@@ -32,7 +32,7 @@ const char *output_modes[] = {
     "print:sensor:unreachable",
     "print:axiom:unreachable",
 
-    // ks0-translation options
+    // ks0-translation options (cp2fsc)
     "print:ks0-translation:raw",
     "print:ks0-translation:preprocessed",
     "print:ks0-translation:reachable",
@@ -41,6 +41,14 @@ const char *output_modes[] = {
     "print:ks0-translation:action",
     "print:ks0-translation:merge:literals",
     "print:ks0-translation:merge:action",
+
+    // solver options (k_replanner)
+    "print:solver:plan",
+    "print:solver:assumptions",
+    "print:solver:plan-step",
+    "print:solver:inconsistency",
+    "print:solver:inconsistency:details",
+    "print:solver:consistency:check",
 
     // cp2fsc/k_replanner options
     "print:parser:raw",

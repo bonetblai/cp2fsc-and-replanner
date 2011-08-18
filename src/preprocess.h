@@ -19,7 +19,7 @@ class Preprocessor {
     void remove_useless_effects_and_actions();
 
   public:
-    Verbosity::Mode verbosity_mode;
+    const Verbosity::Mode verbosity_mode;
 
     Preprocessor(Instance &ins, const Verbosity::Mode &vmode = Verbosity::Mode());
     ~Preprocessor();

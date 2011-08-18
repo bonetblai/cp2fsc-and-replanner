@@ -4,8 +4,6 @@
 
 using namespace std;
 
-//#define DEBUG
-
 bool Solver::solve(const State &initial_hidden_state, vector<int> &final_plan) const {
     vector<State> assumption_vec;
     State hidden(initial_hidden_state), state;
@@ -34,27 +32,31 @@ bool Solver::solve(const State &initial_hidden_state, vector<int> &final_plan) c
         calculate_relevant_assumptions(plan, state, assumption_vec);
         ++planner_calls;
 
-#ifdef DEBUG
-        cout << "Plan:" << endl;
-        for( Instance::Plan::const_iterator a = plan.begin(); a != plan.end(); ++a )
-            cout << "  " << *a << "." << kp_instance_.actions[*a]->name << endl;
-        cout << "Assumptions:" << endl;
-        for( size_t k = 0; k < assumption_vec.size(); ++k ) {
-            cout << "  ";
-            assumption_vec[k].print(cout, kp_instance_);
-            cout << endl;
+        if( verbosity_mode_.is_enabled("print:solver:plan") ) {
+            cout << "Plan:" << endl;
+            for( Instance::Plan::const_iterator a = plan.begin(); a != plan.end(); ++a )
+                cout << "  " << *a << "." << kp_instance_.actions[*a]->name << endl;
         }
-#endif
+        if( verbosity_mode_.is_enabled("print:solver:assumptions") ) {
+            cout << "Assumptions:" << endl;
+            for( size_t k = 0; k < assumption_vec.size(); ++k ) {
+                cout << "  ";
+                assumption_vec[k].print(cout, kp_instance_);
+                cout << endl;
+            }
+        }
 
         // apply plan until an inconsistency is found or termination
         for( size_t k = 0; k < plan.size(); ++k ) {
             const Instance::Action &kp_act = *kp_instance_.actions[plan[k]];
 
-#ifdef DEBUG
-            cout << "state:" << endl << "  "; state.print(cout, kp_instance_); cout << endl;
-            cout << "hidden:" << endl << "  "; hidden.print(cout, instance_); cout << endl;
-            cout << "x0-act: " << kp_act.name << endl;
-#endif
+            if( verbosity_mode_.is_enabled("print:solver:plan-step") ) {
+                cout << " state=";
+                state.print(cout, kp_instance_);
+                cout << endl << "hidden=";
+                hidden.print(cout, instance_);
+                cout << endl << "x0-act=" << kp_act.name << endl;
+            }
 
             assert(state.applicable(kp_act));
             state.apply(kp_act);
@@ -85,29 +87,39 @@ bool Solver::solve(const State &initial_hidden_state, vector<int> &final_plan) c
 
                 // check for consistency of remaining plan
                 if( inconsistent(state, assumption_vec, k+1) ) {
-#ifdef DEBUG
-                    cout << "inconsistency found with action " << plan[k+1] << endl;
-                    //cout << "STATE:" << endl << "  "; state.print(cout, kp_instance_); cout << endl;
-                    //cout << "HIDDEN="; hidden.print(cout, instance_); cout << endl;
-                    //cout << "STATE="; state.print(cout, kp_instance_); cout << endl;
-                    //for( size_t l = k+1; l < assumption_vec.size(); ++l ) {
-                    //    cout << "SUP[" << l << "]="; assumption_vec[l].print(cout, kp_instance_); cout << endl;
-                    //}
-#endif
+                    if( verbosity_mode_.is_enabled("print:solver:inconsistency") ) {
+                        cout << "inconsistency found with action " << plan[k+1] << endl;
+                        if( verbosity_mode_.is_enabled("print:solver:inconsistency:details") ) {
+                            cout << " STATE=";
+                            state.print(cout, kp_instance_);
+                            cout << endl << "HIDDEN=";
+                            hidden.print(cout, instance_);
+                            cout << endl;
+                            for( size_t l = k+1; l < assumption_vec.size(); ++l ) {
+                                cout << "SUP[" << l << "]=";
+                                assumption_vec[l].print(cout, kp_instance_);
+                                cout << endl;
+                            }
+                        }
+                    }
                     break;
                 }
             }
         }
     }
 
-#ifdef DEBUG
-    cout << "FINAL STATE="; state.print(cout, kp_instance_); cout << endl;
-#endif
+    if( verbosity_mode_.is_enabled("print:solver:plan-step") ) {
+        cout << " state=";
+        state.print(cout, kp_instance_);
+        cout << endl;
+    }
 
     return SOLVED;
 }
 
-void Solver::calculate_relevant_assumptions(const Instance::Plan &plan, const State &state, vector<State> &assumption_vec) const {
+void Solver::calculate_relevant_assumptions(const Instance::Plan &plan,
+                                            const State &state,
+                                            vector<State> &assumption_vec) const {
     State final_state;
     kp_instance_.apply_plan(plan, state, final_state, assumption_vec);
 }
@@ -144,28 +156,25 @@ void Solver::compute_and_add_observations(State &hidden, State &state) const {
 }
 
 bool Solver::inconsistent(const State &state, const vector<State> &assumption_vec, size_t k) const {
+    bool verbose = verbosity_mode_.is_enabled("print:solver:consistency:check");
     for( State::const_iterator it = state.begin(); it != state.end(); ++it ) {
         int atom = *it/2;
-#ifdef DEBUG
-        cout << "checking consistency of " << instance_.atoms[atom]->name << ": ";
-#endif
+
+        if( verbose ) {
+            cout << "checking consistency of " << instance_.atoms[atom]->name << ": ";
+        }
+
         if( instance_.is_observable(atom) ) {
             int comp = *it%2 == 0 ? *it + 1 : *it - 1;
             for( size_t i = k; i < assumption_vec.size(); ++i ) {
                 if( assumption_vec[i].satisfy(comp) ) {
-#ifdef DEBUG
-                    cout << "inconsistent!" << endl;
-#endif
+                    if( verbose ) cout << "inconsistent!" << endl;
                     return true;
                 }
             }
-#ifdef DEBUG
-            cout << "consistent!" << endl;
-#endif
+            if( verbose ) cout << "consistent!" << endl;
         } else {
-#ifdef DEBUG
-            cout << " ok [non-observable]" << endl;
-#endif
+            if( verbose ) cout << " ok [non-observable]" << endl;
         }
     }
     return false;
