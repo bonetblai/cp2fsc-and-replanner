@@ -10,7 +10,9 @@ class KS0_Instance : public Instance {
     std::vector<bool> tagged_;
     std::vector<int> tag_map_;
   public:
-    KS0_Instance(const CP_Instance &instance, bool tag_all_literals = true);
+    KS0_Instance(const CP_Instance &instance,
+                 const Verbosity::Mode &vmode = Verbosity::Mode(),
+                 bool tag_all_literals = true);
     ~KS0_Instance();
     int n_tags() const { return n_tags_; }
 };

@@ -32,6 +32,16 @@ const char *output_modes[] = {
     "print:sensor:unreachable",
     "print:axiom:unreachable",
 
+    // ks0-translation options
+    "print:ks0-translation:raw",
+    "print:ks0-translation:preprocessed",
+    "print:ks0-translation:reachable",
+    "print:ks0-translation:tag:must",
+    "print:ks0-translation:tag:atom:creation",
+    "print:ks0-translation:action",
+    "print:ks0-translation:merge:literals",
+    "print:ks0-translation:merge:action",
+
     // cp2fsc/k_replanner options
     "print:parser:raw",
     "print:problem:raw",
@@ -40,8 +50,6 @@ const char *output_modes[] = {
     "print:cp-translation:preprocessed",
     "print:kp-translation:raw",
     "print:kp-translation:preprocessed",
-    "print:ks0-translation:raw",
-    "print:ks0-translation:preprocessed",
 
     0
 };

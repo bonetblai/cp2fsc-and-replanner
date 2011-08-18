@@ -506,7 +506,7 @@ void Preprocessor::preprocess(bool remove_atoms, const bool_vec *known_non_stati
     // make sure we don't remove unreachable goals and hidden fluents!
     for( index_set::const_iterator it = instance.goal_literals.begin(); it != instance.goal_literals.end(); ++it ) {
         int idx = *it > 0 ? *it-1 : -*it-1;
-        if( atoms_to_remove[idx] == true ) cout << instance.atoms[idx]->name << endl;
+        //if( atoms_to_remove[idx] == true ) cout << instance.atoms[idx]->name << endl;
         atoms_to_remove[idx] = false;
     }
 
