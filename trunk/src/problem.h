@@ -125,7 +125,7 @@ class Instance {
     Instance(Name *n = 0, const Verbosity::Mode &vmode = Verbosity::Mode())
       : cross_referenced(false), name(n), verbosity_mode(vmode) {
     }
-    Instance(Verbosity::Mode &vmode)
+    Instance(const Verbosity::Mode &vmode)
       : cross_referenced(false), name(0), verbosity_mode(vmode) {
     }
     Instance(const Instance &ins);
