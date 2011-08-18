@@ -7,10 +7,6 @@ using namespace std;
 KS0_Instance::~KS0_Instance() {
 }
 
-// NOTE: When using tag_all_literals=false DO NOT remove unreachable/static
-// atoms in CP_Instance as the atoms in the initial_states and
-// reachable_space aren't remapped.
-
 KS0_Instance::KS0_Instance(const CP_Instance &instance,
                            const Verbosity::Mode &vmode,
                            bool tag_all_literals) : Instance(vmode) {
