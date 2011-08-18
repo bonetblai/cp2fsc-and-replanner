@@ -204,7 +204,12 @@ int main(int argc, char *argv[]) {
 
     cout << "preprocessing CP translation..." << endl;
     Preprocessor cp_prep(cp_instance, output_mode);
-    cp_prep.preprocess(opt_tag_all_literals);
+
+    // For some reason, true instead of false works better in some hard problems such as
+    // visual marker. This flag instruct the preprocessor to remove unreachable and
+    // static atoms. This odd behaviour could be a bug somewhere...
+    cp_prep.preprocess(false);
+  
     if( output_mode.is_enabled("print:cp-translation:preprocessed") ) {
         cp_instance.write_domain(cout);
         cp_instance.write_problem(cout);
