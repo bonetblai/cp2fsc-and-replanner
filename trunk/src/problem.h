@@ -120,7 +120,7 @@ class Instance {
     index_set   given_observables;
     index_set   given_stickies;
 
-    Verbosity::Mode verbosity_mode;
+    const Verbosity::Mode verbosity_mode;
 
     Instance(Name *n = 0, const Verbosity::Mode &vmode = Verbosity::Mode())
       : cross_referenced(false), name(n), verbosity_mode(vmode) {
