@@ -214,7 +214,6 @@ void Instance::remove_axioms(const bool_vec &set, index_vec &map) {
     }
 }
 
-
 void Instance::remove_atoms(const bool_vec &set, index_vec &map) {
     index_vec rm_map(atoms.size());
 

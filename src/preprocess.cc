@@ -538,9 +538,11 @@ void Preprocessor::preprocess(bool remove_atoms, const bool_vec *known_non_stati
     }
 
     if( remove_atoms && !atoms_to_remove.empty() ) {
-        //cout << "Atoms to remove = ";
-        //instance.write_atom_set(cout, atoms_to_remove);
-        //cout << endl;
+        if( verbosity_mode.is_enabled("print:atom:removal") ) {
+            cout << "atoms to remove = ";
+            instance.write_atom_set(cout, atoms_to_remove);
+            cout << endl;
+        }
         instance.remove_atoms(atoms_to_remove, atom_map);
         remove_useless_effects_and_actions();
     }

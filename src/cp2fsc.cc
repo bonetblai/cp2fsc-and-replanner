@@ -25,6 +25,7 @@ const char *output_modes[] = {
 
     // preprocessor options
     "print:preprocess:stage",
+    "print:atom:removal",
     "print:atom:unreachable",
     "print:atom:static",
     "print:action:unreachable",

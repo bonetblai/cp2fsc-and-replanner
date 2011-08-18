@@ -7,6 +7,7 @@
 #include <tr1/unordered_set>
 #include <list>
 #include <assert.h>
+#include <index.h>
 
 class StateHash;
 class StateSet;
@@ -37,6 +38,15 @@ class State {
         add(s);
     }
     virtual ~State() { delete[] atoms_; }
+
+    void remap(State &state, index_vec &map) const {
+        state.clear();
+        for( register unsigned *p = atoms_; *p; p++ ) {
+            if( map[*p-1] != no_such_index )
+                state.add(map[*p-1]);
+        }
+    }
+
     void clear() { atoms_[0] = 0; size_ = 0; }
     size_t hash() const { return 0; }
 
