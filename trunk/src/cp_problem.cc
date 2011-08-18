@@ -15,7 +15,8 @@ CP_Instance::CP_Instance(const Instance &ins, size_t fsc_states,
                          bool compound_obs_as_fluents)
   : Instance(ins.name), fsc_states_(fsc_states),
     forbid_inconsistent_tuples_(forbid_inconsistent_tuples),
-    compound_obs_as_fluents_(compound_obs_as_fluents) {
+    compound_obs_as_fluents_(compound_obs_as_fluents),
+    instance_(ins) {
 
     // set description of init
     init = ins.init;
@@ -255,5 +256,88 @@ bool CP_Instance::consistent_with_obs(int obs_idx, const index_set &condition) c
         ++state_idx;
     }
     return false;
+}
+
+void CP_Instance::remove_atoms(const bool_vec &set, index_vec &map) {
+    index_vec rm_map(atoms.size());
+
+    // mark atoms to remove and re-index
+    size_t j = 0;
+    for( size_t k = 0; k < atoms.size(); ++k ) {
+        if( !set[k] ) {
+            rm_map[k] = j;
+            ++j;
+        } else {
+            rm_map[k] = no_such_index;
+        }
+    }
+
+    // remap atoms in initial states
+    StateSet remaped_initial_states;
+    StateSet remaped_reachable_space;
+    std::map<const State*, const StateSet*> remaped_reachable_space_from_initial_state;
+    for( StateSet::const_iterator it = initial_states_.begin(); it != initial_states_.end(); ++it ) {
+        State *state = new State;
+        (*it)->remap(*state, rm_map);
+        remaped_initial_states.insert(state);
+        //cout << "ISTATE:old = " << **it << endl;
+        //cout << "ISTATE:new = " << *state << endl;
+
+        // remap atoms in reachable space from initial state
+        StateSet *space = new StateSet;
+        std::map<const State*, const StateSet*>::const_iterator jt = reachable_space_from_initial_state_.find(*it);
+        assert(jt != reachable_space_from_initial_state_.end());
+        for( StateSet::const_iterator kt = jt->second->begin(); kt != jt->second->end(); ++kt ) {
+            State *st = new State;
+            (*kt)->remap(*st, rm_map);
+            space->insert(st);
+            //cout << "ISTATE:old = " << **kt << endl;
+            //cout << "ISTATE:new = " << *st << endl;
+        }
+
+        remaped_reachable_space_from_initial_state.insert(make_pair(state, space));
+        remaped_reachable_space.insert(space->begin(), space->end());
+    }
+    initial_states_ = remaped_initial_states;
+    reachable_space_ = remaped_reachable_space;
+    reachable_space_from_initial_state_ = remaped_reachable_space_from_initial_state;
+
+    // calls Instance::remove_atoms() to finish the job!
+    Instance::remove_atoms(set, map);
+
+    // re-calculate reachable observations
+    reachable_obs_.clear();
+    state_obs_ = vector<int>(reachable_space_.size(), -1);
+    int state_idx = 0;
+    for( StateSet::const_iterator it = reachable_space_.begin(); it != reachable_space_.end(); ++it ) {
+        index_set obs;
+        for( index_set::const_iterator jt = instance_.observable_fluents.begin(); jt != instance_.observable_fluents.end(); ++jt ) {
+            if( (*it)->satisfy(*jt) ) obs.insert(1 + *jt);
+        }
+        if( reachable_obs_.find(obs) == reachable_obs_.end() ) {
+            // this is a new observation
+            reachable_obs_.insert(make_pair(obs, (int)reachable_obs_.size()));
+        }
+        state_obs_[state_idx++] = reachable_obs_[obs];
+    }
+
+    /*
+    cout << "# reachable obs = " << reachable_obs_.size() << endl;
+    for( std::map<index_set, int>::const_iterator it = reachable_obs_.begin(); it != reachable_obs_.end(); ++it ) {
+        for( std::map<index_set, int>::const_iterator jt = it; jt != reachable_obs_.end(); ++jt ) {
+            if( (it != jt) && (it->first.contains(jt->first) || jt->first.contains(it->first)) ) {
+                cout << "warning: obs ";
+                write_atom_set(cout, it->first);
+                cout << " and ";
+                write_atom_set(cout, jt->first);
+                cout << " not disjunct. Translation may be invalid!" << endl;
+            }
+        }
+        cout << "obs" << it->second << ":";
+        for( index_set::const_iterator jt = it->first.begin(); jt != it->first.end(); ++jt )
+            cout << " " << atoms[*jt-1]->name;
+        cout << endl;
+    }
+    */
 }
 

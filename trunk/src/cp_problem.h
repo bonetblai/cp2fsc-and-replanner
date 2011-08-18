@@ -16,6 +16,7 @@ class CP_Instance : public Instance {
     std::map<const State*, const StateSet*> reachable_space_from_initial_state_;
     std::map<index_set, int> reachable_obs_;
     std::vector<int> state_obs_;
+    const Instance &instance_;
 
     size_t obs0_, q0_; // initial fluent index for reachable obs and FSC states
     size_t n_unused_fluents_, n_mapped_fluents_; // number of fluents used for removing inconsistent tuples
@@ -28,6 +29,9 @@ class CP_Instance : public Instance {
     void add_to_initial_states(int fluent);
     bool consistent_with_obs(int obs_idx, const index_set &condition) const;
     int n_obs() const { return reachable_obs_.size(); }
+
+    // Remaps atoms in the initial states and then calls Instance::remove_atoms()
+    virtual void remove_atoms(const bool_vec &set, index_vec &map);
 };
 
 #endif

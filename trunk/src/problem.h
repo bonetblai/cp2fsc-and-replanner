@@ -143,10 +143,13 @@ class Instance {
     void remove_actions(const bool_vec &set, index_vec &map);
     void remove_sensors(const bool_vec &set, index_vec &map);
     void remove_axioms(const bool_vec &set, index_vec &map);
-    void remove_atoms(const bool_vec &set, index_vec &map);
+    virtual void remove_atoms(const bool_vec &set, index_vec &map);
     void set_non_primitive_and_observable_fluents();
     void set_initial_state(State &state) const;
     void set_hidden_state(State &state) const;
+
+    // NOTE: remove_atoms must be virtual because CP_Instance needs to 
+    // remap atoms in the initial states, rechable space, etc.
 
     // compute/clear secondary instance info
     void cross_reference();
