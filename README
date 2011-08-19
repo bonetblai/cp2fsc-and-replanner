@@ -26,6 +26,11 @@ cp2fsc receives different paramenters, the most important being:
 
 For a complete list of paramenters, run cp2fsc without parameters.
 
+[still under construction]
+
+[take a look at the examples in benchmarks/fsc. See the README and
+ experiments.sh files therein]
+
 
 ===============================================================================
 k_replanner
@@ -34,5 +39,7 @@ k_replanner
 The executable k_replanner implements a replanning algorithm based on a
 classical planner. The classical planner used can be specified with a
 parameter.
+
+[still under construction]
 
 
