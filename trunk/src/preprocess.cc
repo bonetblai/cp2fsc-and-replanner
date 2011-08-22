@@ -411,7 +411,8 @@ void Preprocessor::preprocess(bool remove_atoms, const bool_vec *known_non_stati
     bool_vec static_atoms(instance.n_atoms(), false);
     bool fix_point_reached = false;
     while( !fix_point_reached ) {
-        //cout << "NEW ITERATION" << endl;
+        if( verbosity_mode.is_enabled("print:preprocess:stage") )
+            cout << "           new iteration..." << endl;
         fix_point_reached = true;
         instance.remove_unreachable_conditional_effects(reachable_atoms, static_atoms);
         instance.remove_unreachable_axioms(reachable_atoms, static_atoms);
@@ -428,10 +429,12 @@ void Preprocessor::preprocess(bool remove_atoms, const bool_vec *known_non_stati
         for( index_set::const_iterator it = instance.non_primitive_fluents.begin(); it != instance.non_primitive_fluents.end(); ++it ) {
             assert(*it >= 0);
             static_atoms[*it] = false;
+            static_atoms_aux[*it] = false;
         }
         for( index_set::const_iterator it = instance.observable_fluents.begin(); it != instance.observable_fluents.end(); ++it ) {
             assert(*it >= 0);
             static_atoms[*it] = false;
+            static_atoms_aux[*it] = false;
         }
 
         // check achievement of fix-point
