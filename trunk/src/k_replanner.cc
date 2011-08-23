@@ -50,7 +50,7 @@ const char *output_modes[] = {
     "print:kp-translation:action:invariant",
 
     // classical_planner options (k_replanner)
-    "no-remove-intermediate-files",
+    "remove-intermediate-files",
 
     // cp2fsc/k_replanner options
     "print:parser:raw",
@@ -80,7 +80,6 @@ void usage(ostream &os, const char *exec_name) {
        << endl;
     free(tmp_name);
 }
-
 
 int main(int argc, char *argv[]) {
     StringTable symbols(50, lowercase_map);
