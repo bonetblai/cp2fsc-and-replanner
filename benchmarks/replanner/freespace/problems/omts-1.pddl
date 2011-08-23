@@ -1,0 +1,56 @@
+;; dim=(6,5)
+;; init=(4,3)
+;; goal=(2,2)
+;; @@@@@@
+;; @....@
+;; @..I.@
+;; @G...@
+;; @@@@@@
+
+(define (problem map-omts)
+    (:domain freespace)
+    (:objects
+        x1 x2 x3 x4 x5 x6 - xpos
+        y1 y2 y3 y4 y5 - ypos)
+    (:init
+        (suc-x x1 x2) (suc-x x2 x3) (suc-x x3 x4) (suc-x x4 x5) (suc-x x5 x6)
+        (suc-y y1 y2) (suc-y y2 y3) (suc-y y3 y4) (suc-y y4 y5)
+       (at x4 y3)
+       (invariant (wall x1 y1) (not (wall x1 y1)))
+       (invariant (wall x1 y2) (not (wall x1 y2)))
+       (invariant (wall x1 y3) (not (wall x1 y3)))
+       (invariant (wall x1 y4) (not (wall x1 y4)))
+       (invariant (wall x1 y5) (not (wall x1 y5)))
+       (invariant (wall x2 y1) (not (wall x2 y1)))
+       (invariant (wall x2 y2) (not (wall x2 y2)))
+       (invariant (wall x2 y3) (not (wall x2 y3)))
+       (invariant (wall x2 y4) (not (wall x2 y4)))
+       (invariant (wall x2 y5) (not (wall x2 y5)))
+       (invariant (wall x3 y1) (not (wall x3 y1)))
+       (invariant (wall x3 y2) (not (wall x3 y2)))
+       (invariant (wall x3 y3) (not (wall x3 y3)))
+       (invariant (wall x3 y4) (not (wall x3 y4)))
+       (invariant (wall x3 y5) (not (wall x3 y5)))
+       (invariant (wall x4 y1) (not (wall x4 y1)))
+       (invariant (wall x4 y2) (not (wall x4 y2)))
+       (invariant (wall x4 y3) (not (wall x4 y3)))
+       (invariant (wall x4 y4) (not (wall x4 y4)))
+       (invariant (wall x4 y5) (not (wall x4 y5)))
+       (invariant (wall x5 y1) (not (wall x5 y1)))
+       (invariant (wall x5 y2) (not (wall x5 y2)))
+       (invariant (wall x5 y3) (not (wall x5 y3)))
+       (invariant (wall x5 y4) (not (wall x5 y4)))
+       (invariant (wall x5 y5) (not (wall x5 y5)))
+       (invariant (wall x6 y1) (not (wall x6 y1)))
+       (invariant (wall x6 y2) (not (wall x6 y2)))
+       (invariant (wall x6 y3) (not (wall x6 y3)))
+       (invariant (wall x6 y4) (not (wall x6 y4)))
+       (invariant (wall x6 y5) (not (wall x6 y5)))
+    )
+    (:hidden
+       (wall x1 y1) (wall x1 y2) (wall x1 y3) (wall x1 y4) (wall x1 y5) (wall x2 y1)
+       (wall x2 y5) (wall x3 y1) (wall x3 y5) (wall x4 y1) (wall x4 y5) (wall x5 y1)
+       (wall x5 y5) (wall x6 y1) (wall x6 y2) (wall x6 y3) (wall x6 y4) (wall x6 y5)
+    )
+    (:goal (at x2 y2))
+)
