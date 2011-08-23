@@ -198,9 +198,8 @@ int read();
 #line 1 "ppddl.lex"
 #define INITIAL 0
 #define YY_PDDL_Scanner_FLEX_SCANNER
-/* CHAR [a-zA-Z_] */
 #include "scanner.h"
-#line 38 "ppddl.lex"
+#line 40 "ppddl.lex"
 #line 196 "/opt/sfw/lib/flexskel.cc"
 
 #define yy___stderr YY_PDDL_Scanner_ERRFILE
@@ -684,11 +683,11 @@ static YY_CHAR *yy_last_accepting_cpos;
 #if YY_PDDL_Scanner_DEBUG != 0
 static const short int yy_rule_linenum[47] =
     {   0,
-       40,   41,   45,   50,   51,   52,   53,   54,   55,   57,
-       58,   59,   60,   61,   62,   63,   64,   65,   66,   67,
-       68,   69,   70,   71,   72,   73,   74,   75,   76,   77,
-       78,   79,   80,   81,   82,   83,   84,   85,   86,   87,
-       88,   89,   91,   99,  104,  128
+       42,   43,   47,   52,   53,   54,   55,   56,   57,   59,
+       60,   61,   62,   63,   64,   65,   66,   67,   68,   69,
+       70,   71,   72,   73,   74,   75,   76,   77,   78,   79,
+       80,   81,   82,   83,   84,   85,   86,   87,   88,   89,
+       90,   91,   93,  101,  105,  128
     } ;
 
 #endif
@@ -854,221 +853,219 @@ do_action:      /* this label is used only to access EOF actions */
 	    goto yy_find_action;
 
 case 1:
-#line 40 "ppddl.lex"
+#line 42 "ppddl.lex"
 ;
 	YY_BREAK
 case 2:
-#line 41 "ppddl.lex"
+#line 43 "ppddl.lex"
 { _line_no++;
-                  if( _trace_line )
-                      std::cerr << std::endl << "LINE: " << _line_no << std::endl;
-}
+                   if( _trace_line )
+                       cerr << endl << "LINE: " << _line_no << endl;
+                 }
 	YY_BREAK
 case 3:
-#line 45 "ppddl.lex"
+#line 47 "ppddl.lex"
 { _line_no++;
-                  if( _trace_line )
-                      std::cerr << std::endl << "LINE: " << _line_no << std::endl;
-}
+                   if( _trace_line )
+                       cerr << endl << "LINE: " << _line_no << endl;
+                 }
 	YY_BREAK
 case 4:
-#line 50 "ppddl.lex"
+#line 52 "ppddl.lex"
 { return PDDL_Parser::TK_OPEN; }
 	YY_BREAK
 case 5:
-#line 51 "ppddl.lex"
+#line 53 "ppddl.lex"
 { return PDDL_Parser::TK_CLOSE; }
 	YY_BREAK
 case 6:
-#line 52 "ppddl.lex"
+#line 54 "ppddl.lex"
 { return PDDL_Parser::TK_OPEN_SQ; }
 	YY_BREAK
 case 7:
-#line 53 "ppddl.lex"
+#line 55 "ppddl.lex"
 { return PDDL_Parser::TK_CLOSE_SQ; }
 	YY_BREAK
 case 8:
-#line 54 "ppddl.lex"
+#line 56 "ppddl.lex"
 { return PDDL_Parser::TK_HYPHEN; }
 	YY_BREAK
 case 9:
-#line 55 "ppddl.lex"
+#line 57 "ppddl.lex"
 { return PDDL_Parser::TK_EQ; }
 	YY_BREAK
 case 10:
-#line 57 "ppddl.lex"
+#line 59 "ppddl.lex"
 { return PDDL_Parser::KW_DEFINE; }
 	YY_BREAK
 case 11:
-#line 58 "ppddl.lex"
+#line 60 "ppddl.lex"
 { return PDDL_Parser::KW_DOMAIN; }
 	YY_BREAK
 case 12:
-#line 59 "ppddl.lex"
+#line 61 "ppddl.lex"
 { return PDDL_Parser::KW_REQS; }
 	YY_BREAK
 case 13:
-#line 60 "ppddl.lex"
+#line 62 "ppddl.lex"
 { return PDDL_Parser::KW_TYPES; }
 	YY_BREAK
 case 14:
-#line 61 "ppddl.lex"
+#line 63 "ppddl.lex"
 { return PDDL_Parser::KW_CONSTANTS; }
 	YY_BREAK
 case 15:
-#line 62 "ppddl.lex"
+#line 64 "ppddl.lex"
 { return PDDL_Parser::KW_PREDS; }
 	YY_BREAK
 case 16:
-#line 63 "ppddl.lex"
+#line 65 "ppddl.lex"
 { return PDDL_Parser::KW_OBSERVABLE; }
 	YY_BREAK
 case 17:
-#line 64 "ppddl.lex"
+#line 66 "ppddl.lex"
 { return PDDL_Parser::KW_STICKY; }
 	YY_BREAK
 case 18:
-#line 65 "ppddl.lex"
+#line 67 "ppddl.lex"
 { return PDDL_Parser::KW_FLUENTS; }
 	YY_BREAK
 case 19:
-#line 66 "ppddl.lex"
+#line 68 "ppddl.lex"
 { return PDDL_Parser::KW_ACTION; }
 	YY_BREAK
 case 20:
-#line 67 "ppddl.lex"
+#line 69 "ppddl.lex"
 { return PDDL_Parser::KW_AXIOM; }
 	YY_BREAK
 case 21:
-#line 68 "ppddl.lex"
+#line 70 "ppddl.lex"
 { return PDDL_Parser::KW_SENSOR; }
 	YY_BREAK
 case 22:
-#line 69 "ppddl.lex"
+#line 71 "ppddl.lex"
 { return PDDL_Parser::KW_ARGS; }
 	YY_BREAK
 case 23:
-#line 70 "ppddl.lex"
+#line 72 "ppddl.lex"
 { return PDDL_Parser::KW_PRE; }
 	YY_BREAK
 case 24:
-#line 71 "ppddl.lex"
+#line 73 "ppddl.lex"
 { return PDDL_Parser::KW_EFFECT; }
 	YY_BREAK
 case 25:
-#line 72 "ppddl.lex"
+#line 74 "ppddl.lex"
 { return PDDL_Parser::KW_COND; }
 	YY_BREAK
 case 26:
-#line 73 "ppddl.lex"
+#line 75 "ppddl.lex"
 { return PDDL_Parser::KW_SENSED; }
 	YY_BREAK
 case 27:
-#line 74 "ppddl.lex"
+#line 76 "ppddl.lex"
 { return PDDL_Parser::KW_BODY; }
 	YY_BREAK
 case 28:
-#line 75 "ppddl.lex"
+#line 77 "ppddl.lex"
 { return PDDL_Parser::KW_HEAD; }
 	YY_BREAK
 case 29:
-#line 76 "ppddl.lex"
+#line 78 "ppddl.lex"
 { return PDDL_Parser::KW_AND; }
 	YY_BREAK
 case 30:
-#line 77 "ppddl.lex"
+#line 79 "ppddl.lex"
 { return PDDL_Parser::KW_EXISTS; }
 	YY_BREAK
 case 31:
-#line 78 "ppddl.lex"
+#line 80 "ppddl.lex"
 { return PDDL_Parser::KW_FORALL; }
 	YY_BREAK
 case 32:
-#line 79 "ppddl.lex"
+#line 81 "ppddl.lex"
 { return PDDL_Parser::KW_NOT; }
 	YY_BREAK
 case 33:
-#line 80 "ppddl.lex"
+#line 82 "ppddl.lex"
 { return PDDL_Parser::KW_WHEN; }
 	YY_BREAK
 case 34:
-#line 81 "ppddl.lex"
+#line 83 "ppddl.lex"
 { return PDDL_Parser::KW_INVARIANT; }
 	YY_BREAK
 case 35:
-#line 82 "ppddl.lex"
+#line 84 "ppddl.lex"
 { return PDDL_Parser::KW_OR; }
 	YY_BREAK
 case 36:
-#line 83 "ppddl.lex"
+#line 85 "ppddl.lex"
 { return PDDL_Parser::KW_ONEOF; }
 	YY_BREAK
 case 37:
-#line 84 "ppddl.lex"
+#line 86 "ppddl.lex"
 { return PDDL_Parser::KW_PROBLEM; }
 	YY_BREAK
 case 38:
-#line 85 "ppddl.lex"
+#line 87 "ppddl.lex"
 { return PDDL_Parser::KW_FORDOMAIN; }
 	YY_BREAK
 case 39:
-#line 86 "ppddl.lex"
+#line 88 "ppddl.lex"
 { return PDDL_Parser::KW_OBJECTS; }
 	YY_BREAK
 case 40:
-#line 87 "ppddl.lex"
+#line 89 "ppddl.lex"
 { return PDDL_Parser::KW_INIT; }
 	YY_BREAK
 case 41:
-#line 88 "ppddl.lex"
+#line 90 "ppddl.lex"
 { return PDDL_Parser::KW_HIDDEN; }
 	YY_BREAK
 case 42:
-#line 89 "ppddl.lex"
+#line 91 "ppddl.lex"
 { return PDDL_Parser::KW_GOAL; }
 	YY_BREAK
 case 43:
-#line 91 "ppddl.lex"
-{
-    val.sym = _tab.inserta(yytext);
-    if( val.sym->val == 0 ) return PDDL_Parser::TK_NEW_VAR_SYMBOL;
-    if( ((PDDL_Base::Symbol*)val.sym->val)->sym_class == PDDL_Base::sym_variable )
-        return PDDL_Parser::TK_VAR_SYMBOL;
-    return PDDL_Parser::TK_NEW_VAR_SYMBOL;
-}
+#line 93 "ppddl.lex"
+{ val.sym = _tab.inserta(yytext);
+             if( val.sym->val == 0 )
+                 return PDDL_Parser::TK_NEW_VAR_SYMBOL;
+             if( ((PDDL_Base::Symbol*)val.sym->val)->sym_class == PDDL_Base::sym_variable )
+                 return PDDL_Parser::TK_VAR_SYMBOL;
+             return PDDL_Parser::TK_NEW_VAR_SYMBOL;
+           }
 	YY_BREAK
 case 44:
-#line 99 "ppddl.lex"
-{
-    val.sym = _tab.inserta(yytext);
-    return PDDL_Parser::TK_KEYWORD;
-}
+#line 101 "ppddl.lex"
+{ val.sym = _tab.inserta(yytext);
+             return PDDL_Parser::TK_KEYWORD;
+           }
 	YY_BREAK
 case 45:
-#line 104 "ppddl.lex"
-{
-    val.sym = _tab.inserta(yytext);
-    if( val.sym->val == 0 )
-        return PDDL_Parser::TK_NEW_SYMBOL;
-    else {
-        switch (((PDDL_Base::Symbol*)val.sym->val)->sym_class) {
-            case PDDL_Base::sym_object:
-                return PDDL_Parser::TK_OBJ_SYMBOL;
-            case PDDL_Base::sym_typename:
-                return PDDL_Parser::TK_TYPE_SYMBOL;
-            case PDDL_Base::sym_predicate:
-                return PDDL_Parser::TK_PRED_SYMBOL;
-            case PDDL_Base::sym_action:
-                return PDDL_Parser::TK_ACTION_SYMBOL;
-            case PDDL_Base::sym_sensor:
-                return PDDL_Parser::TK_SENSOR_SYMBOL;
-            case PDDL_Base::sym_axiom:
-                return PDDL_Parser::TK_AXIOM_SYMBOL;
-            default:
-                return PDDL_Parser::TK_MISC_SYMBOL;
-        }
-    }
-}
+#line 105 "ppddl.lex"
+{ val.sym = _tab.inserta(yytext);
+             if( val.sym->val == 0 ) {
+                 return PDDL_Parser::TK_NEW_SYMBOL;
+             } else {
+                 switch (((PDDL_Base::Symbol*)val.sym->val)->sym_class) {
+                   case PDDL_Base::sym_object:
+                     return PDDL_Parser::TK_OBJ_SYMBOL;
+                   case PDDL_Base::sym_typename:
+                     return PDDL_Parser::TK_TYPE_SYMBOL;
+                   case PDDL_Base::sym_predicate:
+                     return PDDL_Parser::TK_PRED_SYMBOL;
+                   case PDDL_Base::sym_action:
+                     return PDDL_Parser::TK_ACTION_SYMBOL;
+                   case PDDL_Base::sym_sensor:
+                     return PDDL_Parser::TK_SENSOR_SYMBOL;
+                   case PDDL_Base::sym_axiom:
+                     return PDDL_Parser::TK_AXIOM_SYMBOL;
+                   default:
+                     return PDDL_Parser::TK_MISC_SYMBOL;
+                 }
+             }
+           }
 	YY_BREAK
 case 46:
 #line 128 "ppddl.lex"
@@ -1675,7 +1672,7 @@ void YY_PDDL_Scanner_CLASS::YY_PDDL_Scanner_INIT_BUFFER( YY_BUFFER_STATE b, YY_P
 #line 130 "ppddl.lex"
 
 
-/*{FLOAT} { val.rval = A_TO_NN(yytext); return PDDL_Parser::TK_FLOAT; }*/
+/*{FLOAT}    { val.rval = A_TO_NN(yytext); return PDDL_Parser::TK_FLOAT; }*/
 
 int yywrap() {
     return 1;
@@ -1684,7 +1681,7 @@ int yywrap() {
 void PDDL_Scanner::open_file(char* name, bool trace) {
     yyin = fopen(name, "r");
     if( !yyin ) {
-        std::cerr << "error: can't open " << name << std::endl;
+        cerr << "error: can't open " << name << endl;
         exit(255);
     }
     _filename = name;

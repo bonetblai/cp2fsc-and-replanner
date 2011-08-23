@@ -80,7 +80,10 @@
 #include <strings.h>
 #include "string_table.h"
 #include "grammar.h"
-#line 38 "ppddl.lex"
+
+using namespace std;
+
+#line 40 "ppddl.lex"
 #line 52 "/opt/sfw/lib/flexskel.h"
 
 #ifdef YY_USE_CLASS
