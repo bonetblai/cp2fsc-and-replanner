@@ -9,7 +9,6 @@ bool Solver::solve(const State &initial_hidden_state, vector<int> &final_plan) c
     State hidden(initial_hidden_state), state;
     Instance::Plan plan;
 
-
     // set initial state
     kp_instance_.set_initial_state(state);
     compute_and_add_observations(hidden, state);

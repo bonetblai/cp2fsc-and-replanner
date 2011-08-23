@@ -62,8 +62,7 @@ bool PDDL_Base::Atom::operator==(const Atom &atom) const {
     return true;
 }
 
-Instance::Atom*
-PDDL_Base::Atom::find_prop(Instance &ins, bool neg, bool create) const {
+Instance::Atom* PDDL_Base::Atom::find_prop(Instance &ins, bool neg, bool create) const {
     ptr_table *r = neg ? &(pred->neg_prop) : &(pred->pos_prop);
     for( size_t k = 0; k < param.size(); k++ ) {
         if( param[k]->sym_class == sym_variable )
