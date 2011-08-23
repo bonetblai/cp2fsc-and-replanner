@@ -4,8 +4,9 @@
 
 using namespace std;
 
-KP_Instance::KP_Instance(const Instance &ins)
-  : Instance(ins.name), n_standard_actions_(0), n_sensor_actions_(0), n_invariant_actions_(0) {
+KP_Instance::KP_Instance(const Instance &ins, const Verbosity::Mode &vmode)
+  : Instance(ins.name, vmode),
+    n_standard_actions_(0), n_sensor_actions_(0), n_invariant_actions_(0) {
 
     // create K0 atoms
     atoms.reserve(2*ins.n_atoms());
@@ -53,7 +54,9 @@ KP_Instance::KP_Instance(const Instance &ins)
             // if not in some oneof, add K_not_<atom> to init
             if( !in_invariant ) {
                 init.literals.insert(1 + 2*k+1);
-                //cout << "Atom " << atoms[2*k+1]->name << " added to init" << endl;
+                if( verbosity_mode.is_enabled("print:kp-translation:atom:init") ) {
+                    cout << "Atom " << atoms[2*k+1]->name << " added to init" << endl;
+                }
             }
         }
     }
@@ -112,7 +115,9 @@ KP_Instance::KP_Instance(const Instance &ins)
             nact.when.push_back(can_eff);
         }
 
-        //nact.print(cout, *this);
+        if( verbosity_mode.is_enabled("print:kp-translation:action:regular") ) {
+            nact.print(cout, *this);
+        }
     }
     n_standard_actions_ = n_actions();
 
@@ -155,7 +160,9 @@ KP_Instance::KP_Instance(const Instance &ins)
                 // add conditional effect to rule
                 obs_rules_by_name_[nact.name->to_string()] = n_actions();
                 nact.when.push_back(c_eff);
-                //nact.print(cout, *this);
+                if( verbosity_mode.is_enabled("print:kp-translation:action:sensor") ) {
+                    nact.print(cout, *this);
+                }
             }
             ++obs;
         }
@@ -192,7 +199,9 @@ KP_Instance::KP_Instance(const Instance &ins)
                 }
             }
             nact.when.push_back(c_eff);
-            //nact.print(cout, *this);
+            if( verbosity_mode.is_enabled("print:kp-translation:action:invariant") ) {
+                nact.print(cout, *this);
+            }
         }
     }
     n_invariant_actions_ = n_actions() - n_standard_actions_ - n_sensor_actions_;

@@ -517,7 +517,7 @@ void Preprocessor::preprocess(bool remove_atoms, const bool_vec *known_non_stati
         const Instance::Sensor &r = *instance.sensors[k];
         for( index_set::const_iterator it = r.sensed.begin(); it != r.sensed.end(); ++it ) {
             assert(*it > 0);
-            assert(atoms_to_remove[*it-1] == false);
+            //assert(atoms_to_remove[*it-1] == false);
             atoms_to_remove[*it-1] = false;
         }
     }
@@ -526,7 +526,7 @@ void Preprocessor::preprocess(bool remove_atoms, const bool_vec *known_non_stati
         const index_vec &invariant = instance.init.invariants[k];
         for( index_vec::const_iterator it = invariant.begin(); it != invariant.end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
-            assert(atoms_to_remove[idx] == false);
+            //assert(atoms_to_remove[idx] == false);
             atoms_to_remove[idx] = false;
         }
     }
@@ -535,7 +535,7 @@ void Preprocessor::preprocess(bool remove_atoms, const bool_vec *known_non_stati
         const index_vec &oneof = instance.init.oneofs[k];
         for( index_vec::const_iterator it = oneof.begin(); it != oneof.end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
-            assert(atoms_to_remove[idx] == false);
+            //assert(atoms_to_remove[idx] == false);
             atoms_to_remove[idx] = false;
         }
     }

@@ -44,6 +44,12 @@ const char *output_modes[] = {
     "print:ks0-translation:merge:literals",
     "print:ks0-translation:merge:action",
 
+    // kp-translation options (k_replanner)
+    "print:kp-translation:atom:init",
+    "print:kp-translation:action:regular",
+    "print:kp-translation:action:sensor",
+    "print:kp-translation:action:invariant",
+
     // solver options (k_replanner)
     "print:solver:plan",
     "print:solver:assumptions",

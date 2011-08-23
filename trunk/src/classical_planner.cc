@@ -33,7 +33,9 @@ ClassicalPlanner::ClassicalPlanner(const char *planner_name, const Instance &ins
 }
 
 FF_Planner::~FF_Planner() {
-    if( !first_call_ ) unlink(domain_fn_);
+    if( instance_.verbosity_mode.is_enabled("remove-intermediate-files") ) {
+        if( !first_call_ ) unlink(domain_fn_);
+    }
 }
 
 int FF_Planner::get_plan(const State &state, Instance::Plan &plan) const {
@@ -61,7 +63,11 @@ int FF_Planner::get_plan(const State &state, Instance::Plan &plan) const {
     ostringstream cmd("");
     cmd << "./ff -o " << domain_fn_ << " -f " << problem_fn_ << " > " << output_fn_;
     int rv = system(cmd.str().c_str());
-    unlink(problem_fn_);
+
+    if( instance_.verbosity_mode.is_enabled("remove-intermediate-files") ) {
+        unlink(problem_fn_);
+    }
+
     if( rv != 0 ) {
         total_time_ += Utils::read_time_in_seconds() - start_time;
         return ERROR;
@@ -82,17 +88,26 @@ int FF_Planner::get_plan(const State &state, Instance::Plan &plan) const {
     cmd.str("");
     cmd << "egrep -e [0-9]+: " << output_fn_ << " > " << tmp_fn_;
     rv = system(cmd.str().c_str());
-    unlink(output_fn_);
+
+    if( instance_.verbosity_mode.is_enabled("remove-intermediate-files") ) {
+        unlink(output_fn_);
+    }
+
     if( rv != 0 ) {
         total_time_ += Utils::read_time_in_seconds() - start_time;
-        unlink(tmp_fn_);
+        if( instance_.verbosity_mode.is_enabled("remove-intermediate-files") ) {
+            unlink(tmp_fn_);
+        }
         return NO_SOLUTION;
     }
 
     cmd.str("");
     cmd << "cat " << tmp_fn_ << " | awk '{print $NF;}' | tr [:upper:] [:lower:]  > " << plan_fn_;
     rv = system(cmd.str().c_str());
-    unlink(tmp_fn_);
+
+    if( instance_.verbosity_mode.is_enabled("remove-intermediate-files") ) {
+        unlink(tmp_fn_);
+    }
     assert(rv == 0);
 
     // read plan from file
@@ -108,7 +123,11 @@ int FF_Planner::get_plan(const State &state, Instance::Plan &plan) const {
         }
     }
     ifs.close();
-    unlink(plan_fn_);
+
+    if( instance_.verbosity_mode.is_enabled("remove-intermediate-files") ) {
+        unlink(plan_fn_);
+    }
+
     total_time_ += Utils::read_time_in_seconds() - start_time;
     return SOLVED;
 }
@@ -167,8 +186,12 @@ int LAMA_Planner::get_plan(const State &state, Instance::Plan &plan) const {
 
         // call LAMA planner including translation, preprocessing and search
         int rv = system(first_cmd_);
-        unlink(domain_fn_);
-        unlink(problem_fn_);
+
+        if( instance_.verbosity_mode.is_enabled("remove-intermediate-files") ) {
+            unlink(domain_fn_);
+            unlink(problem_fn_);
+        }
+
         if( rv != 0 ) {
             total_time_ += Utils::read_time_in_seconds() - start_time;
             return ERROR;
@@ -184,8 +207,11 @@ int LAMA_Planner::get_plan(const State &state, Instance::Plan &plan) const {
         ifs >> search_time;
         total_search_time_ += search_time;
         ifs.close();
-        unlink(output_fn_);
-        unlink(tmp_fn_);
+
+        if( instance_.verbosity_mode.is_enabled("remove-intermediate-files") ) {
+            unlink(output_fn_);
+            unlink(tmp_fn_);
+        }
 
         // save result from translation: output.sas, all.groups, test.groups
         //system("cp ~/software/seq-sat-lama/output.sas output.sas");
@@ -238,8 +264,11 @@ int LAMA_Planner::get_plan(const State &state, Instance::Plan &plan) const {
         ifs >> search_time;
         total_search_time_ += search_time;
         ifs.close();
-        unlink(output_fn_);
-        unlink(tmp_fn_);
+
+        if( instance_.verbosity_mode.is_enabled("remove-intermediate-files") ) {
+            unlink(output_fn_);
+            unlink(tmp_fn_);
+        }
     }
 
     // read plan from file
@@ -259,7 +288,11 @@ int LAMA_Planner::get_plan(const State &state, Instance::Plan &plan) const {
         }
     }
     ifs.close();
-    unlink(fname.str().c_str());
+
+    if( instance_.verbosity_mode.is_enabled("remove-intermediate-files") ) {
+        unlink(fname.str().c_str());
+    }
+
     total_time_ += Utils::read_time_in_seconds() - start_time;
     return SOLVED;
 }
@@ -327,7 +360,9 @@ void LAMA_Planner::read_variables(ifstream &ifs) const {
 }
 
 M_Planner::~M_Planner() {
-    if( !first_call_ ) unlink(domain_fn_);
+    if( instance_.verbosity_mode.is_enabled("remove-intermediate-files") ) {
+        if( !first_call_ ) unlink(domain_fn_);
+    }
 }
 
 int M_Planner::get_plan(const State &state, Instance::Plan &plan) const {
@@ -355,10 +390,16 @@ int M_Planner::get_plan(const State &state, Instance::Plan &plan) const {
     ostringstream cmd("");
     cmd << "./" << planner_name_ << " " << domain_fn_ << " " << problem_fn_ << " > " << output_fn_;
     int rv = system(cmd.str().c_str());
-    unlink(problem_fn_);
+
+    if( instance_.verbosity_mode.is_enabled("remove-intermediate-files") ) {
+        unlink(problem_fn_);
+    }
+
     if( rv != 0 ) {
         total_time_ += Utils::read_time_in_seconds() - start_time;
-        unlink(output_fn_);
+        if( instance_.verbosity_mode.is_enabled("remove-intermediate-files") ) {
+            unlink(output_fn_);
+        }
         return ERROR;
     }
 
@@ -372,7 +413,10 @@ int M_Planner::get_plan(const State &state, Instance::Plan &plan) const {
     ifs >> total_time >> preprocess_time;
     total_search_time_ += total_time - preprocess_time;
     ifs.close();
-    unlink(tmp_fn_);
+
+    if( instance_.verbosity_mode.is_enabled("remove-intermediate-files") ) {
+        unlink(tmp_fn_);
+    }
 
     // extract plan from output
     cmd.str("");
@@ -380,11 +424,16 @@ int M_Planner::get_plan(const State &state, Instance::Plan &plan) const {
         << " | grep STEP | sed \"s/STEP .*: //\" | tr \" \" \"\\n\" | sed \"s/()//\" > "
         << plan_fn_;
     rv = system(cmd.str().c_str());
-    unlink(output_fn_);
+
+    if( instance_.verbosity_mode.is_enabled("remove-intermediate-files") ) {
+        unlink(output_fn_);
+    }
 
     if( rv != 0 ) {
         total_time_ += Utils::read_time_in_seconds() - start_time;
-        unlink(plan_fn_);
+        if( instance_.verbosity_mode.is_enabled("remove-intermediate-files") ) {
+            unlink(plan_fn_);
+        }
         return ERROR;
     }
 
@@ -401,14 +450,18 @@ int M_Planner::get_plan(const State &state, Instance::Plan &plan) const {
         }
     }
     ifs.close();
-    unlink(plan_fn_);
+
+    if( instance_.verbosity_mode.is_enabled("remove-intermediate-files") ) {
+        unlink(plan_fn_);
+    }
+
     total_time_ += Utils::read_time_in_seconds() - start_time;
     return SOLVED;
 }
 
 MP_Planner::~MP_Planner() {
-    if( !first_call_ ) unlink(domain_fn_);
+    if( instance_.verbosity_mode.is_enabled("remove-intermediate-files") ) {
+        if( !first_call_ ) unlink(domain_fn_);
+    }
 }
-
-
 

@@ -43,13 +43,14 @@ const char *output_modes[] = {
     "print:ks0-translation:merge:literals",
     "print:ks0-translation:merge:action",
 
-    // solver options (k_replanner)
-    "print:solver:plan",
-    "print:solver:assumptions",
-    "print:solver:plan-step",
-    "print:solver:inconsistency",
-    "print:solver:inconsistency:details",
-    "print:solver:consistency:check",
+    // kp-translation options (k_replanner)
+    "print:kp-translation:atom:init",
+    "print:kp-translation:action:regular",
+    "print:kp-translation:action:sensor",
+    "print:kp-translation:action:invariant",
+
+    // classical_planner options (k_replanner)
+    "remove-intermediate-files",
 
     // cp2fsc/k_replanner options
     "print:parser:raw",
@@ -189,7 +190,7 @@ int main(int argc, char *argv[]) {
     }
 
     cout << "creating KP translation..." << endl;
-    KP_Instance kp_instance(instance);
+    KP_Instance kp_instance(instance, output_mode);
     if( output_mode.is_enabled("print:kp-translation:raw") ) {
         kp_instance.print(cout);
         kp_instance.write_domain(cout);
