@@ -444,6 +444,7 @@ void Preprocessor::preprocess(bool remove_atoms, const bool_vec *known_non_stati
         }
     }
     //cout << "FIX POINT REACHED!" << endl;
+    remove_useless_effects_and_actions();
 
 #if 0
     cout << "Static atoms = ";
@@ -488,7 +489,7 @@ void Preprocessor::preprocess(bool remove_atoms, const bool_vec *known_non_stati
     instance.remove_sensors(reachable_sensors, sensor_map);
 
     // stage 6: Remove unreachable axioms
-#if 0 // TODO: this is all a mess...
+#if 0 // TODO: all this is a mess..
     if( trace_level > 0) cout << "  removing unreachable axioms..." << endl;
     reachable_axioms.bitwise_complement();
     instance.remove_axioms(reachable_axioms, axiom_map);
