@@ -4,7 +4,7 @@
 #include <map>
 #include "name.h"
 #include "index.h"
-#include "verbosity.h"
+#include "options.h"
 
 class State;
 class StateSet;
@@ -120,13 +120,13 @@ class Instance {
     index_set   given_observables;
     index_set   given_stickies;
 
-    const Verbosity::Mode verbosity_mode;
+    const Options::Mode options_;
 
-    Instance(Name *n = 0, const Verbosity::Mode &vmode = Verbosity::Mode())
-      : cross_referenced(false), name(n), verbosity_mode(vmode) {
+    Instance(Name *n = 0, const Options::Mode &options = Options::Mode())
+      : cross_referenced(false), name(n), options_(options) {
     }
-    Instance(const Verbosity::Mode &vmode)
-      : cross_referenced(false), name(0), verbosity_mode(vmode) {
+    Instance(const Options::Mode &options)
+      : cross_referenced(false), name(0), options_(options) {
     }
     Instance(const Instance &ins);
     ~Instance() { }

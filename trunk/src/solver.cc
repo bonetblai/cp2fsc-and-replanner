@@ -32,12 +32,12 @@ bool Solver::solve(const State &initial_hidden_state, vector<int> &final_plan) c
         calculate_relevant_assumptions(plan, state, assumption_vec);
         ++planner_calls;
 
-        if( verbosity_mode_.is_enabled("print:solver:plan") ) {
+        if( options_.is_enabled("print:solver:plan") ) {
             cout << "Plan:" << endl;
             for( Instance::Plan::const_iterator a = plan.begin(); a != plan.end(); ++a )
                 cout << "  " << *a << "." << kp_instance_.actions[*a]->name << endl;
         }
-        if( verbosity_mode_.is_enabled("print:solver:assumptions") ) {
+        if( options_.is_enabled("print:solver:assumptions") ) {
             cout << "Assumptions:" << endl;
             for( size_t k = 0; k < assumption_vec.size(); ++k ) {
                 cout << "  ";
@@ -50,7 +50,7 @@ bool Solver::solve(const State &initial_hidden_state, vector<int> &final_plan) c
         for( size_t k = 0; k < plan.size(); ++k ) {
             const Instance::Action &kp_act = *kp_instance_.actions[plan[k]];
 
-            if( verbosity_mode_.is_enabled("print:solver:plan-step") ) {
+            if( options_.is_enabled("print:solver:plan-step") ) {
                 cout << " state=";
                 state.print(cout, kp_instance_);
                 cout << endl << "hidden=";
@@ -87,9 +87,9 @@ bool Solver::solve(const State &initial_hidden_state, vector<int> &final_plan) c
 
                 // check for consistency of remaining plan
                 if( inconsistent(state, assumption_vec, k+1) ) {
-                    if( verbosity_mode_.is_enabled("print:solver:inconsistency") ) {
+                    if( options_.is_enabled("print:solver:inconsistency") ) {
                         cout << "inconsistency found with action " << plan[k+1] << endl;
-                        if( verbosity_mode_.is_enabled("print:solver:inconsistency:details") ) {
+                        if( options_.is_enabled("print:solver:inconsistency:details") ) {
                             cout << " STATE=";
                             state.print(cout, kp_instance_);
                             cout << endl << "HIDDEN=";
@@ -108,7 +108,7 @@ bool Solver::solve(const State &initial_hidden_state, vector<int> &final_plan) c
         }
     }
 
-    if( verbosity_mode_.is_enabled("print:solver:plan-step") ) {
+    if( options_.is_enabled("print:solver:plan-step") ) {
         cout << " state=";
         state.print(cout, kp_instance_);
         cout << endl;
@@ -156,7 +156,7 @@ void Solver::compute_and_add_observations(State &hidden, State &state) const {
 }
 
 bool Solver::inconsistent(const State &state, const vector<State> &assumption_vec, size_t k) const {
-    bool verbose = verbosity_mode_.is_enabled("print:solver:consistency:check");
+    bool verbose = options_.is_enabled("print:solver:consistency:check");
     for( State::const_iterator it = state.begin(); it != state.end(); ++it ) {
         int atom = *it/2;
 

@@ -6,12 +6,12 @@
 #include "parser.h"
 #include "state.h"
 #include "solver.h"
-#include "verbosity.h"
+#include "options.h"
 #include "utils.h"
 
 using namespace std;
 
-Verbosity::Mode output_mode;
+Options::Mode output_mode;
 const char *output_modes[] = {
     // problem options
     "print:atom:creation",
@@ -50,7 +50,7 @@ const char *output_modes[] = {
     "print:kp-translation:action:invariant",
 
     // classical_planner options (k_replanner)
-    "remove-intermediate-files",
+    "no-remove-intermediate-files",
 
     // cp2fsc/k_replanner options
     "print:parser:raw",
@@ -73,6 +73,7 @@ void usage(ostream &os, const char *exec_name) {
        << " [--max-time <time>]"
        << " [--no-print-plan"
        << " [--prefix <prefix>]"
+       << " [--no-remove-intermediate-files]"
        << " [--use-{ff|lama|m|mp}]"
        << " [--verbose:<option>]"
        << " <pddl-files>"
@@ -89,10 +90,11 @@ int main(int argc, char *argv[]) {
     string      opt_prefix = "";
     float       start_time = Utils::read_time_in_seconds();
 
-    // initialize verbosity mode
+    // initialize options
     for( const char **opt = &output_modes[0]; *opt != 0; ++opt ) {
         output_mode.add(*opt);
     }
+    output_mode.enable("remove-intermediate-files");
 
     // check correct number of parameters
     const char *exec_name = argv[0];
@@ -124,6 +126,8 @@ int main(int argc, char *argv[]) {
                 exit(-1);
             }
             opt_prefix = argv[++k];
+        } else if( !skip_options && !strcmp(argv[k], "--no-remove-intermediate-files") ) {
+            output_mode.clear("remove-intermediate-files");
         } else if( !skip_options && !strcmp(argv[k], "--use-ff") ) {
             opt_planner = 0;
         } else if( !skip_options && !strcmp(argv[k], "--use-lama") ) {

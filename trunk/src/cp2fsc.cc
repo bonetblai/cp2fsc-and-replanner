@@ -7,12 +7,12 @@
 #include "parser.h"
 #include "state.h"
 #include "solver.h"
-#include "verbosity.h"
+#include "options.h"
 #include "utils.h"
 
 using namespace std;
 
-Verbosity::Mode output_mode;
+Options::Mode output_mode;
 const char *output_modes[] = {
     // problem options
     "print:atom:creation",
@@ -49,6 +49,9 @@ const char *output_modes[] = {
     "print:kp-translation:action:regular",
     "print:kp-translation:action:sensor",
     "print:kp-translation:action:invariant",
+
+    // classical_planner options (k_replanner)
+    "remove-intermediate-files",
 
     // solver options (k_replanner)
     "print:solver:plan",
@@ -96,7 +99,7 @@ int main(int argc, char *argv[]) {
     string      opt_metadata_filename = "";
     float       start_time = Utils::read_time_in_seconds();
 
-    // initialize verbosity mode
+    // initialize options
     for( const char **opt = &output_modes[0]; *opt != 0; ++opt ) {
         output_mode.add(*opt);
     }

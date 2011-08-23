@@ -4,8 +4,8 @@
 
 using namespace std;
 
-KP_Instance::KP_Instance(const Instance &ins, const Verbosity::Mode &vmode)
-  : Instance(ins.name, vmode),
+KP_Instance::KP_Instance(const Instance &ins, const Options::Mode &options)
+  : Instance(ins.name, options),
     n_standard_actions_(0), n_sensor_actions_(0), n_invariant_actions_(0) {
 
     // create K0 atoms
@@ -54,7 +54,7 @@ KP_Instance::KP_Instance(const Instance &ins, const Verbosity::Mode &vmode)
             // if not in some oneof, add K_not_<atom> to init
             if( !in_invariant ) {
                 init.literals.insert(1 + 2*k+1);
-                if( verbosity_mode.is_enabled("print:kp-translation:atom:init") ) {
+                if( options_.is_enabled("print:kp-translation:atom:init") ) {
                     cout << "Atom " << atoms[2*k+1]->name << " added to init" << endl;
                 }
             }
@@ -115,7 +115,7 @@ KP_Instance::KP_Instance(const Instance &ins, const Verbosity::Mode &vmode)
             nact.when.push_back(can_eff);
         }
 
-        if( verbosity_mode.is_enabled("print:kp-translation:action:regular") ) {
+        if( options_.is_enabled("print:kp-translation:action:regular") ) {
             nact.print(cout, *this);
         }
     }
@@ -160,7 +160,7 @@ KP_Instance::KP_Instance(const Instance &ins, const Verbosity::Mode &vmode)
                 // add conditional effect to rule
                 obs_rules_by_name_[nact.name->to_string()] = n_actions();
                 nact.when.push_back(c_eff);
-                if( verbosity_mode.is_enabled("print:kp-translation:action:sensor") ) {
+                if( options_.is_enabled("print:kp-translation:action:sensor") ) {
                     nact.print(cout, *this);
                 }
             }
@@ -199,7 +199,7 @@ KP_Instance::KP_Instance(const Instance &ins, const Verbosity::Mode &vmode)
                 }
             }
             nact.when.push_back(c_eff);
-            if( verbosity_mode.is_enabled("print:kp-translation:action:invariant") ) {
+            if( options_.is_enabled("print:kp-translation:action:invariant") ) {
                 nact.print(cout, *this);
             }
         }

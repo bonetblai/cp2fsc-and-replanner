@@ -7,8 +7,8 @@ using namespace std;
 // TODO: implement proper cross-references (and update functions)
 //       relevance of atoms wrt goal
 
-Preprocessor::Preprocessor(Instance &ins, const Verbosity::Mode &vmode)
-  : instance(ins), verbosity_mode(vmode) {
+Preprocessor::Preprocessor(Instance &ins, const Options::Mode &options)
+  : instance(ins), options_(options) {
     for( size_t k = 0; k < instance.n_atoms(); k++ ) atom_map.push_back(k);
     for( size_t k = 0; k < instance.n_actions(); k++ ) action_map.push_back(k);
     for( size_t k = 0; k < instance.n_sensors(); k++ ) sensor_map.push_back(k);
@@ -151,25 +151,25 @@ void Preprocessor::compute_reachability(bool_vec &reachable_atoms, bool_vec &rea
         }
     }
 
-    if( verbosity_mode.is_enabled("print:atom:unreachable") ) {
+    if( options_.is_enabled("print:atom:unreachable") ) {
         for( size_t k = 0; k < instance.n_atoms(); k++ ) {
             if( !reachable_atoms[k] )
                 cout << "  unreachable atom " << instance.atoms[k]->name << endl;
         }
     }
-    if( verbosity_mode.is_enabled("print:action:unreachable") ) {
+    if( options_.is_enabled("print:action:unreachable") ) {
         for( size_t k = 0; k < instance.actions.size(); k++ ) {
             if( !reachable_actions[k] )
                 cout << "  unreachable action " << instance.actions[k]->name << endl;
         }
     }
-    if( verbosity_mode.is_enabled("print:sensor:unreachable") ) {
+    if( options_.is_enabled("print:sensor:unreachable") ) {
         for( size_t k = 0; k < instance.sensors.size(); k++ ) {
             if( !reachable_sensors[k] )
                 cout << "  unreachable sensor " << instance.sensors[k]->name << endl;
         }
     }
-    if( verbosity_mode.is_enabled("print:axiom:unreachable") ) {
+    if( options_.is_enabled("print:axiom:unreachable") ) {
         for( size_t k = 0; k < instance.axioms.size(); k++ ) {
             if( !reachable_axioms[k] )
                 cout << "  unreachable axiom " << instance.axioms[k]->name << endl;
@@ -249,7 +249,7 @@ void Preprocessor::compute_static_atoms(const bool_vec &reachable_actions, bool_
         }
     }
 
-    if( verbosity_mode.is_enabled("print:atom:static") ) {
+    if( options_.is_enabled("print:atom:static") ) {
         for( size_t k = 0; k < instance.n_atoms(); k++ ) {
             if( static_atoms[k] )
                 cout << "  static atom " << k << "." << instance.atoms[k]->name << endl;
@@ -303,7 +303,7 @@ void Preprocessor::remove_inconsistent_actions() {
             }
         }
 
-        if( inconsistent[k] && verbosity_mode.is_enabled("print:action:inconsistent") ) {
+        if( inconsistent[k] && options_.is_enabled("print:action:inconsistent") ) {
             cout << "  action " << act.name << " is inconsistent." << endl;
         }
     }
@@ -350,7 +350,7 @@ void Preprocessor::remove_useless_effects_and_actions() {
         } else
             useless[k] = false;
 
-        if( useless[k] && verbosity_mode.is_enabled("print:action:useless") ) {
+        if( useless[k] && options_.is_enabled("print:action:useless") ) {
             cout << "  action " << act.name << " is useless." << endl;
         }
     }
@@ -386,18 +386,18 @@ void Preprocessor::preprocess(bool remove_atoms, const bool_vec *known_non_stati
     assert((known_non_static_atoms == 0) || (known_non_static_atoms->size() == instance.n_atoms()));
 
     // stage 1: Remove inconsistent and useless actions
-    if( verbosity_mode.is_enabled("print:preprocess:stage") )
+    if( options_.is_enabled("print:preprocess:stage") )
         cout << "  Stage 1: removing inconsistent & useless actions..." << endl;
     remove_inconsistent_actions();
     remove_useless_effects_and_actions();
 
     // after action removal, compute cross references
-    if( verbosity_mode.is_enabled("print:preprocess:stage") )
+    if( options_.is_enabled("print:preprocess:stage") )
         cout << "           cross referencing..." << endl;
     instance.cross_reference();
 
     // stage 2: Compute reachable atoms, actions, sensors and axioms
-    if( verbosity_mode.is_enabled("print:preprocess:stage") )
+    if( options_.is_enabled("print:preprocess:stage") )
         cout << "  Stage 2: computing reachability..." << endl;
     bool_vec reachable_atoms(instance.n_atoms(), false);
     bool_vec reachable_actions(instance.n_actions(), false);
@@ -406,12 +406,12 @@ void Preprocessor::preprocess(bool remove_atoms, const bool_vec *known_non_stati
     compute_reachability(reachable_atoms, reachable_actions, reachable_sensors, reachable_axioms);
 
     // stage 3: remove unreachable conditional effects and compute static atoms until fix point
-    if( verbosity_mode.is_enabled("print:preprocess:stage") )
+    if( options_.is_enabled("print:preprocess:stage") )
         cout << "  Stage 3: removing unreachable conditions effects..." << endl;
     bool_vec static_atoms(instance.n_atoms(), false);
     bool fix_point_reached = false;
     while( !fix_point_reached ) {
-        if( verbosity_mode.is_enabled("print:preprocess:stage") )
+        if( options_.is_enabled("print:preprocess:stage") )
             cout << "           new iteration..." << endl;
         fix_point_reached = true;
         instance.remove_unreachable_conditional_effects(reachable_atoms, static_atoms);
@@ -475,14 +475,14 @@ void Preprocessor::preprocess(bool remove_atoms, const bool_vec *known_non_stati
 #endif
 
     // stage 5: Remove unreachable actions and conditional effects
-    if( verbosity_mode.is_enabled("print:preprocess:stage") )
+    if( options_.is_enabled("print:preprocess:stage") )
         cout << "  Stage 5: removing unreachable actions..." << endl;
     reachable_actions.bitwise_complement();
     instance.remove_actions(reachable_actions, action_map);
     instance.simplify_conditional_effects(static_atoms);
 
     // stage 5: Remove unreachable sensors
-    if( verbosity_mode.is_enabled("print:preprocess:stage") )
+    if( options_.is_enabled("print:preprocess:stage") )
         cout << "           removing unreachable sensors..." << endl;
     reachable_sensors.bitwise_complement();
     instance.remove_sensors(reachable_sensors, sensor_map);
@@ -495,12 +495,12 @@ void Preprocessor::preprocess(bool remove_atoms, const bool_vec *known_non_stati
 #endif
 
     // after action removal, compute cross references
-    if( verbosity_mode.is_enabled("print:preprocess:stage") )
+    if( options_.is_enabled("print:preprocess:stage") )
         cout << "           cross referencing..." << endl;
     instance.cross_reference();
 
     // stage 7: Remove unreachable and static atoms
-    if( verbosity_mode.is_enabled("print:preprocess:stage") )
+    if( options_.is_enabled("print:preprocess:stage") )
         cout << "  Stage 7: removing unreachable and static atoms..." << endl;
     bool_vec atoms_to_remove(static_atoms);
     reachable_atoms.bitwise_complement();
@@ -541,7 +541,7 @@ void Preprocessor::preprocess(bool remove_atoms, const bool_vec *known_non_stati
     }
 
     if( remove_atoms && !atoms_to_remove.empty() ) {
-        if( verbosity_mode.is_enabled("print:atom:removal") ) {
+        if( options_.is_enabled("print:atom:removal") ) {
             cout << "atoms to remove = ";
             instance.write_atom_set(cout, atoms_to_remove);
             cout << endl;
@@ -551,7 +551,7 @@ void Preprocessor::preprocess(bool remove_atoms, const bool_vec *known_non_stati
     }
 
     // after action removal, compute cross references
-    if( verbosity_mode.is_enabled("print:preprocess:stage") )
+    if( options_.is_enabled("print:preprocess:stage") )
         cout << "           cross referencing..." << endl;
     instance.cross_reference();
 
