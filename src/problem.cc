@@ -19,13 +19,13 @@ Instance::Instance(const Instance& ins)
     observable_fluents(ins.observable_fluents),
     given_observables(ins.given_observables),
     given_stickies(ins.given_stickies),
-    verbosity_mode(ins.verbosity_mode) {
+    options_(ins.options_) {
 }
 
 Instance::Atom& Instance::new_atom(Name *name) {
     Atom *a = new Atom(name, atoms.size());
     atoms.push_back(a);
-    if( verbosity_mode.is_enabled("print:atom:creation") )
+    if( options_.is_enabled("print:atom:creation") )
         cout << "atom " << a->index << "." << a->name << " created" << endl;
     return *a;
 }
@@ -33,7 +33,7 @@ Instance::Atom& Instance::new_atom(Name *name) {
 Instance::Action& Instance::new_action(Name *name) {
     Action *a = new Action(name, actions.size());
     actions.push_back(a);
-    if( verbosity_mode.is_enabled("print:action:creation") )
+    if( options_.is_enabled("print:action:creation") )
         cout << "action " << a->index << "." << a->name << " created" << endl;
     return *a;
 }
@@ -41,7 +41,7 @@ Instance::Action& Instance::new_action(Name *name) {
 Instance::Sensor& Instance::new_sensor(Name* name) {
     Sensor *r = new Sensor(name, sensors.size());
     sensors.push_back(r);
-    if( verbosity_mode.is_enabled("print:sensor:creation") )
+    if( options_.is_enabled("print:sensor:creation") )
         cout << "sensor " << r->index << "." << r->name << " created" << endl;
     return *r;
 }
@@ -49,7 +49,7 @@ Instance::Sensor& Instance::new_sensor(Name* name) {
 Instance::Axiom& Instance::new_axiom(Name* name) {
     Axiom *r = new Axiom(name, axioms.size());
     axioms.push_back(r);
-    if( verbosity_mode.is_enabled("print:axiom:creation") )
+    if( options_.is_enabled("print:axiom:creation") )
         cout << "axiom " << r->index << "." << r->name << " created" << endl;
     return *r;
 }
@@ -106,7 +106,7 @@ void Instance::remove_unreachable_axioms(const bool_vec &reachable_atoms, const 
             }
         }
         if( !reachable ) {
-            if( verbosity_mode.is_enabled("print:axiom:removal") )
+            if( options_.is_enabled("print:axiom:removal") )
                 cout << "removing axiom " << axioms[k]->name << endl;
             axioms[k] = axioms.back();
             axioms.pop_back();
@@ -135,7 +135,7 @@ void Instance::remove_actions(const bool_vec &set, index_vec &map) {
             rm_map[k] = j;
             ++j;
         } else {
-            if( verbosity_mode.is_enabled("print:action:removal") )
+            if( options_.is_enabled("print:action:removal") )
                 cout << "removing action " << actions[k]->name << endl;
             rm_map[k] = no_such_index;
         }
@@ -166,7 +166,7 @@ void Instance::remove_sensors(const bool_vec &set, index_vec &map) {
             rm_map[k] = j;
             ++j;
         } else {
-            if( verbosity_mode.is_enabled("print:sensor:removal") )
+            if( options_.is_enabled("print:sensor:removal") )
                 cout << "removing sensor " << sensors[k]->name << endl;
             rm_map[k] = no_such_index;
         }
@@ -197,7 +197,7 @@ void Instance::remove_axioms(const bool_vec &set, index_vec &map) {
             rm_map[k] = j;
             ++j;
         } else {
-            if( verbosity_mode.is_enabled("print:axiom:removal") )
+            if( options_.is_enabled("print:axiom:removal") )
                 cout << "removing axiom " << axioms[k]->name << endl;
             rm_map[k] = no_such_index;
         }

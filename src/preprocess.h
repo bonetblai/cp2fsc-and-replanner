@@ -3,7 +3,7 @@
 
 #include "problem.h"
 #include "index.h"
-#include "verbosity.h"
+#include "options.h"
 
 class Preprocessor {
   public:
@@ -19,9 +19,9 @@ class Preprocessor {
     void remove_useless_effects_and_actions();
 
   public:
-    const Verbosity::Mode verbosity_mode;
+    const Options::Mode options_;
 
-    Preprocessor(Instance &ins, const Verbosity::Mode &vmode = Verbosity::Mode());
+    Preprocessor(Instance &ins, const Options::Mode &options = Options::Mode());
     ~Preprocessor();
 
     // methods that do NOT change the instance:

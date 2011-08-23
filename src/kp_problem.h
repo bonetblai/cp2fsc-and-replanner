@@ -2,7 +2,7 @@
 #define KP_PROBLEM_H
 
 #include "problem.h"
-#include "verbosity.h"
+#include "options.h"
 
 class KP_Instance : public Instance {
   public:
@@ -10,7 +10,7 @@ class KP_Instance : public Instance {
     size_t n_sensor_actions_;
     size_t n_invariant_actions_;
     std::map<std::string, int> obs_rules_by_name_;
-    KP_Instance(const Instance &instance, const Verbosity::Mode &vmode = Verbosity::Mode());
+    KP_Instance(const Instance &instance, const Options::Mode &options = Options::Mode());
     ~KP_Instance() { }
     size_t first_deductive_action() const { return n_standard_actions_ + n_sensor_actions_; }
     bool is_obs_rule(const std::string &name) const {

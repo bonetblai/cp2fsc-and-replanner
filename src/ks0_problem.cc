@@ -8,8 +8,8 @@ KS0_Instance::~KS0_Instance() {
 }
 
 KS0_Instance::KS0_Instance(const CP_Instance &instance,
-                           const Verbosity::Mode &vmode,
-                           bool tag_all_literals) : Instance(vmode) {
+                           const Options::Mode &options,
+                           bool tag_all_literals) : Instance(options) {
 
     // set number of tags; tag0 is the empty tag
     n_tags_ = instance.initial_states_.size();
@@ -37,7 +37,7 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance,
         }
     }
 
-    if( verbosity_mode.is_enabled("print:ks0-translation:tag:must") ) {
+    if( options_.is_enabled("print:ks0-translation:tag:must") ) {
         cout << "literals that *must* be tagged =";
         for( size_t k = 0; k < ins_n_fluents; ++k ) {
             if( tagged_[k] )
@@ -68,7 +68,7 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance,
         // store reachable literals
         reachable_literals.push_back(literals);
 
-        if( verbosity_mode.is_enabled("print:ks0-translation:reachable") ) {
+        if( options_.is_enabled("print:ks0-translation:reachable") ) {
             cout << "reachable literals = ";
             instance.write_atom_set(cout, literals);
             cout << endl;
@@ -100,7 +100,7 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance,
         tag_map_[tag0_*ins_n_fluents + k] = n_atoms();
         new_atom(new CopyName(lit_name.str()));
 
-        if( verbosity_mode.is_enabled("print:ks0-translation:tag:atom:creation") )
+        if( options_.is_enabled("print:ks0-translation:tag:atom:creation") )
             cout << "atom " << n_atoms()-1 << "." << lit_name.str() << " created" << endl;
     }
 
@@ -128,7 +128,7 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance,
                     tag_map_[tag*ins_n_fluents + k] = n_atoms();
                     new_atom(new CopyName(lit_name.str()));
 
-                    if( verbosity_mode.is_enabled("print:ks0-translation:tag:atom:creation") )
+                    if( options_.is_enabled("print:ks0-translation:tag:atom:creation") )
                         cout << "atom " << n_atoms()-1 << "." << lit_name.str() << " created" << endl;
                 }
             }
@@ -158,7 +158,7 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance,
                     tag_map_[tag*ins_n_fluents + *it-1] = n_atoms();
                     new_atom(new CopyName(lit_name.str()));
 
-                    if( verbosity_mode.is_enabled("print:ks0-translation:tag:atom:creation") )
+                    if( options_.is_enabled("print:ks0-translation:tag:atom:creation") )
                         cout << "atom " << n_atoms()-1 << "." << lit_name.str() << " created" << endl;
                 }
             }
@@ -269,7 +269,7 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance,
 
         }
 
-        if( verbosity_mode.is_enabled("print:ks0-translation:action") )
+        if( options_.is_enabled("print:ks0-translation:action") )
             nact.print(cout, *this);
     }
 
@@ -287,7 +287,7 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance,
         if( tagged_[*it-1] ) merge_lits.insert(*it-1);
     }
 
-    if( verbosity_mode.is_enabled("print:ks0-translation:merge:literals") ) {
+    if( options_.is_enabled("print:ks0-translation:merge:literals") ) {
         cout << "merge literals =";
         for( set<int>::const_iterator it = merge_lits.begin(); it != merge_lits.end(); ++it ) {
             cout << " " << instance.atoms[*it]->name;
@@ -312,8 +312,8 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance,
             merge.when.push_back(merge_eff);
         }
 
-        if( verbosity_mode.is_enabled("print:ks0-translation:action") ||
-            verbosity_mode.is_enabled("print:ks0-translation:merge:action") )
+        if( options_.is_enabled("print:ks0-translation:action") ||
+            options_.is_enabled("print:ks0-translation:merge:action") )
             merge.print(cout, *this);
     }
 }
