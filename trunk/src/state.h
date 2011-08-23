@@ -160,7 +160,6 @@ class State {
         apply(act);
         apply_axioms(ins);
     }
-    void apply(const Instance::Action &act, StateSet &bel) const;
 
     bool goal(const Instance &ins) const {
         for( index_set::const_iterator p = ins.goal_literals.begin(); p != ins.goal_literals.end(); ++p ) {
@@ -179,7 +178,7 @@ class State {
     bool operator==(const State &s) const {
         if( size_ != s.size_ ) return false;
         unsigned *p = atoms_, *q = s.atoms_;
-        for( ; *p && (*p == *q); ++p, ++q );
+        while( *p && (*p++ == *q++) );
         return *p == 0;
     }
     bool operator!=(const State &s) const { return !(*this == s); }
