@@ -129,7 +129,6 @@ struct Instance {
         if( ((x1 == x2+1) || (x1 == x2-1)) && (y1 == y2) )
             return true;
         return false;
-        
     }
     bool wall(int x, int y) const { return map->wall(x, y); }
     bool wall(pair<int, int> &p) const { return map->wall(p.first, p.second); }
