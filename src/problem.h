@@ -129,7 +129,7 @@ class Instance {
       : cross_referenced(false), name(0), options_(options) {
     }
     Instance(const Instance &ins);
-    ~Instance() { }
+    virtual ~Instance() { }
 
     Atom&      new_atom(Name *name);
     Action&    new_action(Name *name);
