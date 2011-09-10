@@ -51,7 +51,7 @@ KP_Instance::KP_Instance(const Instance &ins, const Options::Mode &options)
                 }
             }
 
-            // if not in some oneof, add K_not_<atom> to init
+            // if not in some invariant, add K_not_<atom> to init
             if( !in_invariant ) {
                 init.literals.insert(1 + 2*k+1);
                 if( options_.is_enabled("print:kp-translation:atom:init") ) {
