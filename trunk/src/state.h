@@ -261,9 +261,9 @@ namespace Hash {
         : action_(action), marks_(marks), scc_low_(UINT_MAX), scc_idx_(UINT_MAX) { }
       size_t action() const { return action_; }
       void set_action(size_t action) { action_ = action; }
-      bool marked() const { return marks_&0x1; }
+      bool marked() const { return marks_ & 0x1; }
       void mark() { marks_ |= 0x1; }
-      bool solved() const { return marks_&0x2; }
+      bool solved() const { return marks_ & 0x2; }
       void solve() { marks_ |= 0x2; }
       size_t scc_low() const { return scc_low_; }
       void set_scc_low(size_t low) const { scc_low_ = low; }
@@ -309,10 +309,7 @@ template<typename T, typename F=Hash::hash<T>, typename E=Hash::equal_to<T> > cl
 
       Hash::Data* data_ptr(const T &s) {
           iterator di = lookup(s);
-          if( di == end() )
-              return push(s, new Hash::Data);
-          else
-              return (*di).second;
+          return di == end() ? push(s, new Hash::Data) : (*di).second;
       }
       bool marked(const T &s) const {
           const_iterator di = lookup(s);
@@ -338,10 +335,8 @@ template<typename T, typename F=Hash::hash<T>, typename E=Hash::equal_to<T> > cl
       }
       size_t action(const T &s) const {
           const_iterator di = lookup(s);
-          if( di == end() )
-              return UINT_MAX;
-          else
-              return (*di).second->action(); }
+          return di == end() ? UINT_MAX : (*di).second->action();
+      }
       void set_action(const T &s, size_t action) {
           iterator di = lookup(s);
           if( di == end() )
