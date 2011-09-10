@@ -2,12 +2,12 @@
 #define STATE_H
 
 #include "problem.h"
+#include "index.h"
 #include <iostream>
 #include <tr1/unordered_map>
 #include <tr1/unordered_set>
 #include <list>
 #include <assert.h>
-#include <index.h>
 
 class StateHash;
 class StateSet;
