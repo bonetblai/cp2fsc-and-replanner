@@ -19,11 +19,5 @@
         :condition (at ?p)
         :sensed (stench ?p)
     )
-
-;   (:inference stench-wumpus
-;       :parameters (?p1 ?p2 - pos)
-;       :body (and (adj ?p1 ?p2) (at ?p1) (not (stench ?p1)))
-;       :head (not (wumpus ?p2))
-;   )
 )
 
