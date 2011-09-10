@@ -279,42 +279,84 @@ inline std::ostream& operator<<(std::ostream &os, const Hash::Data &d) {
     return os;
 }
 
-template<typename T, typename F=Hash::hash<T>, typename E=Hash::equal_to<T> > class Hash_set : public std::tr1::unordered_set<T,F,E> { };
+template<typename T, typename F=Hash::hash<T>, typename E=Hash::equal_to<T> > class Hash_set : public std::tr1::unordered_set<T, F, E> { };
 
-template<typename T, typename F=Hash::hash<T>, typename E=Hash::equal_to<T> > class Hash_map : public std::tr1::unordered_map<T,Hash::Data*,F,E> {
-      typedef std::tr1::unordered_map<T,Hash::Data*,F,E> base_;
+template<typename T, typename F=Hash::hash<T>, typename E=Hash::equal_to<T> > class Hash_map : public std::tr1::unordered_map<T, Hash::Data*, F, E> {
+      typedef std::tr1::unordered_map<T, Hash::Data*, F, E> base_;
+
     public:
-      typedef typename std::tr1::unordered_map<T,Hash::Data*,F,E>::iterator iterator;
-      typedef typename std::tr1::unordered_map<T,Hash::Data*,F,E>::const_iterator const_iterator;
+      typedef typename std::tr1::unordered_map<T, Hash::Data*, F, E>::iterator iterator;
+      typedef typename std::tr1::unordered_map<T, Hash::Data*, F, E>::const_iterator const_iterator;
       const_iterator begin() const { return base_::begin(); }
       const_iterator end() const { return base_::end(); }
       iterator begin() { return base_::begin(); }
       iterator end() { return base_::end(); }
+
     protected:
-      Hash::Data* push(const T &s, Hash::Data *d) { std::pair<iterator,bool> p = insert(std::make_pair(s, d)); return d; }
+      Hash::Data* push(const T &s, Hash::Data *d) {
+          std::pair<iterator, bool> p = insert(std::make_pair(s, d));
+          return d;
+      }
       iterator lookup(const T &s) { return find(s); }
       const_iterator lookup(const T &s) const { return find(s); }
+
     public:
       Hash_map() { }
-      virtual ~Hash_map() { for( iterator hi = begin(); hi != end(); ++hi ) delete (*hi).second; }
-      Hash::Data* data_ptr( const T &s ) { iterator di = lookup(s); if( di == end() ) return push(s, new Hash::Data); else return (*di).second; }
-      bool marked(const T &s) const { const_iterator di = lookup(s); return di == end() ? false : (*di).second->marked(); }
-      void mark(const T &s) { iterator di = lookup(s); if( di == end() ) push(s, new Hash::Data(UINT_MAX,1)); else (*di).second->mark(); }
-      bool solved(const T &s) const { const_iterator di = lookup(s); return di == end() ? false : (*di).second->solved(); }
-      void solve(const T &s) { iterator di = lookup(s); if( di == end() ) push(s, new Hash::Data(UINT_MAX,2)); else (*di).second->solve(); }
-      size_t action(const T &s) const { const_iterator di = lookup(s); if( di == end() ) return UINT_MAX; else return (*di).second->action(); }
-      void set_action(const T &s, size_t action) { iterator di = lookup(s); if( di == end() ) push(s, new Hash::Data(action, false)); else (*di).second->set_action(action); }
-      void dump(std::ostream &os) const { for( const_iterator di = begin(); di != end(); ++di ) os << (*di).first << " : " << *(*di).second << std::endl; }
+      virtual ~Hash_map() {
+          for( iterator hi = begin(); hi != end(); ++hi )
+              delete (*hi).second;
+      }
+
+      Hash::Data* data_ptr(const T &s) {
+          iterator di = lookup(s);
+          if( di == end() )
+              return push(s, new Hash::Data);
+          else
+              return (*di).second;
+      }
+      bool marked(const T &s) const {
+          const_iterator di = lookup(s);
+          return di == end() ? false : (*di).second->marked();
+      }
+      void mark(const T &s) {
+          iterator di = lookup(s);
+          if( di == end() )
+              push(s, new Hash::Data(UINT_MAX, 1));
+          else
+              (*di).second->mark();
+      }
+      bool solved(const T &s) const {
+          const_iterator di = lookup(s);
+          return di == end() ? false : (*di).second->solved();
+      }
+      void solve(const T &s) {
+          iterator di = lookup(s);
+          if( di == end() )
+              push(s, new Hash::Data(UINT_MAX, 2));
+          else
+              (*di).second->solve();
+      }
+      size_t action(const T &s) const {
+          const_iterator di = lookup(s);
+          if( di == end() )
+              return UINT_MAX;
+          else
+              return (*di).second->action(); }
+      void set_action(const T &s, size_t action) {
+          iterator di = lookup(s);
+          if( di == end() )
+              push(s, new Hash::Data(action, false));
+          else
+              (*di).second->set_action(action);
+      }
+      void dump(std::ostream &os) const {
+          for( const_iterator di = begin(); di != end(); ++di )
+              os << (*di).first << " : " << *(*di).second << std::endl;
+      }
 };
 
-class StateHash : public Hash_map<const State*,State,State> { };
-class StateSet : public Hash_set<const State*,State,State> { };
-//class StateSet : public std::vector<const State*> {
-//  public:
-//    StateSet() { }
-//    virtual ~StateSet() { }
-//    void insert(const State *s) { push_back(s); }
-//};
+class StateHash : public Hash_map<const State*, State, State> { };
+class StateSet : public Hash_set<const State*, State, State> { };
 
 #if 0
 inline void State::apply(const Instance::Action &act, StateSet &bel) const {
