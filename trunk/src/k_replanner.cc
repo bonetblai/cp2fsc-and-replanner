@@ -60,6 +60,7 @@ const char *output_modes[] = {
     "print:cp-translation:preprocessed",
     "print:kp-translation:raw",
     "print:kp-translation:preprocessed",
+    "print:fired-sensors",
 
     0
 };
@@ -221,16 +222,44 @@ int main(int argc, char *argv[]) {
         planner = new MP_Planner(kp_instance);
     }
     Solver solver(instance, kp_instance, *planner, opt_time_bound);
-    vector<int> plan;
+    Instance::Plan plan;
+    vector<vector<int> > fired_sensors;
     State hidden_initial_state;
     instance.set_hidden_state(hidden_initial_state);
-    int status = solver.solve(hidden_initial_state, plan);
+    int status = solver.solve(hidden_initial_state, plan, fired_sensors);
+    assert(1+plan.size() == fired_sensors.size());
+
     if( status == Solver::SOLVED ) {
         if( opt_print_plan ) {
             cout << "PLAN: ";
+            bool need_indent = false;
+
+            if( output_mode.is_enabled("print:fired-sensors") ) {
+                const vector<int> &sensors = fired_sensors[0];
+                if( sensors.size() > 0 ) {
+                    cout << "  0*:";
+                    for( int i = 0, isz = sensors.size(); i < isz; ++i ) {
+                        cout << " " << instance.sensors[sensors[i]]->name;
+                    }
+                    cout << endl;
+                    need_indent = true;
+                }
+            }
+
             for( size_t k = 0; k < plan.size(); ++k ) {
-                if( k > 0 ) cout << "      ";
-                cout << setw(3) << k << ": " << instance.actions[plan[k]]->name << endl;
+                if( need_indent ) cout << "      ";
+                cout << setw(3) << k << " : " << instance.actions[plan[k]]->name << endl;
+                if( output_mode.is_enabled("print:fired-sensors") ) {
+                    const vector<int> &sensors = fired_sensors[1+k];
+                    if( sensors.size() > 0 ) {
+                        cout << "      " << setw(3) << k << "*:";
+                        for( int i = 0, isz = sensors.size(); i < isz; ++i ) {
+                            cout << " " << instance.sensors[sensors[i]]->name;
+                        }
+                        cout << endl;
+                    }
+                }
+                need_indent = true;
             }
         }
     } else {

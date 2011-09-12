@@ -26,8 +26,9 @@ class Solver {
         options_(instance.options_) {
     }
     ~Solver() { }
-    bool solve(const State &initial_hidden__state, std::vector<int> &final_plan) const;
-    void compute_and_add_observations(State &hidden, State &state) const;
+    bool solve(const State &initial_hidden__state, Instance::Plan &final_plan,
+               std::vector<std::vector<int> > &fired_sensors) const;
+    void compute_and_add_observations(State &hidden, State &state, Instance::Plan &sensors) const;
     void calculate_relevant_assumptions(const Instance::Plan &plan, const State &state, std::vector<State> &assumption_vec) const;
     bool inconsistent(const State &state, const std::vector<State> &assumption_vec, size_t k) const;
 };

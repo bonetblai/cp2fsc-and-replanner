@@ -4,14 +4,18 @@
 
 using namespace std;
 
-bool Solver::solve(const State &initial_hidden_state, vector<int> &final_plan) const {
+bool Solver::solve(const State &initial_hidden_state, Instance::Plan &final_plan,
+                   vector<vector<int> > &fired_sensors) const {
     vector<State> assumption_vec;
     State hidden(initial_hidden_state), state;
     Instance::Plan plan;
+    Instance::Plan sensors;
 
     // set initial state
     kp_instance_.set_initial_state(state);
-    compute_and_add_observations(hidden, state);
+    compute_and_add_observations(hidden, state, sensors);
+    fired_sensors.push_back(sensors);
+    sensors.clear();
 
     // plan/replan loop
     final_plan.clear();
@@ -81,7 +85,9 @@ bool Solver::solve(const State &initial_hidden_state, vector<int> &final_plan) c
                     return ERROR;
                 }
                 hidden.apply(act);
-                compute_and_add_observations(hidden, state);
+                compute_and_add_observations(hidden, state, sensors);
+                fired_sensors.push_back(sensors);
+                sensors.clear();
                 //cout << "HIDDEN="; hidden.print(cout, instance_); cout << endl;
 
                 // check for consistency of remaining plan
@@ -123,12 +129,13 @@ void Solver::calculate_relevant_assumptions(const Instance::Plan &plan,
     kp_instance_.apply_plan(plan, state, final_state, assumption_vec);
 }
 
-void Solver::compute_and_add_observations(State &hidden, State &state) const {
+void Solver::compute_and_add_observations(State &hidden, State &state, Instance::Plan &sensors) const {
     // fire observation rules
     index_set observations;
     for( size_t k = 0; k < instance_.n_sensors(); ++k ) {
         const Instance::Sensor &r = *instance_.sensors[k];
         if( hidden.satisfy(r.condition) ) {
+            sensors.push_back(k);
             for( index_set::const_iterator it = r.sensed.begin(); it != r.sensed.end(); ++it ) {
                 assert(*it > 0);
                 int obs = *it-1;
