@@ -194,7 +194,7 @@ int main(int argc, char *argv[]) {
             if( options.is_enabled("print:fired-sensors") ) {
                 const vector<int> &sensors = fired_sensors[0];
                 if( sensors.size() > 0 ) {
-                    cout << "  0*:";
+                    cout << "init*:";
                     for( int i = 0, isz = sensors.size(); i < isz; ++i ) {
                         cout << " " << instance.sensors[sensors[i]]->name;
                     }
@@ -205,11 +205,11 @@ int main(int argc, char *argv[]) {
 
             for( size_t k = 0; k < plan.size(); ++k ) {
                 if( need_indent ) cout << "      ";
-                cout << setw(3) << k << " : " << instance.actions[plan[k]]->name << endl;
+                cout << setw(4) << k << " : " << instance.actions[plan[k]]->name << endl;
                 if( options.is_enabled("print:fired-sensors") ) {
                     const vector<int> &sensors = fired_sensors[1+k];
                     if( sensors.size() > 0 ) {
-                        cout << "      " << setw(3) << k << "*:";
+                        cout << "      " << setw(4) << k << "*:";
                         for( int i = 0, isz = sensors.size(); i < isz; ++i ) {
                             cout << " " << instance.sensors[sensors[i]]->name;
                         }
