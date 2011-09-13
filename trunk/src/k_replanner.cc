@@ -7,64 +7,12 @@
 #include "state.h"
 #include "solver.h"
 #include "options.h"
+#include "available_options.h"
 #include "utils.h"
 
 using namespace std;
 
-Options::Mode output_mode;
-const char *output_modes[] = {
-    // problem options
-    "print:atom:creation",
-    "print:action:creation",
-    "print:action:removal",
-    "print:sensor:creation",
-    "print:sensor:removal",
-    "print:axiom:creation",
-    "print:axiom:removal",
-
-    // preprocessor options
-    "print:preprocess:stage",
-    "print:atom:removal",
-    "print:atom:unreachable",
-    "print:atom:static",
-    "print:action:unreachable",
-    "print:action:inconsistent",
-    "print:action:useless",
-    "print:sensor:unreachable",
-    "print:axiom:unreachable",
-
-    // ks0-translation options (cp2fsc)
-    "print:ks0-translation:raw",
-    "print:ks0-translation:preprocessed",
-    "print:ks0-translation:reachable",
-    "print:ks0-translation:tag:must",
-    "print:ks0-translation:tag:atom:creation",
-    "print:ks0-translation:action",
-    "print:ks0-translation:merge:literals",
-    "print:ks0-translation:merge:action",
-
-    // kp-translation options (k_replanner)
-    "print:kp-translation:atom:init",
-    "print:kp-translation:action:regular",
-    "print:kp-translation:action:sensor",
-    "print:kp-translation:action:invariant",
-
-    // classical_planner options (k_replanner)
-    "remove-intermediate-files",
-
-    // cp2fsc/k_replanner options
-    "print:parser:raw",
-    "print:problem:raw",
-    "print:problem:preprocessed",
-    "print:cp-translation:raw",
-    "print:cp-translation:preprocessed",
-    "print:kp-translation:raw",
-    "print:kp-translation:preprocessed",
-    "print:fired-sensors",
-
-    0
-};
-
+Options::Mode options;
 const char *planner_name[] = { "ff", "lama", "m", "mp" };
 
 void usage(ostream &os, const char *exec_name) {
@@ -78,8 +26,15 @@ void usage(ostream &os, const char *exec_name) {
        << " [--use-{ff|lama|m|mp}]"
        << " [--verbose:<option>]"
        << " <pddl-files>"
-       << endl;
+       << endl << endl;
     free(tmp_name);
+
+    os << "available options:" << endl << endl;
+    for( int i = 0, isz = options.options_.size(); i < isz; ++i ) {
+        const Options::Option &opt = options.options_[i];
+        os << left << "\t" << setw(40) << opt.name() << "    " << opt.desc() << endl;
+    }
+    os << endl;
 }
 
 int main(int argc, char *argv[]) {
@@ -91,15 +46,17 @@ int main(int argc, char *argv[]) {
     float       start_time = Utils::read_time_in_seconds();
 
     // initialize options
-    for( const char **opt = &output_modes[0]; *opt != 0; ++opt ) {
-        output_mode.add(*opt);
+    for( const char **opt = &available_options[0]; *opt != 0; ++opt ) {
+        const char *name = *opt++;
+        const char *desc = *opt;
+        options.add(name, desc);
     }
-    output_mode.enable("remove-intermediate-files");
+    options.enable("remove-intermediate-files");
 
     // check correct number of parameters
     const char *exec_name = argv[0];
     if( argc == 1 ) {
-        usage(cerr, exec_name);
+        usage(cout, exec_name);
         exit(0);
     }
 
@@ -110,7 +67,7 @@ int main(int argc, char *argv[]) {
     bool skip_options = false;
     for( int k = 1; k < argc; ++k ) {
         if( !skip_options && !strcmp(argv[k], "--help") ) {
-            usage(cerr, exec_name);
+            usage(cout, exec_name);
             exit(0);
         } else if( !skip_options && !strcmp(argv[k], "--max-time") ) {
             if( k == argc-1 ) {
@@ -127,7 +84,7 @@ int main(int argc, char *argv[]) {
             }
             opt_prefix = argv[++k];
         } else if( !skip_options && !strcmp(argv[k], "--no-remove-intermediate-files") ) {
-            output_mode.clear("remove-intermediate-files");
+            options.clear("remove-intermediate-files");
         } else if( !skip_options && !strcmp(argv[k], "--use-ff") ) {
             opt_planner = 0;
         } else if( !skip_options && !strcmp(argv[k], "--use-lama") ) {
@@ -138,7 +95,7 @@ int main(int argc, char *argv[]) {
             opt_planner = 3;
         } else if( !skip_options && !strncmp(argv[k], "--verbose:", 10) ) {
             const char *opt = &argv[k][10];
-            if( !output_mode.enable(opt) )
+            if( !options.enable(opt) )
                 cout << "warning: unrecognized option '" << opt << "'. Ignored." << endl;
 
         // if '--', stop parsing options. Remaining fields are file names.
@@ -169,42 +126,42 @@ int main(int argc, char *argv[]) {
     }
 
     // print file read by parser
-    if( output_mode.is_enabled("print:parser:raw") ) {
+    if( options.is_enabled("print:parser:raw") ) {
         reader->print(cout);
     }
 
-    Instance instance(output_mode);
+    Instance instance(options);
 
     cout << "instantiating p.o. problem..." << endl;
     reader->instantiate(instance);
     delete reader;
-    if( output_mode.is_enabled("print:problem:raw") ) {
+    if( options.is_enabled("print:problem:raw") ) {
         instance.print(cout);
         instance.write_domain(cout);
         instance.write_problem(cout);
     }
 
     cout << "preprocessing p.o. problem..." << endl;
-    Preprocessor prep(instance, output_mode);
+    Preprocessor prep(instance, options);
     prep.preprocess();
-    if( output_mode.is_enabled("print:problem:preprocessed") ) {
+    if( options.is_enabled("print:problem:preprocessed") ) {
         instance.print(cout);
         instance.write_domain(cout);
         instance.write_problem(cout);
     }
 
     cout << "creating KP translation..." << endl;
-    KP_Instance kp_instance(instance, output_mode);
-    if( output_mode.is_enabled("print:kp-translation:raw") ) {
+    KP_Instance kp_instance(instance, options);
+    if( options.is_enabled("print:kp-translation:raw") ) {
         kp_instance.print(cout);
         kp_instance.write_domain(cout);
         kp_instance.write_problem(cout);
     }
 
     cout << "preprocessing KP translation..." << endl;
-    Preprocessor kp_prep(kp_instance, output_mode);
+    Preprocessor kp_prep(kp_instance, options);
     kp_prep.preprocess(false);
-    if( output_mode.is_enabled("print:kp-translation:preprocessed") ) {
+    if( options.is_enabled("print:kp-translation:preprocessed") ) {
         kp_instance.write_domain(cout);
         kp_instance.write_problem(cout);
     }
@@ -234,7 +191,7 @@ int main(int argc, char *argv[]) {
             cout << "PLAN: ";
             bool need_indent = false;
 
-            if( output_mode.is_enabled("print:fired-sensors") ) {
+            if( options.is_enabled("print:fired-sensors") ) {
                 const vector<int> &sensors = fired_sensors[0];
                 if( sensors.size() > 0 ) {
                     cout << "  0*:";
@@ -249,7 +206,7 @@ int main(int argc, char *argv[]) {
             for( size_t k = 0; k < plan.size(); ++k ) {
                 if( need_indent ) cout << "      ";
                 cout << setw(3) << k << " : " << instance.actions[plan[k]]->name << endl;
-                if( output_mode.is_enabled("print:fired-sensors") ) {
+                if( options.is_enabled("print:fired-sensors") ) {
                     const vector<int> &sensors = fired_sensors[1+k];
                     if( sensors.size() > 0 ) {
                         cout << "      " << setw(3) << k << "*:";

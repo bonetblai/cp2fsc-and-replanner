@@ -8,70 +8,12 @@
 #include "state.h"
 #include "solver.h"
 #include "options.h"
+#include "available_options.h"
 #include "utils.h"
 
 using namespace std;
 
-Options::Mode output_mode;
-const char *output_modes[] = {
-    // problem options
-    "print:atom:creation",
-    "print:action:creation",
-    "print:action:removal",
-    "print:sensor:creation",
-    "print:sensor:removal",
-    "print:axiom:creation",
-    "print:axiom:removal",
-
-    // preprocessor options
-    "print:preprocess:stage",
-    "print:atom:removal",
-    "print:atom:unreachable",
-    "print:atom:static",
-    "print:action:unreachable",
-    "print:action:inconsistent",
-    "print:action:useless",
-    "print:sensor:unreachable",
-    "print:axiom:unreachable",
-
-    // ks0-translation options (cp2fsc)
-    "print:ks0-translation:raw",
-    "print:ks0-translation:preprocessed",
-    "print:ks0-translation:reachable",
-    "print:ks0-translation:tag:must",
-    "print:ks0-translation:tag:atom:creation",
-    "print:ks0-translation:action",
-    "print:ks0-translation:merge:literals",
-    "print:ks0-translation:merge:action",
-
-    // kp-translation options (k_replanner)
-    "print:kp-translation:atom:init",
-    "print:kp-translation:action:regular",
-    "print:kp-translation:action:sensor",
-    "print:kp-translation:action:invariant",
-
-    // classical_planner options (k_replanner)
-    "remove-intermediate-files",
-
-    // solver options (k_replanner)
-    "print:solver:plan",
-    "print:solver:assumptions",
-    "print:solver:plan-step",
-    "print:solver:inconsistency",
-    "print:solver:inconsistency:details",
-    "print:solver:consistency:check",
-
-    // cp2fsc/k_replanner options
-    "print:parser:raw",
-    "print:problem:raw",
-    "print:problem:preprocessed",
-    "print:cp-translation:raw",
-    "print:cp-translation:preprocessed",
-    "print:kp-translation:raw",
-    "print:kp-translation:preprocessed",
-
-    0
-};
+Options::Mode options;
 
 void usage(ostream &os, const char *exec_name) {
     char *tmp_name = strdup(exec_name);
@@ -85,8 +27,15 @@ void usage(ostream &os, const char *exec_name) {
        << " [--tag-all-literals]"
        << " [--verbose:<option>]"
        << " <pddl-files>"
-       << endl;
+       << endl << endl;
     free(tmp_name);
+
+    os << "available options:" << endl << endl;
+    for( int i = 0, isz = options.options_.size(); i < isz; ++i ) {
+        const Options::Option &opt = options.options_[i];
+        os << left << "\t" << setw(40) << opt.name() << "    " << opt.desc() << endl;
+    }
+    os << endl;
 }
 
 int main(int argc, char *argv[]) {
@@ -100,14 +49,16 @@ int main(int argc, char *argv[]) {
     float       start_time = Utils::read_time_in_seconds();
 
     // initialize options
-    for( const char **opt = &output_modes[0]; *opt != 0; ++opt ) {
-        output_mode.add(*opt);
+    for( const char **opt = &available_options[0]; *opt != 0; ++opt ) {
+        const char *name = *opt++;
+        const char *desc = *opt;
+        options.add(name, desc);
     }
 
     // check correct number of parameters
     const char *exec_name = argv[0];
     if( argc == 1 ) {
-        usage(cerr, exec_name);
+        usage(cout, exec_name);
         exit(0);
     }
 
@@ -128,7 +79,7 @@ int main(int argc, char *argv[]) {
             }
             opt_fsc_states = atoi(argv[++k]);
         } else if( !skip_options && !strcmp(argv[k], "--help") ) {
-            usage(cerr, exec_name);
+            usage(cout, exec_name);
             exit(0);
         } else if( !skip_options && !strcmp(argv[k], "--no-forbid-inconsistent-tuples") ) {
             opt_forbid_inconsistent_tuples = false;
@@ -148,7 +99,7 @@ int main(int argc, char *argv[]) {
             opt_tag_all_literals = true;
         } else if( !skip_options && !strncmp(argv[k], "--verbose:", 10) ) {
             const char *opt = &argv[k][10];
-            if( !output_mode.enable(opt) )
+            if( !options.enable(opt) )
                 cout << "warning: unrecognized option '" << opt << "'. Ignored." << endl;
 
         // if '--', stop parsing options. Remaining fields are file names.
@@ -179,25 +130,25 @@ int main(int argc, char *argv[]) {
     }
 
     // print file read by parser
-    if( output_mode.is_enabled("print:parser:raw") ) {
+    if( options.is_enabled("print:parser:raw") ) {
         reader->print(cout);
     }
 
-    Instance instance(output_mode);
+    Instance instance(options);
 
     cout << "instantiating control problem..." << endl;
     reader->instantiate(instance);
     delete reader;
-    if( output_mode.is_enabled("print:problem:raw") ) {
+    if( options.is_enabled("print:problem:raw") ) {
         instance.print(cout);
         instance.write_domain(cout);
         instance.write_problem(cout);
     }
 
     cout << "preprocessing control problem..." << endl;
-    Preprocessor prep(instance, output_mode);
+    Preprocessor prep(instance, options);
     prep.preprocess();
-    if( output_mode.is_enabled("print:problem:preprocessed") ) {
+    if( options.is_enabled("print:problem:preprocessed") ) {
         instance.print(cout);
         instance.write_domain(cout);
         instance.write_problem(cout);
@@ -206,35 +157,35 @@ int main(int argc, char *argv[]) {
     cout << "creating CP translation..." << endl;
     CP_Instance cp_instance(instance, opt_fsc_states,
                             opt_forbid_inconsistent_tuples, opt_compound_obs_as_fluents);
-    if( output_mode.is_enabled("print:cp-translation:raw") ) {
+    if( options.is_enabled("print:cp-translation:raw") ) {
         cp_instance.write_domain(cout);
         cp_instance.write_problem(cout);
     }
 
     cout << "preprocessing CP translation..." << endl;
-    Preprocessor cp_prep(cp_instance, output_mode);
+    Preprocessor cp_prep(cp_instance, options);
 
     // For some reason, true instead of false works better in some hard problems such as
     // visual marker. This flag instruct the preprocessor to remove unreachable and
     // static atoms. This odd behaviour could be a bug somewhere...
     cp_prep.preprocess(false);
   
-    if( output_mode.is_enabled("print:cp-translation:preprocessed") ) {
+    if( options.is_enabled("print:cp-translation:preprocessed") ) {
         cp_instance.write_domain(cout);
         cp_instance.write_problem(cout);
     }
 
     cout << "creating KS0 translation..." << endl;
-    KS0_Instance ks0_instance(cp_instance, output_mode, opt_tag_all_literals);
-    if( output_mode.is_enabled("print:ks0-translation:raw") ) {
+    KS0_Instance ks0_instance(cp_instance, options, opt_tag_all_literals);
+    if( options.is_enabled("print:ks0-translation:raw") ) {
         ks0_instance.write_domain(cout);
         ks0_instance.write_problem(cout);
     }
 
     cout << "preprocessing KS0 translation..." << endl;
-    Preprocessor ks0_prep(ks0_instance, output_mode);
+    Preprocessor ks0_prep(ks0_instance, options);
     ks0_prep.preprocess(true);
-    if( output_mode.is_enabled("print:ks0-translation:preprocessed") ) {
+    if( options.is_enabled("print:ks0-translation:preprocessed") ) {
         ks0_instance.write_domain(cout);
         ks0_instance.write_problem(cout);
     }

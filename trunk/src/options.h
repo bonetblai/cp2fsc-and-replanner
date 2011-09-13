@@ -1,20 +1,26 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
+#include <string>
 #include <vector>
 
 namespace Options {
 
   struct Option {
-      std::string opt_;
-      Option(const Option &option) : opt_(option.opt_) { }
-      Option(const std::string &opt) : opt_(opt) { }
-      bool match(const std::string &opt) const { return opt_ == opt; }
-      bool operator==(const Option &opt) const {
-          return opt_ == opt.opt_;
+      std::string name_;
+      std::string desc_;
+      Option(const Option &option) : name_(option.name_), desc_(option.desc_) { }
+      Option(const std::string &name) : name_(name), desc_("") { }
+      Option(const std::string &name, const std::string &desc) : name_(name), desc_(desc) { }
+      const std::string& name() const { return name_; }
+      const std::string& desc() const { return desc_; }
+      bool match(const std::string &name) const { return name_ == name; }
+      bool operator==(const Option &name) const {
+          return name_ == name.name_;
       }
       const Option & operator=(const Option &opt) {
-          opt_ = opt.opt_;
+          name_ = opt.name_;
+          desc_ = opt.desc_;
           return *this;
       }
   };
@@ -28,6 +34,7 @@ namespace Options {
               options_.push_back(opt);
       }
       void add(const std::string &opt) { add(Option(opt)); }
+      void add(const std::string &opt, const std::string &desc) { add(Option(opt, desc)); }
 
       bool is_option(const Option &opt) const {
           for( size_t i = 0; i < options_.size(); ++i ) {
