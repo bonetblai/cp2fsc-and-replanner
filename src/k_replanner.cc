@@ -15,20 +15,39 @@ using namespace std;
 Options::Mode options;
 const char *planner_name[] = { "ff", "lama", "m", "mp" };
 
-void usage(ostream &os, const char *exec_name) {
-    char *tmp_name = strdup(exec_name);
-    os << "usage: " << basename(tmp_name) << " [--help]" << endl
-       << "                   [--max-time <time>]" << endl
-       << "                   [--no-print-plan" << endl
-       << "                   [--prefix <prefix>]" << endl
-       << "                   [--no-remove-intermediate-files]" << endl
-       << "                   [--use-{ff|lama|m|mp}]" << endl
-       << "                   [--verbose:<option>]" << endl
-       << "                   <pddl-files>" << endl
-       << endl;
-    free(tmp_name);
+void parse_options(const char *options_str) {
+    char *opts = strdup(options_str);
+    char *opt = strtok(opts, ",");
+    while( opt != 0 ) {
+        if( !options.enable(opt) )
+            cout << "warning: unrecognized option '" << opt << "' (ignored)." << endl;
+        opt = strtok(0, ",");
+    }
+    free(opts);
+}
 
-    os << "available options:" << endl << endl;
+void print_usage(ostream &os, const char *exec_name, const char **cmdline_options) {
+    char *tmp = strdup(exec_name);
+    const char *base_name = basename(tmp);
+    int indent = strlen("usage: ") + strlen(base_name) + 1;
+    os << "usage: " << base_name << " ";
+    free(tmp);
+
+    if( cmdline_options[0] == 0 ) {
+        os << endl;
+    } else {
+        os << cmdline_options[0] << endl;
+        for( int i = 1; cmdline_options[i] != 0; ++i ) {
+            os << setw(indent) << "" << cmdline_options[i] << endl;
+        }
+    }
+
+    os << setw(indent) << "" << "[--options=<options>]" << endl
+       << setw(indent) << "" << "<pddl-files>" << endl
+       << endl
+       << "where <options> is a comma-separated list of options from:" << endl
+       << endl;
+
     for( int i = 0, isz = options.options_.size(); i < isz; ++i ) {
         const Options::Option &opt = options.options_[i];
         os << "  " << left << setw(35) << opt.name() << "  " << opt.desc() << endl;
@@ -58,7 +77,7 @@ int main(int argc, char *argv[]) {
     // check correct number of parameters
     const char *exec_name = argv[0];
     if( argc == 1 ) {
-        usage(cout, exec_name);
+        print_usage(cout, exec_name, k_replanner_cmdline_options);
         exit(0);
     }
 
@@ -69,7 +88,7 @@ int main(int argc, char *argv[]) {
     bool skip_options = false;
     for( int k = 1; k < argc; ++k ) {
         if( !skip_options && !strcmp(argv[k], "--help") ) {
-            usage(cout, exec_name);
+            print_usage(cout, exec_name, k_replanner_cmdline_options);
             exit(0);
         } else if( !skip_options && !strcmp(argv[k], "--max-time") ) {
             if( k == argc-1 ) {
@@ -95,10 +114,9 @@ int main(int argc, char *argv[]) {
             opt_planner = 2;
         } else if( !skip_options && !strcmp(argv[k], "--use-mp") ) {
             opt_planner = 3;
-        } else if( !skip_options && !strncmp(argv[k], "--verbose:", 10) ) {
-            const char *opt = &argv[k][10];
-            if( !options.enable(opt) )
-                cout << "warning: unrecognized option '" << opt << "'. Ignored." << endl;
+        } else if( !skip_options && !strncmp(argv[k], "--options=", 10) ) {
+            const char *options = &argv[k][10];
+            parse_options(options);
 
         // if '--', stop parsing options. Remaining fields are file names.
         } else if( !skip_options && !strcmp(argv[k], "--") ) {
