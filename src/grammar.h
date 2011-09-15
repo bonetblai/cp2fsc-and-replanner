@@ -259,6 +259,9 @@ extern YY_PDDL_Parser_STYPE YY_PDDL_Parser_LVAL;
 #define	KW_FLUENTS	306
 #define	KW_HIDDEN	307
 #define	KW_INVARIANT	308
+#define	KW_AT_LEAST_ONE	309
+#define	KW_AT_MOST_ONE	310
+#define	KW_EXACTLY_ONE	311
 
 
 #line 143 "/opt/sfw/lib/bison.h"
@@ -303,7 +306,7 @@ public:
 /* static const int token ... */
 
 /* #line 182 "/opt/sfw/lib/bison.h" */
-#line 307 "grammar.h"
+#line 310 "grammar.h"
 static const int TK_OPEN;
 static const int TK_CLOSE;
 static const int TK_OPEN_SQ;
@@ -355,6 +358,9 @@ static const int KW_STICKY;
 static const int KW_FLUENTS;
 static const int KW_HIDDEN;
 static const int KW_INVARIANT;
+static const int KW_AT_LEAST_ONE;
+static const int KW_AT_MOST_ONE;
+static const int KW_EXACTLY_ONE;
 
 
 #line 182 "/opt/sfw/lib/bison.h"
@@ -363,7 +369,7 @@ static const int KW_INVARIANT;
 enum YY_PDDL_Parser_ENUM_TOKEN { YY_PDDL_Parser_NULL_TOKEN=0
 
 /* #line 185 "/opt/sfw/lib/bison.h" */
-#line 367 "grammar.h"
+#line 373 "grammar.h"
 	,TK_OPEN=258
 	,TK_CLOSE=259
 	,TK_OPEN_SQ=260
@@ -415,6 +421,9 @@ enum YY_PDDL_Parser_ENUM_TOKEN { YY_PDDL_Parser_NULL_TOKEN=0
 	,KW_FLUENTS=306
 	,KW_HIDDEN=307
 	,KW_INVARIANT=308
+	,KW_AT_LEAST_ONE=309
+	,KW_AT_MOST_ONE=310
+	,KW_EXACTLY_ONE=311
 
 
 #line 185 "/opt/sfw/lib/bison.h"
@@ -471,5 +480,5 @@ public:
 /* END */
 
 /* #line 236 "/opt/sfw/lib/bison.h" */
-#line 475 "grammar.h"
+#line 484 "grammar.h"
 #endif

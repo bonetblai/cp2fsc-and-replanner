@@ -97,6 +97,13 @@ class Instance {
     };
     class axiom_vec : public std::vector<Axiom*> { };
 
+    struct Invariant : public index_vec {
+        int type;
+        enum { AT_LEAST_ONE, AT_MOST_ONE, EXACTLY_ONE };
+        Invariant(int t) : type(t) { }
+    };
+    class invariant_vec : public std::vector<Invariant> { };
+
     struct Init {
         index_set literals;
         index_vec_vec invariants;
