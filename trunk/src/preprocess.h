@@ -15,8 +15,8 @@ class Preprocessor {
     index_vec   inv_map;
 
   protected:
-    void remove_inconsistent_actions();
-    void remove_useless_effects_and_actions();
+    void mark_inconsistent_actions(bool_vec &actions_to_remove);
+    void remove_useless_effects_and_mark_actions(bool_vec &actions_to_remove);
 
   public:
     const Options::Mode options_;

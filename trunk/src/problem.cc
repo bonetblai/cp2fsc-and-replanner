@@ -107,7 +107,7 @@ void Instance::remove_unreachable_axioms(const bool_vec &reachable_atoms, const 
         }
         if( !reachable ) {
             if( options_.is_enabled("print:axiom:removal") )
-                cout << "removing axiom " << axioms[k]->name << endl;
+                cout << "removing axiom " << k << "." << axioms[k]->name << endl;
             axioms[k] = axioms.back();
             axioms.pop_back();
             --k;
@@ -136,7 +136,7 @@ void Instance::remove_actions(const bool_vec &set, index_vec &map) {
             ++j;
         } else {
             if( options_.is_enabled("print:action:removal") )
-                cout << "removing action " << actions[k]->name << endl;
+                cout << "removing action " << k << "." << actions[k]->name << endl;
             rm_map[k] = no_such_index;
         }
     }
@@ -167,7 +167,7 @@ void Instance::remove_sensors(const bool_vec &set, index_vec &map) {
             ++j;
         } else {
             if( options_.is_enabled("print:sensor:removal") )
-                cout << "removing sensor " << sensors[k]->name << endl;
+                cout << "removing sensor " << k << "." << sensors[k]->name << endl;
             rm_map[k] = no_such_index;
         }
     }
@@ -198,7 +198,7 @@ void Instance::remove_axioms(const bool_vec &set, index_vec &map) {
             ++j;
         } else {
             if( options_.is_enabled("print:axiom:removal") )
-                cout << "removing axiom " << axioms[k]->name << endl;
+                cout << "removing axiom " << k << "." << axioms[k]->name << endl;
             rm_map[k] = no_such_index;
         }
     }
