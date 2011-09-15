@@ -63,4 +63,25 @@ const char *available_options[] = {
     0
 };
 
+const char *cp2fsc_cmdline_options[] = {
+    "[--compound-obs-as-fluents]",
+    "[--fsc-states <n>]",
+    "[--help]",
+    "[--no-forbid-inconsistent-tuples]",
+    "[--output-metadata <filename>]",
+    "[--prefix <prefix>]",
+    "[--tag-all-literals]",
+    0
+};
+
+const char *k_replanner_cmdline_options[] = {
+    "[--help]",
+    "[--max-time <time>]",
+    "[--no-print-plan]",
+    "[--prefix <prefix>]",
+    "[--no-remove-intermediate-files]",
+    "[--use-{ff|lama|m|mp}]",
+    0
+};
+
 #endif

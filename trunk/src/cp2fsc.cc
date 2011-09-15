@@ -15,21 +15,39 @@ using namespace std;
 
 Options::Mode options;
 
-void usage(ostream &os, const char *exec_name) {
-    char *tmp_name = strdup(exec_name);
-    os << "usage: " << basename(tmp_name) << " [--compound-obs-as-fluents]" << endl
-       << "              [--fsc-states <n>]" << endl
-       << "              [--help]" << endl
-       << "              [--no-forbid-inconsistent-tuples]" << endl
-       << "              [--output-metadata <filename>]" << endl
-       << "              [--prefix <prefix>]" << endl
-       << "              [--tag-all-literals]" << endl
-       << "              [--verbose:<option>]" << endl
-       << "              <pddl-files>" << endl
-       << endl;
-    free(tmp_name);
+void parse_options(const char *options_str) {
+    char *opts = strdup(options_str);
+    char *opt = strtok(opts, ",");
+    while( opt != 0 ) {
+        if( !options.enable(opt) )
+            cout << "warning: unrecognized option '" << opt << "' (ignored)." << endl;
+        opt = strtok(0, ",");
+    }
+    free(opts);
+}
 
-    os << "available options:" << endl << endl;
+void print_usage(ostream &os, const char *exec_name, const char **cmdline_options) {
+    char *tmp = strdup(exec_name);
+    const char *base_name = basename(tmp);
+    int indent = strlen("usage: ") + strlen(base_name) + 1;
+    os << "usage: " << base_name << " ";
+    free(tmp);
+
+    if( cmdline_options[0] == 0 ) {
+        os << endl;
+    } else {
+        os << cmdline_options[0] << endl;
+        for( int i = 1; cmdline_options[i] != 0; ++i ) {
+            os << setw(indent) << "" << cmdline_options[i] << endl;
+        }
+    }
+
+    os << setw(indent) << "" << "[--options=<options>]" << endl
+       << setw(indent) << "" << "<pddl-files>" << endl
+       << endl
+       << "where <options> is a comma-separated list of options from:" << endl
+       << endl;
+
     for( int i = 0, isz = options.options_.size(); i < isz; ++i ) {
         const Options::Option &opt = options.options_[i];
         os << "  " << left << setw(35) << opt.name() << "  " << opt.desc() << endl;
@@ -60,7 +78,7 @@ int main(int argc, char *argv[]) {
     // check correct number of parameters
     const char *exec_name = argv[0];
     if( argc == 1 ) {
-        usage(cout, exec_name);
+        print_usage(cout, exec_name, cp2fsc_cmdline_options);
         exit(0);
     }
 
@@ -81,7 +99,7 @@ int main(int argc, char *argv[]) {
             }
             opt_fsc_states = atoi(argv[++k]);
         } else if( !skip_options && !strcmp(argv[k], "--help") ) {
-            usage(cout, exec_name);
+            print_usage(cout, exec_name, cp2fsc_cmdline_options);
             exit(0);
         } else if( !skip_options && !strcmp(argv[k], "--no-forbid-inconsistent-tuples") ) {
             opt_forbid_inconsistent_tuples = false;
@@ -99,10 +117,9 @@ int main(int argc, char *argv[]) {
             opt_prefix = argv[++k];
         } else if( !skip_options && !strcmp(argv[k], "--tag-all-literals") ) {
             opt_tag_all_literals = true;
-        } else if( !skip_options && !strncmp(argv[k], "--verbose:", 10) ) {
-            const char *opt = &argv[k][10];
-            if( !options.enable(opt) )
-                cout << "warning: unrecognized option '" << opt << "'. Ignored." << endl;
+        } else if( !skip_options && !strncmp(argv[k], "--options=", 10) ) {
+            const char *options = &argv[k][10];
+            parse_options(options);
 
         // if '--', stop parsing options. Remaining fields are file names.
         } else if( !skip_options && !strcmp(argv[k], "--") ) {
