@@ -154,25 +154,25 @@ void Preprocessor::compute_reachability(bool_vec &reachable_atoms, bool_vec &rea
     if( options_.is_enabled("print:atom:unreachable") ) {
         for( size_t k = 0; k < instance.n_atoms(); k++ ) {
             if( !reachable_atoms[k] )
-                cout << "  unreachable atom " << instance.atoms[k]->name << endl;
+                cout << "  unreachable atom " << k << "." << instance.atoms[k]->name << endl;
         }
     }
     if( options_.is_enabled("print:action:unreachable") ) {
         for( size_t k = 0; k < instance.actions.size(); k++ ) {
             if( !reachable_actions[k] )
-                cout << "  unreachable action " << instance.actions[k]->name << endl;
+                cout << "  unreachable action " << k << "." << instance.actions[k]->name << endl;
         }
     }
     if( options_.is_enabled("print:sensor:unreachable") ) {
         for( size_t k = 0; k < instance.sensors.size(); k++ ) {
             if( !reachable_sensors[k] )
-                cout << "  unreachable sensor " << instance.sensors[k]->name << endl;
+                cout << "  unreachable sensor " << k << "." << instance.sensors[k]->name << endl;
         }
     }
     if( options_.is_enabled("print:axiom:unreachable") ) {
         for( size_t k = 0; k < instance.axioms.size(); k++ ) {
             if( !reachable_axioms[k] )
-                cout << "  unreachable axiom " << instance.axioms[k]->name << endl;
+                cout << "  unreachable axiom " << k << "." << instance.axioms[k]->name << endl;
         }
     }
 }
@@ -275,7 +275,7 @@ void Preprocessor::compute_irrelevant_atoms() {
     }
 }
 
-void Preprocessor::remove_inconsistent_actions() {
+void Preprocessor::mark_inconsistent_actions(bool_vec &actions_to_remove) {
     bool_vec inconsistent(instance.n_actions(), false);
     for( size_t k = 0; k < instance.n_actions(); k++ ) {
         Instance::Action &act = *instance.actions[k];
@@ -283,13 +283,13 @@ void Preprocessor::remove_inconsistent_actions() {
         // check for inconsistencies in add and del
         for( index_set::const_iterator it = act.effect.begin(); it != act.effect.end(); ++it ) {
             if( act.effect.contains(-*it) ) {
-                inconsistent[k] = true;
+                actions_to_remove[k] = true;
                 break;
             }
         }
 
         // check for inconsistencies in conditional effects
-        if( !inconsistent[k] ) {
+        if( !actions_to_remove[k] ) {
             for( int i = 0; i < (int)act.when.size(); ++i ) {
                 Instance::When &when = act.when[i];
                 for( index_set::const_iterator it = when.effect.begin(); it != when.effect.end(); ++it ) {
@@ -303,14 +303,13 @@ void Preprocessor::remove_inconsistent_actions() {
             }
         }
 
-        if( inconsistent[k] && options_.is_enabled("print:action:inconsistent") ) {
-            cout << "  action " << act.name << " is inconsistent." << endl;
+        if( actions_to_remove[k] && options_.is_enabled("print:action:inconsistent") ) {
+            cout << "  action " << k << "." << act.name << " is inconsistent." << endl;
         }
     }
-    instance.remove_actions(inconsistent, action_map);
 }
 
-void Preprocessor::remove_useless_effects_and_actions() {
+void Preprocessor::remove_useless_effects_and_mark_actions(bool_vec &actions_to_remove) {
     bool_vec useless(instance.n_actions(), true);
     for( size_t k = 0; k < instance.n_actions(); k++ ) {
         Instance::Action &act = *instance.actions[k];
@@ -350,11 +349,12 @@ void Preprocessor::remove_useless_effects_and_actions() {
         } else
             useless[k] = false;
 
-        if( useless[k] && options_.is_enabled("print:action:useless") ) {
-            cout << "  action " << act.name << " is useless." << endl;
+        if( useless[k] ) {
+            actions_to_remove[k] = true;
+            if( options_.is_enabled("print:action:useless") )
+                cout << "  action " << k << "." << act.name << " is useless." << endl;
         }
     }
-    instance.remove_actions(useless, action_map);
 }
 
 void Preprocessor::remove_irrelevant_atoms() {
@@ -386,10 +386,12 @@ void Preprocessor::preprocess(bool remove_atoms, const bool_vec *known_non_stati
     assert((known_non_static_atoms == 0) || (known_non_static_atoms->size() == instance.n_atoms()));
 
     // stage 1: Remove inconsistent and useless actions
+    bool_vec actions_to_remove(instance.n_actions(), false);
     if( options_.is_enabled("print:preprocess:stage") )
         cout << "  Stage 1: removing inconsistent & useless actions..." << endl;
-    remove_inconsistent_actions();
-    remove_useless_effects_and_actions();
+    mark_inconsistent_actions(actions_to_remove);
+    remove_useless_effects_and_mark_actions(actions_to_remove);
+    instance.remove_actions(actions_to_remove, action_map);
 
     // after action removal, compute cross references
     if( options_.is_enabled("print:preprocess:stage") )
@@ -444,7 +446,14 @@ void Preprocessor::preprocess(bool remove_atoms, const bool_vec *known_non_stati
         }
     }
     //cout << "FIX POINT REACHED!" << endl;
-    remove_useless_effects_and_actions();
+
+
+    // stage 4: remove useless effects and mark actions for removal
+    if( options_.is_enabled("print:preprocess:stage") )
+        cout << "  Stage 4: removing useless effects and marking actions to remove..." << endl;
+    actions_to_remove = bool_vec(instance.n_actions(), false);
+    remove_useless_effects_and_mark_actions(actions_to_remove);
+    // Note: removal of marked actions is done to Stage 6
 
 #if 0
     cout << "Static atoms = ";
@@ -453,8 +462,9 @@ void Preprocessor::preprocess(bool remove_atoms, const bool_vec *known_non_stati
 #endif
  
 #if 0
-    // stage 4: Compute static atoms
-    if( trace_level > 0 ) cout << "  computing static atoms..." << endl;
+    // stage 5: Compute static atoms
+    if( options_.is_enabled("print:preprocess:stage") )
+        cout << "  Stage 7: compute static atoms..." << endl;
     bool_vec static_atoms(instance.n_atoms(), true);
     compute_static_atoms(reachable_actions, static_atoms);
     if( known_non_static_atoms != 0 ) {
@@ -475,21 +485,24 @@ void Preprocessor::preprocess(bool remove_atoms, const bool_vec *known_non_stati
     }
 #endif
 
-    // stage 5: Remove unreachable actions and conditional effects
+    // stage 6: Remove unreachable and marked actions, and conditional effects
     if( options_.is_enabled("print:preprocess:stage") )
-        cout << "  Stage 5: removing unreachable actions..." << endl;
+        cout << "  Stage 6: removing unreachable and marked actions..." << endl;
     reachable_actions.bitwise_complement();
-    instance.remove_actions(reachable_actions, action_map);
+    actions_to_remove.bitwise_or(reachable_actions);
+    instance.remove_actions(actions_to_remove, action_map);
     instance.simplify_conditional_effects(static_atoms);
 
-    // stage 5: Remove unreachable sensors
+    // stage 7: Remove unreachable sensors
     if( options_.is_enabled("print:preprocess:stage") )
-        cout << "           removing unreachable sensors..." << endl;
+        cout << "  Stage 7: removing unreachable sensors..." << endl;
     reachable_sensors.bitwise_complement();
     instance.remove_sensors(reachable_sensors, sensor_map);
 
-    // stage 6: Remove unreachable axioms
+    // stage 8: Remove unreachable axioms
 #if 0 // TODO: all this is a mess..
+    if( options_.is_enabled("print:preprocess:stage") )
+        cout << "  Stage 8: removing unreachable axioms..." << endl;
     if( trace_level > 0) cout << "  removing unreachable axioms..." << endl;
     reachable_axioms.bitwise_complement();
     instance.remove_axioms(reachable_axioms, axiom_map);
@@ -500,9 +513,9 @@ void Preprocessor::preprocess(bool remove_atoms, const bool_vec *known_non_stati
         cout << "           cross referencing..." << endl;
     instance.cross_reference();
 
-    // stage 7: Remove unreachable and static atoms
+    // stage 9: Remove unreachable and static atoms
     if( options_.is_enabled("print:preprocess:stage") )
-        cout << "  Stage 7: removing unreachable and static atoms..." << endl;
+        cout << "  Stage 9: removing unreachable and static atoms..." << endl;
     bool_vec atoms_to_remove(static_atoms);
     reachable_atoms.bitwise_complement();
     atoms_to_remove.bitwise_or(reachable_atoms);
@@ -548,7 +561,9 @@ void Preprocessor::preprocess(bool remove_atoms, const bool_vec *known_non_stati
             cout << endl;
         }
         instance.remove_atoms(atoms_to_remove, atom_map);
-        remove_useless_effects_and_actions();
+        actions_to_remove = bool_vec(instance.n_actions(), false);
+        remove_useless_effects_and_mark_actions(actions_to_remove);
+        instance.remove_actions(actions_to_remove, action_map);
     }
 
     // after action removal, compute cross references
