@@ -48,7 +48,8 @@
                    KW_OR KW_EXISTS KW_FORALL KW_NOT KW_WHEN KW_ONEOF
                    KW_PROBLEM KW_FORDOMAIN KW_OBJECTS KW_INIT KW_GOAL
                    KW_SENSOR KW_SENSED KW_AXIOM KW_COND KW_OBSERVABLE
-                   KW_BODY KW_HEAD KW_STICKY KW_FLUENTS KW_HIDDEN KW_INVARIANT
+                   KW_BODY KW_HEAD KW_STICKY KW_FLUENTS KW_HIDDEN
+                   KW_INVARIANT KW_AT_LEAST_ONE KW_AT_MOST_ONE KW_EXACTLY_ONE
 
 %type <sym>        action_symbol any_symbol sensor_symbol axiom_symbol
 %type <param>      atom_argument_list
@@ -57,7 +58,8 @@
 %type <atom>       positive_literal negative_literal literal
 %type <condition>  condition single_condition condition_list
 %type <condition>  goal_list single_goal
-%type <condition>  invariant clause oneof
+%type <condition>  invariant at_least_one_invariant at_most_one_invariant exactly_one_invariant
+%type <condition>  clause oneof
 %type <effect>     atomic_effect positive_atomic_effect positive_atomic_effect_list
 %type <effect>     action_effect action_effect_list single_action_effect conditional_effect forall_effect
 %type <effect>     atomic_effect_kw_list atomic_effect_list
@@ -453,8 +455,29 @@ positive_atomic_effect:
       positive_literal { $$ = new AtomicEffect(*$1); }
     ;
 
-invariant:
+at_least_one_invariant:
       TK_OPEN KW_INVARIANT condition_list TK_CLOSE { $$ = $3; }
+    | TK_OPEN KW_AT_LEAST_ONE condition_list TK_CLOSE { $$ = $3; }
+    ;
+
+at_most_one_invariant:
+      TK_OPEN KW_AT_MOST_ONE condition_list TK_CLOSE error {
+          log_error("'at-most-one' invariants not yet supported.");
+          yyerrok;
+      }
+    ;
+
+exactly_one_invariant:
+      TK_OPEN KW_EXACTLY_ONE condition_list TK_CLOSE error {
+          log_error("'exactly-one' invariants not yet supported.");
+          yyerrok;
+      }
+    ;
+
+invariant:
+      at_least_one_invariant
+    | at_most_one_invariant
+    | exactly_one_invariant
     ;
 
 clause:
