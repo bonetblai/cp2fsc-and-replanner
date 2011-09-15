@@ -17,24 +17,26 @@ const char *planner_name[] = { "ff", "lama", "m", "mp" };
 
 void usage(ostream &os, const char *exec_name) {
     char *tmp_name = strdup(exec_name);
-    os << "usage: " << basename(tmp_name)
-       << " [--help]"
-       << " [--max-time <time>]"
-       << " [--no-print-plan"
-       << " [--prefix <prefix>]"
-       << " [--no-remove-intermediate-files]"
-       << " [--use-{ff|lama|m|mp}]"
-       << " [--verbose:<option>]"
-       << " <pddl-files>"
-       << endl << endl;
+    os << "usage: " << basename(tmp_name) << " [--help]" << endl
+       << "                   [--max-time <time>]" << endl
+       << "                   [--no-print-plan" << endl
+       << "                   [--prefix <prefix>]" << endl
+       << "                   [--no-remove-intermediate-files]" << endl
+       << "                   [--use-{ff|lama|m|mp}]" << endl
+       << "                   [--verbose:<option>]" << endl
+       << "                   <pddl-files>" << endl
+       << endl;
     free(tmp_name);
 
     os << "available options:" << endl << endl;
     for( int i = 0, isz = options.options_.size(); i < isz; ++i ) {
         const Options::Option &opt = options.options_[i];
-        os << left << "\t" << setw(40) << opt.name() << "    " << opt.desc() << endl;
+        os << "  " << left << setw(35) << opt.name() << "  " << opt.desc() << endl;
     }
     os << endl;
+
+    os << "The components {cp,ks0} belong to cp2fsc while {kp} to k_replanner."
+       << endl << endl;
 }
 
 int main(int argc, char *argv[]) {
