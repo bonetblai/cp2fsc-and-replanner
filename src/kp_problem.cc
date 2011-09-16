@@ -1,4 +1,5 @@
-#include <assert.h>
+#include <cassert>
+#include <cstdlib>
 #include "kp_problem.h"
 #include "state.h"
 
@@ -171,37 +172,46 @@ KP_Instance::KP_Instance(const Instance &ins, const Options::Mode &options)
 
     // create invariant rules
     size_t invariant_no = 0;
-    for( index_vec_vec::const_iterator it = ins.init.invariants.begin(); it != ins.init.invariants.end(); ++it ) {
-        for( size_t k = 0; k < it->size(); ++k ) {
-            ostringstream s;
-            s << "invariant-" << invariant_no++;
-            Action &nact = new_action(new CopyName(s.str()));
+    for( invariant_vec::const_iterator it = ins.init.invariants.begin(); it != ins.init.invariants.end(); ++it ) {
+        const Invariant &invariant = *it;
+        assert(invariant.type != Invariant::EXACTLY_ONE);
 
-            // conditional effects
-            size_t i = 0;
-            When c_eff;
-            for( index_vec::const_iterator jt = it->begin(); jt != it->end(); ++jt, ++i ) {
-                int idx = *jt > 0 ? *jt-1 : -*jt-1;
-                if( *jt > 0 ) {
-                    if( i != k )
-                        c_eff.condition.insert(1 + 2*idx+1);
-                    else {
-                        c_eff.condition.insert(-(1 + 2*idx+1)); // TODO: check if necessary
-                        c_eff.effect.insert(1 + 2*idx);
-                    }
-                } else {
-                    if( i != k )
-                        c_eff.condition.insert(1 + 2*idx);
-                    else {
-                        c_eff.condition.insert(-(1 + 2*idx)); // TODO: check if necessary
-                        c_eff.effect.insert(1 + 2*idx+1);
+        if( invariant.type == Invariant::AT_LEAST_ONE ) {
+            for( size_t k = 0; k < invariant.size(); ++k ) {
+                ostringstream s;
+                s << "invariant-" << invariant_no++;
+                Action &nact = new_action(new CopyName(s.str()));
+
+                // conditional effects
+                When c_eff;
+                for( size_t i = 0; i < invariant.size(); ++i ) {
+                    int lit = invariant[i];
+                    int idx = lit > 0 ? lit-1 : -lit-1;
+                    if( lit > 0 ) {
+                        if( i != k )
+                            c_eff.condition.insert(1 + 2*idx+1);
+                        else {
+                            c_eff.condition.insert(-(1 + 2*idx+1)); // TODO: check if necessary
+                            c_eff.effect.insert(1 + 2*idx);
+                        }
+                    } else {
+                        if( i != k )
+                            c_eff.condition.insert(1 + 2*idx);
+                        else {
+                            c_eff.condition.insert(-(1 + 2*idx)); // TODO: check if necessary
+                            c_eff.effect.insert(1 + 2*idx+1);
+                        }
                     }
                 }
+                nact.when.push_back(c_eff);
+                if( options_.is_enabled("print:kp-translation:action:invariant") ) {
+                    nact.print(cout, *this);
+                }
             }
-            nact.when.push_back(c_eff);
-            if( options_.is_enabled("print:kp-translation:action:invariant") ) {
-                nact.print(cout, *this);
-            }
+        } else {
+            assert(invariant.type == Invariant::AT_MOST_ONE);
+            cout << "error: invariants of type 'at-most-one' not yet supported." << endl;
+            exit(-1);
         }
     }
     n_invariant_actions_ = n_actions() - n_standard_actions_ - n_sensor_actions_;

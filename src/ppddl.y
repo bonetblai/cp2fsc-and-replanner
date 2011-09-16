@@ -469,16 +469,14 @@ at_least_one_invariant:
     ;
 
 at_most_one_invariant:
-      TK_OPEN KW_AT_MOST_ONE condition_list TK_CLOSE error {
-          log_error("'at-most-one' invariants not yet supported.");
-          yyerrok;
+      TK_OPEN KW_AT_MOST_ONE condition_list TK_CLOSE {
+          $$ = new Invariant(Invariant::AT_MOST_ONE, *static_cast<const And*>($3));
       }
     ;
 
 exactly_one_invariant:
-      TK_OPEN KW_EXACTLY_ONE condition_list TK_CLOSE error {
-          log_error("'exactly-one' invariants not yet supported.");
-          yyerrok;
+      TK_OPEN KW_EXACTLY_ONE condition_list TK_CLOSE {
+          $$ = new Invariant(Invariant::EXACTLY_ONE, *static_cast<const And*>($3));
       }
     ;
 

@@ -4,7 +4,7 @@
 #include "ptr_table.h"
 #include "string_table.h"
 #include "problem.h"
-#include <assert.h>
+#include <cassert>
 #include <set>
 #include <vector>
 
@@ -161,24 +161,24 @@ class PDDL_Base {
 
     struct Invariant : public condition_vec {
         int type;
-        enum { AT_LEAST_ONE, AT_MOST_ONE, EXACTLY_ONE };
+        enum { AT_LEAST_ONE = 0, AT_MOST_ONE = 1, EXACTLY_ONE = 2 };
         Invariant(int t, const condition_vec &invariant) : condition_vec(invariant), type(t) { }
         virtual ~Invariant() { }
-        virtual void instantiate(Instance &ins, index_vec &invariant) const;
+        virtual void instantiate(Instance &ins, Instance::Invariant &invariant) const;
         virtual void print(std::ostream &os) const { assert(0); }
     };
 
     struct Clause : public condition_vec {
         Clause(const condition_vec &clause) : condition_vec(clause) { }
         virtual ~Clause() { }
-        virtual void instantiate(Instance &ins, index_vec &clause) const;
+        virtual void instantiate(Instance &ins, Instance::Clause &clause) const;
         virtual void print(std::ostream &os) const { assert(0); }
     };
 
     struct Oneof : public condition_vec {
         Oneof(const condition_vec &oneof) : condition_vec(oneof) { }
         virtual ~Oneof() { }
-        virtual void instantiate(Instance &ins, index_vec &oneof) const;
+        virtual void instantiate(Instance &ins, Instance::Oneof &oneof) const;
         virtual void print(std::ostream &os) const { assert(0); }
     };
 

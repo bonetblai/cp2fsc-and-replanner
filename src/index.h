@@ -82,7 +82,6 @@ class index_set : public std::set<int> {
     }
 };
 
-class index_vec_vec : public std::vector<index_vec> { };
 class index_set_vec : public std::vector<index_set> { };
 
 #endif

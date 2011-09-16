@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <assert.h>
+#include <cassert>
 #include "ks0_problem.h"
 
 using namespace std;

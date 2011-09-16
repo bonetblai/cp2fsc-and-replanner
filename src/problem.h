@@ -99,16 +99,25 @@ class Instance {
 
     struct Invariant : public index_vec {
         int type;
-        enum { AT_LEAST_ONE, AT_MOST_ONE, EXACTLY_ONE };
-        Invariant(int t) : type(t) { }
+        enum { AT_LEAST_ONE = 0, AT_MOST_ONE = 1, EXACTLY_ONE = 2 };
+        Invariant(int t = AT_LEAST_ONE) : type(t) { }
+        // Invariants of type EXACTLY_ONE shouldn't exist because
+        // they are mapped into two invariants of types AT_LEAST_ONE
+        // and AT_MOST_ONE respectively.
     };
     class invariant_vec : public std::vector<Invariant> { };
 
+    struct Clause : public index_vec { };
+    class clause_vec : public std::vector<Clause> { };
+
+    struct Oneof : public index_vec { };
+    class oneof_vec : public std::vector<Oneof> { };
+
     struct Init {
         index_set literals;
-        index_vec_vec invariants;
-        index_vec_vec clauses;
-        index_vec_vec oneofs;
+        invariant_vec invariants;
+        clause_vec    clauses;
+        oneof_vec     oneofs;
     };
 
     class Plan : public std::vector<int> { };

@@ -1,4 +1,4 @@
-#include <assert.h>
+#include <cassert>
 #include <list>
 #include "preprocess.h"
 
@@ -30,8 +30,8 @@ void Preprocessor::compute_reachability(bool_vec &reachable_atoms, bool_vec &rea
 
     // extend reachable atoms with those in invariants
     for( size_t k = 0; k < instance.init.invariants.size(); ++k ) {
-        const index_vec &invariant = instance.init.invariants[k];
-        for( index_vec::const_iterator it = invariant.begin(); it != invariant.end(); ++it ) {
+        const Instance::Invariant &invariant = instance.init.invariants[k];
+        for( Instance::Invariant::const_iterator it = invariant.begin(); it != invariant.end(); ++it ) {
             if( *it > 0 ) {
                 reachable_atoms[*it - 1] = true;
             }
@@ -40,8 +40,8 @@ void Preprocessor::compute_reachability(bool_vec &reachable_atoms, bool_vec &rea
 
     // extend reachable atoms with those in oneofs
     for( size_t k = 0; k < instance.init.oneofs.size(); ++k ) {
-        const index_vec &oneof = instance.init.oneofs[k];
-        for( index_vec::const_iterator it = oneof.begin(); it != oneof.end(); ++it ) {
+        const Instance::Oneof &oneof = instance.init.oneofs[k];
+        for( Instance::Oneof::const_iterator it = oneof.begin(); it != oneof.end(); ++it ) {
             if( *it > 0 ) {
                 reachable_atoms[*it - 1] = true;
             }
@@ -190,8 +190,8 @@ void Preprocessor::compute_static_atoms(const bool_vec &reachable_actions, bool_
 
     // atoms in the invariants are non-static
     for( size_t k = 0; k < instance.init.invariants.size(); ++k ) {
-        const index_vec &invariant = instance.init.invariants[k];
-        for( index_vec::const_iterator it = invariant.begin(); it != invariant.end(); ++it ) {
+        const Instance::Invariant &invariant = instance.init.invariants[k];
+        for( Instance::Invariant::const_iterator it = invariant.begin(); it != invariant.end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
             static_atoms[idx] = false;
         }
@@ -199,8 +199,8 @@ void Preprocessor::compute_static_atoms(const bool_vec &reachable_actions, bool_
 
     // atoms in the oneofs are non-static
     for( size_t k = 0; k < instance.init.oneofs.size(); ++k ) {
-        const index_vec &oneof = instance.init.oneofs[k];
-        for( index_vec::const_iterator it = oneof.begin(); it != oneof.end(); ++it ) {
+        const Instance::Oneof &oneof = instance.init.oneofs[k];
+        for( Instance::Oneof::const_iterator it = oneof.begin(); it != oneof.end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
             static_atoms[idx] = false;
         }
@@ -537,8 +537,8 @@ void Preprocessor::preprocess(bool remove_atoms, const bool_vec *known_non_stati
     }
 
     for( size_t k = 0; k < instance.init.invariants.size(); ++k ) {
-        const index_vec &invariant = instance.init.invariants[k];
-        for( index_vec::const_iterator it = invariant.begin(); it != invariant.end(); ++it ) {
+        const Instance::Invariant &invariant = instance.init.invariants[k];
+        for( Instance::Invariant::const_iterator it = invariant.begin(); it != invariant.end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
             //assert(atoms_to_remove[idx] == false);
             atoms_to_remove[idx] = false;
@@ -546,8 +546,8 @@ void Preprocessor::preprocess(bool remove_atoms, const bool_vec *known_non_stati
     }
 
     for( size_t k = 0; k < instance.init.oneofs.size(); ++k ) {
-        const index_vec &oneof = instance.init.oneofs[k];
-        for( index_vec::const_iterator it = oneof.begin(); it != oneof.end(); ++it ) {
+        const Instance::Oneof &oneof = instance.init.oneofs[k];
+        for( Instance::Oneof::const_iterator it = oneof.begin(); it != oneof.end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
             //assert(atoms_to_remove[idx] == false);
             atoms_to_remove[idx] = false;

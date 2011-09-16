@@ -628,7 +628,8 @@ void PDDL_Base::ForallEffect::build(Instance &ins, size_t p, index_set &eff, Ins
     }
 }
 
-void PDDL_Base::Invariant::instantiate(Instance &ins, index_vec &invariant) const {
+void PDDL_Base::Invariant::instantiate(Instance &ins, Instance::Invariant &invariant) const {
+    invariant.type = type;
     for( size_t k = 0; k < size(); ++k ) {
         const Literal *lit = dynamic_cast<const Literal*>((*this)[k]);
         assert(lit != 0);
@@ -640,7 +641,7 @@ void PDDL_Base::Invariant::instantiate(Instance &ins, index_vec &invariant) cons
     }
 }
 
-void PDDL_Base::Clause::instantiate(Instance &ins, index_vec &clause) const {
+void PDDL_Base::Clause::instantiate(Instance &ins, Instance::Clause &clause) const {
     for( size_t k = 0; k < size(); ++k ) {
         const Literal *lit = dynamic_cast<const Literal*>((*this)[k]);
         assert(lit != 0);
@@ -652,7 +653,7 @@ void PDDL_Base::Clause::instantiate(Instance &ins, index_vec &clause) const {
     }
 }
 
-void PDDL_Base::Oneof::instantiate(Instance &ins, index_vec &oneof) const {
+void PDDL_Base::Oneof::instantiate(Instance &ins, Instance::Oneof &oneof) const {
     for( size_t k = 0; k < size(); ++k ) {
         const Literal *lit = dynamic_cast<const Literal*>((*this)[k]);
         assert(lit != 0);
@@ -678,9 +679,19 @@ bool PDDL_Base::InitLiteral::is_strongly_static(const PredicateSymbol &p) const 
 }
 
 void PDDL_Base::InitInvariant::instantiate(Instance &ins, Instance::Init &init) const {
-    index_vec invariant;
+    Instance::Invariant invariant;
     Invariant::instantiate(ins, invariant);
-    init.invariants.push_back(invariant);
+
+    // If invariant is of type EXACTLY_ONE, map it into two
+    // invariants of types AT_LEAST_ONE and AT_MOST_ONE.
+    if( invariant.type == EXACTLY_ONE ) {
+        invariant.type = AT_LEAST_ONE;
+        init.invariants.push_back(invariant);
+        invariant.type = AT_MOST_ONE;
+        init.invariants.push_back(invariant);
+    } else {
+        init.invariants.push_back(invariant);
+    }
 }
 
 // TODO: fix strongly-static detection. It seems that only need to be checked
@@ -698,7 +709,7 @@ bool PDDL_Base::InitInvariant::is_strongly_static(const PredicateSymbol &p) cons
 }
 
 void PDDL_Base::InitClause::instantiate(Instance &ins, Instance::Init &init) const {
-    index_vec clause;
+    Instance::Clause clause;
     Clause::instantiate(ins, clause);
     init.clauses.push_back(clause);
 }
@@ -715,7 +726,7 @@ bool PDDL_Base::InitClause::is_strongly_static(const PredicateSymbol &p) const {
 }
 
 void PDDL_Base::InitOneof::instantiate(Instance &ins, Instance::Init &init) const {
-    index_vec oneof;
+    Instance::Oneof oneof;
     Oneof::instantiate(ins, oneof);
     init.oneofs.push_back(oneof);
 }
