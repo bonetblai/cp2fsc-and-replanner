@@ -125,8 +125,8 @@ rule 101  atomic_effect -> literal
 rule 102  positive_atomic_effect -> positive_literal
 rule 103  at_least_one_invariant -> TK_OPEN KW_INVARIANT condition_list TK_CLOSE
 rule 104  at_least_one_invariant -> TK_OPEN KW_AT_LEAST_ONE condition_list TK_CLOSE
-rule 105  at_most_one_invariant -> TK_OPEN KW_AT_MOST_ONE condition_list TK_CLOSE error
-rule 106  exactly_one_invariant -> TK_OPEN KW_EXACTLY_ONE condition_list TK_CLOSE error
+rule 105  at_most_one_invariant -> TK_OPEN KW_AT_MOST_ONE condition_list TK_CLOSE
+rule 106  exactly_one_invariant -> TK_OPEN KW_EXACTLY_ONE condition_list TK_CLOSE
 rule 107  invariant -> at_least_one_invariant
 rule 108  invariant -> at_most_one_invariant
 rule 109  invariant -> exactly_one_invariant
@@ -185,7 +185,7 @@ rule 160  single_goal -> negative_literal
 Terminals, with rules where they appear
 
 $ (-1)
-error (256) 5 29 34 38 66 105 106 114 121 128 134 140
+error (256) 5 29 34 38 66 114 121 128 134 140
 TK_OPEN (258) 4 5 12 28 29 33 34 37 38 44 52 53 65 66 67 72 78 79 80
     85 91 94 95 103 104 105 106 110 111 113 114 115 120 121 122 127
     128 129 133 134 135 139 140 141 148 154 155 156
@@ -398,7 +398,7 @@ state 0
 
     $default	reduce using rule 3 (pddl_declarations)
 
-    pddl_declarations	go to state 280
+    pddl_declarations	go to state 278
     pddl_domain	go to state 2
     pddl_problem	go to state 3
 
@@ -2654,8 +2654,8 @@ state 210
     negative_literal  ->  TK_OPEN . KW_NOT positive_literal TK_CLOSE   (rule 80)
     at_least_one_invariant  ->  TK_OPEN . KW_INVARIANT condition_list TK_CLOSE   (rule 103)
     at_least_one_invariant  ->  TK_OPEN . KW_AT_LEAST_ONE condition_list TK_CLOSE   (rule 104)
-    at_most_one_invariant  ->  TK_OPEN . KW_AT_MOST_ONE condition_list TK_CLOSE error   (rule 105)
-    exactly_one_invariant  ->  TK_OPEN . KW_EXACTLY_ONE condition_list TK_CLOSE error   (rule 106)
+    at_most_one_invariant  ->  TK_OPEN . KW_AT_MOST_ONE condition_list TK_CLOSE   (rule 105)
+    exactly_one_invariant  ->  TK_OPEN . KW_EXACTLY_ONE condition_list TK_CLOSE   (rule 106)
     clause  ->  TK_OPEN . KW_OR condition_list TK_CLOSE   (rule 110)
     oneof  ->  TK_OPEN . KW_ONEOF condition_list TK_CLOSE   (rule 111)
 
@@ -3010,7 +3010,7 @@ state 243
 
 state 244
 
-    at_most_one_invariant  ->  TK_OPEN KW_AT_MOST_ONE . condition_list TK_CLOSE error   (rule 105)
+    at_most_one_invariant  ->  TK_OPEN KW_AT_MOST_ONE . condition_list TK_CLOSE   (rule 105)
 
     TK_OPEN	shift, and go to state 223
 
@@ -3024,7 +3024,7 @@ state 244
 
 state 245
 
-    exactly_one_invariant  ->  TK_OPEN KW_EXACTLY_ONE . condition_list TK_CLOSE error   (rule 106)
+    exactly_one_invariant  ->  TK_OPEN KW_EXACTLY_ONE . condition_list TK_CLOSE   (rule 106)
 
     TK_OPEN	shift, and go to state 223
 
@@ -3195,7 +3195,7 @@ state 260
 state 261
 
     condition_list  ->  condition_list . single_condition   (rule 73)
-    at_most_one_invariant  ->  TK_OPEN KW_AT_MOST_ONE condition_list . TK_CLOSE error   (rule 105)
+    at_most_one_invariant  ->  TK_OPEN KW_AT_MOST_ONE condition_list . TK_CLOSE   (rule 105)
 
     TK_OPEN	shift, and go to state 223
     TK_CLOSE	shift, and go to state 271
@@ -3210,7 +3210,7 @@ state 261
 state 262
 
     condition_list  ->  condition_list . single_condition   (rule 73)
-    exactly_one_invariant  ->  TK_OPEN KW_EXACTLY_ONE condition_list . TK_CLOSE error   (rule 106)
+    exactly_one_invariant  ->  TK_OPEN KW_EXACTLY_ONE condition_list . TK_CLOSE   (rule 106)
 
     TK_OPEN	shift, and go to state 223
     TK_CLOSE	shift, and go to state 272
@@ -3295,17 +3295,17 @@ state 270
 
 state 271
 
-    at_most_one_invariant  ->  TK_OPEN KW_AT_MOST_ONE condition_list TK_CLOSE . error   (rule 105)
+    at_most_one_invariant  ->  TK_OPEN KW_AT_MOST_ONE condition_list TK_CLOSE .   (rule 105)
 
-    error	shift, and go to state 275
+    $default	reduce using rule 105 (at_most_one_invariant)
 
 
 
 state 272
 
-    exactly_one_invariant  ->  TK_OPEN KW_EXACTLY_ONE condition_list TK_CLOSE . error   (rule 106)
+    exactly_one_invariant  ->  TK_OPEN KW_EXACTLY_ONE condition_list TK_CLOSE .   (rule 106)
 
-    error	shift, and go to state 276
+    $default	reduce using rule 106 (exactly_one_invariant)
 
 
 
@@ -3323,27 +3323,11 @@ state 274
 
     $default	reduce using rule 93 (@3)
 
-    @3  	go to state 277
+    @3  	go to state 275
 
 
 
 state 275
-
-    at_most_one_invariant  ->  TK_OPEN KW_AT_MOST_ONE condition_list TK_CLOSE error .   (rule 105)
-
-    $default	reduce using rule 105 (at_most_one_invariant)
-
-
-
-state 276
-
-    exactly_one_invariant  ->  TK_OPEN KW_EXACTLY_ONE condition_list TK_CLOSE error .   (rule 106)
-
-    $default	reduce using rule 106 (exactly_one_invariant)
-
-
-
-state 277
 
     forall_effect  ->  TK_OPEN KW_FORALL TK_OPEN @2 typed_param_list TK_CLOSE @3 . action_effect TK_CLOSE   (rule 94)
 
@@ -3352,7 +3336,7 @@ state 277
     literal	go to state 169
     positive_literal	go to state 166
     negative_literal	go to state 167
-    action_effect	go to state 278
+    action_effect	go to state 276
     single_action_effect	go to state 171
     conditional_effect	go to state 172
     forall_effect	go to state 173
@@ -3360,15 +3344,15 @@ state 277
 
 
 
-state 278
+state 276
 
     forall_effect  ->  TK_OPEN KW_FORALL TK_OPEN @2 typed_param_list TK_CLOSE @3 action_effect . TK_CLOSE   (rule 94)
 
-    TK_CLOSE	shift, and go to state 279
+    TK_CLOSE	shift, and go to state 277
 
 
 
-state 279
+state 277
 
     forall_effect  ->  TK_OPEN KW_FORALL TK_OPEN @2 typed_param_list TK_CLOSE @3 action_effect TK_CLOSE .   (rule 94)
 
@@ -3376,18 +3360,18 @@ state 279
 
 
 
+state 278
+
+    $   	go to state 279
+
+
+
+state 279
+
+    $   	go to state 280
+
+
+
 state 280
-
-    $   	go to state 281
-
-
-
-state 281
-
-    $   	go to state 282
-
-
-
-state 282
 
     $default	accept
