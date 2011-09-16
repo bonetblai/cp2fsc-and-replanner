@@ -32,6 +32,9 @@
     PDDL_Base::variable_vec           *vparam;
     const PDDL_Base::Condition        *condition;
     const PDDL_Base::Effect           *effect;
+    const PDDL_Base::Invariant        *invariant;
+    const PDDL_Base::Clause           *clause;
+    const PDDL_Base::Oneof            *oneof;
     const PDDL_Base::init_element_vec *ilist;
     int                               ival;
 }
@@ -58,8 +61,9 @@
 %type <atom>       positive_literal negative_literal literal
 %type <condition>  condition single_condition condition_list
 %type <condition>  goal_list single_goal
-%type <condition>  invariant at_least_one_invariant at_most_one_invariant exactly_one_invariant
-%type <condition>  clause oneof
+%type <invariant>  invariant at_least_one_invariant at_most_one_invariant exactly_one_invariant
+%type <clause>     clause
+%type <oneof>      oneof
 %type <effect>     atomic_effect positive_atomic_effect positive_atomic_effect_list
 %type <effect>     action_effect action_effect_list single_action_effect conditional_effect forall_effect
 %type <effect>     atomic_effect_kw_list atomic_effect_list
@@ -456,8 +460,12 @@ positive_atomic_effect:
     ;
 
 at_least_one_invariant:
-      TK_OPEN KW_INVARIANT condition_list TK_CLOSE { $$ = $3; }
-    | TK_OPEN KW_AT_LEAST_ONE condition_list TK_CLOSE { $$ = $3; }
+      TK_OPEN KW_INVARIANT condition_list TK_CLOSE {
+          $$ = new Invariant(Invariant::AT_LEAST_ONE, *static_cast<const And*>($3));
+      }
+    | TK_OPEN KW_AT_LEAST_ONE condition_list TK_CLOSE {
+          $$ = new Invariant(Invariant::AT_LEAST_ONE, *static_cast<const And*>($3));
+      }
     ;
 
 at_most_one_invariant:
@@ -481,11 +489,15 @@ invariant:
     ;
 
 clause:
-      TK_OPEN KW_OR condition_list TK_CLOSE { $$ = $3; }
+      TK_OPEN KW_OR condition_list TK_CLOSE {
+          $$ = new Clause(*static_cast<const And*>($3));
+      }
     ;
 
 oneof:
-      TK_OPEN KW_ONEOF condition_list TK_CLOSE { $$ = $3; }
+      TK_OPEN KW_ONEOF condition_list TK_CLOSE {
+          $$ = new Oneof(*static_cast<const And*>($3));
+      }
     ;
 
 axiom_declaration:
@@ -621,17 +633,17 @@ init_elements:
       }
     | init_elements invariant {
           init_element_vec *ilist = const_cast<init_element_vec*>($1);
-          ilist->push_back(new InitInvariant(*static_cast<const And*>($2)));
+          ilist->push_back(new InitInvariant(*$2));
           $$ = ilist;
       }
     | init_elements clause {
           init_element_vec *ilist = const_cast<init_element_vec*>($1);
-          ilist->push_back(new InitClause(*static_cast<const And*>($2)));
+          ilist->push_back(new InitClause(*$2));
           $$ = ilist;
       }
     | init_elements oneof {
           init_element_vec *ilist = const_cast<init_element_vec*>($1);
-          ilist->push_back(new InitOneof(*static_cast<const And*>($2)));
+          ilist->push_back(new InitOneof(*$2));
           $$ = ilist;
       }
     | /* empty */ { $$ = new init_element_vec; }

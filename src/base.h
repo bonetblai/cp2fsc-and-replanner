@@ -160,7 +160,9 @@ class PDDL_Base {
     };
 
     struct Invariant : public condition_vec {
-        Invariant(const condition_vec &invariant) : condition_vec(invariant) { }
+        int type;
+        enum { AT_LEAST_ONE, AT_MOST_ONE, EXACTLY_ONE };
+        Invariant(int t, const condition_vec &invariant) : condition_vec(invariant), type(t) { }
         virtual ~Invariant() { }
         virtual void instantiate(Instance &ins, index_vec &invariant) const;
         virtual void print(std::ostream &os) const { assert(0); }
