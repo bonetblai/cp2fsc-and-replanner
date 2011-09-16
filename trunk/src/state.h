@@ -7,7 +7,7 @@
 #include <tr1/unordered_map>
 #include <tr1/unordered_set>
 #include <list>
-#include <assert.h>
+#include <cassert>
 
 class StateHash;
 class StateSet;
@@ -63,7 +63,7 @@ class State {
         }
         return true;
     }
-    bool satisfy(const index_vec &clause) const {
+    bool satisfy(const Instance::Clause &clause) const {
         for( size_t k = 0; k < clause.size(); ++k ) {
             int l = clause[k];
             int p = l < 0 ? -l : l;
@@ -71,9 +71,9 @@ class State {
         }
         return false;
     }
-    bool satisfy(const index_vec_vec &cls) const {
-        for( size_t k = 0; k < cls.size(); ++k )
-            if( !satisfy(cls[k]) ) return false;
+    bool satisfy(const Instance::clause_vec &clauses) const {
+        for( size_t k = 0; k < clauses.size(); ++k )
+            if( !satisfy(clauses[k]) ) return false;
         return true;
     }
 
@@ -389,7 +389,7 @@ inline void State::apply(const Instance::Action &act, StateSet &bel) const {
             continue;
         }
         int l = act.oneof[i][j], p = l < 0? -l : l;
-        restore.push_back(t.satisfy(p-1,p==l) ? -l : INT_MAX);
+        restore.push_back(t.satisfy(p-1, p==l) ? -l : INT_MAX);
         t.apply(p-1, p!=l);
         stack.push_back(1+j);
         ++i;

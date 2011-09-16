@@ -1,4 +1,4 @@
-#include <assert.h>
+#include <cassert>
 #include <list>
 #include "cp_problem.h"
 #include "state.h"

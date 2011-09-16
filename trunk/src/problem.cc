@@ -1,4 +1,4 @@
-#include <assert.h>
+#include <cassert>
 #include <deque>
 #include "problem.h"
 #include "state.h"
@@ -278,10 +278,15 @@ void Instance::remove_atoms(const bool_vec &set, index_vec &map) {
         init.oneofs[k].signed_remap(rm_map);
 
     hidden.literals.signed_remap(rm_map);
+    assert(hidden.invariants.empty());
+    assert(hidden.clauses.empty());
+    assert(hidden.oneofs.empty());
+    /*
     for( size_t k = 0; k < hidden.clauses.size(); ++k )
         hidden.clauses[k].signed_remap(rm_map);
     for( size_t k = 0; k < hidden.invariants.size(); ++k )
         hidden.invariants[k].signed_remap(rm_map);
+    */
 
     goal_literals.signed_remap(rm_map);
     given_observables.signed_remap(rm_map);
