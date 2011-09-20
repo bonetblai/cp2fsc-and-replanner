@@ -176,14 +176,14 @@ KP_Instance::KP_Instance(const Instance &ins, const Options::Mode &options)
         const Invariant &invariant = *it;
         assert(invariant.type != Invariant::EXACTLY_ONE);
 
-        if( invariant.type == Invariant::AT_LEAST_ONE ) {
-            for( size_t k = 0; k < invariant.size(); ++k ) {
-                ostringstream s;
-                s << "invariant-" << invariant_no++;
-                Action &nact = new_action(new CopyName(s.str()));
+        for( size_t k = 0; k < invariant.size(); ++k ) {
+            ostringstream s;
+            s << "invariant-" << invariant_no++;
+            Action &nact = new_action(new CopyName(s.str()));
 
-                // conditional effects
-                When c_eff;
+            // conditional effects
+            When c_eff;
+            if( invariant.type == Invariant::AT_LEAST_ONE ) {
                 for( size_t i = 0; i < invariant.size(); ++i ) {
                     int lit = invariant[i];
                     int idx = lit > 0 ? lit-1 : -lit-1;
@@ -203,15 +203,34 @@ KP_Instance::KP_Instance(const Instance &ins, const Options::Mode &options)
                         }
                     }
                 }
-                nact.when.push_back(c_eff);
-                if( options_.is_enabled("print:kp-translation:action:invariant") ) {
-                    nact.print(cout, *this);
+            } else {
+                assert(invariant.type == Invariant::AT_MOST_ONE);
+                for( size_t i = 0; i < invariant.size(); ++i ) {
+                    int lit = invariant[i];
+                    int idx = lit > 0 ? lit-1 : -lit-1;
+                    if( lit > 0 ) {
+                        if( i == k ) {
+                            c_eff.condition.insert(1 + 2*idx);
+                        } else {
+                            c_eff.condition.insert(-(1 + 2*idx)); // TODO: check if necessary
+                            c_eff.effect.insert(1 + 2*idx+1);
+                        }
+                    } else {
+                        if( i == k ) {
+                            c_eff.condition.insert(1 + 2*idx+1);
+                        } else {
+                            c_eff.condition.insert(-(1 + 2*idx+1)); // TODO: check if necessary
+                            c_eff.effect.insert(1 + 2*idx);
+                        }
+                    }
                 }
             }
-        } else {
-            assert(invariant.type == Invariant::AT_MOST_ONE);
-            cout << "error: invariants of type 'at-most-one' not yet supported." << endl;
-            exit(-1);
+
+            // push conditional effect
+            nact.when.push_back(c_eff);
+            if( options_.is_enabled("print:kp-translation:action:invariant") ) {
+                nact.print(cout, *this);
+            }
         }
     }
     n_invariant_actions_ = n_actions() - n_standard_actions_ - n_sensor_actions_;
