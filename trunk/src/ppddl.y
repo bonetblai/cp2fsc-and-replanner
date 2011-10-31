@@ -82,7 +82,7 @@ pddl_declarations:
 pddl_domain:
       TK_OPEN KW_DEFINE domain_name domain_elements TK_CLOSE
     | TK_OPEN KW_DEFINE domain_name error TK_CLOSE {
-          log_error("syntax error in domain");
+          log_error((char*)"syntax error in domain");
           yyerrok;
       }
     ;
@@ -134,7 +134,7 @@ axiom_symbol:
 domain_requires:
       TK_OPEN KW_REQS require_list TK_CLOSE
     | TK_OPEN KW_REQS error TK_CLOSE {
-          log_error("syntax error in requirements declaration.");
+          log_error((char*)"syntax error in requirements declaration.");
           yyerrok; 
       }
     ;
@@ -150,7 +150,7 @@ require_list:
 domain_predicates:
       TK_OPEN KW_PREDS predicate_list TK_CLOSE
     | TK_OPEN KW_PREDS error TK_CLOSE {
-          log_error("syntax error in (:predicates ...)");
+          log_error((char*)"syntax error in (:predicates ...)");
           yyerrok;
       }
     ;
@@ -170,7 +170,7 @@ predicate_decl:
           $2->val = p;
       }
     | TK_OPEN error TK_CLOSE {
-          log_error("syntax error in predicate declaration");
+          log_error((char*)"syntax error in predicate declaration");
           yyerrok;
       }
     ;
@@ -286,7 +286,7 @@ action_declaration:
           $3->val = dom_actions.back();
       }
     | TK_OPEN KW_ACTION error TK_CLOSE {
-          log_error("syntax error in action declaration");
+          log_error((char*)"syntax error in action declaration");
           yyerrok; 
       }
     ;
@@ -344,7 +344,7 @@ positive_literal:
           $$->param = *$3;
           delete $3;
           if( $$->param.size() != 2 ) {
-              log_error("wrong number of arguments for equality");
+              log_error((char*)"wrong number of arguments for equality");
           }
           assert(0); // TODO: remove this assertion which is here
                      // because (probably) the code for '=' is broken...
@@ -361,7 +361,7 @@ negative_literal:
 atom_argument_list:
       atom_argument_list TK_VAR_SYMBOL {
           if( $2->val == 0 )
-              log_error("undeclared variable in atom args list");
+              log_error((char*)"undeclared variable in atom args list");
           else
               $1->push_back((VariableSymbol*)$2->val);
           $$ = $1;
@@ -508,7 +508,7 @@ axiom_declaration:
           $3->val = dom_axioms.back();
       }
     | TK_OPEN KW_AXIOM error TK_CLOSE {
-          log_error("syntax error in axiom declaration");
+          log_error((char*)"syntax error in axiom declaration");
           yyerrok; 
       }
     ;
@@ -533,7 +533,7 @@ sensor_declaration:
           $3->val = dom_sensors.back();
       }
     | TK_OPEN KW_SENSOR error TK_CLOSE {
-          log_error("syntax error in sensor declaration");
+          log_error((char*)"syntax error in sensor declaration");
           yyerrok; 
       }
     ;
@@ -556,7 +556,7 @@ observable_declaration:
           clear_param(dom_observables.back()->param);
       }
     | TK_OPEN KW_OBSERVABLE error TK_CLOSE {
-          log_error("syntax error in observable declaration");
+          log_error((char*)"syntax error in observable declaration");
           yyerrok; 
       }
     ;
@@ -580,7 +580,7 @@ sticky_declaration:
           clear_param(dom_stickies.back()->param);
       }
     | TK_OPEN KW_STICKY error TK_CLOSE {
-          log_error("syntax error in sticky declaration");
+          log_error((char*)"syntax error in sticky declaration");
           yyerrok; 
       }
     ;
@@ -604,7 +604,7 @@ pddl_problem:
       }
       problem_elements TK_CLOSE
     | TK_OPEN KW_DEFINE TK_OPEN KW_PROBLEM error TK_CLOSE {
-          log_error("syntax error in problem definition.");
+          log_error((char*)"syntax error in problem definition.");
           yyerrok;
       }
     ;

@@ -6,7 +6,7 @@
   */
 
 
-#line 1 "/opt/sfw/lib/bison.cc"
+#line 1 "/home/bonet/tools/lib/bison.cc"
 /* -*-C-*-  Note some compilers choke on comments on `#line' lines.  */
 /* Skeleton output parser for bison,
    Copyright (C) 1984, 1989, 1990 Bob Corbett and Richard Stallman
@@ -80,7 +80,7 @@ void *alloca ();
 #include <stdio.h>
 #define YYBISON 1  
 
-/* #line 73 "/opt/sfw/lib/bison.cc" */
+/* #line 73 "/home/bonet/tools/lib/bison.cc" */
 #line 85 "grammar.cc"
 #define YY_PDDL_Parser_ERROR  log_error
 #define YY_PDDL_Parser_ERROR_BODY  = 0
@@ -122,7 +122,7 @@ typedef union {
 } yy_PDDL_Parser_stype;
 #define YY_PDDL_Parser_STYPE yy_PDDL_Parser_stype
 
-#line 73 "/opt/sfw/lib/bison.cc"
+#line 73 "/home/bonet/tools/lib/bison.cc"
 /* %{ and %header{ and %union, during decl */
 #define YY_PDDL_Parser_BISON 1
 #ifndef YY_PDDL_Parser_COMPATIBILITY
@@ -168,36 +168,36 @@ typedef union {
 
 #ifndef YY_PDDL_Parser_PURE
 
-/* #line 117 "/opt/sfw/lib/bison.cc" */
+/* #line 117 "/home/bonet/tools/lib/bison.cc" */
 #line 173 "grammar.cc"
 
-#line 117 "/opt/sfw/lib/bison.cc"
+#line 117 "/home/bonet/tools/lib/bison.cc"
 /*  YY_PDDL_Parser_PURE */
 #endif
 
 /* section apres lecture def, avant lecture grammaire S2 */
 
-/* #line 121 "/opt/sfw/lib/bison.cc" */
+/* #line 121 "/home/bonet/tools/lib/bison.cc" */
 #line 182 "grammar.cc"
 
-#line 121 "/opt/sfw/lib/bison.cc"
+#line 121 "/home/bonet/tools/lib/bison.cc"
 /* prefix */
 #ifndef YY_PDDL_Parser_DEBUG
 
-/* #line 123 "/opt/sfw/lib/bison.cc" */
+/* #line 123 "/home/bonet/tools/lib/bison.cc" */
 #line 189 "grammar.cc"
 
-#line 123 "/opt/sfw/lib/bison.cc"
+#line 123 "/home/bonet/tools/lib/bison.cc"
 /* YY_PDDL_Parser_DEBUG */
 #endif
 
 
 #ifndef YY_PDDL_Parser_LSP_NEEDED
 
-/* #line 128 "/opt/sfw/lib/bison.cc" */
+/* #line 128 "/home/bonet/tools/lib/bison.cc" */
 #line 199 "grammar.cc"
 
-#line 128 "/opt/sfw/lib/bison.cc"
+#line 128 "/home/bonet/tools/lib/bison.cc"
  /* YY_PDDL_Parser_LSP_NEEDED*/
 #endif
 
@@ -307,7 +307,7 @@ typedef
 #ifndef YY_USE_CLASS
 /* TOKEN C */
 
-/* #line 236 "/opt/sfw/lib/bison.cc" */
+/* #line 236 "/home/bonet/tools/lib/bison.cc" */
 #line 312 "grammar.cc"
 #define	TK_OPEN	258
 #define	TK_CLOSE	259
@@ -365,7 +365,7 @@ typedef
 #define	KW_EXACTLY_ONE	311
 
 
-#line 236 "/opt/sfw/lib/bison.cc"
+#line 236 "/home/bonet/tools/lib/bison.cc"
  /* #defines tokens */
 #else
 /* CLASS */
@@ -411,7 +411,7 @@ public:
 #if YY_PDDL_Parser_USE_CONST_TOKEN != 0
 /* static const int token ... */
 
-/* #line 280 "/opt/sfw/lib/bison.cc" */
+/* #line 280 "/home/bonet/tools/lib/bison.cc" */
 #line 416 "grammar.cc"
 static const int TK_OPEN;
 static const int TK_CLOSE;
@@ -469,12 +469,12 @@ static const int KW_AT_MOST_ONE;
 static const int KW_EXACTLY_ONE;
 
 
-#line 280 "/opt/sfw/lib/bison.cc"
+#line 280 "/home/bonet/tools/lib/bison.cc"
  /* decl const */
 #else
 enum YY_PDDL_Parser_ENUM_TOKEN { YY_PDDL_Parser_NULL_TOKEN=0
 
-/* #line 283 "/opt/sfw/lib/bison.cc" */
+/* #line 283 "/home/bonet/tools/lib/bison.cc" */
 #line 479 "grammar.cc"
 	,TK_OPEN=258
 	,TK_CLOSE=259
@@ -532,7 +532,7 @@ enum YY_PDDL_Parser_ENUM_TOKEN { YY_PDDL_Parser_NULL_TOKEN=0
 	,KW_EXACTLY_ONE=311
 
 
-#line 283 "/opt/sfw/lib/bison.cc"
+#line 283 "/home/bonet/tools/lib/bison.cc"
  /* enum token */
      }; /* end of enum declaration */
 #endif
@@ -565,7 +565,7 @@ public:
 /* other declare folow */
 #if YY_PDDL_Parser_USE_CONST_TOKEN != 0
 
-/* #line 314 "/opt/sfw/lib/bison.cc" */
+/* #line 314 "/home/bonet/tools/lib/bison.cc" */
 #line 570 "grammar.cc"
 const int YY_PDDL_Parser_CLASS::TK_OPEN=258;
 const int YY_PDDL_Parser_CLASS::TK_CLOSE=259;
@@ -623,7 +623,7 @@ const int YY_PDDL_Parser_CLASS::KW_AT_MOST_ONE=310;
 const int YY_PDDL_Parser_CLASS::KW_EXACTLY_ONE=311;
 
 
-#line 314 "/opt/sfw/lib/bison.cc"
+#line 314 "/home/bonet/tools/lib/bison.cc"
  /* const YY_PDDL_Parser_CLASS::token */
 #endif
 /*apres const  */
@@ -636,7 +636,7 @@ YY_PDDL_Parser_CONSTRUCTOR_CODE;
 };
 #endif
 
-/* #line 325 "/opt/sfw/lib/bison.cc" */
+/* #line 325 "/home/bonet/tools/lib/bison.cc" */
 #line 641 "grammar.cc"
 
 
@@ -997,7 +997,7 @@ static const short yycheck[] = {    10,
      0,     0,   107,   185,   275,   231,   158
 };
 
-#line 325 "/opt/sfw/lib/bison.cc"
+#line 325 "/home/bonet/tools/lib/bison.cc"
  /* fattrs + tables */
 
 /* parser code folow  */
@@ -1485,7 +1485,7 @@ YYLABEL(yyreduce)
 #endif
 
 
-/* #line 811 "/opt/sfw/lib/bison.cc" */
+/* #line 811 "/home/bonet/tools/lib/bison.cc" */
 #line 1490 "grammar.cc"
 
   switch (yyn) {
@@ -1493,7 +1493,7 @@ YYLABEL(yyreduce)
 case 5:
 #line 84 "ppddl.y"
 {
-          log_error("syntax error in domain");
+          log_error((char*)"syntax error in domain");
           yyerrok;
       ;
     break;}
@@ -1564,14 +1564,14 @@ case 27:
 case 29:
 #line 136 "ppddl.y"
 {
-          log_error("syntax error in requirements declaration.");
+          log_error((char*)"syntax error in requirements declaration.");
           yyerrok; 
       ;
     break;}
 case 34:
 #line 152 "ppddl.y"
 {
-          log_error("syntax error in (:predicates ...)");
+          log_error((char*)"syntax error in (:predicates ...)");
           yyerrok;
       ;
     break;}
@@ -1589,7 +1589,7 @@ case 37:
 case 38:
 #line 172 "ppddl.y"
 {
-          log_error("syntax error in predicate declaration");
+          log_error((char*)"syntax error in predicate declaration");
           yyerrok;
       ;
     break;}
@@ -1707,7 +1707,7 @@ case 65:
 case 66:
 #line 288 "ppddl.y"
 {
-          log_error("syntax error in action declaration");
+          log_error((char*)"syntax error in action declaration");
           yyerrok; 
       ;
     break;}
@@ -1770,7 +1770,7 @@ case 79:
           yyval.atom->param = *yyvsp[-1].param;
           delete yyvsp[-1].param;
           if( yyval.atom->param.size() != 2 ) {
-              log_error("wrong number of arguments for equality");
+              log_error((char*)"wrong number of arguments for equality");
           }
           assert(0); // TODO: remove this assertion which is here
                      // because (probably) the code for '=' is broken...
@@ -1787,7 +1787,7 @@ case 81:
 #line 362 "ppddl.y"
 {
           if( yyvsp[0].sym->val == 0 )
-              log_error("undeclared variable in atom args list");
+              log_error((char*)"undeclared variable in atom args list");
           else
               yyvsp[-1].param->push_back((VariableSymbol*)yyvsp[0].sym->val);
           yyval.param = yyvsp[-1].param;
@@ -1943,7 +1943,7 @@ case 113:
 case 114:
 #line 510 "ppddl.y"
 {
-          log_error("syntax error in axiom declaration");
+          log_error((char*)"syntax error in axiom declaration");
           yyerrok; 
       ;
     break;}
@@ -1979,7 +1979,7 @@ case 120:
 case 121:
 #line 535 "ppddl.y"
 {
-          log_error("syntax error in sensor declaration");
+          log_error((char*)"syntax error in sensor declaration");
           yyerrok; 
       ;
     break;}
@@ -2014,7 +2014,7 @@ case 127:
 case 128:
 #line 558 "ppddl.y"
 {
-          log_error("syntax error in observable declaration");
+          log_error((char*)"syntax error in observable declaration");
           yyerrok; 
       ;
     break;}
@@ -2047,7 +2047,7 @@ case 133:
 case 134:
 #line 582 "ppddl.y"
 {
-          log_error("syntax error in sticky declaration");
+          log_error((char*)"syntax error in sticky declaration");
           yyerrok; 
       ;
     break;}
@@ -2073,7 +2073,7 @@ case 138:
 case 140:
 #line 606 "ppddl.y"
 {
-          log_error("syntax error in problem definition.");
+          log_error((char*)"syntax error in problem definition.");
           yyerrok;
       ;
     break;}
@@ -2154,7 +2154,7 @@ case 160:
     break;}
 }
 
-#line 811 "/opt/sfw/lib/bison.cc"
+#line 811 "/home/bonet/tools/lib/bison.cc"
    /* the action file gets copied in in place of this dollarsign  */
   yyvsp -= yylen;
   yyssp -= yylen;
@@ -2226,7 +2226,7 @@ YYLABEL(yyerrlab)   /* here on detecting error */
 	  count = 0;
 	  /* Start X at -yyn if nec to avoid negative indexes in yycheck.  */
 	  for (x = (yyn < 0 ? -yyn : 0);
-	       x < (int)(sizeof(yytname) / sizeof(char *)); x++)
+	       x < (sizeof(yytname) / sizeof(char *)); x++)
 	    if (yycheck[x + yyn] == x)
 	      size += strlen(yytname[x]) + 15, count++;
 	  msg = (char *) malloc(size + 15);
@@ -2238,7 +2238,7 @@ YYLABEL(yyerrlab)   /* here on detecting error */
 		{
 		  count = 0;
 		  for (x = (yyn < 0 ? -yyn : 0);
-		       x < (int)(sizeof(yytname) / sizeof(char *)); x++)
+		       x < (sizeof(yytname) / sizeof(char *)); x++)
 		    if (yycheck[x + yyn] == x)
 		      {
 			strcat(msg, count == 0 ? ", expecting `" : " or `");
@@ -2355,7 +2355,7 @@ YYLABEL(yyerrhandle)
 
 /* END */
 
-/* #line 1010 "/opt/sfw/lib/bison.cc" */
+/* #line 1010 "/home/bonet/tools/lib/bison.cc" */
 #line 2360 "grammar.cc"
 #line 677 "ppddl.y"
 
