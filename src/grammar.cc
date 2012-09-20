@@ -1779,7 +1779,7 @@ case 79:
 case 80:
 #line 355 "ppddl.y"
 {
-          static_cast<const Literal*>(yyvsp[-1].atom)->neg = true;
+          const_cast<Literal*>(static_cast<const Literal*>(yyvsp[-1].atom))->neg = true;
           yyval.atom = yyvsp[-1].atom;
       ;
     break;}

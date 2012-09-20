@@ -205,6 +205,7 @@ class PDDL_Base {
         virtual void print(std::ostream &os) const { assert(0); }
         virtual void instantiate(Instance &ins, Instance::Init &init) const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
+        using Invariant::instantiate;
     };
 
     struct InitClause : public InitElement, Clause {
@@ -213,6 +214,7 @@ class PDDL_Base {
         virtual void print(std::ostream &os) const { assert(0); }
         virtual void instantiate(Instance &ins, Instance::Init &init) const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
+        using Clause::instantiate;
     };
 
     struct InitOneof : public InitElement, Oneof {
@@ -221,6 +223,7 @@ class PDDL_Base {
         virtual void print(std::ostream &os) const { assert(0); }
         virtual void instantiate(Instance &ins, Instance::Init &init) const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
+        using Oneof::instantiate;
     };
 
     struct Action : public Symbol {
