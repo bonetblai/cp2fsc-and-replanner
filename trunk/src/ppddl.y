@@ -353,7 +353,7 @@ positive_literal:
 
 negative_literal:
       TK_OPEN KW_NOT positive_literal TK_CLOSE {
-          static_cast<const Literal*>($3)->neg = true;
+          const_cast<Literal*>(static_cast<const Literal*>($3))->neg = true;
           $$ = $3;
       }
     ;
