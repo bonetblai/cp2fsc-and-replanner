@@ -67,7 +67,6 @@ The PODCP problem P is expressed with a PDDL-like syntax that is then parsed by 
                 | (:predicates  <predicate-list>)
                 | <structure>*
 
-
 <types-decl> ::= XXXX
 <typed-obj-list> ::= XXXX
 <predicate-list> ::= XXXX
