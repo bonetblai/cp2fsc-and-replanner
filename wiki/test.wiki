@@ -1,4 +1,4 @@
-#Introductory page to documentation of cp2fsc & replanner.
+Introductory page to documentation of cp2fsc / replanner.
 
 = Introduction =
 
