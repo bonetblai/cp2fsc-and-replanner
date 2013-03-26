@@ -57,7 +57,7 @@ The problem P,,N,, can be solved with different methods, as recently, many solve
 
 = Syntax =
 
-The PODCP problem P is expressed with a PDDL-like syntax that is then parsed by cp2fsc in order to generate P,,N,, and then K,,T,M,,(P,,N,,). The syntax for PODCP domain is the following:
+The PODCP problem P is expressed with a PDDL-like syntax that is then parsed by cp2fsc in order to generate P,,N,, and then K,,T,M,,(P,,N,,). The syntax for PODCP domains is the following:
 
 {{{
 <domain> ::= (define (domain <name>) <domain-items>)
@@ -108,6 +108,12 @@ The PODCP problem P is expressed with a PDDL-like syntax that is then parsed by 
                | (when <condition> <atomic-eff>*)
                | (forall (<parameters>) <effect>)
 <atomic-eff> ::= <fluent> | (not <fluent>)
+
+}}}
+
+The syntax for PODCP problems is the following:
+
+{{{
 
 }}}
 
