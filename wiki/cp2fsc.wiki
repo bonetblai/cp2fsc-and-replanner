@@ -50,12 +50,15 @@ matter when the goals are observable but is relevant otherwise.
 
 = Translation =
 
-cp2fsc solves the input PODCP problem P by computing a finite-state controller with N states for P. The FSC is found by solving a *conformant planning problem* P,,N,, that is automatically obtained from P and N. The problem P,,N,, is designed in such a way that any plan for it, necessarily encodes a finite-state controller C,,N,, for P.
+cp2fsc solves the input PODCP problem P by computing a finite-state controller with N states for P. The FSC is found by solving a *conformant planning problem* P,,N,, that is automatically obtained from P and N. The problem P,,N,, is designed in such a way that any plan for it, necessarily encodes a finite-state controller C,,N,, for P with N controller states.
 
 The problem P,,N,, can be solved with different methods, as recently, many solvers for this class of problems had been developed. In the case of cp2fsc, the conformant problem P,,N,, is translated into a *classical planning problem* K,,T,M,,(P,,N,,) which then can be solved with any classical planner. Thus, cp2fsc works by composing two translations: the first from the control problem P and number N into the conformant problem P,,N,,, and then from the conformant problem P,,N,, into the classical problem K,,T,M,,(P,,N,,).
 
 
 = Syntax =
+
+The PODCP problem P is expressed with a PDDL-like syntax that is then parsed by cp2fsc in order to generate P,,N,, and then K,,T,M,,(P,,N,,). The syntax for PODCP is the following:
+
 
 = User's Guide =
 
