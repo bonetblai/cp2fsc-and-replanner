@@ -59,6 +59,17 @@ The problem P,,N,, can be solved with different methods, as recently, many solve
 
 The PODCP problem P is expressed with a PDDL-like syntax that is then parsed by cp2fsc in order to generate P,,N,, and then K,,T,M,,(P,,N,,). The syntax for PODCP is the following:
 
+{{{
+<domain> ::= (define (domain <dname>) <domain-elements>)
+
+
+
+  
+
+
+
+}}}
+
 
 = User's Guide =
 
