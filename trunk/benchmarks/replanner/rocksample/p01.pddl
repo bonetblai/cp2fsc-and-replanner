@@ -11,10 +11,11 @@
         (not-sensing)
 
         (nearby p1 p1) (nearby p2 p2) (nearby p3 p3) (nearby p4 p4) (nearby p5 p5)
+        (nearby p1 p2) (nearby p1 p3) (nearby p1 p4)
 
-        (invariant (nearby p1 p2) (not (nearby p1 p2)))
-        (invariant (nearby p1 p3) (not (nearby p1 p3)))
-        (invariant (nearby p1 p4) (not (nearby p1 p4)))
+        ;(invariant (nearby p1 p2) (not (nearby p1 p2)))
+        ;(invariant (nearby p1 p3) (not (nearby p1 p3)))
+        ;(invariant (nearby p1 p4) (not (nearby p1 p4)))
         (invariant (nearby p1 p5) (not (nearby p1 p5)))
 
         (invariant (nearby p2 p1) (not (nearby p2 p1)))
@@ -38,7 +39,7 @@
         (invariant (nearby p5 p4) (not (nearby p5 p4)))
     )
     (:hidden
-        (good r2)
+        ;(good r2)
         (nearby p1 p2) (nearby p2 p1)
         (nearby p2 p3) (nearby p3 p2)
         (nearby p3 p4) (nearby p4 p3)

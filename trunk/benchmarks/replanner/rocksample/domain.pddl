@@ -12,22 +12,22 @@
         (nearby ?p1 ?p2 - pos)
     )
 
-    (:action move-north
+    (:action move-east
         :parameters (?x ?y1 ?y2 - pos)
         :precondition (and (not-sensing) (at ?x ?y1) (suc ?y1 ?y2))
         :effect (and (not (at ?x ?y1)) (at ?x ?y2))
     )
-    (:action move-south
+    (:action move-west
         :parameters (?x ?y1 ?y2 - pos)
         :precondition (and (not-sensing) (at ?x ?y1) (suc ?y2 ?y1))
         :effect (and (not (at ?x ?y1)) (at ?x ?y2))
     )
-    (:action move-east
+    (:action move-north
         :parameters (?x1 ?x2 ?y - pos)
         :precondition (and (not-sensing) (at ?x1 ?y) (suc ?x1 ?x2))
         :effect (and (not (at ?x1 ?y)) (at ?x2 ?y))
     )
-    (:action move-west
+    (:action move-down
         :parameters (?x1 ?x2 ?y - pos)
         :precondition (and (not-sensing) (at ?x1 ?y) (suc ?x2 ?x1))
         :effect (and (not (at ?x1 ?y)) (at ?x2 ?y))
@@ -38,8 +38,8 @@
         :effect (sampled ?r)
     )
     (:action fake-sample
-        :parameters (?r - rock ?x ?y - pos)
-        :precondition (and (not-sensing) (at ?x ?y) (rock-pos ?r ?x ?y))
+        :parameters (?r - rock) ; ?x ?y - pos)
+        :precondition (and (not-sensing)) ; (at ?x ?y) (rock-pos ?r ?x ?y))
         :effect (when (and (not (good ?r))) (sampled ?r))
     )
     (:action activate-sensor
