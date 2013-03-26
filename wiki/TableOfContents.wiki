@@ -8,8 +8,8 @@
   * [cp2fsc#User's_guide User's guide]
   * [cp2fsc#Examples Examples]
 
-* [K-Replanner K-Replanner]
-  * [replanner_into Introduction]
-  * [replanner_syntax Syntax]
-  * [replanner_userguide User's guide]
-  * [replanner_example Examples]
+* [Kreplanner K-Replanner]
+  * [Kreplanner_into Introduction]
+  * [Kreplanner_syntax Syntax]
+  * [Kreplanner_userguide User's guide]
+  * [Kreplanner_example Examples]
