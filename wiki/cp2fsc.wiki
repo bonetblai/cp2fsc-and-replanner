@@ -75,7 +75,18 @@ If `cp2fsc` is called without arguments, it prints the following usage informati
                  <pddl-files>
 }}}
 
-`cp2fsc` expects at least one PDDL file describing a problem, but it is typical to have the domain and problem descriptions split in two files. Without any other arguments, `cp2fsc` generates an encoding for a FSC with just 1 state (i.e., a memoryless controller) in the form of a classical planning problem encoded with domain and problem files named '`d.pddl`' and '`p.pddl`' respectively. The number of controller states can be specified with the option '`--fsc-states <n>`', while the prefix '`prefix`' can be added to the names of the files if the option '`--prefix <prefix>`' is used.
+`cp2fsc` expects at least one PDDL file describing a problem, but it is typical to have the domain and problem descriptions split in two files. Without any other arguments, `cp2fsc` generates an encoding for a FSC with just 1 state (i.e., a memoryless controller) in the form of a classical planning problem encoded with domain and problem files named '`d.pddl`' and '`p.pddl`' respectively. The number of controller states can be specified with the option '`--fsc-states <n>`', while the prefix '`<prefix>`' can be added to the names of the files if the option '`--prefix <prefix>`' is used.
+
+The option `'--output-metadata <filename>'` can be used to tell `cp2fsc` to write to the file named '`<filiename>`' some data associated with the problem, FSC and translation. If a prefix is specified, it is appended at the beginning of the string defining name of the output file.
+
+The option '`--no-forbid-inconsistent-tuples`' can be used to generate a planning problem whose solution does not necessarily correspond to a FSC because the set of tuples C defining the FSC may contain inconsistent pairs of tuples. This option exists because sometimes the resulting classical problem can be solved with tailored and specialized SAT-based solvers.
+
+The option '`--tag-all-literals`' is used to enable the tagging of all literals when doing the K,,T,M,, translation, instead of just tagging the strictly necessary literals. The use of this option changes the translation, but still remains a valid translation. However, its use proves beneficial in terms of performance in some domains, not all.
+
+The option `'--compound-observations-as-fluents'` is not yet supported and should not be passed.
+
+Finally, different options can be passed to `cp2fsc` with the option '`--options=<comma-separated-list-of-options>`' together with a list of different options, whose main purpose is to generate output about the different translation processes.
+
 
 
 = Examples =
