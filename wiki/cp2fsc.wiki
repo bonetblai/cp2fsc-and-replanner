@@ -18,18 +18,15 @@ A state s is a truth valuation over the primitive fluents that defines the truth
 
 The observable fluents or simply the observables refer to a set O ⊆ R of non-primitive fluents whose truth value in a given state s is known to the agent. An observation o represents the conjunction of O-literals that are true in a given state. We refer to the observation that corresponds to the state s as o(s) and to the set of all possible observations as O^*^. Clearly, the size of O^∗^ is exponential in the number of observable fluents. The observables along with the set of axioms defining them constitute what is called the sensor model, that relates the true but hidden state s with the information o(s) available to the agent.
 
-These elements define the class of contingent problems considered, that we call Partially Observable Deterministic Control Problems (PODCPs), abbreviated simply as control problems:
+These elements define the class of contingent problems considered, that we call Partially Observable Deterministic Control Problems (PODCPs), abbreviated simply as control problems and denoted by tuples P=(F,I,A,G,R,O,D) where:
 
-  A control problem is a tuple P=(F,I,A,G,R,O,D) where
-
-    * F is a set of (primitive) fluents,
-    * I is a set of F-clauses representing the initial situation,
-    * A is a set of deterministic actions with conditional effects
-but no preconditions,
-    * G is a set of literals representing the goal situation,
-    * R is a set of non-primitive fluents,
-    * O is the set of observable fluents, O ⊆ R, and
-    * D is the set of axioms defining the fluents in R.
+  * F is a set of (primitive) fluents,
+  * I is a set of F-clauses representing the initial situation,
+  * A is a set of deterministic actions with conditional effects but no preconditions,
+  * G is a set of literals representing the goal situation,
+  * R is a set of non-primitive fluents,
+  * O is the set of observable fluents, O ⊆ R, and
+  * D is the set of axioms defining the fluents in R.
 
 
 = Control Problems =
