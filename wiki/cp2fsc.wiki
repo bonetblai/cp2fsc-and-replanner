@@ -102,7 +102,12 @@ The PODCP problem P is expressed with a PDDL-like syntax that is then parsed by 
 
 <parameters> ::= <parameters> <variable>+ [- <type>] | /* empty */
 <condition>  ::= <fluent> | (and <fluent>*)
-<effect>     ::= 
+
+<effect>     ::= <single-eff> | (and <single-eff>*)
+<single-eff> ::= <atomic-eff>
+               | (when <condition> <atomic-eff>*)
+               | (forall (<parameters>) <effect>)
+<atomic-eff> ::= <fluent> | (not <fluent>)
 
 }}}
 
