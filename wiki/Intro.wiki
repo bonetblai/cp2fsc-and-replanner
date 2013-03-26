@@ -1,5 +1,5 @@
 #summary Introduction to wiki for cp2fsc & K-Replanner.
-#sidebar test
+#sidebar TableOfContents
 
 = Introduction =
 
