@@ -3,4 +3,8 @@
 
 = Introduction =
 
-This wiki documents the cp2fsc and K-Replanner software for planning with sensing. cp2fsc is a software tool aimed at the synthesis of a general *finite-state controllers* (FSCs) that prescribe the next action to execute after an observed sequence of actions/observations pairs for a control problem. The FSC is guaranteed to work for all possible trajectories of the control problem and it often generalizes for other similar control problems or when actions are non-deterministic. On the other hand, K-Replanner is an on-line planning tool aimed at computing a *single execution* trajectory that ends in a goal state for planning problems with sensing. K-Replanner is always sound and it is complete for a well-defined and broad class of planning problems. Both tools are based on a common planning framework, yet they are aimed at different types of problems, deliver different types of results, and have different guarantees. 
+This wiki documents the cp2fsc and K-Replanner software for contingent planning. cp2fsc is a software tool aimed at the synthesis of a general *finite-state controllers* (FSCs) that prescribe the next action to execute after an observed sequence of actions/observations pairs for a control problem. The FSC is guaranteed to work for all possible trajectories of the control problem and it often generalizes for other similar control problems or when actions are non-deterministic.
+
+On the other hand, K-Replanner is an on-line planning tool aimed at computing a *single execution* trajectory that ends in a goal state for contingent planning problems. K-Replanner is always sound and it is complete for a well-defined and broad class of planning problems.
+
+Both tools are based on a common planning framework, yet they are aimed at different types of problems, deliver different types of solutions, and have different guarantees. 
