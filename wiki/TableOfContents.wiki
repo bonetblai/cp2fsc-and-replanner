@@ -1,10 +1,12 @@
 * [intro Introduction]
 
 * [cp2fsc cp2fsc]
-  * [cp2fsc_into Introduction]
-  * [cp2fsc_syntax Syntax]
-  * [cp2fsc_userguide User's guide]
-  * [cp2fsc_example Examples]
+  * [cp2fsc#Planning_and_Control_Problems Planning and Control Problems]
+  * [cp2fsc#Finite-State_Controllers Finite-State Controllers]
+  * [cp2fsc#Translation Translation]
+  * [cp2fsc#Syntax Syntax]
+  * [cp2fsc#User's_guide User's guide]
+  * [cp2fsc#Examples Examples]
 
 * [replanner K-Replanner]
   * [replanner_into Introduction]
