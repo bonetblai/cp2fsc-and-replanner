@@ -36,13 +36,8 @@ Finite-state controllers (FSCs) provide a convenient solution form for PODCP of 
 
 Controller states serve as controller memory allowing the selection of different actions given the same observation. A FSC with a single state represents a memoryless controller. 
 
-The transition function can be described with rules of the form (o, q) → (a, q') that express that the transition function for C is defined on the pair (o, q) and maps it into the pair (a, q'). It is also convenient to understand
-a controller C as a set of such rules, that we express
-as tuples. Thus we write t ∈ C for a tuple t = o, q, a, q
-if C is defined over the pair o, q and maps it into the pair
-a, q. Note, however, that if t = o, q, a, q is a tuple in C,
-C cannot contain a tuple t 	= t with the same o, q pair, as
-δ is a transition function over such pairs.
+The transition function can be described with rules of the form (o, q) → (a, q') that express that the transition function for C is defined on the pair (o, q) and maps it into the pair (a, q'). It is also convenient to understand a controller C as a set of such rules, that we express as tuples. Thus we write t ∈ C for a tuple t = (o, q, a, q)
+if C is defined over the pair (o, q) and maps it into the pair (a, q). Note, however, that if t = (o, q, a, q( is a tuple in C, C cannot contain a tuple t' /= t with the same (o, q) pair, as δ is a transition function over such pairs.
 
 
 
