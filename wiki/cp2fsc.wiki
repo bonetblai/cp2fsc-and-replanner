@@ -75,6 +75,7 @@ If `cp2fsc` is called without arguments, it prints the following usage informati
                  <pddl-files>
 }}}
 
-`cp2fsc` expects at least one PDDL file describing a problem, but it is typical to have the domain and problem descriptions split in two files. Without any other arguments, `cp2fsc` generates an encoding for a FSC with just 1 state (i.e., a memoryless controller). The number of controller states can be specified with the option `--fsc-states <n>`.
+`cp2fsc` expects at least one PDDL file describing a problem, but it is typical to have the domain and problem descriptions split in two files. Without any other arguments, `cp2fsc` generates an encoding for a FSC with just 1 state (i.e., a memoryless controller) in the form of a classical planning problem encoded with domain and problem files named '`d.pddl`' and '`p.pddl`' respectively. The number of controller states can be specified with the option '`--fsc-states <n>`', while the prefix '`prefix`' can be added to the names of the files if the option '`--prefix <prefix>`' is used.
+
 
 = Examples =
