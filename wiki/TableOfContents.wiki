@@ -1,4 +1,4 @@
-* [intro Introduction]
+* [introduction Introduction]
 
 * [cp2fsc cp2fsc]
   * [cp2fsc#Planning_and_Control_Problems Planning and Control Problems]
