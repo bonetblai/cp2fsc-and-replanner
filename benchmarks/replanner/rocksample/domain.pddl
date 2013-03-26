@@ -48,8 +48,8 @@
                 )
     )
     (:action activate-sensor
-        :parameters (?r - rock ?x ?y - pos)
-        :precondition (and (no-need-calibration) (no-sensing) (at ?x ?y))
+        :parameters (?r - rock)
+        :precondition (and (no-need-calibration) (no-sensing))
         :effect (and (sensing ?r) (not (no-sensing)))
     )
     (:action deactivate-sensor
