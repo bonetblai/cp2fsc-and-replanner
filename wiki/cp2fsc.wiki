@@ -60,13 +60,25 @@ The problem P,,N,, can be solved with different methods, as recently, many solve
 The PODCP problem P is expressed with a PDDL-like syntax that is then parsed by cp2fsc in order to generate P,,N,, and then K,,T,M,,(P,,N,,). The syntax for PODCP is the following:
 
 {{{
-<domain> ::= (define (domain <dname>) <domain-elements>)
+<domain> ::= (define (domain <name>) <elements>)
+<elements> ::= <elements> <requirements>
+               | <elements> <types>
+               | <elements> <constants>
+               | <elements> <predicates>
+               | <elements> <structure>
+               | /* empty */
 
-
-
-  
-
-
+<requirements> ::= ( <require-keyword>* )
+<types> ::= XXXX
+<constants> ::= (:constants <typed-obj-list>)
+<predicates> ::= (:predicates  <predicate-list>)
+<structure> ::= <structure> <action>
+                | <structure> <axiom>
+                | <structure> <axiom>
+                | <structure> <sensor>
+                | <structure> <observable>
+                | <structure> <sticky>
+                | /* empty */
 
 }}}
 
