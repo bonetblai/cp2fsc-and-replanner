@@ -62,13 +62,13 @@ The PODCP problem P is expressed with a PDDL-like syntax that is then parsed by 
 {{{
 <domain> ::= (define (domain <name>) <domain-items>)
 <domain-items> ::= <domain-items> (<require-keyword>*)
-                 | <domain-items> <types>
+                 | <domain-items> <types-decl>
                  | <domain-items> (:constants <typed-obj-list>)
                  | <domain-items> (:predicates  <predicate-list>)
                  | <domain-items> <structures>
                  | /* empty */
 
-<types> ::= XXXX
+<types-decl> ::= XXXX
 <structures> ::= <structures> <action>
                | <structures> <axiom>
                | <structures> <observable>
