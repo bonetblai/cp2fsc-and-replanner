@@ -60,44 +60,37 @@ The problem P,,N,, can be solved with different methods, as recently, many solve
 The PODCP problem P is expressed with a PDDL-like syntax that is then parsed by cp2fsc in order to generate P,,N,, and then K,,T,M,,(P,,N,,). The syntax for PODCP domains is the following:
 
 {{{
-<domain> ::= (define (domain <name>) <domain-items>)
-<domain-items> ::= <domain-items> (<require-keyword>*)
-                 | <domain-items> <types-decl>
-                 | <domain-items> (:constants <typed-obj-list>)
-                 | <domain-items> (:predicates  <predicate-list>)
-                 | <domain-items> <structures>
-                 | /* empty */
+<domain> ::= (define (domain <name>) <domain-item>*)
+<domain-item> ::= (:requirements <require-keyword>*)
+                | <types-decl>
+                | (:constants <typed-obj-list>)
+                | (:predicates  <predicate-list>)
+                | <structure>*
+
 
 <types-decl> ::= XXXX
-<structures> ::= <structures> <action>
-               | <structures> <axiom>
-               | <structures> <observable>
-               | <structures> <sticky>
-               | /* empty */
+<typed-obj-list> ::= XXXX
+<predicate-list> ::= XXXX
+<structure> ::= <action> | <axiom> | <observable> | <sticky>
 
-<action>     ::= (:action <name> <action-items>)
-<axiom>      ::= (:axiom <name> <axiom-items>)
-<observable> ::= (:observable <obs-items>)
-<sticky>     ::= (:sticky <sticky-items>)
+<action>     ::= (:action <name> <action-item>*)
+<axiom>      ::= (:axiom <name> <axiom-item>*)
+<observable> ::= (:observable <obs-item>*)
+<sticky>     ::= (:sticky <sticky-item>*)
 
-<action-items>  ::= <action-items> :parameters <parameters>
-                  | <action-items> :precondition <condition>
-                  | <action-items> :effect <effect>
-                  | /* empty */
+<action-item>  ::= :parameters <parameters>
+                 | :precondition <condition>
+                 | :effect <effect>
 
-<axiom-items>   ::= <axiom-items>
-                  | <axiom-items> :parameters <parameters>
-                  | <axiom-items> :body <condition>
-                  | <axiom-items> :head <fluent>+
-                  | /* empty */
+<axiom-item>   ::= :parameters <parameters>
+                 | :body <condition>
+                 | :head <fluent>+
 
-<obs-items>     ::= <obs-items> :parameters <parameters>
-                  | <obs-items> :fluents <fluent>+
-                  | /* empty */
+<obs-item>     ::= :parameters <parameters>
+                 | :fluents <fluent>+
 
-<stikcky-items> ::= <sticky-items> :parameters <parameters>
-                  | <sticky-items> :fluents <fluent>+
-                  | /* empty */
+<stikcky-item> ::= :parameters <parameters>
+                 | :fluents <fluent>+
 
 
 <parameters> ::= <parameters> <variable>+ [- <type>] | /* empty */
@@ -108,13 +101,20 @@ The PODCP problem P is expressed with a PDDL-like syntax that is then parsed by 
                | (when <condition> <atomic-eff>*)
                | (forall (<parameters>) <effect>)
 <atomic-eff> ::= <fluent> | (not <fluent>)
-
 }}}
 
 The syntax for PODCP problems is the following:
 
 {{{
+<problem> ::= (define (problem <name>) <problem-item>*)
+<problem-item> ::= (:domain <name>)
+                 | (:requirements <require-keyword>*)
+                 | (:init <init-item>*)
+                 | (:goal <goal-decl>)
 
+<init-item> := <fluent> | (oneof <fluent>+)
+<goal-decl> := <single-goal> | (and <single-goal>*)
+<sigle-goal> ::= <fluent> | (not <fluent>)
 }}}
 
 
