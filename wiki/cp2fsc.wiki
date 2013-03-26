@@ -28,6 +28,10 @@ These elements define the class of contingent problems considered, that we call 
   * O is the set of observable fluents, O ⊆ R, and
   * D is the set of axioms defining the fluents in R.
 
+In PODCPs, the initial situation defines a set S,,0,, of possible initial states s,,0,,, and from any such state, a sequence of actions (a,,0,,, a,,1,,,...,a,,n,,) defines a unique trajectory
+s0, a0, . . . , an, sn+1 of state-action pairs, and a unique trajectory
+o0, a0, . . . , an, on+1 of observation-action pairs,
+that can be obtained by replacing si by o(si).
 
 = Control Problems =
 
