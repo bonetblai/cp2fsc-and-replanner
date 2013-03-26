@@ -65,15 +65,15 @@ The PODCP problem P is expressed with a PDDL-like syntax that is then parsed by 
                  | <domain-items> <types>
                  | <domain-items> (:constants <typed-obj-list>)
                  | <domain-items> (:predicates  <predicate-list>)
-                 | <domain-items> <structure>
+                 | <domain-items> <structures>
                  | /* empty */
 
 <types> ::= XXXX
-<structure> ::= <structure> <action>
-              | <structure> <axiom>
-              | <structure> <observable>
-              | <structure> <sticky>
-              | /* empty */
+<structures> ::= <structures> <action>
+               | <structures> <axiom>
+               | <structures> <observable>
+               | <structures> <sticky>
+               | /* empty */
 
 <action>     ::= (:action <name> <action-items>)
 <axiom>      ::= (:axiom <name> <axiom-items>)
