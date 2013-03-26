@@ -11,9 +11,35 @@ a number of conditional effects C → C, where C is a set
 of fluent literals and C is either one such set or one such
 literal. We sometimes write them as a : C → C when we
 want to indicate the action name.
+
 The initial situation I is given by a set of clauses over the
 fluents in F so the possible initial states of P are the truth
 valuations over F that satisfy I.
+
+A set D of axioms or ramification rules r ⇐ C are used
+to define a set of ‘non-primitive fluents’ r ∈ R, where C
+is a set of literals defined over the ‘primitive fluents’ in F
+(Thi´ebaux, Hoffmann, and Nebel 2005). The sets R and F
+are disjoint, and we allow non-primitive fluents in the body
+C of conditional effects C → C and goals, but we do not
+allow them in the heads C.
+A state s is a truth valuation over the primitive fluents that
+defines the truth value of the non-primitive fluents r ∈ R
+through the axioms: r is true in s iff there is an axiom r ⇐ C
+such that C is true in s.
+The observable fluents or simply the observables refer to
+a set O ⊆ R of non-primitive fluents whose truth value in a
+given state s is known to the agent. An observation o represents
+the conjunction of O-literals that are true in a given
+state. We refer to the observation that corresponds to the
+state s as o(s) and to the set of all possible observations as
+O∗. Clearly, the size of O∗ is exponential in the number
+of observable fluents. The observables along with the set
+of axioms defining them constitute what is called the sensor
+model, that relates the true but hidden state s with the
+information o(s) available to the agent.
+
+
 
 = Control Problems =
 
