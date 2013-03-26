@@ -39,6 +39,14 @@ Controller states serve as controller memory allowing the selection of different
 The transition function can be described with rules of the form (o, q) → (a, q') that express that the transition function for C is defined on the pair (o, q) and maps it into the pair (a, q'). It is also convenient to understand a controller C as a set of such rules, that we express as tuples. Thus we write t ∈ C for a tuple t = (o, q, a, q)
 if C is defined over the pair (o, q) and maps it into the pair (a, q). Note, however, that if t = (o, q, a, q( is a tuple in C, C cannot contain a tuple t' /= t with the same (o, q) pair, as δ is a transition function over such pairs.
 
+A finite-state controller C provides, like contingent trees and POMDP policies, an specification of the action a,,i+1,, to do next after a given observation-action sequence (o,,0,,, a,,0,,, ... , a,,i,,, o,,i+1,,). The action to do at time i = 0 is a,,0,, = a if t =(o0, q0, a, q) is in C and o(s0) = o0, and the controller state that results at time i = 1 is q. Similarly, the action to do at time i > 0 is a if o and q are the observation and state at time i, and t = (o, q, a, q( is a tuple in C, and the controller state that results at time i + 1 is then q.
+
+A controller C and an initial state s,,0,, determine a unique trajectory s,,0,,, a,,0,,, ... , a,,i,,, s,,i+1,, ...  of state-action
+pairs, and a unique trajectory o,,0,,, a,,0,,, ... , a,,i,,, o,,i+1,,, ... of observation-action pairs. These trajectories terminate at time i + 1 if the controller state at time i + 1 is q and there is no tuple t = (o,,i+1,,, q, a, q) in C defined over the pair (o,,i+1,,, q). If this is not the case, the observation-action trajectory resulting from s,,0,, and C is infinite. We say that a controller C solves a control problem P if all the state-action pair trajectories that it produces, starting in a possible initial state s,,0,, ∈ I, reach a goal state. This is a weak form of solution as it does not demand all state trajectories to *terminate* in a goal state. The difference does not
+matter when the goals are observable but is relevant otherwise. 
+
+
+
 
 
 = Details =
