@@ -6,7 +6,7 @@
   * [cp2fsc_userguide User's guide]
   * [cp2fsc_example Examples]
 
-* [replanner cp2fsc]
+* [replanner K-Replanner]
   * [replanner_into Introduction]
   * [replanner_syntax Syntax]
   * [replanner_userguide User's guide]
