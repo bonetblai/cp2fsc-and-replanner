@@ -30,6 +30,7 @@ These elements define the class of contingent problems considered, that we call 
 
 In PODCPs, the initial situation defines a set S,,0,, of possible initial states s,,0,,, and from any such state, a sequence of actions (a,,0,,, a,,1,,, ..., a,,n,,) defines a unique trajectory (s,,0,,, a,,0,,, ... , a,,n,,, s,,n+1,,) of state-action pairs, and a unique trajectory (o,,0,,, a,,0,,, ... , a,,n,,, o,,n+1,,) of observation-action pairs, that can be obtained by replacing s,,i,, by o(s,,i,,).
 
+
 = Finite-State Controllers =
 
 Finite-state controllers (FSCs) provide a convenient solution form for PODCP of the type P=(F, I, A, G, R, O, D). Formally, a finite-state controller is a tuple C = (Q, A, O^∗^, δ, q,,0,,) with a non-empty and finite set Q of controller states, sets A and O^∗^ of actions and observations, a (partial) transition function δ that maps observation and controller state pairs (o, q) ∈ O^∗^ × Q into action and controller state pairs (a, q) ∈ A × Q, and an initial controller state q,,0,, ∈ Q. 
@@ -46,12 +47,9 @@ pairs, and a unique trajectory o,,0,,, a,,0,,, ... , a,,i,,, o,,i+1,,, ... of 
 matter when the goals are observable but is relevant otherwise. 
 
 
+= cp2fsc =
 
 
+== Syntax ==
 
-= Details =
-
-Add your content here.  Format your content with:
-  * Text in *bold* or _italic_
-  * Headings, paragraphs, and lists
-  * Automatic links to other wiki pages
+== Examples ==
