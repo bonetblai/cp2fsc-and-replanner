@@ -50,7 +50,9 @@ matter when the goals are observable but is relevant otherwise.
 
 = Translation =
 
-
 = Syntax =
+
+= User's Guide =
+
 
 = Examples =
