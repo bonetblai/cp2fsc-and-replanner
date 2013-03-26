@@ -4,7 +4,7 @@
 
 The model from which finite-state controllers are derived stands for a class of contingent planning problems. For problems in this class, we make three assumptions. First, that actions are deterministic and thus all uncertainty results from incomplete information in the initial situation. Second, that actions may have conditional effects but no preconditions, and thus are always executable. And third, that sensing is passive meaning that the set of observable fluents is fixed and does not depend on the action taken. The contingent planning problem remains challenging even under these assumptions, and in particular, the controllers that we obtain from these models often work when the assumption of determinism is dropped.
 
-Under these assumptions, we adopt a syntax for expressing contingent problems similar to the one used for defining classical problems P=(F,I,A,G), where F is the set of fluents, I and G stand for the initial and goal situations, and A is the set of actions, except for the following features.
+Under these assumptions, we adopt a syntax for expressing contingent problems similar to the one used for defining classical problems <mi>a</mi> P=(F,I,A,G), where F is the set of fluents, I and G stand for the initial and goal situations, and A is the set of actions, except for the following features.
 
 Actions a in A have all empty preconditions but may have
 a number of conditional effects C → C, where C is a set
