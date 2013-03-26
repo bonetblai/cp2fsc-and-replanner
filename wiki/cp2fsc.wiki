@@ -81,23 +81,28 @@ The PODCP problem P is expressed with a PDDL-like syntax that is then parsed by 
 <sticky>     ::= (:sticky <sticky-items>)
 
 <action-items>  ::= <action-items> :parameters <parameters>
-                  | <action-items> :precondition <precondition>
+                  | <action-items> :precondition <condition>
                   | <action-items> :effect <effect>
                   | /* empty */
 
 <axiom-items>   ::= <axiom-items>
                   | <axiom-items> :parameters <parameters>
-                  | <axiom-items> :body <body>
-                  | <axiom-items> :head <head>
+                  | <axiom-items> :body <condition>
+                  | <axiom-items> :head <fluent>+
                   | /* empty */
 
 <obs-items>     ::= <obs-items> :parameters <parameters>
-                  | <obs-items> :fluents <fluents>
+                  | <obs-items> :fluents <fluent>+
                   | /* empty */
 
 <stikcky-items> ::= <sticky-items> :parameters <parameters>
-                  | <sticky-items> :fluents <fluents>
+                  | <sticky-items> :fluents <fluent>+
                   | /* empty */
+
+
+<parameters> ::= <parameters> <variable>+ [- <type>] | /* empty */
+<condition>  ::= <fluent> | (and <fluent>*)
+<effect>     ::= 
 
 }}}
 
