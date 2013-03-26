@@ -8,8 +8,9 @@
         (rock-pos r2 p1 p4)
         (invariant (good r1) (not (good r1)))
         (invariant (good r2) (not (good r2)))
-        (not-sensing)
-        (not-need-calibration)
+
+        (no-sensing)
+        (no-need-calibration)
 
         (nearby p1 p1) (nearby p2 p2) (nearby p3 p3) (nearby p4 p4) (nearby p5 p5)
         (nearby p1 p2) (nearby p1 p3) (nearby p1 p4)

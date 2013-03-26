@@ -30,8 +30,8 @@
         (invariant (good r8) (not (good r8)))
         (invariant (good r9) (not (good r9)))
 
-        (not-sensing)
-        (not-need-calibration)
+        (no-sensing)
+        (no-need-calibration)
 
         (nearby p0 p0) (nearby p1 p1) (nearby p2 p2) (nearby p3 p3)
         (nearby p4 p4) (nearby p5 p5) (nearby p6 p6)
