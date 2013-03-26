@@ -1,9 +1,11 @@
 * [intro Introduction]
+
 * [cp2fsc cp2fsc]
   * [cp2fsc_into Introduction]
   * [cp2fsc_syntax Syntax]
   * [cp2fsc_userguide User's guide]
   * [cp2fsc_example Examples]
+
 * [replanner cp2fsc]
   * [replanner_into Introduction]
   * [replanner_syntax Syntax]
