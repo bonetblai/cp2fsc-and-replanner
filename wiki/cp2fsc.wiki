@@ -72,6 +72,7 @@ If `cp2fsc` is called without arguments, it prints the following usage informati
                  [--output-metadata <filename>]
                  [--prefix <prefix>]
                  [--tag-all-literals]
+                 [--options=<comma-sparated-list-of-options>]
                  <pddl-files>
 }}}
 
