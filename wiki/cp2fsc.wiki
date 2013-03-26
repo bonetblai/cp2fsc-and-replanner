@@ -64,14 +64,14 @@ The PODCP problem P is expressed with a PDDL-like syntax that is then parsed by 
 
 If `cp2fsc` is called without arguments, it prints the following usage information:
 
-  `Usage: cp2fsc [--compound-obs-as-fluents]
-              [--fsc-states '<n>']
+  {{{Usage: cp2fsc [--compound-obs-as-fluents]
+              [--fsc-states `<n>`]
               [--help]
               [--no-forbid-inconsistent-tuples]
               [--output-metadata <filename>]
               [--prefix <prefix>]
               [--tag-all-literals]
-              <pddl-files>`
+              <pddl-files>}}}
 
 
 = Examples =
