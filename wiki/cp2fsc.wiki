@@ -57,43 +57,47 @@ The problem P,,N,, can be solved with different methods, as recently, many solve
 
 = Syntax =
 
-The PODCP problem P is expressed with a PDDL-like syntax that is then parsed by cp2fsc in order to generate P,,N,, and then K,,T,M,,(P,,N,,). The syntax for PODCP is the following:
+The PODCP problem P is expressed with a PDDL-like syntax that is then parsed by cp2fsc in order to generate P,,N,, and then K,,T,M,,(P,,N,,). The syntax for PODCP domain is the following:
 
 {{{
-<domain> ::= (define (domain <name>) <elements>)
-<elements> ::= <elements> (<require-keyword>*)
-               | <elements> <types>
-               | <elements> (:constants <typed-obj-list>)
-               | <elements> (:predicates  <predicate-list>)
-               | <elements> <structure>
-               | /* empty */
+<domain> ::= (define (domain <name>) <domain-items>)
+<domain-items> ::= <domain-items> (<require-keyword>*)
+                 | <domain-items> <types>
+                 | <domain-items> (:constants <typed-obj-list>)
+                 | <domain-items> (:predicates  <predicate-list>)
+                 | <domain-items> <structure>
+                 | /* empty */
 
 <types> ::= XXXX
 <structure> ::= <structure> <action>
-                | <structure> <axiom>
-                | <structure> <observable>
-                | <structure> <sticky>
-                | /* empty */
+              | <structure> <axiom>
+              | <structure> <observable>
+              | <structure> <sticky>
+              | /* empty */
 
-<action> ::= (:action <name> <action-elements>)
-<axiom> ::= (:axiom <name> <axiom-elements>)
-<observable> ::= (:observable <observable-elements>)
-<sticky> ::= (:sticky <sticky-elements>)
+<action>     ::= (:action <name> <action-items>)
+<axiom>      ::= (:axiom <name> <axiom-items>)
+<observable> ::= (:observable <obs-items>)
+<sticky>     ::= (:sticky <sticky-items>)
 
-<action-elements> ::= <action-elements> :parameters <parameters>
-                      | <action-elements> :precondition <precondition>
-                      | <action-elements> :effect <effect>
-                      | /* empty */
+<action-items>  ::= <action-items> :parameters <parameters>
+                  | <action-items> :precondition <precondition>
+                  | <action-items> :effect <effect>
+                  | /* empty */
 
-<axiom-elements> ::= <axiom-elements>
-                     | <axiom-elements> :parameters <parameters>
-                     | <axiom-elements> :body <body>
-                     | <axiom-elements> :head <head>
-                     | /* empty */
+<axiom-items>   ::= <axiom-items>
+                  | <axiom-items> :parameters <parameters>
+                  | <axiom-items> :body <body>
+                  | <axiom-items> :head <head>
+                  | /* empty */
 
-<observable-elements> ::= <observable-elements> :parameters <parameters>
-                          | <observable-elements> :fluents <fluents>
-                          | /* empty */
+<obs-items>     ::= <obs-items> :parameters <parameters>
+                  | <obs-items> :fluents <fluents>
+                  | /* empty */
+
+<stikcky-items> ::= <sticky-items> :parameters <parameters>
+                  | <sticky-items> :fluents <fluents>
+                  | /* empty */
 
 }}}
 
