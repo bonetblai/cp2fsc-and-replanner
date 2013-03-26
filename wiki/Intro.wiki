@@ -8,4 +8,4 @@ This wiki documents the cp2fsc and K-Replanner software for planning with sensin
 Documentation for cp2fsc and K-Replanner:
 
   * [cp2fsc cp2fsc]
-  * [k-replanner K-Replanner]
+  * [replanner K-Replanner]
