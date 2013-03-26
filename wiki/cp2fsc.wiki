@@ -14,9 +14,9 @@ A set D of axioms or ramification rules r ⇐ C are used to define a set of _non
 
 A state s is a truth valuation over the primitive fluents that defines the truth value of the non-primitive fluents r ∈ R through the axioms:
 
-  * r is true in state s iff there is an axiom r ⇐ C such that C is true in s.
+  * The fluent r is true in state s iff there is an axiom r ⇐ C such that C is true in s.
 
-The observable fluents or simply the observables refer to a set O ⊆ R of non-primitive fluents whose truth value in a given state s is known to the agent. An observation o represents the conjunction of O-literals that are true in a given state. We refer to the observation that corresponds to the state s as o(s) and to the set of all possible observations as O∗. Clearly, the size of O∗ is exponential in the number of observable fluents. The observables along with the set of axioms defining them constitute what is called the sensor model, that relates the true but hidden state s with the information o(s) available to the agent.
+The observable fluents or simply the observables refer to a set O ⊆ R of non-primitive fluents whose truth value in a given state s is known to the agent. An observation o represents the conjunction of O-literals that are true in a given state. We refer to the observation that corresponds to the state s as o(s) and to the set of all possible observations as O^∗. Clearly, the size of O∗ is exponential in the number of observable fluents. The observables along with the set of axioms defining them constitute what is called the sensor model, that relates the true but hidden state s with the information o(s) available to the agent.
 
 
 
