@@ -1,4 +1,5 @@
 #summary Documentation for cp2fsc.
+#sidebar TableOfContents
 
 = Planning and Control Problems =
 
