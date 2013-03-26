@@ -61,24 +61,39 @@ The PODCP problem P is expressed with a PDDL-like syntax that is then parsed by 
 
 {{{
 <domain> ::= (define (domain <name>) <elements>)
-<elements> ::= <elements> <requirements>
+<elements> ::= <elements> (<require-keyword>*)
                | <elements> <types>
-               | <elements> <constants>
-               | <elements> <predicates>
+               | <elements> (:constants <typed-obj-list>)
+               | <elements> (:predicates  <predicate-list>)
                | <elements> <structure>
                | /* empty */
 
-<requirements> ::= ( <require-keyword>* )
 <types> ::= XXXX
-<constants> ::= (:constants <typed-obj-list>)
-<predicates> ::= (:predicates  <predicate-list>)
 <structure> ::= <structure> <action>
                 | <structure> <axiom>
-                | <structure> <axiom>
-                | <structure> <sensor>
                 | <structure> <observable>
                 | <structure> <sticky>
                 | /* empty */
+
+<action> ::= (:action <name> <action-elements>)
+<axiom> ::= (:axiom <name> <axiom-elements>)
+<observable> ::= (:observable <observable-elements>)
+<sticky> ::= (:sticky <sticky-elements>)
+
+<action-elements> ::= <action-elements> :parameters <parameters>
+                      | <action-elements> :precondition <precondition>
+                      | <action-elements> :effect <effect>
+                      | /* empty */
+
+<axiom-elements> ::= <axiom-elements>
+                     | <axiom-elements> :parameters <parameters>
+                     | <axiom-elements> :body <body>
+                     | <axiom-elements> :head <head>
+                     | /* empty */
+
+<observable-elements> ::= <observable-elements> :parameters <parameters>
+                          | <observable-elements> :fluents <fluents>
+                          | /* empty */
 
 }}}
 
