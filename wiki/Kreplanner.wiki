@@ -20,7 +20,6 @@ Given a simple planning problem P, the first translation K'(P) captures
 the partially observable problem P at the *knowledge level* by applying an extension of the K,,0,, translation for conformant planning. The K,,0,, translation replaces each literal L by two fluents KL and ¬KL that stand for whether L is known to be true or not.
 
   _*Definition*_. For a partially observable problem P = (F, O, I, G, M), K'(P) = (F, O, I, G, M, D) is the fully observable non-deterministic problem where:
-
   * F = { KL, K¬L : L ∈ F },
   * I = { KL : L ∈ I },
   * G = { KL : L ∈ G },
