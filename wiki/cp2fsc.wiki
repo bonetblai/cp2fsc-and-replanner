@@ -113,6 +113,8 @@ The PODCP problem P is expressed with a PDDL-like syntax that is then parsed by 
 <sigle-goal> ::= <fluent> | (not <fluent>)
 }}}
 
+In this implementation, `cp2fsc` only supports initial state description whose non-unit clauses are captured by statements of the form `(oneof <fluent,,1,,> ... <fluent,,n,,>)` that 
+
 
 = User's Guide =
 
