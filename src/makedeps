@@ -1,4 +1,4 @@
-k_replanner.o: k_replanner.cc problem.h name.h index.h options.h \
+k-replanner.o: k-replanner.cc problem.h name.h index.h options.h \
  preprocess.h parser.h scanner.h string_table.h char_map.h grammar.h \
  base.h ptr_table.h state.h solver.h classical_planner.h kp_problem.h \
  available_options.h utils.h

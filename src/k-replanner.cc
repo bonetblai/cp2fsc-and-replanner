@@ -54,7 +54,7 @@ void print_usage(ostream &os, const char *exec_name, const char **cmdline_option
     }
     os << endl;
 
-    os << "The components {cp,ks0} belong to cp2fsc while {kp} to k_replanner."
+    os << "The components {cp,ks0} belong to cp2fsc while {kp} to k-replanner."
        << endl << endl;
 }
 
