@@ -1,7 +1,7 @@
 * [Introduction Introduction]
 
 * [cp2fsc cp2fsc]
-  * [cp2fsc#Planning_and_Control_Problems Planning and Control Problems]
+  * [cp2fsc#Planning_and_Control_Models Planning and Control Models]
   * [cp2fsc#Finite-State_Controllers Finite-State Controllers]
   * [cp2fsc#Translation Translation]
   * [cp2fsc#Syntax Syntax]
