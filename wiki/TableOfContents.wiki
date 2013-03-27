@@ -9,6 +9,8 @@
   * [cp2fsc#Examples Examples]
 
 * [Kreplanner K-Replanner]
+  * [Kreplanner#Planning_Models Planning Models]
+  * [Kreplanner#Translation Translation]
   * [Kreplanner#Syntax Syntax]
   * [Kreplanner#User's_Guide User's Guide]
   * [Kreplanner#Examples Examples]
