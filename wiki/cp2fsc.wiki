@@ -138,10 +138,18 @@ The option '`--no-forbid-inconsistent-tuples`' can be used to generate a plannin
 
 The option '`--tag-all-literals`' is used to enable the tagging of all literals when doing the K,,T,M,, translation, instead of just tagging the strictly necessary literals. The use of this option changes the translation, but still remains a valid translation. However, its use proves beneficial in terms of performance in some domains, not all.
 
-The option `'--compound-observations-as-fluents'` is not yet supported and should not be passed.
+The option `'--compound-observations-as-fluents'` is not yet supported and should not be used.
 
-Finally, different options can be passed to `cp2fsc` with the option '`--options=<comma-separated-list-of-options>`' together with a list of different options, whose main purpose is to generate output about the different translation processes.
+Finally, different options can be passed to `cp2fsc` with '`--options=<comma-separated-list-of-options>`' together with a list of different options, whose main purpose is to generate output about the different translation processes and their results.
 
 
 
 = Examples =
+
+The `benchamarks/fsc` folder contains examples for 4 different domains:
+
+  * Blocksworld: there are two problems for this domain. In the first, a green block that is located in a tower of blocks must be recognized and collected. The blocks are popped out the stack until the green block revels itself and the agent grabs it. The second problem consists of moving a visual marker over a scene of blocksworld trying to locate the marker over a green block. The movements of the marker are restricted and the agent receives only partial information from the environment.
+  * Grid: an agent should scan all the cells in a grid world in order to locate a hidden object.
+  * Gripper: in the classical gripper problem from planning, a robot must move all the objects in one room to the next room. In this variation, the robot has a gripper of varying capacity and has partial information from the environment.
+  * Hall: problems involving halls and corridors that must be traveled around in order to reach designated points. There are two versions of the domains and controllers with 1 or 2 states are required.
+  * Visual-marker: a problem in which a visual marker should
