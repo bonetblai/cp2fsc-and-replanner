@@ -9,7 +9,7 @@ The definitions above are general and standard. The following focuses on the res
 
 Interestingly, it turns out that when the non-unary clauses in I are all invariant (i.e., those expressing uncertainty) and the effects of the actions do not depend on fluents that are hidden in I (these are the fluents p such that neither p nor ¬p are known to be true in I), then the beliefs that need to be maintained in the planning process can be characterized in a simple form. We say that such problems are simple:
 
-  *Definition*. A (deterministic) partially observable problem P = (F, O, I, G, M) is *simple* if the non-unary clauses in I are all invariant, and no hidden fluent appears in the body of a conditional effect.
+  _*Definition*_. A (deterministic) partially observable problem P = (F, O, I, G, M) is *simple* if the non-unary clauses in I are all invariant, and no hidden fluent appears in the body of a conditional effect.
 
 
 
