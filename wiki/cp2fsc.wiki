@@ -153,3 +153,5 @@ The `benchamarks/fsc` folder contains examples for 4 different domains:
   * *Gripper:* in the classical gripper problem from planning, a robot must move all the objects in one room to the next room. In this variation, the robot has a gripper of varying capacity and has partial information from the environment.
   * *Hall:* problems involving halls and corridors that must be traveled around in order to reach designated points. There are two versions of the domains and controllers with 1 or 2 states are required.
   * *Visual-marker:* a problem in which a visual marker must be moved around a visual scene of blocksworld in order to locate it over a green block. The marker can be moved in a restricted manner and the agent receives partial information from the environment. The controllers obtained work for any scenes with any number of blocks and any placement of them.
+
+For each domain, the corresponding directory contains the files `experiment.sh` and README that describe how `cp2fsc` is called and the results for the SAT-based planner M/Mp.
