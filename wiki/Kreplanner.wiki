@@ -11,10 +11,27 @@ Interestingly, it turns out that when the non-unary clauses in I are all invaria
 
   _*Definition*_. A (deterministic) partially observable problem P = (F, O, I, G, M) is *simple* if the non-unary clauses in I are all invariant, and no hidden fluent appears in the body of a conditional effect.
 
-
+It turns out that for simple problems, it is enough to track the set of literals that are true; the additional information needed is captured by the invariants that are given in I, which as invariants, do not change and hence do not have to be tracked.
 
 
 = Translation =
+
+Given a simple planning problem P, the first translation K'(P) captures
+the partially observable problem P at the *knowledge level* by applying an extension of the K,,0,, translation for conformant planning. The K,,0,, translation replaces each literal L by two fluents KL and ¬KL that stand for whether L is known to be true or not.
+
+  _*Definition*_. For a partially observable problem P = (F, O, I, G, M), K'(P) = (F, O, I, G, M, D) is the fully observable non-deterministic problem where:
+
+  * F = { KL, K¬L : L ∈ F },
+  * I = { KL : L ∈ I },
+  * G = { KL : L ∈ G },
+  * M = { KC, ¬KL, ¬K¬L → KL | K¬L : (C,L) ∈ M },
+  * D = { KC ⊃ KL : if ¬C ∨ L invariant in I },
+  * O = O but with each precondition L for a ∈ O replaced by KL, and each conditional effect C → L replaced by KC → KL and ¬K¬C → ¬K¬L.
+
+The expressions KC and ¬K¬C for C = L,,1,, ∧ L,,2,, ... are abbreviations of the formulas KL,,1,, ∧ KL,,2,, ... and ¬K¬L,,1,, ∧ ¬K¬L,,2,, ... respectively.
+
+
+
 
 asdasd asd sda
 
