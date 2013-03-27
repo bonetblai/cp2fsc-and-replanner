@@ -94,9 +94,7 @@ Finally, different options can be passed to `cp2fsc` with '`--options=<comma-sep
 
 K-Replanner is tested on instances from several domains, all of which can be naturally encoded as simple partially observable problems. Several of these domains are beyond the reach of simple replanners as non-trivial beliefs that integrate the observations gathered need to be maintained. In the K-Replanner, this is achieved by keeping track of literals while maintaining the invariants. The domains are:
 
-  * *Freespace:* the agent needs to reach a final position by moving
-through unknown terrain. Each cell of the grid is either blocked
-or clear. As the agent moves, it senses the status of adjacent cells.
+  * *Freespace:* the agent needs to reach a final position by moving through unknown terrain. Each cell of the grid is either blocked or clear. As the agent moves, it senses the status of adjacent cells.
 
   * *Doors:* the agent moves in a grid to reach a final position, yet is has to cross doors whose positions are only partially known.
 
