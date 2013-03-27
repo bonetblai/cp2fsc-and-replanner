@@ -1,6 +1,7 @@
 #summary Documentation for cp2fsc.
 #sidebar TableOfContents
 
+
 = Planning and Control Problems =
 
 The model from which finite-state controllers are derived stands for a class of contingent planning problems. The problems considered are required to satisfy the following assumptions. First, the actions are deterministic and thus all uncertainty results from incomplete information in the initial situation. Second, the actions may have conditional effects but no preconditions, and thus are always executable. And third, the sensing is passive meaning that the set of observable fluents is fixed and does not depend on the action taken. The contingent planning problem remains challenging even under these assumptions, and in particular, the controllers obtained from these models often work when the assumption of determinism is dropped.
@@ -142,7 +143,6 @@ The option '`--tag-all-literals`' is used to enable the tagging of all literals 
 The option `'--compound-observations-as-fluents'` is not yet supported and should not be used.
 
 Finally, different options can be passed to `cp2fsc` with '`--options=<comma-separated-list-of-options>`' together with a list of different options, whose main purpose is to generate output about the different translation processes and their results.
-
 
 
 = Examples =
