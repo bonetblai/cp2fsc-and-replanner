@@ -21,7 +21,7 @@ the partially observable problem P at the *knowledge level* by applying an exten
 
   _*Definition*_. For a partially observable problem P = (F, O, I, G, M), K'(P) = (F, O, I, G, M, D) is the fully observable non-deterministic problem where:
 
-  * * F = { KL, K¬L : L ∈ F },
+  * F = { KL, K¬L : L ∈ F },
   * I = { KL : L ∈ I },
   * G = { KL : L ∈ G },
   * M = { KC, ¬KL, ¬K¬L → KL | K¬L : (C,L) ∈ M },
