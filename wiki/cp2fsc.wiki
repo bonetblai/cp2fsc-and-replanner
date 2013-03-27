@@ -113,7 +113,7 @@ The PODCP problem P is expressed with a PDDL-like syntax that is then parsed by 
 <sigle-goal> ::= <fluent> | (not <fluent>)
 }}}
 
-In this implementation, `cp2fsc` only supports initial state description whose non-unit clauses are captured by statements of the form `(oneof <fluent,,1,,> ... <fluent,,n,,>)` that 
+In this implementation, `cp2fsc` only supports initial state description whose non-unit clauses are captured by statements of the form '`(oneof <fluent-1> ... <fluent-n>)`' that should be interpreted as a the clause made of all the fluents in the oneof, and clauses with 2 literals asserting that at most one such fluent should be true. On the other hand, `cp2fsc` extends the basic PODCP model with the `sticky` statements: when a fluent is declared as 'sticky', it remains valid once it is achieved, even if it is a fluent defined through axioms (i.e., a defined fluent).
 
 
 = User's Guide =
