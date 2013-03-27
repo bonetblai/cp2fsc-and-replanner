@@ -9,6 +9,55 @@
 
 = Syntax = 
 
+Contingent problems P are expressed with a  PDDL-like syntax that is parsed by `k-replanner` in order to generate the different classucal translations. The syntax for writing domains and problems is the following:
+
+{{{
+<domain> ::= (define (domain <name>) <domain-item>*)
+<domain-item> ::= (:requirements <require-keyword>*)
+                | <types-decl>
+                | (:constants <typed-obj-list>)
+                | (:predicates  <predicate-list>)
+                | <structure>*
+
+<types-decl> ::= XXXX
+<typed-obj-list> ::= XXXX
+<predicate-list> ::= XXXX
+<structure> ::= <action> | <axiom> | <observable> | <sticky>
+
+<action> ::= (:action <name> <action-item>*)
+<sensor> ::= (:sensor <name> <sensor-item>*)
+
+<action-item> ::= :parameters (<parameter>*)
+                 | :precondition <condition>
+                 | :effect <effect>
+
+<sensor-item> ::= :parameters (<parameter>*)
+                 | :condition <condition>
+                 | :sensed <fluent>+
+
+<parameters> ::= <variable>+ | <variable>+ - <type>
+<condition>  ::= <fluent> | (and <fluent>*)
+
+<effect>     ::= <single-eff> | (and <single-eff>*)
+<single-eff> ::= <atomic-eff>
+               | (when <condition> <atomic-eff>*)
+               | (forall (<parameters>) <effect>)
+<atomic-eff> ::= <fluent> | (not <fluent>)
+
+
+<problem> ::= (define (problem <name>) <problem-item>*)
+<problem-item> ::= (:domain <name>)
+                 | (:requirements <require-keyword>*)
+                 | (:init <init-item>*)
+                 | (:hidden <hidden-item>*)
+                 | (:goal <goal-decl>)
+
+<init-item>   := <fluent> | (not (fluen)) | (invariant <fluent>+)
+<hidden-item> ::= <fluent>
+<goal-decl>   ::= <single-goal> | (and <single-goal>*)
+<sigle-goal>  ::= <fluent> | (not <fluent>)
+}}}
+
 
 = User's Guide =
 
