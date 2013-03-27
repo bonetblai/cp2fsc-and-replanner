@@ -1,15 +1,18 @@
 * [Introduction Introduction]
+
 * [cp2fsc cp2fsc]
+ 
   * [cp2fsc#Planning_and_Control_Models Planning and Control Models]
   * [cp2fsc#Finite-State_Controllers Finite-State Controllers]
   * [cp2fsc#Translation Translation]
   * [cp2fsc#Syntax Syntax]
   * [cp2fsc#User's_guide User's Guide]
   * [cp2fsc#Examples Examples]
+
 * [Kreplanner K-Replanner]
+
   * [Kreplanner#Planning_Models Planning Models]
   * [Kreplanner#Translation Translation]
   * [Kreplanner#Syntax Syntax]
   * [Kreplanner#User's_Guide User's Guide]
   * [Kreplanner#Examples Examples]
-
