@@ -14,14 +14,14 @@ Contingent problems P are expressed with a  PDDL-like syntax that is parsed by `
 {{{
 <domain> ::= (define (domain <name>) <domain-item>*)
 <domain-item> ::= (:requirements <require-keyword>*)
-                | <types-decl>
-                | (:constants <typed-obj-list>)
-                | (:predicates  <predicate-list>)
+                | (:types <type-decl>*)
+                | (:constants <typed-obj>*)
+                | (:predicates  <predicate>*)
                 | <structure>*
 
-<types-decl> ::= XXXX
-<typed-obj-list> ::= XXXX
-<predicate-list> ::= XXXX
+<type-decl> ::= <type>+ | <type>+ - <type>
+<typed-obj> ::= <obj>+ | <obj>+ - <type>
+<predicate> ::= (<name> <parameter>*)
 <structure> ::= <action> | <axiom> | <observable> | <sticky>
 
 <action> ::= (:action <name> <action-item>*)
@@ -35,7 +35,7 @@ Contingent problems P are expressed with a  PDDL-like syntax that is parsed by `
                  | :condition <condition>
                  | :sensed <fluent>+
 
-<parameters> ::= <variable>+ | <variable>+ - <type>
+<parameter>  ::= <variable>+ | <variable>+ - <type>
 <condition>  ::= <fluent> | (and <fluent>*)
 
 <effect>     ::= <single-eff> | (and <single-eff>*)
