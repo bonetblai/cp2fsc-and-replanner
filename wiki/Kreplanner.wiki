@@ -1,6 +1,7 @@
 #summary Documentation for K-Replanner.
 #sidebar TableOfContents
 
+
 = Planning Models =
 
 The language is a simple extension of STRIPS with conditional effects, negation, an uncertain initial situation, and sensing. More precisely, a partially observable problem is a tuple P = (F, O, I, G, M) where F stands for the fluent symbols, O for the actions, I is a set of clauses over F defining the initial situation, G is a set of F-literals defining the goal situation, and M represents the sensor model. An action a has preconditions given by a set of literals, and a set of conditional effects a : C → L where C is a set of literals and L is a literal. The sensor model M is a set of pairs (C,L) where C is a set of literals and L is a positive literal. The pair indicates that the truth value of L is observable when C is true. Each pair (C,L) can be understood as a sensor that is active when C is true, or as an information-gathering action with precondition C that reveals the boolean value of L. Unlike the other actions, however, these sensing actions trigger when their preconditions hold. The notation ¬L denotes the complement of literal L.
@@ -41,13 +42,6 @@ Formally,
 
 The K-translation is the basis for an on-line K-Replanner for partially observable problems. The K-Replanner constructs a policy that solves P in on-line fashion, setting the response Π(b) for the current belief as the prefix π of the plan obtained with an off-the-shelf classical planner for the classical problem K(P)[s,,b,,], where s,,b,, is the state defined by the belief b. The K-Replanner is always sound, and it is complete if P is simple and connected. The K-Replanner solves an instance with a given hidden initial state if the single execution that results from the policy Π(b) computed in this fashion reaches the goal. In the K-Replanner, the beliefs b over P are represented by the states over the translation K(P).
 
-
-
-
-
-
-
-asdasd asd sda
 
 = Syntax = 
 
