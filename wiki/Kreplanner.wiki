@@ -39,6 +39,7 @@ Formally,
 
 *Definition*. The classical problem K(P)`[`s`]` is defined from P and the translation K'(P) = (F' , O', I', G', M', D') as K(P)`[`s`]` = (F'', O'', I'', G'') where F'' = F', G'' = G', I'' = s, and O'' is O' union the actions KC → KL for the invariants ¬C ∨ L in P, and the actions A(C,L) and  A(C, ¬L) for the sensors (C,L) in P.
 
+The K-translation is the basis for an on-line K-Replanner for partially observable problems. The K-Replanner constructs a policy that solves P in on-line fashion, setting the response Π(b) for the current belief as the prefix π of the plan obtained with an off-the-shelf classical planner for the classical problem K(P)[s,,b,,], where s,,b,, is the state defined by the belief b. The K-Replanner is always sound, and it is complete if P is simple and connected. The K-Replanner solves an instance with a given hidden initial state if the single execution that results from the policy Π(b) computed in this fashion reaches the goal. In the K-Replanner, the beliefs b over P are represented by the states over the translation K(P).
 
 
 
