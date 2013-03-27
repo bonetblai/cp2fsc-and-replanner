@@ -9,7 +9,7 @@ The definitions above are general and standard. The following focuses on the res
 
 Interestingly, it turns out that when the non-unary clauses in I are all invariant (i.e., those expressing uncertainty) and the effects of the actions do not depend on fluents that are hidden in I (these are the fluents p such that neither p nor ¬p are known to be true in I), then the beliefs that need to be maintained in the planning process can be characterized in a simple form. We say that such problems are simple:
 
-  _*Definition*_. A (deterministic) partially observable problem P = (F, O, I, G, M) is *simple* if the non-unary clauses in I are all invariant, and no hidden fluent appears in the body of a conditional effect.
+*Definition*. A (deterministic) partially observable problem P = (F, O, I, G, M) is *simple* if the non-unary clauses in I are all invariant, and no hidden fluent appears in the body of a conditional effect.
 
 It turns out that for simple problems, it is enough to track the set of literals that are true; the additional information needed is captured by the invariants that are given in I, which as invariants, do not change and hence do not have to be tracked.
 
@@ -19,7 +19,8 @@ It turns out that for simple problems, it is enough to track the set of literals
 Given a simple planning problem P, the first translation K'(P) captures
 the partially observable problem P at the *knowledge level* by applying an extension of the K,,0,, translation for conformant planning. The K,,0,, translation replaces each literal L by two fluents KL and ¬KL that stand for whether L is known to be true or not.
 
-  _*Definition*_. For a partially observable problem P = (F, O, I, G, M), K'(P) = (F, O, I, G, M, D) is the fully observable non-deterministic problem where:
+*Definition*. For a partially observable problem P = (F, O, I, G, M), K'(P) = (F, O, I, G, M, D) is the fully observable non-deterministic problem where:
+
   * F = { KL, K¬L : L ∈ F },
   * I = { KL : L ∈ I },
   * G = { KL : L ∈ G },
@@ -36,7 +37,7 @@ For planning, and without loosing completeness or generality, it is enough to fo
 In order to compute reduced policies that are always goal oriented, the classical planning problem K(P)[s], for a state s that encodes a belief state b, is defined according to the following guidelines. First, the goal of K(P) is set to the goal of K'(P). Second, in order to make the goal achievable from any state even when information from sensors is needed, the invariants and sensors in P are translated into *actions* in K(P). A sensor (C,L) is translated into two deterministic actions, one with preconditions KC, ¬KL and ¬K¬L, and effect KL, and the other with same preconditions but effect K¬L. These actions are denoted as A(C, L) and A(C, ¬L), and called assumptions, as each makes an assumption about the truth value of the literal L whose value is observed when C is true. On the other hand, invariants of the form ¬C ∨ L are translated into actions with a conditional effects KC → KL.
 Formally,
 
-  _*Definition*_. The classical problem K(P)[s] is defined from P and the translation K'(P) = (F' , O', I', G', M', D') as K(P)[s] = (F'', O'', I'', G'') where F'' = F', G'' = G', I'' = s, and O'' is O' union the actions KC → KL for the invariants ¬C ∨ L in P, and the actions A(C,L) and  A(C, ¬L) for the sensors (C,L) in P.
+*Definition*. The classical problem K(P)[s] is defined from P and the translation K'(P) = (F' , O', I', G', M', D') as K(P)[s] = (F'', O'', I'', G'') where F'' = F', G'' = G', I'' = s, and O'' is O' union the actions KC → KL for the invariants ¬C ∨ L in P, and the actions A(C,L) and  A(C, ¬L) for the sensors (C,L) in P.
 
 
 
