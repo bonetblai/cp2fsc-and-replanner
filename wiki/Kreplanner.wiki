@@ -91,3 +91,22 @@ Finally, different options can be passed to `cp2fsc` with '`--options=<comma-sep
 
 
 = Examples =
+
+K-Replanner is tested on instances from several domains, all of which can be naturally encoded as simple partially observable problems. Several of these domains are beyond the reach of simple replanners as non-trivial beliefs that integrate the observations gathered need to be maintained. In the K-Replanner, this is achieved by keeping track of literals while maintaining the invariants. The domains are:
+
+  * *Freespace:* the agent needs to reach a final position by moving
+through unknown terrain. Each cell of the grid is either blocked
+or clear. As the agent moves, it senses the status of adjacent cells.
+
+  * *Doors:* the agent moves in a grid to reach a final position, yet is has to cross doors whose positions are only partially known.
+
+  * *Wumpus:* a variant of the well-known domain where the agent moves in a grid to reach a final position while avoiding multiple wumpus monsters. As the agent moves, it smells the stench of nearby wumpuses.
+
+  * *Kill-wumpus:* a variation of the above in which the agent must
+locate and kill the single wumpus in the grid.
+
+  * *Colored-balls:* the agent navigates a grid to pick up and deliver balls of different colors to destinations that depend on the color of the ball. The positions and colors of the balls are unknown, but when the agent is at a position, he observes if there are balls in there, and if so, their colors.
+
+  * *Trail:* the agent must follow a trail of stones til the end. The shape and length of the trail are not known. The agent cannot get off trail but can observe the presence of stones in the nearby cells.
+
+ 
