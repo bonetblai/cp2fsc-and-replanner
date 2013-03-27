@@ -22,7 +22,7 @@ Contingent problems P are expressed with a  PDDL-like syntax that is parsed by `
 <type-decl> ::= <type>+ | <type>+ - <type>
 <typed-obj> ::= <obj>+ | <obj>+ - <type>
 <predicate> ::= (<name> <parameter>*)
-<structure> ::= <action> | <axiom> | <observable> | <sticky>
+<structure> ::= <action> | <sensor>
 
 <action> ::= (:action <name> <action-item>*)
 <sensor> ::= (:sensor <name> <sensor-item>*)
