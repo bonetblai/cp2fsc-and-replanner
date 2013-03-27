@@ -102,8 +102,7 @@ or clear. As the agent moves, it senses the status of adjacent cells.
 
   * *Wumpus:* a variant of the well-known domain where the agent moves in a grid to reach a final position while avoiding multiple wumpus monsters. As the agent moves, it smells the stench of nearby wumpuses.
 
-  * *Kill-wumpus:* a variation of the above in which the agent must
-locate and kill the single wumpus in the grid.
+  * *Kill-wumpus:* a variation of the above in which the agent must locate and kill the single wumpus in the grid.
 
   * *Colored-balls:* the agent navigates a grid to pick up and deliver balls of different colors to destinations that depend on the color of the ball. The positions and colors of the balls are unknown, but when the agent is at a position, he observes if there are balls in there, and if so, their colors.
 
