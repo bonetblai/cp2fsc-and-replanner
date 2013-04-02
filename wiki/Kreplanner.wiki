@@ -88,10 +88,14 @@ Contingent problems P are expressed with a  PDDL-like syntax that is parsed by `
                  | (:hidden <hidden-item>*)
                  | (:goal <goal-decl>)
 
-<init-item>   := <fluent> | (not (fluen)) | (invariant <fluent>+)
+<init-item>   := <fluent> | (not (fluen)) | <invariant>
 <hidden-item> ::= <fluent>
 <goal-decl>   ::= <single-goal> | (and <single-goal>*)
 <sigle-goal>  ::= <fluent> | (not <fluent>)
+
+<invariant>       := <at-least-one> | <at-most-one>
+<at-least-one> := (invariant <fluent>+) | (at-least-one <fluent>+)
+<at-most-one> := (at-most-one <fluent>+)
 }}}
 
 
