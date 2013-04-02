@@ -172,7 +172,7 @@ int main(int argc, char *argv[]) {
 
     cout << "creating KP translation..." << endl;
     KP_Instance kp_instance(instance, options);
-    if( options.is_enabled("print:kp-translation:raw") ) {
+    if( options.is_enabled("print:kp:raw") ) {
         kp_instance.print(cout);
         kp_instance.write_domain(cout);
         kp_instance.write_problem(cout);
@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
     cout << "preprocessing KP translation..." << endl;
     Preprocessor kp_prep(kp_instance, options);
     kp_prep.preprocess(false);
-    if( options.is_enabled("print:kp-translation:preprocessed") ) {
+    if( options.is_enabled("print:kp:preprocessed") ) {
         kp_instance.write_domain(cout);
         kp_instance.write_problem(cout);
     }
@@ -200,10 +200,10 @@ int main(int argc, char *argv[]) {
     }
     Solver solver(instance, kp_instance, *planner, opt_time_bound);
     Instance::Plan plan;
-    vector<vector<int> > fired_sensors;
+    vector<vector<int> > fired_sensors, sensed_literals;
     State hidden_initial_state;
     instance.set_hidden_state(hidden_initial_state);
-    int status = solver.solve(hidden_initial_state, plan, fired_sensors);
+    int status = solver.solve(hidden_initial_state, plan, fired_sensors, sensed_literals);
     assert(1+plan.size() == fired_sensors.size());
 
     if( status == Solver::SOLVED ) {
@@ -223,6 +223,22 @@ int main(int argc, char *argv[]) {
                 }
             }
 
+            if( options.is_enabled("print:sensed-literals") ) {
+                const vector<int> &sensed = sensed_literals[0];
+                if( sensed.size() > 0 ) {
+                    if( need_indent ) cout << "      ";
+                    cout << "init@:";
+                    for( int i = 0, isz = sensed.size(); i < isz; ++i ) {
+                        int atom = sensed[i] < 0 ? -sensed[i] + 1 : sensed[i] - 1;
+                        cout << (sensed[i] < 0 ? " (not " : " ")
+                             << instance.atoms[atom]->name
+                             << (sensed[i] < 0 ? ")" : "");
+                    }
+                    cout << endl;
+                    need_indent = true;
+                }
+            }
+
             for( size_t k = 0; k < plan.size(); ++k ) {
                 if( need_indent ) cout << "      ";
                 cout << setw(4) << k << " : " << instance.actions[plan[k]]->name << endl;
@@ -232,6 +248,19 @@ int main(int argc, char *argv[]) {
                         cout << "      " << setw(4) << k << "*:";
                         for( int i = 0, isz = sensors.size(); i < isz; ++i ) {
                             cout << " " << instance.sensors[sensors[i]]->name;
+                        }
+                        cout << endl;
+                    }
+                }
+                if( options.is_enabled("print:sensed-literals") ) {
+                    const vector<int> &sensed = sensed_literals[1+k];
+                    if( sensed.size() > 0 ) {
+                        cout << "      " << setw(4) << k << "@:";
+                        for( int i = 0, isz = sensed.size(); i < isz; ++i ) {
+                            int atom = sensed[i] < 0 ? -sensed[i] + 1 : sensed[i] - 1;
+                            cout << (sensed[i] < 0 ? " (not " : " ")
+                                 << instance.atoms[atom]->name
+                                 << (sensed[i] < 0 ? ")" : "");
                         }
                         cout << endl;
                     }

@@ -7,6 +7,7 @@ const char *available_options[] = {
     "print:action:creation",               "[INST] print the name of the actions at creation time",
     "print:sensor:creation",               "[INST] print the name of the sensors at creation time",
     "print:axiom:creation",                "[INST] print the name of the axioms at creation time",
+    "print:deductive-rule",                "[INST] print the deductive rule at creation time",
 
     // preprocessor options
     "print:atom:removal",                  "[PREP] print the name of the atoms that are removed",
@@ -54,6 +55,7 @@ const char *available_options[] = {
     "print:solver:consistency:check",      "[SOLV] print the details of each consistency check",
     "remove-intermediate-files",           "[SOLV] remove the files created for calling the classical planner",
     "print:fired-sensors",                 "[SOLV] print the fired sensors at each step of the plan",
+    "print:sensed-literals",               "[SOLV] print the fired sensors at each step of the plan",
 
     // general
     "print:parser:raw",                    "[GEN] print the output from the parser",

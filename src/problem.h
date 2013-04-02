@@ -136,6 +136,9 @@ class Instance {
     index_set   given_observables;
     index_set   given_stickies;
 
+    // deductive rules to apply to hidden state
+    action_vec  deductive_rules;
+
     const Options::Mode options_;
 
     Instance(Name *n = 0, const Options::Mode &options = Options::Mode())
@@ -206,6 +209,8 @@ class Instance {
     void print(std::ostream &os) const;
 
     // plan application
+    void create_deductive_rules();
+    void apply_deductive_rules(State &state) const;
 };
 
 #endif

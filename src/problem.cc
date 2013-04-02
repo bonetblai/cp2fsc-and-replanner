@@ -862,3 +862,72 @@ void Instance::generate_initial_states(StateSet &initial_states) const {
     }
 }
 
+void Instance::create_deductive_rules() {
+    // This is pretty much the same as for invariant actions for KP.
+    // The difference is that this rule apply at the atom level and
+    // not at tje KP-atom level. We call the generated rules, the
+    // deductive rules.
+    for( invariant_vec::const_iterator it = init.invariants.begin(); it != init.invariants.end(); ++it ) {
+        const Invariant &invariant = *it;
+        assert(invariant.type != Invariant::EXACTLY_ONE);
+
+        for( size_t k = 0; k < invariant.size(); ++k ) {
+            ostringstream s;
+            s << "deductive-rule-" << deductive_rules.size();
+            Action *rule = new Action(new CopyName(s.str()), deductive_rules.size());
+
+            // conditional effects
+            When c_eff;
+            if( invariant.type == Invariant::AT_LEAST_ONE ) {
+                for( size_t i = 0; i < invariant.size(); ++i ) {
+                    int lit = invariant[i];
+                    if( i != k ) {
+                        c_eff.condition.insert(-lit);
+                        if( c_eff.effect.contains(-lit) )
+                           c_eff.effect.clear();
+                    } else {
+                        if( !c_eff.condition.contains(lit) )
+                            c_eff.effect.insert(lit);
+                    }
+                }
+            } else {
+                assert(invariant.type == Invariant::AT_MOST_ONE);
+                for( size_t i = 0; i < invariant.size(); ++i ) {
+                    int lit = invariant[i];
+                    if( i == k ) {
+                        c_eff.condition.insert(lit);
+                    } else {
+                        c_eff.effect.insert(-lit);
+                    }
+                }
+            }
+
+            // push conditional effect
+            if( !c_eff.effect.empty() ) {
+                rule->when.push_back(c_eff);
+                deductive_rules.push_back(rule);
+                if( options_.is_enabled("print:deductive-rule") ) {
+                    rule->print(cout, *this);
+                }
+            } else {
+                delete rule;
+            }
+        }
+    }
+}
+
+void Instance::apply_deductive_rules(State &state) const {
+    // compute the deductive closure with respect to the invariants
+    bool fix_point_reached = false;
+    while( !fix_point_reached ) {
+        State old_state(state);
+        for( size_t k = 0; k < deductive_rules.size(); ++k ) {
+            const Action &act = *deductive_rules[k];
+            if( state.applicable(act) ) {
+                state.apply(act);
+            }
+        }
+        fix_point_reached = old_state == state;
+    }
+}
+

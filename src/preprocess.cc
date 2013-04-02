@@ -573,5 +573,8 @@ void Preprocessor::preprocess(bool remove_atoms, const bool_vec *known_non_stati
 
     // set observable atoms
     instance.set_non_primitive_and_observable_fluents();
+
+    // compute deductive rules
+    instance.create_deductive_rules();
 }
 

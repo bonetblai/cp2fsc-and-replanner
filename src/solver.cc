@@ -4,23 +4,41 @@
 
 using namespace std;
 
-bool Solver::solve(const State &initial_hidden_state, Instance::Plan &final_plan,
-                   vector<vector<int> > &fired_sensors) const {
+bool Solver::solve(const State &initial_hidden_state,
+                   Instance::Plan &final_plan,
+                   vector<vector<int> > &fired_sensors,
+                   vector<vector<int> > &sensed_literals) const {
     vector<State> assumption_vec;
     State hidden(initial_hidden_state), state;
     Instance::Plan plan;
-    Instance::Plan sensors;
+    vector<int> sensors, sensed;
+
+    // close hidden state with deductive rule.
+    // (Disabled since if hidden is not corect, result is a propositional
+    // model of invariants that can be unintended hidden state.)
+    //instance_.apply_deductive_rules(hidden);
 
     // set initial state
     kp_instance_.set_initial_state(state);
-    compute_and_add_observations(hidden, state, sensors);
+    compute_and_add_observations(hidden, state, sensors, sensed);
     fired_sensors.push_back(sensors);
+    sensed_literals.push_back(sensed);
     sensors.clear();
+    sensed.clear();
+
+    if( options_.is_enabled("print:solver:plan-step") ) {
+        cout << ">>> state=";
+        state.print(cout, kp_instance_);
+        cout << endl << ">>> hidden=";
+        hidden.print(cout, instance_);
+        cout << endl;
+    }
 
     // plan/replan loop
     final_plan.clear();
     size_t planner_calls = 0;
     while( !state.goal(kp_instance_) ) {
+
         // obtain plan for state
         int status = planner_.get_plan(state, plan);
         if( status != ClassicalPlanner::SOLVED ) {
@@ -54,11 +72,7 @@ bool Solver::solve(const State &initial_hidden_state, Instance::Plan &final_plan
             const Instance::Action &kp_act = *kp_instance_.actions[plan[k]];
 
             if( options_.is_enabled("print:solver:plan-step") ) {
-                cout << " state=";
-                state.print(cout, kp_instance_);
-                cout << endl << "hidden=";
-                hidden.print(cout, instance_);
-                cout << endl << "x0-act=" << kp_act.name << endl;
+                cout << ">>> x0-act=" << kp_act.name << endl;
             }
 
             assert(state.applicable(kp_act));
@@ -85,10 +99,21 @@ bool Solver::solve(const State &initial_hidden_state, Instance::Plan &final_plan
                     return ERROR;
                 }
                 hidden.apply(act);
-                compute_and_add_observations(hidden, state, sensors);
+                //instance_.apply_deductive_rules(hidden);
+                compute_and_add_observations(hidden, state, sensors, sensed);
                 fired_sensors.push_back(sensors);
+                sensed_literals.push_back(sensed);
                 sensors.clear();
+                sensed.clear();
                 //cout << "HIDDEN="; hidden.print(cout, instance_); cout << endl;
+
+                if( options_.is_enabled("print:solver:plan-step") ) {
+                    cout << ">>> state=";
+                    state.print(cout, kp_instance_);
+                    cout << endl << ">>> hidden=";
+                    hidden.print(cout, instance_);
+                    cout << endl;
+                }
 
                 // check for consistency of remaining plan
                 if( inconsistent(state, assumption_vec, k+1) ) {
@@ -129,7 +154,10 @@ void Solver::calculate_relevant_assumptions(const Instance::Plan &plan,
     kp_instance_.apply_plan(plan, state, final_state, assumption_vec);
 }
 
-void Solver::compute_and_add_observations(State &hidden, State &state, Instance::Plan &sensors) const {
+void Solver::compute_and_add_observations(const State &hidden,
+                                          State &state,
+                                          vector<int> &sensors,
+                                          vector<int> &sensed) const {
     // fire observation rules
     index_set observations;
     for( size_t k = 0; k < instance_.n_sensors(); ++k ) {
@@ -141,8 +169,10 @@ void Solver::compute_and_add_observations(State &hidden, State &state, Instance:
                 int obs = *it-1;
                 if( hidden.satisfy(obs) ) {
                     state.add(2*obs);
+                    sensed.push_back(1 + obs);
                 } else {
                     state.add(2*obs+1);
+                    sensed.push_back(-(1 + obs));
                 }
             }
         }
@@ -152,10 +182,11 @@ void Solver::compute_and_add_observations(State &hidden, State &state, Instance:
     bool fix_point_reached = false;
     while( !fix_point_reached ) {
         State old_state(state);
-        for( size_t k = kp_instance_.first_deductive_action(); k < kp_instance_.n_actions(); ++k ) {
+        for( size_t k = kp_instance_.first_deductive_action(); k < kp_instance_.last_deductive_action(); ++k ) {
             const Instance::Action &act = *kp_instance_.actions[k];
-            if( state.applicable(act) )
+            if( state.applicable(act) ) {
                 state.apply(act);
+            }
         }
         fix_point_reached = old_state == state;
     }
