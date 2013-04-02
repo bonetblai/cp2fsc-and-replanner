@@ -38,8 +38,8 @@ KP_Instance::KP_Instance(const Instance &ins, const Options::Mode &options)
     // add known literals in initial situation
     for( size_t k = 0; k < ins.n_atoms(); k++ ) {
         const Atom &atom = *ins.atoms[k];
-        if( (init.literals.find(1+k) == init.literals.end()) &&
-            (init.literals.find(-(1+k)) == init.literals.end()) ) {
+        if( (init.literals.find(1 + 2*k) == init.literals.end()) &&
+            (init.literals.find(1 + 2*k+1) == init.literals.end()) ) {
             // check that atom does not appear in invariants
             bool in_invariant = false;
             for( size_t i = 0; !in_invariant && (i < ins.init.invariants.size()); ++i ) {
@@ -55,7 +55,7 @@ KP_Instance::KP_Instance(const Instance &ins, const Options::Mode &options)
             // if not in some invariant, add K_not_<atom> to init
             if( !in_invariant ) {
                 init.literals.insert(1 + 2*k+1);
-                if( options_.is_enabled("print:kp-translation:atom:init") ) {
+                if( options_.is_enabled("print:kp:atom:init") ) {
                     cout << "Atom " << atoms[2*k+1]->name << " added to init" << endl;
                 }
             }
@@ -116,7 +116,7 @@ KP_Instance::KP_Instance(const Instance &ins, const Options::Mode &options)
             nact.when.push_back(can_eff);
         }
 
-        if( options_.is_enabled("print:kp-translation:action:regular") ) {
+        if( options_.is_enabled("print:kp:action:regular") ) {
             nact.print(cout, *this);
         }
     }
@@ -161,7 +161,7 @@ KP_Instance::KP_Instance(const Instance &ins, const Options::Mode &options)
                 // add conditional effect to rule
                 obs_rules_by_name_[nact.name->to_string()] = n_actions();
                 nact.when.push_back(c_eff);
-                if( options_.is_enabled("print:kp-translation:action:sensor") ) {
+                if( options_.is_enabled("print:kp:action:sensor") ) {
                     nact.print(cout, *this);
                 }
             }
@@ -228,7 +228,7 @@ KP_Instance::KP_Instance(const Instance &ins, const Options::Mode &options)
 
             // push conditional effect
             nact.when.push_back(c_eff);
-            if( options_.is_enabled("print:kp-translation:action:invariant") ) {
+            if( options_.is_enabled("print:kp:action:invariant") ) {
                 nact.print(cout, *this);
             }
         }

@@ -55,7 +55,7 @@ class index_set : public std::set<int> {
             if( find( *si ) != end() ) return true;
         return false;
     }
-    bool contains(size_t e) const { return find(e) != end(); }
+    bool contains(int e) const { return find(e) != end(); }
     bool contains(const index_set &s) const {
         for( const_iterator si = s.begin(); si != s.end(); ++si )
             if( !contains(*si) ) return false;

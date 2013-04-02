@@ -13,6 +13,7 @@ class KP_Instance : public Instance {
     KP_Instance(const Instance &instance, const Options::Mode &options = Options::Mode());
     ~KP_Instance() { }
     size_t first_deductive_action() const { return n_standard_actions_ + n_sensor_actions_; }
+    size_t last_deductive_action() const { return first_deductive_action() + n_invariant_actions_; }
     bool is_obs_rule(const std::string &name) const {
         return obs_rules_by_name_.find(name) != obs_rules_by_name_.end();
     }
