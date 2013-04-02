@@ -93,9 +93,9 @@ Contingent problems P are expressed with a  PDDL-like syntax that is parsed by `
 <goal-decl>   ::= <single-goal> | (and <single-goal>*)
 <sigle-goal>  ::= <fluent> | (not <fluent>)
 
-<invariant>       := <at-least-one> | <at-most-one>
-<at-least-one> := (invariant <fluent>+) | (at-least-one <fluent>+)
-<at-most-one>  := (at-most-one <fluent>+)
+<invariant>    := <at-least-one> | <at-most-one>
+<at-least-one> := (invariant <fluent>^+^) | (at-least-one <fluent>^+^)
+<at-most-one>  := (at-most-one <fluent>^+^)
 }}}
 
 
