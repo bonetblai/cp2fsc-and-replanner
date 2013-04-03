@@ -110,6 +110,7 @@ If `k-replanner` is called without arguments, it prints the following usage info
                       [--prefix <prefix>]
                       [--no-remove-intermediate-files]
                       [--use-{ff|lama|m|mp}]
+                      [--planner-path <path>]
                       [--options=<options>]
                       <pddl-files>
 
