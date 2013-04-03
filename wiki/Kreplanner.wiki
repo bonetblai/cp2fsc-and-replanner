@@ -139,9 +139,7 @@ K-Replanner is tested on instances from several domains, all of which can be nat
 
   * *Doors:* the agent moves in a grid to reach a final position, yet is has to cross doors whose positions are only partially known.
 
-  * *Wumpus:* a variant of the well-known domain where the agent moves in a grid to reach a final position while avoiding multiple wumpus monsters. As the agent moves, it smells the stench of nearby wumpuses.
-
-  * *Kill-wumpus:* a variation of the above in which the agent must locate and kill the single wumpus in the grid.
+  * *Wumpus:* different variants of the well-known domain where the agent moves in a grid to reach a final position while avoiding multiple wumpus monsters and dangerous pits. As the agent moves, it smells the stench of nearby wumpuses and feel the breeze caused by nearby pits.
 
   * *Colored-balls:* the agent navigates a grid to pick up and deliver balls of different colors to destinations that depend on the color of the ball. The positions and colors of the balls are unknown, but when the agent is at a position, he observes if there are balls in there, and if so, their colors.
 
