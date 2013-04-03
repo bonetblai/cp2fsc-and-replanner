@@ -65,6 +65,7 @@ int main(int argc, char *argv[]) {
     int         opt_time_bound = 3600;
     string      opt_prefix = "";
     float       start_time = Utils::read_time_in_seconds();
+    string      opt_planner_path = ".";
 
     // initialize options
     for( const char **opt = &available_options[0]; *opt != 0; ++opt ) {
@@ -114,6 +115,8 @@ int main(int argc, char *argv[]) {
             opt_planner = 2;
         } else if( !skip_options && !strcmp(argv[k], "--use-mp") ) {
             opt_planner = 3;
+        } else if( !skip_options && !strcmp(argv[k], "--planner-path") ) {
+            opt_planner_path = argv[++k];
         } else if( !skip_options && !strncmp(argv[k], "--options=", 10) ) {
             const char *options = &argv[k][10];
             parse_options(options);
@@ -190,13 +193,13 @@ int main(int argc, char *argv[]) {
     cout << "solving problem..." << endl;
     const ClassicalPlanner *planner = 0;
     if( opt_planner == 0 ) {
-        planner = new FF_Planner(kp_instance);
+        planner = new FF_Planner(kp_instance, opt_planner_path.c_str());
     } else if( opt_planner == 1 ) {
-        planner = new LAMA_Planner(kp_instance);
+        planner = new LAMA_Planner(kp_instance, opt_planner_path.c_str());
     } else if( opt_planner == 2 ) {
-        planner = new M_Planner(kp_instance);
+        planner = new M_Planner(kp_instance, opt_planner_path.c_str());
     } else if( opt_planner == 3 ) {
-        planner = new MP_Planner(kp_instance);
+        planner = new MP_Planner(kp_instance, opt_planner_path.c_str());
     }
     Solver solver(instance, kp_instance, *planner, opt_time_bound);
     Instance::Plan plan;

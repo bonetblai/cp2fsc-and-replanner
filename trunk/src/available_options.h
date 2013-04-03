@@ -83,6 +83,7 @@ const char *k_replanner_cmdline_options[] = {
     "[--prefix <prefix>]",
     "[--no-remove-intermediate-files]",
     "[--use-{ff|lama|m|mp}]",
+    "[--planner-path <path>]",
     0
 };
 
