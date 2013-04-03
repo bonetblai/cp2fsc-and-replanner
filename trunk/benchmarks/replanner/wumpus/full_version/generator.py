@@ -118,7 +118,7 @@ pits = []
 breeze = []
 
 def available(pos):
-    if (pos == (1,1)) | (pos == (1,2)) | (pos == (2,1)):
+    if (pos == (1,1)) | (pos == (1,2)) | (pos == (2,1) | (pos == (2,2)):
         return False
     if pos == gold:
         return False
