@@ -7,8 +7,12 @@
 
 using namespace std;
 
-ClassicalPlanner::ClassicalPlanner(const char *planner_name, const Instance &instance)
-  : planner_name_(planner_name), instance_(instance), total_search_time_(0), total_time_(0), n_calls_(0) {
+ClassicalPlanner::ClassicalPlanner(const char *name,
+                                   const char *planner_path,
+                                   const char *planner_name,
+                                   const Instance &instance)
+  : name_(name), planner_path_(planner_path), planner_name_(planner_name),
+    instance_(instance), total_search_time_(0), total_time_(0), n_calls_(0) {
     for( size_t k = 0; k < instance_.n_actions(); ++k ) {
         const Instance::Action &act = *instance_.actions[k];
         action_map_.insert(make_pair(act.name->to_string(), k));
@@ -61,7 +65,8 @@ int FF_Planner::get_plan(const State &state, Instance::Plan &plan) const {
 
     // call FF planner
     ostringstream cmd("");
-    cmd << "./ff -o " << domain_fn_ << " -f " << problem_fn_ << " > " << output_fn_;
+    cmd << planner_path_ << "/" << planner_name_
+        << " -o " << domain_fn_ << " -f " << problem_fn_ << " > " << output_fn_;
     int rv = system(cmd.str().c_str());
 
     if( instance_.options_.is_enabled("remove-intermediate-files") ) {
@@ -135,8 +140,8 @@ int FF_Planner::get_plan(const State &state, Instance::Plan &plan) const {
 LAMA_Planner::~LAMA_Planner() {
 }
 
-LAMA_Planner::LAMA_Planner(const Instance &instance)
-  : ClassicalPlanner("LAMA", instance), first_call_(true) {
+LAMA_Planner::LAMA_Planner(const Instance &instance, const char *planner_path)
+  : ClassicalPlanner("LAMA", planner_path, "lama", instance), first_call_(true) {
 
     LAMA_path_ = "/home/bonet/LAMA/seq-sat-lama";
     solver_path_ = "/home/bonet/translator-X0+/source";
@@ -388,7 +393,8 @@ int M_Planner::get_plan(const State &state, Instance::Plan &plan) const {
 
     // call MP planner
     ostringstream cmd("");
-    cmd << "./" << planner_name_ << " " << domain_fn_ << " " << problem_fn_ << " > " << output_fn_;
+    cmd << planner_path_ << "/" << planner_name_
+        << " " << domain_fn_ << " " << problem_fn_ << " > " << output_fn_;
     int rv = system(cmd.str().c_str());
 
     if( instance_.options_.is_enabled("remove-intermediate-files") ) {
