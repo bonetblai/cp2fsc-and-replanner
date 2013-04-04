@@ -13,7 +13,7 @@
 ;; @@@@@@@@@@@@
 
 (define (problem bottleneck5)
-    (:domain wumpus)
+    (:domain short-wumpus)
     (:objects p11 p12 p13 p14 p15 p16 p17 p18 p21 p22 p23 p24 p25 p26 p27 p28 p31 p33 p38 p41 p43 p44 p45 p46 p48 p51 p53 p54 p55 p56 p58 p61 p63 p64 p65 p66 p68 p71 p73 p74 p75 p76 p78 p81 p86 p88 p91 p92 p93 p94 p95 p96 p97 p98 p101 p102 p103 p104 p105 p106 p107 p108 - pos)
     (:init
        (adj p11 p12)

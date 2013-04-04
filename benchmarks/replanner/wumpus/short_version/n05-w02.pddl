@@ -1,5 +1,5 @@
 (define (problem n05-w02)
-    (:domain wumpus)
+    (:domain short-wumpus)
     (:objects p11 p12 p13 p14 p15 p21 p22 p23 p24 p25 p31 p32 p33 p34 p35 p41 p42 p43 p44 p45 p51 p52 p53 p54 p55 - pos)
     (:init
         (adj p11 p12) (adj p11 p21)

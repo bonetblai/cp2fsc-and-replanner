@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
     Preprocessor prep(instance, options);
     prep.preprocess();
     if( options.is_enabled("print:problem:preprocessed") ) {
-        instance.print(cout);
+        //instance.print(cout);
         instance.write_domain(cout);
         instance.write_problem(cout);
     }
