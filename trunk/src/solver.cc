@@ -85,7 +85,7 @@ bool Solver::solve(const State &initial_hidden_state,
                 // apply action at hidden state
                 const Instance::Action &act = *instance_.actions[plan[k]];
                 if( !hidden.applicable(act) ) {
-                    cout << "warning: action " << act.name
+                    cout << "warning: action " << act.name //<< "[k=" << k << ", idx=" << plan[k] << "]"
                          << " isn't applicable at hidden state: "
                          << "check whether hidden specification is correct!"
                          << endl;

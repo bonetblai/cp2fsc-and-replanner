@@ -1,4 +1,4 @@
-(define (domain wumpus)
+(define (domain short-wumpus)
     (:requirements :typing :equality)
     (:types pos)
     (:predicates

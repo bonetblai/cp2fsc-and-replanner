@@ -1,5 +1,5 @@
 (define (problem wumpus_5_1_1_6985)
-  (:domain wumpus)
+  (:domain full-wumpus)
   (:objects p_1_1 p_1_2 p_1_3 p_1_4 p_1_5 p_2_1 p_2_2 p_2_3 p_2_4 p_2_5 p_3_1 p_3_2 p_3_3 p_3_4 p_3_5 p_4_1 p_4_2 p_4_3 p_4_4 p_4_5 p_5_1 p_5_2 p_5_3 p_5_4 p_5_5 - pos
   )
   (:init
