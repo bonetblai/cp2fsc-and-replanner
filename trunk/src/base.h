@@ -234,7 +234,8 @@ class PDDL_Base {
         ~Action() { }
         void instantiate(Instance &ins) const;
         void print(std::ostream &os) const;
-        void build(Instance &ins, size_t p) const;
+        void build(Instance &ins, size_t p, int pass) const;
+        mutable int action_count_;
     };
     struct action_vec : public std::vector<Action*> { };
 
