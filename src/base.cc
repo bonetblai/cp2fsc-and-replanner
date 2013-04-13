@@ -93,20 +93,24 @@ void PDDL_Base::insert_atom(ptr_table &t, Atom *a) {
     r->val = a;
 }
 
-void PDDL_Base::Action::build(Instance &ins, size_t p) const {
+void PDDL_Base::Action::build(Instance &ins, size_t p, int pass) const {
     if( p < param.size() ) {
         TypeSymbol *t = (TypeSymbol*)param[p]->sym_type;
         for( size_t k = 0, ksz = t->elements.size(); k < ksz; ++k ) {
             param[p]->value = t->elements[k];
             // TODO: incremental pruning
-            build(ins, p+1);
+            build(ins, p+1, pass);
         }
         param[p]->value = 0;
     } else {
-        Instance::Action &act = ins.new_action(new PDDL_Name(this, param, param.size()));
-        if( precondition != 0 ) precondition->instantiate(ins, act.precondition);
-        if( effect != 0 ) effect->instantiate(ins, act.effect, &act);
-        act.cost = 1;
+        if( pass == 0 ) {
+            Instance::Action &act = ins.new_action(new PDDL_Name(this, param, param.size()));
+            if( precondition != 0 ) precondition->instantiate(ins, act.precondition);
+            if( effect != 0 ) effect->instantiate(ins, act.effect, &act);
+            act.cost = 1;
+        } else {
+            ++action_count_;
+        }
     }
 }
 
@@ -115,7 +119,10 @@ void PDDL_Base::Action::instantiate(Instance &ins) const {
     cout << "instantiating '" << print_name << "' ..." << flush;
     for( size_t k = 0; k < param.size(); ++k )
         param[k]->value = 0;
-    build(ins, 0);
+    action_count_ = 0;
+    build(ins, 0, 0);
+    ins.reserve_actions(action_count_);
+    build(ins, 0, 1);
     cout << " " << ins.n_actions()-base << " action(s)" << endl;
 }
 

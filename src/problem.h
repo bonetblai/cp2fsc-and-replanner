@@ -186,6 +186,9 @@ class Instance {
         return observable_fluents.find(fluent) != observable_fluents.end();
     }
 
+    // reserve space
+    void reserve_actions(int n) { actions.reserve(n); }
+
     // generate reachable state space
     void generate_reachable_state_space(StateSet &hash) const;
     void generate_reachable_state_space(const State &state, StateSet &hash) const;
