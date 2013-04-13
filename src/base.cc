@@ -103,7 +103,7 @@ void PDDL_Base::Action::build(Instance &ins, size_t p, int pass) const {
         }
         param[p]->value = 0;
     } else {
-        if( pass == 0 ) {
+        if( pass == 1 ) {
             Instance::Action &act = ins.new_action(new PDDL_Name(this, param, param.size()));
             if( precondition != 0 ) precondition->instantiate(ins, act.precondition);
             if( effect != 0 ) effect->instantiate(ins, act.effect, &act);
