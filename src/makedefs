@@ -21,7 +21,7 @@ FLEX   = flex++
 
 # Define compiler/linker flags:
 DEBUG = #-g 
-OPTIMIZE = #-O3 #-DNDEBUG
+OPTIMIZE = -O3 #-DNDEBUG
 
 CFLAGS = $(DEBUG) $(OPTIMIZE) -I. -Wall
 LFLAGS = $(DEBUG) $(OPTIMIZE) -L. -Wall
