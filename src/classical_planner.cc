@@ -107,7 +107,7 @@ int FF_Planner::get_plan(const State &state, Instance::Plan &plan) const {
     }
 
     cmd.str("");
-    cmd << "cat " << tmp_fn_ << " | awk '{print $NF;}' | tr [:upper:] [:lower:]  > " << plan_fn_;
+    cmd << "cat " << tmp_fn_ << " | awk '{print $NF;}' | tr \"[:upper:]\" \"[:lower:]\"  > " << plan_fn_;
     rv = system(cmd.str().c_str());
 
     if( instance_.options_.is_enabled("remove-intermediate-files") ) {
