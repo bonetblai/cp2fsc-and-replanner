@@ -172,6 +172,6 @@
         ;(good-rocks-in-range p2-4 h2)
     )
 
-    (:goal (and (not (good r0)) (not (good r1))))
+    (:goal (and (done r0) (done r1)))
 )
 

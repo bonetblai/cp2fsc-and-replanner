@@ -136,7 +136,7 @@ void emit_instance(ostream &os, const vector<int> &placement, const vector<bool>
     // goal state
     os << "    (:goal (and";
     for( int i = 0; i < nrocks; ++i )
-        os << " (not (good r" << i << "))";
+        os << " (done r" << i << ")";
     os << "))" << endl
        << ")" << endl << endl;
 }
