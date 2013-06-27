@@ -122,6 +122,7 @@ void PDDL_Base::Action::instantiate(Instance &ins) const {
     action_count_ = 0;
     build(ins, 0, 0);
     ins.reserve_actions(action_count_);
+    cout << " (reserve " << action_count_ << ") ..." << flush;
     build(ins, 0, 1);
     cout << " " << ins.n_actions()-base << " action(s)" << endl;
 }
