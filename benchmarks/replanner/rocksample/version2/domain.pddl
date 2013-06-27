@@ -49,12 +49,12 @@
 
     (:action activate-sensor
         :precondition (not (sensing))
-        :effect (sensing) ;(and (sensing) (not (not-sensing)))
+        :effect (sensing)
     )
 
     (:action deactivate-sensor
         :precondition (sensing)
-        :effect (not (sensing)) ;(and (not-sensing) (not (sensing)))
+        :effect (not (sensing))
     )
 
     (:sensor rock-sensor
