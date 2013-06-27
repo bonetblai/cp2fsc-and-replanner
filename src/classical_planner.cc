@@ -20,18 +20,23 @@ ClassicalPlanner::ClassicalPlanner(const char *name,
 
     int pid = getpid();
     ostringstream sstr("");
+    sstr << "/tmp/";
     sstr << "gen-d." << pid << ".pddl";
     domain_fn_ = strdup(sstr.str().c_str());
     sstr.str("");
+    sstr << "/tmp/";
     sstr << "gen-p." << pid << ".pddl";
     problem_fn_ = strdup(sstr.str().c_str());
     sstr.str("");
+    sstr << "/tmp/";
     sstr << planner_name_ << ".output." << pid;
     output_fn_ = strdup(sstr.str().c_str());
     sstr.str("");
+    sstr << "/tmp/";
     sstr << planner_name_ << ".tmp." << pid;
     tmp_fn_ = strdup(sstr.str().c_str());
     sstr.str("");
+    sstr << "/tmp/";
     sstr << planner_name_ << ".plan." << pid;
     plan_fn_ = strdup(sstr.str().c_str());
 }
@@ -65,8 +70,8 @@ int FF_Planner::get_plan(const State &state, Instance::Plan &plan) const {
 
     // call FF planner
     ostringstream cmd("");
-    cmd << planner_path_ << "/" << planner_name_
-        << " -o " << domain_fn_ << " -f " << problem_fn_ << " > " << output_fn_;
+    //cmd << planner_path_ << "/";
+    cmd << planner_name_ << " -o " << domain_fn_ << " -f " << problem_fn_ << " > " << output_fn_;
     int rv = system(cmd.str().c_str());
 
     if( instance_.options_.is_enabled("remove-intermediate-files") ) {
@@ -393,8 +398,8 @@ int M_Planner::get_plan(const State &state, Instance::Plan &plan) const {
 
     // call MP planner
     ostringstream cmd("");
-    cmd << planner_path_ << "/" << planner_name_
-        << " " << domain_fn_ << " " << problem_fn_ << " > " << output_fn_;
+    //cmd << planner_path_ << "/";
+    cmd << planner_name_ << " " << domain_fn_ << " " << problem_fn_ << " > " << output_fn_;
     int rv = system(cmd.str().c_str());
 
     if( instance_.options_.is_enabled("remove-intermediate-files") ) {
