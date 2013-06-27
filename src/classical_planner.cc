@@ -20,23 +20,23 @@ ClassicalPlanner::ClassicalPlanner(const char *name,
 
     int pid = getpid();
     ostringstream sstr("");
-    sstr << "/tmp/";
+    //sstr << "/tmp/";
     sstr << "gen-d." << pid << ".pddl";
     domain_fn_ = strdup(sstr.str().c_str());
     sstr.str("");
-    sstr << "/tmp/";
+    //sstr << "/tmp/";
     sstr << "gen-p." << pid << ".pddl";
     problem_fn_ = strdup(sstr.str().c_str());
     sstr.str("");
-    sstr << "/tmp/";
+    //sstr << "/tmp/";
     sstr << planner_name_ << ".output." << pid;
     output_fn_ = strdup(sstr.str().c_str());
     sstr.str("");
-    sstr << "/tmp/";
+    //sstr << "/tmp/";
     sstr << planner_name_ << ".tmp." << pid;
     tmp_fn_ = strdup(sstr.str().c_str());
     sstr.str("");
-    sstr << "/tmp/";
+    //sstr << "/tmp/";
     sstr << planner_name_ << ".plan." << pid;
     plan_fn_ = strdup(sstr.str().c_str());
 }
