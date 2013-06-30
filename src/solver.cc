@@ -27,9 +27,9 @@ bool Solver::solve(const State &initial_hidden_state,
     sensed.clear();
 
     if( options_.is_enabled("print:solver:plan-step") ) {
-        cout << ">>> state=";
+        cout << ">>> initial state=";
         state.print(cout, kp_instance_);
-        cout << endl << ">>> hidden=";
+        cout << endl << ">>> initial hidden=";
         hidden.print(cout, instance_);
         cout << endl;
     }
@@ -166,7 +166,7 @@ void Solver::compute_and_add_observations(const State &hidden,
             sensors.push_back(k);
             for( index_set::const_iterator it = r.sensed.begin(); it != r.sensed.end(); ++it ) {
                 assert(*it > 0);
-                int obs = *it-1;
+                int obs = *it - 1;
                 if( hidden.satisfy(obs) ) {
                     state.add(2*obs);
                     sensed.push_back(1 + obs);
