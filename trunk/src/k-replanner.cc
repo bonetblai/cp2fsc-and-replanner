@@ -217,7 +217,7 @@ int main(int argc, char *argv[]) {
             if( options.is_enabled("print:fired-sensors") ) {
                 const vector<int> &sensors = fired_sensors[0];
                 if( sensors.size() > 0 ) {
-                    cout << "init*:";
+                    cout << "init*:" << flush;
                     for( int i = 0, isz = sensors.size(); i < isz; ++i ) {
                         cout << " " << instance.sensors[sensors[i]]->name;
                     }
@@ -230,9 +230,9 @@ int main(int argc, char *argv[]) {
                 const vector<int> &sensed = sensed_literals[0];
                 if( sensed.size() > 0 ) {
                     if( need_indent ) cout << "      ";
-                    cout << "init@:";
+                    cout << "init@:" << flush;
                     for( int i = 0, isz = sensed.size(); i < isz; ++i ) {
-                        int atom = sensed[i] < 0 ? -sensed[i] + 1 : sensed[i] - 1;
+                        int atom = sensed[i] < 0 ? -sensed[i] - 1 : sensed[i] - 1;
                         cout << (sensed[i] < 0 ? " (not " : " ")
                              << instance.atoms[atom]->name
                              << (sensed[i] < 0 ? ")" : "");
@@ -260,7 +260,7 @@ int main(int argc, char *argv[]) {
                     if( sensed.size() > 0 ) {
                         cout << "      " << setw(4) << k << "@:";
                         for( int i = 0, isz = sensed.size(); i < isz; ++i ) {
-                            int atom = sensed[i] < 0 ? -sensed[i] + 1 : sensed[i] - 1;
+                            int atom = sensed[i] < 0 ? -sensed[i] - 1 : sensed[i] - 1;
                             cout << (sensed[i] < 0 ? " (not " : " ")
                                  << instance.atoms[atom]->name
                                  << (sensed[i] < 0 ? ")" : "");
