@@ -396,10 +396,10 @@ int M_Planner::get_plan(const State &state, Instance::Plan &plan) const {
     instance_.write_problem(ofs, &state);
     ofs.close();
 
-    // call MP planner
+    // call M/Mp planner. Flag '-W' sets the random seed using time.
     ostringstream cmd("");
     //cmd << planner_path_ << "/";
-    cmd << planner_name_ << " " << domain_fn_ << " " << problem_fn_ << " > " << output_fn_;
+    cmd << planner_name_ << " -W " << domain_fn_ << " " << problem_fn_ << " > " << output_fn_;
     int rv = system(cmd.str().c_str());
 
     if( instance_.options_.is_enabled("remove-intermediate-files") ) {
