@@ -1,0 +1,3 @@
+An agent must navigate thorugh a rectangular grid
+with hidden obstacles. The agent may know its initial
+location or not, and the position of the obstacles.
