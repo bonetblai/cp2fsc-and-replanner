@@ -176,9 +176,7 @@
     )
     ; The important thing here is the stenches not the wumpuses. In fact, we
     ; can remove the wumpuses from the hidden state and the problem is still
-    ; solvable. The reason is that the wumpuses are conditional independent
-    ; of the rest of the fluents given the stenches (I think). The stenches
-    ; form a "markov blanket".
+    ; solvable.
     (:hidden (wumpus p31) (stench p21) (stench p41)              (stench p32)
              (wumpus p32) (stench p22) (stench p42) (stench p31) (stench p33))
     (:goal (at p51))
