@@ -1,0 +1,6 @@
+A robot must navigate a grid in order to locate the
+good rocks to sample them.  The robot has a sensor
+that detects good rocks at its vecinity, which is
+defined in terms of the height of the antenna when
+the sensor is activated.
+
