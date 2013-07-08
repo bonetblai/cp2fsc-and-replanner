@@ -84,6 +84,7 @@ const char *k_replanner_cmdline_options[] = {
     "[--no-remove-intermediate-files]",
     "[--use-{ff|lama|m|mp}]",
     "[--planner-path <path>]",
+    "[--tmpfile-path <path>]",
     0
 };
 
