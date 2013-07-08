@@ -862,6 +862,11 @@ void Instance::generate_initial_states(StateSet &initial_states) const {
     }
 }
 
+void Instance::simplify_invariants(const bool_vec &static_atoms) {
+    // Simplify invariants: literals that are static and false are removed from
+    // invariants, and invariants that contain a static true literal are removed.
+}
+
 void Instance::create_deductive_rules() {
     // This is pretty much the same as for invariant actions for KP.
     // The difference is that this rule apply at the atom level and
