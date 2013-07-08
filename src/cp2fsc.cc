@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
     }
 
     int nfiles = 0;
-    Parser* reader = new Parser(symbols);
+    Parser* reader = new Parser(Parser::cp2fsc, symbols);
 
     // parse options
     bool skip_options = false;

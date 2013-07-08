@@ -8,18 +8,19 @@
 
 class Parser : public PDDL_Parser {
     PDDL_Scanner scanner;
+
   public:
-    Parser(StringTable &t) : PDDL_Parser(t), scanner(t) { }
+    Parser(PDDL_Parser::Type type, StringTable &t) : PDDL_Parser(t, type), scanner(t) { }
     virtual ~Parser() { }
 
     void read(char *name, bool trace) {
         yydebug = trace;
         scanner.open_file(name, trace);
-        error_flag = false;
+        error_flag_ = false;
         int rv = yyparse();
         scanner.close_file();
-        if( error_flag || (rv > 0) ) {
-            std::cerr << "error: rv = " << rv << std::endl;
+        if( error_flag_ || (rv > 0) ) {
+            //std::cerr << "error: rv = " << rv << std::endl;
             exit(255);
         }
     }
@@ -28,7 +29,7 @@ class Parser : public PDDL_Parser {
 
     virtual void log_error(char *msg) {
         syntax_errors() << msg << std::endl;
-        error_flag = true;
+        error_flag_ = true;
     }
 
     virtual std::ostream& syntax_errors() {

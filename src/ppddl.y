@@ -7,13 +7,15 @@
 %define DEBUG 1
 
 %define INHERIT : public PDDL_Base
-%define CONSTRUCTOR_PARAM StringTable& t
-%define CONSTRUCTOR_INIT : PDDL_Base(t), error_flag(false)
+%define CONSTRUCTOR_PARAM StringTable& t, int type
+%define CONSTRUCTOR_INIT : PDDL_Base(t), type_(type), error_flag_(false)
 %define MEMBERS \
   public: \
+    typedef enum { replanner, cp2fsc } Type; \
     virtual ~PDDL_Parser() { } \
     virtual std::ostream& syntax_errors() = 0; \
-    bool error_flag; \
+    bool error_flag_; \
+    int type_; \
   private: \
     std::vector<ForallEffect*> forall_effects;
 
@@ -268,10 +270,30 @@ ne_constant_sym_list:
 
 domain_structure:
       action_declaration
-    | axiom_declaration
-    | sensor_declaration
-    | observable_declaration
-    | sticky_declaration
+    | axiom_declaration {
+         if( type_ == replanner ) {
+             log_error((char*)"':axiom' is not a valid element in k-replanner.");
+             yyerrok; 
+         }
+      }
+    | sensor_declaration {
+         if( type_ == cp2fsc ) {
+             log_error((char*)"':sensor' is not a valid element in cp2fsc.");
+             yyerrok; 
+         }
+      }
+    | observable_declaration {
+         if( type_ == replanner ) {
+             log_error((char*)"':observable' is not a valid element in k-replanner.");
+             yyerrok; 
+         }
+      }
+    | sticky_declaration {
+         if( type_ == replanner ) {
+             log_error((char*)"':sticky' is not a valid element in k-replanner.");
+             yyerrok; 
+         }
+      }
     ;
 
 // structure declarations
@@ -630,25 +652,48 @@ init_elements:
           $$ = ilist;
       }
     | init_elements invariant {
-          init_element_vec *ilist = const_cast<init_element_vec*>($1);
-          ilist->push_back(new InitInvariant(*$2));
-          $$ = ilist;
+          if( type_ == cp2fsc ) {
+              log_error((char*)"'invariant' is not a valid element in cp2fsc.");
+              yyerrok; 
+          } else {
+              init_element_vec *ilist = const_cast<init_element_vec*>($1);
+              ilist->push_back(new InitInvariant(*$2));
+              $$ = ilist;
+          }
       }
     | init_elements clause {
-          init_element_vec *ilist = const_cast<init_element_vec*>($1);
-          ilist->push_back(new InitClause(*$2));
-          $$ = ilist;
+          if( type_ == replanner ) {
+              log_error((char*)"'clause' is not a valid element in k-replanner.");
+              yyerrok; 
+          } else {
+              init_element_vec *ilist = const_cast<init_element_vec*>($1);
+              ilist->push_back(new InitClause(*$2));
+              $$ = ilist;
+          }
       }
     | init_elements oneof {
-          init_element_vec *ilist = const_cast<init_element_vec*>($1);
-          ilist->push_back(new InitOneof(*$2));
-          $$ = ilist;
+          if( type_ == replanner ) {
+              log_error((char*)"'oneof' is not a valid element in k-replanner.");
+              yyerrok; 
+          } else {
+              init_element_vec *ilist = const_cast<init_element_vec*>($1);
+              ilist->push_back(new InitOneof(*$2));
+              $$ = ilist;
+          }
       }
     | /* empty */ { $$ = new init_element_vec; }
     ;
 
 hidden_state:
-      TK_OPEN KW_HIDDEN init_elements TK_CLOSE { dom_hidden = *$3; delete $3; }
+      TK_OPEN KW_HIDDEN init_elements TK_CLOSE {
+          if( type_ == cp2fsc ) {
+              log_error((char*)"':hidden' is not a valid element in cp2fsc.");
+              yyerrok; 
+          } else {
+              dom_hidden = *$3;
+              delete $3;
+          }
+      }
     ;
 
 goal_spec:
