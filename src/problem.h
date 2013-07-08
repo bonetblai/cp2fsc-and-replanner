@@ -211,8 +211,11 @@ class Instance {
     void print_axioms(std::ostream &os) const;
     void print(std::ostream &os) const;
 
-    // plan application
+    // deductive rules
+    void simplify_invariants(const bool_vec &static_atoms);
     void create_deductive_rules();
+
+    // plan application
     void apply_deductive_rules(State &state) const;
 };
 

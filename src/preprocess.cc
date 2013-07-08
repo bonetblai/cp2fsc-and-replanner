@@ -574,7 +574,10 @@ void Preprocessor::preprocess(bool remove_atoms, const bool_vec *known_non_stati
     // set observable atoms
     instance.set_non_primitive_and_observable_fluents();
 
-    // compute deductive rules
+    // stage 10: Simplify invariants
+    if( options_.is_enabled("print:preprocess:stage") )
+        cout << "  Stage 10: simplifying invariants and computing deductive rules..." << endl;
+    instance.simplify_invariants(static_atoms);
     instance.create_deductive_rules();
 }
 
