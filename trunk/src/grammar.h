@@ -1,7 +1,7 @@
 #ifndef YY_PDDL_Parser_h_included
 #define YY_PDDL_Parser_h_included
 
-#line 1 "/home/bonet/tools/lib/bison.h"
+#line 1 "/usr/local/lib/bison.h"
 /* before anything */
 #ifdef c_plusplus
 #ifndef __cplusplus
@@ -16,7 +16,7 @@
 #endif
 #include <stdio.h>
 
-/* #line 14 "/home/bonet/tools/lib/bison.h" */
+/* #line 14 "/usr/local/lib/bison.h" */
 #line 21 "grammar.h"
 #define YY_PDDL_Parser_ERROR  log_error
 #define YY_PDDL_Parser_ERROR_BODY  = 0
@@ -25,16 +25,18 @@
 #define YY_PDDL_Parser_LEX_BODY  = 0
 #define YY_PDDL_Parser_DEBUG  1
 #define YY_PDDL_Parser_INHERIT  : public PDDL_Base
-#define YY_PDDL_Parser_CONSTRUCTOR_PARAM  StringTable& t
-#define YY_PDDL_Parser_CONSTRUCTOR_INIT  : PDDL_Base(t), error_flag(false)
+#define YY_PDDL_Parser_CONSTRUCTOR_PARAM  StringTable& t, int type
+#define YY_PDDL_Parser_CONSTRUCTOR_INIT  : PDDL_Base(t), type_(type), error_flag_(false)
 #define YY_PDDL_Parser_MEMBERS  \
   public: \
+    typedef enum { replanner, cp2fsc } Type; \
     virtual ~PDDL_Parser() { } \
     virtual std::ostream& syntax_errors() = 0; \
-    bool error_flag; \
+    bool error_flag_; \
+    int type_; \
   private: \
     std::vector<ForallEffect*> forall_effects;
-#line 20 "ppddl.y"
+#line 22 "ppddl.y"
 
 #include <stdlib.h>
 #include <string.h>
@@ -42,7 +44,7 @@
 #include <sstream>
 #include "base.h"
 
-#line 28 "ppddl.y"
+#line 30 "ppddl.y"
 typedef union {
     StringTable::Cell                 *sym;
     PDDL_Base::Atom                   *atom;
@@ -58,7 +60,7 @@ typedef union {
 } yy_PDDL_Parser_stype;
 #define YY_PDDL_Parser_STYPE yy_PDDL_Parser_stype
 
-#line 14 "/home/bonet/tools/lib/bison.h"
+#line 14 "/usr/local/lib/bison.h"
  /* %{ and %header{ and %union, during decl */
 #ifndef YY_PDDL_Parser_COMPATIBILITY
 #ifndef YY_USE_CLASS
@@ -109,32 +111,32 @@ typedef union {
 
 #ifndef YY_PDDL_Parser_PURE
 
-/* #line 63 "/home/bonet/tools/lib/bison.h" */
-#line 114 "grammar.h"
+/* #line 63 "/usr/local/lib/bison.h" */
+#line 116 "grammar.h"
 
-#line 63 "/home/bonet/tools/lib/bison.h"
+#line 63 "/usr/local/lib/bison.h"
 /* YY_PDDL_Parser_PURE */
 #endif
 
-/* #line 65 "/home/bonet/tools/lib/bison.h" */
-#line 121 "grammar.h"
+/* #line 65 "/usr/local/lib/bison.h" */
+#line 123 "grammar.h"
 
-#line 65 "/home/bonet/tools/lib/bison.h"
+#line 65 "/usr/local/lib/bison.h"
 /* prefix */
 #ifndef YY_PDDL_Parser_DEBUG
 
-/* #line 67 "/home/bonet/tools/lib/bison.h" */
-#line 128 "grammar.h"
+/* #line 67 "/usr/local/lib/bison.h" */
+#line 130 "grammar.h"
 
-#line 67 "/home/bonet/tools/lib/bison.h"
+#line 67 "/usr/local/lib/bison.h"
 /* YY_PDDL_Parser_DEBUG */
 #endif
 #ifndef YY_PDDL_Parser_LSP_NEEDED
 
-/* #line 70 "/home/bonet/tools/lib/bison.h" */
-#line 136 "grammar.h"
+/* #line 70 "/usr/local/lib/bison.h" */
+#line 138 "grammar.h"
 
-#line 70 "/home/bonet/tools/lib/bison.h"
+#line 70 "/usr/local/lib/bison.h"
  /* YY_PDDL_Parser_LSP_NEEDED*/
 #endif
 /* DEFAULT LTYPE*/
@@ -209,8 +211,8 @@ extern YY_PDDL_Parser_STYPE YY_PDDL_Parser_LVAL;
 #endif
 
 
-/* #line 143 "/home/bonet/tools/lib/bison.h" */
-#line 214 "grammar.h"
+/* #line 143 "/usr/local/lib/bison.h" */
+#line 216 "grammar.h"
 #define	TK_OPEN	258
 #define	TK_CLOSE	259
 #define	TK_OPEN_SQ	260
@@ -267,7 +269,7 @@ extern YY_PDDL_Parser_STYPE YY_PDDL_Parser_LVAL;
 #define	KW_EXACTLY_ONE	311
 
 
-#line 143 "/home/bonet/tools/lib/bison.h"
+#line 143 "/usr/local/lib/bison.h"
  /* #defines token */
 /* after #define tokens, before const tokens S5*/
 #else
@@ -308,8 +310,8 @@ public:
 #if YY_PDDL_Parser_USE_CONST_TOKEN != 0
 /* static const int token ... */
 
-/* #line 182 "/home/bonet/tools/lib/bison.h" */
-#line 313 "grammar.h"
+/* #line 182 "/usr/local/lib/bison.h" */
+#line 315 "grammar.h"
 static const int TK_OPEN;
 static const int TK_CLOSE;
 static const int TK_OPEN_SQ;
@@ -366,13 +368,13 @@ static const int KW_AT_MOST_ONE;
 static const int KW_EXACTLY_ONE;
 
 
-#line 182 "/home/bonet/tools/lib/bison.h"
+#line 182 "/usr/local/lib/bison.h"
  /* decl const */
 #else
 enum YY_PDDL_Parser_ENUM_TOKEN { YY_PDDL_Parser_NULL_TOKEN=0
 
-/* #line 185 "/home/bonet/tools/lib/bison.h" */
-#line 376 "grammar.h"
+/* #line 185 "/usr/local/lib/bison.h" */
+#line 378 "grammar.h"
 	,TK_OPEN=258
 	,TK_CLOSE=259
 	,TK_OPEN_SQ=260
@@ -429,7 +431,7 @@ enum YY_PDDL_Parser_ENUM_TOKEN { YY_PDDL_Parser_NULL_TOKEN=0
 	,KW_EXACTLY_ONE=311
 
 
-#line 185 "/home/bonet/tools/lib/bison.h"
+#line 185 "/usr/local/lib/bison.h"
  /* enum token */
      }; /* end of enum declaration */
 #endif
@@ -482,6 +484,6 @@ public:
 #endif
 /* END */
 
-/* #line 236 "/home/bonet/tools/lib/bison.h" */
-#line 487 "grammar.h"
+/* #line 236 "/usr/local/lib/bison.h" */
+#line 489 "grammar.h"
 #endif
