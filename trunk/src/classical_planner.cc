@@ -8,10 +8,11 @@
 using namespace std;
 
 ClassicalPlanner::ClassicalPlanner(const char *name,
+                                   const char *tmpfile_path,
                                    const char *planner_path,
                                    const char *planner_name,
                                    const Instance &instance)
-  : name_(name), planner_path_(planner_path), planner_name_(planner_name),
+  : name_(name), tmpfile_path_(tmpfile_path), planner_path_(planner_path), planner_name_(planner_name),
     instance_(instance), total_search_time_(0), total_time_(0), n_calls_(0) {
     for( size_t k = 0; k < instance_.n_actions(); ++k ) {
         const Instance::Action &act = *instance_.actions[k];
@@ -19,24 +20,29 @@ ClassicalPlanner::ClassicalPlanner(const char *name,
     }
 
     int pid = getpid();
+
     ostringstream sstr("");
-    //sstr << "/tmp/";
+    if( planner_path_ != "" ) sstr << tmpfile_path_ << "/";
     sstr << "gen-d." << pid << ".pddl";
     domain_fn_ = strdup(sstr.str().c_str());
+
     sstr.str("");
-    //sstr << "/tmp/";
+    if( planner_path_ != "" ) sstr << tmpfile_path_ << "/";
     sstr << "gen-p." << pid << ".pddl";
     problem_fn_ = strdup(sstr.str().c_str());
+
     sstr.str("");
-    //sstr << "/tmp/";
+    if( planner_path_ != "" ) sstr << tmpfile_path_ << "/";
     sstr << planner_name_ << ".output." << pid;
     output_fn_ = strdup(sstr.str().c_str());
+
     sstr.str("");
-    //sstr << "/tmp/";
+    if( planner_path_ != "" ) sstr << tmpfile_path_ << "/";
     sstr << planner_name_ << ".tmp." << pid;
     tmp_fn_ = strdup(sstr.str().c_str());
+
     sstr.str("");
-    //sstr << "/tmp/";
+    if( planner_path_ != "" ) sstr << tmpfile_path_ << "/";
     sstr << planner_name_ << ".plan." << pid;
     plan_fn_ = strdup(sstr.str().c_str());
 }
@@ -70,7 +76,7 @@ int FF_Planner::get_plan(const State &state, Instance::Plan &plan) const {
 
     // call FF planner
     ostringstream cmd("");
-    //cmd << planner_path_ << "/";
+    if( planner_path_ != "" ) cmd << planner_path_ << "/";
     cmd << planner_name_ << " -o " << domain_fn_ << " -f " << problem_fn_ << " > " << output_fn_;
     int rv = system(cmd.str().c_str());
 
@@ -145,8 +151,8 @@ int FF_Planner::get_plan(const State &state, Instance::Plan &plan) const {
 LAMA_Planner::~LAMA_Planner() {
 }
 
-LAMA_Planner::LAMA_Planner(const Instance &instance, const char *planner_path)
-  : ClassicalPlanner("LAMA", planner_path, "lama", instance), first_call_(true) {
+LAMA_Planner::LAMA_Planner(const Instance &instance, const char *tmpfile_path, const char *planner_path)
+  : ClassicalPlanner("LAMA", tmpfile_path, planner_path, "lama", instance), first_call_(true) {
 
     LAMA_path_ = "/home/bonet/LAMA/seq-sat-lama";
     solver_path_ = "/home/bonet/translator-X0+/source";
@@ -398,7 +404,7 @@ int M_Planner::get_plan(const State &state, Instance::Plan &plan) const {
 
     // call M/Mp planner. Flag '-W' sets the random seed using time.
     ostringstream cmd("");
-    //cmd << planner_path_ << "/";
+    if( planner_path_ != "" ) cmd << planner_path_ << "/";
     cmd << planner_name_ << " -W " << domain_fn_ << " " << problem_fn_ << " > " << output_fn_;
     int rv = system(cmd.str().c_str());
 
