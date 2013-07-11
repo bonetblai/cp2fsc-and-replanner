@@ -1,16 +1,3 @@
-* implement simplification of invariants in order to achieve the same
-performance of old version of localize with new version of localize. 
-The problem here is that the invariants are not simplified with the
-known static atoms before generating the inference rules. To do this
-right, we should compute static atoms with respect the p.o. problem
-and the kp problem. The invariants are then filtered with the p.o.-
-static atoms.
-
-* implement the action completion preprocessing. Need to check definition
-and do implementation.
-
-* must enforce elements for each class of problems (cp2fsc or replanner)
-so that there is no mixing.
-
+* revision before action compilation and revision of preprocessing is 233
 * test and fix all benchmark problems with respect naming of elements.
 

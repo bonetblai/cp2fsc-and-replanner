@@ -58,6 +58,7 @@ class Instance {
         }
         bool operator==(const Action &a) { return index == a.index; }
         void print(std::ostream &os, const Instance &i) const;
+        void write(std::ostream &os, int indent, const Instance &instance) const;
     };
     class action_vec : public std::vector<Action*> { };
 
@@ -76,6 +77,7 @@ class Instance {
         }
         bool operator==(const Sensor &r) { return index == r.index; }
         void print(std::ostream &os, const Instance &i) const;
+        void write(std::ostream &os, int indent, const Instance &instance) const;
     };
     class sensor_vec : public std::vector<Sensor*> { };
 
@@ -94,16 +96,16 @@ class Instance {
         }
         bool operator==(const Axiom &r) { return index == r.index; }
         void print(std::ostream &os, const Instance &i) const;
+        void write(std::ostream &os, int indent, const Instance &instance) const;
     };
     class axiom_vec : public std::vector<Axiom*> { };
 
+    // After instantiation, all invariants are of type AT_LEAST_ONE.
     struct Invariant : public index_vec {
         int type;
         enum { AT_LEAST_ONE = 0, AT_MOST_ONE = 1, EXACTLY_ONE = 2 };
         Invariant(int t = AT_LEAST_ONE) : type(t) { }
-        // Invariants of type EXACTLY_ONE shouldn't exist because
-        // they are mapped into two invariants of types AT_LEAST_ONE
-        // and AT_MOST_ONE respectively.
+        void write(std::ostream &os, int indent, const Instance &instance) const;
     };
     class invariant_vec : public std::vector<Invariant> { };
 
@@ -158,12 +160,11 @@ class Instance {
     // change (remove from) instance
     void remove_unreachable_conditional_effects(const bool_vec &reachable_atoms, const bool_vec &static_atoms);
     void remove_unreachable_axioms(const bool_vec &reachable_atoms, const bool_vec &static_atoms);
-    void simplify_conditional_effects(const bool_vec &static_atoms);
+    void remove_unreachable_sensors(const bool_vec &reachable_atoms, const bool_vec &static_atoms);
+    void simplify_conditions_and_invariants(const bool_vec &reachable_atoms, const bool_vec &static_atoms);
     void remove_actions(const bool_vec &set, index_vec &map);
-    void remove_sensors(const bool_vec &set, index_vec &map);
-    void remove_axioms(const bool_vec &set, index_vec &map);
     virtual void remove_atoms(const bool_vec &set, index_vec &map);
-    void set_non_primitive_and_observable_fluents();
+    void calculate_non_primitive_and_observable_fluents();
     void set_initial_state(State &state) const;
     void set_hidden_state(State &state) const;
 
@@ -212,10 +213,7 @@ class Instance {
     void print(std::ostream &os) const;
 
     // deductive rules
-    void simplify_invariants(const bool_vec &static_atoms);
     void create_deductive_rules();
-
-    // plan application
     void apply_deductive_rules(State &state) const;
 };
 

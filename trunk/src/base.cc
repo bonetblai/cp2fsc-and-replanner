@@ -690,14 +690,24 @@ void PDDL_Base::InitInvariant::instantiate(Instance &ins, Instance::Init &init) 
     Instance::Invariant invariant;
     Invariant::instantiate(ins, invariant);
 
-    // If invariant is of type EXACTLY_ONE, map it into two
-    // invariants of types AT_LEAST_ONE and AT_MOST_ONE.
-    if( invariant.type == EXACTLY_ONE ) {
+    // If invariant is of type AT_MOST_ONE or EXACTLY_ONE,
+    // generate implied invatiants of type AT_LEAST_ONE
+    if( invariant.type != AT_LEAST_ONE ) {
+        for( size_t i = 0; i < invariant.size(); ++i ) {
+            for( size_t j = 1 + i; j < invariant.size(); ++j ) {
+                Instance::Invariant implied_invariant;
+                implied_invariant.type = AT_LEAST_ONE;
+                implied_invariant.push_back(-invariant[i]);
+                implied_invariant.push_back(-invariant[j]);
+                init.invariants.push_back(implied_invariant);
+            }
+        }
+    }
+
+    // If invariant is of type AT_LEAST_ONE or EXACTLY_ONE,
+    // insert invariant.
+    if( invariant.type != AT_MOST_ONE ) {
         invariant.type = AT_LEAST_ONE;
-        init.invariants.push_back(invariant);
-        invariant.type = AT_MOST_ONE;
-        init.invariants.push_back(invariant);
-    } else {
         init.invariants.push_back(invariant);
     }
 }
