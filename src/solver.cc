@@ -26,7 +26,7 @@ bool Solver::solve(const State &initial_hidden_state,
     sensors.clear();
     sensed.clear();
 
-    if( options_.is_enabled("print:solver:plan-step") ) {
+    if( options_.is_enabled("print:solver:steps") ) {
         cout << ">>> initial state=";
         state.print(cout, kp_instance_);
         cout << endl << ">>> initial hidden=";
@@ -71,7 +71,7 @@ bool Solver::solve(const State &initial_hidden_state,
         for( size_t k = 0; k < plan.size(); ++k ) {
             const Instance::Action &kp_act = *kp_instance_.actions[plan[k]];
 
-            if( options_.is_enabled("print:solver:plan-step") ) {
+            if( options_.is_enabled("print:solver:steps") ) {
                 cout << ">>> x0-act=" << kp_act.name << endl;
             }
 
@@ -107,7 +107,7 @@ bool Solver::solve(const State &initial_hidden_state,
                 sensed.clear();
                 //cout << "HIDDEN="; hidden.print(cout, instance_); cout << endl;
 
-                if( options_.is_enabled("print:solver:plan-step") ) {
+                if( options_.is_enabled("print:solver:steps") ) {
                     cout << ">>> state=";
                     state.print(cout, kp_instance_);
                     cout << endl << ">>> hidden=";
@@ -138,7 +138,7 @@ bool Solver::solve(const State &initial_hidden_state,
         }
     }
 
-    if( options_.is_enabled("print:solver:plan-step") ) {
+    if( options_.is_enabled("print:solver:steps") ) {
         cout << " state=";
         state.print(cout, kp_instance_);
         cout << endl;

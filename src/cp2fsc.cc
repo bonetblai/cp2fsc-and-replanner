@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
 
     cout << "preprocessing control problem..." << endl;
     Preprocessor prep(instance, options);
-    prep.preprocess();
+    prep.preprocess(true);
     if( options.is_enabled("print:problem:preprocessed") ) {
         instance.print(cout);
         instance.write_domain(cout);

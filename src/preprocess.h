@@ -6,17 +6,13 @@
 #include "options.h"
 
 class Preprocessor {
-  public:
-    Instance&   instance;
-    index_vec   atom_map;
-    index_vec   action_map;
-    index_vec   sensor_map;
-    index_vec   axiom_map;
-    index_vec   inv_map;
+    Instance&   instance_;
+    index_vec   atom_map_;
+    index_vec   action_map_;
 
   protected:
     void mark_inconsistent_actions(bool_vec &actions_to_remove);
-    void remove_useless_effects_and_mark_actions(bool_vec &actions_to_remove);
+    void mark_useless_actions(bool_vec &actions_to_remove);
 
   public:
     const Options::Mode options_;
@@ -41,8 +37,11 @@ class Preprocessor {
     // remove atoms marked irrelevant from instance (re-cross-ref)
     void remove_irrelevant_atoms();
 
+    // compute action completion
+    void compute_action_completion(Instance::Action &action);
+
     // perform standard preprocessing: remove static atoms and unreachable actions, re-cross-ref
-    void preprocess(bool remove_atoms = true, const bool_vec *known_non_static_atoms = 0);
+    void preprocess(bool remove_atoms = false, bool do_action_completion = false, const bool_vec *known_non_static_atoms = 0);
 };
 
 #endif

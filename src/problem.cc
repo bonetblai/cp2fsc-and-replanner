@@ -61,18 +61,37 @@ void Instance::cross_reference() {
 }
 
 void Instance::remove_unreachable_conditional_effects(const bool_vec &reachable_atoms, const bool_vec &static_atoms) {
+    // compute known literals in init
+    bool_vec pos_literal_in_init(n_atoms(), false);
+    bool_vec neg_literal_in_init(n_atoms(), false);
+    for( index_set::const_iterator it = init.literals.begin(); it != init.literals.end(); ++it ) {
+        if( *it > 0 )
+            pos_literal_in_init[*it - 1] = true;
+        else
+            neg_literal_in_init[-*it - 1] = true;
+    }
+
+    // iterate over actions and their conditional effects.
     for( size_t k = 0; k < actions.size(); ++k ) {
         Action &act = *actions[k];
         for( int j = 0; j < (int)act.when.size(); ++j ) {
-            bool reachable = true;
+            bool reachable_effect = true;
             for( index_set::const_iterator it = act.when[j].condition.begin(); it != act.when[j].condition.end(); ++it ) {
+                //if( (*it > 0) && !reachable_atoms[*it-1] ) {
                 if( ((*it > 0) && !reachable_atoms[*it-1]) ||
-                    ((*it < 0) && reachable_atoms[-*it-1] && static_atoms[-*it-1]) ) {
-                    reachable = false;
+                    ((*it > 0) && static_atoms[*it-1] && neg_literal_in_init[*it-1]) ||
+                    ((*it < 0) && static_atoms[-*it-1] && pos_literal_in_init[-*it-1]) ) {
+                    reachable_effect = false;
+#if 0
+                    if( *it > 0 )
+                        cout << "positive atom " << atoms[*it - 1]->name << endl;
+                    else
+                        cout << "negative atom " << atoms[-*it - 1]->name << endl;
+#endif
                     break;
                 }
             }
-            if( !reachable ) {
+            if( !reachable_effect ) {
                 act.when[j] = act.when.back();
                 act.when.pop_back();
                 --j;
@@ -82,30 +101,29 @@ void Instance::remove_unreachable_conditional_effects(const bool_vec &reachable_
 }
 
 void Instance::remove_unreachable_axioms(const bool_vec &reachable_atoms, const bool_vec &static_atoms) {
+    // compute known literals in init
+    bool_vec pos_literal_in_init(n_atoms(), false);
+    bool_vec neg_literal_in_init(n_atoms(), false);
+    for( index_set::const_iterator it = init.literals.begin(); it != init.literals.end(); ++it ) {
+        if( *it > 0 )
+            pos_literal_in_init[*it - 1] = true;
+        else
+            neg_literal_in_init[-*it - 1] = true;
+    }
+
+    // iterate over axioms
     for( int k = 0; k < (int)axioms.size(); ++k ) {
         Axiom &axiom = *axioms[k];
-        bool reachable = true;
+        bool reachable_axiom = true;
         for( index_set::const_iterator it = axiom.body.begin(); it != axiom.body.end(); ++it ) {
-#if 0
-            if( *it < 0 ) cout << "ATOM " << atoms[-*it-1]->name << ":";
-            if( (*it < 0) && static_atoms[-*it-1] ) cout << " static";
-            if( (*it < 0) && reachable_atoms[-*it-1] ) cout << " reachable";
-            if( *it < 0 ) cout << endl;
-#endif
             if( ((*it > 0) && !reachable_atoms[*it-1]) ||
-                ((*it < 0) && reachable_atoms[-*it-1] && static_atoms[-*it-1]) ) {
-#if 0
-                cout << "removing axiom " << axiom.name << " because atom ";
-                if( *it > 0 )
-                    cout << atoms[*it-1]->name << " isn't reachable" << endl;
-                else
-                    cout << "(not " << atoms[-*it-1]->name << ") is reachable and static" << endl;
-#endif
-                reachable = false;
+                ((*it > 0) && static_atoms[*it-1] && neg_literal_in_init[*it-1]) ||
+                ((*it < 0) && static_atoms[-*it-1] && pos_literal_in_init[-*it-1]) ) {
+                reachable_axiom = false;
                 break;
             }
         }
-        if( !reachable ) {
+        if( !reachable_axiom ) {
             if( options_.is_enabled("print:axiom:removal") )
                 cout << "removing axiom " << k << "." << axioms[k]->name << endl;
             axioms[k] = axioms.back();
@@ -115,10 +133,184 @@ void Instance::remove_unreachable_axioms(const bool_vec &reachable_atoms, const 
     }
 }
 
-void Instance::simplify_conditional_effects(const bool_vec &static_atoms) {
-    // TODO: implement something; remove effects whose condition contains
-    // a negative static fluent that is true at init. Apply similar rule
-    // to prune axioms.
+void Instance::remove_unreachable_sensors(const bool_vec &reachable_atoms, const bool_vec &static_atoms) {
+    // compute known literals in init
+    bool_vec pos_literal_in_init(n_atoms(), false);
+    bool_vec neg_literal_in_init(n_atoms(), false);
+    for( index_set::const_iterator it = init.literals.begin(); it != init.literals.end(); ++it ) {
+        if( *it > 0 )
+            pos_literal_in_init[*it - 1] = true;
+        else
+            neg_literal_in_init[-*it - 1] = true;
+    }
+
+    // iterate over sensors
+    for( int k = 0; k < (int)sensors.size(); ++k ) {
+        Sensor &sensor = *sensors[k];
+        bool reachable_sensor = true;
+        for( index_set::const_iterator it = sensor.condition.begin(); it != sensor.condition.end(); ++it ) {
+            if( ((*it > 0) && !reachable_atoms[*it-1]) ||
+                ((*it > 0) && static_atoms[*it-1] && neg_literal_in_init[*it-1]) ||
+                ((*it < 0) && static_atoms[-*it-1] && pos_literal_in_init[-*it-1]) ) {
+                reachable_sensor = false;
+                break;
+            }
+        }
+        if( !reachable_sensor ) {
+            if( options_.is_enabled("print:sensor:removal") )
+                cout << "removing sensor " << k << "." << sensors[k]->name << endl;
+            sensors[k] = sensors.back();
+            sensors.pop_back();
+            --k;
+        }
+    }
+}
+
+void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atoms, const bool_vec &static_atoms) {
+    // compute known literals in init
+    bool_vec pos_literal_in_init(n_atoms(), false);
+    bool_vec neg_literal_in_init(n_atoms(), false);
+    for( index_set::const_iterator it = init.literals.begin(); it != init.literals.end(); ++it ) {
+        if( *it > 0 )
+            pos_literal_in_init[*it - 1] = true;
+        else
+            neg_literal_in_init[-*it - 1] = true;
+    }
+
+    // iterate over actions
+    for( size_t k = 0; k < actions.size(); ++k ) {
+        Action &act = *actions[k];
+
+        // precondition
+        for( index_set::const_iterator p = act.precondition.begin(); p != act.precondition.end(); ) {
+            if( ((*p < 0) && !reachable_atoms[-*p-1]) ||
+                ((*p > 0) && static_atoms[*p-1] && pos_literal_in_init[*p-1]) ||
+                ((*p < 0) && static_atoms[-*p-1] && neg_literal_in_init[-*p-1]) ) {
+#if 0
+                cout << "eliminating ";
+                if( *p > 0 )
+                    cout << atoms[*p-1]->name;
+                else
+                    cout << "(not " << atoms[-*p-1]->name << ")";
+                cout << " from " << act.name << endl;
+#endif
+                act.precondition.erase(p++);
+            } else {
+                ++p;
+            }
+        }
+
+        // conditional effects
+        for( int j = 0; j < (int)act.when.size(); ++j ) {
+            When &when = act.when[j];
+            for( index_set::const_iterator p = when.condition.begin(); p != when.condition.end(); ) {
+                if( ((*p < 0) && !reachable_atoms[-*p-1]) ||
+                    ((*p > 0) && static_atoms[*p-1] && pos_literal_in_init[*p-1]) ||
+                    ((*p < 0) && static_atoms[-*p-1] && neg_literal_in_init[-*p-1]) ) {
+#if 0
+                    cout << "Eliminating " << flush;
+                    if( *p > 0 )
+                        cout << atoms[*p-1]->name << flush;
+                    else
+                        cout << "(not " << atoms[-*p-1]->name << ")" << flush;
+                    cout << " from " << act.name << endl;
+#endif
+                    when.condition.erase(p++);
+                } else {
+                    ++p;
+                }
+            }
+
+            // If condition becomes empty, make effects unconditional and
+            // remove conditional effect
+            if( when.condition.empty() ) {
+                act.effect.insert(when.effect.begin(), when.effect.end());
+                act.when[j] = act.when.back();
+                act.when.pop_back();
+                --j;
+            }
+        }
+    }
+
+    // iterate over axioms
+    for( size_t k = 0; k < axioms.size(); ++k ) {
+        Axiom &axiom = *axioms[k];
+        for( index_set::const_iterator p = axiom.body.begin(); p != axiom.body.end(); ) {
+            if( ((*p < 0) && !reachable_atoms[-*p-1]) ||
+                ((*p > 0) && static_atoms[*p-1] && pos_literal_in_init[*p-1]) ||
+                ((*p < 0) && static_atoms[-*p-1] && neg_literal_in_init[-*p-1]) ) {
+                axiom.body.erase(p++);
+            } else {
+                ++p;
+            }
+        }
+    }
+
+    // iterate over sensors
+    for( size_t k = 0; k < sensors.size(); ++k ) {
+        Sensor &sensor = *sensors[k];
+        for( index_set::const_iterator p = sensor.condition.begin(); p != sensor.condition.end(); ) {
+            if( ((*p < 0) && !reachable_atoms[-*p-1]) ||
+                ((*p > 0) && static_atoms[*p-1] && pos_literal_in_init[*p-1]) ||
+                ((*p < 0) && static_atoms[-*p-1] && neg_literal_in_init[-*p-1]) ) {
+                sensor.condition.erase(p++);
+            } else {
+                ++p;
+            }
+        }
+    }
+
+    // iterate over at-least-one invariants
+    for( int k = 0; k < (int)init.invariants.size(); ++k ) {
+        Invariant &invariant = init.invariants[k];
+        bool remove_invariant = false;
+        assert(invariant.type == Invariant::AT_LEAST_ONE);
+        if( invariant.type == Invariant::AT_LEAST_ONE ) {
+            for( int i = 0; i < (int)invariant.size(); ++i ) {
+                int lit = invariant[i];
+                if( ((lit > 0) && !reachable_atoms[lit-1]) ||
+                    ((lit > 0) && static_atoms[lit-1] && neg_literal_in_init[lit-1]) ||
+                    ((lit < 0) && static_atoms[-lit-1] && pos_literal_in_init[-lit-1]) ) {
+#if 0
+                    cout << "Eliminating " << flush;
+                    if( lit > 0 )
+                        cout << atoms[lit-1]->name << flush;
+                    else
+                        cout << "(not " << atoms[-lit-1]->name << ")" << flush;
+                    cout << " from ";
+                    invariant.write(cout, 0, *this);
+#endif
+                    invariant[i] = invariant.back();
+                    invariant.pop_back();
+                    --i;
+                }
+
+                if( ((lit > 0) && static_atoms[lit-1] && pos_literal_in_init[lit-1]) ||
+                    ((lit < 0) && static_atoms[-lit-1] && neg_literal_in_init[-lit-1]) ) {
+                    remove_invariant = true;
+                    break;
+                }
+            }
+        }
+
+        // Check if need to remove invariant or to reduce it to
+        // initial conditions.
+        if( remove_invariant || (invariant.size() == 1) ) {
+            // If size is 1, insert literal in initial state
+            if( !remove_invariant ) {
+                init.literals.insert(invariant[0]);
+            }
+
+            // remove invariant
+            if( options_.is_enabled("print:invariant:removal") ) {
+                cout << "removing ";
+                init.invariants[k].write(cout, 0, *this);
+            }
+            init.invariants[k] = init.invariants.back();
+            init.invariants.pop_back();
+            --k;
+        }
+    }
 }
 
 void Instance::remove_actions(const bool_vec &set, index_vec &map) {
@@ -144,68 +336,6 @@ void Instance::remove_actions(const bool_vec &set, index_vec &map) {
     // update cross-reference bit and remove actions
     if( actions.size() > j ) cross_referenced = false;
     while( actions.size() > j ) actions.pop_back();
-
-    // update map
-    for( size_t k = 0; k < map.size(); ++k ) {
-        if( map[k] != no_such_index )
-            map[k] = rm_map[map[k]];
-    }
-}
-
-void Instance::remove_sensors(const bool_vec &set, index_vec &map) {
-    index_vec rm_map(sensors.size());
-    size_t j = 0;
-
-    // mark sensors to remove and re-index
-    for( size_t k = 0; k < sensors.size(); ++k ) {
-        if( !set[k] ) {
-            if( j < k ) {
-                sensors[j] = sensors[k];
-                sensors[j]->index = (int)j;
-            }
-            rm_map[k] = j;
-            ++j;
-        } else {
-            if( options_.is_enabled("print:sensor:removal") )
-                cout << "removing sensor " << k << "." << sensors[k]->name << endl;
-            rm_map[k] = no_such_index;
-        }
-    }
-
-    // update cross-reference bit and remove sensors
-    if( sensors.size() > j ) cross_referenced = false;
-    while( sensors.size() > j ) sensors.pop_back();
-
-    // update map
-    for( size_t k = 0; k < map.size(); ++k ) {
-        if( map[k] != no_such_index )
-            map[k] = rm_map[map[k]];
-    }
-}
-
-void Instance::remove_axioms(const bool_vec &set, index_vec &map) {
-    index_vec rm_map(axioms.size());
-    size_t j = 0;
-
-    // mark axioms to remove and re-index
-    for( size_t k = 0; k < axioms.size(); ++k ) {
-        if( !set[k] ) {
-            if( j < k ) {
-                axioms[j] = axioms[k];
-                axioms[j]->index = j;
-            }
-            rm_map[k] = j;
-            ++j;
-        } else {
-            if( options_.is_enabled("print:axiom:removal") )
-                cout << "removing axiom " << k << "." << axioms[k]->name << endl;
-            rm_map[k] = no_such_index;
-        }
-    }
-
-    // update cross-reference bit and remove axioms
-    if( axioms.size() > j ) cross_referenced = false;
-    while( axioms.size() > j ) axioms.pop_back();
 
     // update map
     for( size_t k = 0; k < map.size(); ++k ) {
@@ -241,7 +371,7 @@ void Instance::remove_atoms(const bool_vec &set, index_vec &map) {
         actions[k]->effect.signed_remap(rm_map);
 
         // update conditional effects
-        for( size_t j = 0; j < actions[k]->when.size(); ++j ) {
+        for( int j = 0; j < (int)actions[k]->when.size(); ++j ) {
             When &when = actions[k]->when[j];
             when.condition.signed_remap(rm_map);
             when.effect.signed_remap(rm_map);
@@ -272,8 +402,9 @@ void Instance::remove_atoms(const bool_vec &set, index_vec &map) {
     init.literals.signed_remap(rm_map);
     for( size_t k = 0; k < init.clauses.size(); ++k )
         init.clauses[k].signed_remap(rm_map);
-    for( size_t k = 0; k < init.invariants.size(); ++k )
+    for( size_t k = 0; k < init.invariants.size(); ++k ) {
         init.invariants[k].signed_remap(rm_map);
+    }
     for( size_t k = 0; k < init.oneofs.size(); ++k )
         init.oneofs[k].signed_remap(rm_map);
 
@@ -303,7 +434,7 @@ void Instance::remove_atoms(const bool_vec &set, index_vec &map) {
     }
 }
 
-void Instance::set_non_primitive_and_observable_fluents() {
+void Instance::calculate_non_primitive_and_observable_fluents() {
     non_primitive_fluents.clear();
     for( size_t k = 0; k < n_axioms(); ++k ) {
         const Axiom &axiom = *axioms[k];
@@ -466,131 +597,19 @@ void Instance::write_domain(ostream &os, int indent) const {
 
     // actions
     for( size_t k = 0; k < n_actions(); k++ ) {
-        const Action *act = actions[k];
-
-        // name and parameters
-        os << istr << "(:action " << act->name->to_string() << endl;
-        if( always_write_parameters_declaration )
-            os << istr << istr << ":parameters ()" << endl;
-
-        // precondition
-        if( act->precondition.size() > 0 ) {
-            os << istr << istr << ":precondition";
-            if( (act->precondition.size() > 1) || always_write_conjunction ) os << " (and";
-            for( index_set::const_iterator p = act->precondition.begin(); p != act->precondition.end(); ++p ) {
-                int idx = (*p < 0 ? -*p : *p) - 1;
-                if( *p < 0  )
-                    os << " (not " << atoms[idx]->name << ")";
-                else
-                    os << " " << atoms[idx]->name;
-            }
-            if( (act->precondition.size() > 1) || always_write_conjunction ) os << ")";
-            os << endl;
-        } else if( always_write_precondition ) {
-            if( always_write_conjunction )
-                os << istr << istr << ":precondition (and)" << endl;
-            else
-                os << istr << istr << ":precondition ()" << endl;
-        }
-
-        // effects
-        int n_effects = act->effect.size() + act->when.size();
-        if( n_effects > 0 ) {
-            os << istr << istr << ":effect";
-            if( n_effects > 1 ) os << " (and";
-
-            // add and del effects
-            for( index_set::const_iterator p = act->effect.begin(); p != act->effect.end(); ++p ) {
-                int idx = (*p < 0 ? -*p : *p) - 1;
-                if( *p > 0 )
-                    os << " " << atoms[idx]->name;
-                else
-                    os << " (not " << atoms[idx]->name << ")";
-            }
-
-            // conditional effects
-            for( size_t i = 0; i < act->when.size(); ++i ) {
-                const When &w = act->when[i];
-                int n_ceffects = w.effect.size();
-                if( n_ceffects > 0 ) {
-                    assert(!w.condition.empty());
-                    if( (i > 0) || (act->effect.size() > 0) )
-                        os << endl << istr << istr << "            ";
-                    os << " (when";
-
-                    // condition
-                    if( (w.condition.size() > 1) || always_write_conjunction ) os << " (and";
-                    for( index_set::const_iterator p = w.condition.begin(); p != w.condition.end(); ++p ) {
-                        int idx = (*p < 0 ? -*p : *p) - 1;
-                        if( *p > 0 )
-                            os << " " << atoms[idx]->name;
-                        else
-                            os << " (not " << atoms[idx]->name << ")";
-                    }
-                    if( (w.condition.size() > 1) || always_write_conjunction ) os << ")";
-
-                    // effects
-                    if( n_ceffects > 1 ) os << " (and";
-                    for( index_set::const_iterator p = w.effect.begin(); p != w.effect.end(); ++p ) {
-                        int idx = (*p < 0 ? -*p : *p) - 1;
-                        if( *p > 0 )
-                            os << " " << atoms[idx]->name;
-                        else
-                            os << " (not " << atoms[idx]->name << ")";
-                    }
-                    if( n_ceffects > 1 ) os << ")";
-
-                    os << ")"; // close (when ....)
-                }
-            }
-
-            if( n_effects > 1 ) os << ")";
-        }
-        os << ")" << endl;
+        const Action &act = *actions[k];
+        if( act.effect.size() + act.when.size() > 0 )
+            act.write(os, indent, *this);
     }
 
     // axioms
     for( size_t k = 0; k < n_axioms(); k++ ) {
-        const Axiom *axiom = axioms[k];
+        axioms[k]->write(os, indent, *this);
+    }
 
-        // name and parameters
-        os << istr << "(:axiom " << axiom->name->to_string() << endl;
-        if( always_write_parameters_declaration )
-            os << istr << istr << ":parameters ()" << endl;
-
-        // body
-        if( axiom->body.size() > 0 ) {
-            os << istr << istr << ":body";
-            if( (axiom->body.size() > 1) || always_write_conjunction ) os << " (and";
-            for( index_set::const_iterator p = axiom->body.begin(); p != axiom->body.end(); ++p ) {
-                int idx = (*p < 0 ? -*p : *p) - 1;
-                if( *p < 0  )
-                    os << " (not " << atoms[idx]->name << ")";
-                else
-                    os << " " << atoms[idx]->name;
-            }
-            if( (axiom->body.size() > 1) || always_write_conjunction ) os << ")";
-            os << endl;
-        } else if( always_write_precondition ) {
-            if( always_write_conjunction )
-                os << istr << istr << ":body (and)" << endl;
-            else
-                os << istr << istr << ":body ()" << endl;
-        }
-
-        // head
-        int n_heads = axiom->head.size();
-        if( n_heads > 0 ) {
-            os << istr << istr << ":head";
-            if( n_heads > 1 ) os << " (and";
-            for( index_set::const_iterator p = axiom->head.begin(); p != axiom->head.end(); ++p ) {
-                assert(*p > 0);
-                int idx = *p - 1;
-                 os << " " << atoms[idx]->name;
-            }
-            if( n_heads > 1 ) os << ")";
-        }
-        os << ")" << endl;
+    // sensors
+    for( size_t k = 0; k < n_sensors(); k++ ) {
+        sensors[k]->write(os, indent, *this);
     }
 
     os << ")" << endl;
@@ -717,6 +736,93 @@ void Instance::Action::print(ostream &os, const Instance &i) const {
     if( cost != 1 ) os << "  cost: " << cost << endl;
 }
 
+void Instance::Action::write(ostream &os, int indent, const Instance &instance) const {
+    // setup indentation string
+    char *istr = new char[indent+1];
+    for( int i = 0; i < indent; ++i ) istr[i] = ' ';
+    istr[indent] = '\0';
+
+    // name and parameters
+    os << istr << "(:action " << name->to_string() << endl;
+    if( always_write_parameters_declaration )
+        os << istr << istr << ":parameters ()" << endl;
+
+    // precondition
+    if( precondition.size() > 0 ) {
+        os << istr << istr << ":precondition";
+        if( (precondition.size() > 1) || always_write_conjunction ) os << " (and";
+        for( index_set::const_iterator p = precondition.begin(); p != precondition.end(); ++p ) {
+            int idx = (*p < 0 ? -*p : *p) - 1;
+            if( *p < 0  )
+                os << " (not " << instance.atoms[idx]->name << ")";
+            else
+                os << " " << instance.atoms[idx]->name;
+        }
+        if( (precondition.size() > 1) || always_write_conjunction ) os << ")";
+        os << endl;
+    } else if( always_write_precondition ) {
+        if( always_write_conjunction )
+            os << istr << istr << ":precondition (and)" << endl;
+        else
+            os << istr << istr << ":precondition ()" << endl;
+    }
+
+    // effects
+    int n_effects = effect.size() + when.size();
+    if( n_effects > 0 ) {
+        os << istr << istr << ":effect";
+        if( n_effects > 1 ) os << " (and";
+
+        // add and del effects
+        for( index_set::const_iterator p = effect.begin(); p != effect.end(); ++p ) {
+            int idx = (*p < 0 ? -*p : *p) - 1;
+            if( *p > 0 )
+                os << " " << instance.atoms[idx]->name;
+            else
+                os << " (not " << instance.atoms[idx]->name << ")";
+        }
+
+        // conditional effects
+        for( size_t i = 0; i < when.size(); ++i ) {
+            const When &w = when[i];
+            int n_ceffects = w.effect.size();
+            if( n_ceffects > 0 ) {
+                assert(!w.condition.empty());
+                if( (i > 0) || (effect.size() > 0) )
+                    os << endl << istr << istr << "            ";
+                os << " (when";
+
+                // condition
+                if( (w.condition.size() > 1) || always_write_conjunction ) os << " (and";
+                for( index_set::const_iterator p = w.condition.begin(); p != w.condition.end(); ++p ) {
+                    int idx = (*p < 0 ? -*p : *p) - 1;
+                    if( *p > 0 )
+                        os << " " << instance.atoms[idx]->name;
+                    else
+                        os << " (not " << instance.atoms[idx]->name << ")";
+                }
+                if( (w.condition.size() > 1) || always_write_conjunction ) os << ")";
+
+                // effects
+                if( n_ceffects > 1 ) os << " (and";
+                for( index_set::const_iterator p = w.effect.begin(); p != w.effect.end(); ++p ) {
+                    int idx = (*p < 0 ? -*p : *p) - 1;
+                    if( *p > 0 )
+                        os << " " << instance.atoms[idx]->name;
+                    else
+                        os << " (not " << instance.atoms[idx]->name << ")";
+                }
+                if( n_ceffects > 1 ) os << ")";
+
+                os << ")"; // close (when ....)
+            }
+        }
+
+        if( n_effects > 1 ) os << ")";
+    }
+    os << ")" << endl;
+}
+
 void Instance::Sensor::print(ostream &os, const Instance &i) const {
     os << name << ":" << endl;
     if( condition.size() > 0 ) {
@@ -737,6 +843,47 @@ void Instance::Sensor::print(ostream &os, const Instance &i) const {
         os << " " << *it-1 << '.' << i.atoms[*it-1]->name;
     }
     os << endl;
+}
+
+void Instance::Sensor::write(ostream &os, int indent, const Instance &instance) const {
+    // setup indentation string
+    char *istr = new char[indent+1];
+    for( int i = 0; i < indent; ++i ) istr[i] = ' ';
+    istr[indent] = '\0';
+
+    // name and parameters
+    os << istr << "(:sensor " << name->to_string() << endl;
+    if( always_write_parameters_declaration )
+        os << istr << istr << ":parameters ()" << endl;
+
+    // condition
+    if( condition.size() > 0 ) {
+        os << istr << istr << ":condition";
+        if( (condition.size() > 1) || always_write_conjunction ) os << " (and";
+        for( index_set::const_iterator p = condition.begin(); p != condition.end(); ++p ) {
+            int idx = (*p < 0 ? -*p : *p) - 1;
+            if( *p < 0  )
+                os << " (not " << instance.atoms[idx]->name << ")";
+            else
+                os << " " << instance.atoms[idx]->name;
+        }
+        if( (condition.size() > 1) || always_write_conjunction ) os << ")";
+        os << endl;
+    } else if( always_write_precondition ) {
+        if( always_write_conjunction )
+            os << istr << istr << ":condition (and)" << endl;
+        else
+            os << istr << istr << ":condition ()" << endl;
+    }
+
+    // sensed
+    assert(!sensed.empty());
+    os << istr << istr << ":sensed";
+    for( index_set::const_iterator it = sensed.begin(); it != sensed.end(); ++it ) {
+        assert(*it > 0);
+        os << " " << instance.atoms[*it-1]->name;
+    }
+    os << ")" << endl;
 }
 
 void Instance::Axiom::print(ostream &os, const Instance &i) const {
@@ -762,6 +909,67 @@ void Instance::Axiom::print(ostream &os, const Instance &i) const {
             os << " -" << idx << '.' << i.atoms[idx]->name;
     }
     os << endl;
+}
+
+void Instance::Axiom::write(ostream &os, int indent, const Instance &instance) const {
+    // setup indentation string
+    char *istr = new char[indent+1];
+    for( int i = 0; i < indent; ++i ) istr[i] = ' ';
+    istr[indent] = '\0';
+
+    // name and parameters
+    os << istr << "(:axiom " << name->to_string() << endl;
+    if( always_write_parameters_declaration )
+        os << istr << istr << ":parameters ()" << endl;
+
+    // body
+    if( body.size() > 0 ) {
+        os << istr << istr << ":body";
+        if( (body.size() > 1) || always_write_conjunction ) os << " (and";
+        for( index_set::const_iterator p = body.begin(); p != body.end(); ++p ) {
+            int idx = (*p < 0 ? -*p : *p) - 1;
+            if( *p < 0  )
+                os << " (not " << instance.atoms[idx]->name << ")";
+            else
+                os << " " << instance.atoms[idx]->name;
+        }
+        if( (body.size() > 1) || always_write_conjunction ) os << ")";
+        os << endl;
+    } else if( always_write_precondition ) {
+        if( always_write_conjunction )
+            os << istr << istr << ":body (and)" << endl;
+        else
+            os << istr << istr << ":body ()" << endl;
+    }
+
+    // head
+    int n_heads = head.size();
+    if( n_heads > 0 ) {
+        os << istr << istr << ":head";
+        if( n_heads > 1 ) os << " (and";
+        for( index_set::const_iterator p = head.begin(); p != head.end(); ++p ) {
+            assert(*p > 0);
+            os << " " << instance.atoms[*p-1]->name;
+        }
+        if( n_heads > 1 ) os << ")";
+    }
+    os << ")" << endl;
+}
+
+void Instance::Invariant::write(ostream &os, int indent, const Instance &instance) const {
+    // setup indentation string
+    char *istr = new char[indent+1];
+    for( int i = 0; i < indent; ++i ) istr[i] = ' ';
+    istr[indent] = '\0';
+    os << istr << "(invariant";
+    for( size_t i = 0; i < size(); ++i ) {
+        int lit = (*this)[i];
+        if( lit > 0 )
+            os << " " << instance.atoms[lit-1]->name;
+        else
+            os << " (not " << instance.atoms[-lit-1]->name << ")";
+    }
+    os << ")" << endl;
 }
 
 void Instance::print_actions(ostream &os) const {
@@ -862,11 +1070,6 @@ void Instance::generate_initial_states(StateSet &initial_states) const {
     }
 }
 
-void Instance::simplify_invariants(const bool_vec &static_atoms) {
-    // Simplify invariants: literals that are static and false are removed from
-    // invariants, and invariants that contain a static true literal are removed.
-}
-
 void Instance::create_deductive_rules() {
     // This is pretty much the same as for invariant actions for KP.
     // The difference is that this rule apply at the atom level and
@@ -874,7 +1077,7 @@ void Instance::create_deductive_rules() {
     // deductive rules.
     for( invariant_vec::const_iterator it = init.invariants.begin(); it != init.invariants.end(); ++it ) {
         const Invariant &invariant = *it;
-        assert(invariant.type != Invariant::EXACTLY_ONE);
+        assert(invariant.type == Invariant::AT_LEAST_ONE);
 
         for( size_t k = 0; k < invariant.size(); ++k ) {
             ostringstream s;
@@ -896,6 +1099,7 @@ void Instance::create_deductive_rules() {
                     }
                 }
             } else {
+                // This should be dead code.
                 assert(invariant.type == Invariant::AT_MOST_ONE);
                 for( size_t i = 0; i < invariant.size(); ++i ) {
                     int lit = invariant[i];

@@ -14,8 +14,10 @@ const char *available_options[] = {
     "print:action:removal",                "[PREP] print the name of the actions that are removed",
     "print:sensor:removal",                "[PREP] print the name of the sensors that are removed",
     "print:axiom:removal",                 "[PREP] print the name of axioms that are removed",
+    "print:invariant:removal",             "[PREP] print the invariants are removed",
 
     "print:preprocess:stage",              "[PREP] print the stage name",
+    "print:atom:reachable",                "[PREP] print the name of reachable atoms",
     "print:atom:unreachable",              "[PREP] print the name of unreachable atoms",
     "print:atom:static",                   "[PREP] print the name of static atoms",
     "print:action:unreachable" ,           "[PREP] print the name of unreachable actions",
@@ -49,7 +51,7 @@ const char *available_options[] = {
     // solver options (k_replanner)
     "print:solver:plan",                   "[SOLV] print classical plan",
     "print:solver:assumptions",            "[SOLV] print assumptions made in classical plan",
-    "print:solver:plan-step",              "[SOLV] print the result of each action in the plan",
+    "print:solver:steps",                  "[SOLV] print the result of each action in the plan",
     "print:solver:inconsistency",          "[SOLV] print when detecting an inconsistency",
     "print:solver:inconsistency:details",  "[SOLV] print details of the inconsistency",
     "print:solver:consistency:check",      "[SOLV] print the details of each consistency check",

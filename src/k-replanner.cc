@@ -169,7 +169,7 @@ int main(int argc, char *argv[]) {
 
     cout << "preprocessing p.o. problem..." << endl;
     Preprocessor prep(instance, options);
-    prep.preprocess();
+    prep.preprocess(true, true);
     if( options.is_enabled("print:problem:preprocessed") ) {
         //instance.print(cout);
         instance.write_domain(cout);

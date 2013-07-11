@@ -174,7 +174,7 @@ KP_Instance::KP_Instance(const Instance &ins, const Options::Mode &options)
     size_t invariant_no = 0;
     for( invariant_vec::const_iterator it = ins.init.invariants.begin(); it != ins.init.invariants.end(); ++it ) {
         const Invariant &invariant = *it;
-        assert(invariant.type != Invariant::EXACTLY_ONE);
+        assert(invariant.type == Invariant::AT_LEAST_ONE);
 
         for( size_t k = 0; k < invariant.size(); ++k ) {
             ostringstream s;
@@ -204,6 +204,7 @@ KP_Instance::KP_Instance(const Instance &ins, const Options::Mode &options)
                     }
                 }
             } else {
+                // This should be dead code.
                 assert(invariant.type == Invariant::AT_MOST_ONE);
                 for( size_t i = 0; i < invariant.size(); ++i ) {
                     int lit = invariant[i];
