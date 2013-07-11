@@ -41,7 +41,7 @@ class Preprocessor {
     void compute_action_completion(Instance::Action &action);
 
     // perform standard preprocessing: remove static atoms and unreachable actions, re-cross-ref
-    void preprocess(bool remove_atoms = false, bool do_action_completion = false, const bool_vec *known_non_static_atoms = 0);
+    void preprocess(bool remove_atoms = false, bool do_action_completion = false);
 };
 
 #endif
