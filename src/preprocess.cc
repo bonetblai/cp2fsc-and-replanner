@@ -271,6 +271,7 @@ void Preprocessor::compute_static_atoms(const bool_vec &reachable_actions, bool_
 #endif
 
     // atoms in the oneofs are non-static
+    // TODO: not sure of this is correct!
     for( size_t k = 0; k < instance_.init.oneofs.size(); ++k ) {
         const Instance::Oneof &oneof = instance_.init.oneofs[k];
         for( Instance::Oneof::const_iterator it = oneof.begin(); it != oneof.end(); ++it ) {
@@ -281,6 +282,7 @@ void Preprocessor::compute_static_atoms(const bool_vec &reachable_actions, bool_
 
     // negative atoms in the body of axioms are non static
     // atoms in the head of axioms are non static
+    // TODO: not sure of this is correct!
     for( size_t k = 0; k < instance_.axioms.size(); ++k ) {
         const Instance::Axiom &axiom = *instance_.axioms[k];
         for( index_set::const_iterator it = axiom.body.begin(); it != axiom.body.end(); ++it ) {
@@ -336,19 +338,19 @@ void Preprocessor::compute_action_completion(Instance::Action &action) {
     }
 
     // iterate over candidate literals to check for completion.
-    // A completion for literal L is a set of literals S such that
+    // A completion for literal L and action a is a set S of
+    // literals such that:
     //
-    //    1) for each conditional effect that adds L:
+    //    1) for each conditional effect a : C -> L,
     //
-    //       - the condition contains a literal L'
-    //       - the complement of L' belongs to S
+    //       - C contains a literal L' such that -L' belongs to S
     //
-    //    2) there is a conditional effect whose only condition
-    //       is L and that deletes L
+    //    2) there is a conditional effect a : L -> -L
     //
-    //    3) L is not unconditionally addded
-    //
-    // The completion of L wrt S is the conditional effect -S -> -L.
+    // The first case implies that L is not unconditionally addded
+    // If S is a completion of (a,L), then the compilation of S is
+    // to add the effect a : S -> -L
+
     for( size_t k = 0; k < candidate_literals.size(); ++k ) {
         int lit = candidate_literals[k];
         if( action.effect.contains(lit) ) continue;
@@ -453,10 +455,7 @@ void Preprocessor::remove_irrelevant_atoms() {
 
 
 
-void Preprocessor::preprocess(bool remove_atoms, bool do_action_completion, const bool_vec *known_non_static_atoms) {
-    assert(known_non_static_atoms == 0);
-    assert((known_non_static_atoms == 0) || (known_non_static_atoms->size() == instance_.n_atoms()));
-
+void Preprocessor::preprocess(bool remove_atoms, bool do_action_completion) {
     if( options_.is_enabled("print:preprocess:stage") )
         cout << "Preprocessing..." << endl;
 
@@ -500,13 +499,6 @@ void Preprocessor::preprocess(bool remove_atoms, bool do_action_completion, cons
         // compute static atoms
         bool_vec static_atoms_aux(instance_.n_atoms(), true);
         compute_static_atoms(reachable_actions, static_atoms_aux);
-#if 0
-        if( known_non_static_atoms != 0 ) {
-            static_atoms_aux.bitwise_complement();
-            static_atoms_aux.bitwise_or(*known_non_static_atoms);
-            static_atoms_aux.bitwise_complement();
-        }
-#endif
 
         // mark as non-static all non-primitive and observable fluents
         instance_.calculate_non_primitive_and_observable_fluents();
@@ -637,8 +629,7 @@ void Preprocessor::preprocess(bool remove_atoms, bool do_action_completion, cons
     instance_.create_deductive_rules();
 
 
-    // stage 8: Perform action completion. This is only valid for
-    // k-replanner.
+    // stage 8: Perform action completion. This is only valid for k-replanner.
     if( do_action_completion ) {
         if( options_.is_enabled("print:preprocess:stage") )
             cout << "  Stage 8: computing action completion..." << endl;
