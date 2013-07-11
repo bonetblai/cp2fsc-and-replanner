@@ -103,6 +103,40 @@ void Preprocessor::mark_useless_actions(bool_vec &actions_to_remove) {
     }
 }
 
+
+// This procedure detects actions with dead preconditions determined by static atoms
+// and the known atoms at initial state. It must be called after the set of static
+// and reachable atoms have been computed.
+
+void Preprocessor::mark_unreachable_actions(const bool_vec &reachable_atoms, const bool_vec &static_atoms, bool_vec &actions_to_remove) {
+    // compute known literals in init
+    bool_vec pos_literal_in_init(instance_.n_atoms(), false);
+    bool_vec neg_literal_in_init(instance_.n_atoms(), false);
+    for( index_set::const_iterator it = instance_.init.literals.begin(); it != instance_.init.literals.end(); ++it ) {
+        if( *it > 0 )
+            pos_literal_in_init[*it - 1] = true;
+        else
+            neg_literal_in_init[-*it - 1] = true;
+    }
+
+    // iterate over actions and their conditional effects.
+    for( size_t k = 0; k < instance_.actions.size(); ++k ) {
+        Instance::Action &act = *instance_.actions[k];
+        bool reachable_action = true;
+        for( index_set::const_iterator it = act.precondition.begin(); it != act.precondition.end(); ++it ) {
+            if( ((*it > 0) && !reachable_atoms[*it-1]) ||
+                ((*it > 0) && static_atoms[*it-1] && neg_literal_in_init[*it-1]) ||
+                ((*it < 0) && static_atoms[-*it-1] && pos_literal_in_init[-*it-1]) ) {
+                reachable_action = false;
+                break;
+            }
+        }
+        if( !reachable_action ) {
+            actions_to_remove[k] = true;
+        }
+    }
+}
+
 // Computes reachable atoms, actions, sensors and axioms. Assumes that all entries 
 // in the input vectors are false.
 
@@ -383,7 +417,7 @@ void Preprocessor::compute_action_completion(Instance::Action &action) {
 
         // If valid completion, add new conditional effect
         if( valid_completion ) {
-#if 0
+#if 1
             cout << "found completion for '" << action.name << "' and '";
             if( lit > 0 )
                 cout << instance_.atoms[lit-1]->name << "' = ";
@@ -467,10 +501,6 @@ void Preprocessor::preprocess(bool remove_atoms, bool do_action_completion) {
     mark_useless_actions(actions_to_remove);
     instance_.remove_actions(actions_to_remove, action_map_);
 
-    // after action removal, compute cross references
-    instance_.cross_reference();
-
-
     // stage 2: Compute reachable atoms, actions, sensors and axioms
     if( options_.is_enabled("print:preprocess:stage") )
         cout << "  Stage 2: computing reachability..." << endl;
@@ -553,6 +583,7 @@ void Preprocessor::preprocess(bool remove_atoms, bool do_action_completion) {
         cout << "  Stage 4: removing unreachable actions..." << endl;
     reachable_actions.bitwise_complement();
     mark_useless_actions(reachable_actions);
+    mark_unreachable_actions(reachable_atoms, static_atoms, reachable_actions);
     instance_.remove_actions(reachable_actions, action_map_);
 
 
@@ -623,10 +654,12 @@ void Preprocessor::preprocess(bool remove_atoms, bool do_action_completion) {
     instance_.calculate_non_primitive_and_observable_fluents();
 
 
+#if 0 // This old stuff. It should not be necessary
     // stage 7: Create deductive rules
     if( options_.is_enabled("print:preprocess:stage") )
         cout << "  Stage 7: computing deductive rules..." << endl;
     instance_.create_deductive_rules();
+#endif
 
 
     // stage 8: Perform action completion. This is only valid for k-replanner.
@@ -637,5 +670,9 @@ void Preprocessor::preprocess(bool remove_atoms, bool do_action_completion) {
             compute_action_completion(*instance_.actions[k]);
         }
     }
+
+
+    // do cross referencing
+    instance_.cross_reference();
 }
 

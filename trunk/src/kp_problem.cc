@@ -6,7 +6,7 @@
 using namespace std;
 
 KP_Instance::KP_Instance(const Instance &ins, const Options::Mode &options)
-  : Instance(ins.name, options),
+  : Instance(ins.name, options), po_instance_(ins),
     n_standard_actions_(0), n_sensor_actions_(0), n_invariant_actions_(0) {
 
     // create K0 atoms
@@ -63,9 +63,11 @@ KP_Instance::KP_Instance(const Instance &ins, const Options::Mode &options)
     }
 
     // create K-actions
+    remap_ = vector<int>(ins.n_actions(),-1);
     for( size_t k = 0; k < ins.n_actions(); k++ ) {
         const Action &act = *ins.actions[k];
         Action &nact = new_action(new CopyName(act.name->to_string()));
+        remap_[k] = k;
 
         // preconditions
         for( index_set::const_iterator it = act.precondition.begin(); it != act.precondition.end(); ++it ) {
@@ -235,6 +237,38 @@ KP_Instance::KP_Instance(const Instance &ins, const Options::Mode &options)
         }
     }
     n_invariant_actions_ = n_actions() - n_standard_actions_ - n_sensor_actions_;
+}
+
+void KP_Instance::cross_reference() {
+    size_t k = 0;
+    while( k < n_actions() ) {
+        if( actions[k]->name->to_string().compare(0, 7, "sensor-") == 0 ) {
+            n_standard_actions_ = k;
+            break;
+        }
+        ++k;
+    }
+    while( k < n_actions() ) {
+        if( actions[k]->name->to_string().compare(0, 10, "invariant-") == 0 ) {
+            n_sensor_actions_ = k - n_standard_actions_;
+            break;
+        }
+        ++k;
+    }
+    n_invariant_actions_ = n_actions() - n_standard_actions_ - n_sensor_actions_;
+
+    // remap actions into po instance
+    for( size_t k = 0; k < n_standard_actions_; ++k ) {
+        remap_[k] = -1;
+        for( size_t j = 0; j < po_instance_.n_actions(); ++j ) {
+            if( actions[k]->name->to_string() == po_instance_.actions[j]->name->to_string() ) {
+                remap_[k] = j;
+                break;
+            }
+        }
+    }
+
+    Instance::cross_referenced = true;
 }
 
 void KP_Instance::apply_plan(const Plan &plan, const State &initial_state, State &final_state, vector<State> &assumption_vec) const {

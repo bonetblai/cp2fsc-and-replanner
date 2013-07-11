@@ -1,6 +1,7 @@
 #ifndef NAME_H
 #define NAME_H
 
+#include <stdlib.h>
 #include <string.h>
 #include <string>
 #include <iostream>
@@ -36,7 +37,7 @@ inline std::ostream& operator<<(std::ostream &os, const Name *n) {
 }
 
 class StringName : public Name {
-    const char* _string;
+    const char *_string;
   public:
     StringName(const char *s) : _string(s) { }
     virtual ~StringName() { }
@@ -48,7 +49,7 @@ class CopyName : public Name {
   public:
     CopyName(const char *s) : _string(strdup(s)) { }
     CopyName(const std::string &s) : _string(strdup(s.c_str())) { }
-    virtual ~CopyName() { delete _string; }
+    virtual ~CopyName() { free(_string); }
     virtual void write(std::ostream &os, bool cat) const { os << _string; }
 };
 

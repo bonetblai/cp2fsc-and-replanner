@@ -11,6 +11,7 @@ class StateSet;
 class StateHash;
 
 class Instance {
+  protected:
     bool cross_referenced;
 
   public:
@@ -172,8 +173,8 @@ class Instance {
     // remap atoms in the initial states, rechable space, etc.
 
     // compute/clear secondary instance info
-    void cross_reference();
     void clear_cross_reference();
+    virtual void cross_reference();
 
     // access instance information
     size_t n_atoms() const { return atoms.size(); }

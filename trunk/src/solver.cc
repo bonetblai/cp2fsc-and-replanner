@@ -54,14 +54,16 @@ bool Solver::solve(const State &initial_hidden_state,
         ++planner_calls;
 
         if( options_.is_enabled("print:solver:plan") ) {
-            cout << "Plan:" << endl;
-            for( Instance::Plan::const_iterator a = plan.begin(); a != plan.end(); ++a )
-                cout << "  " << *a << "." << kp_instance_.actions[*a]->name << endl;
+            cout << "Classical plan: " << flush;
+            for( Instance::Plan::const_iterator a = plan.begin(); a != plan.end(); ++a ) {
+                if( a != plan.begin() ) cout << "                ";
+                cout << *a << "." << kp_instance_.actions[*a]->name << endl;
+            }
         }
         if( options_.is_enabled("print:solver:assumptions") ) {
-            cout << "Assumptions:" << endl;
+            cout << "Assumptions: " << flush;
             for( size_t k = 0; k < assumption_vec.size(); ++k ) {
-                cout << "  ";
+                if( k > 0 ) cout << "             ";
                 assumption_vec[k].print(cout, kp_instance_);
                 cout << endl;
             }
@@ -83,7 +85,7 @@ bool Solver::solve(const State &initial_hidden_state,
                 //cout << "ACTION: " << instance_.actions[plan[k]]->name << endl;
 
                 // apply action at hidden state
-                const Instance::Action &act = *instance_.actions[plan[k]];
+                const Instance::Action &act = *instance_.actions[kp_instance_.remap_[plan[k]]];
                 if( !hidden.applicable(act) ) {
                     cout << "warning: action " << act.name //<< "[k=" << k << ", idx=" << plan[k] << "]"
                          << " isn't applicable at hidden state: "

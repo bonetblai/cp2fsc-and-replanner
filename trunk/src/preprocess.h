@@ -13,6 +13,7 @@ class Preprocessor {
   protected:
     void mark_inconsistent_actions(bool_vec &actions_to_remove);
     void mark_useless_actions(bool_vec &actions_to_remove);
+    void mark_unreachable_actions(const bool_vec &reachable_atoms, const bool_vec &static_atoms, bool_vec &actions_to_remove);
 
   public:
     const Options::Mode options_;
