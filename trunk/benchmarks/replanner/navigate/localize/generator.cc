@@ -59,6 +59,8 @@ void emit_domain(ostream &os, int dim) {
         }
     }
 
+#if 0
+    // action completion
     for( int col = 0; col < dim; ++col ) {
         for( int row = 0; row < dim; ++row ) {
             if( possible(dim, col, row) && (row == 0) ) {
@@ -74,6 +76,7 @@ void emit_domain(ostream &os, int dim) {
             }
         }
     }
+#endif
 
     os << "            )" << endl << "    )" << endl << endl;
  
@@ -91,6 +94,8 @@ void emit_domain(ostream &os, int dim) {
         }
     }
 
+#if 0
+    // action completion
     for( int col = 0; col < dim; ++col ) {
         for( int row = 0; row < dim; ++row ) {
             if( possible(dim, col, row) && (col == 0) ) {
@@ -106,6 +111,7 @@ void emit_domain(ostream &os, int dim) {
             }
         }
     }
+#endif
 
     os << "            )" << endl << "    )" << endl << endl;
 
@@ -123,6 +129,8 @@ void emit_domain(ostream &os, int dim) {
         }
     }
 
+#if 0
+    // action completion
     for( int col = 0; col < dim; ++col ) {
         for( int row = 0; row < dim; ++row ) {
             if( possible(dim, col, row) && (row == dim - 1) ) {
@@ -138,6 +146,7 @@ void emit_domain(ostream &os, int dim) {
             }
         }
     }
+#endif
 
     os << "            )" << endl << "    )" << endl << endl;
 
@@ -155,6 +164,8 @@ void emit_domain(ostream &os, int dim) {
         }
     }
 
+#if 0
+    // action completion
     for( int col = 0; col < dim; ++col ) {
         for( int row = 0; row < dim; ++row ) {
             if( possible(dim, col, row) && (col == dim - 1) ) {
@@ -170,6 +181,7 @@ void emit_domain(ostream &os, int dim) {
             }
         }
     }
+#endif
 
     os << "            )" << endl << "    )" << endl << endl;
 
