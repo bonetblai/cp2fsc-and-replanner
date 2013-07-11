@@ -280,7 +280,8 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
                     --i;
                 }
 
-                if( ((lit > 0) && static_atoms[lit-1] && pos_literal_in_init[lit-1]) ||
+                if( ((lit < 0) && !reachable_atoms[-lit-1]) ||
+                    ((lit > 0) && static_atoms[lit-1] && pos_literal_in_init[lit-1]) ||
                     ((lit < 0) && static_atoms[-lit-1] && neg_literal_in_init[-lit-1]) ) {
                     remove_invariant = true;
                     break;
