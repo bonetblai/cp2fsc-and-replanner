@@ -54,12 +54,6 @@ Instance::Axiom& Instance::new_axiom(Name* name) {
     return *r;
 }
 
-void Instance::cross_reference() {
-    if( cross_referenced ) return;
-    // cross references should be performed here...
-    cross_referenced = true;
-}
-
 void Instance::remove_unreachable_conditional_effects(const bool_vec &reachable_atoms, const bool_vec &static_atoms) {
     // compute known literals in init
     bool_vec pos_literal_in_init(n_atoms(), false);
@@ -74,6 +68,7 @@ void Instance::remove_unreachable_conditional_effects(const bool_vec &reachable_
     // iterate over actions and their conditional effects.
     for( size_t k = 0; k < actions.size(); ++k ) {
         Action &act = *actions[k];
+
         for( int j = 0; j < (int)act.when.size(); ++j ) {
             bool reachable_effect = true;
             for( index_set::const_iterator it = act.when[j].condition.begin(); it != act.when[j].condition.end(); ++it ) {
@@ -482,6 +477,10 @@ void Instance::set_hidden_state(State &state) const {
 
 void Instance::clear_cross_reference() {
     cross_referenced = false;
+}
+
+void Instance::cross_reference() {
+    cross_referenced = true;
 }
 
 void Instance::write_atom_set(ostream &os, const index_set &set) const {
@@ -1073,7 +1072,7 @@ void Instance::generate_initial_states(StateSet &initial_states) const {
 void Instance::create_deductive_rules() {
     // This is pretty much the same as for invariant actions for KP.
     // The difference is that this rule apply at the atom level and
-    // not at tje KP-atom level. We call the generated rules, the
+    // not at the KP-atom level. We call the generated rules, the
     // deductive rules.
     for( invariant_vec::const_iterator it = init.invariants.begin(); it != init.invariants.end(); ++it ) {
         const Invariant &invariant = *it;
