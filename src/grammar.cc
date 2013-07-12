@@ -779,7 +779,7 @@ static const short yyrline[] = { 0,
    558,   564,   569,   570,   571,   574,   578,   581,   587,   592,
    595,   598,   602,   605,   611,   616,   619,   624,   628,   629,
    635,   637,   638,   639,   640,   641,   642,   645,   649,   655,
-   665,   675,   685,   688,   700,   702,   705,   710,   718,   720
+   666,   677,   688,   691,   703,   705,   708,   713,   721,   723
 };
 
 static const char * const yytname[] = {   "$","error","$illegal.","TK_OPEN",
@@ -2137,12 +2137,13 @@ case 150:
           } else {
               init_element_vec *ilist = const_cast<init_element_vec*>(yyvsp[-1].ilist);
               ilist->push_back(new InitInvariant(*yyvsp[0].invariant));
+              delete yyvsp[0].invariant;
               yyval.ilist = ilist;
           }
       ;
     break;}
 case 151:
-#line 665 "ppddl.y"
+#line 666 "ppddl.y"
 {
           if( type_ == replanner ) {
               log_error((char*)"'clause' is not a valid element in k-replanner.");
@@ -2150,12 +2151,13 @@ case 151:
           } else {
               init_element_vec *ilist = const_cast<init_element_vec*>(yyvsp[-1].ilist);
               ilist->push_back(new InitClause(*yyvsp[0].clause));
+              delete yyvsp[0].clause;
               yyval.ilist = ilist;
           }
       ;
     break;}
 case 152:
-#line 675 "ppddl.y"
+#line 677 "ppddl.y"
 {
           if( type_ == replanner ) {
               log_error((char*)"'oneof' is not a valid element in k-replanner.");
@@ -2163,16 +2165,17 @@ case 152:
           } else {
               init_element_vec *ilist = const_cast<init_element_vec*>(yyvsp[-1].ilist);
               ilist->push_back(new InitOneof(*yyvsp[0].oneof));
+              delete yyvsp[0].oneof;
               yyval.ilist = ilist;
           }
       ;
     break;}
 case 153:
-#line 685 "ppddl.y"
+#line 688 "ppddl.y"
 { yyval.ilist = new init_element_vec; ;
     break;}
 case 154:
-#line 689 "ppddl.y"
+#line 692 "ppddl.y"
 {
           if( type_ == cp2fsc ) {
               log_error((char*)"':hidden' is not a valid element in cp2fsc.");
@@ -2184,22 +2187,22 @@ case 154:
       ;
     break;}
 case 155:
-#line 701 "ppddl.y"
+#line 704 "ppddl.y"
 { dom_goal = yyvsp[-1].condition; ;
     break;}
 case 156:
-#line 702 "ppddl.y"
+#line 705 "ppddl.y"
 { dom_goal = yyvsp[-2].condition; ;
     break;}
 case 157:
-#line 706 "ppddl.y"
+#line 709 "ppddl.y"
 {
           const_cast<And*>(static_cast<const And*>(yyvsp[-1].condition))->push_back(yyvsp[0].condition);
           yyval.condition = yyvsp[-1].condition;
       ;
     break;}
 case 158:
-#line 710 "ppddl.y"
+#line 713 "ppddl.y"
 {
           And *cond = new And;
           cond->push_back(yyvsp[0].condition);
@@ -2207,11 +2210,11 @@ case 158:
       ;
     break;}
 case 159:
-#line 719 "ppddl.y"
+#line 722 "ppddl.y"
 { yyval.condition = new Literal(*yyvsp[0].atom); ;
     break;}
 case 160:
-#line 720 "ppddl.y"
+#line 723 "ppddl.y"
 { yyval.condition = new Literal(*yyvsp[0].atom); ;
     break;}
 }
@@ -2418,7 +2421,7 @@ YYLABEL(yyerrhandle)
 /* END */
 
 /* #line 1010 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc" */
-#line 2422 "grammar.cc"
-#line 723 "ppddl.y"
+#line 2425 "grammar.cc"
+#line 726 "ppddl.y"
 
 
