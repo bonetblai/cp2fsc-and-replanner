@@ -428,6 +428,7 @@ forall_effect:
       }
       typed_param_list TK_CLOSE {
           forall_effects.back()->param = *$5;
+          delete $5;
       }
       action_effect TK_CLOSE {
           forall_effects.back()->effect = $8;
