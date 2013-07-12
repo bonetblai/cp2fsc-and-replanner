@@ -485,21 +485,25 @@ positive_atomic_effect:
 at_least_one_invariant:
       TK_OPEN KW_INVARIANT condition_list TK_CLOSE {
           $$ = new Invariant(Invariant::AT_LEAST_ONE, *static_cast<const And*>($3));
+          const_cast<And*>(static_cast<const And*>($3))->clear(); delete $3;
       }
     | TK_OPEN KW_AT_LEAST_ONE condition_list TK_CLOSE {
           $$ = new Invariant(Invariant::AT_LEAST_ONE, *static_cast<const And*>($3));
+          const_cast<And*>(static_cast<const And*>($3))->clear(); delete $3;
       }
     ;
 
 at_most_one_invariant:
       TK_OPEN KW_AT_MOST_ONE condition_list TK_CLOSE {
           $$ = new Invariant(Invariant::AT_MOST_ONE, *static_cast<const And*>($3));
+          const_cast<And*>(static_cast<const And*>($3))->clear(); delete $3;
       }
     ;
 
 exactly_one_invariant:
       TK_OPEN KW_EXACTLY_ONE condition_list TK_CLOSE {
           $$ = new Invariant(Invariant::EXACTLY_ONE, *static_cast<const And*>($3));
+          const_cast<And*>(static_cast<const And*>($3))->clear(); delete $3;
       }
     ;
 
@@ -512,12 +516,14 @@ invariant:
 clause:
       TK_OPEN KW_OR condition_list TK_CLOSE {
           $$ = new Clause(*static_cast<const And*>($3));
+          const_cast<And*>(static_cast<const And*>($3))->clear(); delete $3;
       }
     ;
 
 oneof:
       TK_OPEN KW_ONEOF condition_list TK_CLOSE {
           $$ = new Oneof(*static_cast<const And*>($3));
+          const_cast<And*>(static_cast<const And*>($3))->clear(); delete $3;
       }
     ;
 
