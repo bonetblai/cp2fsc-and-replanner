@@ -2137,7 +2137,7 @@ case 150:
           } else {
               init_element_vec *ilist = const_cast<init_element_vec*>(yyvsp[-1].ilist);
               ilist->push_back(new InitInvariant(*yyvsp[0].invariant));
-              delete yyvsp[0].invariant;
+              const_cast<Invariant*>(dynamic_cast<const Invariant*>(yyvsp[0].invariant))->clear(); delete yyvsp[0].invariant;
               yyval.ilist = ilist;
           }
       ;
@@ -2151,7 +2151,7 @@ case 151:
           } else {
               init_element_vec *ilist = const_cast<init_element_vec*>(yyvsp[-1].ilist);
               ilist->push_back(new InitClause(*yyvsp[0].clause));
-              delete yyvsp[0].clause;
+              const_cast<Clause*>(dynamic_cast<const Clause*>(yyvsp[0].clause))->clear(); delete yyvsp[0].clause;
               yyval.ilist = ilist;
           }
       ;
@@ -2165,7 +2165,7 @@ case 152:
           } else {
               init_element_vec *ilist = const_cast<init_element_vec*>(yyvsp[-1].ilist);
               ilist->push_back(new InitOneof(*yyvsp[0].oneof));
-              delete yyvsp[0].oneof;
+              const_cast<Oneof*>(dynamic_cast<const Oneof*>(yyvsp[0].oneof))->clear(); delete yyvsp[0].oneof;
               yyval.ilist = ilist;
           }
       ;
