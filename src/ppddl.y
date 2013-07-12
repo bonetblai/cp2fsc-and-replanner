@@ -659,7 +659,7 @@ init_elements:
           } else {
               init_element_vec *ilist = const_cast<init_element_vec*>($1);
               ilist->push_back(new InitInvariant(*$2));
-              delete $2;
+              const_cast<Invariant*>(dynamic_cast<const Invariant*>($2))->clear(); delete $2;
               $$ = ilist;
           }
       }
@@ -670,7 +670,7 @@ init_elements:
           } else {
               init_element_vec *ilist = const_cast<init_element_vec*>($1);
               ilist->push_back(new InitClause(*$2));
-              delete $2;
+              const_cast<Clause*>(dynamic_cast<const Clause*>($2))->clear(); delete $2;
               $$ = ilist;
           }
       }
@@ -681,7 +681,7 @@ init_elements:
           } else {
               init_element_vec *ilist = const_cast<init_element_vec*>($1);
               ilist->push_back(new InitOneof(*$2));
-              delete $2;
+              const_cast<Oneof*>(dynamic_cast<const Oneof*>($2))->clear(); delete $2;
               $$ = ilist;
           }
       }
