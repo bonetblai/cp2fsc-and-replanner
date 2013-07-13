@@ -5,18 +5,22 @@
 
 using namespace std;
 
-CP_Instance::~CP_Instance() {
-}
-
 // TODO: remove map actions for which there are no act actions
 
 CP_Instance::CP_Instance(const Instance &ins, size_t fsc_states,
                          bool forbid_inconsistent_tuples,
                          bool compound_obs_as_fluents)
-  : Instance(ins.name), fsc_states_(fsc_states),
+  : Instance(), fsc_states_(fsc_states),
     forbid_inconsistent_tuples_(forbid_inconsistent_tuples),
     compound_obs_as_fluents_(compound_obs_as_fluents),
     instance_(ins) {
+
+    // set name
+    if( dynamic_cast<const InstanceName*>(ins.name) != 0 ) {
+        set_name(new InstanceName(*dynamic_cast<const InstanceName*>(ins.name)));
+    } else {
+        set_name(new CopyName(ins.name->to_string()));
+    }
 
     // set description of init
     init = ins.init;
@@ -68,7 +72,7 @@ CP_Instance::CP_Instance(const Instance &ins, size_t fsc_states,
     // create atoms
     atoms.reserve(ins.n_atoms() + fsc_states_);
     for( size_t k = 0; k < ins.n_atoms(); ++k )
-        new_atom(ins.atoms[k]->name);
+        new_atom(new CopyName(ins.atoms[k]->name->to_string()));
 
     // fluents for obs
     if( compound_obs_as_fluents_ ) {
@@ -239,6 +243,22 @@ CP_Instance::CP_Instance(const Instance &ins, size_t fsc_states,
         eff.effect = axiom.head;
         ramif.when.push_back(eff);
     }
+}
+
+CP_Instance::~CP_Instance() {
+}
+
+void CP_Instance::release_memory() {
+    for( StateSet::const_iterator it = initial_states_.begin(); it != initial_states_.end(); ++it )
+        delete *it;
+
+    for( map<const State*, const StateSet*>::iterator it = reachable_space_from_initial_state_.begin(); it != reachable_space_from_initial_state_.end(); ++it ) {
+        for( StateSet::const_iterator jt = it->second->begin(); jt != it->second->end(); ++jt )
+            delete *jt;
+        delete it->second;
+    }
+
+    Instance::release_memory();
 }
 
 void CP_Instance::add_to_initial_states(int fluent) {

@@ -20,6 +20,34 @@ PDDL_Base::PDDL_Base(StringTable &t)
 }
 
 PDDL_Base::~PDDL_Base() { // TODO: implement dtor
+    delete dom_eq_pred;
+    delete dom_top_type;
+    delete dom_goal;
+
+    // TODO: for being able to remove ctions/sensors and other symbols, thesymbols
+    // cannot be shared between the parser and *-instances. Probably will need to 
+    // a symbol tape to store the symbols for each instance.
+    for( size_t k = 0; k < dom_init.size(); ++k )
+        delete dom_init[k];
+    for( size_t k = 0; k < dom_hidden.size(); ++k )
+        delete dom_hidden[k];
+    for( size_t k = 0; k < dom_actions.size(); ++k )
+        ;//delete dom_actions[k];
+    for( size_t k = 0; k < dom_sensors.size(); ++k )
+        ;//delete dom_sensors[k];
+    for( size_t k = 0; k < dom_axioms.size(); ++k )
+        delete dom_axioms[k];
+    for( size_t k = 0; k < dom_observables.size(); ++k )
+        delete dom_observables[k];
+    for( size_t k = 0; k < dom_stickies.size(); ++k )
+        delete dom_stickies[k];
+
+    for( size_t k = 0; k < dom_constants.size(); ++k )
+        ;//delete dom_constants[k];
+    for( size_t k = 0; k < dom_predicates.size(); ++k )
+        ;//delete dom_predicates[k];
+    for( size_t k = 0; k < dom_types.size(); ++k )
+        delete dom_types[k];
 }
 
 void PDDL_Base::set_variable_type(variable_vec &vec, size_t n, TypeSymbol *t) {
@@ -223,9 +251,11 @@ void PDDL_Base::instantiate(Instance &ins) const {
 #endif
 
     // create instance
-    ins.name =
-      new InstanceName(tab.table_char_map().strdup(domain_name ? domain_name : "??"),
-                       tab.table_char_map().strdup(problem_name ? domain_name : "??"));
+    const char *dn = tab.table_char_map().strdup(domain_name ? domain_name : "??");
+    const char *pn = tab.table_char_map().strdup(problem_name ? problem_name : "??");
+    ins.name = new InstanceName(dn, pn);
+    delete[] dn;
+    delete[] pn;
 
     // instantiate initial situation.
     for( size_t k = 0; k < dom_init.size(); k++ )
@@ -514,18 +544,8 @@ void PDDL_Base::print(ostream &os) const { // TODO: fix this
 #endif
 }
 
-void InstanceName::write(ostream &os, bool cat) const {
-    if( domain_name_only )
-        os << domain_name;
-    else if( problem_name_only )
-        os << problem_name;
-    else
-        os << domain_name << "::" << problem_name;
-}
-
 PDDL_Name::PDDL_Name(const PDDL_Base::Symbol *sym, const PDDL_Base::symbol_vec &arg, size_t n)
-  : _neg(false), _sym(sym) {
-  _arg = arg;
+  : _neg(false), _sym(sym), _arg(arg) {
 }
 
 PDDL_Name::PDDL_Name(const PDDL_Base::Symbol *sym, const PDDL_Base::variable_vec &arg, size_t n)

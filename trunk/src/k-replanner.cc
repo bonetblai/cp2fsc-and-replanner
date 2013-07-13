@@ -191,6 +191,7 @@ int main(int argc, char *argv[]) {
         kp_instance.write_domain(cout);
         kp_instance.write_problem(cout);
     }
+    float preprocessing_time = Utils::read_time_in_seconds() - start_time;
 
     // solve problem
     cout << "solving problem..." << endl;
@@ -292,11 +293,16 @@ int main(int argc, char *argv[]) {
          << planner_name[opt_planner] << " (planner) "
          << plan.size() << " (plan size) "
          << planner->n_calls() << " (planner calls) "
+         << preprocessing_time << " (preprocessing time) "
          << planner->get_time() << " (planner total time) "
          << planner->get_search_time() << " (planner total search time) "
          << Utils::read_time_in_seconds() - start_time << " (total time)"
          << endl;
+
+    // release memory
     delete planner;
+    kp_instance.release_memory();
+    instance.release_memory();
 
     return 0;
 }

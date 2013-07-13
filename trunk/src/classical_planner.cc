@@ -47,6 +47,14 @@ ClassicalPlanner::ClassicalPlanner(const char *name,
     plan_fn_ = strdup(sstr.str().c_str());
 }
 
+ClassicalPlanner::~ClassicalPlanner() {
+    free((char*)plan_fn_);
+    free((char*)tmp_fn_);
+    free((char*)output_fn_);
+    free((char*)problem_fn_);
+    free((char*)domain_fn_);
+}
+
 FF_Planner::~FF_Planner() {
     if( instance_.options_.is_enabled("remove-intermediate-files") ) {
         if( !first_call_ ) unlink(domain_fn_);
@@ -148,9 +156,6 @@ int FF_Planner::get_plan(const State &state, Instance::Plan &plan) const {
     return SOLVED;
 }
 
-LAMA_Planner::~LAMA_Planner() {
-}
-
 LAMA_Planner::LAMA_Planner(const Instance &instance, const char *tmpfile_path, const char *planner_path)
   : ClassicalPlanner("LAMA", tmpfile_path, planner_path, "lama", instance), first_call_(true) {
 
@@ -178,6 +183,11 @@ LAMA_Planner::LAMA_Planner(const Instance &instance, const char *tmpfile_path, c
             name[i] = tolower(name[i]);
         atom_map_.insert(make_pair(name.substr(1, name.length()-2), k));
     }
+}
+
+LAMA_Planner::~LAMA_Planner() {
+    free((char*)other_cmd_);
+    free((char*)first_cmd_);
 }
 
 int LAMA_Planner::get_plan(const State &state, Instance::Plan &plan) const {

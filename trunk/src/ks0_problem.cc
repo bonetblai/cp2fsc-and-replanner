@@ -4,12 +4,16 @@
 
 using namespace std;
 
-KS0_Instance::~KS0_Instance() {
-}
-
 KS0_Instance::KS0_Instance(const CP_Instance &instance,
                            const Options::Mode &options,
                            bool tag_all_literals) : Instance(options) {
+
+    // set name
+    if( dynamic_cast<const InstanceName*>(instance.name) != 0 ) {
+        set_name(new InstanceName(*dynamic_cast<const InstanceName*>(instance.name)));
+    } else {
+        set_name(new CopyName(instance.name->to_string()));
+    }
 
     // set number of tags; tag0 is the empty tag
     n_tags_ = instance.initial_states_.size();
@@ -316,5 +320,12 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance,
             options_.is_enabled("print:ks0-translation:merge:action") )
             merge.print(cout, *this);
     }
+}
+
+KS0_Instance::~KS0_Instance() {
+}
+
+void KS0_Instance::release_memory() { 
+    Instance::release_memory();
 }
 

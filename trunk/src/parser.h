@@ -1,5 +1,5 @@
 #ifndef PARSER_H
-#define INPUT_H
+#define PARSER_H
 
 #include <stdlib.h>
 #include <stdio.h>

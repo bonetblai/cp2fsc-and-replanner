@@ -26,6 +26,8 @@ class CP_Instance : public Instance {
                 bool forbid_inconsistent_tuples = false,
                 bool compound_obs_as_fluents = false);
     ~CP_Instance();
+    virtual void release_memory();
+
     void add_to_initial_states(int fluent);
     bool consistent_with_obs(int obs_idx, const index_set &condition) const;
     int n_obs() const { return reachable_obs_.size(); }

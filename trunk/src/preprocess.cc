@@ -426,10 +426,15 @@ void Preprocessor::compute_action_completion(Instance::Action &action) {
             instance_.write_atom_set(cout, completion);
             cout << endl;
 #endif
-            Instance::When new_ceff;
-            new_ceff.condition = completion;
-            new_ceff.effect.insert(-lit);
-            action.when.push_back(new_ceff);
+
+            if( !completion.empty() ) {
+                Instance::When new_ceff;
+                new_ceff.condition = completion;
+                new_ceff.effect.insert(-lit);
+                action.when.push_back(new_ceff);
+            } else {
+                action.effect.insert(-lit);
+            }
         }
     }
 }
@@ -500,6 +505,7 @@ void Preprocessor::preprocess(bool remove_atoms, bool do_action_completion) {
     mark_inconsistent_actions(actions_to_remove);
     mark_useless_actions(actions_to_remove);
     instance_.remove_actions(actions_to_remove, action_map_);
+
 
     // stage 2: Compute reachable atoms, actions, sensors and axioms
     if( options_.is_enabled("print:preprocess:stage") )
@@ -662,10 +668,10 @@ void Preprocessor::preprocess(bool remove_atoms, bool do_action_completion) {
 #endif
 
 
-    // stage 8: Perform action completion. This is only valid for k-replanner.
+    // stage 7: Perform action completion. This is only valid for k-replanner.
     if( do_action_completion ) {
         if( options_.is_enabled("print:preprocess:stage") )
-            cout << "  Stage 8: computing action completion..." << endl;
+            cout << "  Stage 7: computing action completion..." << endl;
         for( size_t k = 0; k < instance_.n_actions(); ++k ) {
             compute_action_completion(*instance_.actions[k]);
         }

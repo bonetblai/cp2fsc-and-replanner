@@ -30,7 +30,7 @@ class ClassicalPlanner {
     mutable size_t n_calls_;
   public:
     ClassicalPlanner(const char *name, const char *tmpfile_path, const char *planner_path, const char *planner_name, const Instance &instance);
-    virtual ~ClassicalPlanner() { }
+    virtual ~ClassicalPlanner();
     virtual int get_plan(const State &state, Instance::Plan &plan) const = 0;
     const char* name() const { return planner_name_.c_str(); }
     const char* planner_path() const { return planner_path_.c_str(); }
