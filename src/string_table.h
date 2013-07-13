@@ -1,6 +1,7 @@
 #ifndef STRING_TABLE_H
 #define STRING_TABLE_H
 
+#include <stdlib.h>
 #include <vector>
 #include <iostream>
 //#include "vector.h"
@@ -41,7 +42,7 @@ class StringTable {
         }
         Cell(const char *s, size_t len, char_map &map, void *v, size_t b, Cell *n)
           : bin(b), text(map.strdup(s, len)), val(v), next(n) { }
-        ~Cell() { delete text; if( next ) delete next; }
+        ~Cell() { delete[] text; delete next; }
     };
 
   private:

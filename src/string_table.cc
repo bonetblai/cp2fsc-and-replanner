@@ -9,9 +9,8 @@ StringTable::StringTable(size_t b, char_map &cm)
 
 StringTable::~StringTable() {
     for( size_t k = 0; k < n_bin; k++ )
-        if( table[k] )
-            delete table[k];
-    delete table;
+        delete table[k];
+    delete[] table;
 }
 
 StringTable::Cell* StringTable::inserta(const char *str) {

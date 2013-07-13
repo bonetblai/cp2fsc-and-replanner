@@ -22,6 +22,21 @@ Instance::Instance(const Instance& ins)
     options_(ins.options_) {
 }
 
+Instance::~Instance() {
+}
+
+void Instance::release_memory() {
+    delete name;
+    for( size_t k = 0; k < actions.size(); ++k )
+        delete actions[k];
+    for( size_t k = 0; k < sensors.size(); ++k )
+        delete sensors[k];
+    for( size_t k = 0; k < axioms.size(); ++k )
+        delete axioms[k];
+    for( size_t k = 0; k < atoms.size(); ++k )
+        delete atoms[k];
+}
+
 Instance::Atom& Instance::new_atom(Name *name) {
     Atom *a = new Atom(name, atoms.size());
     atoms.push_back(a);
@@ -121,6 +136,7 @@ void Instance::remove_unreachable_axioms(const bool_vec &reachable_atoms, const 
         if( !reachable_axiom ) {
             if( options_.is_enabled("print:axiom:removal") )
                 cout << "removing axiom " << k << "." << axioms[k]->name << endl;
+            delete axioms[k];
             axioms[k] = axioms.back();
             axioms.pop_back();
             --k;
@@ -154,6 +170,7 @@ void Instance::remove_unreachable_sensors(const bool_vec &reachable_atoms, const
         if( !reachable_sensor ) {
             if( options_.is_enabled("print:sensor:removal") )
                 cout << "removing sensor " << k << "." << sensors[k]->name << endl;
+            delete sensors[k];
             sensors[k] = sensors.back();
             sensors.pop_back();
             --k;
@@ -325,6 +342,7 @@ void Instance::remove_actions(const bool_vec &set, index_vec &map) {
         } else {
             if( options_.is_enabled("print:action:removal") )
                 cout << "removing action " << k << "." << actions[k]->name << endl;
+            delete actions[k];
             rm_map[k] = no_such_index;
         }
     }
@@ -353,8 +371,10 @@ void Instance::remove_atoms(const bool_vec &set, index_vec &map) {
             }
             rm_map[k] = j;
             ++j;
-        } else
+        } else {
+            delete atoms[k];
             rm_map[k] = no_such_index;
+        }
     }
 
     // remove atoms
@@ -821,6 +841,7 @@ void Instance::Action::write(ostream &os, int indent, const Instance &instance) 
         if( n_effects > 1 ) os << ")";
     }
     os << ")" << endl;
+    delete[] istr;
 }
 
 void Instance::Sensor::print(ostream &os, const Instance &i) const {
@@ -884,6 +905,7 @@ void Instance::Sensor::write(ostream &os, int indent, const Instance &instance) 
         os << " " << instance.atoms[*it-1]->name;
     }
     os << ")" << endl;
+    delete[] istr;
 }
 
 void Instance::Axiom::print(ostream &os, const Instance &i) const {
@@ -954,6 +976,7 @@ void Instance::Axiom::write(ostream &os, int indent, const Instance &instance) c
         if( n_heads > 1 ) os << ")";
     }
     os << ")" << endl;
+    delete[] istr;
 }
 
 void Instance::Invariant::write(ostream &os, int indent, const Instance &instance) const {
@@ -970,6 +993,7 @@ void Instance::Invariant::write(ostream &os, int indent, const Instance &instanc
             os << " (not " << instance.atoms[-lit-1]->name << ")";
     }
     os << ")" << endl;
+    delete[] istr;
 }
 
 void Instance::print_actions(ostream &os) const {

@@ -53,5 +53,22 @@ class CopyName : public Name {
     virtual void write(std::ostream &os, bool cat) const { os << _string; }
 };
 
+class InstanceName : public Name {
+    const char* domain_name;
+    const char* problem_name;
+  public:
+    InstanceName(const char *d, const char *p) : domain_name(strdup(d)), problem_name(strdup(p)) { }
+    InstanceName(const InstanceName &name) : domain_name(strdup(name.domain_name)), problem_name(strdup(name.problem_name)) { }
+    virtual ~InstanceName() { free((char*)domain_name); free((char*)problem_name); }
+    virtual void write(std::ostream &os, bool cat) const {
+        if( domain_name_only )
+            os << domain_name;
+        else if( problem_name_only )
+            os << problem_name;
+        else
+            os << domain_name << "::" << problem_name;
+    }
+};
+
 #endif
 

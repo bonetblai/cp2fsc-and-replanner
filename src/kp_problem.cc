@@ -6,8 +6,15 @@
 using namespace std;
 
 KP_Instance::KP_Instance(const Instance &ins, const Options::Mode &options)
-  : Instance(ins.name, options), po_instance_(ins),
+  : Instance(options), po_instance_(ins),
     n_standard_actions_(0), n_sensor_actions_(0), n_invariant_actions_(0) {
+
+    // set name
+    if( dynamic_cast<const InstanceName*>(ins.name) != 0 ) {
+        set_name(new InstanceName(*dynamic_cast<const InstanceName*>(ins.name)));
+    } else {
+        set_name(new CopyName(ins.name->to_string()));
+    }
 
     // create K0 atoms
     atoms.reserve(2*ins.n_atoms());
@@ -237,6 +244,13 @@ KP_Instance::KP_Instance(const Instance &ins, const Options::Mode &options)
         }
     }
     n_invariant_actions_ = n_actions() - n_standard_actions_ - n_sensor_actions_;
+}
+
+KP_Instance::~KP_Instance() {
+}
+
+void KP_Instance::release_memory() {
+    Instance::release_memory();
 }
 
 void KP_Instance::cross_reference() {

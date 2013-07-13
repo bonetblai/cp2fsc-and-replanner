@@ -24,6 +24,7 @@ class Instance {
         Name     *name;
         unsigned index;
         Atom(Name* n = 0, unsigned i = 0) : name(n), index(i) { }
+        ~Atom() { delete name; }
         const Atom& operator=(const Atom &atom) {
             name = atom.name;
             index = atom.index;
@@ -48,6 +49,7 @@ class Instance {
         when_vec   when;
         size_t     cost;
         Action(Name* n = 0, size_t i = 0) : name(n), index(i), cost(1) { }
+        ~Action() { delete name; }
         const Action& operator=(const Action &a) {
             name = a.name;
             index = a.index;
@@ -69,6 +71,7 @@ class Instance {
         index_set condition;
         index_set sensed;
         Sensor(Name *n = 0, size_t i = 0) : name(n), index(i) { }
+        ~Sensor() { delete name; }
         const Sensor& operator=(const Sensor &r) {
             name = r.name;
             index = r.index;
@@ -95,6 +98,7 @@ class Instance {
             head = r.head;
             return *this;
         }
+        ~Axiom() { delete name; }
         bool operator==(const Axiom &r) { return index == r.index; }
         void print(std::ostream &os, const Instance &i) const;
         void write(std::ostream &os, int indent, const Instance &instance) const;
@@ -151,7 +155,8 @@ class Instance {
       : cross_referenced(false), name(0), options_(options) {
     }
     Instance(const Instance &ins);
-    virtual ~Instance() { }
+    virtual ~Instance();
+    virtual void release_memory();
 
     Atom&      new_atom(Name *name);
     Action&    new_action(Name *name);
@@ -159,6 +164,7 @@ class Instance {
     Axiom&     new_axiom(Name *name);
 
     // change (remove from) instance
+    void set_name(Name *n) { delete name; name = n; }
     void remove_unreachable_conditional_effects(const bool_vec &reachable_atoms, const bool_vec &static_atoms);
     void remove_unreachable_axioms(const bool_vec &reachable_atoms, const bool_vec &static_atoms);
     void remove_unreachable_sensors(const bool_vec &reachable_atoms, const bool_vec &static_atoms);

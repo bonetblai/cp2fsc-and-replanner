@@ -14,6 +14,7 @@ class KS0_Instance : public Instance {
                  const Options::Mode &options = Options::Mode(),
                  bool tag_all_literals = true);
     ~KS0_Instance();
+    virtual void release_memory();
     int n_tags() const { return n_tags_; }
 };
 
