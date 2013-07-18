@@ -37,7 +37,7 @@ class KP_Instance : public Instance {
         size_t upper = lower + n_invariant_actions_;
         return (a >= lower) && (a < upper);
     }
-    void apply_plan(const Plan &plan,
+    bool apply_plan(const Plan &plan,
                     const State &initial_state,
                     State &final_state,
                     std::vector<State> &support_vec) const;
