@@ -32,9 +32,9 @@ PDDL_Base::~PDDL_Base() { // TODO: implement dtor
     for( size_t k = 0; k < dom_hidden.size(); ++k )
         delete dom_hidden[k];
     for( size_t k = 0; k < dom_actions.size(); ++k )
-        ;//delete dom_actions[k];
+        delete dom_actions[k];
     for( size_t k = 0; k < dom_sensors.size(); ++k )
-        ;//delete dom_sensors[k];
+        delete dom_sensors[k];
     for( size_t k = 0; k < dom_axioms.size(); ++k )
         delete dom_axioms[k];
     for( size_t k = 0; k < dom_observables.size(); ++k )
@@ -43,9 +43,9 @@ PDDL_Base::~PDDL_Base() { // TODO: implement dtor
         delete dom_stickies[k];
 
     for( size_t k = 0; k < dom_constants.size(); ++k )
-        ;//delete dom_constants[k];
+        delete dom_constants[k];
     for( size_t k = 0; k < dom_predicates.size(); ++k )
-        ;//delete dom_predicates[k];
+        delete dom_predicates[k];
     for( size_t k = 0; k < dom_types.size(); ++k )
         delete dom_types[k];
 }
@@ -100,15 +100,15 @@ Instance::Atom* PDDL_Base::Atom::find_prop(Instance &ins, bool neg, bool create)
     }
     if( !r->val ) {
         if( !create ) return 0;
-        PDDL_Name *a_name = new PDDL_Name(pred, neg);
+        PDDL_Name a_name(pred, neg);
         for( size_t k = 0; k < param.size(); k++ ) {
             if( param[k]->sym_class == sym_variable )
-	        a_name->add(((VariableSymbol*)param[k])->value);
+	        a_name.add(((VariableSymbol*)param[k])->value);
             else
-	        a_name->add(param[k]);
+	        a_name.add(param[k]);
         }
 
-        Instance::Atom &p = ins.new_atom(a_name);
+        Instance::Atom &p = ins.new_atom(new CopyName(a_name.to_string()));
         r->val = &p;
     }
     return (Instance::Atom*)r->val;
@@ -132,7 +132,8 @@ void PDDL_Base::Action::build(Instance &ins, size_t p, int pass) const {
         param[p]->value = 0;
     } else {
         if( pass == 1 ) {
-            Instance::Action &act = ins.new_action(new PDDL_Name(this, param, param.size()));
+            PDDL_Name aname(this, param, param.size());
+            Instance::Action &act = ins.new_action(new CopyName(aname.to_string()));
             if( precondition != 0 ) precondition->instantiate(ins, act.precondition);
             if( effect != 0 ) effect->instantiate(ins, act.effect, &act);
             act.cost = 1;
@@ -165,7 +166,8 @@ void PDDL_Base::Sensor::build(Instance &ins, size_t p) const {
         }
         param[p]->value = 0;
     } else {
-        Instance::Sensor &sensor = ins.new_sensor(new PDDL_Name(this, param, param.size()));
+        PDDL_Name sname(this, param, param.size());
+        Instance::Sensor &sensor = ins.new_sensor(new CopyName(sname.to_string()));
         if( condition != 0 ) condition->instantiate(ins, sensor.condition);
         if( sensed != 0 ) sensed->instantiate(ins, sensor.sensed, 0);
     }
@@ -190,7 +192,8 @@ void PDDL_Base::Axiom::build(Instance &ins, size_t p) const {
         }
         param[p]->value = 0;
     } else {
-        Instance::Axiom &axiom = ins.new_axiom(new PDDL_Name(this, param, param.size()));
+        PDDL_Name aname(this, param, param.size());
+        Instance::Axiom &axiom = ins.new_axiom(new CopyName(aname.to_string()));
         if( body != 0 ) body->instantiate(ins, axiom.body);
         if( head != 0 ) head->instantiate(ins, axiom.head);
     }

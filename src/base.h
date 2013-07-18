@@ -27,9 +27,8 @@ class PDDL_Base {
         symbol_class sym_class;
         const char *print_name;
         Symbol *sym_type;
-        Symbol(const char *n, symbol_class c = sym_object)
-          : sym_class(c), print_name(n), sym_type(0) { }
-        virtual ~Symbol() { }
+        Symbol(const char *n, symbol_class c = sym_object) : sym_class(c), print_name(n), sym_type(0) { }
+        virtual ~Symbol() { /*delete sym_type;*/ }
         void print(std::ostream &os) const { os << print_name; }
     };
     struct symbol_vec : public std::vector<Symbol*> { };
@@ -46,7 +45,7 @@ class PDDL_Base {
     struct VariableSymbol : public Symbol {
         mutable Symbol *value;
         VariableSymbol(const char *n) : Symbol(n, sym_variable), value(0) { }
-        virtual ~VariableSymbol() { /*delete value;*/ }
+        virtual ~VariableSymbol() { delete value; }
         void print(std::ostream &os) const {
             os << print_name;
             if( sym_type ) os << " - " << sym_type->print_name;
@@ -56,8 +55,6 @@ class PDDL_Base {
 
     struct PredicateSymbol : public Symbol {
         variable_vec param;
-        ptr_table pos_goal;
-        ptr_table neg_goal;
         ptr_table pos_prop;
         ptr_table neg_prop;
         mutable bool strongly_static;
@@ -73,7 +70,7 @@ class PDDL_Base {
         bool neg;
         Atom(PredicateSymbol *p, bool n = false) : pred(p), neg(n) { }
         Atom(const Atom &atom) : pred(atom.pred), param(atom.param), neg(atom.neg) { }
-        ~Atom() { /*delete pred; for( size_t k = 0; k < param.size(); ++k ) delete param[k]; */ }
+        ~Atom() { /*delete pred; for( size_t k = 0; k < param.size(); ++k ) delete param[k];*/ }
         bool operator==(const Atom &atom) const;
         Instance::Atom* find_prop(Instance &ins, bool neg, bool create) const;
         void print(std::ostream &os, bool neg) const;
@@ -249,7 +246,7 @@ class PDDL_Base {
         const Condition *condition;
         const Effect *sensed;
         Sensor(const char *name) : Symbol(name, sym_sensor), condition(0), sensed(0) { }
-        ~Sensor() { /*for( size_t k = 0; k < param.size(); ++k ) delete param[k];*/ /*delete condition;*/ /*delete sensed;*/ }
+        ~Sensor() { for( size_t k = 0; k < param.size(); ++k ) delete param[k]; delete condition; delete sensed; }
         void instantiate(Instance &ins) const;
         void print(std::ostream &os) const;
         void build(Instance &ins, size_t p) const;
@@ -328,7 +325,7 @@ class PDDL_Name : public Name {
     const PDDL_Base::Symbol *_sym;
     PDDL_Base::symbol_vec _arg;
   public:
-    PDDL_Name(const PDDL_Base::Symbol *sym, bool n = false) : _neg(n), _sym(sym) { };
+    PDDL_Name(const PDDL_Base::Symbol *sym, bool neg = false) : _neg(neg), _sym(sym) { };
     PDDL_Name(const PDDL_Base::Symbol *sym, const PDDL_Base::symbol_vec &arg, size_t n);
     PDDL_Name(const PDDL_Base::Symbol *sym, const PDDL_Base::variable_vec &arg, size_t n);
     virtual ~PDDL_Name() { }
