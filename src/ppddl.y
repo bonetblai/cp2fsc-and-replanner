@@ -341,7 +341,7 @@ condition_list:
     ;
 
 single_condition:
-      literal { $$ = new Literal(*$1); }
+      literal { $$ = new Literal(*$1); delete $1; }
     ;
 
 literal:
@@ -475,11 +475,11 @@ positive_atomic_effect_list:
     ;
 
 atomic_effect:
-      literal { $$ = new AtomicEffect(*$1); }
+      literal { $$ = new AtomicEffect(*$1); delete $1; }
     ;
 
 positive_atomic_effect:
-      positive_literal { $$ = new AtomicEffect(*$1); }
+      positive_literal { $$ = new AtomicEffect(*$1); delete $1; }
     ;
 
 at_least_one_invariant:
@@ -725,8 +725,8 @@ goal_list:
     ;
 
 single_goal:
-      positive_literal { $$ = new Literal(*$1); }
-    | negative_literal { $$ = new Literal(*$1); }
+      positive_literal { $$ = new Literal(*$1); delete $1; }
+    | negative_literal { $$ = new Literal(*$1); delete $1; }
     ;
 
 %%
