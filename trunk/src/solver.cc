@@ -76,7 +76,11 @@ bool Solver::solve(const State &initial_hidden_state,
             const Instance::Action &kp_act = *kp_instance_.actions[plan[k]];
 
             if( options_.is_enabled("print:solver:steps") ) {
-                cout << ">>> x0-act=" << kp_act.name << endl;
+                cout << ">>> kp-action=" << kp_act.name;
+                if( !kp_instance_.is_obs_rule(plan[k]) && !kp_instance_.is_static_rule(plan[k]) ) {
+                    cout << " [action=" << instance_.actions[kp_instance_.remap_[plan[k]]]->name << "]";
+                }
+                cout << endl;
             }
 
             assert(state.applicable(kp_act));
@@ -84,12 +88,11 @@ bool Solver::solve(const State &initial_hidden_state,
             if( !kp_instance_.is_obs_rule(plan[k]) && !kp_instance_.is_static_rule(plan[k]) ) {
                 // insert action into final plan
                 final_plan.push_back(plan[k]);
-                //cout << "ACTION: " << instance_.actions[plan[k]]->name << endl;
 
                 // apply action at hidden state
                 const Instance::Action &act = *instance_.actions[kp_instance_.remap_[plan[k]]];
                 if( !hidden.applicable(act) ) {
-                    cout << "warning: action " << act.name //<< "[k=" << k << ", idx=" << plan[k] << "]"
+                    cout << "error: action " << act.name
                          << " isn't applicable at hidden state: "
                          << "check whether hidden specification is correct!"
                          << endl;
@@ -109,7 +112,6 @@ bool Solver::solve(const State &initial_hidden_state,
                 sensed_literals.push_back(sensed);
                 sensors.clear();
                 sensed.clear();
-                //cout << "HIDDEN="; hidden.print(cout, instance_); cout << endl;
 
                 if( options_.is_enabled("print:solver:steps") ) {
                     cout << ">>> state=";
@@ -219,7 +221,7 @@ bool Solver::inconsistent(const State &state, const vector<State> &assumption_ve
             }
             if( verbose ) cout << "consistent!" << endl;
         } else {
-            if( verbose ) cout << " ok [not checked since not observable]" << endl;
+            if( verbose ) cout << " [not checked since not observable]" << endl;
         }
     }
     return false;

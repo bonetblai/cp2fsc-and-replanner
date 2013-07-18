@@ -55,7 +55,7 @@ const char *available_options[] = {
     "print:solver:steps",                  "[SOLV] print the result of each action in the plan",
     "print:solver:inconsistency",          "[SOLV] print when detecting an inconsistency",
     "print:solver:inconsistency:details",  "[SOLV] print details of the inconsistency",
-    "print:solver:consistency:check",      "[SOLV] print the details of each consistency check",
+    "print:solver:consistency:check",      "[SOLV] print each consistency check",
     "remove-intermediate-files",           "[SOLV] remove the files created for calling the classical planner",
     "print:fired-sensors",                 "[SOLV] print the fired sensors at each step of the plan",
     "print:sensed-literals",               "[SOLV] print the sensed literals at each step of the plan",
