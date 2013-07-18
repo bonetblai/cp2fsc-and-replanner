@@ -30,7 +30,8 @@ void print_usage(ostream &os, const char *exec_name, const char **cmdline_option
     char *tmp = strdup(exec_name);
     const char *base_name = basename(tmp);
     int indent = strlen("usage: ") + strlen(base_name) + 1;
-    os << "usage: " << base_name << " ";
+
+    os << endl << "usage: " << base_name << " ";
     free(tmp);
 
     if( cmdline_options[0] == 0 ) {
@@ -50,7 +51,7 @@ void print_usage(ostream &os, const char *exec_name, const char **cmdline_option
 
     for( int i = 0, isz = options.options_.size(); i < isz; ++i ) {
         const Options::Option &opt = options.options_[i];
-        os << "  " << left << setw(35) << opt.name() << "  " << opt.desc() << endl;
+        os << "    " << left << setw(35) << opt.name() << "  " << opt.desc() << endl;
     }
     os << endl;
 
