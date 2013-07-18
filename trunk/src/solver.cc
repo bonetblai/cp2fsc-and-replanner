@@ -54,16 +54,18 @@ bool Solver::solve(const State &initial_hidden_state,
         ++planner_calls;
 
         if( options_.is_enabled("print:solver:plan") ) {
-            cout << "Classical plan: " << flush;
-            for( Instance::Plan::const_iterator a = plan.begin(); a != plan.end(); ++a ) {
-                if( a != plan.begin() ) cout << "                ";
-                cout << *a << "." << kp_instance_.actions[*a]->name << endl;
+            cout << "Classical plan:" << endl;
+            int step = 0;
+            for( Instance::Plan::const_iterator a = plan.begin(); a != plan.end(); ++a, ++step ) {
+                cout << "    step " << step << ": "
+                     << *a << "." << kp_instance_.actions[*a]->name
+                     << endl;
             }
         }
         if( options_.is_enabled("print:solver:assumptions") ) {
-            cout << "Assumptions: " << flush;
+            cout << "Assumptions:" << endl;
             for( size_t k = 0; k < assumption_vec.size(); ++k ) {
-                if( k > 0 ) cout << "             ";
+                cout << "    step " << k << ": ";
                 assumption_vec[k].print(cout, kp_instance_);
                 cout << endl;
             }
@@ -119,16 +121,20 @@ bool Solver::solve(const State &initial_hidden_state,
 
                 // check for consistency of remaining plan
                 if( inconsistent(state, assumption_vec, k+1) ) {
-                    if( options_.is_enabled("print:solver:inconsistency") ) {
-                        cout << "inconsistency found with action " << plan[k+1] << endl;
+                    if( options_.is_enabled("print:solver:inconsistency") ||
+                        options_.is_enabled("print:solver:inconsistency:details") ) {
+                        cout << "*** inconsistency found with action "
+                             << plan[k+1] << "." << kp_instance_.actions[plan[k+1]]->name
+                             << endl;
                         if( options_.is_enabled("print:solver:inconsistency:details") ) {
-                            cout << " STATE=";
+                            cout << "    details:" << endl;
+                            cout << "        state=";
                             state.print(cout, kp_instance_);
-                            cout << endl << "HIDDEN=";
+                            cout << endl << "        hidden=";
                             hidden.print(cout, instance_);
                             cout << endl;
                             for( size_t l = k+1; l < assumption_vec.size(); ++l ) {
-                                cout << "SUP[" << l << "]=";
+                                cout << "        support[layer=" << l << "]=";
                                 assumption_vec[l].print(cout, kp_instance_);
                                 cout << endl;
                             }
@@ -200,7 +206,7 @@ bool Solver::inconsistent(const State &state, const vector<State> &assumption_ve
         int atom = *it/2;
 
         if( verbose ) {
-            cout << "checking consistency of " << instance_.atoms[atom]->name << ": ";
+            cout << "*** checking consistency of " << instance_.atoms[atom]->name << ": ";
         }
 
         if( instance_.is_observable(atom) ) {
@@ -213,7 +219,7 @@ bool Solver::inconsistent(const State &state, const vector<State> &assumption_ve
             }
             if( verbose ) cout << "consistent!" << endl;
         } else {
-            if( verbose ) cout << " ok [non-observable]" << endl;
+            if( verbose ) cout << " ok [not checked since not observable]" << endl;
         }
     }
     return false;

@@ -285,7 +285,11 @@ void KP_Instance::cross_reference() {
     Instance::cross_referenced = true;
 }
 
-void KP_Instance::apply_plan(const Plan &plan, const State &initial_state, State &final_state, vector<State> &assumption_vec) const {
+// This function apply given plan at given initial state and returns the final
+// state and the assumptions made by the plan. If plan is applicable, returns
+// true. Otherwise, returns false.
+
+bool KP_Instance::apply_plan(const Plan &plan, const State &initial_state, State &final_state, vector<State> &assumption_vec) const {
     assumption_vec.clear();
     vector<State> support_vec;
 
@@ -294,13 +298,17 @@ void KP_Instance::apply_plan(const Plan &plan, const State &initial_state, State
         const Instance::Action &act = *actions[plan[k]];
         assert(final_state.applicable(act));
 
+        // check that preconditions hold at current state (final_state)
+        if( !final_state.satisfy(act.precondition) ) return false;
+
         State assumption;
         State support;
 
         // add positive preconditions to support
         for( index_set::const_iterator it = act.precondition.begin(); it != act.precondition.end(); ++it ) {
-            if( *it > 0 )
+            if( *it > 0 ) {
                 support.add(*it-1);
+            }
         }
 
         // add positive conditions of triggered conditional effects to support and
@@ -309,14 +317,16 @@ void KP_Instance::apply_plan(const Plan &plan, const State &initial_state, State
             const Instance::When &w = act.when[i];
             if( final_state.satisfy(w.condition) ) {
                 for( index_set::const_iterator it = w.condition.begin(); it != w.condition.end(); ++it ) {
-                    if( *it > 0 )
+                    if( *it > 0 ) {
                         support.add(*it-1);
+                    }
                 }
                 if( is_obs_rule(plan[k]) ) {
                     for( index_set::const_iterator it = w.effect.begin(); it != w.effect.end(); ++it ) {
                         assert(*it > 0);
-                        if( !final_state.satisfy(*it-1) )
+                        if( !final_state.satisfy(*it-1) ) {
                             assumption.add(*it-1);
+                        }
                     }
                 }
             }
@@ -334,10 +344,13 @@ void KP_Instance::apply_plan(const Plan &plan, const State &initial_state, State
     for( int i = assumption_vec.size()-1; i >= 0; --i ) {
         support.add(support_vec[i]);
         for( State::const_iterator it = assumption_vec[i].begin(); it != assumption_vec[i].end(); ++it ) {
-            if( support.satisfy(*it) )
+            if( support.satisfy(*it) ) {
                 relevant.add(*it);
+            }
         }
         assumption_vec[i] = relevant;
     }
+
+    return true;
 }
 
