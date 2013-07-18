@@ -656,6 +656,7 @@ init_elements:
       init_elements literal {
           init_element_vec *ilist = const_cast<init_element_vec*>($1);
           ilist->push_back(new InitLiteral(*$2));
+          delete $2;
           $$ = ilist;
       }
     | init_elements invariant {
