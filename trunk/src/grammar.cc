@@ -1785,7 +1785,7 @@ case 74:
     break;}
 case 75:
 #line 344 "ppddl.y"
-{ yyval.condition = new Literal(*yyvsp[0].atom); ;
+{ yyval.condition = new Literal(*yyvsp[0].atom); delete yyvsp[0].atom; ;
     break;}
 case 78:
 #line 353 "ppddl.y"
@@ -1923,11 +1923,11 @@ case 100:
     break;}
 case 101:
 #line 478 "ppddl.y"
-{ yyval.effect = new AtomicEffect(*yyvsp[0].atom); ;
+{ yyval.effect = new AtomicEffect(*yyvsp[0].atom); delete yyvsp[0].atom; ;
     break;}
 case 102:
 #line 482 "ppddl.y"
-{ yyval.effect = new AtomicEffect(*yyvsp[0].atom); ;
+{ yyval.effect = new AtomicEffect(*yyvsp[0].atom); delete yyvsp[0].atom; ;
     break;}
 case 103:
 #line 486 "ppddl.y"
@@ -2217,11 +2217,11 @@ case 158:
     break;}
 case 159:
 #line 728 "ppddl.y"
-{ yyval.condition = new Literal(*yyvsp[0].atom); ;
+{ yyval.condition = new Literal(*yyvsp[0].atom); delete yyvsp[0].atom; ;
     break;}
 case 160:
 #line 729 "ppddl.y"
-{ yyval.condition = new Literal(*yyvsp[0].atom); ;
+{ yyval.condition = new Literal(*yyvsp[0].atom); delete yyvsp[0].atom; ;
     break;}
 }
 
