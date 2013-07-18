@@ -417,15 +417,16 @@ void Preprocessor::compute_action_completion(Instance::Action &action) {
 
         // If valid completion, add new conditional effect
         if( valid_completion ) {
-#if 1
-            cout << "found completion for '" << action.name << "' and '";
-            if( lit > 0 )
-                cout << instance_.atoms[lit-1]->name << "' = ";
-            else
-                cout << "(not " << instance_.atoms[lit-1]->name << ")' = ";
-            instance_.write_atom_set(cout, completion);
-            cout << endl;
-#endif
+            if( options_.is_enabled("print:literal-completion") ) {
+                cout << "completion for action=" << action.name << " and literal=";
+                if( lit > 0 )
+                    cout << instance_.atoms[lit-1]->name;
+                else
+                    cout << "(not " << instance_.atoms[lit-1]->name << ")";
+                cout << " : ";
+                instance_.write_atom_set(cout, completion);
+                cout << endl;
+            }
 
             if( !completion.empty() ) {
                 Instance::When new_ceff;

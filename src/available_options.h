@@ -15,6 +15,7 @@ const char *available_options[] = {
     "print:sensor:removal",                "[PREP] print the name of the sensors that are removed",
     "print:axiom:removal",                 "[PREP] print the name of axioms that are removed",
     "print:invariant:removal",             "[PREP] print the invariants are removed",
+    "print:literal-completion",            "[PREP] print calculated literal completions",
 
     "print:preprocess:stage",              "[PREP] print the stage name",
     "print:atom:reachable",                "[PREP] print the name of reachable atoms",
