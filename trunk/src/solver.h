@@ -26,10 +26,10 @@ class Solver {
         options_(instance.options_) {
     }
     ~Solver() { }
-    bool solve(const State &initial_hidden__state,
-               Instance::Plan &final_plan,
-               std::vector<std::vector<int> > &fired_sensors,
-               std::vector<std::vector<int> > &sensed_literals) const;
+    int solve(const State &initial_hidden__state,
+              Instance::Plan &final_plan,
+              std::vector<std::vector<int> > &fired_sensors,
+              std::vector<std::vector<int> > &sensed_literals) const;
     void compute_and_add_observations(const State &hidden,
                                       State &state,
                                       std::vector<int> &sensors,

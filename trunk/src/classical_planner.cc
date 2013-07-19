@@ -424,9 +424,6 @@ int M_Planner::get_plan(const State &state, Instance::Plan &plan) const {
 
     if( rv != 0 ) {
         total_time_ += Utils::read_time_in_seconds() - start_time;
-        if( instance_.options_.is_enabled("remove-intermediate-files") ) {
-            unlink(output_fn_);
-        }
         return ERROR;
     }
 
