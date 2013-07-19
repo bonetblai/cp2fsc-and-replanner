@@ -210,6 +210,7 @@ void PDDL_Base::Axiom::instantiate(Instance &ins) const {
 
 void PDDL_Base::calculate_strongly_static_predicates() const {
     cout << "strongly-static predicates:";
+    bool some_strongly_static = false;
     for( size_t p = 0; p < dom_predicates.size(); ++p ) {
         PredicateSymbol &pred = *dom_predicates[p];
         bool strongly_static = true;
@@ -230,8 +231,10 @@ void PDDL_Base::calculate_strongly_static_predicates() const {
         }
 
         pred.strongly_static = strongly_static;
-        if( strongly_static ) cout << " '" << pred.print_name << "'";
+        if( strongly_static ) cout << " " << pred.print_name;
+        if( strongly_static ) some_strongly_static = true;
     }
+    if( !some_strongly_static ) cout << " <none>";
     cout << endl;
 }
 
