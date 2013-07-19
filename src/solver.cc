@@ -4,10 +4,10 @@
 
 using namespace std;
 
-bool Solver::solve(const State &initial_hidden_state,
-                   Instance::Plan &final_plan,
-                   vector<vector<int> > &fired_sensors,
-                   vector<vector<int> > &sensed_literals) const {
+int Solver::solve(const State &initial_hidden_state,
+                  Instance::Plan &final_plan,
+                  vector<vector<int> > &fired_sensors,
+                  vector<vector<int> > &sensed_literals) const {
     vector<State> assumption_vec;
     State hidden(initial_hidden_state), state;
     Instance::Plan plan;
@@ -42,10 +42,11 @@ bool Solver::solve(const State &initial_hidden_state,
         // obtain plan for state
         int status = planner_.get_plan(state, plan);
         if( status != ClassicalPlanner::SOLVED ) {
-            if( status == ClassicalPlanner::NO_SOLUTION )
+            if( status == ClassicalPlanner::NO_SOLUTION ) {
                 return NO_SOLUTION;
-            else
+            } else {
                 return ERROR;
+            }
         } else if( planner_.get_time() > time_bound_ ) {
             return TIME;
         }

@@ -278,21 +278,22 @@ int main(int argc, char *argv[]) {
         }
     } else {
         plan.clear();
+        cout << "unable to solve problem: ";
         if( status == Solver::NO_SOLUTION ) {
             cout << "problem has no solution!" << endl;
         } else if( status == Solver::TIME ) {
-            cout << "expired time!" << endl;
+            cout << "reached time limit of " << opt_time_bound << " seconds" << endl;
         } else if( status == Solver::ERROR ) {
-            cout << "error!" << endl;
+            cout << "planner error" << endl;
         } else  {
-            assert(0);
+            cout << "unrecognized error" << endl;
         }
     }
 
     // print some stats
     cout << "stats: "
          << planner_name[opt_planner] << " (planner) "
-         << plan.size() << " (plan size) "
+         << (int)(status != Solver::SOLVED ? -1 : plan.size()) << " (plan size) "
          << planner->n_calls() << " (planner calls) "
          << preprocessing_time << " (preprocessing time) "
          << planner->get_time() << " (planner total time) "
