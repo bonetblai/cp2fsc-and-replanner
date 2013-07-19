@@ -249,10 +249,6 @@ KP_Instance::KP_Instance(const Instance &ins, const Options::Mode &options)
 KP_Instance::~KP_Instance() {
 }
 
-void KP_Instance::release_memory() {
-    Instance::release_memory();
-}
-
 void KP_Instance::cross_reference() {
     size_t k = 0;
     while( k < n_actions() ) {

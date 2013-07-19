@@ -18,7 +18,6 @@ class KP_Instance : public Instance {
     std::map<std::string, int> obs_rules_by_name_;
     KP_Instance(const Instance &instance, const Options::Mode &options = Options::Mode());
     ~KP_Instance();
-    virtual void release_memory();
 
     virtual void cross_reference();
 
