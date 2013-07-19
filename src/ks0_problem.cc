@@ -325,7 +325,3 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance,
 KS0_Instance::~KS0_Instance() {
 }
 
-void KS0_Instance::release_memory() { 
-    Instance::release_memory();
-}
-

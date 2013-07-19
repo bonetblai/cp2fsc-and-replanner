@@ -156,7 +156,6 @@ class Instance {
     }
     Instance(const Instance &ins);
     virtual ~Instance();
-    virtual void release_memory();
 
     Atom&      new_atom(Name *name);
     Action&    new_action(Name *name);

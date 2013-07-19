@@ -23,9 +23,6 @@ Instance::Instance(const Instance& ins)
 }
 
 Instance::~Instance() {
-}
-
-void Instance::release_memory() {
     delete name;
     for( size_t k = 0; k < actions.size(); ++k )
         delete actions[k];

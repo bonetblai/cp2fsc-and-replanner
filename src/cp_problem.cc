@@ -246,9 +246,6 @@ CP_Instance::CP_Instance(const Instance &ins, size_t fsc_states,
 }
 
 CP_Instance::~CP_Instance() {
-}
-
-void CP_Instance::release_memory() {
     for( StateSet::const_iterator it = initial_states_.begin(); it != initial_states_.end(); ++it )
         delete *it;
 
@@ -257,8 +254,6 @@ void CP_Instance::release_memory() {
             delete *jt;
         delete it->second;
     }
-
-    Instance::release_memory();
 }
 
 void CP_Instance::add_to_initial_states(int fluent) {

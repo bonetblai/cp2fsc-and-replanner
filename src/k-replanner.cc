@@ -300,11 +300,7 @@ int main(int argc, char *argv[]) {
          << Utils::read_time_in_seconds() - start_time << " (total time)"
          << endl;
 
-    // release memory
     delete planner;
-    kp_instance.release_memory();
-    instance.release_memory();
-
     return 0;
 }
 
