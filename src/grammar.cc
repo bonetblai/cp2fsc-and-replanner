@@ -1,3 +1,4 @@
+#include <alloca.h>
 #define YY_PDDL_Parser_h_included
 
 /*  A Bison++ parser, made from ppddl.y  */
