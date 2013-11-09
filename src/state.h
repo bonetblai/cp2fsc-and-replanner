@@ -4,10 +4,16 @@
 #include "problem.h"
 #include "index.h"
 #include <iostream>
-#include <tr1/unordered_map>
-#include <tr1/unordered_set>
 #include <list>
 #include <cassert>
+
+#if __clang_major__ >= 5
+#include <unordered_map>
+#include <unordered_set>
+#else
+#include <tr1/unordered_map>
+#include <tr1/unordered_set>
+#endif
 
 class StateHash;
 class StateSet;
@@ -279,6 +285,16 @@ inline std::ostream& operator<<(std::ostream &os, const Hash::Data &d) {
     return os;
 }
 
+#if __clang_major__ >= 5
+template<typename T, typename F=Hash::hash<T>, typename E=Hash::equal_to<T> > class Hash_set : public std::unordered_set<T, F, E> { };
+
+template<typename T, typename F=Hash::hash<T>, typename E=Hash::equal_to<T> > class Hash_map : public std::unordered_map<T, Hash::Data*, F, E> {
+      typedef std::unordered_map<T, Hash::Data*, F, E> base_;
+
+    public:
+      typedef typename std::unordered_map<T, Hash::Data*, F, E>::iterator iterator;
+      typedef typename std::unordered_map<T, Hash::Data*, F, E>::const_iterator const_iterator;
+#else
 template<typename T, typename F=Hash::hash<T>, typename E=Hash::equal_to<T> > class Hash_set : public std::tr1::unordered_set<T, F, E> { };
 
 template<typename T, typename F=Hash::hash<T>, typename E=Hash::equal_to<T> > class Hash_map : public std::tr1::unordered_map<T, Hash::Data*, F, E> {
@@ -287,6 +303,7 @@ template<typename T, typename F=Hash::hash<T>, typename E=Hash::equal_to<T> > cl
     public:
       typedef typename std::tr1::unordered_map<T, Hash::Data*, F, E>::iterator iterator;
       typedef typename std::tr1::unordered_map<T, Hash::Data*, F, E>::const_iterator const_iterator;
+#endif
       const_iterator begin() const { return base_::begin(); }
       const_iterator end() const { return base_::end(); }
       iterator begin() { return base_::begin(); }
