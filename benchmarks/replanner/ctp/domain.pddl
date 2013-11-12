@@ -16,7 +16,7 @@
     (:sensor edge-obs
         :parameters (?x - vertex ?e - edge)
         :condition (and (at ?x) (adjacent ?x ?e))
-        :sensed (traversable ?e)
+        :sense (traversable ?e)
     )
 )
 

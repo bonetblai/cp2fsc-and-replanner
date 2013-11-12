@@ -30,19 +30,19 @@
     (:sensor sensor-for-stench
         :parameters (?p - pos)
         :condition (at ?p)
-        :sensed (stench ?p)
+        :sense (stench ?p)
     )
 
     (:sensor sensor-for-breeze
         :parameters (?p - pos)
         :condition (at ?p)
-        :sensed (breeze ?p)
+        :sense (breeze ?p)
     )
 
     (:sensor sensor-for-glitter
         :parameters (?p - pos)
         :condition (at ?p)
-        :sensed (glitter ?p)
+        :sense (glitter ?p)
     )
 )
 

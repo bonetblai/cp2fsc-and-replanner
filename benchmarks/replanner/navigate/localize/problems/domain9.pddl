@@ -205,7 +205,7 @@
     )
 
     (:sensor sense
-        :sensed (free-up) (free-right) (free-down) (free-left)
+        :sense (free-up) (free-right) (free-down) (free-left)
     )
 )
 

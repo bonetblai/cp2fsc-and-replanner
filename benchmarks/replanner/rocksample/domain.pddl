@@ -60,7 +60,7 @@
     (:sensor rock-sensor
         :parameters (?loc - LOCATION ?h - HEIGHT)
         :condition (and (sensing) (agent-at ?loc) (antenna-height ?h))
-        :sensed (good-rocks-in-range ?loc ?h)
+        :sense (good-rocks-in-range ?loc ?h)
     )
 )
 

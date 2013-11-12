@@ -27,7 +27,7 @@
     (:sensor sensor-for-stench
         :parameters (?p - pos)
         :condition (at ?p)
-        :sensed (stench ?p)
+        :sense (stench ?p)
     )
 )
 

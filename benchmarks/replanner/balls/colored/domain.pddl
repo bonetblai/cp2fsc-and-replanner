@@ -46,12 +46,12 @@
     (:sensor obs-ball-pos
         :parameters (?b - ball ?x ?y - pos)
         :condition (and (at ?x ?y))
-        :sensed (ball-pos ?b ?x ?y)
+        :sense (ball-pos ?b ?x ?y)
     )
     (:sensor obs-ball-color
         :parameters (?b - ball ?c - color ?x ?y - pos)
         :condition (and (at ?x ?y) (ball-pos ?b ?x ?y))
-        :sensed (ball-color ?b ?c)
+        :sense (ball-color ?b ?c)
     )
 )
 

@@ -32,22 +32,22 @@
     (:sensor north-wall
         :parameters (?x - xpos ?y1 ?y2 - ypos)
         :condition (and (at ?x ?y1) (suc-y ?y1 ?y2))
-        :sensed (wall ?x ?y2)
+        :sense (wall ?x ?y2)
     )
     (:sensor south-wall
         :parameters (?x - xpos ?y1 ?y2 - ypos)
         :condition (and (at ?x ?y1) (suc-y ?y2 ?y1))
-        :sensed (wall ?x ?y2)
+        :sense (wall ?x ?y2)
     )
     (:sensor east-wall
         :parameters (?x1 ?x2 - xpos ?y - ypos)
         :condition (and (at ?x1 ?y) (suc-x ?x1 ?x2))
-        :sensed (wall ?x2 ?y)
+        :sense (wall ?x2 ?y)
     )
     (:sensor west-wall
         :parameters (?x1 ?x2 - xpos ?y - ypos)
         :condition (and (at ?x1 ?y) (suc-x ?x2 ?x1))
-        :sensed (wall ?x2 ?y)
+        :sense (wall ?x2 ?y)
     )
 )
 

@@ -32,7 +32,7 @@
     (:sensor door-obs
       :parameters (?x1 ?x2 ?y - pos)
       :condition (and (at ?x1 ?y) (suc ?x1 ?x2))
-      :sensed (door ?x2 ?y)
+      :sense (door ?x2 ?y)
     )
 )
 
