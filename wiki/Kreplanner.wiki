@@ -85,6 +85,7 @@ Contingent problems P are expressed with a  PDDL-like syntax that is parsed by `
 <problem-item> ::= (:domain <name>)
                  | (:requirements <require-keyword>*)
                  | (:init <init-item>*)
+                 | (:init (and <init-item>*))
                  | (:hidden <hidden-item>*)
                  | (:goal <goal-decl>)
 
