@@ -66,10 +66,11 @@ Contingent problems P are expressed with a  PDDL-like syntax that is parsed by `
 <action-item> ::= :parameters (<parameter>*)
                  | :precondition <condition>
                  | :effect <effect>
+                 | :observe <fluent>+
 
 <sensor-item> ::= :parameters (<parameter>*)
                  | :condition <condition>
-                 | :sensed <fluent>+
+                 | :sense <fluent>+
 
 <parameter>  ::= <variable>+ | <variable>+ - <type>
 <condition>  ::= <fluent> | (and <fluent>*)
@@ -84,19 +85,19 @@ Contingent problems P are expressed with a  PDDL-like syntax that is parsed by `
 <problem> ::= (define (problem <name>) <problem-item>*)
 <problem-item> ::= (:domain <name>)
                  | (:requirements <require-keyword>*)
-                 | (:init <init-item>*)
-                 | (:init (and <init-item>*))
+                 | (:init <init-item>*) | (:init (and <init-item>*))
                  | (:hidden <hidden-item>*)
                  | (:goal <goal-decl>)
 
-<init-item>   := <fluent> | (not (fluen)) | <invariant>
-<hidden-item> ::= <fluent>
-<goal-decl>   ::= <single-goal> | (and <single-goal>*)
-<sigle-goal>  ::= <fluent> | (not <fluent>)
+<init-item>    ::= <fluent> | (not (fluen)) | <invariant> | <oneof>
+<hidden-item>  ::= <fluent>
+<goal-decl>    ::= <single-goal> | (and <single-goal>*)
+<sigle-goal>   ::= <fluent> | (not <fluent>)
 
-<invariant>    := <at-least-one> | <at-most-one>
-<at-least-one> := (invariant <fluent>+) | (at-least-one <fluent>+)
-<at-most-one>  := (at-most-one <fluent>+)
+<invariant>    ::= <at-least-one> | <at-most-one>
+<at-least-one> ::= (invariant <fluent>+) | (at-least-one <fluent>+)
+<at-most-one>  ::= (at-most-one <fluent>+)
+<oneof>        ::= (oneof <fluent>+)
 }}}
 
 
