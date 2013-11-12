@@ -30,7 +30,7 @@ t0
 ;(unknown (in p7 b0))
 ;(unknown (in p8 b0))
 ;(unknown (in p9 b0))
-(exactly-one
+(oneof
 (in p0 b0)
 (in p1 b0)
 (in p2 b0)

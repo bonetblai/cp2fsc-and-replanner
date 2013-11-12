@@ -2,8 +2,8 @@
 (:domain sliding-doors)
 
    (:init
-    ;(and
-     (exactly-one
+    (and
+     (oneof
       (at p2-1)
       (at p2-3)
       (at p1-2) 
@@ -12,7 +12,7 @@
       (at p3-3)
       (at p3-1)
       (at p1-1) )
-  ;)
+  )
  )
 (:hidden (at p1-1) )
     (:goal  (at p3-3)))

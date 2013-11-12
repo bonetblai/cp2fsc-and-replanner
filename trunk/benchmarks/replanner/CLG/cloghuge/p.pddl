@@ -59,7 +59,7 @@
 ;(unknown (at_ol p0 l02))
 ;(unknown (at_ol p0 l03))
 ;(unknown (at_ol p0 l04))
-(exactly-one
+(oneof
    (at_oa p0 l00)
    (at_ol p0 l01)
    (at_ol p0 l02)
@@ -72,7 +72,7 @@
 ;(unknown (at_ol p1 l22))
 ;(unknown (at_ol p1 l23))
 ;(unknown (at_ol p1 l24))
-(exactly-one
+(oneof
    (at_oa p1 l20)
    (at_ol p1 l21)
    (at_ol p1 l22)
@@ -85,7 +85,7 @@
 ;(unknown (at_ol p2 l12))
 ;(unknown (at_ol p2 l13))
 ;(unknown (at_ol p2 l14))
-(exactly-one
+(oneof
    (at_oa p2 l10)
    (at_ol p2 l11)
    (at_ol p2 l12)
@@ -98,7 +98,7 @@
 ;(unknown (at_ol p3 l22))
 ;(unknown (at_ol p3 l23))
 ;(unknown (at_ol p3 l24))
-(exactly-one
+(oneof
    (at_oa p3 l20)
    (at_ol p3 l21)
    (at_ol p3 l22)
@@ -111,7 +111,7 @@
 ;(unknown (at_ol p4 l42))
 ;(unknown (at_ol p4 l43))
 ;(unknown (at_ol p4 l44))
-(exactly-one
+(oneof
    (at_oa p4 l40)
    (at_ol p4 l41)
    (at_ol p4 l42)

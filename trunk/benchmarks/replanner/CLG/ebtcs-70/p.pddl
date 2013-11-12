@@ -150,7 +150,7 @@ t0
 ;(unknown (in p67 b0))
 ;(unknown (in p68 b0))
 ;(unknown (in p69 b0))
-(at-least-one
+(oneof
 (in p0 b0)
 (in p1 b0)
 (in p2 b0)

@@ -28,15 +28,15 @@
 ;(unknown (at_ol package3 phx_po))
 
 
-	(at-least-one
+	(oneof
 	 (at_ol package1 pgh_po)
 	 (at_ol package1 phx_po)
 	 )
-	(at-least-one
+	(oneof
 	(at_ol package2 pgh_po)
 	(at_ol package2 bos_po)
 	)
-	(at-least-one
+	(oneof
 	 (at_ol package3 bos_po)
 	 (at_ol package3 phx_po)
 	 )

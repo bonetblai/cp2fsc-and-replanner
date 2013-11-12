@@ -175,7 +175,7 @@
  - pos 
     )
    (:init
-    ;(and
+    (and
  (at p1-7)
      (adj p1-1 p2-1)
      (adj p2-1 p1-1)
@@ -1128,7 +1128,7 @@
         (opened p1-11)
         (opened p1-12)
         (opened p1-13)
-     (exactly-one
+     (oneof
         (opened p2-1)
         (opened p2-2)
         (opened p2-3)
@@ -1156,7 +1156,7 @@
         (opened p3-11)
         (opened p3-12)
         (opened p3-13)
-     (exactly-one
+     (oneof
         (opened p4-1)
         (opened p4-2)
         (opened p4-3)
@@ -1184,7 +1184,7 @@
         (opened p5-11)
         (opened p5-12)
         (opened p5-13)
-     (exactly-one
+     (oneof
         (opened p6-1)
         (opened p6-2)
         (opened p6-3)
@@ -1212,7 +1212,7 @@
         (opened p7-11)
         (opened p7-12)
         (opened p7-13)
-     (exactly-one
+     (oneof
         (opened p8-1)
         (opened p8-2)
         (opened p8-3)
@@ -1240,7 +1240,7 @@
         (opened p9-11)
         (opened p9-12)
         (opened p9-13)
-     (exactly-one
+     (oneof
         (opened p10-1)
         (opened p10-2)
         (opened p10-3)
@@ -1268,7 +1268,7 @@
         (opened p11-11)
         (opened p11-12)
         (opened p11-13)
-     (exactly-one
+     (oneof
         (opened p12-1)
         (opened p12-2)
         (opened p12-3)
@@ -1298,7 +1298,7 @@
         (opened p13-13)
 
     )
-    ;)
+    )
     (:hidden   (opened p2-8)   (opened p4-2)  (opened p6-12)(opened p8-6)  (opened p10-12) (opened p12-1)  ) 
     (:goal (and (at p13-7))
 ))

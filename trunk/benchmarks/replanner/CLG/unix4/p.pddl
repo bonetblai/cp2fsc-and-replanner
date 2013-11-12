@@ -88,7 +88,7 @@
      ;(unknown (file-in-dir my-file sub212))
      ;(unknown (file-in-dir my-file sub122))
      ;(unknown (file-in-dir my-file sub222))
-     ;
+
      ;(unknown (file-in-dir my-file sub1111))
      ;(unknown (file-in-dir my-file sub2111))
      ;(unknown (file-in-dir my-file sub1211))
@@ -105,7 +105,7 @@
      ;(unknown (file-in-dir my-file sub2122))
      ;(unknown (file-in-dir my-file sub1222))
      ;(unknown (file-in-dir my-file sub2222))
-     ;
+
      ;(unknown (file-in-dir my-file sub11111))
      ;(unknown (file-in-dir my-file sub12111))
      ;(unknown (file-in-dir my-file sub11211))
@@ -122,7 +122,7 @@
      ;(unknown (file-in-dir my-file sub12122))
      ;(unknown (file-in-dir my-file sub11222))
      ;(unknown (file-in-dir my-file sub12222))
-     ;
+
      ;(unknown (file-in-dir my-file sub21111))
      ;(unknown (file-in-dir my-file sub22111))
      ;(unknown (file-in-dir my-file sub21211))
@@ -139,7 +139,7 @@
      ;(unknown (file-in-dir my-file sub22122))
      ;(unknown (file-in-dir my-file sub21222))
      ;(unknown (file-in-dir my-file sub22222))
-     (at-least-one
+     (oneof
         (file-in-dir my-file sub11)
         (file-in-dir my-file sub21)
         (file-in-dir my-file sub12)
