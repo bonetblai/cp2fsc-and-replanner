@@ -98,7 +98,7 @@ Contingent problems P are expressed with a  PDDL-like syntax that is parsed by `
 <at-least-one> ::= (invariant <fluent>+) | (at-least-one <fluent>+)
 <at-most-one>  ::= (at-most-one <fluent>+)
 <exactly-one>  ::= (exactly-one <fluent>+)
-<oneof>        ::= (oneof <fluent>+) // equivalent to <exactly-one>
+<oneof>        ::= (oneof <fluent>+) // equivalent to <exactly-one> (for CLG compatibility mode)
 }}}
 
 
