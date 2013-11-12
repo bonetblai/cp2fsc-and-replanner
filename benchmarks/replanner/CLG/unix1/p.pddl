@@ -14,7 +14,7 @@
      ;(unknown (file-in-dir my-file sub21))
      ;(unknown (file-in-dir my-file sub12))
      ;(unknown (file-in-dir my-file sub22))
-     (at-least-one
+     (oneof
         (file-in-dir my-file sub11)
         (file-in-dir my-file sub21)
         (file-in-dir my-file sub12)

@@ -31,7 +31,7 @@
  - pos 
     )
    (:init
-    ;(and
+    (and
  (at p1-3)
      (adj p1-1 p2-1)
      (adj p2-1 p1-1)
@@ -160,7 +160,7 @@
         (opened p1-3)
         (opened p1-4)
         (opened p1-5)
-     (exactly-one
+     (oneof
         (opened p2-1)
         (opened p2-2)
         (opened p2-3)
@@ -172,7 +172,7 @@
         (opened p3-3)
         (opened p3-4)
         (opened p3-5)
-     (exactly-one
+     (oneof
         (opened p4-1)
         (opened p4-2)
         (opened p4-3)
@@ -186,7 +186,7 @@
         (opened p5-5)
 
     )
-    ;)
+    )
     (:hidden (opened p2-2)  (opened p4-5))
     (:goal (and (at p5-3))
 ))

@@ -3,7 +3,7 @@
 
 
    (:init
-    ;(and
+    (and
      (at p1-1)
      (alive)
      (adj p1-1 p2-1)
@@ -101,21 +101,21 @@
      (safe p2-2)
      (safe p2-4)
      (safe p2-5)
-     (exactly-one
+     (oneof
        (safe p2-3)
        (safe p3-2)
      )
      (safe p3-3)
      (safe p3-5)
      (safe p4-2)
-     (exactly-one
+     (oneof
        (safe p3-4)
        (safe p4-3)
      )
      (safe p4-4)
      (safe p5-2)
      (safe p5-3)
-     (exactly-one
+     (oneof
        (safe p4-5)
        (safe p5-4)
      )
@@ -236,7 +236,7 @@
 (invariant (breeze p5-5) (not (pit-at p4-5)))
 (invariant (breeze p5-5) (not (pit-at p5-4)))
 
-     ;)
+     )
     )
 (:hidden (safe p3-2) (safe p3-4) (safe p5-4)
          (wumpus-at p2-3) (stench p2-2) (stench p1-3) (stench p2-4) (stench p3-3)
