@@ -19,6 +19,7 @@ Instance::Instance(const Instance& ins)
     observable_fluents(ins.observable_fluents),
     given_observables(ins.given_observables),
     given_stickies(ins.given_stickies),
+    disable_actions_atom_index(ins.disable_actions_atom_index),
     options_(ins.options_) {
 }
 

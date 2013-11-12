@@ -157,6 +157,7 @@ int main(int argc, char *argv[]) {
         reader->print(cout);
     }
 
+    reader->map_oneofs_to_invariants();
     reader->translate_observe_effects_into_sensors();
 
     cout << "instantiating p.o. problem..." << endl;

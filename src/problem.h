@@ -143,16 +143,19 @@ class Instance {
     index_set   given_observables;
     index_set   given_stickies;
 
+    // index of atom (disable-actions) (only created when dialing w/ CLG syntax)
+    int         disable_actions_atom_index;
+
     // deductive rules to apply to hidden state
     action_vec  deductive_rules;
 
     const Options::Mode options_;
 
     Instance(Name *n = 0, const Options::Mode &options = Options::Mode())
-      : cross_referenced(false), name(n), options_(options) {
+      : cross_referenced(false), name(n), disable_actions_atom_index(-1), options_(options) {
     }
     Instance(const Options::Mode &options)
-      : cross_referenced(false), name(0), options_(options) {
+      : cross_referenced(false), name(0), disable_actions_atom_index(-1), options_(options) {
     }
     Instance(const Instance &ins);
     virtual ~Instance();
