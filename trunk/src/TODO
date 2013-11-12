@@ -4,3 +4,6 @@
 
 * Revision before general translation is 255
 
+* Restore 'delete reader' in k-replanner.cc
+* Complete initial hidden state w/ fix point of inference rules
+

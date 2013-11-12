@@ -179,6 +179,13 @@ KP_Instance::KP_Instance(const Instance &ins, const Options::Mode &options)
     }
     n_sensor_actions_ = n_actions() - n_standard_actions_;
 
+    // create precondition for invariant actions (non-empty only
+    // when dealing with CLG syntax)
+    index_set precondition;
+    if( po_instance_.disable_actions_atom_index >= 0 ) {
+        precondition.insert(1 + 2*po_instance_.disable_actions_atom_index + 1);
+    }
+
     // create invariant rules
     size_t invariant_no = 0;
     for( invariant_vec::const_iterator it = ins.init.invariants.begin(); it != ins.init.invariants.end(); ++it ) {
@@ -189,6 +196,7 @@ KP_Instance::KP_Instance(const Instance &ins, const Options::Mode &options)
             ostringstream s;
             s << "invariant-" << invariant_no++;
             Action &nact = new_action(new CopyName(s.str()));
+            nact.precondition = precondition;
 
             // conditional effects
             When c_eff;

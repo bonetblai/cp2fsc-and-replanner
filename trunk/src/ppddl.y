@@ -38,6 +38,7 @@
     const PDDL_Base::Clause           *clause;
     const PDDL_Base::Oneof            *oneof;
     const PDDL_Base::init_element_vec *ilist;
+    const PDDL_Base::InitElement      *ielem;
     int                               ival;
 }
 
@@ -70,6 +71,7 @@
 %type <effect>     action_effect action_effect_list single_action_effect conditional_effect forall_effect
 %type <effect>     atomic_effect_kw_list atomic_effect_list
 %type <ilist>      init_elements
+%type <ielem>      single_init_element
 
 %start pddl_declarations
 
@@ -137,7 +139,7 @@ domain_requires:
       TK_OPEN KW_REQS require_list TK_CLOSE
     | TK_OPEN KW_REQS error TK_CLOSE {
           log_error((char*)"syntax error in requirements declaration.");
-          yyerrok; 
+          yyerrok;
       }
     ;
 
@@ -273,25 +275,25 @@ domain_structure:
     | axiom_declaration {
          if( type_ == replanner ) {
              log_error((char*)"':axiom' is not a valid element in k-replanner.");
-             yyerrok; 
+             yyerrok;
          }
       }
     | sensor_declaration {
          if( type_ == cp2fsc ) {
              log_error((char*)"':sensor' is not a valid element in cp2fsc.");
-             yyerrok; 
+             yyerrok;
          }
       }
     | observable_declaration {
          if( type_ == replanner ) {
              log_error((char*)"':observable' is not a valid element in k-replanner.");
-             yyerrok; 
+             yyerrok;
          }
       }
     | sticky_declaration {
          if( type_ == replanner ) {
              log_error((char*)"':sticky' is not a valid element in k-replanner.");
-             yyerrok; 
+             yyerrok;
          }
       }
     ;
@@ -309,7 +311,7 @@ action_declaration:
       }
     | TK_OPEN KW_ACTION error TK_CLOSE {
           log_error((char*)"syntax error in action declaration");
-          yyerrok; 
+          yyerrok;
       }
     ;
 
@@ -371,7 +373,7 @@ positive_literal:
           }
           assert(0); // TODO: remove this assertion which is here
                      // because (probably) the code for '=' is broken...
-    }
+      }
     ;
 
 negative_literal:
@@ -486,25 +488,29 @@ positive_atomic_effect:
 at_least_one_invariant:
       TK_OPEN KW_INVARIANT condition_list TK_CLOSE {
           $$ = new Invariant(Invariant::AT_LEAST_ONE, *static_cast<const And*>($3));
-          const_cast<And*>(static_cast<const And*>($3))->clear(); delete $3;
+          const_cast<And*>(static_cast<const And*>($3))->clear();
+          delete $3;
       }
     | TK_OPEN KW_AT_LEAST_ONE condition_list TK_CLOSE {
           $$ = new Invariant(Invariant::AT_LEAST_ONE, *static_cast<const And*>($3));
-          const_cast<And*>(static_cast<const And*>($3))->clear(); delete $3;
+          const_cast<And*>(static_cast<const And*>($3))->clear();
+          delete $3;
       }
     ;
 
 at_most_one_invariant:
       TK_OPEN KW_AT_MOST_ONE condition_list TK_CLOSE {
           $$ = new Invariant(Invariant::AT_MOST_ONE, *static_cast<const And*>($3));
-          const_cast<And*>(static_cast<const And*>($3))->clear(); delete $3;
+          const_cast<And*>(static_cast<const And*>($3))->clear();
+          delete $3;
       }
     ;
 
 exactly_one_invariant:
       TK_OPEN KW_EXACTLY_ONE condition_list TK_CLOSE {
           $$ = new Invariant(Invariant::EXACTLY_ONE, *static_cast<const And*>($3));
-          const_cast<And*>(static_cast<const And*>($3))->clear(); delete $3;
+          const_cast<And*>(static_cast<const And*>($3))->clear();
+          delete $3;
       }
     ;
 
@@ -517,14 +523,16 @@ invariant:
 clause:
       TK_OPEN KW_OR condition_list TK_CLOSE {
           $$ = new Clause(*static_cast<const And*>($3));
-          const_cast<And*>(static_cast<const And*>($3))->clear(); delete $3;
+          const_cast<And*>(static_cast<const And*>($3))->clear();
+          delete $3;
       }
     ;
 
 oneof:
       TK_OPEN KW_ONEOF condition_list TK_CLOSE {
           $$ = new Oneof(*static_cast<const And*>($3));
-          const_cast<And*>(static_cast<const And*>($3))->clear(); delete $3;
+          const_cast<And*>(static_cast<const And*>($3))->clear();
+          delete $3;
       }
     ;
 
@@ -539,7 +547,7 @@ axiom_declaration:
       }
     | TK_OPEN KW_AXIOM error TK_CLOSE {
           log_error((char*)"syntax error in axiom declaration");
-          yyerrok; 
+          yyerrok;
       }
     ;
 
@@ -564,7 +572,7 @@ sensor_declaration:
       }
     | TK_OPEN KW_SENSOR error TK_CLOSE {
           log_error((char*)"syntax error in sensor declaration");
-          yyerrok; 
+          yyerrok;
       }
     ;
 
@@ -587,7 +595,7 @@ observable_declaration:
       }
     | TK_OPEN KW_OBSERVABLE error TK_CLOSE {
           log_error((char*)"syntax error in observable declaration");
-          yyerrok; 
+          yyerrok;
       }
     ;
 
@@ -611,7 +619,7 @@ sticky_declaration:
       }
     | TK_OPEN KW_STICKY error TK_CLOSE {
           log_error((char*)"syntax error in sticky declaration");
-          yyerrok; 
+          yyerrok;
       }
     ;
 
@@ -650,57 +658,65 @@ problem_elements:
     ;
 
 initial_state:
-      TK_OPEN KW_INIT init_elements TK_CLOSE { dom_init = *$3; delete $3; }
+      TK_OPEN KW_INIT TK_CLOSE
+    | TK_OPEN KW_INIT init_elements TK_CLOSE { dom_init = *$3; delete $3; }
+    | TK_OPEN KW_INIT TK_OPEN KW_AND init_elements TK_CLOSE TK_CLOSE { dom_init = *$5; delete $5; }
     ;
 
 init_elements:
-      init_elements literal {
+      init_elements single_init_element {
           init_element_vec *ilist = const_cast<init_element_vec*>($1);
-          ilist->push_back(new InitLiteral(*$2));
-          delete $2;
+          ilist->push_back(const_cast<InitElement*>($2));
           $$ = ilist;
       }
-    | init_elements invariant {
+    | single_init_element {
+          init_element_vec *ilist = new init_element_vec;
+          ilist->push_back(const_cast<InitElement*>($1));
+          $$ = ilist;
+      }
+    ;
+
+single_init_element:
+      literal { $$ = new InitLiteral(*$1); }
+    | invariant {
           if( type_ == cp2fsc ) {
               log_error((char*)"'invariant' is not a valid element in cp2fsc.");
-              yyerrok; 
+              delete $1;
+              yyerrok;
           } else {
-              init_element_vec *ilist = const_cast<init_element_vec*>($1);
-              ilist->push_back(new InitInvariant(*$2));
-              const_cast<Invariant*>(dynamic_cast<const Invariant*>($2))->clear(); delete $2;
-              $$ = ilist;
+              $$ = new InitInvariant(*$1);
+              const_cast<Invariant*>(dynamic_cast<const Invariant*>($1))->clear();
+              delete $1;
           }
       }
-    | init_elements clause {
+    | clause {
           if( type_ == replanner ) {
               log_error((char*)"'clause' is not a valid element in k-replanner.");
-              yyerrok; 
+              delete $1;
+              yyerrok;
           } else {
-              init_element_vec *ilist = const_cast<init_element_vec*>($1);
-              ilist->push_back(new InitClause(*$2));
-              const_cast<Clause*>(dynamic_cast<const Clause*>($2))->clear(); delete $2;
-              $$ = ilist;
+              $$ = new InitClause(*$1);
+              const_cast<Clause*>(dynamic_cast<const Clause*>($1))->clear();
+              delete $1;
           }
       }
-    | init_elements oneof {
+    | oneof {
           if( type_ == replanner ) {
-              log_error((char*)"'oneof' is not a valid element in k-replanner.");
-              yyerrok; 
-          } else {
-              init_element_vec *ilist = const_cast<init_element_vec*>($1);
-              ilist->push_back(new InitOneof(*$2));
-              const_cast<Oneof*>(dynamic_cast<const Oneof*>($2))->clear(); delete $2;
-              $$ = ilist;
+              // We let oneofs pass in k-replanner as they are later mapped 
+              // into invariants of type exactly-one. This is to support
+              // CLG compatibility mode.
           }
+          $$ = new InitOneof(*$1);
+          const_cast<Oneof*>(dynamic_cast<const Oneof*>($1))->clear();
+          delete $1;
       }
-    | /* empty */ { $$ = new init_element_vec; }
     ;
 
 hidden_state:
       TK_OPEN KW_HIDDEN init_elements TK_CLOSE {
           if( type_ == cp2fsc ) {
               log_error((char*)"':hidden' is not a valid element in cp2fsc.");
-              yyerrok; 
+              yyerrok;
           } else {
               dom_hidden = *$3;
               delete $3;
