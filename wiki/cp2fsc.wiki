@@ -59,22 +59,22 @@ The problem P,,N,, can be solved with different methods, as recently, many solve
 The PODCP problem P is expressed with a PDDL-like syntax that is then parsed by `cp2fsc` in order to generate P,,N,, and then K,,T,M,,(P,,N,,). The syntax for PODCP domains and problems is the following:
 
 {{{
-<domain> ::= (define (domain <name>) <domain-item>*)
-<domain-item> ::= (:requirements <require-keyword>*)
-                | (:types <type-decl>*)
-                | (:constants <typed-obj>*)
-                | (:predicates  <predicate>*)
-                | <structure>*
+<domain>       ::= (define (domain <name>) <domain-item>*)
+<domain-item>  ::= (:requirements <require-keyword>*)
+                 | (:types <type-decl>*)
+                 | (:constants <typed-obj>*)
+                 | (:predicates  <predicate>*)
+                 | <structure>*
 
-<type-decl> ::= <type>+ | <type>+ - <type>
-<typed-obj> ::= <obj>+ | <obj>+ - <type>
-<predicate> ::= (<name> <parameter>*)
-<structure> ::= <action> | <axiom> | <observable> | <sticky>
+<type-decl>    ::= <type>+ | <type>+ - <type>
+<typed-obj>    ::= <obj>+ | <obj>+ - <type>
+<predicate>    ::= (<name> <parameter>*)
+<structure>    ::= <action> | <axiom> | <observable> | <sticky>
 
-<action>     ::= (:action <name> <action-item>*)
-<axiom>      ::= (:axiom <name> <axiom-item>*)
-<observable> ::= (:observable <obs-item>*)
-<sticky>     ::= (:sticky <sticky-item>*)
+<action>       ::= (:action <name> <action-item>*)
+<axiom>        ::= (:axiom <name> <axiom-item>*)
+<observable>   ::= (:observable <obs-item>*)
+<sticky>       ::= (:sticky <sticky-item>*)
 
 <action-item>  ::= :parameters (<parameter>*)
                  | :precondition <condition>
@@ -91,25 +91,27 @@ The PODCP problem P is expressed with a PDDL-like syntax that is then parsed by 
                  | :fluents <fluent>+
 
 
-<parameter>  ::= <variable>+ | <variable>+ - <type>
-<condition>  ::= <fluent> | (and <fluent>*)
+<parameter>    ::= <variable>+ | <variable>+ - <type>
+<condition>    ::= <fluent> | (and <fluent>*)
 
-<effect>     ::= <single-eff> | (and <single-eff>*)
-<single-eff> ::= <atomic-eff>
-               | (when <condition> <atomic-eff>*)
-               | (forall (<parameters>) <effect>)
-<atomic-eff> ::= <fluent> | (not <fluent>)
+<effect>       ::= <single-eff> | (and <single-eff>*)
+<single-eff>   ::= <atomic-eff>
+                 | (when <condition> <atomic-eff>*)
+                 | (forall (<parameters>) <effect>)
+<atomic-eff>   ::= <fluent> | (not <fluent>)
 
 
-<problem> ::= (define (problem <name>) <problem-item>*)
+<problem>      ::= (define (problem <name>) <problem-item>*)
 <problem-item> ::= (:domain <name>)
                  | (:requirements <require-keyword>*)
                  | (:init <init-item>*)
                  | (:goal <goal-decl>)
 
-<init-item>  ::= <fluent> | (oneof <fluent>+)
-<goal-decl>  ::= <single-goal> | (and <single-goal>*)
-<sigle-goal> ::= <fluent> | (not <fluent>)
+<init-item>    ::= <fluent> | <oneof> | <clause>
+<goal-decl>    ::= <single-goal> | (and <single-goal>*)
+<sigle-goal>   ::= <fluent> | (not <fluent>)
+<oneof>        ::= (oneof <fluent>+)
+<clause>       ::= (or <fluent>+)
 }}}
 
 In this implementation, `cp2fsc` only supports initial state description whose non-unit clauses are captured by statements of the form '`(oneof <fluent-1> ... <fluent-n>)`' that should be interpreted as a the clause made of all the fluents in the oneof, and clauses with 2 literals asserting that at most one such fluent should be true. On the other hand, `cp2fsc` extends the basic PODCP model with the `sticky` statements: when a fluent is declared as 'sticky', it remains valid once it is achieved, even if it is a fluent defined through axioms (i.e., a defined fluent).
