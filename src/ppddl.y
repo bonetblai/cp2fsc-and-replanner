@@ -52,7 +52,7 @@
                    KW_ACTION KW_ARGS KW_PRE KW_EFFECT KW_AND
                    KW_OR KW_EXISTS KW_FORALL KW_NOT KW_WHEN KW_ONEOF
                    KW_PROBLEM KW_FORDOMAIN KW_OBJECTS KW_INIT KW_GOAL
-                   KW_SENSOR KW_SENSED KW_AXIOM KW_COND KW_OBSERVABLE
+                   KW_SENSOR KW_SENSE KW_OBSERVE KW_AXIOM KW_COND KW_OBSERVABLE
                    KW_BODY KW_HEAD KW_STICKY KW_FLUENTS KW_HIDDEN
                    KW_INVARIANT KW_AT_LEAST_ONE KW_AT_MOST_ONE KW_EXACTLY_ONE
 
@@ -320,6 +320,7 @@ action_elements:
       }
     | action_elements KW_PRE condition { dom_actions.back()->precondition = $3; }
     | action_elements KW_EFFECT action_effect { dom_actions.back()->effect = $3; }
+    | action_elements KW_OBSERVE action_effect { dom_actions.back()->observe = $3; }
     | /* empty */
     ;
 
@@ -573,7 +574,7 @@ sensor_elements:
           delete $4;
       }
     | sensor_elements KW_COND condition { dom_sensors.back()->condition = $3; }
-    | sensor_elements KW_SENSED positive_atomic_effect_list { dom_sensors.back()->sensed = $3; }
+    | sensor_elements KW_SENSE positive_atomic_effect_list { dom_sensors.back()->sense = $3; }
     | /* empty */
     ;
 

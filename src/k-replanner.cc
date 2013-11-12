@@ -157,11 +157,12 @@ int main(int argc, char *argv[]) {
         reader->print(cout);
     }
 
-    Instance instance(options);
+    reader->translate_observe_effects_into_sensors();
 
     cout << "instantiating p.o. problem..." << endl;
+    Instance instance(options);
     reader->instantiate(instance);
-    delete reader;
+    //delete reader;
     if( options.is_enabled("print:problem:raw") ) {
         instance.print(cout);
         instance.write_domain(cout);
@@ -170,7 +171,7 @@ int main(int argc, char *argv[]) {
 
     cout << "preprocessing p.o. problem..." << endl;
     Preprocessor prep(instance, options);
-    prep.preprocess(true, false); // turn off action compilation
+    prep.preprocess(true, true); // turn off action compilation
     if( options.is_enabled("print:problem:preprocessed") ) {
         //instance.print(cout);
         instance.write_domain(cout);

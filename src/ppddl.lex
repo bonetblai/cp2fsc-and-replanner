@@ -72,7 +72,8 @@ COMMENT ;.*$
 ":precondition"  { return PDDL_Parser::KW_PRE; }
 ":effect"        { return PDDL_Parser::KW_EFFECT; }
 ":condition"     { return PDDL_Parser::KW_COND; }
-":sensed"        { return PDDL_Parser::KW_SENSED; }
+":sense"         { return PDDL_Parser::KW_SENSE; }
+":observe"       { return PDDL_Parser::KW_OBSERVE; }
 ":body"          { return PDDL_Parser::KW_BODY; }
 ":head"          { return PDDL_Parser::KW_HEAD; }
 "and"            { return PDDL_Parser::KW_AND; }

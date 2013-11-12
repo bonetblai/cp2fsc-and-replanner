@@ -69,14 +69,14 @@ class Instance {
         Name *    name;
         size_t    index;
         index_set condition;
-        index_set sensed;
+        index_set sense;
         Sensor(Name *n = 0, size_t i = 0) : name(n), index(i) { }
         ~Sensor() { delete name; }
         const Sensor& operator=(const Sensor &r) {
             name = r.name;
             index = r.index;
             condition = r.condition;
-            sensed = r.sensed;
+            sense = r.sense;
             return *this;
         }
         bool operator==(const Sensor &r) { return index == r.index; }

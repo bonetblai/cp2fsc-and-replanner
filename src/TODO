@@ -1,4 +1,6 @@
-* revision before action compilation and preprocessing is 233
+* Revision before action compilation and preprocessing is 233
 * test and fix all benchmark problems with respect naming of elements.
 * revise compute_static_atoms in preprocessing for cp2fsc.
+
+* Revision before general translation is 255
 
