@@ -37,7 +37,7 @@
     (:sensor ball-pos
         :parameters (?b - ball ?x ?y - pos)
         :condition (at ?x ?y)
-        :sensed (ball-at ?b ?x ?y)
+        :sense (ball-at ?b ?x ?y)
     )
 )
 

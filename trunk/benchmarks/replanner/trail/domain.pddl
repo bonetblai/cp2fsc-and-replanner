@@ -24,12 +24,12 @@
     (:sensor adj-stone
         :parameters (?p1 ?p2 - pos)
         :condition (and (adj ?p1 ?p2) (at ?p1))
-        :sensed (stone ?p2)
+        :sense (stone ?p2)
     )
     (:sensor final
         :parameters (?p - pos)
         :condition (at ?p)
-        :sensed (final-stone ?p)
+        :sense (final-stone ?p)
     )
 )
 
