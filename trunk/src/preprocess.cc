@@ -212,7 +212,7 @@ void Preprocessor::compute_reachability(bool_vec &reachable_atoms, bool_vec &rea
         // iterate over sensors
         for( size_t k = 0; k < instance_.sensors.size(); ++k ) {
             Instance::Sensor *r = instance_.sensors[k];
-            assert(!r->sensed.empty());
+            assert(!r->sense.empty());
 
             bool reachable_sensor = true;
             for( index_set::const_iterator p = r->condition.begin(); p != r->condition.end(); ++p ) {
@@ -225,7 +225,7 @@ void Preprocessor::compute_reachability(bool_vec &reachable_atoms, bool_vec &rea
             reachable_sensors[k] = true;
 
             // add sensed atoms to reachable set
-            for( index_set::const_iterator p = r->sensed.begin(); p != r->sensed.end(); ++p ) {
+            for( index_set::const_iterator p = r->sense.begin(); p != r->sense.end(); ++p ) {
                 assert(*p > 0);
                 if( !reachable_atoms[*p - 1] ) {
                     reachable_atoms[*p - 1] = true;
@@ -621,7 +621,7 @@ void Preprocessor::preprocess(bool remove_atoms, bool do_action_completion) {
 
     for( size_t k = 0; k < instance_.n_sensors(); ++k ) {
         const Instance::Sensor &r = *instance_.sensors[k];
-        for( index_set::const_iterator it = r.sensed.begin(); it != r.sensed.end(); ++it ) {
+        for( index_set::const_iterator it = r.sense.begin(); it != r.sense.end(); ++it ) {
             assert(*it > 0);
             //assert(atoms_to_remove[*it-1] == false);
             atoms_to_remove[*it-1] = false;

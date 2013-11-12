@@ -175,7 +175,7 @@ void Solver::compute_and_add_observations(const State &hidden,
         const Instance::Sensor &r = *instance_.sensors[k];
         if( hidden.satisfy(r.condition) ) {
             sensors.push_back(k);
-            for( index_set::const_iterator it = r.sensed.begin(); it != r.sensed.end(); ++it ) {
+            for( index_set::const_iterator it = r.sense.begin(); it != r.sense.end(); ++it ) {
                 assert(*it > 0);
                 int obs = *it - 1;
                 if( hidden.satisfy(obs) ) {

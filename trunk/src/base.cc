@@ -136,6 +136,7 @@ void PDDL_Base::Action::build(Instance &ins, size_t p, int pass) const {
             Instance::Action &act = ins.new_action(new CopyName(aname.to_string()));
             if( precondition != 0 ) precondition->instantiate(ins, act.precondition);
             if( effect != 0 ) effect->instantiate(ins, act.effect, &act);
+            assert(observe == 0); // observe effects should had been translated!
             act.cost = 1;
         } else {
             ++action_count_;
@@ -169,7 +170,7 @@ void PDDL_Base::Sensor::build(Instance &ins, size_t p) const {
         PDDL_Name sname(this, param, param.size());
         Instance::Sensor &sensor = ins.new_sensor(new CopyName(sname.to_string()));
         if( condition != 0 ) condition->instantiate(ins, sensor.condition);
-        if( sensed != 0 ) sensed->instantiate(ins, sensor.sensed, 0);
+        if( sense != 0 ) sense->instantiate(ins, sensor.sense, 0);
     }
 }
 
@@ -236,6 +237,116 @@ void PDDL_Base::calculate_strongly_static_predicates() const {
     }
     if( !some_strongly_static ) cout << " <none>";
     cout << endl;
+}
+
+template <class T>
+void PDDL_Base::copy_symbol_vec(const vector<T> &src, vector<T> &dst) {
+    dst.clear();
+    dst.reserve(src.size());
+    //cout << "sz=" << src.size() << ", src=" << &src << ", dst=" << &dst << endl;
+    for( typename vector<T>::const_iterator it = src.begin(); it != src.end(); ++it ) {
+        //cout << (*it)->print_name << "=" << flush;
+        //(*it)->print(cout); cout << endl;
+        dst.push_back(static_cast<T>((*it)->clone()));
+    }
+}
+
+void PDDL_Base::translate_observe_effects_into_sensors() {
+    PredicateSymbol *da = new PredicateSymbol("disable-actions");
+    Atom da_pos(da), da_neg(da, true);
+
+    set<Action*> fixed_actions;
+    cout << "translating observe effects into sensors:";
+    for( size_t k = 0; k < dom_actions.size(); ++k ) {
+        Action *action = dom_actions[k];
+        if( action->observe != 0 ) {
+            cout << " '" << action->print_name << "'" << flush;
+
+            // save observations and create (do-post-sense-for-<action> <args>) predicate
+            const Effect *observe = action->observe;
+            PredicateSymbol *ps = new PredicateSymbol(strdup((string("do-post-sense-for-") + action->print_name).c_str()));
+            //cout << action->param.size() << flush << " " << ps->param.size() << endl;
+            //copy_symbol_vec<VariableSymbol*>(action->param, ps->param);
+            //cout << action->param.size() << flush << " " << ps->param.size() << endl;
+            ps->param = action->param;
+            dom_predicates.push_back(ps);
+            //ps->print(cout);
+
+            Atom ps_pos(ps), ps_neg(ps, true);
+            ps_pos.param.insert(ps_pos.param.begin(), ps->param.begin(), ps->param.end());
+            ps_neg.param.insert(ps_neg.param.begin(), ps->param.begin(), ps->param.end());
+            //ps_pos.print(cout); ps_neg.print(cout); cout << endl;
+
+            // Must do 3 things for this action:
+            // 1) modify the action to add precondition (not (disable-actions)), and
+            //    effects (do-post-sense-for-<action> <args>) and (disable-actions)
+            And *new_precondition = dynamic_cast<And*>(const_cast<Condition*>(action->precondition));
+            if( new_precondition == 0 ) {
+                new_precondition = new And;
+                if( action->precondition != 0 ) new_precondition->push_back(action->precondition);
+            }
+            new_precondition->push_back(new Literal(da_neg));
+            action->precondition = new_precondition;
+
+            AndEffect *new_effect = dynamic_cast<AndEffect*>(const_cast<Effect*>(action->effect));
+            if( new_effect == 0 ) {
+                new_effect = new AndEffect;
+                if( action->effect != 0 ) new_effect->push_back(action->effect);
+            }
+            new_effect->push_back(new AtomicEffect(da_pos));
+            new_effect->push_back(new AtomicEffect(ps_pos));
+            action->effect = new_effect;
+            action->observe = 0;
+            fixed_actions.insert(action);
+            //action->print(cout);
+
+            // 2) create sensor sensor-<action> with same arguments, condition
+            //    (do-post-sense-for-<action> <args>), and sense <observation>
+            Sensor *sensor = new Sensor(strdup((string("sensor-for-") + action->print_name).c_str()));
+            dom_sensors.push_back(sensor);
+            sensor->param = action->param;
+            sensor->condition = new Literal(ps_pos);
+            sensor->sense = observe;
+            //sensor->print(cout);
+
+            // 3) create action (post-sense-<action> <args>) with precondition
+            //    (do-post-sense-for-<action> <args>) and effects that remove
+            //    precondition and remove (disable-actions)
+            AndEffect *post_effect = new AndEffect;
+            post_effect->push_back(new AtomicEffect(da_neg));
+            post_effect->push_back(new AtomicEffect(ps_neg));
+
+            Action *post_action = new Action(strdup((string("post-sense-for-") + action->print_name).c_str()));
+            dom_actions.push_back(post_action);
+            post_action->param = action->param;
+            post_action->precondition = new Literal(ps_pos);
+            post_action->effect = post_effect;
+            fixed_actions.insert(post_action);
+            //post_action->print(cout);
+        }
+    }
+    cout << endl;
+
+    // if some translation was done, add precondition (not (disable-actions))
+    // to all other actions
+    if( !fixed_actions.empty() ) {
+        for( size_t k = 0; k < dom_actions.size(); ++k ) {
+            Action *action = dom_actions[k];
+            if( fixed_actions.find(action) == fixed_actions.end() ) {
+                And *new_precondition = dynamic_cast<And*>(const_cast<Condition*>(action->precondition));
+                if( new_precondition == 0 ) {
+                    new_precondition = new And;
+                    if( action->precondition != 0 ) new_precondition->push_back(action->precondition);
+                }
+                new_precondition->push_back(new Literal(da_neg));
+                action->precondition = new_precondition;
+                //action->print(cout);
+            }
+        }
+        dom_predicates.push_back(da);
+    } else {
+        delete da;
+    }
 }
 
 void PDDL_Base::instantiate(Instance &ins) const {
@@ -455,12 +566,34 @@ void PDDL_Base::ActionSymbol::print(ostream &os) const {
 
 void PDDL_Base::Action::print(ostream &os) const {
     os << "(:action " << print_name << endl;
-    os << "  :parameters (";
-    for( size_t k = 0; k < param.size(); k++ ) {
-      if (k > 0) os << ' ';
-      param[k]->print(os);
+
+    if( !param.empty() ) {
+        os << "    :parameters (";
+        for( size_t k = 0; k < param.size(); k++ ) {
+            if (k > 0) os << ' ';
+            param[k]->print(os);
+        }
+        os << ")" << endl;
     }
-    os << ")" << endl;
+
+    if( precondition != 0 ) {
+        os << "    :precondition ";
+        precondition->print(os);
+        os << endl;
+    }
+
+    if( effect != 0 ) {
+        os << "    :effect ";
+        effect->print(os);
+        os << endl;
+    }
+
+    if( observe != 0 ) {
+        os << "    :observe ";
+        observe->print(os);
+        os << endl;
+    }
+
 #if 0
     os << "  :pos_prec (";
     for( size_t k = 0; k < pos_atm.size(); k++ ) {
@@ -506,15 +639,39 @@ void PDDL_Base::Action::print(ostream &os) const {
     os << ")" << endl;
 }
 
+void PDDL_Base::Sensor::print(ostream &os) const {
+    os << "(:sensor " << print_name << endl;
 
+    if( !param.empty() ) {
+        os << "    :parameters (";
+        for( size_t k = 0; k < param.size(); k++ ) {
+          if (k > 0) os << ' ';
+          param[k]->print(os);
+        }
+        os << ")" << endl;
+    }
 
-void PDDL_Base::Atom::print(ostream &os, bool neg) const {
-    if (neg) os << "(not ";
+    if( condition != 0 ) {
+        os << "    :condition ";
+        condition->print(os);
+        os << endl;
+    }
+
+    assert(sense != 0);
+    os << "    :sense ";
+    sense->print(os);
+    os << endl;
+    os << ")" << endl;
+}
+
+void PDDL_Base::Atom::print(ostream &os, bool extra_neg) const {
+    extra_neg = extra_neg ? !neg : neg;
+    if( extra_neg ) os << "(not ";
     os << "(" << pred->print_name;
     for (size_t k = 0; k < param.size(); k++)
         param[k]->print(os << ' ');
     os << ")";
-    if (neg) os << ")";
+    if( extra_neg ) os << ")";
 }
 
 void PDDL_Base::print(ostream &os) const { // TODO: fix this

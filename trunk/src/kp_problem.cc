@@ -134,7 +134,7 @@ KP_Instance::KP_Instance(const Instance &ins, const Options::Mode &options)
     // create sensor rules
     for( size_t k = 0; k < ins.n_sensors(); k++ ) {
         const Sensor &r = *ins.sensors[k];
-        assert(!r.sensed.empty());
+        assert(!r.sense.empty());
 
         // create common condition
         index_set common_condition;
@@ -148,7 +148,7 @@ KP_Instance::KP_Instance(const Instance &ins, const Options::Mode &options)
 
         // generate different rule for every sensed fluent
         int obs = 0;
-        for( index_set::const_iterator it = r.sensed.begin(); it != r.sensed.end(); ++it ) {
+        for( index_set::const_iterator it = r.sense.begin(); it != r.sense.end(); ++it ) {
             assert(*it > 0);
             int idx = *it-1;
             for( size_t n = 0; n < 2; ++n ) {

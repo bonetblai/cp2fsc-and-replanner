@@ -402,7 +402,7 @@ void Instance::remove_atoms(const bool_vec &set, index_vec &map) {
     // update sensors
     for( size_t k = 0; k < sensors.size(); ++k ) {
         sensors[k]->condition.signed_remap(rm_map);
-        sensors[k]->sensed.signed_remap(rm_map);
+        sensors[k]->sense.signed_remap(rm_map);
     }
 
     // update axioms
@@ -459,7 +459,7 @@ void Instance::calculate_non_primitive_and_observable_fluents() {
     observable_fluents.clear();
     for( size_t k = 0; k < n_sensors(); ++k ) {
         const Sensor &sensor = *sensors[k];
-        for( index_set::const_iterator it = sensor.sensed.begin(); it != sensor.sensed.end(); ++it ) {
+        for( index_set::const_iterator it = sensor.sense.begin(); it != sensor.sense.end(); ++it ) {
             assert(*it > 0);
             observable_fluents.insert(*it-1);
         }
@@ -854,9 +854,9 @@ void Instance::Sensor::print(ostream &os, const Instance &i) const {
         }
         os << endl;
     }
-    assert(!sensed.empty());
-    os << "  sensed:";
-    for( index_set::const_iterator it = sensed.begin(); it != sensed.end(); ++it ) {
+    assert(!sense.empty());
+    os << "  sense:";
+    for( index_set::const_iterator it = sense.begin(); it != sense.end(); ++it ) {
         assert(*it >= 0);
         os << " " << *it-1 << '.' << i.atoms[*it-1]->name;
     }
@@ -894,10 +894,10 @@ void Instance::Sensor::write(ostream &os, int indent, const Instance &instance) 
             os << istr << istr << ":condition ()" << endl;
     }
 
-    // sensed
-    assert(!sensed.empty());
-    os << istr << istr << ":sensed";
-    for( index_set::const_iterator it = sensed.begin(); it != sensed.end(); ++it ) {
+    // sense
+    assert(!sense.empty());
+    os << istr << istr << ":sense";
+    for( index_set::const_iterator it = sense.begin(); it != sense.end(); ++it ) {
         assert(*it > 0);
         os << " " << instance.atoms[*it-1]->name;
     }
