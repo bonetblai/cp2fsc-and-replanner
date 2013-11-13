@@ -9,12 +9,6 @@
         (ill ?i - ILLNESS)    
     )
  
-    (:action inspect-stain
-        :parameters (?i - DYE)
-        :precondition (ndead)
-        :observe (stain ?i)
-    )
-
     (:action medicate1
         :precondition (and (ndead) (ill i1))
         :effect (when (ill i1) (ill i0))
@@ -70,6 +64,7 @@
                      (when (ill i10) (stain s10))
                      (when (ill i0) (stain s0))
                 )
+        :observe (stain s0) (stain s1) (stain s2) (stain s3) (stain s4) (stain s5) (stain s6) (stain s7) (stain s8) (stain s9) (stain s10)
     )
 )
 
