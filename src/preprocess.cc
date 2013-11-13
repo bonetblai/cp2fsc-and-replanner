@@ -656,10 +656,8 @@ void Preprocessor::preprocess(bool remove_atoms, bool do_action_completion) {
         instance_.remove_atoms(atoms_to_remove, atom_map_);
     }
 
-
     // recalculate non-primitive and observable atoms
     instance_.calculate_non_primitive_and_observable_fluents();
-
 
 #if 0 // This old stuff. It should not be necessary
     // stage 7: Create deductive rules
@@ -667,7 +665,6 @@ void Preprocessor::preprocess(bool remove_atoms, bool do_action_completion) {
         cout << "  Stage 7: computing deductive rules..." << endl;
     instance_.create_deductive_rules();
 #endif
-
 
     // stage 7: Perform action completion. This is only valid for k-replanner.
     if( do_action_completion ) {
@@ -677,7 +674,6 @@ void Preprocessor::preprocess(bool remove_atoms, bool do_action_completion) {
             compute_action_completion(*instance_.actions[k]);
         }
     }
-
 
     // do cross referencing
     instance_.cross_reference();
