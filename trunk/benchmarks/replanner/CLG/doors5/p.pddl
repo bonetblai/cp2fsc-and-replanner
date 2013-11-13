@@ -187,6 +187,6 @@
 
     )
     )
-    (:hidden (opened p2-2)  (opened p4-5))
+    ;(:hidden (opened p2-2)  (opened p4-5))
     (:goal (and (at p5-3))
 ))
