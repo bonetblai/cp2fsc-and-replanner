@@ -49,7 +49,7 @@ typedef union {
     StringTable::Cell                 *sym;
     PDDL_Base::Atom                   *atom;
     PDDL_Base::symbol_vec             *param;
-    PDDL_Base::variable_vec           *vparam;
+    PDDL_Base::var_symbol_vec         *vparam;
     const PDDL_Base::Condition        *condition;
     const PDDL_Base::Effect           *effect;
     const PDDL_Base::Invariant        *invariant;
@@ -231,44 +231,49 @@ extern YY_PDDL_Parser_STYPE YY_PDDL_Parser_LVAL;
 #define	TK_MISC_SYMBOL	272
 #define	TK_KEYWORD	273
 #define	TK_NEW_VAR_SYMBOL	274
-#define	TK_INT	275
-#define	KW_REQS	276
-#define	KW_CONSTANTS	277
-#define	KW_PREDS	278
-#define	KW_TYPES	279
-#define	KW_DEFINE	280
-#define	KW_DOMAIN	281
-#define	KW_ACTION	282
-#define	KW_ARGS	283
-#define	KW_PRE	284
-#define	KW_EFFECT	285
-#define	KW_AND	286
-#define	KW_OR	287
-#define	KW_EXISTS	288
-#define	KW_FORALL	289
-#define	KW_NOT	290
-#define	KW_WHEN	291
-#define	KW_ONEOF	292
-#define	KW_PROBLEM	293
-#define	KW_FORDOMAIN	294
-#define	KW_OBJECTS	295
-#define	KW_INIT	296
-#define	KW_GOAL	297
-#define	KW_SENSOR	298
-#define	KW_SENSE	299
-#define	KW_OBSERVE	300
-#define	KW_AXIOM	301
-#define	KW_COND	302
-#define	KW_OBSERVABLE	303
-#define	KW_BODY	304
-#define	KW_HEAD	305
-#define	KW_STICKY	306
-#define	KW_FLUENTS	307
-#define	KW_HIDDEN	308
-#define	KW_INVARIANT	309
-#define	KW_AT_LEAST_ONE	310
-#define	KW_AT_MOST_ONE	311
-#define	KW_EXACTLY_ONE	312
+#define	TK_VARNAME_SYMBOL	275
+#define	TK_INT	276
+#define	KW_REQS	277
+#define	KW_TRANSLATION	278
+#define	KW_CONSTANTS	279
+#define	KW_PREDS	280
+#define	KW_TYPES	281
+#define	KW_DEFINE	282
+#define	KW_DOMAIN	283
+#define	KW_ACTION	284
+#define	KW_ARGS	285
+#define	KW_PRE	286
+#define	KW_EFFECT	287
+#define	KW_AND	288
+#define	KW_OR	289
+#define	KW_EXISTS	290
+#define	KW_FORALL	291
+#define	KW_NOT	292
+#define	KW_WHEN	293
+#define	KW_ONEOF	294
+#define	KW_PROBLEM	295
+#define	KW_FORDOMAIN	296
+#define	KW_OBJECTS	297
+#define	KW_INIT	298
+#define	KW_GOAL	299
+#define	KW_SENSOR	300
+#define	KW_SENSE	301
+#define	KW_OBSERVE	302
+#define	KW_AXIOM	303
+#define	KW_COND	304
+#define	KW_OBSERVABLE	305
+#define	KW_BODY	306
+#define	KW_HEAD	307
+#define	KW_STICKY	308
+#define	KW_FLUENTS	309
+#define	KW_HIDDEN	310
+#define	KW_INVARIANT	311
+#define	KW_AT_LEAST_ONE	312
+#define	KW_AT_MOST_ONE	313
+#define	KW_EXACTLY_ONE	314
+#define	KW_VARIABLE	315
+#define	KW_OBS_VARIABLE	316
+#define	KW_SENSING_MODEL	317
 
 
 #line 143 "/home/bonet/space/software/bison++-1.21-8/lib/bison.h"
@@ -313,7 +318,7 @@ public:
 /* static const int token ... */
 
 /* #line 182 "/home/bonet/space/software/bison++-1.21-8/lib/bison.h" */
-#line 317 "grammar.h"
+#line 322 "grammar.h"
 static const int TK_OPEN;
 static const int TK_CLOSE;
 static const int TK_OPEN_SQ;
@@ -331,8 +336,10 @@ static const int TK_SENSOR_SYMBOL;
 static const int TK_MISC_SYMBOL;
 static const int TK_KEYWORD;
 static const int TK_NEW_VAR_SYMBOL;
+static const int TK_VARNAME_SYMBOL;
 static const int TK_INT;
 static const int KW_REQS;
+static const int KW_TRANSLATION;
 static const int KW_CONSTANTS;
 static const int KW_PREDS;
 static const int KW_TYPES;
@@ -369,6 +376,9 @@ static const int KW_INVARIANT;
 static const int KW_AT_LEAST_ONE;
 static const int KW_AT_MOST_ONE;
 static const int KW_EXACTLY_ONE;
+static const int KW_VARIABLE;
+static const int KW_OBS_VARIABLE;
+static const int KW_SENSING_MODEL;
 
 
 #line 182 "/home/bonet/space/software/bison++-1.21-8/lib/bison.h"
@@ -377,7 +387,7 @@ static const int KW_EXACTLY_ONE;
 enum YY_PDDL_Parser_ENUM_TOKEN { YY_PDDL_Parser_NULL_TOKEN=0
 
 /* #line 185 "/home/bonet/space/software/bison++-1.21-8/lib/bison.h" */
-#line 381 "grammar.h"
+#line 391 "grammar.h"
 	,TK_OPEN=258
 	,TK_CLOSE=259
 	,TK_OPEN_SQ=260
@@ -395,44 +405,49 @@ enum YY_PDDL_Parser_ENUM_TOKEN { YY_PDDL_Parser_NULL_TOKEN=0
 	,TK_MISC_SYMBOL=272
 	,TK_KEYWORD=273
 	,TK_NEW_VAR_SYMBOL=274
-	,TK_INT=275
-	,KW_REQS=276
-	,KW_CONSTANTS=277
-	,KW_PREDS=278
-	,KW_TYPES=279
-	,KW_DEFINE=280
-	,KW_DOMAIN=281
-	,KW_ACTION=282
-	,KW_ARGS=283
-	,KW_PRE=284
-	,KW_EFFECT=285
-	,KW_AND=286
-	,KW_OR=287
-	,KW_EXISTS=288
-	,KW_FORALL=289
-	,KW_NOT=290
-	,KW_WHEN=291
-	,KW_ONEOF=292
-	,KW_PROBLEM=293
-	,KW_FORDOMAIN=294
-	,KW_OBJECTS=295
-	,KW_INIT=296
-	,KW_GOAL=297
-	,KW_SENSOR=298
-	,KW_SENSE=299
-	,KW_OBSERVE=300
-	,KW_AXIOM=301
-	,KW_COND=302
-	,KW_OBSERVABLE=303
-	,KW_BODY=304
-	,KW_HEAD=305
-	,KW_STICKY=306
-	,KW_FLUENTS=307
-	,KW_HIDDEN=308
-	,KW_INVARIANT=309
-	,KW_AT_LEAST_ONE=310
-	,KW_AT_MOST_ONE=311
-	,KW_EXACTLY_ONE=312
+	,TK_VARNAME_SYMBOL=275
+	,TK_INT=276
+	,KW_REQS=277
+	,KW_TRANSLATION=278
+	,KW_CONSTANTS=279
+	,KW_PREDS=280
+	,KW_TYPES=281
+	,KW_DEFINE=282
+	,KW_DOMAIN=283
+	,KW_ACTION=284
+	,KW_ARGS=285
+	,KW_PRE=286
+	,KW_EFFECT=287
+	,KW_AND=288
+	,KW_OR=289
+	,KW_EXISTS=290
+	,KW_FORALL=291
+	,KW_NOT=292
+	,KW_WHEN=293
+	,KW_ONEOF=294
+	,KW_PROBLEM=295
+	,KW_FORDOMAIN=296
+	,KW_OBJECTS=297
+	,KW_INIT=298
+	,KW_GOAL=299
+	,KW_SENSOR=300
+	,KW_SENSE=301
+	,KW_OBSERVE=302
+	,KW_AXIOM=303
+	,KW_COND=304
+	,KW_OBSERVABLE=305
+	,KW_BODY=306
+	,KW_HEAD=307
+	,KW_STICKY=308
+	,KW_FLUENTS=309
+	,KW_HIDDEN=310
+	,KW_INVARIANT=311
+	,KW_AT_LEAST_ONE=312
+	,KW_AT_MOST_ONE=313
+	,KW_EXACTLY_ONE=314
+	,KW_VARIABLE=315
+	,KW_OBS_VARIABLE=316
+	,KW_SENSING_MODEL=317
 
 
 #line 185 "/home/bonet/space/software/bison++-1.21-8/lib/bison.h"
@@ -489,5 +504,5 @@ public:
 /* END */
 
 /* #line 236 "/home/bonet/space/software/bison++-1.21-8/lib/bison.h" */
-#line 493 "grammar.h"
+#line 508 "grammar.h"
 #endif

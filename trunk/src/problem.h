@@ -126,10 +126,7 @@ class Instance {
         clause_vec    clauses;
         oneof_vec     oneofs;
     };
-    class init_vec : public std::vector<Init> {
-      public:
-        init_vec(size_t n = 0) : std::vector<Init>(n) { }
-    };
+    class init_vec : public std::vector<Init> { };
 
     class Plan : public std::vector<int> { };
 
