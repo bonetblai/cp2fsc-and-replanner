@@ -90,7 +90,7 @@ rule 66   action_declaration -> TK_OPEN KW_ACTION error TK_CLOSE
 rule 67   action_elements -> action_elements KW_ARGS TK_OPEN typed_param_list TK_CLOSE
 rule 68   action_elements -> action_elements KW_PRE condition
 rule 69   action_elements -> action_elements KW_EFFECT action_effect
-rule 70   action_elements -> action_elements KW_OBSERVE action_effect
+rule 70   action_elements -> action_elements KW_OBSERVE positive_atomic_effect_list
 rule 71   action_elements ->		/* empty */
 rule 72   condition -> single_condition
 rule 73   condition -> TK_OPEN KW_AND condition_list TK_CLOSE
@@ -317,7 +317,7 @@ negative_literal (88)
 atom_argument_list (89)
     on left: 82 83 84, on right: 79 80 82 83
 action_effect (90)
-    on left: 85 86, on right: 69 70 95
+    on left: 85 86, on right: 69 95
 action_effect_list (91)
     on left: 87 88, on right: 86 87
 single_action_effect (92)
@@ -335,7 +335,7 @@ atomic_effect_kw_list (97)
 atomic_effect_list (98)
     on left: 98 99, on right: 96 98
 positive_atomic_effect_list (99)
-    on left: 100 101, on right: 100 125 131 137
+    on left: 100 101, on right: 70 100 125 131 137
 atomic_effect (100)
     on left: 102, on right: 89 97 98 99
 positive_atomic_effect (101)
@@ -1633,7 +1633,7 @@ state 115
     action_elements  ->  action_elements . KW_ARGS TK_OPEN typed_param_list TK_CLOSE   (rule 67)
     action_elements  ->  action_elements . KW_PRE condition   (rule 68)
     action_elements  ->  action_elements . KW_EFFECT action_effect   (rule 69)
-    action_elements  ->  action_elements . KW_OBSERVE action_effect   (rule 70)
+    action_elements  ->  action_elements . KW_OBSERVE positive_atomic_effect_list   (rule 70)
 
     TK_CLOSE	shift, and go to state 136
     KW_ARGS	shift, and go to state 137
@@ -1895,18 +1895,13 @@ state 139
 
 state 140
 
-    action_elements  ->  action_elements KW_OBSERVE . action_effect   (rule 70)
+    action_elements  ->  action_elements KW_OBSERVE . positive_atomic_effect_list   (rule 70)
 
-    TK_OPEN	shift, and go to state 169
+    TK_OPEN	shift, and go to state 150
 
-    literal	go to state 170
-    positive_literal	go to state 167
-    negative_literal	go to state 168
-    action_effect	go to state 176
-    single_action_effect	go to state 172
-    conditional_effect	go to state 173
-    forall_effect	go to state 174
-    atomic_effect	go to state 175
+    positive_literal	go to state 151
+    positive_atomic_effect_list	go to state 176
+    positive_atomic_effect	go to state 153
 
 
 
@@ -2292,9 +2287,15 @@ state 175
 
 state 176
 
-    action_elements  ->  action_elements KW_OBSERVE action_effect .   (rule 70)
+    action_elements  ->  action_elements KW_OBSERVE positive_atomic_effect_list .   (rule 70)
+    positive_atomic_effect_list  ->  positive_atomic_effect_list . positive_atomic_effect   (rule 100)
+
+    TK_OPEN	shift, and go to state 150
 
     $default	reduce using rule 70 (action_elements)
+
+    positive_literal	go to state 151
+    positive_atomic_effect	go to state 188
 
 
 

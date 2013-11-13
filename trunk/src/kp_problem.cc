@@ -258,6 +258,10 @@ KP_Instance::~KP_Instance() {
 }
 
 void KP_Instance::cross_reference() {
+    n_standard_actions_ = 0;
+    n_sensor_actions_ = 0;
+    n_invariant_actions_ = 0;
+
     size_t k = 0;
     while( k < n_actions() ) {
         if( actions[k]->name->to_string().compare(0, 7, "sensor-") == 0 ) {

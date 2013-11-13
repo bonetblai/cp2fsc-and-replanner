@@ -322,7 +322,7 @@ action_elements:
       }
     | action_elements KW_PRE condition { dom_actions.back()->precondition = $3; }
     | action_elements KW_EFFECT action_effect { dom_actions.back()->effect = $3; }
-    | action_elements KW_OBSERVE action_effect { dom_actions.back()->observe = $3; }
+    | action_elements KW_OBSERVE positive_atomic_effect_list { dom_actions.back()->observe = $3; }
     | /* empty */
     ;
 
