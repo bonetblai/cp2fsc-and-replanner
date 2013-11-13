@@ -718,7 +718,7 @@ hidden_state:
               log_error((char*)"':hidden' is not a valid element in cp2fsc.");
               yyerrok;
           } else {
-              dom_hidden = *$3;
+              dom_hidden.push_back(*$3);
               delete $3;
           }
       }

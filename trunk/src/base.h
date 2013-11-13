@@ -10,8 +10,8 @@
 
 class PDDL_Base {
   public:
-    static bool     write_warnings;
-    static bool     write_info;
+    static bool write_warnings;
+    static bool write_info;
 
     enum symbol_class {
         sym_object,
@@ -289,26 +289,27 @@ class PDDL_Base {
     };
     struct sticky_vec : public std::vector<Sticky*> { };
 
-    const char* domain_name;
-    const char* problem_name;
 
-    StringTable      &tab;
-    type_vec         dom_types;
-    TypeSymbol       *dom_top_type;
-    symbol_vec       dom_constants;
-    predicate_vec    dom_predicates;
-    PredicateSymbol  *dom_eq_pred;
+    const char                      *domain_name;
+    const char                      *problem_name;
 
-    action_vec       dom_actions;
-    sensor_vec       dom_sensors;
-    axiom_vec        dom_axioms;
-    const Condition  *dom_goal;
-    init_element_vec dom_init;
-    init_element_vec dom_hidden;
-    observable_vec   dom_observables;
-    sticky_vec       dom_stickies;
+    StringTable                     &tab;
+    type_vec                        dom_types;
+    TypeSymbol                      *dom_top_type;
+    symbol_vec                      dom_constants;
+    predicate_vec                   dom_predicates;
+    PredicateSymbol                 *dom_eq_pred;
 
-    Atom             *disable_actions_atom;
+    action_vec                      dom_actions;
+    sensor_vec                      dom_sensors;
+    axiom_vec                       dom_axioms;
+    const Condition                 *dom_goal;
+    init_element_vec                dom_init;
+    std::vector<init_element_vec>   dom_hidden;
+    observable_vec                  dom_observables;
+    sticky_vec                      dom_stickies;
+
+    Atom                            *disable_actions_atom;
 
     PDDL_Base(StringTable& t);
     ~PDDL_Base();
