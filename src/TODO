@@ -6,4 +6,40 @@
 
 * Restore 'delete reader' in k-replanner.cc
 * Complete initial hidden state w/ fix point of inference rules
+* Provide functionality to select hidden states with indices to solve
+
+* Proposal for principled handling of active sensing:
+
+General translation is a 3-stage process:
+
+Problem w/ multi                                       K-replanner instance
+values vars and   ==>  Propositional translation  ==>  with pasive sensing
+active sensing
+
+Syntax for multi-valued description is still pending.
+
+Syntax for propositional translation given by:
+
+1) Variables and observable variables specified with
+   (variable ...) and (obs-variable) in :init
+
+2) All actions of the form:
+
+      Precondition
+      Effects that include effects of the form C_i => Z(Y=y)
+      Observables Z(Y=y)
+ 
+   where different formulas W_a(Y=y) = C_1 v ... v C_n in DNF
+   make up the sensing model for all the observable literals Y=y,
+   and Z(Y=y) are atoms that "propositionalise" the obsevables.
+   This observables must then appear in :init as
+
+      (obs-variable Z(Y=y1) Z(Y=y2) ... Z(Y=yn))
+
+3) Nothing else.
+
+
+
+
+
 

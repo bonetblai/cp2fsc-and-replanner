@@ -113,7 +113,7 @@ typedef union {
     StringTable::Cell                 *sym;
     PDDL_Base::Atom                   *atom;
     PDDL_Base::symbol_vec             *param;
-    PDDL_Base::variable_vec           *vparam;
+    PDDL_Base::var_symbol_vec         *vparam;
     const PDDL_Base::Condition        *condition;
     const PDDL_Base::Effect           *effect;
     const PDDL_Base::Invariant        *invariant;
@@ -329,44 +329,49 @@ typedef
 #define	TK_MISC_SYMBOL	272
 #define	TK_KEYWORD	273
 #define	TK_NEW_VAR_SYMBOL	274
-#define	TK_INT	275
-#define	KW_REQS	276
-#define	KW_CONSTANTS	277
-#define	KW_PREDS	278
-#define	KW_TYPES	279
-#define	KW_DEFINE	280
-#define	KW_DOMAIN	281
-#define	KW_ACTION	282
-#define	KW_ARGS	283
-#define	KW_PRE	284
-#define	KW_EFFECT	285
-#define	KW_AND	286
-#define	KW_OR	287
-#define	KW_EXISTS	288
-#define	KW_FORALL	289
-#define	KW_NOT	290
-#define	KW_WHEN	291
-#define	KW_ONEOF	292
-#define	KW_PROBLEM	293
-#define	KW_FORDOMAIN	294
-#define	KW_OBJECTS	295
-#define	KW_INIT	296
-#define	KW_GOAL	297
-#define	KW_SENSOR	298
-#define	KW_SENSE	299
-#define	KW_OBSERVE	300
-#define	KW_AXIOM	301
-#define	KW_COND	302
-#define	KW_OBSERVABLE	303
-#define	KW_BODY	304
-#define	KW_HEAD	305
-#define	KW_STICKY	306
-#define	KW_FLUENTS	307
-#define	KW_HIDDEN	308
-#define	KW_INVARIANT	309
-#define	KW_AT_LEAST_ONE	310
-#define	KW_AT_MOST_ONE	311
-#define	KW_EXACTLY_ONE	312
+#define	TK_VARNAME_SYMBOL	275
+#define	TK_INT	276
+#define	KW_REQS	277
+#define	KW_TRANSLATION	278
+#define	KW_CONSTANTS	279
+#define	KW_PREDS	280
+#define	KW_TYPES	281
+#define	KW_DEFINE	282
+#define	KW_DOMAIN	283
+#define	KW_ACTION	284
+#define	KW_ARGS	285
+#define	KW_PRE	286
+#define	KW_EFFECT	287
+#define	KW_AND	288
+#define	KW_OR	289
+#define	KW_EXISTS	290
+#define	KW_FORALL	291
+#define	KW_NOT	292
+#define	KW_WHEN	293
+#define	KW_ONEOF	294
+#define	KW_PROBLEM	295
+#define	KW_FORDOMAIN	296
+#define	KW_OBJECTS	297
+#define	KW_INIT	298
+#define	KW_GOAL	299
+#define	KW_SENSOR	300
+#define	KW_SENSE	301
+#define	KW_OBSERVE	302
+#define	KW_AXIOM	303
+#define	KW_COND	304
+#define	KW_OBSERVABLE	305
+#define	KW_BODY	306
+#define	KW_HEAD	307
+#define	KW_STICKY	308
+#define	KW_FLUENTS	309
+#define	KW_HIDDEN	310
+#define	KW_INVARIANT	311
+#define	KW_AT_LEAST_ONE	312
+#define	KW_AT_MOST_ONE	313
+#define	KW_EXACTLY_ONE	314
+#define	KW_VARIABLE	315
+#define	KW_OBS_VARIABLE	316
+#define	KW_SENSING_MODEL	317
 
 
 #line 236 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc"
@@ -416,7 +421,7 @@ public:
 /* static const int token ... */
 
 /* #line 280 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc" */
-#line 420 "grammar.cc"
+#line 425 "grammar.cc"
 static const int TK_OPEN;
 static const int TK_CLOSE;
 static const int TK_OPEN_SQ;
@@ -434,8 +439,10 @@ static const int TK_SENSOR_SYMBOL;
 static const int TK_MISC_SYMBOL;
 static const int TK_KEYWORD;
 static const int TK_NEW_VAR_SYMBOL;
+static const int TK_VARNAME_SYMBOL;
 static const int TK_INT;
 static const int KW_REQS;
+static const int KW_TRANSLATION;
 static const int KW_CONSTANTS;
 static const int KW_PREDS;
 static const int KW_TYPES;
@@ -472,6 +479,9 @@ static const int KW_INVARIANT;
 static const int KW_AT_LEAST_ONE;
 static const int KW_AT_MOST_ONE;
 static const int KW_EXACTLY_ONE;
+static const int KW_VARIABLE;
+static const int KW_OBS_VARIABLE;
+static const int KW_SENSING_MODEL;
 
 
 #line 280 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc"
@@ -480,7 +490,7 @@ static const int KW_EXACTLY_ONE;
 enum YY_PDDL_Parser_ENUM_TOKEN { YY_PDDL_Parser_NULL_TOKEN=0
 
 /* #line 283 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc" */
-#line 484 "grammar.cc"
+#line 494 "grammar.cc"
 	,TK_OPEN=258
 	,TK_CLOSE=259
 	,TK_OPEN_SQ=260
@@ -498,44 +508,49 @@ enum YY_PDDL_Parser_ENUM_TOKEN { YY_PDDL_Parser_NULL_TOKEN=0
 	,TK_MISC_SYMBOL=272
 	,TK_KEYWORD=273
 	,TK_NEW_VAR_SYMBOL=274
-	,TK_INT=275
-	,KW_REQS=276
-	,KW_CONSTANTS=277
-	,KW_PREDS=278
-	,KW_TYPES=279
-	,KW_DEFINE=280
-	,KW_DOMAIN=281
-	,KW_ACTION=282
-	,KW_ARGS=283
-	,KW_PRE=284
-	,KW_EFFECT=285
-	,KW_AND=286
-	,KW_OR=287
-	,KW_EXISTS=288
-	,KW_FORALL=289
-	,KW_NOT=290
-	,KW_WHEN=291
-	,KW_ONEOF=292
-	,KW_PROBLEM=293
-	,KW_FORDOMAIN=294
-	,KW_OBJECTS=295
-	,KW_INIT=296
-	,KW_GOAL=297
-	,KW_SENSOR=298
-	,KW_SENSE=299
-	,KW_OBSERVE=300
-	,KW_AXIOM=301
-	,KW_COND=302
-	,KW_OBSERVABLE=303
-	,KW_BODY=304
-	,KW_HEAD=305
-	,KW_STICKY=306
-	,KW_FLUENTS=307
-	,KW_HIDDEN=308
-	,KW_INVARIANT=309
-	,KW_AT_LEAST_ONE=310
-	,KW_AT_MOST_ONE=311
-	,KW_EXACTLY_ONE=312
+	,TK_VARNAME_SYMBOL=275
+	,TK_INT=276
+	,KW_REQS=277
+	,KW_TRANSLATION=278
+	,KW_CONSTANTS=279
+	,KW_PREDS=280
+	,KW_TYPES=281
+	,KW_DEFINE=282
+	,KW_DOMAIN=283
+	,KW_ACTION=284
+	,KW_ARGS=285
+	,KW_PRE=286
+	,KW_EFFECT=287
+	,KW_AND=288
+	,KW_OR=289
+	,KW_EXISTS=290
+	,KW_FORALL=291
+	,KW_NOT=292
+	,KW_WHEN=293
+	,KW_ONEOF=294
+	,KW_PROBLEM=295
+	,KW_FORDOMAIN=296
+	,KW_OBJECTS=297
+	,KW_INIT=298
+	,KW_GOAL=299
+	,KW_SENSOR=300
+	,KW_SENSE=301
+	,KW_OBSERVE=302
+	,KW_AXIOM=303
+	,KW_COND=304
+	,KW_OBSERVABLE=305
+	,KW_BODY=306
+	,KW_HEAD=307
+	,KW_STICKY=308
+	,KW_FLUENTS=309
+	,KW_HIDDEN=310
+	,KW_INVARIANT=311
+	,KW_AT_LEAST_ONE=312
+	,KW_AT_MOST_ONE=313
+	,KW_EXACTLY_ONE=314
+	,KW_VARIABLE=315
+	,KW_OBS_VARIABLE=316
+	,KW_SENSING_MODEL=317
 
 
 #line 283 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc"
@@ -572,7 +587,7 @@ public:
 #if YY_PDDL_Parser_USE_CONST_TOKEN != 0
 
 /* #line 314 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc" */
-#line 576 "grammar.cc"
+#line 591 "grammar.cc"
 const int YY_PDDL_Parser_CLASS::TK_OPEN=258;
 const int YY_PDDL_Parser_CLASS::TK_CLOSE=259;
 const int YY_PDDL_Parser_CLASS::TK_OPEN_SQ=260;
@@ -590,44 +605,49 @@ const int YY_PDDL_Parser_CLASS::TK_SENSOR_SYMBOL=271;
 const int YY_PDDL_Parser_CLASS::TK_MISC_SYMBOL=272;
 const int YY_PDDL_Parser_CLASS::TK_KEYWORD=273;
 const int YY_PDDL_Parser_CLASS::TK_NEW_VAR_SYMBOL=274;
-const int YY_PDDL_Parser_CLASS::TK_INT=275;
-const int YY_PDDL_Parser_CLASS::KW_REQS=276;
-const int YY_PDDL_Parser_CLASS::KW_CONSTANTS=277;
-const int YY_PDDL_Parser_CLASS::KW_PREDS=278;
-const int YY_PDDL_Parser_CLASS::KW_TYPES=279;
-const int YY_PDDL_Parser_CLASS::KW_DEFINE=280;
-const int YY_PDDL_Parser_CLASS::KW_DOMAIN=281;
-const int YY_PDDL_Parser_CLASS::KW_ACTION=282;
-const int YY_PDDL_Parser_CLASS::KW_ARGS=283;
-const int YY_PDDL_Parser_CLASS::KW_PRE=284;
-const int YY_PDDL_Parser_CLASS::KW_EFFECT=285;
-const int YY_PDDL_Parser_CLASS::KW_AND=286;
-const int YY_PDDL_Parser_CLASS::KW_OR=287;
-const int YY_PDDL_Parser_CLASS::KW_EXISTS=288;
-const int YY_PDDL_Parser_CLASS::KW_FORALL=289;
-const int YY_PDDL_Parser_CLASS::KW_NOT=290;
-const int YY_PDDL_Parser_CLASS::KW_WHEN=291;
-const int YY_PDDL_Parser_CLASS::KW_ONEOF=292;
-const int YY_PDDL_Parser_CLASS::KW_PROBLEM=293;
-const int YY_PDDL_Parser_CLASS::KW_FORDOMAIN=294;
-const int YY_PDDL_Parser_CLASS::KW_OBJECTS=295;
-const int YY_PDDL_Parser_CLASS::KW_INIT=296;
-const int YY_PDDL_Parser_CLASS::KW_GOAL=297;
-const int YY_PDDL_Parser_CLASS::KW_SENSOR=298;
-const int YY_PDDL_Parser_CLASS::KW_SENSE=299;
-const int YY_PDDL_Parser_CLASS::KW_OBSERVE=300;
-const int YY_PDDL_Parser_CLASS::KW_AXIOM=301;
-const int YY_PDDL_Parser_CLASS::KW_COND=302;
-const int YY_PDDL_Parser_CLASS::KW_OBSERVABLE=303;
-const int YY_PDDL_Parser_CLASS::KW_BODY=304;
-const int YY_PDDL_Parser_CLASS::KW_HEAD=305;
-const int YY_PDDL_Parser_CLASS::KW_STICKY=306;
-const int YY_PDDL_Parser_CLASS::KW_FLUENTS=307;
-const int YY_PDDL_Parser_CLASS::KW_HIDDEN=308;
-const int YY_PDDL_Parser_CLASS::KW_INVARIANT=309;
-const int YY_PDDL_Parser_CLASS::KW_AT_LEAST_ONE=310;
-const int YY_PDDL_Parser_CLASS::KW_AT_MOST_ONE=311;
-const int YY_PDDL_Parser_CLASS::KW_EXACTLY_ONE=312;
+const int YY_PDDL_Parser_CLASS::TK_VARNAME_SYMBOL=275;
+const int YY_PDDL_Parser_CLASS::TK_INT=276;
+const int YY_PDDL_Parser_CLASS::KW_REQS=277;
+const int YY_PDDL_Parser_CLASS::KW_TRANSLATION=278;
+const int YY_PDDL_Parser_CLASS::KW_CONSTANTS=279;
+const int YY_PDDL_Parser_CLASS::KW_PREDS=280;
+const int YY_PDDL_Parser_CLASS::KW_TYPES=281;
+const int YY_PDDL_Parser_CLASS::KW_DEFINE=282;
+const int YY_PDDL_Parser_CLASS::KW_DOMAIN=283;
+const int YY_PDDL_Parser_CLASS::KW_ACTION=284;
+const int YY_PDDL_Parser_CLASS::KW_ARGS=285;
+const int YY_PDDL_Parser_CLASS::KW_PRE=286;
+const int YY_PDDL_Parser_CLASS::KW_EFFECT=287;
+const int YY_PDDL_Parser_CLASS::KW_AND=288;
+const int YY_PDDL_Parser_CLASS::KW_OR=289;
+const int YY_PDDL_Parser_CLASS::KW_EXISTS=290;
+const int YY_PDDL_Parser_CLASS::KW_FORALL=291;
+const int YY_PDDL_Parser_CLASS::KW_NOT=292;
+const int YY_PDDL_Parser_CLASS::KW_WHEN=293;
+const int YY_PDDL_Parser_CLASS::KW_ONEOF=294;
+const int YY_PDDL_Parser_CLASS::KW_PROBLEM=295;
+const int YY_PDDL_Parser_CLASS::KW_FORDOMAIN=296;
+const int YY_PDDL_Parser_CLASS::KW_OBJECTS=297;
+const int YY_PDDL_Parser_CLASS::KW_INIT=298;
+const int YY_PDDL_Parser_CLASS::KW_GOAL=299;
+const int YY_PDDL_Parser_CLASS::KW_SENSOR=300;
+const int YY_PDDL_Parser_CLASS::KW_SENSE=301;
+const int YY_PDDL_Parser_CLASS::KW_OBSERVE=302;
+const int YY_PDDL_Parser_CLASS::KW_AXIOM=303;
+const int YY_PDDL_Parser_CLASS::KW_COND=304;
+const int YY_PDDL_Parser_CLASS::KW_OBSERVABLE=305;
+const int YY_PDDL_Parser_CLASS::KW_BODY=306;
+const int YY_PDDL_Parser_CLASS::KW_HEAD=307;
+const int YY_PDDL_Parser_CLASS::KW_STICKY=308;
+const int YY_PDDL_Parser_CLASS::KW_FLUENTS=309;
+const int YY_PDDL_Parser_CLASS::KW_HIDDEN=310;
+const int YY_PDDL_Parser_CLASS::KW_INVARIANT=311;
+const int YY_PDDL_Parser_CLASS::KW_AT_LEAST_ONE=312;
+const int YY_PDDL_Parser_CLASS::KW_AT_MOST_ONE=313;
+const int YY_PDDL_Parser_CLASS::KW_EXACTLY_ONE=314;
+const int YY_PDDL_Parser_CLASS::KW_VARIABLE=315;
+const int YY_PDDL_Parser_CLASS::KW_OBS_VARIABLE=316;
+const int YY_PDDL_Parser_CLASS::KW_SENSING_MODEL=317;
 
 
 #line 314 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc"
@@ -644,14 +664,14 @@ YY_PDDL_Parser_CONSTRUCTOR_CODE;
 #endif
 
 /* #line 325 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc" */
-#line 648 "grammar.cc"
+#line 668 "grammar.cc"
 
 
-#define	YYFINAL		290
+#define	YYFINAL		318
 #define	YYFLAG		-32768
-#define	YYNTBASE	58
+#define	YYNTBASE	63
 
-#define YYTRANSLATE(x) ((unsigned)(x) <= 312 ? yytranslate[x] : 130)
+#define YYTRANSLATE(x) ((unsigned)(x) <= 317 ? yytranslate[x] : 146)
 
 static const char yytranslate[] = {     0,
      2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
@@ -685,338 +705,370 @@ static const char yytranslate[] = {     0,
     26,    27,    28,    29,    30,    31,    32,    33,    34,    35,
     36,    37,    38,    39,    40,    41,    42,    43,    44,    45,
     46,    47,    48,    49,    50,    51,    52,    53,    54,    55,
-    56,    57
+    56,    57,    58,    59,    60,    61,    62
 };
 
 #if YY_PDDL_Parser_DEBUG != 0
 static const short yyprhs[] = {     0,
      0,     3,     6,     7,    13,    19,    22,    25,    28,    31,
-    34,    35,    40,    42,    44,    46,    48,    50,    52,    54,
-    56,    58,    60,    62,    64,    66,    68,    70,    75,    80,
-    83,    86,    87,    92,    97,   100,   102,   107,   111,   116,
-   119,   120,   123,   124,   129,   134,   139,   142,   143,   146,
-   149,   150,   155,   160,   165,   168,   169,   172,   174,   176,
-   178,   180,   182,   184,   185,   192,   197,   203,   207,   211,
-   215,   216,   218,   223,   226,   228,   230,   232,   234,   239,
-   244,   249,   252,   255,   256,   258,   263,   266,   268,   270,
-   272,   274,   280,   281,   282,   292,   297,   299,   302,   304,
-   307,   309,   311,   313,   318,   323,   328,   333,   335,   337,
-   339,   344,   349,   350,   357,   362,   368,   372,   376,   377,
-   378,   385,   390,   396,   400,   404,   405,   406,   412,   417,
-   423,   427,   428,   429,   435,   440,   446,   450,   451,   452,
-   462,   469,   475,   478,   481,   484,   487,   490,   491,   495,
-   500,   508,   511,   513,   515,   517,   519,   521,   526,   531,
-   539,   542,   544,   546
+    34,    37,    38,    43,    45,    47,    49,    51,    53,    55,
+    57,    59,    61,    63,    65,    67,    69,    71,    73,    75,
+    77,    82,    87,    90,    93,    94,    99,   104,   107,   109,
+   114,   118,   123,   126,   127,   130,   131,   136,   141,   146,
+   149,   150,   153,   156,   157,   162,   167,   172,   175,   176,
+   179,   181,   184,   186,   188,   190,   191,   199,   201,   202,
+   203,   210,   213,   215,   217,   219,   221,   223,   225,   227,
+   229,   230,   237,   242,   248,   252,   256,   260,   264,   265,
+   267,   272,   275,   277,   279,   281,   283,   288,   293,   298,
+   301,   304,   305,   307,   312,   315,   317,   319,   321,   323,
+   329,   330,   331,   341,   346,   348,   351,   353,   356,   358,
+   360,   362,   364,   365,   366,   373,   378,   384,   388,   392,
+   393,   394,   401,   406,   412,   416,   420,   421,   422,   428,
+   433,   439,   443,   444,   445,   451,   456,   462,   466,   467,
+   468,   478,   485,   491,   494,   497,   500,   503,   506,   507,
+   511,   516,   524,   527,   529,   531,   533,   535,   537,   542,
+   547,   552,   557,   559,   561,   563,   568,   573,   578,   583,
+   591,   594,   596,   598
 };
 
-static const short yyrhs[] = {    59,
-    58,     0,   120,    58,     0,     0,     3,    25,    61,    60,
-     4,     0,     3,    25,    61,     1,     4,     0,    66,    60,
-     0,    73,    60,     0,    76,    60,     0,    68,    60,     0,
-    79,    60,     0,     0,     3,    26,    62,     4,     0,     9,
-     0,    10,     0,    11,     0,    12,     0,    13,     0,    14,
-     0,    15,     0,    16,     0,    17,     0,     9,     0,    14,
-     0,     9,     0,    16,     0,     9,     0,    15,     0,     3,
-    21,    67,     4,     0,     3,    21,     1,     4,     0,    67,
-    24,     0,    67,    18,     0,     0,     3,    23,    69,     4,
-     0,     3,    23,     1,     4,     0,    69,    70,     0,    70,
-     0,     3,     9,    71,     4,     0,     3,     1,     4,     0,
-    71,    72,     8,    11,     0,    71,    72,     0,     0,    72,
-    19,     0,     0,     3,    24,    74,     4,     0,    74,    75,
-     8,    11,     0,    74,    75,     8,     9,     0,    74,    75,
-     0,     0,    75,    11,     0,    75,     9,     0,     0,     3,
-    22,    77,     4,     0,     3,    40,    77,     4,     0,    77,
-    78,     8,    11,     0,    77,    78,     0,     0,    78,     9,
-     0,     9,     0,    80,     0,   108,     0,   111,     0,   114,
-     0,   117,     0,     0,     3,    27,    63,    81,    82,     4,
-     0,     3,    27,     1,     4,     0,    82,    28,     3,    71,
-     4,     0,    82,    29,    83,     0,    82,    30,    90,     0,
-    82,    45,    99,     0,     0,    85,     0,     3,    31,    84,
-     4,     0,    84,    85,     0,    85,     0,    86,     0,    87,
-     0,    88,     0,     3,    12,    89,     4,     0,     3,     7,
-    89,     4,     0,     3,    35,    87,     4,     0,    89,    13,
-     0,    89,    10,     0,     0,    92,     0,     3,    31,    91,
-     4,     0,    91,    92,     0,    92,     0,   100,     0,    93,
-     0,    94,     0,     3,    36,    83,    97,     4,     0,     0,
-     0,     3,    34,     3,    95,    71,     4,    96,    90,     4,
-     0,     3,    31,    98,     4,     0,   100,     0,    98,   100,
-     0,   100,     0,    99,   101,     0,   101,     0,    86,     0,
-    87,     0,     3,    54,    84,     4,     0,     3,    55,    84,
-     4,     0,     3,    56,    84,     4,     0,     3,    57,    84,
-     4,     0,   102,     0,   103,     0,   104,     0,     3,    32,
-    84,     4,     0,     3,    37,    84,     4,     0,     0,     3,
-    46,    65,   109,   110,     4,     0,     3,    46,     1,     4,
-     0,   110,    28,     3,    71,     4,     0,   110,    49,    83,
-     0,   110,    50,    97,     0,     0,     0,     3,    43,    64,
-   112,   113,     4,     0,     3,    43,     1,     4,     0,   113,
-    28,     3,    71,     4,     0,   113,    47,    83,     0,   113,
-    44,    99,     0,     0,     0,     3,    48,   115,   116,     4,
-     0,     3,    48,     1,     4,     0,   116,    28,     3,    71,
-     4,     0,   116,    52,    99,     0,     0,     0,     3,    51,
-   118,   119,     4,     0,     3,    51,     1,     4,     0,   119,
-    28,     3,    71,     4,     0,   119,    52,    99,     0,     0,
-     0,     3,    25,     3,    38,    62,     4,   121,   122,     4,
-     0,     3,    25,     3,    38,     1,     4,     0,   122,     3,
-    39,    62,     4,     0,   122,    66,     0,   122,    76,     0,
-   122,   123,     0,   122,   126,     0,   122,   127,     0,     0,
-     3,    41,     4,     0,     3,    41,   124,     4,     0,     3,
-    41,     3,    31,   124,     4,     4,     0,   124,   125,     0,
-   125,     0,    86,     0,   105,     0,   106,     0,   107,     0,
-     3,    53,   124,     4,     0,     3,    42,   129,     4,     0,
-     3,    42,     3,    31,   128,     4,     4,     0,   128,   129,
-     0,   129,     0,    87,     0,    88,     0
+static const short yyrhs[] = {    64,
+    63,     0,   130,    63,     0,     0,     3,    27,    66,    65,
+     4,     0,     3,    27,    66,     1,     4,     0,    72,    65,
+     0,    79,    65,     0,    82,    65,     0,    74,    65,     0,
+    85,    65,     0,    94,    65,     0,     0,     3,    28,    67,
+     4,     0,     9,     0,    10,     0,    11,     0,    12,     0,
+    13,     0,    14,     0,    15,     0,    16,     0,    17,     0,
+     9,     0,    20,     0,     9,     0,    14,     0,     9,     0,
+    16,     0,     9,     0,    15,     0,     3,    22,    73,     4,
+     0,     3,    22,     1,     4,     0,    73,    23,     0,    73,
+    18,     0,     0,     3,    25,    75,     4,     0,     3,    25,
+     1,     4,     0,    75,    76,     0,    76,     0,     3,     9,
+    77,     4,     0,     3,     1,     4,     0,    77,    78,     8,
+    11,     0,    77,    78,     0,     0,    78,    19,     0,     0,
+     3,    26,    80,     4,     0,    80,    81,     8,    11,     0,
+    80,    81,     8,     9,     0,    80,    81,     0,     0,    81,
+    11,     0,    81,     9,     0,     0,     3,    24,    83,     4,
+     0,     3,    42,    83,     4,     0,    83,    84,     8,    11,
+     0,    83,    84,     0,     0,    84,     9,     0,     9,     0,
+    85,    86,     0,    86,     0,    87,     0,    90,     0,     0,
+     3,    60,    68,    88,    92,    89,     4,     0,    50,     0,
+     0,     0,     3,    61,    68,    91,    92,     4,     0,    92,
+    93,     0,    93,     0,   116,     0,   109,     0,    95,     0,
+   118,     0,   121,     0,   124,     0,   127,     0,     0,     3,
+    29,    69,    96,    97,     4,     0,     3,    29,     1,     4,
+     0,    97,    30,     3,    77,     4,     0,    97,    31,    98,
+     0,    97,    32,   105,     0,    97,    47,   114,     0,    97,
+    62,   117,     0,     0,   100,     0,     3,    33,    99,     4,
+     0,    99,   100,     0,   100,     0,   101,     0,   102,     0,
+   103,     0,     3,    12,   104,     4,     0,     3,     7,   104,
+     4,     0,     3,    37,   102,     4,     0,   104,    13,     0,
+   104,    10,     0,     0,   107,     0,     3,    33,   106,     4,
+     0,   106,   107,     0,   107,     0,   115,     0,   108,     0,
+   109,     0,     3,    38,    98,   112,     4,     0,     0,     0,
+     3,    36,     3,   110,    77,     4,   111,   105,     4,     0,
+     3,    33,   113,     4,     0,   115,     0,   113,   115,     0,
+   115,     0,   114,   116,     0,   116,     0,   101,     0,   102,
+     0,   105,     0,     0,     0,     3,    48,    71,   119,   120,
+     4,     0,     3,    48,     1,     4,     0,   120,    30,     3,
+    77,     4,     0,   120,    51,    98,     0,   120,    52,   112,
+     0,     0,     0,     3,    45,    70,   122,   123,     4,     0,
+     3,    45,     1,     4,     0,   123,    30,     3,    77,     4,
+     0,   123,    49,    98,     0,   123,    46,   114,     0,     0,
+     0,     3,    50,   125,   126,     4,     0,     3,    50,     1,
+     4,     0,   126,    30,     3,    77,     4,     0,   126,    54,
+   114,     0,     0,     0,     3,    53,   128,   129,     4,     0,
+     3,    53,     1,     4,     0,   129,    30,     3,    77,     4,
+     0,   129,    54,   114,     0,     0,     0,     3,    27,     3,
+    40,    67,     4,   131,   132,     4,     0,     3,    27,     3,
+    40,     1,     4,     0,   132,     3,    41,    67,     4,     0,
+   132,    72,     0,   132,    82,     0,   132,   133,     0,   132,
+   142,     0,   132,   143,     0,     0,     3,    43,     4,     0,
+     3,    43,   134,     4,     0,     3,    43,     3,    33,   134,
+     4,     4,     0,   134,   135,     0,   135,     0,   101,     0,
+   139,     0,   140,     0,   141,     0,     3,    56,    99,     4,
+     0,     3,    57,    99,     4,     0,     3,    58,    99,     4,
+     0,     3,    59,    99,     4,     0,   136,     0,   137,     0,
+   138,     0,     3,    34,    99,     4,     0,     3,    39,    99,
+     4,     0,     3,    55,   134,     4,     0,     3,    44,   145,
+     4,     0,     3,    44,     3,    33,   144,     4,     4,     0,
+   144,   145,     0,   145,     0,   102,     0,   103,     0
 };
 
 #endif
 
 #if YY_PDDL_Parser_DEBUG != 0
 static const short yyrline[] = { 0,
-    80,    82,    83,    86,    88,    94,    96,    97,    98,    99,
-   100,   103,   109,   111,   112,   113,   114,   115,   116,   117,
-   118,   121,   123,   126,   128,   131,   133,   138,   140,   146,
-   148,   149,   154,   156,   162,   164,   167,   176,   182,   189,
-   195,   198,   205,   210,   214,   218,   226,   229,   232,   236,
-   240,   245,   247,   250,   254,   257,   260,   265,   273,   275,
-   281,   287,   293,   303,   308,   312,   318,   323,   324,   325,
-   326,   329,   331,   334,   339,   346,   350,   352,   355,   367,
-   379,   386,   394,   398,   401,   403,   406,   411,   418,   420,
-   421,   424,   428,   432,   436,   451,   453,   456,   461,   468,
-   473,   480,   484,   488,   494,   501,   509,   517,   519,   520,
-   523,   531,   539,   544,   548,   554,   559,   560,   561,   564,
-   569,   573,   579,   584,   585,   586,   589,   593,   596,   602,
-   607,   610,   613,   617,   620,   626,   631,   634,   639,   643,
-   644,   650,   652,   653,   654,   655,   656,   657,   660,   662,
-   663,   666,   672,   679,   681,   692,   703,   715,   727,   729,
-   732,   737,   745,   747
+    88,    90,    91,    94,    96,   102,   104,   105,   106,   107,
+   108,   109,   112,   118,   120,   121,   122,   123,   124,   125,
+   126,   127,   130,   132,   135,   137,   140,   142,   145,   147,
+   152,   154,   160,   162,   163,   168,   170,   176,   178,   181,
+   190,   196,   203,   209,   212,   219,   224,   228,   232,   240,
+   243,   246,   250,   254,   259,   261,   264,   268,   271,   274,
+   279,   287,   289,   292,   294,   297,   302,   305,   309,   312,
+   317,   320,   324,   329,   331,   336,   338,   344,   350,   356,
+   366,   371,   375,   381,   386,   387,   388,   389,   390,   393,
+   395,   398,   403,   410,   414,   416,   419,   431,   443,   450,
+   458,   462,   465,   467,   470,   475,   482,   484,   485,   488,
+   492,   496,   500,   508,   510,   513,   518,   525,   530,   537,
+   541,   545,   547,   550,   555,   559,   565,   570,   571,   572,
+   575,   580,   584,   590,   595,   596,   597,   600,   604,   607,
+   613,   618,   621,   624,   628,   631,   637,   642,   645,   650,
+   654,   655,   661,   663,   664,   665,   666,   667,   668,   671,
+   673,   674,   677,   683,   690,   692,   703,   714,   726,   732,
+   739,   747,   755,   757,   758,   761,   769,   777,   789,   791,
+   794,   799,   807,   809
 };
 
 static const char * const yytname[] = {   "$","error","$illegal.","TK_OPEN",
 "TK_CLOSE","TK_OPEN_SQ","TK_CLOSE_SQ","TK_EQ","TK_HYPHEN","TK_NEW_SYMBOL","TK_OBJ_SYMBOL",
 "TK_TYPE_SYMBOL","TK_PRED_SYMBOL","TK_VAR_SYMBOL","TK_ACTION_SYMBOL","TK_AXIOM_SYMBOL",
-"TK_SENSOR_SYMBOL","TK_MISC_SYMBOL","TK_KEYWORD","TK_NEW_VAR_SYMBOL","TK_INT",
-"KW_REQS","KW_CONSTANTS","KW_PREDS","KW_TYPES","KW_DEFINE","KW_DOMAIN","KW_ACTION",
-"KW_ARGS","KW_PRE","KW_EFFECT","KW_AND","KW_OR","KW_EXISTS","KW_FORALL","KW_NOT",
-"KW_WHEN","KW_ONEOF","KW_PROBLEM","KW_FORDOMAIN","KW_OBJECTS","KW_INIT","KW_GOAL",
-"KW_SENSOR","KW_SENSE","KW_OBSERVE","KW_AXIOM","KW_COND","KW_OBSERVABLE","KW_BODY",
-"KW_HEAD","KW_STICKY","KW_FLUENTS","KW_HIDDEN","KW_INVARIANT","KW_AT_LEAST_ONE",
-"KW_AT_MOST_ONE","KW_EXACTLY_ONE","pddl_declarations","pddl_domain","domain_elements",
-"domain_name","any_symbol","action_symbol","sensor_symbol","axiom_symbol","domain_requires",
-"require_list","domain_predicates","predicate_list","predicate_decl","typed_param_list",
-"typed_param_sym_list","domain_types","typed_type_list","primitive_type_list",
-"domain_constants","typed_constant_list","ne_constant_sym_list","domain_structure",
-"action_declaration","@1","action_elements","condition","condition_list","single_condition",
-"literal","positive_literal","negative_literal","atom_argument_list","action_effect",
-"action_effect_list","single_action_effect","conditional_effect","forall_effect",
-"@2","@3","atomic_effect_kw_list","atomic_effect_list","positive_atomic_effect_list",
-"atomic_effect","positive_atomic_effect","at_least_one_invariant","at_most_one_invariant",
-"exactly_one_invariant","invariant","clause","oneof","axiom_declaration","@4",
-"axiom_elements","sensor_declaration","@5","sensor_elements","observable_declaration",
-"@6","observable_elements","sticky_declaration","@7","sticky_elements","pddl_problem",
-"@8","problem_elements","initial_state","init_elements","single_init_element",
-"hidden_state","goal_spec","goal_list","single_goal",""
+"TK_SENSOR_SYMBOL","TK_MISC_SYMBOL","TK_KEYWORD","TK_NEW_VAR_SYMBOL","TK_VARNAME_SYMBOL",
+"TK_INT","KW_REQS","KW_TRANSLATION","KW_CONSTANTS","KW_PREDS","KW_TYPES","KW_DEFINE",
+"KW_DOMAIN","KW_ACTION","KW_ARGS","KW_PRE","KW_EFFECT","KW_AND","KW_OR","KW_EXISTS",
+"KW_FORALL","KW_NOT","KW_WHEN","KW_ONEOF","KW_PROBLEM","KW_FORDOMAIN","KW_OBJECTS",
+"KW_INIT","KW_GOAL","KW_SENSOR","KW_SENSE","KW_OBSERVE","KW_AXIOM","KW_COND",
+"KW_OBSERVABLE","KW_BODY","KW_HEAD","KW_STICKY","KW_FLUENTS","KW_HIDDEN","KW_INVARIANT",
+"KW_AT_LEAST_ONE","KW_AT_MOST_ONE","KW_EXACTLY_ONE","KW_VARIABLE","KW_OBS_VARIABLE",
+"KW_SENSING_MODEL","pddl_declarations","pddl_domain","domain_elements","domain_name",
+"any_symbol","variable_symbol","action_symbol","sensor_symbol","axiom_symbol",
+"domain_requires","require_list","domain_predicates","predicate_list","predicate_decl",
+"typed_param_list","typed_param_sym_list","domain_types","typed_type_list","primitive_type_list",
+"domain_constants","typed_constant_list","ne_constant_sym_list","domain_variables",
+"variable","state_variable","@1","rest_state_variable","observable_variable",
+"@2","variable_values","variable_value_decl","domain_structure","action_declaration",
+"@3","action_elements","condition","condition_list","single_condition","literal",
+"positive_literal","negative_literal","atom_argument_list","action_effect","action_effect_list",
+"single_action_effect","conditional_effect","forall_effect","@4","@5","atomic_effect_kw_list",
+"atomic_effect_list","positive_atomic_effect_list","atomic_effect","positive_atomic_effect",
+"sensing_model","axiom_declaration","@6","axiom_elements","sensor_declaration",
+"@7","sensor_elements","observable_declaration","@8","observable_elements","sticky_declaration",
+"@9","sticky_elements","pddl_problem","@10","problem_elements","initial_state",
+"init_elements","single_init_element","at_least_one_invariant","at_most_one_invariant",
+"exactly_one_invariant","invariant","clause","oneof","hidden_state","goal_spec",
+"goal_list","single_goal",""
 };
 #endif
 
 static const short yyr1[] = {     0,
-    58,    58,    58,    59,    59,    60,    60,    60,    60,    60,
-    60,    61,    62,    62,    62,    62,    62,    62,    62,    62,
-    62,    63,    63,    64,    64,    65,    65,    66,    66,    67,
+    63,    63,    63,    64,    64,    65,    65,    65,    65,    65,
+    65,    65,    66,    67,    67,    67,    67,    67,    67,    67,
     67,    67,    68,    68,    69,    69,    70,    70,    71,    71,
-    71,    72,    72,    73,    74,    74,    74,    74,    75,    75,
-    75,    76,    76,    77,    77,    77,    78,    78,    79,    79,
-    79,    79,    79,    81,    80,    80,    82,    82,    82,    82,
-    82,    83,    83,    84,    84,    85,    86,    86,    87,    87,
-    88,    89,    89,    89,    90,    90,    91,    91,    92,    92,
-    92,    93,    95,    96,    94,    97,    97,    98,    98,    99,
-    99,   100,   101,   102,   102,   103,   104,   105,   105,   105,
-   106,   107,   109,   108,   108,   110,   110,   110,   110,   112,
-   111,   111,   113,   113,   113,   113,   115,   114,   114,   116,
-   116,   116,   118,   117,   117,   119,   119,   119,   121,   120,
-   120,   122,   122,   122,   122,   122,   122,   122,   123,   123,
-   123,   124,   124,   125,   125,   125,   125,   126,   127,   127,
-   128,   128,   129,   129
+    72,    72,    73,    73,    73,    74,    74,    75,    75,    76,
+    76,    77,    77,    77,    78,    78,    79,    80,    80,    80,
+    80,    81,    81,    81,    82,    82,    83,    83,    83,    84,
+    84,    85,    85,    86,    86,    88,    87,    89,    89,    91,
+    90,    92,    92,    93,    93,    94,    94,    94,    94,    94,
+    96,    95,    95,    97,    97,    97,    97,    97,    97,    98,
+    98,    99,    99,   100,   101,   101,   102,   102,   103,   104,
+   104,   104,   105,   105,   106,   106,   107,   107,   107,   108,
+   110,   111,   109,   112,   112,   113,   113,   114,   114,   115,
+   116,   117,   117,   119,   118,   118,   120,   120,   120,   120,
+   122,   121,   121,   123,   123,   123,   123,   125,   124,   124,
+   126,   126,   126,   128,   127,   127,   129,   129,   129,   131,
+   130,   130,   132,   132,   132,   132,   132,   132,   132,   133,
+   133,   133,   134,   134,   135,   135,   135,   135,   136,   136,
+   137,   138,   139,   139,   139,   140,   141,   142,   143,   143,
+   144,   144,   145,   145
 };
 
 static const short yyr2[] = {     0,
      2,     2,     0,     5,     5,     2,     2,     2,     2,     2,
-     0,     4,     1,     1,     1,     1,     1,     1,     1,     1,
-     1,     1,     1,     1,     1,     1,     1,     4,     4,     2,
-     2,     0,     4,     4,     2,     1,     4,     3,     4,     2,
-     0,     2,     0,     4,     4,     4,     2,     0,     2,     2,
-     0,     4,     4,     4,     2,     0,     2,     1,     1,     1,
-     1,     1,     1,     0,     6,     4,     5,     3,     3,     3,
-     0,     1,     4,     2,     1,     1,     1,     1,     4,     4,
-     4,     2,     2,     0,     1,     4,     2,     1,     1,     1,
-     1,     5,     0,     0,     9,     4,     1,     2,     1,     2,
-     1,     1,     1,     4,     4,     4,     4,     1,     1,     1,
-     4,     4,     0,     6,     4,     5,     3,     3,     0,     0,
-     6,     4,     5,     3,     3,     0,     0,     5,     4,     5,
-     3,     0,     0,     5,     4,     5,     3,     0,     0,     9,
-     6,     5,     2,     2,     2,     2,     2,     0,     3,     4,
-     7,     2,     1,     1,     1,     1,     1,     4,     4,     7,
+     2,     0,     4,     1,     1,     1,     1,     1,     1,     1,
+     1,     1,     1,     1,     1,     1,     1,     1,     1,     1,
+     4,     4,     2,     2,     0,     4,     4,     2,     1,     4,
+     3,     4,     2,     0,     2,     0,     4,     4,     4,     2,
+     0,     2,     2,     0,     4,     4,     4,     2,     0,     2,
+     1,     2,     1,     1,     1,     0,     7,     1,     0,     0,
+     6,     2,     1,     1,     1,     1,     1,     1,     1,     1,
+     0,     6,     4,     5,     3,     3,     3,     3,     0,     1,
+     4,     2,     1,     1,     1,     1,     4,     4,     4,     2,
+     2,     0,     1,     4,     2,     1,     1,     1,     1,     5,
+     0,     0,     9,     4,     1,     2,     1,     2,     1,     1,
+     1,     1,     0,     0,     6,     4,     5,     3,     3,     0,
+     0,     6,     4,     5,     3,     3,     0,     0,     5,     4,
+     5,     3,     0,     0,     5,     4,     5,     3,     0,     0,
+     9,     6,     5,     2,     2,     2,     2,     2,     0,     3,
+     4,     7,     2,     1,     1,     1,     1,     1,     4,     4,
+     4,     4,     1,     1,     1,     4,     4,     4,     4,     7,
      2,     1,     1,     1
 };
 
 static const short yydefact[] = {     3,
      0,     3,     3,     0,     1,     2,     0,     0,     0,     0,
-     0,     0,     0,    11,    11,    11,    11,    11,    59,    60,
-    61,    62,    63,    13,    14,    15,    16,    17,    18,    19,
-    20,    21,     0,     0,     0,     5,     0,    56,     0,    48,
-     0,    56,     0,     0,     0,     0,     4,     6,     9,     7,
-     8,    10,    12,   141,   139,     0,     0,     0,     0,     0,
-     0,    36,    51,     0,    22,    23,    64,     0,     0,    24,
-    25,   120,     0,    26,    27,   113,     0,   132,     0,   138,
-   148,    29,    28,    31,    30,    52,    58,    55,    34,     0,
-    41,    33,    35,    44,    47,    66,    71,    53,   122,   126,
-   115,   119,   129,     0,   135,     0,     0,     0,    57,    38,
-    43,     0,    50,    49,     0,     0,     0,   128,     0,     0,
-   134,     0,     0,     0,   140,   143,   144,   145,   146,   147,
-    54,    37,    40,    46,    45,    65,     0,     0,     0,     0,
-   121,     0,     0,     0,   114,     0,     0,     0,    41,     0,
-   103,   131,   101,    41,   137,     0,     0,     0,     0,     0,
-    42,    41,     0,    68,    72,    76,    77,    78,     0,   102,
-    69,    85,    90,    91,    89,    70,    41,   125,   124,    41,
-   117,     0,   118,    97,    43,    84,    84,   100,    43,     0,
-     0,   149,   154,   108,   109,   110,   155,   156,   157,     0,
-   153,     0,   163,   164,     0,     0,     0,    39,    43,     0,
-     0,     0,     0,     0,    43,    43,     0,   130,     0,     0,
-   136,   142,     0,     0,     0,     0,     0,     0,     0,   150,
-   152,     0,   159,   158,    67,     0,     0,    75,     0,     0,
-     0,    88,    93,     0,   123,   116,     0,    99,    80,    83,
-    82,    79,     0,     0,     0,     0,     0,     0,     0,     0,
-   162,    73,    74,    81,    86,    87,    41,     0,    96,    98,
-     0,   111,   112,   104,   105,   106,   107,     0,   161,    43,
-    92,   151,   160,    94,     0,     0,    95,     0,     0,     0
+     0,     0,     0,    12,    12,    12,    12,    12,    63,    64,
+    65,    12,    76,    77,    78,    79,    80,    14,    15,    16,
+    17,    18,    19,    20,    21,    22,     0,     0,     0,     5,
+     0,    59,     0,    51,     0,    59,     0,     0,     0,     0,
+     0,     0,     4,     6,     9,     7,     8,    10,    62,    11,
+    13,   152,   150,     0,     0,     0,     0,     0,     0,    39,
+    54,     0,    25,    26,    81,     0,     0,    27,    28,   131,
+     0,    29,    30,   124,     0,   143,     0,   149,    23,    24,
+    66,    70,   159,    32,    31,    34,    33,    55,    61,    58,
+    37,     0,    44,    36,    38,    47,    50,    83,    89,    56,
+   133,   137,   126,   130,   140,     0,   146,     0,     0,     0,
+     0,     0,    60,    41,    46,     0,    53,    52,     0,     0,
+     0,   139,     0,     0,   145,     0,     0,     0,    69,    73,
+   121,    75,    74,     0,     0,   151,   154,   155,   156,   157,
+   158,    57,    40,    43,    49,    48,    82,     0,     0,     0,
+     0,   123,   132,     0,     0,     0,   125,     0,     0,     0,
+    44,     0,   142,   119,    44,   148,   102,   102,     0,    68,
+     0,    72,    71,     0,     0,     0,     0,     0,    45,    44,
+     0,    85,    90,    94,    95,    96,     0,   120,    86,   103,
+   108,   109,   107,    87,   122,    88,    44,   136,   135,    44,
+   128,     0,   129,   115,    46,   118,    46,     0,     0,   111,
+    67,     0,     0,   160,   165,     0,   164,   173,   174,   175,
+   166,   167,   168,     0,   183,   184,     0,     0,     0,    42,
+    46,     0,     0,     0,     0,    46,    46,     0,   141,   147,
+    98,   101,   100,    97,    44,   153,     0,     0,     0,     0,
+     0,     0,     0,   161,   163,     0,   179,   178,    84,     0,
+     0,    93,     0,     0,     0,   106,     0,   134,   127,     0,
+   117,    46,     0,     0,     0,     0,     0,     0,     0,     0,
+   182,    91,    92,    99,   104,   105,     0,   114,   116,   112,
+     0,   176,   177,   169,   170,   171,   172,     0,   181,   110,
+     0,   162,   180,     0,   113,     0,     0,     0
 };
 
 static const short yydefgoto[] = {     5,
-     2,    13,     8,    33,    67,    72,    76,    14,    57,    15,
-    61,    62,   111,   133,    16,    63,    95,    17,    58,    88,
-    18,    19,    97,   115,   164,   237,   238,   166,   167,   168,
-   219,   171,   241,   172,   173,   174,   267,   285,   183,   247,
-   152,   175,   153,   194,   195,   196,   197,   198,   199,    20,
-   102,   117,    21,   100,   116,    22,    78,   104,    23,    80,
-   106,     3,    81,   107,   128,   200,   201,   129,   130,   260,
-   205
+     2,    13,     8,    37,    91,    75,    80,    84,    14,    65,
+    15,    69,    70,   125,   154,    16,    71,   107,    17,    66,
+   100,    18,    19,    20,   119,   181,    21,   120,   139,   140,
+    22,    23,   109,   129,   192,   271,   272,   194,   195,   196,
+   218,   199,   275,   200,   201,   202,   255,   311,   213,   280,
+   173,   203,   143,   206,    24,   114,   131,    25,   112,   130,
+    26,    86,   116,    27,    88,   118,     3,    93,   121,   149,
+   226,   227,   228,   229,   230,   231,   232,   233,   150,   151,
+   290,   237
 };
 
-static const short yypact[] = {    47,
-    31,    47,    47,    83,-32768,-32768,     9,   155,   225,   216,
-    61,   144,    85,   104,   104,   104,   104,   104,-32768,-32768,
+static const short yypact[] = {    64,
+     4,    64,    64,    72,-32768,-32768,    24,   251,   259,   233,
+   100,   157,   106,    95,    95,    95,    95,    95,-32768,-32768,
+-32768,    95,-32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,
+-32768,-32768,-32768,-32768,-32768,-32768,   148,   187,   189,-32768,
+   218,-32768,    32,-32768,   252,-32768,   161,   250,    40,    55,
+    18,    18,-32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,
+-32768,-32768,-32768,   216,   186,   152,   235,   129,   220,-32768,
+   256,   258,-32768,-32768,-32768,   155,   280,-32768,-32768,-32768,
+   314,-32768,-32768,-32768,   315,-32768,   316,-32768,-32768,-32768,
+-32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,   219,
+-32768,   317,-32768,-32768,-32768,-32768,   131,-32768,-32768,-32768,
+-32768,-32768,-32768,-32768,-32768,    20,-32768,    42,   162,   162,
+   234,   144,-32768,-32768,   318,    54,-32768,-32768,    30,   111,
+    77,-32768,   197,   260,-32768,   320,   260,    59,    26,-32768,
+-32768,-32768,-32768,   253,   170,-32768,-32768,-32768,-32768,-32768,
+-32768,-32768,-32768,    89,-32768,-32768,-32768,   321,   322,   323,
+   260,   323,-32768,   324,   260,   322,-32768,   325,   322,   326,
+-32768,   173,   260,-32768,-32768,   260,-32768,-32768,   327,-32768,
+   328,-32768,-32768,   259,   279,   330,   331,   329,-32768,-32768,
+    94,-32768,-32768,-32768,-32768,-32768,   151,-32768,-32768,-32768,
+-32768,-32768,-32768,   260,-32768,-32768,-32768,   260,-32768,-32768,
+-32768,   138,-32768,-32768,   332,-32768,   333,   101,   254,-32768,
+-32768,   334,   110,-32768,-32768,   289,-32768,-32768,-32768,-32768,
+-32768,-32768,-32768,   196,-32768,-32768,   335,   139,   291,-32768,
+   337,   339,   260,   340,   322,   341,   342,   339,-32768,-32768,
+-32768,-32768,-32768,-32768,-32768,-32768,   331,   339,   339,   339,
+   339,   339,   339,-32768,-32768,   339,-32768,-32768,-32768,    66,
+   293,-32768,   343,   194,   295,-32768,   326,-32768,-32768,   297,
+-32768,   344,   299,   301,   303,   305,   307,   309,   311,   313,
+-32768,-32768,-32768,-32768,-32768,-32768,   345,-32768,-32768,-32768,
+   346,-32768,-32768,-32768,-32768,-32768,-32768,   347,-32768,-32768,
+   323,-32768,-32768,   348,-32768,   353,   354,-32768
+};
+
+static const short yypgoto[] = {   121,
+-32768,   263,-32768,   -10,   283,-32768,-32768,-32768,   210,-32768,
+-32768,-32768,   275,  -153,-32768,-32768,-32768,-32768,   236,   310,
+-32768,-32768,   349,-32768,-32768,-32768,-32768,-32768,   238,    82,
+-32768,-32768,-32768,-32768,  -146,    28,  -152,  -157,  -118,  -178,
+   177,  -158,-32768,  -233,-32768,    96,-32768,-32768,    83,-32768,
+  -112,  -164,  -125,-32768,-32768,-32768,-32768,-32768,-32768,-32768,
 -32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,
--32768,-32768,   116,   124,   138,-32768,   200,-32768,    96,-32768,
-   201,-32768,   139,   130,    18,    25,-32768,-32768,-32768,-32768,
--32768,-32768,-32768,-32768,-32768,   153,    27,   185,   166,    54,
-   219,-32768,   175,   187,-32768,-32768,-32768,   210,   189,-32768,
--32768,-32768,   196,-32768,-32768,-32768,   252,-32768,   284,-32768,
--32768,-32768,-32768,-32768,-32768,-32768,-32768,   204,-32768,   285,
--32768,-32768,-32768,-32768,   246,-32768,-32768,-32768,-32768,-32768,
--32768,-32768,-32768,     2,-32768,    24,   255,   161,-32768,-32768,
-   286,   118,-32768,-32768,    29,    62,    44,-32768,   217,   288,
--32768,   289,   288,   111,-32768,-32768,-32768,-32768,-32768,-32768,
--32768,-32768,    56,-32768,-32768,-32768,   290,   291,   292,   288,
--32768,   293,   288,   291,-32768,   294,   291,   295,-32768,   209,
--32768,   288,-32768,-32768,   288,   225,   257,   296,   297,   298,
--32768,-32768,   168,-32768,-32768,-32768,-32768,-32768,   142,-32768,
--32768,-32768,-32768,-32768,-32768,   288,-32768,   288,-32768,-32768,
--32768,   174,-32768,-32768,   299,-32768,-32768,-32768,   300,   301,
-    80,-32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,   259,
--32768,   176,-32768,-32768,   302,   106,   261,-32768,   303,   305,
-   288,   307,   308,   291,   309,   310,   305,-32768,    28,    75,
--32768,-32768,   297,   305,   305,   305,   305,   305,   305,-32768,
--32768,   305,-32768,-32768,-32768,    84,   263,-32768,   311,   162,
-   265,-32768,-32768,   295,-32768,-32768,   267,-32768,-32768,-32768,
--32768,-32768,   269,   271,   273,   275,   277,   279,   281,   283,
--32768,-32768,-32768,-32768,-32768,-32768,-32768,   312,-32768,-32768,
-   313,-32768,-32768,-32768,-32768,-32768,-32768,   314,-32768,   315,
--32768,-32768,-32768,-32768,   292,   316,-32768,   321,   322,-32768
-};
-
-static const short yypgoto[] = {    34,
--32768,   235,-32768,    -9,-32768,-32768,-32768,   194,-32768,-32768,
--32768,   241,  -137,-32768,-32768,-32768,-32768,   205,   282,-32768,
--32768,-32768,-32768,-32768,  -134,    19,  -133,  -139,  -116,  -150,
-   136,    40,-32768,  -197,-32768,-32768,-32768,-32768,    82,-32768,
-   -40,  -146,    30,-32768,-32768,-32768,-32768,-32768,-32768,-32768,
--32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,
--32768,-32768,-32768,-32768,-32768,  -156,  -184,-32768,-32768,-32768,
-  -211
+  -177,  -194,-32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,
+-32768,  -251
 };
 
 
-#define	YYLAST		326
+#define	YYLAST		367
 
 
-static const short yytable[] = {   170,
-    35,   184,   207,   151,   165,   118,   151,   204,   170,   179,
-   165,   185,   181,   165,   242,   231,   189,   193,    77,   193,
-   261,  -127,   231,   151,   209,    79,   151,   121,  -133,   119,
-    83,   249,   136,   288,     9,   151,     6,   250,   151,   215,
-   251,   203,   216,   266,    84,  -127,    10,   145,   279,     1,
-    85,   122,  -133,   120,    90,     4,   137,   138,   139,   151,
-   193,   151,    91,   160,    36,   141,   253,   193,   231,  -127,
-   248,   146,   170,   140,   161,   123,  -133,   170,   252,   244,
-   165,   204,   155,   193,   250,     7,   186,   251,    47,   142,
-   186,   187,   147,   148,   239,   187,    59,   184,    60,   176,
-   270,   170,   178,   263,   170,   143,    12,   170,   144,   204,
-   223,   224,   186,   193,   211,   203,   225,   187,   211,    53,
-   263,   263,   263,   263,   263,   263,   134,    54,   135,   280,
-    73,    37,    38,   226,   227,   228,   229,   224,    74,    69,
-   211,    55,   225,   203,    75,   170,   190,    70,   186,   156,
-    42,   157,   158,   187,    71,    11,    82,    12,   -11,   226,
-   227,   228,   229,   159,    37,    38,    39,    40,   186,    89,
-    41,   131,   212,   187,   186,   213,   211,   214,    94,   187,
-   186,   188,   186,    42,   188,   187,    43,   187,    86,    44,
-    96,    45,    99,    87,    46,   213,   211,   214,   210,   101,
-    56,    64,   211,   -32,   217,   188,   232,   188,   211,    65,
-   211,   108,   109,    98,    66,   186,    34,   -32,    87,   149,
-   187,    60,    92,   -32,    24,    25,    26,    27,    28,    29,
-    30,    31,    32,    24,    25,    26,    27,    28,    29,    30,
-    31,    32,   254,   255,   256,   257,   258,   259,    48,    49,
-    50,    51,    52,   112,   113,   103,   114,   124,   125,   191,
-   192,   206,   230,   206,   234,   236,   262,   240,   265,   236,
-   269,   206,   271,   236,   272,   236,   273,   236,   274,   236,
-   275,   236,   276,   236,   277,   236,   278,   105,   110,   132,
-   150,   154,   162,   163,   169,   177,   180,   182,   202,   206,
-   126,    93,   218,   221,   222,   233,   235,   236,   208,   240,
-   243,   127,   245,   246,   264,   281,   282,   283,   284,   287,
-   289,   290,   220,    68,   286,   268
+static const short yytable[] = {    39,
+   141,   141,   198,   205,   198,   214,   193,   236,   174,   239,
+   276,   174,   198,   193,   291,   141,   193,   215,   141,   209,
+   141,   217,   211,   132,   176,   141,    89,   225,   138,   225,
+     4,   265,    67,   157,    68,   174,   241,    90,   309,   174,
+    85,   296,   141,  -138,   265,   135,   141,   216,   204,   133,
+   216,     9,   208,   246,   141,    87,   247,   141,  -144,   158,
+   159,   160,   155,    10,   156,   177,     1,   235,   225,  -138,
+   178,   136,   177,   134,     7,   180,   161,   178,   216,   283,
+   167,   225,   216,   281,  -144,   141,   198,   236,   265,   141,
+   198,   162,   193,  -138,   179,   137,   188,    12,   277,   225,
+   177,   282,   243,    40,   251,   178,   168,   189,  -144,    53,
+   252,   236,   214,   253,   163,   299,   177,   198,   293,   198,
+   316,   178,   198,     6,   273,   225,   242,   169,   170,   102,
+   243,   293,   293,   293,   293,   293,   293,   103,   126,   127,
+   164,   128,   257,   258,   177,   177,   243,   235,   259,   178,
+   178,    61,   314,   198,   152,    98,   165,   177,   110,   166,
+    99,    77,   178,    99,   138,   260,   261,   262,   263,    78,
+   248,   235,   258,   222,   243,   243,    79,   259,    41,   177,
+    42,    43,    44,   244,   178,    45,   179,   243,   245,    95,
+    62,    41,    63,    42,   260,   261,   262,   263,    46,   171,
+   177,    47,   177,    96,    48,   178,    49,   178,    97,    50,
+   184,    46,   185,   186,   142,   142,    51,    52,    64,    94,
+   182,   -35,    68,   104,   187,   182,   122,   123,   266,   179,
+   243,   245,   243,    38,   142,   -35,   145,   146,   101,   142,
+   -35,    28,    29,    30,    31,    32,    33,    34,    35,    36,
+    81,    11,    72,    12,   -12,   138,   183,   254,    82,   106,
+    73,   108,   172,   252,    83,    74,   253,    28,    29,    30,
+    31,    32,    33,    34,    35,    36,    54,    55,    56,    57,
+    58,   223,   224,   111,    60,   284,   285,   286,   287,   288,
+   289,   238,   264,   238,   268,   270,   292,   274,   295,   270,
+   298,   238,   301,   270,   302,   270,   303,   270,   304,   270,
+   305,   270,   306,   270,   307,   270,   308,   113,   115,   117,
+   124,   153,   175,   190,   191,   197,   207,   210,   212,   220,
+   147,   221,   234,   238,    92,   249,   250,   256,   267,   240,
+   269,   270,   274,   105,   278,   279,   294,   300,   310,   312,
+   313,   315,   317,   318,   219,    76,   148,   144,     0,   297,
+     0,     0,     0,     0,     0,     0,    59
 };
 
-static const short yycheck[] = {   139,
-    10,   148,   159,   120,   138,     4,   123,   158,   148,   144,
-   144,   149,   147,   147,   212,   200,   154,   157,     1,   159,
-   232,     4,   207,   140,   162,     1,   143,     4,     4,    28,
-     4,     4,     4,     0,    26,   152,     3,    10,   155,   177,
-    13,   158,   180,   241,    18,    28,    38,     4,   260,     3,
-    24,    28,    28,    52,     1,    25,    28,    29,    30,   176,
-   200,   178,     9,     8,     4,     4,   223,   207,   253,    52,
-   217,    28,   212,    45,    19,    52,    52,   217,     4,   214,
-   214,   232,   123,   223,    10,     3,     7,    13,     4,    28,
-     7,    12,    49,    50,   211,    12,     1,   244,     3,   140,
-   247,   241,   143,   237,   244,    44,     3,   247,    47,   260,
-    31,    32,     7,   253,    35,   232,    37,    12,    35,     4,
-   254,   255,   256,   257,   258,   259,     9,     4,    11,   267,
-     1,    21,    22,    54,    55,    56,    57,    32,     9,     1,
-    35,     4,    37,   260,    15,   285,   156,     9,     7,    39,
-    40,    41,    42,    12,    16,     1,     4,     3,     4,    54,
-    55,    56,    57,    53,    21,    22,    23,    24,     7,     4,
-    27,    11,    31,    12,     7,    34,    35,    36,     4,    12,
-     7,   152,     7,    40,   155,    12,    43,    12,     4,    46,
-     4,    48,     4,     9,    51,    34,    35,    36,    31,     4,
-     1,     1,    35,     4,    31,   176,    31,   178,    35,     9,
-    35,     8,     9,     4,    14,     7,     1,    18,     9,     3,
-    12,     3,     4,    24,     9,    10,    11,    12,    13,    14,
-    15,    16,    17,     9,    10,    11,    12,    13,    14,    15,
-    16,    17,   224,   225,   226,   227,   228,   229,    14,    15,
-    16,    17,    18,     8,     9,     4,    11,     3,     4,     3,
-     4,     3,     4,     3,     4,     3,     4,     3,     4,     3,
+static const short yycheck[] = {    10,
+   119,   120,   160,   162,   162,   170,   159,   186,   134,   187,
+   244,   137,   170,   166,   266,   134,   169,   171,   137,   166,
+   139,   175,   169,     4,   137,   144,     9,   185,     3,   187,
+    27,   226,     1,     4,     3,   161,   190,    20,   290,   165,
+     1,   275,   161,     4,   239,     4,   165,   173,   161,    30,
+   176,    28,   165,   207,   173,     1,   210,   176,     4,    30,
+    31,    32,     9,    40,    11,     7,     3,   186,   226,    30,
+    12,    30,     7,    54,     3,    50,    47,    12,   204,   257,
+     4,   239,   208,   248,    30,   204,   244,   266,   283,   208,
+   248,    62,   245,    54,    36,    54,     8,     3,   245,   257,
+     7,   255,    37,     4,     4,    12,    30,    19,    54,     4,
+    10,   290,   277,    13,     4,   280,     7,   275,   271,   277,
+     0,    12,   280,     3,   243,   283,    33,    51,    52,     1,
+    37,   284,   285,   286,   287,   288,   289,     9,     8,     9,
+    30,    11,    33,    34,     7,     7,    37,   266,    39,    12,
+    12,     4,   311,   311,    11,     4,    46,     7,     4,    49,
+     9,     1,    12,     9,     3,    56,    57,    58,    59,     9,
+    33,   290,    34,   184,    37,    37,    16,    39,    22,     7,
+    24,    25,    26,    33,    12,    29,    36,    37,    38,     4,
+     4,    22,     4,    24,    56,    57,    58,    59,    42,     3,
+     7,    45,     7,    18,    48,    12,    50,    12,    23,    53,
+    41,    42,    43,    44,   119,   120,    60,    61,     1,     4,
+   139,     4,     3,     4,    55,   144,     8,     9,    33,    36,
+    37,    38,    37,     1,   139,    18,     3,     4,     4,   144,
+    23,     9,    10,    11,    12,    13,    14,    15,    16,    17,
+     1,     1,     1,     3,     4,     3,     4,     4,     9,     4,
+     9,     4,     3,    10,    15,    14,    13,     9,    10,    11,
+    12,    13,    14,    15,    16,    17,    14,    15,    16,    17,
+    18,     3,     4,     4,    22,   258,   259,   260,   261,   262,
+   263,     3,     4,     3,     4,     3,     4,     3,     4,     3,
      4,     3,     4,     3,     4,     3,     4,     3,     4,     3,
      4,     3,     4,     3,     4,     3,     4,     4,     4,     4,
-     3,     3,     3,     3,     3,     3,     3,     3,     3,     3,
-   107,    61,     4,     4,     4,     4,     4,     3,    11,     3,
-     3,   107,     4,     4,     4,     4,     4,     4,     4,     4,
-     0,     0,   187,    42,   285,   244
+     4,     4,     3,     3,     3,     3,     3,     3,     3,     3,
+   121,     4,     3,     3,    52,     4,     4,     4,     4,    11,
+     4,     3,     3,    69,     4,     4,     4,     4,     4,     4,
+     4,     4,     0,     0,   178,    46,   121,   120,    -1,   277,
+    -1,    -1,    -1,    -1,    -1,    -1,    18
 };
 
 #line 325 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc"
@@ -1508,97 +1560,109 @@ YYLABEL(yyreduce)
 
 
 /* #line 811 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc" */
-#line 1512 "grammar.cc"
+#line 1564 "grammar.cc"
 
   switch (yyn) {
 
 case 5:
-#line 88 "ppddl.y"
+#line 96 "ppddl.y"
 {
           log_error((char*)"syntax error in domain");
           yyerrok;
       ;
     break;}
-case 12:
-#line 104 "ppddl.y"
+case 13:
+#line 113 "ppddl.y"
 { domain_name = yyvsp[-1].sym->text; ;
     break;}
-case 13:
-#line 110 "ppddl.y"
-{ yyval.sym = yyvsp[0].sym; ;
-    break;}
 case 14:
-#line 111 "ppddl.y"
+#line 119 "ppddl.y"
 { yyval.sym = yyvsp[0].sym; ;
     break;}
 case 15:
-#line 112 "ppddl.y"
+#line 120 "ppddl.y"
 { yyval.sym = yyvsp[0].sym; ;
     break;}
 case 16:
-#line 113 "ppddl.y"
+#line 121 "ppddl.y"
 { yyval.sym = yyvsp[0].sym; ;
     break;}
 case 17:
-#line 114 "ppddl.y"
-{ yyval.sym = yyvsp[0].sym; ;
-    break;}
-case 18:
-#line 115 "ppddl.y"
-{ yyval.sym = yyvsp[0].sym; ;
-    break;}
-case 19:
-#line 116 "ppddl.y"
-{ yyval.sym = yyvsp[0].sym; ;
-    break;}
-case 20:
-#line 117 "ppddl.y"
-{ yyval.sym = yyvsp[0].sym; ;
-    break;}
-case 21:
-#line 118 "ppddl.y"
-{ yyval.sym = yyvsp[0].sym; ;
-    break;}
-case 22:
 #line 122 "ppddl.y"
 { yyval.sym = yyvsp[0].sym; ;
     break;}
-case 23:
+case 18:
 #line 123 "ppddl.y"
 { yyval.sym = yyvsp[0].sym; ;
     break;}
-case 24:
+case 19:
+#line 124 "ppddl.y"
+{ yyval.sym = yyvsp[0].sym; ;
+    break;}
+case 20:
+#line 125 "ppddl.y"
+{ yyval.sym = yyvsp[0].sym; ;
+    break;}
+case 21:
+#line 126 "ppddl.y"
+{ yyval.sym = yyvsp[0].sym; ;
+    break;}
+case 22:
 #line 127 "ppddl.y"
 { yyval.sym = yyvsp[0].sym; ;
     break;}
-case 25:
-#line 128 "ppddl.y"
+case 23:
+#line 131 "ppddl.y"
 { yyval.sym = yyvsp[0].sym; ;
     break;}
-case 26:
+case 24:
 #line 132 "ppddl.y"
 { yyval.sym = yyvsp[0].sym; ;
     break;}
+case 25:
+#line 136 "ppddl.y"
+{ yyval.sym = yyvsp[0].sym; ;
+    break;}
+case 26:
+#line 137 "ppddl.y"
+{ yyval.sym = yyvsp[0].sym; ;
+    break;}
 case 27:
-#line 133 "ppddl.y"
+#line 141 "ppddl.y"
+{ yyval.sym = yyvsp[0].sym; ;
+    break;}
+case 28:
+#line 142 "ppddl.y"
 { yyval.sym = yyvsp[0].sym; ;
     break;}
 case 29:
-#line 140 "ppddl.y"
+#line 146 "ppddl.y"
+{ yyval.sym = yyvsp[0].sym; ;
+    break;}
+case 30:
+#line 147 "ppddl.y"
+{ yyval.sym = yyvsp[0].sym; ;
+    break;}
+case 32:
+#line 154 "ppddl.y"
 {
           log_error((char*)"syntax error in requirements declaration.");
           yyerrok;
       ;
     break;}
-case 34:
-#line 156 "ppddl.y"
+case 33:
+#line 161 "ppddl.y"
+{ translation = true; ;
+    break;}
+case 37:
+#line 170 "ppddl.y"
 {
           log_error((char*)"syntax error in (:predicates ...)");
           yyerrok;
       ;
     break;}
-case 37:
-#line 168 "ppddl.y"
+case 40:
+#line 182 "ppddl.y"
 {
           PredicateSymbol *p = new PredicateSymbol(yyvsp[-2].sym->text);
           dom_predicates.push_back(p);
@@ -1608,15 +1672,15 @@ case 37:
           yyvsp[-2].sym->val = p;
       ;
     break;}
-case 38:
-#line 176 "ppddl.y"
+case 41:
+#line 190 "ppddl.y"
 {
           log_error((char*)"syntax error in predicate declaration");
           yyerrok;
       ;
     break;}
-case 39:
-#line 183 "ppddl.y"
+case 42:
+#line 197 "ppddl.y"
 {
           set_variable_type(*yyvsp[-2].vparam, yyvsp[-2].vparam->size(), (TypeSymbol*)yyvsp[0].sym->val);
           yyvsp[-3].vparam->insert(yyvsp[-3].vparam->end(), yyvsp[-2].vparam->begin(), yyvsp[-2].vparam->end());
@@ -1624,8 +1688,8 @@ case 39:
           yyval.vparam = yyvsp[-3].vparam;
       ;
     break;}
-case 40:
-#line 189 "ppddl.y"
+case 43:
+#line 203 "ppddl.y"
 {
           set_variable_type(*yyvsp[-1].vparam, yyvsp[-1].vparam->size(), dom_top_type);
           yyvsp[-1].vparam->insert(yyvsp[-1].vparam->end(), yyvsp[0].vparam->begin(), yyvsp[0].vparam->end());
@@ -1633,12 +1697,12 @@ case 40:
           yyval.vparam = yyvsp[-1].vparam;
       ;
     break;}
-case 41:
-#line 195 "ppddl.y"
-{ yyval.vparam = new variable_vec; ;
+case 44:
+#line 209 "ppddl.y"
+{ yyval.vparam = new var_symbol_vec; ;
     break;}
-case 42:
-#line 199 "ppddl.y"
+case 45:
+#line 213 "ppddl.y"
 {
           VariableSymbol *var = new VariableSymbol(yyvsp[0].sym->text);
           yyvsp[0].sym->val = var;
@@ -1646,18 +1710,18 @@ case 42:
           yyval.vparam = yyvsp[-1].vparam;
       ;
     break;}
-case 43:
-#line 205 "ppddl.y"
-{ yyval.vparam = new variable_vec; ;
+case 46:
+#line 219 "ppddl.y"
+{ yyval.vparam = new var_symbol_vec; ;
     break;}
-case 45:
-#line 215 "ppddl.y"
+case 48:
+#line 229 "ppddl.y"
 {
           set_type_type(dom_types, dom_types.size(), (TypeSymbol*)yyvsp[0].sym->val);
       ;
     break;}
-case 46:
-#line 218 "ppddl.y"
+case 49:
+#line 232 "ppddl.y"
 {
           yyvsp[0].sym->val = new TypeSymbol(yyvsp[0].sym->text);
           if( write_warnings )
@@ -1667,53 +1731,85 @@ case 46:
           dom_types.push_back((TypeSymbol*)yyvsp[0].sym->val);
       ;
     break;}
-case 47:
-#line 226 "ppddl.y"
+case 50:
+#line 240 "ppddl.y"
 {
           set_type_type(dom_types, dom_types.size(), dom_top_type);
       ;
     break;}
-case 49:
-#line 233 "ppddl.y"
+case 52:
+#line 247 "ppddl.y"
 {
           /* the type is already (implicitly) declared */
       ;
     break;}
-case 50:
-#line 236 "ppddl.y"
+case 53:
+#line 250 "ppddl.y"
 {
           yyvsp[0].sym->val = new TypeSymbol(yyvsp[0].sym->text);
           dom_types.push_back((TypeSymbol*)yyvsp[0].sym->val);
       ;
     break;}
-case 54:
-#line 251 "ppddl.y"
+case 57:
+#line 265 "ppddl.y"
 {
           set_constant_type(dom_constants, dom_constants.size(), (TypeSymbol*)yyvsp[0].sym->val);
       ;
     break;}
-case 55:
-#line 254 "ppddl.y"
+case 58:
+#line 268 "ppddl.y"
 {
           set_constant_type(dom_constants, dom_constants.size(), dom_top_type);
       ;
     break;}
-case 57:
-#line 261 "ppddl.y"
-{
-          yyvsp[0].sym->val = new Symbol(yyvsp[0].sym->text);
-          dom_constants.push_back((Symbol*)yyvsp[0].sym->val);
-      ;
-    break;}
-case 58:
-#line 265 "ppddl.y"
-{
-          yyvsp[0].sym->val = new Symbol(yyvsp[0].sym->text);
-          dom_constants.push_back((Symbol*)yyvsp[0].sym->val);
-      ;
-    break;}
 case 60:
 #line 275 "ppddl.y"
+{
+          yyvsp[0].sym->val = new Symbol(yyvsp[0].sym->text);
+          dom_constants.push_back((Symbol*)yyvsp[0].sym->val);
+      ;
+    break;}
+case 61:
+#line 279 "ppddl.y"
+{
+          yyvsp[0].sym->val = new Symbol(yyvsp[0].sym->text);
+          dom_constants.push_back((Symbol*)yyvsp[0].sym->val);
+      ;
+    break;}
+case 66:
+#line 298 "ppddl.y"
+{
+          StateVariable *var = new StateVariable(yyvsp[0].sym->text);
+          dom_variables.push_back(var);
+      ;
+    break;}
+case 68:
+#line 306 "ppddl.y"
+{
+          dynamic_cast<StateVariable*>(dom_variables.back())->is_observable = true;
+      ;
+    break;}
+case 70:
+#line 313 "ppddl.y"
+{
+          ObsVariable *var = new ObsVariable(yyvsp[0].sym->text);
+          dom_variables.push_back(var);
+      ;
+    break;}
+case 72:
+#line 321 "ppddl.y"
+{
+          dom_variables.back()->values.push_back(yyvsp[0].effect);
+      ;
+    break;}
+case 73:
+#line 324 "ppddl.y"
+{
+          dom_variables.back()->values.push_back(yyvsp[0].effect);
+      ;
+    break;}
+case 77:
+#line 338 "ppddl.y"
 {
          if( type_ == replanner ) {
              log_error((char*)"':axiom' is not a valid element in k-replanner.");
@@ -1721,8 +1817,8 @@ case 60:
          }
       ;
     break;}
-case 61:
-#line 281 "ppddl.y"
+case 78:
+#line 344 "ppddl.y"
 {
          if( type_ == cp2fsc ) {
              log_error((char*)"':sensor' is not a valid element in cp2fsc.");
@@ -1730,8 +1826,8 @@ case 61:
          }
       ;
     break;}
-case 62:
-#line 287 "ppddl.y"
+case 79:
+#line 350 "ppddl.y"
 {
          if( type_ == replanner ) {
              log_error((char*)"':observable' is not a valid element in k-replanner.");
@@ -1739,8 +1835,8 @@ case 62:
          }
       ;
     break;}
-case 63:
-#line 293 "ppddl.y"
+case 80:
+#line 356 "ppddl.y"
 {
          if( type_ == replanner ) {
              log_error((char*)"':sticky' is not a valid element in k-replanner.");
@@ -1748,71 +1844,75 @@ case 63:
          }
       ;
     break;}
-case 64:
-#line 304 "ppddl.y"
+case 81:
+#line 367 "ppddl.y"
 {
           Action *na = new Action(yyvsp[0].sym->text);
           dom_actions.push_back(na);
       ;
     break;}
-case 65:
-#line 308 "ppddl.y"
+case 82:
+#line 371 "ppddl.y"
 {
           clear_param(dom_actions.back()->param);
           yyvsp[-3].sym->val = dom_actions.back();
       ;
     break;}
-case 66:
-#line 312 "ppddl.y"
+case 83:
+#line 375 "ppddl.y"
 {
           log_error((char*)"syntax error in action declaration");
           yyerrok;
       ;
     break;}
-case 67:
-#line 319 "ppddl.y"
+case 84:
+#line 382 "ppddl.y"
 {
           dom_actions.back()->param = *yyvsp[-1].vparam;
           delete yyvsp[-1].vparam;
       ;
     break;}
-case 68:
-#line 323 "ppddl.y"
+case 85:
+#line 386 "ppddl.y"
 { dom_actions.back()->precondition = yyvsp[0].condition; ;
     break;}
-case 69:
-#line 324 "ppddl.y"
+case 86:
+#line 387 "ppddl.y"
 { dom_actions.back()->effect = yyvsp[0].effect; ;
     break;}
-case 70:
-#line 325 "ppddl.y"
+case 87:
+#line 388 "ppddl.y"
 { dom_actions.back()->observe = yyvsp[0].effect; ;
     break;}
-case 73:
-#line 331 "ppddl.y"
+case 88:
+#line 389 "ppddl.y"
+{ dom_actions.back()->sensing_model = yyvsp[0].effect; ;
+    break;}
+case 91:
+#line 395 "ppddl.y"
 { yyval.condition = yyvsp[-1].condition; ;
     break;}
-case 74:
-#line 335 "ppddl.y"
+case 92:
+#line 399 "ppddl.y"
 {
           const_cast<And*>(static_cast<const And*>(yyvsp[-1].condition))->push_back(yyvsp[0].condition);
           yyval.condition = yyvsp[-1].condition;
       ;
     break;}
-case 75:
-#line 339 "ppddl.y"
+case 93:
+#line 403 "ppddl.y"
 {
           And *cond = new And();
           cond->push_back(yyvsp[0].condition);
           yyval.condition = cond;
       ;
     break;}
-case 76:
-#line 347 "ppddl.y"
+case 94:
+#line 411 "ppddl.y"
 { yyval.condition = new Literal(*yyvsp[0].atom); delete yyvsp[0].atom; ;
     break;}
-case 79:
-#line 356 "ppddl.y"
+case 97:
+#line 420 "ppddl.y"
 {
           PredicateSymbol* p = (PredicateSymbol*)yyvsp[-2].sym->val;
           yyval.atom = new Atom(p);
@@ -1825,8 +1925,8 @@ case 79:
           }
       ;
     break;}
-case 80:
-#line 367 "ppddl.y"
+case 98:
+#line 431 "ppddl.y"
 {
           yyval.atom = new Atom(dom_eq_pred);
           yyval.atom->param = *yyvsp[-1].param;
@@ -1834,19 +1934,19 @@ case 80:
           if( yyval.atom->param.size() != 2 ) {
               log_error((char*)"wrong number of arguments for equality");
           }
-          assert(0); // TODO: remove this assertion which is here
+          //assert(0); // TODO: remove this assertion which is here
                      // because (probably) the code for '=' is broken...
       ;
     break;}
-case 81:
-#line 380 "ppddl.y"
+case 99:
+#line 444 "ppddl.y"
 {
           const_cast<Literal*>(static_cast<const Literal*>(yyvsp[-1].atom))->neg = true;
           yyval.atom = yyvsp[-1].atom;
       ;
     break;}
-case 82:
-#line 387 "ppddl.y"
+case 100:
+#line 451 "ppddl.y"
 {
           if( yyvsp[0].sym->val == 0 )
               log_error((char*)"undeclared variable in atom args list");
@@ -1855,55 +1955,55 @@ case 82:
           yyval.param = yyvsp[-1].param;
       ;
     break;}
-case 83:
-#line 394 "ppddl.y"
+case 101:
+#line 458 "ppddl.y"
 {
           yyvsp[-1].param->push_back((Symbol*)yyvsp[0].sym->val);
           yyval.param = yyvsp[-1].param;
       ;
     break;}
-case 84:
-#line 398 "ppddl.y"
+case 102:
+#line 462 "ppddl.y"
 { yyval.param = new PDDL_Base::symbol_vec; ;
     break;}
-case 86:
-#line 403 "ppddl.y"
+case 104:
+#line 467 "ppddl.y"
 { yyval.effect = yyvsp[-1].effect; ;
     break;}
-case 87:
-#line 407 "ppddl.y"
+case 105:
+#line 471 "ppddl.y"
 {
           const_cast<AndEffect*>(static_cast<const AndEffect*>(yyvsp[-1].effect))->push_back(yyvsp[0].effect);
           yyval.effect = yyvsp[-1].effect;
       ;
     break;}
-case 88:
-#line 411 "ppddl.y"
+case 106:
+#line 475 "ppddl.y"
 {
           AndEffect *eff = new AndEffect;
           eff->push_back(yyvsp[0].effect);
           yyval.effect = eff;
       ;
     break;}
-case 92:
-#line 425 "ppddl.y"
+case 110:
+#line 489 "ppddl.y"
 { yyval.effect = new ConditionalEffect(yyvsp[-2].condition, yyvsp[-1].effect); ;
     break;}
-case 93:
-#line 429 "ppddl.y"
+case 111:
+#line 493 "ppddl.y"
 {
           forall_effects.push_back(new ForallEffect);
       ;
     break;}
-case 94:
-#line 432 "ppddl.y"
+case 112:
+#line 496 "ppddl.y"
 {
           forall_effects.back()->param = *yyvsp[-1].vparam;
           delete yyvsp[-1].vparam;
       ;
     break;}
-case 95:
-#line 436 "ppddl.y"
+case 113:
+#line 500 "ppddl.y"
 {
           forall_effects.back()->effect = yyvsp[-1].effect;
           clear_param(forall_effects.back()->param);
@@ -1911,277 +2011,233 @@ case 95:
           forall_effects.pop_back();
       ;
     break;}
-case 96:
-#line 452 "ppddl.y"
+case 114:
+#line 509 "ppddl.y"
 { yyval.effect = yyvsp[-1].effect; ;
     break;}
-case 98:
-#line 457 "ppddl.y"
+case 116:
+#line 514 "ppddl.y"
 {
           const_cast<AndEffect*>(static_cast<const AndEffect*>(yyvsp[-1].effect))->push_back(yyvsp[0].effect);
           yyval.effect = yyvsp[-1].effect;
       ;
     break;}
-case 99:
-#line 461 "ppddl.y"
+case 117:
+#line 518 "ppddl.y"
 {
           AndEffect *eff = new AndEffect;
           eff->push_back(yyvsp[0].effect);
           yyval.effect = eff;
       ;
     break;}
-case 100:
-#line 469 "ppddl.y"
+case 118:
+#line 526 "ppddl.y"
 {
           const_cast<AndEffect*>(static_cast<const AndEffect*>(yyvsp[-1].effect))->push_back(yyvsp[0].effect);
           yyval.effect = yyvsp[-1].effect;
       ;
     break;}
-case 101:
-#line 473 "ppddl.y"
+case 119:
+#line 530 "ppddl.y"
 {
           AndEffect *eff = new AndEffect;
           eff->push_back(yyvsp[0].effect);
           yyval.effect = eff;
       ;
     break;}
-case 102:
-#line 481 "ppddl.y"
+case 120:
+#line 538 "ppddl.y"
 { yyval.effect = new AtomicEffect(*yyvsp[0].atom); delete yyvsp[0].atom; ;
     break;}
-case 103:
-#line 485 "ppddl.y"
+case 121:
+#line 542 "ppddl.y"
 { yyval.effect = new AtomicEffect(*yyvsp[0].atom); delete yyvsp[0].atom; ;
     break;}
-case 104:
-#line 489 "ppddl.y"
-{
-          yyval.invariant = new Invariant(Invariant::AT_LEAST_ONE, *static_cast<const And*>(yyvsp[-1].condition));
-          const_cast<And*>(static_cast<const And*>(yyvsp[-1].condition))->clear();
-          delete yyvsp[-1].condition;
-      ;
+case 123:
+#line 547 "ppddl.y"
+{ yyval.effect = 0; ;
     break;}
-case 105:
-#line 494 "ppddl.y"
-{
-          yyval.invariant = new Invariant(Invariant::AT_LEAST_ONE, *static_cast<const And*>(yyvsp[-1].condition));
-          const_cast<And*>(static_cast<const And*>(yyvsp[-1].condition))->clear();
-          delete yyvsp[-1].condition;
-      ;
-    break;}
-case 106:
-#line 502 "ppddl.y"
-{
-          yyval.invariant = new Invariant(Invariant::AT_MOST_ONE, *static_cast<const And*>(yyvsp[-1].condition));
-          const_cast<And*>(static_cast<const And*>(yyvsp[-1].condition))->clear();
-          delete yyvsp[-1].condition;
-      ;
-    break;}
-case 107:
-#line 510 "ppddl.y"
-{
-          yyval.invariant = new Invariant(Invariant::EXACTLY_ONE, *static_cast<const And*>(yyvsp[-1].condition));
-          const_cast<And*>(static_cast<const And*>(yyvsp[-1].condition))->clear();
-          delete yyvsp[-1].condition;
-      ;
-    break;}
-case 111:
-#line 524 "ppddl.y"
-{
-          yyval.clause = new Clause(*static_cast<const And*>(yyvsp[-1].condition));
-          const_cast<And*>(static_cast<const And*>(yyvsp[-1].condition))->clear();
-          delete yyvsp[-1].condition;
-      ;
-    break;}
-case 112:
-#line 532 "ppddl.y"
-{
-          yyval.oneof = new Oneof(*static_cast<const And*>(yyvsp[-1].condition));
-          const_cast<And*>(static_cast<const And*>(yyvsp[-1].condition))->clear();
-          delete yyvsp[-1].condition;
-      ;
-    break;}
-case 113:
-#line 540 "ppddl.y"
+case 124:
+#line 551 "ppddl.y"
 {
           Axiom *nr = new Axiom(yyvsp[0].sym->text);
           dom_axioms.push_back(nr);
       ;
     break;}
-case 114:
-#line 544 "ppddl.y"
+case 125:
+#line 555 "ppddl.y"
 {
           clear_param(dom_axioms.back()->param);
           yyvsp[-3].sym->val = dom_axioms.back();
       ;
     break;}
-case 115:
-#line 548 "ppddl.y"
+case 126:
+#line 559 "ppddl.y"
 {
           log_error((char*)"syntax error in axiom declaration");
           yyerrok;
       ;
     break;}
-case 116:
-#line 555 "ppddl.y"
+case 127:
+#line 566 "ppddl.y"
 {
           dom_axioms.back()->param = *yyvsp[-1].vparam;
           delete yyvsp[-1].vparam;
       ;
     break;}
-case 117:
-#line 559 "ppddl.y"
+case 128:
+#line 570 "ppddl.y"
 { dom_axioms.back()->body = yyvsp[0].condition; ;
     break;}
-case 118:
-#line 560 "ppddl.y"
+case 129:
+#line 571 "ppddl.y"
 { dom_axioms.back()->head = yyvsp[0].effect; ;
     break;}
-case 120:
-#line 565 "ppddl.y"
+case 131:
+#line 576 "ppddl.y"
 {
           Sensor *nr = new Sensor(yyvsp[0].sym->text);
           dom_sensors.push_back(nr);
       ;
     break;}
-case 121:
-#line 569 "ppddl.y"
+case 132:
+#line 580 "ppddl.y"
 {
           clear_param(dom_sensors.back()->param);
           yyvsp[-3].sym->val = dom_sensors.back();
       ;
     break;}
-case 122:
-#line 573 "ppddl.y"
+case 133:
+#line 584 "ppddl.y"
 {
           log_error((char*)"syntax error in sensor declaration");
           yyerrok;
       ;
     break;}
-case 123:
-#line 580 "ppddl.y"
+case 134:
+#line 591 "ppddl.y"
 {
           dom_sensors.back()->param = *yyvsp[-1].vparam;
           delete yyvsp[-1].vparam;
       ;
     break;}
-case 124:
-#line 584 "ppddl.y"
+case 135:
+#line 595 "ppddl.y"
 { dom_sensors.back()->condition = yyvsp[0].condition; ;
     break;}
-case 125:
-#line 585 "ppddl.y"
+case 136:
+#line 596 "ppddl.y"
 { dom_sensors.back()->sense = yyvsp[0].effect; ;
     break;}
-case 127:
-#line 590 "ppddl.y"
+case 138:
+#line 601 "ppddl.y"
 {
           Observable *obs = new Observable;
           dom_observables.push_back(obs);
       ;
     break;}
-case 128:
-#line 593 "ppddl.y"
+case 139:
+#line 604 "ppddl.y"
 {
           clear_param(dom_observables.back()->param);
       ;
     break;}
-case 129:
-#line 596 "ppddl.y"
+case 140:
+#line 607 "ppddl.y"
 {
           log_error((char*)"syntax error in observable declaration");
           yyerrok;
       ;
     break;}
-case 130:
-#line 603 "ppddl.y"
+case 141:
+#line 614 "ppddl.y"
 {
           dom_observables.back()->param = *yyvsp[-1].vparam;
           delete yyvsp[-1].vparam;
       ;
     break;}
-case 131:
-#line 607 "ppddl.y"
+case 142:
+#line 618 "ppddl.y"
 {
           dom_observables.back()->observables = yyvsp[0].effect;
       ;
     break;}
-case 133:
-#line 614 "ppddl.y"
+case 144:
+#line 625 "ppddl.y"
 {
           Sticky *stk = new Sticky;
           dom_stickies.push_back(stk);
       ;
     break;}
-case 134:
-#line 617 "ppddl.y"
+case 145:
+#line 628 "ppddl.y"
 {
           clear_param(dom_stickies.back()->param);
       ;
     break;}
-case 135:
-#line 620 "ppddl.y"
+case 146:
+#line 631 "ppddl.y"
 {
           log_error((char*)"syntax error in sticky declaration");
           yyerrok;
       ;
     break;}
-case 136:
-#line 627 "ppddl.y"
+case 147:
+#line 638 "ppddl.y"
 {
           dom_stickies.back()->param = *yyvsp[-1].vparam;
           delete yyvsp[-1].vparam;
       ;
     break;}
-case 137:
-#line 631 "ppddl.y"
+case 148:
+#line 642 "ppddl.y"
 {
           dom_stickies.back()->stickies = yyvsp[0].effect;
       ;
     break;}
-case 139:
-#line 640 "ppddl.y"
+case 150:
+#line 651 "ppddl.y"
 {
           problem_name = yyvsp[-1].sym->text;
       ;
     break;}
-case 141:
-#line 644 "ppddl.y"
+case 152:
+#line 655 "ppddl.y"
 {
           log_error((char*)"syntax error in problem definition.");
           yyerrok;
       ;
     break;}
-case 150:
-#line 662 "ppddl.y"
+case 161:
+#line 673 "ppddl.y"
 { dom_init = *yyvsp[-1].ilist; delete yyvsp[-1].ilist; ;
     break;}
-case 151:
-#line 663 "ppddl.y"
+case 162:
+#line 674 "ppddl.y"
 { dom_init = *yyvsp[-2].ilist; delete yyvsp[-2].ilist; ;
     break;}
-case 152:
-#line 667 "ppddl.y"
+case 163:
+#line 678 "ppddl.y"
 {
           init_element_vec *ilist = const_cast<init_element_vec*>(yyvsp[-1].ilist);
           ilist->push_back(const_cast<InitElement*>(yyvsp[0].ielem));
           yyval.ilist = ilist;
       ;
     break;}
-case 153:
-#line 672 "ppddl.y"
+case 164:
+#line 683 "ppddl.y"
 {
           init_element_vec *ilist = new init_element_vec;
           ilist->push_back(const_cast<InitElement*>(yyvsp[0].ielem));
           yyval.ilist = ilist;
       ;
     break;}
-case 154:
-#line 680 "ppddl.y"
+case 165:
+#line 691 "ppddl.y"
 { yyval.ielem = new InitLiteral(*yyvsp[0].atom); ;
     break;}
-case 155:
-#line 681 "ppddl.y"
+case 166:
+#line 692 "ppddl.y"
 {
           if( type_ == cp2fsc ) {
               log_error((char*)"'invariant' is not a valid element in cp2fsc.");
@@ -2194,8 +2250,8 @@ case 155:
           }
       ;
     break;}
-case 156:
-#line 692 "ppddl.y"
+case 167:
+#line 703 "ppddl.y"
 {
           if( type_ == replanner ) {
               log_error((char*)"'clause' is not a valid element in k-replanner.");
@@ -2208,8 +2264,8 @@ case 156:
           }
       ;
     break;}
-case 157:
-#line 703 "ppddl.y"
+case 168:
+#line 714 "ppddl.y"
 {
           if( type_ == replanner ) {
               // We let oneofs pass in k-replanner as they are later mapped 
@@ -2221,8 +2277,56 @@ case 157:
           delete yyvsp[0].oneof;
       ;
     break;}
-case 158:
-#line 716 "ppddl.y"
+case 169:
+#line 727 "ppddl.y"
+{
+          yyval.invariant = new Invariant(Invariant::AT_LEAST_ONE, *static_cast<const And*>(yyvsp[-1].condition));
+          const_cast<And*>(static_cast<const And*>(yyvsp[-1].condition))->clear();
+          delete yyvsp[-1].condition;
+      ;
+    break;}
+case 170:
+#line 732 "ppddl.y"
+{
+          yyval.invariant = new Invariant(Invariant::AT_LEAST_ONE, *static_cast<const And*>(yyvsp[-1].condition));
+          const_cast<And*>(static_cast<const And*>(yyvsp[-1].condition))->clear();
+          delete yyvsp[-1].condition;
+      ;
+    break;}
+case 171:
+#line 740 "ppddl.y"
+{
+          yyval.invariant = new Invariant(Invariant::AT_MOST_ONE, *static_cast<const And*>(yyvsp[-1].condition));
+          const_cast<And*>(static_cast<const And*>(yyvsp[-1].condition))->clear();
+          delete yyvsp[-1].condition;
+      ;
+    break;}
+case 172:
+#line 748 "ppddl.y"
+{
+          yyval.invariant = new Invariant(Invariant::EXACTLY_ONE, *static_cast<const And*>(yyvsp[-1].condition));
+          const_cast<And*>(static_cast<const And*>(yyvsp[-1].condition))->clear();
+          delete yyvsp[-1].condition;
+      ;
+    break;}
+case 176:
+#line 762 "ppddl.y"
+{
+          yyval.clause = new Clause(*static_cast<const And*>(yyvsp[-1].condition));
+          const_cast<And*>(static_cast<const And*>(yyvsp[-1].condition))->clear();
+          delete yyvsp[-1].condition;
+      ;
+    break;}
+case 177:
+#line 770 "ppddl.y"
+{
+          yyval.oneof = new Oneof(*static_cast<const And*>(yyvsp[-1].condition));
+          const_cast<And*>(static_cast<const And*>(yyvsp[-1].condition))->clear();
+          delete yyvsp[-1].condition;
+      ;
+    break;}
+case 178:
+#line 778 "ppddl.y"
 {
           if( type_ == cp2fsc ) {
               log_error((char*)"':hidden' is not a valid element in cp2fsc.");
@@ -2233,35 +2337,35 @@ case 158:
           }
       ;
     break;}
-case 159:
-#line 728 "ppddl.y"
+case 179:
+#line 790 "ppddl.y"
 { dom_goal = yyvsp[-1].condition; ;
     break;}
-case 160:
-#line 729 "ppddl.y"
+case 180:
+#line 791 "ppddl.y"
 { dom_goal = yyvsp[-2].condition; ;
     break;}
-case 161:
-#line 733 "ppddl.y"
+case 181:
+#line 795 "ppddl.y"
 {
           const_cast<And*>(static_cast<const And*>(yyvsp[-1].condition))->push_back(yyvsp[0].condition);
           yyval.condition = yyvsp[-1].condition;
       ;
     break;}
-case 162:
-#line 737 "ppddl.y"
+case 182:
+#line 799 "ppddl.y"
 {
           And *cond = new And;
           cond->push_back(yyvsp[0].condition);
           yyval.condition = cond;
       ;
     break;}
-case 163:
-#line 746 "ppddl.y"
+case 183:
+#line 808 "ppddl.y"
 { yyval.condition = new Literal(*yyvsp[0].atom); delete yyvsp[0].atom; ;
     break;}
-case 164:
-#line 747 "ppddl.y"
+case 184:
+#line 809 "ppddl.y"
 { yyval.condition = new Literal(*yyvsp[0].atom); delete yyvsp[0].atom; ;
     break;}
 }
@@ -2468,7 +2572,7 @@ YYLABEL(yyerrhandle)
 /* END */
 
 /* #line 1010 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc" */
-#line 2472 "grammar.cc"
-#line 750 "ppddl.y"
+#line 2576 "grammar.cc"
+#line 812 "ppddl.y"
 
 

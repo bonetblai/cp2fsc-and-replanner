@@ -6,6 +6,7 @@ using namespace std;
 
 bool PDDL_Base::write_warnings = true;
 bool PDDL_Base::write_info = true;
+Instance::when_vec PDDL_Base::dummy_when_vec;
 
 template <class T>
 static void copy_symbol_vec(const vector<T> &src, vector<T> &dst) {
@@ -17,7 +18,10 @@ static void copy_symbol_vec(const vector<T> &src, vector<T> &dst) {
 }
 
 PDDL_Base::PDDL_Base(StringTable &t)
-  : domain_name(0), problem_name(0), tab(t), dom_top_type(0), dom_goal(0), disable_actions_atom(0) {
+  : domain_name(0), problem_name(0),
+    tab(t), dom_top_type(0), dom_goal(0),
+    disable_actions_atom(0),
+    translation(false) {
 
     // setup predicate for equality
     StringTable::Cell *sc = tab.inserta("object");
@@ -26,6 +30,10 @@ PDDL_Base::PDDL_Base(StringTable &t)
     sc = tab.inserta("=");
     dom_eq_pred = new PredicateSymbol(sc->text);
     sc->val = dom_eq_pred;
+    dom_eq_pred->param.push_back(new VariableSymbol("?x"));
+    dom_eq_pred->param.push_back(new VariableSymbol("?y"));
+    dom_eq_pred->param[0]->sym_type = dom_top_type;
+    dom_eq_pred->param[1]->sym_type = dom_top_type;
 }
 
 PDDL_Base::~PDDL_Base() { // TODO: implement dtor
@@ -61,14 +69,14 @@ PDDL_Base::~PDDL_Base() { // TODO: implement dtor
         delete dom_types[k];
 }
 
-void PDDL_Base::set_variable_type(variable_vec &vec, size_t n, TypeSymbol *t) {
+void PDDL_Base::set_variable_type(var_symbol_vec &vec, size_t n, TypeSymbol *t) {
     for( size_t k = n; k > 0; k-- ) {
         if( vec[k-1]->sym_type != 0 ) return;
         vec[k-1]->sym_type = t;
     }
 }
 
-void PDDL_Base::set_type_type(type_vec &vec, size_t n, TypeSymbol *t) {
+void PDDL_Base::set_type_type(type_symbol_vec &vec, size_t n, TypeSymbol *t) {
     for( size_t k = vec.size(); k > 0; k-- ) {
         if( vec[k-1]->sym_type != 0 ) return;
         vec[k-1]->sym_type = t;
@@ -83,7 +91,7 @@ void PDDL_Base::set_constant_type(symbol_vec &vec, size_t n, TypeSymbol *t) {
     }
 }
 
-void PDDL_Base::clear_param(variable_vec &vec, size_t start) {
+void PDDL_Base::clear_param(var_symbol_vec &vec, size_t start) {
     for( size_t k = start; k < vec.size(); ++k )
         tab.set(vec[k]->print_name, (void*)0);
 }
@@ -96,7 +104,7 @@ void PDDL_Base::insert_atom(ptr_table &t, Atom *a) {
 }
 
 void PDDL_Base::calculate_strongly_static_predicates() const {
-    cout << "strongly-static predicates:";
+    cout << "strongly-static predicates:" << flush;
     bool some_strongly_static = false;
     for( size_t p = 0; p < dom_predicates.size(); ++p ) {
         PredicateSymbol &pred = *dom_predicates[p];
@@ -114,11 +122,11 @@ void PDDL_Base::calculate_strongly_static_predicates() const {
 
         for( size_t k = 0; strongly_static && (k < dom_actions.size()); ++k ) {
             Action &act = *dom_actions[k];
-            strongly_static = act.effect->is_strongly_static(pred);
+            strongly_static = act.effect == 0 ? true : act.effect->is_strongly_static(pred);
         }
 
         pred.strongly_static = strongly_static;
-        if( strongly_static ) cout << " " << pred.print_name;
+        if( strongly_static ) cout << " '" << pred.print_name << "'";
         if( strongly_static ) some_strongly_static = true;
     }
     if( !some_strongly_static ) cout << " <none>";
@@ -243,6 +251,25 @@ void PDDL_Base::translate_observe_effects_into_sensors() {
     }
 }
 
+void PDDL_Base::do_translation(Instance &ins) {
+    if( !translation ) return;
+
+    // instantiate state and observable variables
+    dom_var_values.resize(dom_variables.size());
+    for( size_t k = 0; k < dom_variables.size(); ++k )
+        dom_variables[k]->instantiate(ins, dom_var_values[k]);
+
+    // partially instantiate sensing models in each action
+    for( size_t k = 0; k < dom_actions.size(); ++k ) {
+        Action &action = *dom_actions[k];
+        if( action.sensing_model != 0 ) {
+            cout << "Action=" << action.print_name << endl;
+            Effect *test = action.sensing_model->partial_instantiate(ins);
+            cout << "Partial=" << flush << *test << endl;
+        }
+    }
+}
+
 void PDDL_Base::instantiate(Instance &ins) const {
 
     // calculate strongly-static predicates. Used to instantiate
@@ -279,7 +306,7 @@ void PDDL_Base::instantiate(Instance &ins) const {
 
     // instantiate hidden initial situation
     cout << "instantiating " << dom_hidden.size() << " hidden state(s)" << endl;
-    ins.hidden = Instance::init_vec(dom_hidden.size());
+    ins.hidden.resize(dom_hidden.size());
     for( size_t k = 0; k < dom_hidden.size(); ++k ) {
         for( size_t j = 0; j < dom_hidden[k].size(); ++j )
             dom_hidden[k][j]->instantiate(ins, ins.hidden[k]);
@@ -322,7 +349,7 @@ PDDL_Base::find_type_predicate(Symbol *type_sym) {
 }
 
 void PDDL_Base::print(ostream &os) const {
-    os << "[PDDL_Base::print() not yet implemented]" << endl;
+    os << flush << "[PDDL_Base::print() not yet implemented]" << endl;
 }
 
 
@@ -338,7 +365,7 @@ void PDDL_Base::TypeSymbol::add_element(Symbol *e) {
 }
 
 void PDDL_Base::TypeSymbol::print(ostream &os) const {
-    os << "(:type " << print_name;
+    os << flush << "(:type " << print_name;
     if( sym_type ) os << " - " << sym_type->print_name;
     os << "): {";
     for( size_t k = 0; k < elements.size(); ++k )
@@ -363,7 +390,7 @@ PDDL_Base::Symbol* PDDL_Base::VariableSymbol::clone() const {
 }
 
 void PDDL_Base::VariableSymbol::print(std::ostream &os) const {
-    os << print_name;
+    os << flush << print_name;
     if( sym_type ) os << " - " << sym_type->print_name;
 }
  
@@ -376,7 +403,7 @@ PDDL_Base::Symbol* PDDL_Base::PredicateSymbol::clone() const {
 }
 
 void PDDL_Base::PredicateSymbol::print(ostream &os) const {
-    os << "(:predicate " << print_name;
+    os << flush << "(:predicate " << print_name;
     for( size_t k = 0; k < param.size(); ++k )
         os << " " << *param[k];
     os << ")" << endl;
@@ -407,17 +434,21 @@ Instance::Atom* PDDL_Base::Atom::find_prop(Instance &ins, bool neg, bool create)
             else
 	        a_name.add(param[k]);
         }
-
         Instance::Atom &p = ins.new_atom(new CopyName(a_name.to_string()));
         r->val = &p;
     }
     return (Instance::Atom*)r->val;
 }
 
+PDDL_Base::Atom* PDDL_Base::Atom::partial_instantiate(Instance &ins, bool neg) const {
+    return (PDDL_Base::Atom*)this;
+    //return 0; // NEED FIX
+}
+
 void PDDL_Base::Atom::print(ostream &os, bool extra_neg) const {
     extra_neg = extra_neg ? !neg : neg;
     if( extra_neg ) os << "(not ";
-    os << "(" << pred->print_name;
+    os << flush << "(" << pred->print_name;
     for (size_t k = 0; k < param.size(); ++k)
         os << " " << *param[k];
     os << ")";
@@ -432,32 +463,66 @@ void PDDL_Base::Literal::instantiate(Instance &ins, index_set &condition) const 
         condition.insert(-(1 + p->index));
 }
 
+PDDL_Base::Condition* PDDL_Base::Literal::partial_instantiate(Instance &ins) const {
+    Atom *atom = Atom::partial_instantiate(ins, false);
+    Literal *result = new Literal(*atom);
+    //delete atom; NEED FIX
+    return result;
+}
+
 void PDDL_Base::EQ::instantiate(Instance &ins, index_set &condition) const {
 }
 
+PDDL_Base::Condition* PDDL_Base::EQ::partial_instantiate(Instance &ins) const {
+    return (Condition*)this;
+    //return 0; // NEED FIX
+}
+
 void PDDL_Base::EQ::print(std::ostream &os) const {
-    os << "(= " << *first << " " << *second << ")";
+    os << flush << "(= " << *first << " " << *second << ")";
 }
  
 void PDDL_Base::And::instantiate(Instance &ins, index_set &condition) const {
-    for( size_t k = 0; k < size(); ++k ) {
+    for( size_t k = 0; k < size(); ++k )
         (*this)[k]->instantiate(ins, condition);
+}
+
+PDDL_Base::Condition* PDDL_Base::And::partial_instantiate(Instance &ins) const {
+    And *result = new And;
+    for( size_t k = 0; k < size(); ++k ) {
+        Condition *item = (*this)[k]->partial_instantiate(ins);
+        if( dynamic_cast<And*>(item) != 0 ) {
+            And &item_list = *dynamic_cast<And*>(item);
+            for( size_t i = 0; i < item_list.size(); ++i)
+                result->push_back(item_list[i]);
+            item_list.clear();
+            delete item;
+        } else
+            result->push_back(item);
     }
+    return result;
 }
 
 void PDDL_Base::And::print(std::ostream &os) const {
-    os << "(and";
+    os << flush << "(and";
     for( size_t k = 0; k < size(); ++k )
         os << " " << *(*this)[k];
     os << ")";
 }
 
-void PDDL_Base::AtomicEffect::instantiate(Instance &ins, index_set &eff, Instance::Action*) const {
+void PDDL_Base::AtomicEffect::instantiate(Instance &ins, index_set &eff, Instance::when_vec&) const {
     Instance::Atom *p = find_prop(ins, false, true);
     if( !neg )
         eff.insert(1 + p->index);
     else
         eff.insert(-(1 + p->index));
+}
+
+PDDL_Base::Effect* PDDL_Base::AtomicEffect::partial_instantiate(Instance &ins) const {
+    Atom *atom = Atom::partial_instantiate(ins, false);
+    AtomicEffect *result = new AtomicEffect(*atom);
+    //delete atom; NEED FIX
+    return result;
 }
 
 bool PDDL_Base::AtomicEffect::is_strongly_static(const PredicateSymbol &p) const {
@@ -466,10 +531,25 @@ bool PDDL_Base::AtomicEffect::is_strongly_static(const PredicateSymbol &p) const
     return pred != &p;
 }
 
-void PDDL_Base::AndEffect::instantiate(Instance &ins, index_set &eff, Instance::Action *act) const {
+void PDDL_Base::AndEffect::instantiate(Instance &ins, index_set &eff, Instance::when_vec &when) const {
+    for( size_t k = 0; k < size(); ++k )
+        (*this)[k]->instantiate(ins, eff, when);
+}
+
+PDDL_Base::Effect* PDDL_Base::AndEffect::partial_instantiate(Instance &ins) const {
+    AndEffect *result = new AndEffect;
     for( size_t k = 0; k < size(); ++k ) {
-        (*this)[k]->instantiate(ins, eff, act);
+        Effect *item = (*this)[k]->partial_instantiate(ins);
+        if( dynamic_cast<AndEffect*>(item) != 0 ) {
+            AndEffect &item_list = *dynamic_cast<AndEffect*>(item);
+            for( size_t i = 0; i < item_list.size(); ++i)
+                result->push_back(item_list[i]);
+            item_list.clear();
+            delete item;
+        } else
+            result->push_back(item);
     }
+    return result;
 }
 
 bool PDDL_Base::AndEffect::is_strongly_static(const PredicateSymbol &p) const {
@@ -479,18 +559,24 @@ bool PDDL_Base::AndEffect::is_strongly_static(const PredicateSymbol &p) const {
     return strongly_static;
 }
 void PDDL_Base::AndEffect::print(std::ostream &os) const {
-    os << "(and";
+    os << flush << "(and";
     for( size_t k = 0; k < size(); ++k )
         os << " " << *(*this)[k];
     os << ")";
 }
 
-void PDDL_Base::ConditionalEffect::instantiate(Instance &ins, index_set &eff, Instance::Action *act) const {
-    assert(act != 0);
-    Instance::When when;
-    condition->instantiate(ins, when.condition);
-    effect->instantiate(ins, when.effect, act);
-    act->when.push_back(when);
+void PDDL_Base::ConditionalEffect::instantiate(Instance &ins, index_set &eff, Instance::when_vec &when) const {
+    Instance::When single_when;
+    condition->instantiate(ins, single_when.condition);
+    effect->instantiate(ins, single_when.effect, when);
+    when.push_back(single_when);
+}
+
+PDDL_Base::Effect* PDDL_Base::ConditionalEffect::partial_instantiate(Instance &ins) const {
+    ConditionalEffect *result = new ConditionalEffect(0, 0);
+    result->condition = condition->partial_instantiate(ins);
+    result->effect = effect->partial_instantiate(ins);
+    return result;
 }
 
 bool PDDL_Base::ConditionalEffect::is_strongly_static(const PredicateSymbol &p) const {
@@ -498,35 +584,55 @@ bool PDDL_Base::ConditionalEffect::is_strongly_static(const PredicateSymbol &p) 
 }
 
 void PDDL_Base::ConditionalEffect::print(std::ostream &os) const {
-    os << "(when " << *condition << " " << *effect << ")";
+    os << flush << "(when " << *condition << " " << *effect << ")";
 }
 
-void PDDL_Base::ForallEffect::instantiate(Instance &ins, index_set &eff, Instance::Action *act) const {
+void PDDL_Base::ForallEffect::instantiate(Instance &ins, index_set &eff, Instance::when_vec &when) const {
     for( size_t k = 0; k < param.size(); ++k )
         param[k]->value = 0;
-    build(ins, 0, eff, act);
+    build(ins, 0, eff, when);
+}
+
+void PDDL_Base::ForallEffect::build(Instance &ins, size_t p, index_set &eff, Instance::when_vec &when) const {
+    if( p < param.size() ) {
+        TypeSymbol *t = (TypeSymbol*)param[p]->sym_type;
+        for( size_t k = 0, ksz = t->elements.size(); k < ksz; ++k ) {
+            param[p]->value = t->elements[k];
+            // TODO: incremental pruning
+            build(ins, p+1, eff, when);
+        }
+        param[p]->value = 0;
+    } else {
+        effect->instantiate(ins, eff, when);
+    }
+}
+
+PDDL_Base::Effect* PDDL_Base::ForallEffect::partial_instantiate(Instance &ins) const {
+    AndEffect *result = new AndEffect;
+    build(ins, 0, *result);
+    return result;
+}
+
+void PDDL_Base::ForallEffect::build(Instance &ins, size_t p, AndEffect &result) const {
+    if( p < param.size() ) {
+        TypeSymbol *t = (TypeSymbol*)param[p]->sym_type;
+        for( size_t k = 0, ksz = t->elements.size(); k < ksz; ++k ) {
+            param[p]->value = t->elements[k];
+            // TODO: incremental pruning
+            build(ins, p+1, result);
+        }
+        param[p]->value = 0;
+    } else {
+        result.push_back(effect->partial_instantiate(ins));
+    }
 }
 
 bool PDDL_Base::ForallEffect::is_strongly_static(const PredicateSymbol &p) const {
     return effect->is_strongly_static(p);
 }
 
-void PDDL_Base::ForallEffect::build(Instance &ins, size_t p, index_set &eff, Instance::Action *act) const {
-    if( p < param.size() ) {
-        TypeSymbol *t = (TypeSymbol*)param[p]->sym_type;
-        for( size_t k = 0, ksz = t->elements.size(); k < ksz; ++k ) {
-            param[p]->value = t->elements[k];
-            // TODO: incremental pruning
-            build(ins, p+1, eff, act);
-        }
-        param[p]->value = 0;
-    } else {
-        effect->instantiate(ins, eff, act);
-    }
-}
-
 void PDDL_Base::ForallEffect::print(std::ostream &os) const {
-    os << "(forall (";
+    os << flush << "(forall (";
     for( size_t k = 0; k < param.size(); ++k )
         os << (k > 0 ? " " : "") << *param[k];
     os << ") " << *effect << ")";
@@ -546,6 +652,7 @@ void PDDL_Base::Invariant::instantiate(Instance &ins, Instance::Invariant &invar
 }
 
 void PDDL_Base::Invariant::print(std::ostream &os) const {
+    os << flush;
     if( type == AT_LEAST_ONE ) os << "(at-least-one";
     else if( type == AT_MOST_ONE ) os << "(at-most-one";
     else os << "(exactly-one";
@@ -567,7 +674,7 @@ void PDDL_Base::Clause::instantiate(Instance &ins, Instance::Clause &clause) con
 }
 
 void PDDL_Base::Clause::print(std::ostream &os) const {
-    os << "(or";
+    os << flush << "(or";
     for( size_t k = 0; k < size(); ++k )
         os << " " << *(*this)[k];
     os << ")";
@@ -586,7 +693,7 @@ void PDDL_Base::Oneof::instantiate(Instance &ins, Instance::Oneof &oneof) const 
 }
 
 void PDDL_Base::Oneof::print(std::ostream &os) const {
-    os << "(oneof";
+    os << flush << "(oneof";
     for( size_t k = 0; k < size(); ++k )
         os << " " << *(*this)[k];
     os << ")";
@@ -706,8 +813,9 @@ void PDDL_Base::Action::build(Instance &ins, size_t p, int pass) const {
             PDDL_Name aname(this, param, param.size());
             Instance::Action &act = ins.new_action(new CopyName(aname.to_string()));
             if( precondition != 0 ) precondition->instantiate(ins, act.precondition);
-            if( effect != 0 ) effect->instantiate(ins, act.effect, &act);
+            if( effect != 0 ) effect->instantiate(ins, act.effect, act.when);
             assert(observe == 0); // observe effects should had been translated!
+            if( sensing_model != 0 ) sensing_model->instantiate(ins, act.effect, act.when);
             act.cost = 1;
         } else {
             ++action_count_;
@@ -762,7 +870,7 @@ void PDDL_Base::Sensor::build(Instance &ins, size_t p) const {
         PDDL_Name sname(this, param, param.size());
         Instance::Sensor &sensor = ins.new_sensor(new CopyName(sname.to_string()));
         if( condition != 0 ) condition->instantiate(ins, sensor.condition);
-        if( sense != 0 ) sense->instantiate(ins, sensor.sense, 0);
+        if( sense != 0 ) sense->instantiate(ins, sensor.sense);
     }
 }
 
@@ -881,7 +989,6 @@ void PDDL_Base::Sticky::build(Instance &ins, size_t p) const {
         param[p]->value = 0;
     } else {
         if( stickies != 0 ) stickies->instantiate(ins, ins.given_stickies);
-        // TODO
     }
 }
 
@@ -900,13 +1007,43 @@ void PDDL_Base::Sticky::print(std::ostream &os) const {
        << ")" << endl;
 }
 
+void PDDL_Base::StateVariable::instantiate(Instance &ins, index_set &var_values) const {
+    cout << "instantiating variable '" << print_name << "' ..." << flush;
+    var_values.clear();
+    for( size_t k = 0; k < values.size(); ++k )
+        values[k]->instantiate(ins, var_values);
+    cout << " " << var_values.size() << " value(s)" << endl;
+}
+
+void PDDL_Base::StateVariable::print(std::ostream &os) const {
+    os << "(:variable " << print_name;
+    for( size_t k = 0; k < values.size(); ++k )
+          os << " " << *values[k];
+    os << (is_observable ? " :observable" : "") << ")" << flush;
+}
+
+void PDDL_Base::ObsVariable::instantiate(Instance &ins, index_set &var_values) const {
+    cout << "instantiating variable '" << print_name << "' ..." << flush;
+    var_values.clear();
+    for( size_t k = 0; k < values.size(); ++k )
+        values[k]->instantiate(ins, var_values);
+    cout << " " << var_values.size() << " value(s)" << endl;
+}
+
+void PDDL_Base::ObsVariable::print(std::ostream &os) const {
+    os << "(:obs-variable " << print_name;
+    for( size_t k = 0; k < values.size(); ++k )
+          os << " " << *values[k];
+    os << ")" << flush;
+}
+
 
 
 PDDL_Name::PDDL_Name(const PDDL_Base::Symbol *sym, const PDDL_Base::symbol_vec &arg, size_t n)
   : _neg(false), _sym(sym), _arg(arg) {
 }
 
-PDDL_Name::PDDL_Name(const PDDL_Base::Symbol *sym, const PDDL_Base::variable_vec &arg, size_t n)
+PDDL_Name::PDDL_Name(const PDDL_Base::Symbol *sym, const PDDL_Base::var_symbol_vec &arg, size_t n)
   : _neg(false), _sym(sym) {
     for( size_t k = 0; k < n; ++k )
         _arg.push_back(arg[k]->value);

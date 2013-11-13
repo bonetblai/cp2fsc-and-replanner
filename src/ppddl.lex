@@ -94,6 +94,12 @@ COMMENT ;.*$
 ":hidden"        { return PDDL_Parser::KW_HIDDEN; }
 ":goal"          { return PDDL_Parser::KW_GOAL; }
 
+":translation"   { return PDDL_Parser::KW_TRANSLATION; }
+":variable"      { return PDDL_Parser::KW_VARIABLE; }
+":obs-variable"  { return PDDL_Parser::KW_OBS_VARIABLE; }
+":sensing-model" { return PDDL_Parser::KW_SENSING_MODEL; }
+
+
 \?{STRING} { val.sym = _tab.inserta(yytext);
              if( val.sym->val == 0 )
                  return PDDL_Parser::TK_NEW_VAR_SYMBOL;
@@ -123,6 +129,8 @@ COMMENT ;.*$
                      return PDDL_Parser::TK_SENSOR_SYMBOL;
                    case PDDL_Base::sym_axiom:
                      return PDDL_Parser::TK_AXIOM_SYMBOL;
+                   case PDDL_Base::sym_varname:
+                     return PDDL_Parser::TK_VARNAME_SYMBOL;
                    default:
                      return PDDL_Parser::TK_MISC_SYMBOL;
                  }

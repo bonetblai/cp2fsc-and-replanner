@@ -157,11 +157,17 @@ int main(int argc, char *argv[]) {
         reader->print(cout);
     }
 
+    // translate oneofs into invariants and observe effects in actions
     reader->map_oneofs_to_invariants();
     reader->translate_observe_effects_into_sensors();
 
-    cout << "instantiating p.o. problem..." << endl;
+    // create fresh instance
     Instance instance(options);
+
+    // if requested, do translation of multi-valued variable problem
+    reader->do_translation(instance);
+
+    cout << "instantiating p.o. problem..." << endl;
     reader->instantiate(instance);
     //delete reader;
     if( options.is_enabled("print:problem:raw") ) {

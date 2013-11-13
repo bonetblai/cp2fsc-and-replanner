@@ -23,8 +23,8 @@ FLEX    = /home/bonet/software/flex++-2.3.8-7/flex++
 #FLEX   = locals/fake-flex++ linux
 
 # Define compiler/linker flags:
-DEBUG = #-g 
-OPTIMIZE = -O3 #-DNDEBUG
+DEBUG = -g 
+OPTIMIZE = #-O3 #-DNDEBUG
 
 CFLAGS = $(DEBUG) $(OPTIMIZE) -I. -Wall
 LFLAGS = $(DEBUG) $(OPTIMIZE) -L. -Wall
