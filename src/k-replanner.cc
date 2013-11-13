@@ -196,8 +196,7 @@ int main(int argc, char *argv[]) {
     }
     float preprocessing_time = Utils::read_time_in_seconds() - start_time;
 
-    // solve problem
-    cout << "solving problem..." << endl;
+    // construct classical planner
     const ClassicalPlanner *planner = 0;
     if( opt_planner == 0 ) {
         planner = new FF_Planner(kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
@@ -208,64 +207,46 @@ int main(int argc, char *argv[]) {
     } else if( opt_planner == 3 ) {
         planner = new MP_Planner(kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
     }
-    Solver solver(instance, kp_instance, *planner, opt_time_bound);
-    Instance::Plan plan;
-    vector<vector<int> > fired_sensors, sensed_literals;
-    State hidden_initial_state;
-    instance.set_hidden_state(hidden_initial_state);
-    int status = solver.solve(hidden_initial_state, plan, fired_sensors, sensed_literals);
-    assert(1+plan.size() == fired_sensors.size());
 
-    if( status == Solver::SOLVED ) {
-        if( opt_print_plan ) {
-            cout << "PLAN: ";
-            bool need_indent = false;
+    // solve problem
+    cout << "solving problem for " << instance.num_hidden_states() << " hidden states ..." << endl;
+    for( int k = 0; k < instance.num_hidden_states(); ++k ) {
+        Instance::Plan plan;
+        State hidden_initial_state;
+        vector<vector<int> > fired_sensors, sensed_literals;
 
-            if( options.is_enabled("print:fired-sensors") ) {
-                const vector<int> &sensors = fired_sensors[0];
-                if( sensors.size() > 0 ) {
-                    cout << "init*:" << flush;
-                    for( int i = 0, isz = sensors.size(); i < isz; ++i ) {
-                        cout << " " << instance.sensors[sensors[i]]->name;
-                    }
-                    cout << endl;
-                    need_indent = true;
-                }
-            }
+        instance.set_hidden_state(k, hidden_initial_state);
+        cout << "hidden[" << k << "]=";
+        hidden_initial_state.print(cout, instance);
+        cout << endl;
 
-            if( options.is_enabled("print:sensed-literals") ) {
-                const vector<int> &sensed = sensed_literals[0];
-                if( sensed.size() > 0 ) {
-                    if( need_indent ) cout << "      ";
-                    cout << "init@:" << flush;
-                    for( int i = 0, isz = sensed.size(); i < isz; ++i ) {
-                        int atom = sensed[i] < 0 ? -sensed[i] - 1 : sensed[i] - 1;
-                        cout << (sensed[i] < 0 ? " (not " : " ")
-                             << instance.atoms[atom]->name
-                             << (sensed[i] < 0 ? ")" : "");
-                    }
-                    cout << endl;
-                    need_indent = true;
-                }
-            }
+        planner->reset_stats();
+        Solver solver(instance, kp_instance, *planner, opt_time_bound);
+        int status = solver.solve(hidden_initial_state, plan, fired_sensors, sensed_literals);
+        assert(1+plan.size() == fired_sensors.size());
 
-            for( size_t k = 0; k < plan.size(); ++k ) {
-                if( need_indent ) cout << "      ";
-                cout << setw(4) << k << " : " << instance.actions[plan[k]]->name << endl;
+        if( status == Solver::SOLVED ) {
+            if( opt_print_plan ) {
+                cout << "PLAN: ";
+                bool need_indent = false;
+
                 if( options.is_enabled("print:fired-sensors") ) {
-                    const vector<int> &sensors = fired_sensors[1+k];
+                    const vector<int> &sensors = fired_sensors[0];
                     if( sensors.size() > 0 ) {
-                        cout << "      " << setw(4) << k << "*:";
+                        cout << "init*:" << flush;
                         for( int i = 0, isz = sensors.size(); i < isz; ++i ) {
                             cout << " " << instance.sensors[sensors[i]]->name;
                         }
                         cout << endl;
+                        need_indent = true;
                     }
                 }
+
                 if( options.is_enabled("print:sensed-literals") ) {
-                    const vector<int> &sensed = sensed_literals[1+k];
+                    const vector<int> &sensed = sensed_literals[0];
                     if( sensed.size() > 0 ) {
-                        cout << "      " << setw(4) << k << "@:";
+                        if( need_indent ) cout << "      ";
+                        cout << "init@:" << flush;
                         for( int i = 0, isz = sensed.size(); i < isz; ++i ) {
                             int atom = sensed[i] < 0 ? -sensed[i] - 1 : sensed[i] - 1;
                             cout << (sensed[i] < 0 ? " (not " : " ")
@@ -273,35 +254,64 @@ int main(int argc, char *argv[]) {
                                  << (sensed[i] < 0 ? ")" : "");
                         }
                         cout << endl;
+                        need_indent = true;
                     }
                 }
-                need_indent = true;
+
+                for( size_t k = 0; k < plan.size(); ++k ) {
+                    if( need_indent ) cout << "      ";
+                    cout << setw(4) << k << " : " << instance.actions[plan[k]]->name << endl;
+                    if( options.is_enabled("print:fired-sensors") ) {
+                        const vector<int> &sensors = fired_sensors[1+k];
+                        if( sensors.size() > 0 ) {
+                            cout << "      " << setw(4) << k << "*:";
+                            for( int i = 0, isz = sensors.size(); i < isz; ++i ) {
+                                cout << " " << instance.sensors[sensors[i]]->name;
+                            }
+                            cout << endl;
+                        }
+                    }
+                    if( options.is_enabled("print:sensed-literals") ) {
+                        const vector<int> &sensed = sensed_literals[1+k];
+                        if( sensed.size() > 0 ) {
+                            cout << "      " << setw(4) << k << "@:";
+                            for( int i = 0, isz = sensed.size(); i < isz; ++i ) {
+                                int atom = sensed[i] < 0 ? -sensed[i] - 1 : sensed[i] - 1;
+                                cout << (sensed[i] < 0 ? " (not " : " ")
+                                     << instance.atoms[atom]->name
+                                     << (sensed[i] < 0 ? ")" : "");
+                            }
+                            cout << endl;
+                        }
+                    }
+                    need_indent = true;
+                }
+            }
+        } else {
+            plan.clear();
+            cout << "unable to solve problem: ";
+            if( status == Solver::NO_SOLUTION ) {
+                cout << "problem has no solution!" << endl;
+            } else if( status == Solver::TIME ) {
+                cout << "reached time limit of " << opt_time_bound << " seconds" << endl;
+            } else if( status == Solver::ERROR ) {
+                cout << "planner error" << endl;
+            } else  {
+                cout << "unrecognized error" << endl;
             }
         }
-    } else {
-        plan.clear();
-        cout << "unable to solve problem: ";
-        if( status == Solver::NO_SOLUTION ) {
-            cout << "problem has no solution!" << endl;
-        } else if( status == Solver::TIME ) {
-            cout << "reached time limit of " << opt_time_bound << " seconds" << endl;
-        } else if( status == Solver::ERROR ) {
-            cout << "planner error" << endl;
-        } else  {
-            cout << "unrecognized error" << endl;
-        }
-    }
 
-    // print some stats
-    cout << "stats: "
-         << planner_name[opt_planner] << " (planner) "
-         << (int)(status != Solver::SOLVED ? -1 : plan.size()) << " (plan size) "
-         << planner->n_calls() << " (planner calls) "
-         << preprocessing_time << " (preprocessing time) "
-         << planner->get_time() << " (planner total time) "
-         << planner->get_search_time() << " (planner total search time) "
-         << Utils::read_time_in_seconds() - start_time << " (total time)"
-         << endl;
+        // print some stats
+        cout << "stats: "
+             << planner_name[opt_planner] << " (planner) "
+             << (int)(status != Solver::SOLVED ? -1 : plan.size()) << " (plan size) "
+             << planner->n_calls() << " (planner calls) "
+             << preprocessing_time << " (preprocessing time) "
+             << planner->get_time() << " (planner total time) "
+             << planner->get_search_time() << " (planner total search time) "
+             << Utils::read_time_in_seconds() - start_time << " (total time)"
+             << endl << endl;
+    }
 
     delete planner;
     return 0;

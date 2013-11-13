@@ -121,10 +121,14 @@ class Instance {
     class oneof_vec : public std::vector<Oneof> { };
 
     struct Init {
-        index_set literals;
+        index_set     literals;
         invariant_vec invariants;
         clause_vec    clauses;
         oneof_vec     oneofs;
+    };
+    class init_vec : public std::vector<Init> {
+      public:
+        init_vec(size_t n = 0) : std::vector<Init>(n) { }
     };
 
     class Plan : public std::vector<int> { };
@@ -136,7 +140,7 @@ class Instance {
     axiom_vec   axioms;
 
     Init        init;
-    Init        hidden;
+    init_vec    hidden;
     index_set   goal_literals;
     index_set   non_primitive_fluents;
     index_set   observable_fluents;
@@ -175,7 +179,8 @@ class Instance {
     virtual void remove_atoms(const bool_vec &set, index_vec &map);
     void calculate_non_primitive_and_observable_fluents();
     void set_initial_state(State &state) const;
-    void set_hidden_state(State &state) const;
+    void set_hidden_state(int k, State &state) const;
+    int num_hidden_states() const { return hidden.size(); }
 
     // NOTE: remove_atoms must be virtual because CP_Instance needs to 
     // remap atoms in the initial states, rechable space, etc.

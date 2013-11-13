@@ -416,16 +416,16 @@ void Instance::remove_atoms(const bool_vec &set, index_vec &map) {
     init.literals.signed_remap(rm_map);
     for( size_t k = 0; k < init.clauses.size(); ++k )
         init.clauses[k].signed_remap(rm_map);
-    for( size_t k = 0; k < init.invariants.size(); ++k ) {
+    for( size_t k = 0; k < init.invariants.size(); ++k )
         init.invariants[k].signed_remap(rm_map);
-    }
     for( size_t k = 0; k < init.oneofs.size(); ++k )
         init.oneofs[k].signed_remap(rm_map);
-
-    hidden.literals.signed_remap(rm_map);
-    assert(hidden.invariants.empty());
-    assert(hidden.clauses.empty());
-    assert(hidden.oneofs.empty());
+    for( size_t k = 0; k < hidden.size(); ++k ) {
+        hidden[k].literals.signed_remap(rm_map);
+        assert(hidden[k].invariants.empty());
+        assert(hidden[k].clauses.empty());
+        assert(hidden[k].oneofs.empty());
+    }
     /*
     for( size_t k = 0; k < hidden.clauses.size(); ++k )
         hidden.clauses[k].signed_remap(rm_map);
@@ -485,9 +485,9 @@ void Instance::set_initial_state(State &state) const {
     state.apply_axioms(*this);
 }
 
-void Instance::set_hidden_state(State &state) const {
+void Instance::set_hidden_state(int k, State &state) const {
     set_initial_state(state);
-    for( index_set::const_iterator it = hidden.literals.begin(); it != hidden.literals.end(); ++it ) {
+    for( index_set::const_iterator it = hidden[k].literals.begin(); it != hidden[k].literals.end(); ++it ) {
         if( *it > 0 )
             state.add(*it-1);
     }

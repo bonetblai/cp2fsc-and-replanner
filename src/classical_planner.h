@@ -38,6 +38,11 @@ class ClassicalPlanner {
     float get_search_time() const { return total_search_time_; }
     float get_time() const { return total_time_; }
     size_t n_calls() const { return n_calls_; }
+    void reset_stats() const {
+        total_search_time_ = 0;
+        total_time_ = 0;
+        n_calls_ = 0;
+    }
 };
 
 class FF_Planner : public ClassicalPlanner {

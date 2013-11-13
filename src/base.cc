@@ -38,8 +38,10 @@ PDDL_Base::~PDDL_Base() { // TODO: implement dtor
     // a symbol tape to store the symbols for each instance.
     for( size_t k = 0; k < dom_init.size(); ++k )
         delete dom_init[k];
-    for( size_t k = 0; k < dom_hidden.size(); ++k )
-        delete dom_hidden[k];
+    for( size_t k = 0; k < dom_hidden.size(); ++k ) {
+        for( size_t j = 0; j < dom_hidden[k].size(); ++j )
+            delete dom_hidden[k][j];
+    }
     for( size_t k = 0; k < dom_actions.size(); ++k )
         delete dom_actions[k];
     for( size_t k = 0; k < dom_sensors.size(); ++k )
@@ -88,7 +90,7 @@ void PDDL_Base::clear_param(variable_vec &vec, size_t start) {
 
 void PDDL_Base::insert_atom(ptr_table &t, Atom *a) {
     ptr_table *r = &t;
-    for( size_t k = 0; k < a->param.size(); k++ )
+    for( size_t k = 0; k < a->param.size(); ++k )
         r = r->insert_next(a->param[k]);
     r->val = a;
 }
@@ -250,7 +252,7 @@ void PDDL_Base::instantiate(Instance &ins) const {
 
 #if 0 // TODO: fix initialization of EQ predicate
     // set up interpretation of equality
-    for( size_t k = 0; k < dom_constants.size(); k++ ) {
+    for( size_t k = 0; k < dom_constants.size(); ++k ) {
         Atom *a = new Atom(dom_eq_pred);
         a->param.push_back(dom_constants[k]);
         a->param.push_back(dom_constants[k]);
@@ -272,12 +274,16 @@ void PDDL_Base::instantiate(Instance &ins) const {
     }
 
     // instantiate initial situation.
-    for( size_t k = 0; k < dom_init.size(); k++ )
+    for( size_t k = 0; k < dom_init.size(); ++k )
         dom_init[k]->instantiate(ins, ins.init);
 
     // instantiate hidden initial situation
-    for( size_t k = 0; k < dom_hidden.size(); k++ )
-        dom_hidden[k]->instantiate(ins, ins.hidden);
+    cout << "instantiating " << dom_hidden.size() << " hidden state(s)" << endl;
+    ins.hidden = Instance::init_vec(dom_hidden.size());
+    for( size_t k = 0; k < dom_hidden.size(); ++k ) {
+        for( size_t j = 0; j < dom_hidden[k].size(); ++j )
+            dom_hidden[k][j]->instantiate(ins, ins.hidden[k]);
+    }
 
     // instantiate goal situation
     if( dom_goal != 0 )
@@ -306,7 +312,7 @@ void PDDL_Base::instantiate(Instance &ins) const {
 
 PDDL_Base::PredicateSymbol*
 PDDL_Base::find_type_predicate(Symbol *type_sym) {
-    for (size_t k = 0; k < dom_predicates.size(); k++) {
+    for (size_t k = 0; k < dom_predicates.size(); ++k) {
         if (dom_predicates[k]->print_name == type_sym->print_name)
             return dom_predicates[k];
     }
@@ -335,7 +341,7 @@ void PDDL_Base::TypeSymbol::print(ostream &os) const {
     os << "(:type " << print_name;
     if( sym_type ) os << " - " << sym_type->print_name;
     os << "): {";
-    for( size_t k = 0; k < elements.size(); k++ )
+    for( size_t k = 0; k < elements.size(); ++k )
         os << *elements[k] << ",";
     os << "}" << endl;
 }
@@ -371,7 +377,7 @@ PDDL_Base::Symbol* PDDL_Base::PredicateSymbol::clone() const {
 
 void PDDL_Base::PredicateSymbol::print(ostream &os) const {
     os << "(:predicate " << print_name;
-    for( size_t k = 0; k < param.size(); k++ )
+    for( size_t k = 0; k < param.size(); ++k )
         os << " " << *param[k];
     os << ")" << endl;
 }
@@ -379,14 +385,14 @@ void PDDL_Base::PredicateSymbol::print(ostream &os) const {
 bool PDDL_Base::Atom::operator==(const Atom &atom) const {
     if( pred != atom.pred ) return false;
     if( param.size() != atom.param.size() ) return false;
-    for( size_t k = 0; k < param.size(); k++ )
+    for( size_t k = 0; k < param.size(); ++k )
         if( param[k] != atom.param[k] ) return false;
     return true;
 }
 
 Instance::Atom* PDDL_Base::Atom::find_prop(Instance &ins, bool neg, bool create) const {
     ptr_table *r = neg ? &(pred->neg_prop) : &(pred->pos_prop);
-    for( size_t k = 0; k < param.size(); k++ ) {
+    for( size_t k = 0; k < param.size(); ++k ) {
         if( param[k]->sym_class == sym_variable )
             r = r->insert_next(((VariableSymbol*)param[k])->value);
         else
@@ -395,7 +401,7 @@ Instance::Atom* PDDL_Base::Atom::find_prop(Instance &ins, bool neg, bool create)
     if( !r->val ) {
         if( !create ) return 0;
         PDDL_Name a_name(pred, neg);
-        for( size_t k = 0; k < param.size(); k++ ) {
+        for( size_t k = 0; k < param.size(); ++k ) {
             if( param[k]->sym_class == sym_variable )
 	        a_name.add(((VariableSymbol*)param[k])->value);
             else
@@ -412,7 +418,7 @@ void PDDL_Base::Atom::print(ostream &os, bool extra_neg) const {
     extra_neg = extra_neg ? !neg : neg;
     if( extra_neg ) os << "(not ";
     os << "(" << pred->print_name;
-    for (size_t k = 0; k < param.size(); k++)
+    for (size_t k = 0; k < param.size(); ++k)
         os << " " << *param[k];
     os << ")";
     if( extra_neg ) os << ")";
@@ -714,7 +720,7 @@ void PDDL_Base::Action::print(ostream &os) const {
 
     if( !param.empty() ) {
         os << "    :parameters (";
-        for( size_t k = 0; k < param.size(); k++ )
+        for( size_t k = 0; k < param.size(); ++k )
             os << (k > 0 ? " " : "") << *param[k];
         os << ")" << endl;
     }
@@ -765,7 +771,7 @@ void PDDL_Base::Sensor::print(ostream &os) const {
 
     if( !param.empty() ) {
         os << "    :parameters (";
-        for( size_t k = 0; k < param.size(); k++ )
+        for( size_t k = 0; k < param.size(); ++k )
           os << (k > 0 ? " " : "") << *param[k];
         os << ")" << endl;
     }
@@ -810,7 +816,7 @@ void PDDL_Base::Axiom::print(std::ostream &os) const {
 
     if( !param.empty() ) {
         os << "    :parameters (";
-        for( size_t k = 0; k < param.size(); k++ )
+        for( size_t k = 0; k < param.size(); ++k )
           os << (k > 0 ? " " : "") << *param[k];
         os << ")" << endl;
     }
@@ -834,7 +840,7 @@ void PDDL_Base::Observable::print(std::ostream &os) const {
 
     if( !param.empty() ) {
         os << "    :parameters (";
-        for( size_t k = 0; k < param.size(); k++ )
+        for( size_t k = 0; k < param.size(); ++k )
           os << (k > 0 ? " " : "") << *param[k];
         os << ")" << endl;
     }
@@ -884,7 +890,7 @@ void PDDL_Base::Sticky::print(std::ostream &os) const {
 
     if( !param.empty() ) {
         os << "    :parameters (";
-        for( size_t k = 0; k < param.size(); k++ )
+        for( size_t k = 0; k < param.size(); ++k )
           os << (k > 0 ? " " : "") << *param[k];
         os << ")" << endl;
     }
@@ -902,7 +908,7 @@ PDDL_Name::PDDL_Name(const PDDL_Base::Symbol *sym, const PDDL_Base::symbol_vec &
 
 PDDL_Name::PDDL_Name(const PDDL_Base::Symbol *sym, const PDDL_Base::variable_vec &arg, size_t n)
   : _neg(false), _sym(sym) {
-    for( size_t k = 0; k < n; k++ )
+    for( size_t k = 0; k < n; ++k )
         _arg.push_back(arg[k]->value);
 }
 
@@ -916,12 +922,12 @@ void PDDL_Name::write(ostream &os, bool cat) const {
             os << "not_" << _sym->print_name;
         else
             os << _sym->print_name;
-        for( size_t k = 0; k < _arg.size(); k++ )
+        for( size_t k = 0; k < _arg.size(); ++k )
             os << '_' << _arg[k]->print_name;
     } else {
         if (_neg) os << "(not ";
         os << '(' << _sym->print_name;
-        for( size_t k = 0; k < _arg.size(); k++ )
+        for( size_t k = 0; k < _arg.size(); ++k )
             os << ' ' << _arg[k]->print_name;
         os << ')';
         if (_neg) os << ')';
