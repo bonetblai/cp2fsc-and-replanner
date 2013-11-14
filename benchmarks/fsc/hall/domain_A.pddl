@@ -48,16 +48,8 @@
     :body (and (agent-x ?x) (agent-y ?y) (not (corner ?x ?y)))
     :head (null-obs)
   )
-  (:observable
-    :parameters (?x - xpos ?y - ypos)
-    :fluents (at-corner ?x ?y)
-  )
-  (:observable
-    :fluents (null-obs)
-  )
-  (:sticky
-    :parameters (?x - xpos ?y - ypos)
-    :fluents (visited ?x ?y)
-  )
+
+  (:observable (null-obs) (forall (?x - xpos ?y - ypos) (at-corner ?x ?y)))
+  (:sticky (forall (?x - xpos ?y - ypos) (visited ?x ?y)))
 )
 

@@ -66,10 +66,7 @@
     :parameters (?x - block)
     :body (and (have ?x) (green ?x))
     :head (got-it))
-  (:observable
-    :fluents (holding) (not-holding)
-             (greenish) (not-greenish)
-             (empty-tower)
-  )
+
+  (:observable (holding) (not-holding) (greenish) (not-greenish) (empty-tower))
 )
 

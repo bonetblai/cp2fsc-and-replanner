@@ -144,10 +144,6 @@
     :body (and (have0) (nballs-at-B-0))
     :head (all-balls-at-A))
 
-  (:observable
-    :fluents (some-ball-at-B) (no-ball-at-B)
-             (holding) (no-holding)
-             (space) (no-space)
-  )
+  (:observable (some-ball-at-B) (no-ball-at-B) (holding) (no-holding) (space) (no-space))
 )
 

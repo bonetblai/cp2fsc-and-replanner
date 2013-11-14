@@ -61,6 +61,6 @@
     :head (obs-clear)
   )
 
-  (:observable :fluents (obs-table) (obs-not-table) (obs-block) (obs-green) (obs-clear))
+  (:observable (obs-table) (obs-not-table) (obs-block) (obs-green) (obs-clear))
 )
 

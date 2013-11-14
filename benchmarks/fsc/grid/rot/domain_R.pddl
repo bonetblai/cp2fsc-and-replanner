@@ -197,7 +197,7 @@
     :head (nowall)
   )
 
-  (:observable :fluents (wall) (nowall))
-  (:sticky :fluents (got-it))
+  (:observable (wall) (nowall))
+  (:sticky (got-it))
 )
 
