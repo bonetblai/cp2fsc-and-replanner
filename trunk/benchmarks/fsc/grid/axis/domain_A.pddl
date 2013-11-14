@@ -79,12 +79,7 @@
     :body (and (not (rightmost-col ?x)) (agent-x ?x))
     :head (no-obs-r))
 
-  (:observable
-    :fluents (obs-t) (no-obs-t)
-             (obs-b) (no-obs-b)
-             (obs-l) (no-obs-l)
-             (obs-r) (no-obs-r)
-  )
-  (:sticky :fluents (got-it))
+  (:observable (obs-t) (no-obs-t) (obs-b) (no-obs-b) (obs-l) (no-obs-l) (obs-r) (no-obs-r))
+  (:sticky (got-it))
 )
 
