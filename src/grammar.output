@@ -118,12 +118,12 @@ rule 93   condition_list -> single_condition
 rule 94   single_condition -> literal
 rule 95   literal -> positive_literal
 rule 96   literal -> negative_literal
-rule 97   positive_literal -> TK_OPEN TK_PRED_SYMBOL atom_argument_list TK_CLOSE
-rule 98   positive_literal -> TK_OPEN TK_EQ atom_argument_list TK_CLOSE
+rule 97   positive_literal -> TK_OPEN TK_PRED_SYMBOL argument_list TK_CLOSE
+rule 98   positive_literal -> TK_OPEN TK_EQ argument_list TK_CLOSE
 rule 99   negative_literal -> TK_OPEN KW_NOT positive_literal TK_CLOSE
-rule 100  atom_argument_list -> atom_argument_list TK_VAR_SYMBOL
-rule 101  atom_argument_list -> atom_argument_list TK_OBJ_SYMBOL
-rule 102  atom_argument_list ->		/* empty */
+rule 100  argument_list -> argument_list TK_VAR_SYMBOL
+rule 101  argument_list -> argument_list TK_OBJ_SYMBOL
+rule 102  argument_list ->		/* empty */
 rule 103  action_effect -> single_action_effect
 rule 104  action_effect -> TK_OPEN KW_AND action_effect_list TK_CLOSE
 rule 105  action_effect_list -> action_effect_list single_action_effect
@@ -361,7 +361,7 @@ positive_literal (102)
     on left: 97 98, on right: 95 99 121 183
 negative_literal (103)
     on left: 99, on right: 96 184
-atom_argument_list (104)
+argument_list (104)
     on left: 100 101 102, on right: 97 98 100 101
 action_effect (105)
     on left: 103 104, on right: 86 113 122
@@ -1972,8 +1972,8 @@ state 137
 
 state 138
 
-    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL atom_argument_list TK_CLOSE   (rule 97)
-    positive_literal  ->  TK_OPEN . TK_EQ atom_argument_list TK_CLOSE   (rule 98)
+    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL argument_list TK_CLOSE   (rule 97)
+    positive_literal  ->  TK_OPEN . TK_EQ argument_list TK_CLOSE   (rule 98)
     forall_effect  ->  TK_OPEN . KW_FORALL TK_OPEN @4 typed_param_list TK_CLOSE @5 action_effect TK_CLOSE   (rule 113)
 
     TK_EQ	shift, and go to state 177
@@ -2343,8 +2343,8 @@ state 171
 
 state 172
 
-    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL atom_argument_list TK_CLOSE   (rule 97)
-    positive_literal  ->  TK_OPEN . TK_EQ atom_argument_list TK_CLOSE   (rule 98)
+    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL argument_list TK_CLOSE   (rule 97)
+    positive_literal  ->  TK_OPEN . TK_EQ argument_list TK_CLOSE   (rule 98)
 
     TK_EQ	shift, and go to state 177
     TK_PRED_SYMBOL	shift, and go to state 178
@@ -2399,21 +2399,21 @@ state 176
 
 state 177
 
-    positive_literal  ->  TK_OPEN TK_EQ . atom_argument_list TK_CLOSE   (rule 98)
+    positive_literal  ->  TK_OPEN TK_EQ . argument_list TK_CLOSE   (rule 98)
 
-    $default	reduce using rule 102 (atom_argument_list)
+    $default	reduce using rule 102 (argument_list)
 
-    atom_argument_list	go to state 218
+    argument_list	go to state 218
 
 
 
 state 178
 
-    positive_literal  ->  TK_OPEN TK_PRED_SYMBOL . atom_argument_list TK_CLOSE   (rule 97)
+    positive_literal  ->  TK_OPEN TK_PRED_SYMBOL . argument_list TK_CLOSE   (rule 97)
 
-    $default	reduce using rule 102 (atom_argument_list)
+    $default	reduce using rule 102 (argument_list)
 
-    atom_argument_list	go to state 219
+    argument_list	go to state 219
 
 
 
@@ -2560,8 +2560,8 @@ state 190
 state 191
 
     condition  ->  TK_OPEN . KW_AND condition_list TK_CLOSE   (rule 91)
-    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL atom_argument_list TK_CLOSE   (rule 97)
-    positive_literal  ->  TK_OPEN . TK_EQ atom_argument_list TK_CLOSE   (rule 98)
+    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL argument_list TK_CLOSE   (rule 97)
+    positive_literal  ->  TK_OPEN . TK_EQ argument_list TK_CLOSE   (rule 98)
     negative_literal  ->  TK_OPEN . KW_NOT positive_literal TK_CLOSE   (rule 99)
 
     TK_EQ	shift, and go to state 177
@@ -2613,8 +2613,8 @@ state 196
 
 state 197
 
-    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL atom_argument_list TK_CLOSE   (rule 97)
-    positive_literal  ->  TK_OPEN . TK_EQ atom_argument_list TK_CLOSE   (rule 98)
+    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL argument_list TK_CLOSE   (rule 97)
+    positive_literal  ->  TK_OPEN . TK_EQ argument_list TK_CLOSE   (rule 98)
     negative_literal  ->  TK_OPEN . KW_NOT positive_literal TK_CLOSE   (rule 99)
     action_effect  ->  TK_OPEN . KW_AND action_effect_list TK_CLOSE   (rule 104)
     conditional_effect  ->  TK_OPEN . KW_WHEN condition atomic_effect_kw_list TK_CLOSE   (rule 110)
@@ -2759,8 +2759,8 @@ state 211
 
 state 212
 
-    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL atom_argument_list TK_CLOSE   (rule 97)
-    positive_literal  ->  TK_OPEN . TK_EQ atom_argument_list TK_CLOSE   (rule 98)
+    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL argument_list TK_CLOSE   (rule 97)
+    positive_literal  ->  TK_OPEN . TK_EQ argument_list TK_CLOSE   (rule 98)
     negative_literal  ->  TK_OPEN . KW_NOT positive_literal TK_CLOSE   (rule 99)
     atomic_effect_kw_list  ->  TK_OPEN . KW_AND atomic_effect_list TK_CLOSE   (rule 114)
 
@@ -2827,9 +2827,9 @@ state 217
 
 state 218
 
-    positive_literal  ->  TK_OPEN TK_EQ atom_argument_list . TK_CLOSE   (rule 98)
-    atom_argument_list  ->  atom_argument_list . TK_VAR_SYMBOL   (rule 100)
-    atom_argument_list  ->  atom_argument_list . TK_OBJ_SYMBOL   (rule 101)
+    positive_literal  ->  TK_OPEN TK_EQ argument_list . TK_CLOSE   (rule 98)
+    argument_list  ->  argument_list . TK_VAR_SYMBOL   (rule 100)
+    argument_list  ->  argument_list . TK_OBJ_SYMBOL   (rule 101)
 
     TK_CLOSE	shift, and go to state 251
     TK_OBJ_SYMBOL	shift, and go to state 252
@@ -2839,9 +2839,9 @@ state 218
 
 state 219
 
-    positive_literal  ->  TK_OPEN TK_PRED_SYMBOL atom_argument_list . TK_CLOSE   (rule 97)
-    atom_argument_list  ->  atom_argument_list . TK_VAR_SYMBOL   (rule 100)
-    atom_argument_list  ->  atom_argument_list . TK_OBJ_SYMBOL   (rule 101)
+    positive_literal  ->  TK_OPEN TK_PRED_SYMBOL argument_list . TK_CLOSE   (rule 97)
+    argument_list  ->  argument_list . TK_VAR_SYMBOL   (rule 100)
+    argument_list  ->  argument_list . TK_OBJ_SYMBOL   (rule 101)
 
     TK_CLOSE	shift, and go to state 254
     TK_OBJ_SYMBOL	shift, and go to state 252
@@ -2877,8 +2877,8 @@ state 222
 
 state 223
 
-    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL atom_argument_list TK_CLOSE   (rule 97)
-    positive_literal  ->  TK_OPEN . TK_EQ atom_argument_list TK_CLOSE   (rule 98)
+    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL argument_list TK_CLOSE   (rule 97)
+    positive_literal  ->  TK_OPEN . TK_EQ argument_list TK_CLOSE   (rule 98)
     negative_literal  ->  TK_OPEN . KW_NOT positive_literal TK_CLOSE   (rule 99)
     initial_state  ->  TK_OPEN KW_INIT TK_OPEN . KW_AND init_elements TK_CLOSE TK_CLOSE   (rule 162)
     at_least_one_invariant  ->  TK_OPEN . KW_INVARIANT condition_list TK_CLOSE   (rule 169)
@@ -2996,8 +2996,8 @@ state 233
 
 state 234
 
-    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL atom_argument_list TK_CLOSE   (rule 97)
-    positive_literal  ->  TK_OPEN . TK_EQ atom_argument_list TK_CLOSE   (rule 98)
+    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL argument_list TK_CLOSE   (rule 97)
+    positive_literal  ->  TK_OPEN . TK_EQ argument_list TK_CLOSE   (rule 98)
     negative_literal  ->  TK_OPEN . KW_NOT positive_literal TK_CLOSE   (rule 99)
     goal_spec  ->  TK_OPEN KW_GOAL TK_OPEN . KW_AND goal_list TK_CLOSE TK_CLOSE   (rule 180)
 
@@ -3034,8 +3034,8 @@ state 237
 
 state 238
 
-    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL atom_argument_list TK_CLOSE   (rule 97)
-    positive_literal  ->  TK_OPEN . TK_EQ atom_argument_list TK_CLOSE   (rule 98)
+    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL argument_list TK_CLOSE   (rule 97)
+    positive_literal  ->  TK_OPEN . TK_EQ argument_list TK_CLOSE   (rule 98)
     negative_literal  ->  TK_OPEN . KW_NOT positive_literal TK_CLOSE   (rule 99)
     at_least_one_invariant  ->  TK_OPEN . KW_INVARIANT condition_list TK_CLOSE   (rule 169)
     at_least_one_invariant  ->  TK_OPEN . KW_AT_LEAST_ONE condition_list TK_CLOSE   (rule 170)
@@ -3217,7 +3217,7 @@ state 250
 
 state 251
 
-    positive_literal  ->  TK_OPEN TK_EQ atom_argument_list TK_CLOSE .   (rule 98)
+    positive_literal  ->  TK_OPEN TK_EQ argument_list TK_CLOSE .   (rule 98)
 
     $default	reduce using rule 98 (positive_literal)
 
@@ -3225,23 +3225,23 @@ state 251
 
 state 252
 
-    atom_argument_list  ->  atom_argument_list TK_OBJ_SYMBOL .   (rule 101)
+    argument_list  ->  argument_list TK_OBJ_SYMBOL .   (rule 101)
 
-    $default	reduce using rule 101 (atom_argument_list)
+    $default	reduce using rule 101 (argument_list)
 
 
 
 state 253
 
-    atom_argument_list  ->  atom_argument_list TK_VAR_SYMBOL .   (rule 100)
+    argument_list  ->  argument_list TK_VAR_SYMBOL .   (rule 100)
 
-    $default	reduce using rule 100 (atom_argument_list)
+    $default	reduce using rule 100 (argument_list)
 
 
 
 state 254
 
-    positive_literal  ->  TK_OPEN TK_PRED_SYMBOL atom_argument_list TK_CLOSE .   (rule 97)
+    positive_literal  ->  TK_OPEN TK_PRED_SYMBOL argument_list TK_CLOSE .   (rule 97)
 
     $default	reduce using rule 97 (positive_literal)
 
@@ -3424,8 +3424,8 @@ state 269
 
 state 270
 
-    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL atom_argument_list TK_CLOSE   (rule 97)
-    positive_literal  ->  TK_OPEN . TK_EQ atom_argument_list TK_CLOSE   (rule 98)
+    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL argument_list TK_CLOSE   (rule 97)
+    positive_literal  ->  TK_OPEN . TK_EQ argument_list TK_CLOSE   (rule 98)
     negative_literal  ->  TK_OPEN . KW_NOT positive_literal TK_CLOSE   (rule 99)
 
     TK_EQ	shift, and go to state 177
@@ -3467,8 +3467,8 @@ state 273
 
 state 274
 
-    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL atom_argument_list TK_CLOSE   (rule 97)
-    positive_literal  ->  TK_OPEN . TK_EQ atom_argument_list TK_CLOSE   (rule 98)
+    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL argument_list TK_CLOSE   (rule 97)
+    positive_literal  ->  TK_OPEN . TK_EQ argument_list TK_CLOSE   (rule 98)
     negative_literal  ->  TK_OPEN . KW_NOT positive_literal TK_CLOSE   (rule 99)
     conditional_effect  ->  TK_OPEN . KW_WHEN condition atomic_effect_kw_list TK_CLOSE   (rule 110)
     forall_effect  ->  TK_OPEN . KW_FORALL TK_OPEN @4 typed_param_list TK_CLOSE @5 action_effect TK_CLOSE   (rule 113)

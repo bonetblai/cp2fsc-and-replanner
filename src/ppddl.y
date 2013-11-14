@@ -65,7 +65,7 @@
                    KW_SENSING_MODEL
 
 %type <sym>        action_symbol any_symbol sensor_symbol axiom_symbol variable_symbol
-%type <param>      atom_argument_list
+%type <param>      argument_list
 %type <vparam>     typed_param_list typed_param_sym_list
 
 %type <atom>       positive_literal negative_literal literal
@@ -195,7 +195,7 @@ predicate_decl:
 
 typed_param_list:
       typed_param_list typed_param_sym_list TK_HYPHEN TK_TYPE_SYMBOL {
-          set_variable_type(*$2, $2->size(), (TypeSymbol*)$4->val);
+          set_variable_type(*$2, $2->size(), static_cast<TypeSymbol*>($4->val));
           $1->insert($1->end(), $2->begin(), $2->end());
           delete $2;
           $$ = $1;
@@ -227,15 +227,15 @@ domain_types:
 
 typed_type_list:
       typed_type_list primitive_type_list TK_HYPHEN TK_TYPE_SYMBOL {
-          set_type_type(dom_types, dom_types.size(), (TypeSymbol*)$4->val);
+          set_type_type(dom_types, dom_types.size(), static_cast<TypeSymbol*>($4->val));
       }
     | typed_type_list primitive_type_list TK_HYPHEN TK_NEW_SYMBOL {
           $4->val = new TypeSymbol($4->text);
           if( write_warnings )
               std::cerr << "warning: assuming " << $4->text << " - object" << std::endl;
-          ((TypeSymbol*)$4->val)->sym_type = dom_top_type;
-          set_type_type(dom_types, dom_types.size(), (TypeSymbol*)$4->val);
-          dom_types.push_back((TypeSymbol*)$4->val);
+          static_cast<TypeSymbol*>($4->val)->sym_type = dom_top_type;
+          set_type_type(dom_types, dom_types.size(), static_cast<TypeSymbol*>($4->val));
+          dom_types.push_back(static_cast<TypeSymbol*>($4->val));
       }
     | typed_type_list primitive_type_list {
           set_type_type(dom_types, dom_types.size(), dom_top_type);
@@ -249,7 +249,7 @@ primitive_type_list:
       }
     | primitive_type_list TK_NEW_SYMBOL {
           $2->val = new TypeSymbol($2->text);
-          dom_types.push_back((TypeSymbol*)$2->val);
+          dom_types.push_back(static_cast<TypeSymbol*>($2->val));
       }
     | /* empty */
     ;
@@ -263,7 +263,7 @@ domain_constants:
 
 typed_constant_list:
       typed_constant_list ne_constant_sym_list TK_HYPHEN TK_TYPE_SYMBOL {
-          set_constant_type(dom_constants, dom_constants.size(), (TypeSymbol*)$4->val);
+          set_constant_type(dom_constants, dom_constants.size(), static_cast<TypeSymbol*>($4->val));
       }
     | typed_constant_list ne_constant_sym_list {
           set_constant_type(dom_constants, dom_constants.size(), dom_top_type);
@@ -274,11 +274,11 @@ typed_constant_list:
 ne_constant_sym_list:
       ne_constant_sym_list TK_NEW_SYMBOL {
           $2->val = new Symbol($2->text);
-          dom_constants.push_back((Symbol*)$2->val);
+          dom_constants.push_back(static_cast<Symbol*>($2->val));
       }
     | TK_NEW_SYMBOL {
           $1->val = new Symbol($1->text);
-          dom_constants.push_back((Symbol*)$1->val);
+          dom_constants.push_back(static_cast<Symbol*>($1->val));
       }
     ;
 
@@ -417,26 +417,26 @@ literal:
     ;
 
 positive_literal:
-      TK_OPEN TK_PRED_SYMBOL atom_argument_list TK_CLOSE {
-          PredicateSymbol* p = (PredicateSymbol*)$2->val;
-          $$ = new Atom(p);
-          $$->param = *$3;
-          delete $3;
-          if( p->param.size() != $$->param.size() ) {
+      TK_OPEN TK_PRED_SYMBOL argument_list TK_CLOSE {
+          PredicateSymbol* p = static_cast<PredicateSymbol*>($2->val);
+          if( p->param.size() != $3->size() ) {
               std::ostringstream msg;
               msg << "wrong number of arguments for predicate '" << p->print_name << "'";
               log_error(const_cast<char*>(msg.str().c_str()));
+          } else {
+              $$ = new Atom(p);
+              $$->param = *$3;
+              delete $3;
           }
       }
-    | TK_OPEN TK_EQ atom_argument_list TK_CLOSE {
-          $$ = new Atom(dom_eq_pred);
-          $$->param = *$3;
-          delete $3;
-          if( $$->param.size() != 2 ) {
+    | TK_OPEN TK_EQ argument_list TK_CLOSE {
+          if( $3->size() != 2 ) {
               log_error((char*)"wrong number of arguments for equality");
+          } else {
+              $$ = new Atom(dom_eq_pred);
+              $$->param = *$3;
+              delete $3;
           }
-          //assert(0); // TODO: remove this assertion which is here
-                     // because (probably) the code for '=' is broken...
       }
     ;
 
@@ -447,16 +447,16 @@ negative_literal:
       }
     ;
 
-atom_argument_list:
-      atom_argument_list TK_VAR_SYMBOL {
+argument_list:
+      argument_list TK_VAR_SYMBOL {
           if( $2->val == 0 )
               log_error((char*)"undeclared variable in atom args list");
           else
-              $1->push_back((VariableSymbol*)$2->val);
+              $1->push_back(static_cast<VariableSymbol*>($2->val));
           $$ = $1;
       }
-    | atom_argument_list TK_OBJ_SYMBOL {
-          $1->push_back((Symbol*)$2->val);
+    | argument_list TK_OBJ_SYMBOL {
+          $1->push_back(static_cast<Symbol*>($2->val));
           $$ = $1;
       }
     | /* empty */ { $$ = new PDDL_Base::symbol_vec; }
