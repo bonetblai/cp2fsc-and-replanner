@@ -256,12 +256,12 @@ void PDDL_Base::do_translation() {
     if( !translation ) return;
 
     // instantiate state and observable variables
-    dom_var_values.resize(dom_variables.size());
-    for( size_t k = 0; k < dom_variables.size(); ++k ) {
+    dom_multivalued_domains.resize(dom_multivalued_variables.size());
+    for( size_t k = 0; k < dom_multivalued_variables.size(); ++k ) {
         effect_vec grounded_values;
-        grounded_values.reserve(dom_variables[k]->values.size());
-        for( size_t i = 0; i < dom_variables[k]->values.size(); ++i ) {
-            Effect *tmp = dom_variables[k]->values[i]->ground();
+        grounded_values.reserve(dom_multivalued_variables[k]->values.size());
+        for( size_t i = 0; i < dom_multivalued_variables[k]->values.size(); ++i ) {
+            Effect *tmp = dom_multivalued_variables[k]->values[i]->ground();
             if( dynamic_cast<AtomicEffect*>(tmp) != 0 )
                 grounded_values.push_back(tmp);
             else if( dynamic_cast<AndEffect*>(tmp) != 0 ) {
@@ -270,15 +270,16 @@ void PDDL_Base::do_translation() {
                 for( size_t j = 0; j < item_list.size(); ++j )
                     grounded_values.push_back(item_list[j]);
             } else {
-                cout << "error: unrecognized format in variable '" << dom_variables[k]->print_name << "'" << endl;
+                cout << "error: unrecognized format in variable '"
+                     << dom_multivalued_variables[k]->print_name << "'" << endl;
                 break;
             }
-            delete dom_variables[k]->values[i];
+            delete dom_multivalued_variables[k]->values[i];
         }
-        dom_variables[k]->values = grounded_values;
-        cout << "variable '" << dom_variables[k]->print_name << "':";
-        for( size_t i = 0; i < dom_variables[k]->values.size(); ++i )
-            cout << " " << *dom_variables[k]->values[i];
+        dom_multivalued_variables[k]->values = grounded_values;
+        cout << "variable '" << dom_multivalued_variables[k]->print_name << "':";
+        for( size_t i = 0; i < dom_multivalued_variables[k]->values.size(); ++i )
+            cout << " " << *dom_multivalued_variables[k]->values[i];
         cout << endl;
     }
 
@@ -930,25 +931,29 @@ void PDDL_Base::Action::process_instance() const {
     Instance::Action &act = ins_ptr->new_action(new CopyName(name.to_string()));
     act.cost = 1;
 
-    cout << "fully instantiated action " << name << endl;
+    //cout << "fully instantiated action " << name << endl;
     if( precondition != 0 ) {
         Condition *c = precondition->ground();
         c->instantiate(*ins_ptr, act.precondition);
-        cout << "    pre=" << *c << endl;
+        //cout << "    pre=" << *c << endl;
+        delete c;
     }
     if( effect != 0 ) {
         Effect *e = effect->ground();
         e->instantiate(*ins_ptr, act.effect, act.when);
-        cout << "    eff=" << *e << endl;
+        //cout << "    eff=" << *e << endl;
+        delete e;
     }
     if( observe != 0 ) {
         Effect *e = observe->ground();
-        cout << "    obs=" << *e << endl;
+        //cout << "    obs=" << *e << endl;
+        delete e;
     }
     if( sensing_model != 0 ) {
         Effect *e = sensing_model->ground();
         e->instantiate(*ins_ptr, act.effect, act.when);
-        cout << "    sen=" << *e << endl;
+        //cout << "    sen=" << *e << endl;
+        delete e;
     }
 }
 
@@ -988,16 +993,18 @@ void PDDL_Base::Sensor::instantiate(Instance &ins) const {
 void PDDL_Base::Sensor::process_instance() const {
     PDDL_Name name(this, param, param.size());
     Instance::Sensor &sensor = ins_ptr->new_sensor(new CopyName(name.to_string()));
-    cout << "fully instantiated sensor " << name << endl;
+    //cout << "fully instantiated sensor " << name << endl;
     if( condition != 0 ) {
         Condition *c = condition->ground();
         c->instantiate(*ins_ptr, sensor.condition);
-        cout << "    :condition " << *c << endl;
+        //cout << "    :condition " << *c << endl;
+        delete c;
     }
     if( sense != 0 ) {
         Effect *e = sense->ground();
         e->instantiate(*ins_ptr, sensor.sense);
-        cout << "    :sense " << *e << endl;
+        //cout << "    :sense " << *e << endl;
+        delete e;
     }
 }
 
@@ -1031,16 +1038,18 @@ void PDDL_Base::Axiom::instantiate(Instance &ins) const {
 void PDDL_Base::Axiom::process_instance() const {
     PDDL_Name name(this, param, param.size());
     Instance::Axiom &axiom = ins_ptr->new_axiom(new CopyName(name.to_string()));
-    cout << "fully instantiated axiom " << name << endl;
+    //cout << "fully instantiated axiom " << name << endl;
     if( body != 0 ) {
         Condition *c = body->ground();
         c->instantiate(*ins_ptr, axiom.body);
-        cout << "    :body " << *c << endl;
+        //cout << "    :body " << *c << endl;
+        delete c;
     }
     if( head != 0 ) {
         Effect *e = head->ground();
         e->instantiate(*ins_ptr, axiom.head);
-        cout << "    :head " << *e << endl;
+        //cout << "    :head " << *e << endl;
+        delete e;
     }
 }
 
@@ -1062,74 +1071,37 @@ void PDDL_Base::Axiom::print(std::ostream &os) const {
 
 void PDDL_Base::Observable::instantiate(Instance &ins) const {
     cout << "instantiating observable ..." << flush;
-    for( size_t k = 0; k < param.size(); ++k )
-        param[k]->value = 0;
-    rec_enumerate_for_instantiate(ins, 0);
+    for( size_t k = 0; k < observables.size(); ++k ) {
+        Effect *obs = observables[k]->ground();
+        obs->instantiate(ins, ins.given_observables);
+        delete obs;
+    }
     cout << " ok" << endl;
 }
 
+
 void PDDL_Base::Observable::print(std::ostream &os) const {
-    os << "(:observable" << endl;
-
-    if( !param.empty() ) {
-        os << "    :parameters (";
-        for( size_t k = 0; k < param.size(); ++k )
-          os << (k > 0 ? " " : "") << *param[k];
-        os << ")" << endl;
-    }
-
-    assert(observables != 0);
-    os << "    :fluents " << *observables << endl
-       << ")" << endl;
-}
-
-void PDDL_Base::Observable::rec_enumerate_for_instantiate(Instance &ins, size_t p) const {
-    if( p < param.size() ) {
-        TypeSymbol *t = static_cast<TypeSymbol*>(param[p]->sym_type);
-        for( size_t k = 0, ksz = t->elements.size(); k < ksz; ++k ) {
-            param[p]->value = t->elements[k];
-            rec_enumerate_for_instantiate(ins, p+1);
-        }
-        param[p]->value = 0;
-    } else {
-        if( observables != 0 ) observables->instantiate(ins, ins.given_observables);
-    }
+    os << "(:observable";
+    for( size_t k = 0; k < observables.size(); ++k )
+        os << " " << *observables[k];
+    os << ")";
 }
 
 void PDDL_Base::Sticky::instantiate(Instance &ins) const {
     cout << "instantiating sticky ..." << flush;
-    for( size_t k = 0; k < param.size(); ++k )
-        param[k]->value = 0;
-    rec_enumerate_for_instantiate(ins, 0);
-    cout << " ok" << endl;
-}
-
-void PDDL_Base::Sticky::rec_enumerate_for_instantiate(Instance &ins, size_t p) const {
-    if( p < param.size() ) {
-        TypeSymbol *t = static_cast<TypeSymbol*>(param[p]->sym_type);
-        for( size_t k = 0, ksz = t->elements.size(); k < ksz; ++k ) {
-            param[p]->value = t->elements[k];
-            rec_enumerate_for_instantiate(ins, p+1);
-        }
-        param[p]->value = 0;
-    } else {
-        if( stickies != 0 ) stickies->instantiate(ins, ins.given_stickies);
+    for( size_t k = 0; k < stickies.size(); ++k ) {
+        Effect *sticky = stickies[k]->ground();
+        sticky->instantiate(ins, ins.given_stickies);
+        delete sticky;
     }
+    cout << " ok" << endl;
 }
 
 void PDDL_Base::Sticky::print(std::ostream &os) const {
     os << "(:sticky" << endl;
-
-    if( !param.empty() ) {
-        os << "    :parameters (";
-        for( size_t k = 0; k < param.size(); ++k )
-          os << (k > 0 ? " " : "") << *param[k];
-        os << ")" << endl;
-    }
-
-    assert(stickies != 0);
-    os << "    :fluents " << *stickies << endl
-       << ")" << endl;
+    for( size_t k = 0; k < stickies.size(); ++k )
+        os << " " << *stickies[k];
+    os << ")";
 }
 
 void PDDL_Base::StateVariable::instantiate(Instance &ins, index_set &var_values) const {
