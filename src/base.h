@@ -330,15 +330,17 @@ class PDDL_Base {
         effect_vec values;
         Variable(const char *name) : Symbol(name, sym_varname) { }
         virtual ~Variable() { for( size_t k = 0; k < values.size(); ++k ) delete values[k]; }
+        virtual bool is_observable() const = 0;
         virtual void instantiate(Instance &ins, index_set &values) const = 0;
         virtual void print(std::ostream &os) const = 0;
     };
     struct variable_vec : public std::vector<Variable*> { };
 
     struct StateVariable : public Variable {
-        bool is_observable;
-        StateVariable(const char *name) : Variable(name), is_observable(false) { }
+        bool is_observable_;
+        StateVariable(const char *name) : Variable(name), is_observable_(false) { }
         virtual ~StateVariable() { }
+        virtual bool is_observable() const { return is_observable_; }
         virtual void instantiate(Instance &ins, index_set &values) const;
         virtual void print(std::ostream &os) const;
     };
@@ -346,6 +348,7 @@ class PDDL_Base {
     struct ObsVariable : public Variable {
         ObsVariable(const char *name) : Variable(name) { }
         virtual ~ObsVariable() { }
+        virtual bool is_observable() const { return true; }
         virtual void instantiate(Instance &ins, index_set &values) const;
         virtual void print(std::ostream &os) const;
     };
@@ -375,10 +378,14 @@ class PDDL_Base {
     // For CLG-type syntax and translations
     Atom                            *disable_actions_atom;
 
-    // For translations
+    // For multivalued variables formulations
     bool                            translation;
     variable_vec                    dom_multivalued_variables;
     index_set_vec                   dom_multivalued_domains;
+    std::pair<Atom*, Atom*>         normal_execution;
+    std::pair<Atom*, Atom*>         sensing;
+    std::vector<std::pair<Atom*, Atom*> > need_sense;
+    std::vector<std::pair<Atom*, Atom*> > need_post;
 
 
     PDDL_Base(StringTable& t);
@@ -390,12 +397,18 @@ class PDDL_Base {
     void clear_param(var_symbol_vec &vec, size_t start = 0);
     void insert_atom(ptr_table &t, Atom *a);
     void calculate_strongly_static_predicates() const;
-    void map_oneofs_to_invariants();
-    void translate_observe_effects_into_sensors();
-    void do_translation();
     void instantiate(Instance &ins) const;
     void print(std::ostream &os) const;
     PredicateSymbol* find_type_predicate(Symbol *type_sym);
+
+    // methods for formulations in CLG-like syntax
+    void map_oneofs_to_invariants();
+    void translate_observe_effects_into_sensors();
+
+    // methods for formulations in terms of multivalued variables
+    void instantiate_multivalued_variables();
+    void translate_actions_for_multivalued_variable_formulation();
+    void translation_for_multivalued_variable_formulation(Action &action, size_t index);
 };
 
 inline std::ostream& operator<<(std::ostream &os, const PDDL_Base::Symbol &sym) {
