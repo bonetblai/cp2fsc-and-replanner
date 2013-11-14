@@ -309,23 +309,19 @@ class PDDL_Base {
     struct axiom_vec : public std::vector<Axiom*> { };
 
     struct Observable {
-        var_symbol_vec param;
-        const Effect *observables;
-        Observable() : observables(0) { }
-        ~Observable() { for( size_t k = 0; k < param.size(); ++k ) delete param[k]; delete observables; }
+        effect_vec observables;
+        Observable() { }
+        ~Observable() { for( size_t k = 0; k < observables.size(); ++k ) delete observables[k]; }
         void instantiate(Instance &ins) const;
-        void rec_enumerate_for_instantiate(Instance &ins, size_t p) const;
         void print(std::ostream &os) const;
     };
     struct observable_vec : public std::vector<Observable*> { };
 
     struct Sticky {
-        var_symbol_vec param;
-        const Effect *stickies;
-        Sticky() : stickies(0) { }
-        ~Sticky() { for( size_t k = 0; k < param.size(); ++k ) delete param[k]; delete stickies; }
+        effect_vec stickies;
+        Sticky() { }
+        ~Sticky() { for( size_t k = 0; k < stickies.size(); ++k ) delete stickies[k]; }
         void instantiate(Instance &ins) const;
-        void rec_enumerate_for_instantiate(Instance &ins, size_t p) const;
         void print(std::ostream &os) const;
     };
     struct sticky_vec : public std::vector<Sticky*> { };
@@ -333,7 +329,7 @@ class PDDL_Base {
     struct Variable : public Symbol {
         effect_vec values;
         Variable(const char *name) : Symbol(name, sym_varname) { }
-        virtual ~Variable() { }
+        virtual ~Variable() { for( size_t k = 0; k < values.size(); ++k ) delete values[k]; }
         virtual void instantiate(Instance &ins, index_set &values) const = 0;
         virtual void print(std::ostream &os) const = 0;
     };
@@ -371,6 +367,8 @@ class PDDL_Base {
     const Condition                 *dom_goal;
     init_element_vec                dom_init;
     std::vector<init_element_vec>   dom_hidden;
+
+    effect_vec                      *tmp_effect_vec_ptr; // only used when parsing
     observable_vec                  dom_observables;
     sticky_vec                      dom_stickies;
 
@@ -379,8 +377,8 @@ class PDDL_Base {
 
     // For translations
     bool                            translation;
-    variable_vec                    dom_variables;
-    index_set_vec                   dom_var_values;
+    variable_vec                    dom_multivalued_variables;
+    index_set_vec                   dom_multivalued_domains;
 
 
     PDDL_Base(StringTable& t);

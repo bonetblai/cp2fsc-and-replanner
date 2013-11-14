@@ -77,17 +77,17 @@
 %type <effect>     atomic_effect positive_atomic_effect positive_atomic_effect_list
 %type <effect>     action_effect action_effect_list single_action_effect conditional_effect forall_effect
 %type <effect>     atomic_effect_kw_list atomic_effect_list
-%type <effect>     variable_value_decl sensing_model
+%type <effect>     sensing_model fluent_decl
 %type <ilist>      init_elements
 %type <ielem>      single_init_element
 
-%start pddl_declarations
+%start pddl_decls
 
 %%
 
-pddl_declarations:
-      pddl_domain pddl_declarations
-    | pddl_problem pddl_declarations
+pddl_decls:
+      pddl_domain pddl_decls
+    | pddl_problem pddl_decls
     | /* empty */
     ;
 
@@ -104,11 +104,10 @@ domain_elements:
     | domain_types domain_elements
     | domain_constants domain_elements
     | domain_predicates domain_elements
-    | domain_variables domain_elements
     | domain_structure domain_elements
     | /* empty */
     ;
-
+ 
 domain_name:
       TK_OPEN KW_DOMAIN any_symbol TK_CLOSE { domain_name = $3->text; }
     ;
@@ -282,80 +281,37 @@ ne_constant_sym_list:
       }
     ;
 
-// variable declaration (only for multi-valued based translations)
-
-domain_variables:
-      domain_variables variable
-    | variable
-    ;
-
-variable:
-      state_variable
-    | observable_variable
-    ;
-
-state_variable:
-      TK_OPEN KW_VARIABLE variable_symbol {
-          StateVariable *var = new StateVariable($3->text);
-          dom_variables.push_back(var);
-      }
-      variable_values rest_state_variable TK_CLOSE
-    ;
-
-rest_state_variable:
-      KW_OBSERVABLE {
-          dynamic_cast<StateVariable*>(dom_variables.back())->is_observable = true;
-      }
-    | /* empty */
-    ;
-
-observable_variable:
-      TK_OPEN KW_OBS_VARIABLE variable_symbol {
-          ObsVariable *var = new ObsVariable($3->text);
-          dom_variables.push_back(var);
-      }
-      variable_values TK_CLOSE
-    ;
-
-variable_values:
-      variable_values variable_value_decl {
-          dom_variables.back()->values.push_back($2);
-      }
-    | variable_value_decl {
-          dom_variables.back()->values.push_back($1);
-      }
-    ;
-
-variable_value_decl:
-      positive_atomic_effect
-    | forall_effect
-    ;
-
 // structure declarations
 
 domain_structure:
-      action_declaration
-    | axiom_declaration {
+      action_decl
+    | axiom_decl {
          if( type_ == replanner ) {
              log_error((char*)"':axiom' is not a valid element in k-replanner.");
              yyerrok;
          }
       }
-    | sensor_declaration {
+    | sensor_decl {
          if( type_ == cp2fsc ) {
              log_error((char*)"':sensor' is not a valid element in cp2fsc.");
              yyerrok;
          }
       }
-    | observable_declaration {
+    | observable_decl {
          if( type_ == replanner ) {
              log_error((char*)"':observable' is not a valid element in k-replanner.");
              yyerrok;
          }
       }
-    | sticky_declaration {
+    | sticky_decl {
          if( type_ == replanner ) {
              log_error((char*)"':sticky' is not a valid element in k-replanner.");
+             yyerrok;
+         }
+      }
+    | multivalued_variable_decl {
+         if( type_ == cp2fsc ) {
+             log_error((char*)"':sensor' is not a valid element in cp2fsc.");
              yyerrok;
          }
       }
@@ -363,7 +319,7 @@ domain_structure:
 
 // structure declarations
 
-action_declaration:
+action_decl:
       TK_OPEN KW_ACTION action_symbol {
           Action *na = new Action($3->text);
           dom_actions.push_back(na);
@@ -557,7 +513,7 @@ sensing_model:
     | /* empty */ { $$ = 0; }
     ;
 
-axiom_declaration:
+axiom_decl:
       TK_OPEN KW_AXIOM axiom_symbol {
           Axiom *nr = new Axiom($3->text);
           dom_axioms.push_back(nr);
@@ -582,7 +538,7 @@ axiom_elements:
     | /* empty */
     ;
 
-sensor_declaration:
+sensor_decl:
       TK_OPEN KW_SENSOR sensor_symbol {
           Sensor *nr = new Sensor($3->text);
           dom_sensors.push_back(nr);
@@ -607,53 +563,82 @@ sensor_elements:
     | /* empty */
     ;
 
-observable_declaration:
+observable_decl:
       TK_OPEN KW_OBSERVABLE {
           Observable *obs = new Observable;
           dom_observables.push_back(obs);
-      } observable_elements TK_CLOSE {
-          clear_param(dom_observables.back()->param);
-      }
+          tmp_effect_vec_ptr = &obs->observables;
+      } fluent_list_decl TK_CLOSE
     | TK_OPEN KW_OBSERVABLE error TK_CLOSE {
           log_error((char*)"syntax error in observable declaration");
           yyerrok;
       }
     ;
 
-observable_elements:
-      observable_elements KW_ARGS TK_OPEN typed_param_list TK_CLOSE {
-          dom_observables.back()->param = *$4;
-          delete $4;
+fluent_list_decl:
+    | fluent_list_decl fluent_decl {
+          tmp_effect_vec_ptr->push_back($2);
       }
-    | observable_elements KW_FLUENTS positive_atomic_effect_list {
-          dom_observables.back()->observables = $3;
+    | fluent_decl {
+          tmp_effect_vec_ptr->push_back($1);
       }
-    | /* empty */
     ;
 
-sticky_declaration:
+fluent_decl:
+      positive_atomic_effect
+    | forall_effect
+    ;
+
+sticky_decl:
       TK_OPEN KW_STICKY {
-          Sticky *stk = new Sticky;
-          dom_stickies.push_back(stk);
-      } sticky_elements TK_CLOSE {
-          clear_param(dom_stickies.back()->param);
-      }
+          Sticky *sticky = new Sticky;
+          dom_stickies.push_back(sticky);
+          tmp_effect_vec_ptr = &sticky->stickies;
+      } fluent_list_decl TK_CLOSE
     | TK_OPEN KW_STICKY error TK_CLOSE {
           log_error((char*)"syntax error in sticky declaration");
           yyerrok;
       }
     ;
 
-sticky_elements:
-      sticky_elements KW_ARGS TK_OPEN typed_param_list TK_CLOSE {
-          dom_stickies.back()->param = *$4;
-          delete $4;
+multivalued_variable_decl:
+      state_variable_decl
+    | observable_variable_decl
+    ;
+
+state_variable_decl:
+      TK_OPEN KW_VARIABLE variable_symbol {
+          StateVariable *var = new StateVariable($3->text);
+          dom_multivalued_variables.push_back(var);
+          tmp_effect_vec_ptr = &var->values;
       }
-    | sticky_elements KW_FLUENTS positive_atomic_effect_list {
-          dom_stickies.back()->stickies = $3;
+      fluent_list_decl rest_state_variable TK_CLOSE
+    | TK_OPEN KW_VARIABLE error TK_CLOSE {
+          log_error((char*)"syntax error in state variable declaration");
+          yyerrok;
+      }
+    ;
+
+rest_state_variable:
+      KW_OBSERVABLE {
+          dynamic_cast<StateVariable*>(dom_multivalued_variables.back())->is_observable = true;
       }
     | /* empty */
     ;
+
+observable_variable_decl:
+      TK_OPEN KW_OBS_VARIABLE variable_symbol {
+          ObsVariable *var = new ObsVariable($3->text);
+          dom_multivalued_variables.push_back(var);
+          tmp_effect_vec_ptr = &var->values;
+      }
+      fluent_list_decl TK_CLOSE
+    | TK_OPEN KW_OBS_VARIABLE error TK_CLOSE {
+          log_error((char*)"syntax error in observable variable declaration");
+          yyerrok;
+      }
+    ;
+
 
 // problem definition
 

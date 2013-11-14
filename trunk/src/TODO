@@ -4,7 +4,7 @@
 
 * Revision before general translation is 255
 
-* Restore 'delete reader' in k-replanner.cc
+* Restore 'delete reader' in k-replanner.cc and cp2fsc.cc
 * Complete initial hidden state w/ fix point of inference rules
 * Provide functionality to select hidden states with indices to solve
 

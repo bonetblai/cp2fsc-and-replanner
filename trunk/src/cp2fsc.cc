@@ -158,7 +158,7 @@ int main(int argc, char *argv[]) {
 
     cout << "instantiating control problem..." << endl;
     reader->instantiate(instance);
-    delete reader;
+    //delete reader;
     if( options.is_enabled("print:problem:raw") ) {
         instance.print(cout);
         instance.write_domain(cout);
