@@ -161,11 +161,11 @@ int main(int argc, char *argv[]) {
     reader->map_oneofs_to_invariants();
     reader->translate_observe_effects_into_sensors();
 
+    // if requested, do translation of multi-valued variable problem
+    reader->do_translation();
+
     // create fresh instance
     Instance instance(options);
-
-    // if requested, do translation of multi-valued variable problem
-    reader->do_translation(instance);
 
     cout << "instantiating p.o. problem..." << endl;
     reader->instantiate(instance);

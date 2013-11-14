@@ -76,7 +76,7 @@ class PDDL_Base {
         ~Atom() { /*delete pred; for( size_t k = 0; k < param.size(); ++k ) delete param[k];*/ }
         bool operator==(const Atom &atom) const;
         Instance::Atom* find_prop(Instance &ins, bool neg, bool create) const;
-        Atom* partial_instantiate(Instance &ins, bool neg) const;
+        Atom* ground() const;
         void print(std::ostream &os, bool extra_neg) const;
         void print(std::ostream &os) const { print(os, false); }
     };
@@ -86,7 +86,7 @@ class PDDL_Base {
         Condition() { }
         virtual ~Condition() { }
         virtual void instantiate(Instance &ins, index_set &condition) const = 0;
-        virtual Condition* partial_instantiate(Instance &ins) const = 0;
+        virtual Condition* ground() const = 0;
         virtual void print(std::ostream &os) const = 0;
     };
     struct condition_vec : public std::vector<const Condition*> { };
@@ -95,15 +95,15 @@ class PDDL_Base {
         Literal(const Atom &atom) : Atom(atom) { }
         virtual ~Literal() { }
         virtual void instantiate(Instance &ins, index_set &condition) const;
-        virtual Condition* partial_instantiate(Instance &ins) const;
+        virtual Condition* ground() const;
         virtual void print(std::ostream &os) const { Atom::print(os); }
     };
 
-    struct EQ : public Condition, std::pair<const Atom*,const Atom*> {
-        EQ(const Atom *p, const Atom *q) : std::pair<const Atom*,const Atom*>(p,q) { }
+    struct EQ : public Condition, std::pair<const VariableSymbol*,const VariableSymbol*> {
+        EQ(const VariableSymbol *x, const VariableSymbol *y) : std::pair<const VariableSymbol*,const VariableSymbol*>(x, y) { }
         virtual ~EQ() { }
         virtual void instantiate(Instance &ins, index_set &condition) const;
-        virtual Condition* partial_instantiate(Instance &ins) const;
+        virtual Condition* ground() const;
         virtual void print(std::ostream &os) const;
     };
 
@@ -111,7 +111,7 @@ class PDDL_Base {
         And() { }
         virtual ~And() { for( size_t k = 0; k < size(); ++k ) delete (*this)[k]; }
         virtual void instantiate(Instance &ins, index_set &condition) const;
-        virtual Condition* partial_instantiate(Instance &ins) const;
+        virtual Condition* ground() const;
         virtual void print(std::ostream &os) const;
     };
 
@@ -119,7 +119,7 @@ class PDDL_Base {
         Effect() { }
         virtual ~Effect() { }
         virtual void instantiate(Instance &ins, index_set &eff, Instance::when_vec &when = dummy_when_vec) const = 0;
-        virtual Effect* partial_instantiate(Instance &ins) const = 0;
+        virtual Effect* ground() const = 0;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const = 0;
         virtual void print(std::ostream &os) const = 0;
     };
@@ -129,7 +129,7 @@ class PDDL_Base {
         NullEffect() { }
         virtual ~NullEffect() { }
         virtual void instantiate(Instance &ins, index_set &eff, Instance::when_vec &when = dummy_when_vec) const { }
-        virtual Effect* partial_instantiate(Instance &ins) const { return new NullEffect(); }
+        virtual Effect* ground() const { return new NullEffect(); }
         virtual bool is_strongly_static(const PredicateSymbol &pred) const { return true; }
         virtual void print(std::ostream &os) const { os << "<null-effect>"; }
     };
@@ -138,7 +138,7 @@ class PDDL_Base {
         AtomicEffect(const Atom &atom) : Atom(atom) { }
         virtual ~AtomicEffect() { }
         virtual void instantiate(Instance &ins, index_set &eff, Instance::when_vec &when = dummy_when_vec) const;
-        virtual Effect* partial_instantiate(Instance &ins) const;
+        virtual Effect* ground() const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
         virtual void print(std::ostream &os) const { Atom::print(os); }
     };
@@ -147,7 +147,7 @@ class PDDL_Base {
         AndEffect() { }
         virtual ~AndEffect() { for( size_t k = 0; k < size(); ++k ) delete (*this)[k]; }
         virtual void instantiate(Instance &ins, index_set &eff, Instance::when_vec &when = dummy_when_vec) const;
-        virtual Effect* partial_instantiate(Instance &ins) const;
+        virtual Effect* ground() const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
         virtual void print(std::ostream &os) const;
     };
@@ -158,7 +158,7 @@ class PDDL_Base {
         ConditionalEffect(const Condition *cond, const Effect *eff) : condition(cond), effect(eff) { }
         virtual ~ConditionalEffect() { delete condition; delete effect; }
         virtual void instantiate(Instance &ins, index_set &eff, Instance::when_vec &when = dummy_when_vec) const;
-        virtual Effect* partial_instantiate(Instance &ins) const;
+        virtual Effect* ground() const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
         virtual void print(std::ostream &os) const;
     };
@@ -170,8 +170,8 @@ class PDDL_Base {
         virtual ~ForallEffect() { for( size_t k = 0; k < param.size(); ++k ) delete param[k]; delete effect; }
         virtual void instantiate(Instance &ins, index_set &eff, Instance::when_vec &when = dummy_when_vec) const;
         void build(Instance &ins, size_t p, index_set &eff, Instance::when_vec &when = dummy_when_vec) const;
-        virtual Effect* partial_instantiate(Instance &ins) const;
-        void build(Instance &ins, size_t p, AndEffect &result) const;
+        virtual Effect* ground() const;
+        void build_for_ground(size_t p, AndEffect &result) const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
         virtual void print(std::ostream &os) const;
     };
@@ -377,7 +377,7 @@ class PDDL_Base {
     void calculate_strongly_static_predicates() const;
     void map_oneofs_to_invariants();
     void translate_observe_effects_into_sensors();
-    void do_translation(Instance &ins);
+    void do_translation();
     void instantiate(Instance &ins) const;
     void print(std::ostream &os) const;
     PredicateSymbol* find_type_predicate(Symbol *type_sym);

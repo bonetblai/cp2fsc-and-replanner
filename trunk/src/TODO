@@ -21,7 +21,7 @@ Syntax for multi-valued description is still pending.
 Syntax for propositional translation given by:
 
 1) Variables and observable variables specified with
-   (variable ...) and (obs-variable) in :init
+   (variable ...) and (obs-variable) in domain file
 
 2) All actions of the form:
 
@@ -32,9 +32,7 @@ Syntax for propositional translation given by:
    where different formulas W_a(Y=y) = C_1 v ... v C_n in DNF
    make up the sensing model for all the observable literals Y=y,
    and Z(Y=y) are atoms that "propositionalise" the obsevables.
-   This observables must then appear in :init as
-
-      (obs-variable Z(Y=y1) Z(Y=y2) ... Z(Y=yn))
+   These observables must match an obs-variable in domain.
 
 3) Nothing else.
 
