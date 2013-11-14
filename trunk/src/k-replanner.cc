@@ -161,8 +161,9 @@ int main(int argc, char *argv[]) {
     reader->map_oneofs_to_invariants();
     reader->translate_observe_effects_into_sensors();
 
-    // if requested, do translation of multi-valued variable problem
-    reader->do_translation();
+    // translate multivalued variables formulations
+    reader->instantiate_multivalued_variables();
+    reader->translate_actions_for_multivalued_variable_formulation();
 
     // create fresh instance
     Instance instance(options);

@@ -252,7 +252,7 @@ void PDDL_Base::translate_observe_effects_into_sensors() {
     cout << endl;
 }
 
-void PDDL_Base::do_translation() {
+void PDDL_Base::instantiate_multivalued_variables() {
     if( !translation ) return;
 
     // instantiate state and observable variables
@@ -282,28 +282,232 @@ void PDDL_Base::do_translation() {
             cout << " " << *dom_multivalued_variables[k]->values[i];
         cout << endl;
     }
+}
 
-    // partially ground sensing models in each action
+void PDDL_Base::translate_actions_for_multivalued_variable_formulation() {
+    if( !translation ) return;
+
+    // compute actions that need translation
+    action_vec actions_to_translate;
     for( size_t k = 0; k < dom_actions.size(); ++k ) {
-        Action &action = *dom_actions[k];
-        if( action.sensing_model != 0 ) {
-            Effect *grounded = action.sensing_model->ground();
-            delete action.sensing_model;
-            action.sensing_model = grounded;
+        if( dom_actions[k]->sensing_model != 0 ) {
+            actions_to_translate.push_back(dom_actions[k]);
+            dom_actions[k] = dom_actions.back();
+            dom_actions.pop_back();
+            --k;
         }
-        //if( action.effect != 0 ) {
-        //    Effect *p = action.effect->ground();
-        //    cout << *p << endl;
-        //}
+    }
+
+    // create unique sensor and atoms need in translation
+    if( !actions_to_translate.empty() ) {
+        PredicateSymbol *execution_status = new PredicateSymbol("normal-execution");
+        dom_predicates.push_back(execution_status);
+        normal_execution.first = new Atom(execution_status);
+        normal_execution.second = new Atom(execution_status, true);
+
+        PredicateSymbol *sensing_status = new PredicateSymbol("sensing-is-on");
+        dom_predicates.push_back(sensing_status);
+        sensing.first = new Atom(sensing_status);
+        sensing.second = new Atom(sensing_status, true);
+
+        // Sensor for the action
+        Sensor *sensor = new Sensor(strdup("UNIQUE_SENSOR"));
+        sensor->condition = new Literal(*sensing.first);                // (sensing-is-on)
+        AndEffect *sense = new AndEffect;
+        for( size_t k = 0; k < dom_multivalued_variables.size(); ++k ) {
+            Variable &var = *dom_multivalued_variables[k];
+            if( var.is_observable() ) {
+                for( size_t i = 0; i < var.values.size(); ++i )
+                    sense->push_back(new AtomicEffect(*dynamic_cast<const AtomicEffect*>(var.values[i])));
+            }
+        }
+        sensor->sense = sense;
+        //cout << *sensor;
+
+        // create needed atoms for each action
+        for( size_t k = 0; k < actions_to_translate.size(); ++k ) {
+            Action &action = *actions_to_translate[k];
+            if( action.effect != 0 ) {
+                PredicateSymbol *sense = new PredicateSymbol(strdup((string("need-set-sensing-for-") + action.print_name).c_str()));
+                sense->param = action.param;
+                dom_predicates.push_back(sense);
+                need_sense.push_back(make_pair(new Atom(sense), new Atom(sense, true)));
+                need_sense.back().first->param.insert(need_sense.back().first->param.begin(),
+                                                      sense->param.begin(),
+                                                      sense->param.end());
+                need_sense.back().second->param.insert(need_sense.back().second->param.begin(),
+                                                      sense->param.begin(),
+                                                      sense->param.end());
+            } else {
+                need_sense.push_back(make_pair(static_cast<Atom*>(0), static_cast<Atom*>(0)));
+            }
+
+            PredicateSymbol *post = new PredicateSymbol(strdup((string("need-post-for-") + action.print_name).c_str()));
+            post->param = action.param;
+            dom_predicates.push_back(post);
+            need_post.push_back(make_pair(new Atom(post), new Atom(post, true)));
+            need_post.back().first->param.insert(need_post.back().first->param.begin(),
+                                                 post->param.begin(),
+                                                 post->param.end());
+            need_post.back().second->param.insert(need_post.back().second->param.begin(),
+                                                  post->param.begin(),
+                                                  post->param.end());
+        }
+
+        // extend preconditions of other actions with (normal-execution). In
+        // a pure multivalued setting, there should be none of such actions
+        cout << "extending preconditions with (normal-execution) for " << dom_actions.size() << " action(s)" << endl;
+        for( size_t k = 0; k < dom_actions.size(); ++k ) {
+            Action &action = *dom_actions[k];
+            And *precondition = new And;
+            precondition->push_back(action.precondition);
+            precondition->push_back(new Literal(*normal_execution.first));
+            action.precondition = precondition->ground();
+            delete precondition;
+        }
+    }
+
+    // translate actions
+    for( size_t k = 0; k < actions_to_translate.size(); ++k ) {
+        Action *action = actions_to_translate[k];
+        Effect *grounded = action->sensing_model->ground();
+        delete action->sensing_model;
+        action->sensing_model = grounded;
+        translation_for_multivalued_variable_formulation(*action, k);
+        cout << "done for " << action->print_name << endl;
+        delete action;
+    }
+    cout << "DONE" << endl;
+}
+
+void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action, size_t index) {
+    //cout << "TRANSLATION FOR" << endl << action;
+
+    And precondition;
+    AndEffect effect;
+
+    if( action.effect != 0 ) {
+        // Action that execute only the effects on state variables (i.e. no sensing model involved)
+        Action *effect_action = new Action(strdup((string(action.print_name) + "__EFFECT__").c_str()));
+        effect_action->param = action.param;
+
+        // precondition
+        precondition.push_back(action.precondition);
+        precondition.push_back(new Literal(*normal_execution.first));  // (normal-execution)
+        effect_action->precondition = precondition.ground();
+        delete precondition[0];
+        precondition.clear();
+
+        // effect
+        effect.push_back(action.effect);
+        effect.push_back(new AtomicEffect(*normal_execution.second));  // (not (normal-execution))
+        effect.push_back(new AtomicEffect(*need_sense[index].first));  // (need-set-sense <param>)
+        effect_action->effect = effect.ground();
+        delete effect[2];
+        delete effect[1];
+        effect.clear();
+
+        cout << *effect_action;
+        dom_actions.push_back(effect_action);
+
+        // Action that computes the effects on observables (i.e. sensing model)
+        Action *set_sensing_action = new Action(strdup((string(action.print_name) + "__SET_SENSING__").c_str()));
+        set_sensing_action->param = action.param;
+
+        // precondition
+        precondition.push_back(new Literal(*need_sense[index].first)); // (need-set-sense <param>)
+        set_sensing_action->precondition = precondition.ground();
+        precondition[0];
+        precondition.clear();
+
+        // effect
+        effect.push_back(action.sensing_model);
+        effect.push_back(new AtomicEffect(*sensing.first));            // (sensing-is-on)
+        effect.push_back(new AtomicEffect(*need_post[index].first));   // (need-post <param>)
+        effect.push_back(new AtomicEffect(*need_sense[index].second)); // (not (need-set-sense <param>))
+        set_sensing_action->effect = effect.ground();
+        delete effect[3];
+        delete effect[2];
+        delete effect[1];
+        effect.clear();
+
+        cout << *set_sensing_action;
+        dom_actions.push_back(set_sensing_action);
+
+        // Post action that re-establish normal execution
+        Action *post_action = new Action(strdup((string(action.print_name) + "__POST__").c_str()));
+        post_action->param = action.param;
+
+        // precondition
+        precondition.push_back(new Literal(*need_post[index].first));  // (need-post <param>)
+        post_action->precondition = precondition.ground();
+        precondition[0];
+        precondition.clear();
+
+        // effect
+        effect.push_back(new AtomicEffect(*normal_execution.first));   // (normal-execution)
+        effect.push_back(new AtomicEffect(*sensing.second));           // (not (sensing-is-on))
+        effect.push_back(new AtomicEffect(*need_post[index].second));  // (not (need-post <param))
+        post_action->effect = effect.ground();
+        delete effect[2];
+        delete effect[1];
+        delete effect[0];
+        effect.clear();
+
+        cout << *post_action;
+        dom_actions.push_back(post_action);
+    } else {
+        // Action that computes the effects on observables (i.e. sensing model)
+        Action *set_sensing_action = new Action(strdup((string(action.print_name) + "__SET_SENSING__").c_str()));
+        set_sensing_action->param = action.param;
+
+        // precondition
+        precondition.push_back(action.precondition);
+        precondition.push_back(new Literal(*normal_execution.first));  // (normal-execution)
+        set_sensing_action->precondition = precondition.ground();
+        precondition[0];
+        precondition.clear();
+
+        // effect
+        effect.push_back(action.sensing_model);
+        effect.push_back(new AtomicEffect(*normal_execution.second));  // (not (normal-execution))
+        effect.push_back(new AtomicEffect(*sensing.first));            // (sensing-is-on)
+        effect.push_back(new AtomicEffect(*need_post[index].first));   // (need-post <param>)
+        set_sensing_action->effect = effect.ground();
+        delete effect[3];
+        delete effect[2];
+        delete effect[1];
+        effect.clear();
+
+        cout << *set_sensing_action;
+        dom_actions.push_back(set_sensing_action);
+
+        // Post action that re-establish normal execution
+        Action *post_action = new Action(strdup((string(action.print_name) + "__POST__").c_str()));
+        post_action->param = action.param;
+
+        // precondition
+        precondition.push_back(new Literal(*need_post[index].first));  // (need-post <param>)
+        post_action->precondition = precondition.ground();
+        delete precondition[0];
+        precondition.clear();
+
+        // effect
+        effect.push_back(new AtomicEffect(*normal_execution.first));   // (normal-execution)
+        effect.push_back(new AtomicEffect(*sensing.second));           // (not (sensing-is-on))
+        effect.push_back(new AtomicEffect(*need_post[index].second));  // (not (need-post <param))
+        post_action->effect = effect.ground();
+        delete effect[2];
+        delete effect[1];
+        delete effect[0];
+        effect.clear();
+
+        cout << *post_action;
+        dom_actions.push_back(post_action);
     }
 }
 
 void PDDL_Base::instantiate(Instance &ins) const {
-
-    // calculate strongly-static predicates. Used to instantiate
-    // actions more efficiently by not generating those
-    // with false static preconditions.
-    calculate_strongly_static_predicates();
 
     // create instance
     const char *dn = tab.table_char_map().strdup(domain_name ? domain_name : "??");
@@ -311,6 +515,11 @@ void PDDL_Base::instantiate(Instance &ins) const {
     ins.name = new InstanceName(dn, pn);
     delete[] dn;
     delete[] pn;
+
+    // calculate strongly-static predicates. Used to instantiate
+    // actions more efficiently by not generating those
+    // with false static preconditions.
+    calculate_strongly_static_predicates();
 
     // set atom (disable-actions) (only when processing CLG syntax)
     if( disable_actions_atom != 0 ) {
@@ -387,7 +596,7 @@ void PDDL_Base::TypeSymbol::print(ostream &os) const {
     os << "): {";
     for( size_t k = 0; k < elements.size(); ++k )
         os << *elements[k] << ",";
-    os << "}" << endl;
+    os << "}";
 }
 
 PDDL_Base::Symbol* PDDL_Base::TypeSymbol::clone() const {
@@ -426,7 +635,7 @@ void PDDL_Base::PredicateSymbol::print(ostream &os) const {
     os << "(:predicate " << print_name;
     for( size_t k = 0; k < param.size(); ++k )
         os << " " << *param[k];
-    os << ")" << endl;
+    os << ")";
 }
 
 void PDDL_Base::Schema::enumerate(bool only_count) const {
@@ -931,28 +1140,28 @@ void PDDL_Base::Action::process_instance() const {
     Instance::Action &act = ins_ptr->new_action(new CopyName(name.to_string()));
     act.cost = 1;
 
-    //cout << "fully instantiated action " << name << endl;
+    cout << "fully instantiated action " << name << endl;
     if( precondition != 0 ) {
         Condition *c = precondition->ground();
         c->instantiate(*ins_ptr, act.precondition);
-        //cout << "    pre=" << *c << endl;
+        cout << "    pre=" << *c << endl;
         delete c;
     }
     if( effect != 0 ) {
         Effect *e = effect->ground();
         e->instantiate(*ins_ptr, act.effect, act.when);
-        //cout << "    eff=" << *e << endl;
+        cout << "    eff=" << *e << endl;
         delete e;
     }
     if( observe != 0 ) {
         Effect *e = observe->ground();
-        //cout << "    obs=" << *e << endl;
+        cout << "    obs=" << *e << endl;
         delete e;
     }
     if( sensing_model != 0 ) {
         Effect *e = sensing_model->ground();
         e->instantiate(*ins_ptr, act.effect, act.when);
-        //cout << "    sen=" << *e << endl;
+        cout << "    sen=" << *e << endl;
         delete e;
     }
 }
@@ -967,17 +1176,10 @@ void PDDL_Base::Action::print(ostream &os) const {
         os << ")" << endl;
     }
 
-    if( precondition != 0 ) {
-        os << "    :precondition " << *precondition << endl;
-    }
-
-    if( effect != 0 ) {
-        os << "    :effect " << *effect << endl;
-    }
-
-    if( observe != 0 ) {
-        os << "    :observe " << *observe << endl;
-    }
+    if( precondition != 0 ) os << "    :precondition " << *precondition << endl;
+    if( effect != 0 ) os << "    :effect " << *effect << endl;
+    if( observe != 0 ) os << "    :observe " << *observe << endl;
+    if( sensing_model != 0 ) os << "    :sensing-model " << *sensing_model << endl;
 
     os << ")" << endl;
 }
@@ -1116,7 +1318,7 @@ void PDDL_Base::StateVariable::print(std::ostream &os) const {
     os << "(:variable " << print_name;
     for( size_t k = 0; k < values.size(); ++k )
           os << " " << *values[k];
-    os << (is_observable ? " :observable" : "") << ")";
+    os << (is_observable_ ? " :observable" : "") << ")";
 }
 
 void PDDL_Base::ObsVariable::instantiate(Instance &ins, index_set &var_values) const {
