@@ -408,7 +408,17 @@ condition_list:
     ;
 
 single_condition:
-      literal { $$ = new Literal(*$1); delete $1; }
+      literal {
+          // if literal is for equality, construct EQ
+          if( $1->pred == dom_eq_pred ) {
+              std::cout << "CREATING EQ: neg=" << $1->neg << std::endl;
+              $$ = new EQ(static_cast<VariableSymbol*>($1->param[0]), static_cast<VariableSymbol*>($1->param[1]), $1->neg);
+              std::cout << "RESULT: " << *$$ << std::endl;
+}
+          else
+              $$ = new Literal(*$1);
+          delete $1;
+      }
     ;
 
 literal:
