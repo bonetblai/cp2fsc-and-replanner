@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
                 exit(-1);
             }
             opt_prefix = argv[++k];
-        } else if( !skip_options && !strcmp(argv[k], "--no-remove-intermediate-files") ) {
+        } else if( !skip_options && !strcmp(argv[k], "--keep-intermediate-files") ) {
             options.clear("remove-intermediate-files");
         } else if( !skip_options && !strcmp(argv[k], "--use-ff") ) {
             opt_planner = 0;
@@ -157,11 +157,11 @@ int main(int argc, char *argv[]) {
         reader->print(cout);
     }
 
-    // translate oneofs into invariants and observe effects in actions
+    // translate oneofs into invariants and observe effects in actions (CLG-compatibility mode)
     reader->map_oneofs_to_invariants();
     reader->translate_observe_effects_into_sensors();
 
-    // translate multivalued variables formulations
+    // translate multivalued variable formulations
     reader->instantiate_multivalued_variables();
     reader->translate_actions_for_multivalued_variable_formulation();
     reader->create_invariants_for_multivalued_variables();
@@ -217,7 +217,7 @@ int main(int argc, char *argv[]) {
     }
 
     // solve problem
-    cout << "solving problem for " << instance.num_hidden_states() << " hidden states ..." << endl;
+    cout << "solving problem for " << instance.num_hidden_states() << " hidden state(s)" << endl;
     for( int k = 0; k < instance.num_hidden_states(); ++k ) {
         Instance::Plan plan;
         State hidden_initial_state;

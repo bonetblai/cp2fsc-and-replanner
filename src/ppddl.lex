@@ -103,7 +103,7 @@ COMMENT ;.*$
 \?{STRING} { val.sym = _tab.inserta(yytext);
              if( val.sym->val == 0 )
                  return PDDL_Parser::TK_NEW_VAR_SYMBOL;
-             if( ((PDDL_Base::Symbol*)val.sym->val)->sym_class == PDDL_Base::sym_variable )
+             if( ((PDDL_Base::Symbol*)val.sym->val)->sym_class_ == PDDL_Base::sym_variable )
                  return PDDL_Parser::TK_VAR_SYMBOL;
              return PDDL_Parser::TK_NEW_VAR_SYMBOL;
            }
@@ -116,7 +116,7 @@ COMMENT ;.*$
              if( val.sym->val == 0 ) {
                  return PDDL_Parser::TK_NEW_SYMBOL;
              } else {
-                 switch (((PDDL_Base::Symbol*)val.sym->val)->sym_class) {
+                 switch (((PDDL_Base::Symbol*)val.sym->val)->sym_class_) {
                    case PDDL_Base::sym_object:
                      return PDDL_Parser::TK_OBJ_SYMBOL;
                    case PDDL_Base::sym_typename:
