@@ -26,7 +26,7 @@
     )
 
     (:action do-test
-        :parameters (?x - ILLNESS) ; ONLY FOR TEST
+        ;:parameters (?x - ILLNESS) ; ONLY FOR TEST
         :precondition (not (dead))
         :sensing-model
             (and (when (cured) (no-stain))
