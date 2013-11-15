@@ -164,6 +164,7 @@ int main(int argc, char *argv[]) {
     // translate multivalued variables formulations
     reader->instantiate_multivalued_variables();
     reader->translate_actions_for_multivalued_variable_formulation();
+    reader->create_invariants_for_multivalued_variables();
 
     // create fresh instance
     Instance instance(options);
