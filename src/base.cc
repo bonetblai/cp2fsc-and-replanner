@@ -153,7 +153,6 @@ void PDDL_Base::map_oneofs_to_invariants() {
     // make oneof into exactly-one invariant
     for( size_t k = 0; k < oneofs.size(); ++k ) {
         Invariant invariant(Invariant::EXACTLY_ONE, *oneofs[k].second);
-        cout << "oneof="; oneofs[k].second->print(cout); cout << " mapped into inv=" << invariant << endl;
         dom_init_[oneofs[k].first] = new InitInvariant(invariant);
         invariant.clear(); // to avoid destruction of elements
         oneofs[k].second->clear(); // to avoid destruction of elements
@@ -320,8 +319,17 @@ void PDDL_Base::translate_actions_for_multivalued_variable_formulation() {
         normal_execution_.first = new Atom(execution_status);
         normal_execution_.second = new Atom(execution_status, true);
 
-        // extend initial situation with (normal-execution)
+        // extend initial and goal situations with (normal-execution)
         dom_init_.push_back(new InitLiteral(*normal_execution_.first));
+        if( dom_goal_ == 0 ) {
+            dom_goal_ = new And;
+        } else if( dynamic_cast<const And*>(dom_goal_) == 0 ) {
+            And *new_goal = new And;
+            new_goal->push_back(dom_goal_->ground());
+            delete dom_goal_;
+            dom_goal_ = new_goal;
+        }
+        static_cast<And*>(const_cast<Condition*>(dom_goal_))->push_back(new Literal(*normal_execution_.first));
 
         // create atoms for sensing
         PredicateSymbol *sensing_status = new PredicateSymbol("sensing-is-on");
@@ -330,7 +338,7 @@ void PDDL_Base::translate_actions_for_multivalued_variable_formulation() {
         sensing_.second = new Atom(sensing_status, true);
 
         // create sensor (unique)
-        Sensor *sensor = new Sensor(strdup("UNIQUE_SENSOR"));
+        Sensor *sensor = new Sensor(strdup("unique_sensor"));
         sensor->condition_ = new Literal(*sensing_.first);                // (sensing-is-on)
         AndEffect *sense = new AndEffect;
         for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
@@ -341,6 +349,7 @@ void PDDL_Base::translate_actions_for_multivalued_variable_formulation() {
             }
         }
         sensor->sense_ = sense;
+        dom_sensors_.push_back(sensor);
         //cout << *sensor;
 
         // create needed atoms for each action
@@ -419,15 +428,15 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
 
     if( action.effect_ != 0 ) {
         // Action that execute only the effects on state variables (i.e. no sensing model involved)
-        Action *effect_action = new Action(strdup((string(action.print_name_) + "__EFFECT__").c_str()));
+        Action *effect_action = new Action(strdup((string(action.print_name_) + "__effect__").c_str()));
         clone_parameters(action.param_, new_param);
         effect_action->param_ = new_param;
 
         // precondition
-        precondition.push_back(action.precondition_);
+        if( action.precondition_ != 0 ) precondition.push_back(action.precondition_);
         precondition.push_back(new Literal(*normal_execution_.first));  // (normal-execution)
         effect_action->precondition_ = precondition.ground();
-        delete precondition[0];
+        delete precondition.back();
         precondition.clear();
 
         // effect
@@ -446,14 +455,14 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
         //cout << *effect_action;
 
         // Action that computes the effects on observables (i.e. sensing model)
-        Action *set_sensing_action = new Action(strdup((string(action.print_name_) + "__SET_SENSING__").c_str()));
+        Action *set_sensing_action = new Action(strdup((string(action.print_name_) + "__set_sensing__").c_str()));
         clone_parameters(action.param_, new_param);
         set_sensing_action->param_ = new_param;
 
         // precondition
         precondition.push_back(new Literal(*need_sense_[index].first)); // (need-set-sense <param>)
         set_sensing_action->precondition_ = precondition.ground();
-        precondition[0];
+        delete precondition[0];
         precondition.clear();
 
         // effect
@@ -475,14 +484,14 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
         //cout << *set_sensing_action;
 
         // Post action that re-establish normal execution
-        Action *post_action = new Action(strdup((string(action.print_name_) + "__POST__").c_str()));
+        Action *post_action = new Action(strdup((string(action.print_name_) + "__post__").c_str()));
         clone_parameters(action.param_, new_param);
         post_action->param_ = new_param;
 
         // precondition
         precondition.push_back(new Literal(*need_post_[index].first));  // (need-post <param>)
         post_action->precondition_ = precondition.ground();
-        precondition[0];
+        delete precondition[0];
         precondition.clear();
 
         // effect
@@ -502,15 +511,15 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
         //cout << *post_action;
     } else {
         // Action that computes the effects on observables (i.e. sensing model)
-        Action *set_sensing_action = new Action(strdup((string(action.print_name_) + "__SET_SENSING__").c_str()));
+        Action *set_sensing_action = new Action(strdup((string(action.print_name_) + "__set_sensing__").c_str()));
         clone_parameters(action.param_, new_param);
         set_sensing_action->param_ = new_param;
 
         // precondition
-        precondition.push_back(action.precondition_);
+        if( action.precondition_ != 0 ) precondition.push_back(action.precondition_);
         precondition.push_back(new Literal(*normal_execution_.first));  // (normal-execution)
         set_sensing_action->precondition_ = precondition.ground();
-        precondition[0];
+        delete precondition.back();
         precondition.clear();
 
         // effect
@@ -532,7 +541,7 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
         //cout << *set_sensing_action;
 
         // Post action that re-establish normal execution
-        Action *post_action = new Action(strdup((string(action.print_name_) + "__POST__").c_str()));
+        Action *post_action = new Action(strdup((string(action.print_name_) + "__post__").c_str()));
         clone_parameters(action.param_, new_param);
         post_action->param_ = new_param;
 
@@ -572,31 +581,52 @@ void PDDL_Base::create_invariants_for_multivalued_variables() {
         if( dynamic_cast<StateVariable*>(multivalued_variables_[k]) != 0 ) {
             // for each state variable with domain size > 1, generate (exactly-one <values>)
             StateVariable &var = *static_cast<StateVariable*>(multivalued_variables_[k]);
-            if( var.values_.size() == 1 ) continue;
-            exactly_one.reserve(var.values_.size());
-            for( size_t i = 0; i < var.values_.size(); ++i ) {
-                exactly_one.push_back(new Literal(*static_cast<const AtomicEffect*>(var.values_[i])));
+            if( var.values_.size() > 1 ) {
+                exactly_one.reserve(var.values_.size());
+                for( size_t i = 0; i < var.values_.size(); ++i ) {
+                    exactly_one.push_back(new Literal(*static_cast<const AtomicEffect*>(var.values_[i])));
+                }
+                dom_init_.push_back(new InitInvariant(exactly_one));
+                //cout << "variable '" << var.print_name_ << "': " << exactly_one << endl;
+                exactly_one.clear();
+            } else {
+                Literal *literal = new Literal(*static_cast<const AtomicEffect*>(var.values_[0]));
+                at_least_one.push_back(literal);
+                literal = new Literal(*static_cast<const AtomicEffect*>(var.values_[0]));
+                literal->negated_ = true;
+                at_least_one.push_back(literal);
+                dom_init_.push_back(new InitInvariant(at_least_one));
+                //cout << "variable '" << var.print_name_ << "': " << at_least_one << endl;
+                at_least_one.clear();
             }
-            dom_init_.push_back(new InitInvariant(exactly_one));
-            cout << "variable '" << var.print_name_ << "': " << exactly_one << endl;
-            exactly_one.clear();
         } else {
             // for each observable variable, and values <value-i> and <value-j>
             // generate (at-least-one (not (sensing-is-on)) (not <value-i>) (not <value-j>))
             ObsVariable &var = *static_cast<ObsVariable*>(multivalued_variables_[k]);
-            for( size_t i = 0; i < var.values_.size(); ++i ) {
-                for( size_t j = i + 1; j < var.values_.size(); ++j ) {
-                    at_least_one.push_back(new Literal(*sensing_.second));
-                    Literal *literal = new Literal(*static_cast<const AtomicEffect*>(var.values_[i]));
-                    literal->negated_ = true;
-                    at_least_one.push_back(literal);
-                    literal = new Literal(*static_cast<const AtomicEffect*>(var.values_[j]));
-                    literal->negated_ = true;
-                    at_least_one.push_back(literal);
-                    dom_init_.push_back(new InitInvariant(at_least_one));
-                    //cout << "variable '" << var.print_name_ << "': " << at_least_one << endl;
-                    at_least_one.clear();
+            if( var.values_.size() > 1 ) {
+                for( size_t i = 0; i < var.values_.size(); ++i ) {
+                    for( size_t j = i + 1; j < var.values_.size(); ++j ) {
+                        at_least_one.push_back(new Literal(*sensing_.second));
+                        Literal *literal = new Literal(*static_cast<const AtomicEffect*>(var.values_[i]));
+                        literal->negated_ = true;
+                        at_least_one.push_back(literal);
+                        literal = new Literal(*static_cast<const AtomicEffect*>(var.values_[j]));
+                        literal->negated_ = true;
+                        at_least_one.push_back(literal);
+                        dom_init_.push_back(new InitInvariant(at_least_one));
+                        //cout << "variable '" << var.print_name_ << "': " << at_least_one << endl;
+                        at_least_one.clear();
+                    }
                 }
+            } else {
+                Literal *literal = new Literal(*static_cast<const AtomicEffect*>(var.values_[0]));
+                at_least_one.push_back(literal);
+                literal = new Literal(*static_cast<const AtomicEffect*>(var.values_[0]));
+                literal->negated_ = true;
+                at_least_one.push_back(literal);
+                dom_init_.push_back(new InitInvariant(at_least_one));
+                //cout << "variable '" << var.print_name_ << "': " << at_least_one << endl;
+                at_least_one.clear();
             }
         }
     }
@@ -644,36 +674,40 @@ void PDDL_Base::create_invariants_for_sensing_model() {
             }
         }
 
-#if 0
-        cout << "SENSING_MAP:" << endl;
+        // for each observable literal p:
+        //
+        // 1) create (invariant (not (need-post <param>)) (not p) C1 C2 .. Cn) where
+        // Ci => p are all rules for p in sensing model
+        //
+        // 2) create (invariant (not (need-post <param>)) p (not Ci)) for each rule
+        // Ci => p in sensing model
+        //
+        Invariant invariant1(Invariant::AT_LEAST_ONE);
         for( map<string, condition_vec>::iterator it = sensing_map.begin(); it != sensing_map.end(); ++it ) {
-            cout << "    key=" << it->first << ":";
-            for( size_t i = 0; i < it->second.size(); ++i )
-                cout << " " << *it->second[i];
-            cout << endl;
-        }
-#endif
-
-        // for each observable literal p, create the invariant
-        // (invariant (not (need-post <param>)) (not p) C1 C2 .. Cn) where Ci are the conditions
-        // that entail p (or new literals standing for them)
-        Invariant invariant(Invariant::AT_LEAST_ONE);
-        for( map<string, condition_vec>::iterator it = sensing_map.begin(); it != sensing_map.end(); ++it ) {
-            invariant.push_back(new Literal(*need_post_[index].second));
+            invariant1.push_back(new Literal(*need_post_[index].second));
             Literal *literal = new Literal(*sensed_literal[it->first]);
-            literal->negated_ = true;
-            invariant.push_back(literal);
+            literal->negated_ = !literal->negated_;
+            invariant1.push_back(literal);
             for( size_t i = 0; i < it->second.size(); ++i ) {
                 if( dynamic_cast<const Literal*>(it->second[i]) != 0 ) {
-                    invariant.push_back(new Literal(*static_cast<const Literal*>(it->second[i])));
+                    invariant1.push_back(new Literal(*static_cast<const Literal*>(it->second[i])));
+                    Invariant invariant2(Invariant::AT_LEAST_ONE);
+                    invariant2.push_back(new Literal(*need_post_[index].second));
+                    invariant2.push_back(new Literal(*sensed_literal[it->first]));
+                    Literal *literal = new Literal(*static_cast<const Literal*>(it->second[i]));
+                    literal->negated_ = !literal->negated_;
+                    invariant2.push_back(literal);
+                    dom_init_.push_back(new InitInvariant(invariant2));
+                    //cout << "invariant for literal " << it->first << ": " << invariant2 << endl;
+                    invariant2.clear();
                 } else {
                     cout << "WARNING" << endl;
                     exit(255);
                 }
             }
-            dom_init_.push_back(new InitInvariant(invariant));
-            //cout << "invariant: literal=" << it->first << ", inv=" << invariant << endl;
-            invariant.clear();
+            dom_init_.push_back(new InitInvariant(invariant1));
+            //cout << "invariant for literal " << it->first << ": " << invariant1 << endl;
+            invariant1.clear();
         }
     }
 }
@@ -1291,7 +1325,6 @@ bool PDDL_Base::InitLiteral::is_strongly_static(const PredicateSymbol &p) const 
 void PDDL_Base::InitInvariant::instantiate(Instance &ins, Instance::Init &init) const {
     Instance::Invariant invariant;
     Invariant::instantiate(ins, invariant);
-    invariant.write(cout, 0, ins);
 
     // If invariant is of type AT_MOST_ONE or EXACTLY_ONE,
     // generate implied invatiants of type AT_LEAST_ONE
@@ -1303,7 +1336,6 @@ void PDDL_Base::InitInvariant::instantiate(Instance &ins, Instance::Init &init) 
                 implied_invariant.push_back(-invariant[i]);
                 implied_invariant.push_back(-invariant[j]);
                 init.invariants.push_back(implied_invariant);
-                implied_invariant.write(cout, 4, ins);
             }
         }
     }
@@ -1313,7 +1345,6 @@ void PDDL_Base::InitInvariant::instantiate(Instance &ins, Instance::Init &init) 
     if( invariant.type != AT_MOST_ONE ) {
         invariant.type = AT_LEAST_ONE;
         init.invariants.push_back(invariant);
-        invariant.write(cout, 4, ins);
     }
 }
 
