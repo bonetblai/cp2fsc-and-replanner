@@ -89,6 +89,7 @@ void Preprocessor::mark_useless_actions(bool_vec &actions_to_remove) {
                 if( !act.precondition.contains(*it) ) {
                     useless[k] = false;
                     break;
+                } else {
                 }
             }
         } else {
@@ -98,7 +99,7 @@ void Preprocessor::mark_useless_actions(bool_vec &actions_to_remove) {
         if( useless[k] ) {
             actions_to_remove[k] = true;
             if( options_.is_enabled("print:action:useless") )
-                cout << "  action " << k << "." << act.name << " is useless." << endl;
+                cout << "action " << k << "." << act.name << " is useless." << endl;
         }
     }
 }
@@ -521,7 +522,7 @@ void Preprocessor::preprocess(bool remove_atoms, bool do_action_completion) {
     // stage 3: remove unreachable conditional effects, axioms and sensors, and
     // compute static atoms until fix point.
     if( options_.is_enabled("print:preprocess:stage") )
-        cout << "  Stage 3: removing unreachable conditions effects..." << endl;
+        cout << "  Stage 3: removing unreachable conditional effects, axioms and sensors..." << endl;
     bool_vec static_atoms(instance_.n_atoms(), false);
     bool fix_point_reached = false;
     while( !fix_point_reached ) {
