@@ -165,6 +165,12 @@ int main(int argc, char *argv[]) {
     reader->instantiate_multivalued_variables();
     reader->translate_actions_for_multivalued_variable_formulation();
     reader->create_invariants_for_multivalued_variables();
+    reader->create_invariants_for_sensing_model();
+
+    // print translated problem
+    if( options.is_enabled("print:parser:translated") ) {
+        reader->print(cout);
+    }
 
     // create fresh instance
     Instance instance(options);
@@ -180,7 +186,7 @@ int main(int argc, char *argv[]) {
 
     cout << "preprocessing p.o. problem..." << endl;
     Preprocessor prep(instance, options);
-    prep.preprocess(true, false); // turn off action compilation
+    prep.preprocess(true, true); // turn off action compilation
     if( options.is_enabled("print:problem:preprocessed") ) {
         //instance.print(cout);
         instance.write_domain(cout);

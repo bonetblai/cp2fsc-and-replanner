@@ -90,6 +90,7 @@ class PDDL_Base {
         Instance::Atom* find_prop(Instance &ins, bool negated, bool create) const;
         void instantiate(Instance &ins, index_set &atoms) const;
         Atom* ground() const;
+        std::string print_name(bool extra_neg = false) const;
         void print(std::ostream &os, bool extra_neg) const;
         void print(std::ostream &os) const { print(os, false); }
     };
@@ -364,40 +365,40 @@ class PDDL_Base {
     };
 
 
-    const char                      *domain_name_;
-    const char                      *problem_name_;
+    const char                                *domain_name_;
+    const char                                *problem_name_;
 
-    StringTable                     &tab_;
-    type_symbol_vec                 dom_types_;
-    TypeSymbol                      *dom_top_type_;
-    symbol_vec                      dom_constants_;
-    predicate_symbol_vec            dom_predicates_;
-    PredicateSymbol                 *dom_eq_pred_;
+    StringTable                               &tab_;
+    type_symbol_vec                           dom_types_;
+    TypeSymbol                                *dom_top_type_;
+    symbol_vec                                dom_constants_;
+    predicate_symbol_vec                      dom_predicates_;
+    PredicateSymbol                           *dom_eq_pred_;
 
-    action_vec                      dom_actions_;
-    sensor_vec                      dom_sensors_;
-    axiom_vec                       dom_axioms_;
-    const Condition                 *dom_goal_;
-    init_element_vec                dom_init_;
-    std::vector<init_element_vec>   dom_hidden_;
+    action_vec                                dom_actions_;
+    sensor_vec                                dom_sensors_;
+    axiom_vec                                 dom_axioms_;
+    const Condition                           *dom_goal_;
+    init_element_vec                          dom_init_;
+    std::vector<init_element_vec>             dom_hidden_;
 
-    effect_vec                      *tmp_effect_vec_ptr_; // only used when parsing
-    observable_vec                  dom_observables_;
-    sticky_vec                      dom_stickies_;
+    effect_vec                                *tmp_effect_vec_ptr_; // only used when parsing
+    observable_vec                            dom_observables_;
+    sticky_vec                                dom_stickies_;
 
     // For CLG-type syntax and translations
-    bool                            clg_translation_;
-    Atom                            *disable_actions_atom_;
+    bool                                      clg_translation_;
+    Atom                                      *disable_actions_atom_;
 
     // For multivalued variables formulations
-    bool                            multivalued_variable_translation_;
-    variable_vec                    multivalued_variables_;
-    index_set_vec                   multivalued_domains_;
-    action_vec                      set_sensing_actions_;
-    std::pair<Atom*, Atom*>         normal_execution_;
-    std::pair<Atom*, Atom*>         sensing_;
-    std::vector<std::pair<Atom*, Atom*> > need_sense_;
-    std::vector<std::pair<Atom*, Atom*> > need_post_;
+    bool                                      multivalued_variable_translation_;
+    variable_vec                              multivalued_variables_;
+    index_set_vec                             multivalued_domains_;
+    std::pair<Atom*, Atom*>                   normal_execution_;
+    std::pair<Atom*, Atom*>                   sensing_;
+    std::vector<std::pair<Atom*, Atom*> >     need_sense_;
+    std::vector<std::pair<Atom*, Atom*> >     need_post_;
+    std::vector<std::pair<Effect*, size_t> >  sensing_models_;
 
 
     PDDL_Base(StringTable& t);

@@ -62,6 +62,7 @@ const char *available_options[] = {
 
     // general
     "print:parser:raw",                    "[GEN] print the output from the parser",
+    "print:parser:translated",             "[GEN] print the output from the parser after translation",
     "print:problem:raw",                   "[GEN] print the problem before preprocessing",
     "print:problem:preprocessed",          "[GEN] print the problem after preprocessing",
 

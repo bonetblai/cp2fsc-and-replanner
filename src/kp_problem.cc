@@ -191,6 +191,7 @@ KP_Instance::KP_Instance(const Instance &ins, const Options::Mode &options)
     for( invariant_vec::const_iterator it = ins.init.invariants.begin(); it != ins.init.invariants.end(); ++it ) {
         const Invariant &invariant = *it;
         assert(invariant.type == Invariant::AT_LEAST_ONE);
+        cout << "processing invariant: "; invariant.write(cout, 0, ins);
 
         for( size_t k = 0; k < invariant.size(); ++k ) {
             ostringstream s;
