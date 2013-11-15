@@ -9,6 +9,19 @@
     (:obs-variable sr (free-right))
     (:obs-variable sd (free-down))
     (:obs-variable sl (free-left))
+
+    (:action start
+        :sensing-model
+            (and (when (at p2-1) (and (free-left) (free-right) (not (free-up)) (not (free-down))))
+                 (when (at p2-3) (and (free-left) (free-right) (not (free-up)) (not (free-down))))
+                 (when (at p1-2) (and (free-up) (free-down) (not (free-left)) (not (free-right))))
+                 (when (at p3-2) (and (free-up) (free-down) (not (free-left)) (not (free-right))))
+                 (when (at p1-1) (and (free-up) (free-right) (not (free-down)) (not (free-left))))
+                 (when (at p3-1) (and (free-up) (free-left) (not (free-down)) (not (free-right))))
+                 (when (at p1-3) (and (free-down) (free-right) (not (free-up)) (not (free-left))))
+                 (when (at p3-3) (and (free-down) (free-left) (not (free-up)) (not (free-right))))
+            )
+    )
  
     (:action move-up
         :precondition (free-up)
