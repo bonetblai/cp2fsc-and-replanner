@@ -157,7 +157,7 @@ domain_requires:
     ;
 
 require_list:
-      require_list KW_TRANSLATION { translation = true; }
+      require_list KW_TRANSLATION { declare_multivalued_variable_translation(); }
     | require_list TK_KEYWORD
     | /* empty */
     ;
@@ -341,8 +341,14 @@ action_elements:
       }
     | action_elements KW_PRE condition { dom_actions.back()->precondition = $3; }
     | action_elements KW_EFFECT action_effect { dom_actions.back()->effect = $3; }
-    | action_elements KW_OBSERVE positive_atomic_effect_list { dom_actions.back()->observe = $3; }
-    | action_elements KW_SENSING_MODEL sensing_model { dom_actions.back()->sensing_model = $3; }
+    | action_elements KW_OBSERVE positive_atomic_effect_list {
+          declare_clg_translation();
+          dom_actions.back()->observe = $3;
+      }
+    | action_elements KW_SENSING_MODEL sensing_model {
+          declare_multivalued_variable_translation();
+          dom_actions.back()->sensing_model = $3;
+      }
     | /* empty */
     ;
 
@@ -688,7 +694,7 @@ single_init_element:
               yyerrok;
           } else {
               $$ = new InitInvariant(*$1);
-              const_cast<Invariant*>(dynamic_cast<const Invariant*>($1))->clear();
+              const_cast<Invariant*>($1)->clear();
               delete $1;
           }
       }
@@ -699,7 +705,7 @@ single_init_element:
               yyerrok;
           } else {
               $$ = new InitClause(*$1);
-              const_cast<Clause*>(dynamic_cast<const Clause*>($1))->clear();
+              const_cast<Clause*>($1)->clear();
               delete $1;
           }
       }
@@ -708,9 +714,10 @@ single_init_element:
               // We let oneofs pass in k-replanner as they are later mapped 
               // into invariants of type exactly-one. This is to support
               // CLG compatibility mode.
+              declare_clg_translation();
           }
           $$ = new InitOneof(*$1);
-          const_cast<Oneof*>(dynamic_cast<const Oneof*>($1))->clear();
+          const_cast<Oneof*>($1)->clear();
           delete $1;
       }
     ;
