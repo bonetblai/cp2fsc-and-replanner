@@ -109,7 +109,7 @@ domain_elements:
     ;
  
 domain_name:
-      TK_OPEN KW_DOMAIN any_symbol TK_CLOSE { domain_name = $3->text; }
+      TK_OPEN KW_DOMAIN any_symbol TK_CLOSE { domain_name_ = $3->text; }
     ;
 
 // symbols
@@ -180,10 +180,10 @@ predicate_list:
 predicate_decl:
       TK_OPEN TK_NEW_SYMBOL typed_param_list TK_CLOSE {
           PredicateSymbol *p = new PredicateSymbol($2->text);
-          dom_predicates.push_back(p);
-          p->param = *$3;
+          dom_predicates_.push_back(p);
+          p->param_ = *$3;
           delete $3;
-          clear_param(p->param);
+          clear_param(p->param_);
           $2->val = p;
       }
     | TK_OPEN error TK_CLOSE {
@@ -200,7 +200,7 @@ typed_param_list:
           $$ = $1;
       }
     | typed_param_list typed_param_sym_list {
-          set_variable_type(*$1, $1->size(), dom_top_type);
+          set_variable_type(*$1, $1->size(), dom_top_type_);
           $1->insert($1->end(), $2->begin(), $2->end());
           delete $2;
           $$ = $1;
@@ -226,18 +226,18 @@ domain_types:
 
 typed_type_list:
       typed_type_list primitive_type_list TK_HYPHEN TK_TYPE_SYMBOL {
-          set_type_type(dom_types, dom_types.size(), static_cast<TypeSymbol*>($4->val));
+          set_type_type(dom_types_, dom_types_.size(), static_cast<TypeSymbol*>($4->val));
       }
     | typed_type_list primitive_type_list TK_HYPHEN TK_NEW_SYMBOL {
           $4->val = new TypeSymbol($4->text);
-          if( write_warnings )
+          if( write_warnings_ )
               std::cerr << "warning: assuming " << $4->text << " - object" << std::endl;
-          static_cast<TypeSymbol*>($4->val)->sym_type = dom_top_type;
-          set_type_type(dom_types, dom_types.size(), static_cast<TypeSymbol*>($4->val));
-          dom_types.push_back(static_cast<TypeSymbol*>($4->val));
+          static_cast<TypeSymbol*>($4->val)->sym_type_ = dom_top_type_;
+          set_type_type(dom_types_, dom_types_.size(), static_cast<TypeSymbol*>($4->val));
+          dom_types_.push_back(static_cast<TypeSymbol*>($4->val));
       }
     | typed_type_list primitive_type_list {
-          set_type_type(dom_types, dom_types.size(), dom_top_type);
+          set_type_type(dom_types_, dom_types_.size(), dom_top_type_);
       }
     | /* empty */
     ;
@@ -248,7 +248,7 @@ primitive_type_list:
       }
     | primitive_type_list TK_NEW_SYMBOL {
           $2->val = new TypeSymbol($2->text);
-          dom_types.push_back(static_cast<TypeSymbol*>($2->val));
+          dom_types_.push_back(static_cast<TypeSymbol*>($2->val));
       }
     | /* empty */
     ;
@@ -262,10 +262,10 @@ domain_constants:
 
 typed_constant_list:
       typed_constant_list ne_constant_sym_list TK_HYPHEN TK_TYPE_SYMBOL {
-          set_constant_type(dom_constants, dom_constants.size(), static_cast<TypeSymbol*>($4->val));
+          set_constant_type(dom_constants_, dom_constants_.size(), static_cast<TypeSymbol*>($4->val));
       }
     | typed_constant_list ne_constant_sym_list {
-          set_constant_type(dom_constants, dom_constants.size(), dom_top_type);
+          set_constant_type(dom_constants_, dom_constants_.size(), dom_top_type_);
       }
     | /* empty */
     ;
@@ -273,11 +273,11 @@ typed_constant_list:
 ne_constant_sym_list:
       ne_constant_sym_list TK_NEW_SYMBOL {
           $2->val = new Symbol($2->text);
-          dom_constants.push_back(static_cast<Symbol*>($2->val));
+          dom_constants_.push_back(static_cast<Symbol*>($2->val));
       }
     | TK_NEW_SYMBOL {
           $1->val = new Symbol($1->text);
-          dom_constants.push_back(static_cast<Symbol*>($1->val));
+          dom_constants_.push_back(static_cast<Symbol*>($1->val));
       }
     ;
 
@@ -322,11 +322,11 @@ domain_structure:
 action_decl:
       TK_OPEN KW_ACTION action_symbol {
           Action *na = new Action($3->text);
-          dom_actions.push_back(na);
+          dom_actions_.push_back(na);
       }
       action_elements TK_CLOSE {
-          clear_param(dom_actions.back()->param);
-          $3->val = dom_actions.back();
+          clear_param(dom_actions_.back()->param_);
+          $3->val = dom_actions_.back();
       }
     | TK_OPEN KW_ACTION error TK_CLOSE {
           log_error((char*)"syntax error in action declaration");
@@ -336,18 +336,18 @@ action_decl:
 
 action_elements:
       action_elements KW_ARGS TK_OPEN typed_param_list TK_CLOSE {
-          dom_actions.back()->param = *$4;
+          dom_actions_.back()->param_ = *$4;
           delete $4;
       }
-    | action_elements KW_PRE condition { dom_actions.back()->precondition = $3; }
-    | action_elements KW_EFFECT action_effect { dom_actions.back()->effect = $3; }
+    | action_elements KW_PRE condition { dom_actions_.back()->precondition_ = $3; }
+    | action_elements KW_EFFECT action_effect { dom_actions_.back()->effect_ = $3; }
     | action_elements KW_OBSERVE positive_atomic_effect_list {
           declare_clg_translation();
-          dom_actions.back()->observe = $3;
+          dom_actions_.back()->observe_ = $3;
       }
     | action_elements KW_SENSING_MODEL sensing_model {
           declare_multivalued_variable_translation();
-          dom_actions.back()->sensing_model = $3;
+          dom_actions_.back()->sensing_model_ = $3;
       }
     | /* empty */
     ;
@@ -372,8 +372,8 @@ condition_list:
 single_condition:
       literal {
           // if literal is for equality, construct EQ
-          if( $1->pred == dom_eq_pred )
-              $$ = new EQ(static_cast<VariableSymbol*>($1->param[0]), static_cast<VariableSymbol*>($1->param[1]), $1->neg);
+          if( $1->pred_ == dom_eq_pred_ )
+              $$ = new EQ(static_cast<VariableSymbol*>($1->param_[0]), static_cast<VariableSymbol*>($1->param_[1]), $1->negated_);
           else
               $$ = new Literal(*$1);
           delete $1;
@@ -388,13 +388,13 @@ literal:
 positive_literal:
       TK_OPEN TK_PRED_SYMBOL argument_list TK_CLOSE {
           PredicateSymbol* p = static_cast<PredicateSymbol*>($2->val);
-          if( p->param.size() != $3->size() ) {
+          if( p->param_.size() != $3->size() ) {
               std::ostringstream msg;
-              msg << "wrong number of arguments for predicate '" << p->print_name << "'";
+              msg << "wrong number of arguments for predicate '" << p->print_name_ << "'";
               log_error(const_cast<char*>(msg.str().c_str()));
           } else {
               $$ = new Atom(p);
-              $$->param = *$3;
+              $$->param_ = *$3;
               delete $3;
           }
       }
@@ -402,8 +402,8 @@ positive_literal:
           if( $3->size() != 2 ) {
               log_error((char*)"wrong number of arguments for equality");
           } else {
-              $$ = new Atom(dom_eq_pred);
-              $$->param = *$3;
+              $$ = new Atom(dom_eq_pred_);
+              $$->param_ = *$3;
               delete $3;
           }
       }
@@ -411,7 +411,7 @@ positive_literal:
 
 negative_literal:
       TK_OPEN KW_NOT positive_literal TK_CLOSE {
-          const_cast<Literal*>(static_cast<const Literal*>($3))->neg = true;
+          const_cast<Literal*>(static_cast<const Literal*>($3))->negated_ = true;
           $$ = $3;
       }
     ;
@@ -463,12 +463,12 @@ forall_effect:
           forall_effects.push_back(new ForallEffect);
       }
       typed_param_list TK_CLOSE {
-          forall_effects.back()->param = *$5;
+          forall_effects.back()->param_ = *$5;
           delete $5;
       }
       action_effect TK_CLOSE {
-          forall_effects.back()->effect = $8;
-          clear_param(forall_effects.back()->param);
+          forall_effects.back()->effect_ = $8;
+          clear_param(forall_effects.back()->param_);
           $$ = forall_effects.back();
           forall_effects.pop_back();
       }
@@ -519,11 +519,11 @@ sensing_model:
 axiom_decl:
       TK_OPEN KW_AXIOM axiom_symbol {
           Axiom *nr = new Axiom($3->text);
-          dom_axioms.push_back(nr);
+          dom_axioms_.push_back(nr);
       }
       axiom_elements TK_CLOSE {
-          clear_param(dom_axioms.back()->param);
-          $3->val = dom_axioms.back();
+          clear_param(dom_axioms_.back()->param_);
+          $3->val = dom_axioms_.back();
       }
     | TK_OPEN KW_AXIOM error TK_CLOSE {
           log_error((char*)"syntax error in axiom declaration");
@@ -533,22 +533,22 @@ axiom_decl:
 
 axiom_elements:
       axiom_elements KW_ARGS TK_OPEN typed_param_list TK_CLOSE {
-          dom_axioms.back()->param = *$4;
+          dom_axioms_.back()->param_ = *$4;
           delete $4;
       }
-    | axiom_elements KW_BODY condition { dom_axioms.back()->body = $3; }
-    | axiom_elements KW_HEAD atomic_effect_kw_list { dom_axioms.back()->head = $3; }
+    | axiom_elements KW_BODY condition { dom_axioms_.back()->body_ = $3; }
+    | axiom_elements KW_HEAD atomic_effect_kw_list { dom_axioms_.back()->head_ = $3; }
     | /* empty */
     ;
 
 sensor_decl:
       TK_OPEN KW_SENSOR sensor_symbol {
           Sensor *nr = new Sensor($3->text);
-          dom_sensors.push_back(nr);
+          dom_sensors_.push_back(nr);
       }
       sensor_elements TK_CLOSE {
-          clear_param(dom_sensors.back()->param);
-          $3->val = dom_sensors.back();
+          clear_param(dom_sensors_.back()->param_);
+          $3->val = dom_sensors_.back();
       }
     | TK_OPEN KW_SENSOR error TK_CLOSE {
           log_error((char*)"syntax error in sensor declaration");
@@ -558,19 +558,19 @@ sensor_decl:
 
 sensor_elements:
       sensor_elements KW_ARGS TK_OPEN typed_param_list TK_CLOSE {
-          dom_sensors.back()->param = *$4;
+          dom_sensors_.back()->param_ = *$4;
           delete $4;
       }
-    | sensor_elements KW_COND condition { dom_sensors.back()->condition = $3; }
-    | sensor_elements KW_SENSE positive_atomic_effect_list { dom_sensors.back()->sense = $3; }
+    | sensor_elements KW_COND condition { dom_sensors_.back()->condition_ = $3; }
+    | sensor_elements KW_SENSE positive_atomic_effect_list { dom_sensors_.back()->sense_ = $3; }
     | /* empty */
     ;
 
 observable_decl:
       TK_OPEN KW_OBSERVABLE {
           Observable *obs = new Observable;
-          dom_observables.push_back(obs);
-          tmp_effect_vec_ptr = &obs->observables;
+          dom_observables_.push_back(obs);
+          tmp_effect_vec_ptr_ = &obs->observables_;
       } fluent_list_decl TK_CLOSE
     | TK_OPEN KW_OBSERVABLE error TK_CLOSE {
           log_error((char*)"syntax error in observable declaration");
@@ -580,10 +580,10 @@ observable_decl:
 
 fluent_list_decl:
     | fluent_list_decl fluent_decl {
-          tmp_effect_vec_ptr->push_back($2);
+          tmp_effect_vec_ptr_->push_back($2);
       }
     | fluent_decl {
-          tmp_effect_vec_ptr->push_back($1);
+          tmp_effect_vec_ptr_->push_back($1);
       }
     ;
 
@@ -595,8 +595,8 @@ fluent_decl:
 sticky_decl:
       TK_OPEN KW_STICKY {
           Sticky *sticky = new Sticky;
-          dom_stickies.push_back(sticky);
-          tmp_effect_vec_ptr = &sticky->stickies;
+          dom_stickies_.push_back(sticky);
+          tmp_effect_vec_ptr_ = &sticky->stickies_;
       } fluent_list_decl TK_CLOSE
     | TK_OPEN KW_STICKY error TK_CLOSE {
           log_error((char*)"syntax error in sticky declaration");
@@ -612,8 +612,8 @@ multivalued_variable_decl:
 state_variable_decl:
       TK_OPEN KW_VARIABLE variable_symbol {
           StateVariable *var = new StateVariable($3->text);
-          dom_multivalued_variables.push_back(var);
-          tmp_effect_vec_ptr = &var->values;
+          multivalued_variables_.push_back(var);
+          tmp_effect_vec_ptr_ = &var->values_;
       }
       fluent_list_decl rest_state_variable TK_CLOSE
     | TK_OPEN KW_VARIABLE error TK_CLOSE {
@@ -624,7 +624,7 @@ state_variable_decl:
 
 rest_state_variable:
       KW_OBSERVABLE {
-          dynamic_cast<StateVariable*>(dom_multivalued_variables.back())->is_observable_ = true;
+          dynamic_cast<StateVariable*>(multivalued_variables_.back())->is_observable_ = true;
       }
     | /* empty */
     ;
@@ -632,8 +632,8 @@ rest_state_variable:
 observable_variable_decl:
       TK_OPEN KW_OBS_VARIABLE variable_symbol {
           ObsVariable *var = new ObsVariable($3->text);
-          dom_multivalued_variables.push_back(var);
-          tmp_effect_vec_ptr = &var->values;
+          multivalued_variables_.push_back(var);
+          tmp_effect_vec_ptr_ = &var->values_;
       }
       fluent_list_decl TK_CLOSE
     | TK_OPEN KW_OBS_VARIABLE error TK_CLOSE {
@@ -647,7 +647,7 @@ observable_variable_decl:
 
 pddl_problem:
       TK_OPEN KW_DEFINE TK_OPEN KW_PROBLEM any_symbol TK_CLOSE {
-          problem_name = $5->text;
+          problem_name_ = $5->text;
       }
       problem_elements TK_CLOSE
     | TK_OPEN KW_DEFINE TK_OPEN KW_PROBLEM error TK_CLOSE {
@@ -668,8 +668,8 @@ problem_elements:
 
 initial_state:
       TK_OPEN KW_INIT TK_CLOSE
-    | TK_OPEN KW_INIT init_elements TK_CLOSE { dom_init = *$3; delete $3; }
-    | TK_OPEN KW_INIT TK_OPEN KW_AND init_elements TK_CLOSE TK_CLOSE { dom_init = *$5; delete $5; }
+    | TK_OPEN KW_INIT init_elements TK_CLOSE { dom_init_ = *$3; delete $3; }
+    | TK_OPEN KW_INIT TK_OPEN KW_AND init_elements TK_CLOSE TK_CLOSE { dom_init_ = *$5; delete $5; }
     ;
 
 init_elements:
@@ -779,15 +779,15 @@ hidden_state:
               log_error((char*)"':hidden' is not a valid element in cp2fsc.");
               yyerrok;
           } else {
-              dom_hidden.push_back(*$3);
+              dom_hidden_.push_back(*$3);
               delete $3;
           }
       }
     ;
 
 goal_spec:
-      TK_OPEN KW_GOAL single_goal TK_CLOSE { dom_goal = $3; }
-    | TK_OPEN KW_GOAL TK_OPEN KW_AND goal_list TK_CLOSE TK_CLOSE { dom_goal = $5; }
+      TK_OPEN KW_GOAL single_goal TK_CLOSE { dom_goal_ = $3; }
+    | TK_OPEN KW_GOAL TK_OPEN KW_AND goal_list TK_CLOSE TK_CLOSE { dom_goal_ = $5; }
     ;
 
 goal_list:

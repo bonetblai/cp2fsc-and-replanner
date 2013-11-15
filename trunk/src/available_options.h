@@ -84,7 +84,7 @@ const char *k_replanner_cmdline_options[] = {
     "[--max-time <time>]",
     "[--no-print-plan]",
     "[--prefix <prefix>]",
-    "[--no-remove-intermediate-files]",
+    "[--keep-intermediate-files]",
     "[--use-{ff|lama|m|mp}]",
     "[--planner-path <path>]",
     "[--tmpfile-path <path>]",
