@@ -71,7 +71,7 @@ class PDDL_Base {
     struct Schema {
         var_symbol_vec param_;
         Schema() { }
-        virtual ~Schema() { for( size_t k = 0; k < param_.size(); ++k ) delete param_[k]; }
+        virtual ~Schema() { /*for( size_t k = 0; k < param_.size(); ++k ) delete param_[k];*/ }
         void enumerate(bool only_count = false) const;
         void rec_enumerate(size_t p, bool only_count) const;
         virtual void process_instance() const = 0;
@@ -86,6 +86,7 @@ class PDDL_Base {
         Atom(const Atom &atom) : pred_(atom.pred_), param_(atom.param_), negated_(atom.negated_) { }
         ~Atom() { /*delete pred_; for( size_t k = 0; k < param_.size(); ++k ) delete param_[k];*/ }
         void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
+        void remap_parameters_by_name(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         bool operator==(const Atom &atom) const;
         Instance::Atom* find_prop(Instance &ins, bool negated, bool create) const;
         void instantiate(Instance &ins, index_set &atoms) const;
@@ -100,6 +101,7 @@ class PDDL_Base {
         Condition() { }
         virtual ~Condition() { }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param) = 0;
+        virtual void remap_parameters_by_name(const var_symbol_vec &old_param, const var_symbol_vec &new_param) = 0;
         virtual void instantiate(Instance &ins, index_set &condition) const = 0;
         virtual Condition* ground() const = 0;
         virtual void print(std::ostream &os) const = 0;
@@ -111,6 +113,7 @@ class PDDL_Base {
         Constant(bool value) : value_(value) { }
         virtual ~Constant() { }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param) { }
+        virtual void remap_parameters_by_name(const var_symbol_vec &old_param, const var_symbol_vec &new_param) { }
         virtual void instantiate(Instance &ins, index_set &condition) const { }
         virtual Condition* ground() const { return new Constant(value_); }
         virtual void print(std::ostream &os) const { os << (value_ ? "true" : "false"); }
@@ -120,6 +123,7 @@ class PDDL_Base {
         Literal(const Atom &atom) : Atom(atom) { }
         virtual ~Literal() { }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
+        virtual void remap_parameters_by_name(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         virtual void instantiate(Instance &ins, index_set &condition) const;
         virtual Condition* ground() const;
         virtual void print(std::ostream &os) const { Atom::print(os); }
@@ -131,6 +135,7 @@ class PDDL_Base {
           : std::pair<const VariableSymbol*,const VariableSymbol*>(x, y), negated_(negated) { }
         virtual ~EQ() { }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
+        virtual void remap_parameters_by_name(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         virtual void instantiate(Instance &ins, index_set &condition) const { }
         virtual Condition* ground() const;
         virtual void print(std::ostream &os) const;
@@ -140,6 +145,7 @@ class PDDL_Base {
         And() { }
         virtual ~And() { for( size_t k = 0; k < size(); ++k ) delete (*this)[k]; }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
+        virtual void remap_parameters_by_name(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         virtual void instantiate(Instance &ins, index_set &condition) const;
         virtual Condition* ground() const;
         virtual void print(std::ostream &os) const;
@@ -149,6 +155,7 @@ class PDDL_Base {
         Effect() { }
         virtual ~Effect() { }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param) = 0;
+        virtual void remap_parameters_by_name(const var_symbol_vec &old_param, const var_symbol_vec &new_param) = 0;
         virtual void instantiate(Instance &ins, index_set &eff, Instance::when_vec &when = dummy_when_vec_) const = 0;
         virtual Effect* ground() const = 0;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const = 0;
@@ -160,6 +167,7 @@ class PDDL_Base {
         NullEffect() { }
         virtual ~NullEffect() { }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param) { }
+        virtual void remap_parameters_by_name(const var_symbol_vec &old_param, const var_symbol_vec &new_param) { }
         virtual void instantiate(Instance &ins, index_set &eff, Instance::when_vec &when = dummy_when_vec_) const { }
         virtual Effect* ground() const { return new NullEffect; }
         virtual bool is_strongly_static(const PredicateSymbol &pred) const { return true; }
@@ -170,6 +178,7 @@ class PDDL_Base {
         AtomicEffect(const Atom &atom) : Atom(atom) { }
         virtual ~AtomicEffect() { }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
+        virtual void remap_parameters_by_name(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         virtual void instantiate(Instance &ins, index_set &eff, Instance::when_vec &when = dummy_when_vec_) const;
         virtual Effect* ground() const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
@@ -180,6 +189,7 @@ class PDDL_Base {
         AndEffect() { }
         virtual ~AndEffect() { for( size_t k = 0; k < size(); ++k ) delete (*this)[k]; }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
+        virtual void remap_parameters_by_name(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         virtual void instantiate(Instance &ins, index_set &eff, Instance::when_vec &when = dummy_when_vec_) const;
         virtual Effect* ground() const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
@@ -193,6 +203,7 @@ class PDDL_Base {
           : condition_(condition), effect_(effect) { }
         virtual ~ConditionalEffect() { delete condition_; delete effect_; }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
+        virtual void remap_parameters_by_name(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         virtual void instantiate(Instance &ins, index_set &eff, Instance::when_vec &when = dummy_when_vec_) const;
         virtual Effect* ground() const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
@@ -204,28 +215,31 @@ class PDDL_Base {
         ForallEffect() : effect_(0) { }
         virtual ~ForallEffect() { delete effect_; }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
+        virtual void remap_parameters_by_name(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         virtual void instantiate(Instance &ins, index_set &eff, Instance::when_vec &when = dummy_when_vec_) const;
-        virtual Effect* ground() const;
         virtual void process_instance() const;
+        virtual Effect* ground() const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
         virtual void print(std::ostream &os) const;
         mutable std::vector<AndEffect*> result_stack;
     };
 
-    struct Invariant : public condition_vec {
+    struct Invariant : public condition_vec, Schema {
         int type_;
         enum { AT_LEAST_ONE = 0, AT_MOST_ONE = 1, EXACTLY_ONE = 2 };
         Invariant(int type) : type_(type) { }
         Invariant(int type, const condition_vec &invariant) : condition_vec(invariant), type_(type) { }
         virtual ~Invariant() { for( size_t k = 0; k < size(); ++k ) delete (*this)[k]; }
-        virtual void instantiate(Instance &ins, Instance::Invariant &invariant) const;
+        virtual void process_instance() const;
         virtual void print(std::ostream &os) const;
+        mutable Instance::invariant_vec *invariant_vec_ptr_;
+        mutable Instance *instance_ptr_;
     };
 
     struct Clause : public condition_vec {
         Clause(const condition_vec &clause) : condition_vec(clause) { }
         virtual ~Clause() { for( size_t k = 0; k < size(); ++k ) delete (*this)[k]; }
-        virtual void instantiate(Instance &ins, Instance::Clause &clause) const;
+        void instantiate(Instance &ins, Instance::Clause &clause) const;
         virtual void print(std::ostream &os) const;
     };
 
@@ -233,14 +247,14 @@ class PDDL_Base {
         Oneof() { }
         Oneof(const condition_vec &oneof) : condition_vec(oneof) { }
         virtual ~Oneof() { for( size_t k = 0; k < size(); ++k ) delete (*this)[k]; }
-        virtual void instantiate(Instance &ins, Instance::Oneof &oneof) const;
+        void instantiate(Instance &ins, Instance::Oneof &oneof) const;
         virtual void print(std::ostream &os) const;
     };
 
     struct InitElement {
         InitElement() { }
         virtual ~InitElement() { }
-        virtual void instantiate(Instance &ins, Instance::Init &init) const = 0;
+        virtual void instantiate(Instance &ins) const = 0;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const = 0;
         virtual void print(std::ostream &os) const = 0;
     };
@@ -249,7 +263,8 @@ class PDDL_Base {
     struct InitLiteral : public InitElement, Atom {
         InitLiteral(const Atom &atom) : Atom(atom) { }
         virtual ~InitLiteral() { }
-        virtual void instantiate(Instance &ins, Instance::Init &init) const;
+        void instantiate(Instance &ins, Instance::Init &state) const;
+        virtual void instantiate(Instance &ins) const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
         virtual void print(std::ostream &os) const { Atom::print(os); }
     };
@@ -257,16 +272,15 @@ class PDDL_Base {
     struct InitInvariant : public InitElement, Invariant {
         InitInvariant(const Invariant &invariant) : Invariant(invariant) { }
         virtual ~InitInvariant() { }
-        virtual void instantiate(Instance &ins, Instance::Init &init) const;
+        virtual void instantiate(Instance &ins) const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
         virtual void print(std::ostream &os) const { Invariant::print(os); }
-        using Invariant::instantiate;
     };
 
     struct InitClause : public InitElement, Clause {
         InitClause(const Clause &clause) : Clause(clause) { }
         virtual ~InitClause() { }
-        virtual void instantiate(Instance &ins, Instance::Init &init) const;
+        virtual void instantiate(Instance &ins) const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
         virtual void print(std::ostream &os) const { Clause::print(os); }
         using Clause::instantiate;
@@ -275,7 +289,7 @@ class PDDL_Base {
     struct InitOneof : public InitElement, Oneof {
         InitOneof(const Oneof &oneof) : Oneof(oneof) { }
         virtual ~InitOneof() { }
-        virtual void instantiate(Instance &ins, Instance::Init &init) const;
+        virtual void instantiate(Instance &ins) const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
         virtual void print(std::ostream &os) const { Oneof::print(os); }
         using Oneof::instantiate;
@@ -293,7 +307,7 @@ class PDDL_Base {
         void instantiate(Instance &ins) const;
         virtual void process_instance() const;
         virtual void print(std::ostream &os) const;
-        mutable Instance *ins_ptr_;
+        mutable Instance *instance_ptr_;
     };
     struct action_vec : public std::vector<Action*> { };
 
@@ -305,7 +319,7 @@ class PDDL_Base {
         void instantiate(Instance &ins) const;
         virtual void process_instance() const;
         virtual void print(std::ostream &os) const;
-        mutable Instance *ins_ptr_;
+        mutable Instance *instance_ptr_;
     };
     struct sensor_vec : public std::vector<Sensor*> { };
 
@@ -317,7 +331,7 @@ class PDDL_Base {
         void instantiate(Instance &ins) const;
         virtual void process_instance() const;
         virtual void print(std::ostream &os) const;
-        mutable Instance *ins_ptr_;
+        mutable Instance *instance_ptr_;
     };
     struct axiom_vec : public std::vector<Axiom*> { };
 
@@ -339,20 +353,25 @@ class PDDL_Base {
     };
     struct sticky_vec : public std::vector<Sticky*> { };
 
-    struct Variable : public Symbol {
+    struct Variable : public Symbol, Schema {
         effect_vec values_;
         Variable(const char *name) : Symbol(name, sym_varname) { }
         virtual ~Variable() { for( size_t k = 0; k < values_.size(); ++k ) delete values_[k]; }
-        void instantiate(Instance &ins, index_set &values) const;
+        //void instantiate(Instance &ins, index_set &values) const;
+        void instantiate() const;
+        virtual void process_instance() const;
+        virtual Variable* make_instance(const char *name) const = 0;
         virtual bool is_observable() const = 0;
         virtual void print(std::ostream &os) const = 0;
+        mutable std::vector<Variable*> *variable_vec_ptr_;
     };
     struct variable_vec : public std::vector<Variable*> { };
 
     struct StateVariable : public Variable {
         bool is_observable_;
-        StateVariable(const char *name) : Variable(name), is_observable_(false) { }
+        StateVariable(const char *name, bool is_observable = false) : Variable(name), is_observable_(is_observable) { }
         virtual ~StateVariable() { }
+        virtual Variable* make_instance(const char *name) const { return new StateVariable(name, is_observable_); }
         virtual bool is_observable() const { return is_observable_; }
         virtual void print(std::ostream &os) const;
     };
@@ -360,6 +379,7 @@ class PDDL_Base {
     struct ObsVariable : public Variable {
         ObsVariable(const char *name) : Variable(name) { }
         virtual ~ObsVariable() { }
+        virtual Variable* make_instance(const char *name) const { return new ObsVariable(name); }
         virtual bool is_observable() const { return true; }
         virtual void print(std::ostream &os) const;
     };
@@ -394,11 +414,12 @@ class PDDL_Base {
     bool                                      multivalued_variable_translation_;
     variable_vec                              multivalued_variables_;
     index_set_vec                             multivalued_domains_;
-    std::pair<Atom*, Atom*>                   normal_execution_;
-    std::pair<Atom*, Atom*>                   sensing_;
+    std::pair<const Atom*, const Atom*>       normal_execution_;
+    std::pair<const Atom*, const Atom*>       sensing_;
     std::vector<std::pair<Atom*, Atom*> >     need_sense_;
     std::vector<std::pair<Atom*, Atom*> >     need_post_;
-    std::vector<std::pair<Effect*, size_t> >  sensing_models_;
+    const Effect                              *default_sensing_model_;
+    std::vector<std::pair<std::pair<const var_symbol_vec*, const Effect*>, size_t> > sensing_models_;
 
 
     PDDL_Base(StringTable& t);

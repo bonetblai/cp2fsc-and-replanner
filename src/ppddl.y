@@ -29,6 +29,7 @@
 
 %union {
     StringTable::Cell                 *sym;
+    PDDL_Base::VariableSymbol         *vsym;
     PDDL_Base::Atom                   *atom;
     PDDL_Base::symbol_vec             *param;
     PDDL_Base::var_symbol_vec         *vparam;
@@ -61,13 +62,15 @@
                    KW_INVARIANT KW_AT_LEAST_ONE KW_AT_MOST_ONE KW_EXACTLY_ONE
 
 %token             KW_TRANSLATION
-                   KW_VARIABLE KW_OBS_VARIABLE
-                   KW_SENSING_MODEL
+                   KW_VARIABLE KW_OBS_VARIABLE KW_VALUES
+                   KW_SENSING_MODEL KW_DEFAULT_SENSING_MODEL
 
+%type <vsym>       new_var_symbol
 %type <sym>        action_symbol any_symbol sensor_symbol axiom_symbol variable_symbol
 %type <param>      argument_list
-%type <vparam>     typed_param_list typed_param_sym_list
+%type <vparam>     param_list typed_param_list untyped_param_list param_sym_list
 
+%type <sym>        primitive_type
 %type <atom>       positive_literal negative_literal literal
 %type <condition>  condition single_condition condition_list
 %type <condition>  goal_list single_goal
@@ -80,6 +83,8 @@
 %type <effect>     sensing_model fluent_decl
 %type <ilist>      init_elements
 %type <ielem>      single_init_element
+
+%type <ival>       multivalued_variable_type
 
 %start pddl_decls
 
@@ -100,11 +105,12 @@ pddl_domain:
     ;
 
 domain_elements:
-      domain_requires domain_elements
-    | domain_types domain_elements
-    | domain_constants domain_elements
-    | domain_predicates domain_elements
-    | domain_structure domain_elements
+      domain_elements domain_requires
+    | domain_elements domain_types
+    | domain_elements domain_constants
+    | domain_elements domain_predicates
+    | domain_elements domain_schemas
+    | domain_elements domain_default_sensing_model
     | /* empty */
     ;
  
@@ -178,7 +184,7 @@ predicate_list:
     ;
 
 predicate_decl:
-      TK_OPEN TK_NEW_SYMBOL typed_param_list TK_CLOSE {
+      TK_OPEN TK_NEW_SYMBOL param_list TK_CLOSE {
           PredicateSymbol *p = new PredicateSymbol($2->text);
           dom_predicates_.push_back(p);
           p->param_ = *$3;
@@ -192,65 +198,89 @@ predicate_decl:
       }
     ;
 
-typed_param_list:
-      typed_param_list typed_param_sym_list TK_HYPHEN TK_TYPE_SYMBOL {
-          set_variable_type(*$2, $2->size(), static_cast<TypeSymbol*>($4->val));
-          $1->insert($1->end(), $2->begin(), $2->end());
-          delete $2;
-          $$ = $1;
-      }
-    | typed_param_list typed_param_sym_list {
-          set_variable_type(*$1, $1->size(), dom_top_type_);
-          $1->insert($1->end(), $2->begin(), $2->end());
-          delete $2;
+param_list:
+      untyped_param_list
+    | typed_param_list {
+          // must reverse parameter list
+          var_symbol_vec tmp_list(*$1);
+          $1->clear();
+          $1->insert($1->end(), tmp_list.rbegin(), tmp_list.rend());
           $$ = $1;
       }
     | /* empty */ { $$ = new var_symbol_vec; }
     ;
 
-typed_param_sym_list:
-      typed_param_sym_list TK_NEW_VAR_SYMBOL {
-          VariableSymbol *var = new VariableSymbol($2->text);
-          $2->val = var;
-          $1->push_back(var);
+untyped_param_list:
+      param_sym_list {
+          set_variable_type(*$1, $1->size(), dom_top_type_);
           $$ = $1;
       }
-    | /* empty */ { $$ = new var_symbol_vec; }
+    ;
+
+typed_param_list:
+      param_sym_list TK_HYPHEN TK_TYPE_SYMBOL typed_param_list {
+          set_variable_type(*$1, $1->size(), static_cast<TypeSymbol*>($3->val));
+          $4->insert($4->end(), $1->rbegin(), $1->rend());
+          delete $1;
+          $$ = $4;
+      }
+    | param_sym_list TK_HYPHEN TK_TYPE_SYMBOL {
+          set_variable_type(*$1, $1->size(), static_cast<TypeSymbol*>($3->val));
+          $$ = $1;
+      }
+    ;
+
+param_sym_list:
+      param_sym_list new_var_symbol {
+          $1->push_back(static_cast<VariableSymbol*>($2));
+          $$ = $1;
+      }
+    | new_var_symbol { $$ = new var_symbol_vec; $$->push_back($1); }
+    ;
+
+new_var_symbol:
+      TK_NEW_VAR_SYMBOL {
+          VariableSymbol *var = new VariableSymbol($1->text);
+          $1->val = var;
+          $$ = var;
+      }
     ;
 
 // type declarations
 
 domain_types:
-      TK_OPEN KW_TYPES typed_type_list TK_CLOSE
+      TK_OPEN KW_TYPES primitive_type_list TK_CLOSE
+    | TK_OPEN KW_TYPES typed_type_list TK_CLOSE {
+          set_type_type(dom_types_, dom_types_.size(), dom_top_type_);
+      }
     ;
 
 typed_type_list:
-      typed_type_list primitive_type_list TK_HYPHEN TK_TYPE_SYMBOL {
-          set_type_type(dom_types_, dom_types_.size(), static_cast<TypeSymbol*>($4->val));
+      primitive_type_list TK_HYPHEN TK_TYPE_SYMBOL typed_type_list {
+          set_type_type(dom_types_, dom_types_.size(), static_cast<TypeSymbol*>($3->val));
       }
-    | typed_type_list primitive_type_list TK_HYPHEN TK_NEW_SYMBOL {
-          $4->val = new TypeSymbol($4->text);
+    | primitive_type_list TK_HYPHEN TK_NEW_SYMBOL typed_type_list {
+          $3->val = new TypeSymbol($3->text);
           if( write_warnings_ )
-              std::cerr << "warning: assuming " << $4->text << " - object" << std::endl;
-          static_cast<TypeSymbol*>($4->val)->sym_type_ = dom_top_type_;
-          set_type_type(dom_types_, dom_types_.size(), static_cast<TypeSymbol*>($4->val));
-          dom_types_.push_back(static_cast<TypeSymbol*>($4->val));
-      }
-    | typed_type_list primitive_type_list {
-          set_type_type(dom_types_, dom_types_.size(), dom_top_type_);
+              std::cerr << "warning: assuming " << $3->text << " - object" << std::endl;
+          static_cast<TypeSymbol*>($3->val)->sym_type_ = dom_top_type_;
+          set_type_type(dom_types_, dom_types_.size(), static_cast<TypeSymbol*>($3->val));
+          dom_types_.push_back(static_cast<TypeSymbol*>($3->val));
       }
     | /* empty */
     ;
 
 primitive_type_list:
-      primitive_type_list TK_TYPE_SYMBOL {
-          /* the type is already (implicitly) declared */
+      primitive_type_list primitive_type
+    | primitive_type { }
+    ;
+
+primitive_type:
+      TK_TYPE_SYMBOL
+    | TK_NEW_SYMBOL {
+          $1->val = new TypeSymbol($1->text);
+          dom_types_.push_back(static_cast<TypeSymbol*>($1->val));
       }
-    | primitive_type_list TK_NEW_SYMBOL {
-          $2->val = new TypeSymbol($2->text);
-          dom_types_.push_back(static_cast<TypeSymbol*>($2->val));
-      }
-    | /* empty */
     ;
 
 // constant declarations
@@ -258,20 +288,26 @@ primitive_type_list:
 domain_constants:
       TK_OPEN KW_CONSTANTS typed_constant_list TK_CLOSE
     | TK_OPEN KW_OBJECTS typed_constant_list TK_CLOSE
+    | TK_OPEN KW_CONSTANTS untyped_constant_list TK_CLOSE
+    | TK_OPEN KW_OBJECTS untyped_constant_list TK_CLOSE
     ;
 
 typed_constant_list:
-      typed_constant_list ne_constant_sym_list TK_HYPHEN TK_TYPE_SYMBOL {
-          set_constant_type(dom_constants_, dom_constants_.size(), static_cast<TypeSymbol*>($4->val));
+      constant_sym_list TK_HYPHEN TK_TYPE_SYMBOL {
+          set_constant_type(dom_constants_, dom_constants_.size(), static_cast<TypeSymbol*>($3->val));
       }
-    | typed_constant_list ne_constant_sym_list {
-          set_constant_type(dom_constants_, dom_constants_.size(), dom_top_type_);
-      }
+      typed_constant_list
     | /* empty */
     ;
 
-ne_constant_sym_list:
-      ne_constant_sym_list TK_NEW_SYMBOL {
+untyped_constant_list:
+      constant_sym_list {
+          set_constant_type(dom_constants_, dom_constants_.size(), dom_top_type_);
+      }
+    ;
+
+constant_sym_list:
+      constant_sym_list TK_NEW_SYMBOL {
           $2->val = new Symbol($2->text);
           dom_constants_.push_back(static_cast<Symbol*>($2->val));
       }
@@ -283,37 +319,38 @@ ne_constant_sym_list:
 
 // structure declarations
 
-domain_structure:
+domain_schemas:
       action_decl
     | axiom_decl {
-         if( type_ == replanner ) {
-             log_error((char*)"':axiom' is not a valid element in k-replanner.");
-             yyerrok;
-         }
+          if( type_ == replanner ) {
+              log_error((char*)"':axiom' is not a valid element in k-replanner.");
+              yyerrok;
+          }
       }
     | sensor_decl {
-         if( type_ == cp2fsc ) {
-             log_error((char*)"':sensor' is not a valid element in cp2fsc.");
-             yyerrok;
-         }
+          if( type_ == cp2fsc ) {
+              log_error((char*)"':sensor' is not a valid element in cp2fsc.");
+              yyerrok;
+          }
       }
     | observable_decl {
-         if( type_ == replanner ) {
-             log_error((char*)"':observable' is not a valid element in k-replanner.");
-             yyerrok;
-         }
+          if( type_ == replanner ) {
+              log_error((char*)"':observable' is not a valid element in k-replanner.");
+              yyerrok;
+          }
       }
     | sticky_decl {
-         if( type_ == replanner ) {
-             log_error((char*)"':sticky' is not a valid element in k-replanner.");
-             yyerrok;
-         }
+          if( type_ == replanner ) {
+              log_error((char*)"':sticky' is not a valid element in k-replanner.");
+              yyerrok;
+          }
       }
     | multivalued_variable_decl {
-         if( type_ == cp2fsc ) {
-             log_error((char*)"':sensor' is not a valid element in cp2fsc.");
-             yyerrok;
-         }
+          //declare_multivalued_variable_translation();
+          if( type_ == cp2fsc ) {
+              log_error((char*)"':sensor' is not a valid element in cp2fsc.");
+              yyerrok;
+          }
       }
     ;
 
@@ -335,7 +372,7 @@ action_decl:
     ;
 
 action_elements:
-      action_elements KW_ARGS TK_OPEN typed_param_list TK_CLOSE {
+      action_elements KW_ARGS TK_OPEN param_list TK_CLOSE {
           dom_actions_.back()->param_ = *$4;
           delete $4;
       }
@@ -462,7 +499,7 @@ forall_effect:
       TK_OPEN KW_FORALL TK_OPEN {
           forall_effects.push_back(new ForallEffect);
       }
-      typed_param_list TK_CLOSE {
+      param_list TK_CLOSE {
           forall_effects.back()->param_ = *$5;
           delete $5;
       }
@@ -532,7 +569,7 @@ axiom_decl:
     ;
 
 axiom_elements:
-      axiom_elements KW_ARGS TK_OPEN typed_param_list TK_CLOSE {
+      axiom_elements KW_ARGS TK_OPEN param_list TK_CLOSE {
           dom_axioms_.back()->param_ = *$4;
           delete $4;
       }
@@ -557,7 +594,7 @@ sensor_decl:
     ;
 
 sensor_elements:
-      sensor_elements KW_ARGS TK_OPEN typed_param_list TK_CLOSE {
+      sensor_elements KW_ARGS TK_OPEN param_list TK_CLOSE {
           dom_sensors_.back()->param_ = *$4;
           delete $4;
       }
@@ -571,7 +608,8 @@ observable_decl:
           Observable *obs = new Observable;
           dom_observables_.push_back(obs);
           tmp_effect_vec_ptr_ = &obs->observables_;
-      } fluent_list_decl TK_CLOSE
+      }
+      fluent_list_decl TK_CLOSE
     | TK_OPEN KW_OBSERVABLE error TK_CLOSE {
           log_error((char*)"syntax error in observable declaration");
           yyerrok;
@@ -579,7 +617,7 @@ observable_decl:
     ;
 
 fluent_list_decl:
-    | fluent_list_decl fluent_decl {
+      fluent_list_decl fluent_decl {
           tmp_effect_vec_ptr_->push_back($2);
       }
     | fluent_decl {
@@ -597,7 +635,8 @@ sticky_decl:
           Sticky *sticky = new Sticky;
           dom_stickies_.push_back(sticky);
           tmp_effect_vec_ptr_ = &sticky->stickies_;
-      } fluent_list_decl TK_CLOSE
+      }
+      fluent_list_decl TK_CLOSE
     | TK_OPEN KW_STICKY error TK_CLOSE {
           log_error((char*)"syntax error in sticky declaration");
           yyerrok;
@@ -605,40 +644,66 @@ sticky_decl:
     ;
 
 multivalued_variable_decl:
-      state_variable_decl
-    | observable_variable_decl
-    ;
-
-state_variable_decl:
-      TK_OPEN KW_VARIABLE variable_symbol {
-          StateVariable *var = new StateVariable($3->text);
+      TK_OPEN multivalued_variable_type variable_symbol {
+          Variable *var = 0;
+          if( $2 == 0 )
+              var = new StateVariable($3->text);
+          else
+              var = new ObsVariable($3->text);
           multivalued_variables_.push_back(var);
           tmp_effect_vec_ptr_ = &var->values_;
       }
-      fluent_list_decl rest_state_variable TK_CLOSE
+      optional_variable_parameters fluent_list_decl rest_variable_decl TK_CLOSE {
+          $3->val = multivalued_variables_.back();
+      }
+    | TK_OPEN multivalued_variable_type TK_OPEN variable_symbol param_list TK_CLOSE {
+          Variable *var = 0;
+          if( $2 == 0 )
+              var = new StateVariable($4->text);
+          else
+              var = new ObsVariable($4->text);
+          var->param_ = *$5;
+          delete $5;
+          multivalued_variables_.push_back(var);
+          tmp_effect_vec_ptr_ = &var->values_;
+      }
+      fluent_list_decl rest_variable_decl TK_CLOSE {
+          clear_param(multivalued_variables_.back()->param_);
+          $4->val = multivalued_variables_.back();
+      }
     | TK_OPEN KW_VARIABLE error TK_CLOSE {
           log_error((char*)"syntax error in state variable declaration");
           yyerrok;
       }
     ;
 
-rest_state_variable:
+multivalued_variable_type:
+      KW_VARIABLE { $$ = 0; }
+    | KW_OBS_VARIABLE { $$ = 1; }
+    ;
+
+optional_variable_parameters:
+      KW_ARGS TK_OPEN param_list TK_CLOSE {
+          multivalued_variables_.back()->param_ = *$3;
+          delete $3;
+      }
+    | /* empty */
+    ;
+
+rest_variable_decl:
       KW_OBSERVABLE {
+          assert(dynamic_cast<StateVariable*>(multivalued_variables_.back()) != 0);
           dynamic_cast<StateVariable*>(multivalued_variables_.back())->is_observable_ = true;
       }
     | /* empty */
     ;
 
-observable_variable_decl:
-      TK_OPEN KW_OBS_VARIABLE variable_symbol {
-          ObsVariable *var = new ObsVariable($3->text);
-          multivalued_variables_.push_back(var);
-          tmp_effect_vec_ptr_ = &var->values_;
-      }
-      fluent_list_decl TK_CLOSE
-    | TK_OPEN KW_OBS_VARIABLE error TK_CLOSE {
-          log_error((char*)"syntax error in observable variable declaration");
-          yyerrok;
+// default sensing declaration
+
+domain_default_sensing_model:
+      TK_OPEN KW_DEFAULT_SENSING_MODEL sensing_model TK_CLOSE {
+          declare_multivalued_variable_translation();
+          default_sensing_model_ = $3;
       }
     ;
 
