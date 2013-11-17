@@ -61,6 +61,7 @@ void print_usage(ostream &os, const char *exec_name, const char **cmdline_option
 
 int main(int argc, char *argv[]) {
     StringTable symbols(50, lowercase_map);
+    bool        opt_debug_parser = false;
     bool        opt_print_plan = true;
     int         opt_planner = 0;
     int         opt_time_bound = 3600;
@@ -93,6 +94,8 @@ int main(int argc, char *argv[]) {
         if( !skip_options && !strcmp(argv[k], "--help") ) {
             print_usage(cout, exec_name, k_replanner_cmdline_options);
             exit(0);
+        } else if( !skip_options && !strcmp(argv[k], "--debug-parser") ) {
+            opt_debug_parser = true;
         } else if( !skip_options && !strcmp(argv[k], "--max-time") ) {
             if( k == argc-1 ) {
                 cout << "error: not enough arguments for '" << argv[k] << "'." << endl;
@@ -137,7 +140,7 @@ int main(int argc, char *argv[]) {
         // read input file
         } else if( *argv[k] != '-' ) {
             cout << "reading " << argv[k] << "..." << endl;
-            reader->read(argv[k], false);
+            reader->read(argv[k], opt_debug_parser);
             ++nfiles;
         } else {
             cout << argv[k] << endl;

@@ -7,21 +7,9 @@ Terminals which are not used:
    TK_INT
    KW_EXISTS
    KW_FLUENTS
+   KW_VALUES
 
 
-State 68 contains 1 shift/reduce conflict.
-State 83 contains 1 shift/reduce conflict.
-State 85 contains 1 shift/reduce conflict.
-State 99 contains 1 shift/reduce conflict.
-State 106 contains 3 shift/reduce conflicts.
-State 124 contains 1 shift/reduce conflict.
-State 126 contains 1 shift/reduce conflict.
-State 131 contains 1 shift/reduce conflict.
-State 155 contains 2 shift/reduce conflicts.
-State 236 contains 1 shift/reduce conflict.
-State 242 contains 1 shift/reduce conflict.
-State 243 contains 1 shift/reduce conflict.
-State 245 contains 1 shift/reduce conflict.
 
 Grammar
 rule 1    pddl_decls -> pddl_domain pddl_decls
@@ -29,414 +17,441 @@ rule 2    pddl_decls -> pddl_problem pddl_decls
 rule 3    pddl_decls ->		/* empty */
 rule 4    pddl_domain -> TK_OPEN KW_DEFINE domain_name domain_elements TK_CLOSE
 rule 5    pddl_domain -> TK_OPEN KW_DEFINE domain_name error TK_CLOSE
-rule 6    domain_elements -> domain_requires domain_elements
-rule 7    domain_elements -> domain_types domain_elements
-rule 8    domain_elements -> domain_constants domain_elements
-rule 9    domain_elements -> domain_predicates domain_elements
-rule 10   domain_elements -> domain_structure domain_elements
-rule 11   domain_elements ->		/* empty */
-rule 12   domain_name -> TK_OPEN KW_DOMAIN any_symbol TK_CLOSE
-rule 13   any_symbol -> TK_NEW_SYMBOL
-rule 14   any_symbol -> TK_OBJ_SYMBOL
-rule 15   any_symbol -> TK_TYPE_SYMBOL
-rule 16   any_symbol -> TK_PRED_SYMBOL
-rule 17   any_symbol -> TK_VAR_SYMBOL
-rule 18   any_symbol -> TK_ACTION_SYMBOL
-rule 19   any_symbol -> TK_AXIOM_SYMBOL
-rule 20   any_symbol -> TK_SENSOR_SYMBOL
-rule 21   any_symbol -> TK_MISC_SYMBOL
-rule 22   variable_symbol -> TK_NEW_SYMBOL
-rule 23   variable_symbol -> TK_VARNAME_SYMBOL
-rule 24   action_symbol -> TK_NEW_SYMBOL
-rule 25   action_symbol -> TK_ACTION_SYMBOL
-rule 26   sensor_symbol -> TK_NEW_SYMBOL
-rule 27   sensor_symbol -> TK_SENSOR_SYMBOL
-rule 28   axiom_symbol -> TK_NEW_SYMBOL
-rule 29   axiom_symbol -> TK_AXIOM_SYMBOL
-rule 30   domain_requires -> TK_OPEN KW_REQS require_list TK_CLOSE
-rule 31   domain_requires -> TK_OPEN KW_REQS error TK_CLOSE
-rule 32   require_list -> require_list KW_TRANSLATION
-rule 33   require_list -> require_list TK_KEYWORD
-rule 34   require_list ->		/* empty */
-rule 35   domain_predicates -> TK_OPEN KW_PREDS predicate_list TK_CLOSE
-rule 36   domain_predicates -> TK_OPEN KW_PREDS error TK_CLOSE
-rule 37   predicate_list -> predicate_list predicate_decl
-rule 38   predicate_list -> predicate_decl
-rule 39   predicate_decl -> TK_OPEN TK_NEW_SYMBOL typed_param_list TK_CLOSE
-rule 40   predicate_decl -> TK_OPEN error TK_CLOSE
-rule 41   typed_param_list -> typed_param_list typed_param_sym_list TK_HYPHEN TK_TYPE_SYMBOL
-rule 42   typed_param_list -> typed_param_list typed_param_sym_list
-rule 43   typed_param_list ->		/* empty */
-rule 44   typed_param_sym_list -> typed_param_sym_list TK_NEW_VAR_SYMBOL
-rule 45   typed_param_sym_list ->		/* empty */
-rule 46   domain_types -> TK_OPEN KW_TYPES typed_type_list TK_CLOSE
-rule 47   typed_type_list -> typed_type_list primitive_type_list TK_HYPHEN TK_TYPE_SYMBOL
-rule 48   typed_type_list -> typed_type_list primitive_type_list TK_HYPHEN TK_NEW_SYMBOL
-rule 49   typed_type_list -> typed_type_list primitive_type_list
-rule 50   typed_type_list ->		/* empty */
-rule 51   primitive_type_list -> primitive_type_list TK_TYPE_SYMBOL
-rule 52   primitive_type_list -> primitive_type_list TK_NEW_SYMBOL
-rule 53   primitive_type_list ->		/* empty */
-rule 54   domain_constants -> TK_OPEN KW_CONSTANTS typed_constant_list TK_CLOSE
-rule 55   domain_constants -> TK_OPEN KW_OBJECTS typed_constant_list TK_CLOSE
-rule 56   typed_constant_list -> typed_constant_list ne_constant_sym_list TK_HYPHEN TK_TYPE_SYMBOL
-rule 57   typed_constant_list -> typed_constant_list ne_constant_sym_list
-rule 58   typed_constant_list ->		/* empty */
-rule 59   ne_constant_sym_list -> ne_constant_sym_list TK_NEW_SYMBOL
-rule 60   ne_constant_sym_list -> TK_NEW_SYMBOL
-rule 61   domain_structure -> action_decl
-rule 62   domain_structure -> axiom_decl
-rule 63   domain_structure -> sensor_decl
-rule 64   domain_structure -> observable_decl
-rule 65   domain_structure -> sticky_decl
-rule 66   domain_structure -> multivalued_variable_decl
-rule 67   @1 ->		/* empty */
-rule 68   action_decl -> TK_OPEN KW_ACTION action_symbol @1 action_elements TK_CLOSE
-rule 69   action_decl -> TK_OPEN KW_ACTION error TK_CLOSE
-rule 70   action_elements -> action_elements KW_ARGS TK_OPEN typed_param_list TK_CLOSE
-rule 71   action_elements -> action_elements KW_PRE condition
-rule 72   action_elements -> action_elements KW_EFFECT action_effect
-rule 73   action_elements -> action_elements KW_OBSERVE positive_atomic_effect_list
-rule 74   action_elements -> action_elements KW_SENSING_MODEL sensing_model
-rule 75   action_elements ->		/* empty */
-rule 76   condition -> single_condition
-rule 77   condition -> TK_OPEN KW_AND condition_list TK_CLOSE
-rule 78   condition_list -> condition_list single_condition
-rule 79   condition_list -> single_condition
-rule 80   single_condition -> literal
-rule 81   literal -> positive_literal
-rule 82   literal -> negative_literal
-rule 83   positive_literal -> TK_OPEN TK_PRED_SYMBOL argument_list TK_CLOSE
-rule 84   positive_literal -> TK_OPEN TK_EQ argument_list TK_CLOSE
-rule 85   negative_literal -> TK_OPEN KW_NOT positive_literal TK_CLOSE
-rule 86   argument_list -> argument_list TK_VAR_SYMBOL
-rule 87   argument_list -> argument_list TK_OBJ_SYMBOL
-rule 88   argument_list ->		/* empty */
-rule 89   action_effect -> single_action_effect
-rule 90   action_effect -> TK_OPEN KW_AND action_effect_list TK_CLOSE
-rule 91   action_effect_list -> action_effect_list single_action_effect
-rule 92   action_effect_list -> single_action_effect
-rule 93   single_action_effect -> atomic_effect
-rule 94   single_action_effect -> conditional_effect
-rule 95   single_action_effect -> forall_effect
-rule 96   conditional_effect -> TK_OPEN KW_WHEN condition atomic_effect_kw_list TK_CLOSE
-rule 97   @2 ->		/* empty */
-rule 98   @3 ->		/* empty */
-rule 99   forall_effect -> TK_OPEN KW_FORALL TK_OPEN @2 typed_param_list TK_CLOSE @3 action_effect TK_CLOSE
-rule 100  atomic_effect_kw_list -> TK_OPEN KW_AND atomic_effect_list TK_CLOSE
-rule 101  atomic_effect_kw_list -> atomic_effect
-rule 102  atomic_effect_list -> atomic_effect_list atomic_effect
-rule 103  atomic_effect_list -> atomic_effect
-rule 104  positive_atomic_effect_list -> positive_atomic_effect_list positive_atomic_effect
-rule 105  positive_atomic_effect_list -> positive_atomic_effect
-rule 106  atomic_effect -> literal
-rule 107  positive_atomic_effect -> positive_literal
-rule 108  sensing_model -> action_effect
-rule 109  sensing_model ->		/* empty */
-rule 110  @4 ->		/* empty */
-rule 111  axiom_decl -> TK_OPEN KW_AXIOM axiom_symbol @4 axiom_elements TK_CLOSE
-rule 112  axiom_decl -> TK_OPEN KW_AXIOM error TK_CLOSE
-rule 113  axiom_elements -> axiom_elements KW_ARGS TK_OPEN typed_param_list TK_CLOSE
-rule 114  axiom_elements -> axiom_elements KW_BODY condition
-rule 115  axiom_elements -> axiom_elements KW_HEAD atomic_effect_kw_list
-rule 116  axiom_elements ->		/* empty */
-rule 117  @5 ->		/* empty */
-rule 118  sensor_decl -> TK_OPEN KW_SENSOR sensor_symbol @5 sensor_elements TK_CLOSE
-rule 119  sensor_decl -> TK_OPEN KW_SENSOR error TK_CLOSE
-rule 120  sensor_elements -> sensor_elements KW_ARGS TK_OPEN typed_param_list TK_CLOSE
-rule 121  sensor_elements -> sensor_elements KW_COND condition
-rule 122  sensor_elements -> sensor_elements KW_SENSE positive_atomic_effect_list
-rule 123  sensor_elements ->		/* empty */
-rule 124  @6 ->		/* empty */
-rule 125  observable_decl -> TK_OPEN KW_OBSERVABLE @6 fluent_list_decl TK_CLOSE
-rule 126  observable_decl -> TK_OPEN KW_OBSERVABLE error TK_CLOSE
-rule 127  fluent_list_decl ->		/* empty */
-rule 128  fluent_list_decl -> fluent_list_decl fluent_decl
-rule 129  fluent_list_decl -> fluent_decl
-rule 130  fluent_decl -> positive_atomic_effect
-rule 131  fluent_decl -> forall_effect
-rule 132  @7 ->		/* empty */
-rule 133  sticky_decl -> TK_OPEN KW_STICKY @7 fluent_list_decl TK_CLOSE
-rule 134  sticky_decl -> TK_OPEN KW_STICKY error TK_CLOSE
-rule 135  multivalued_variable_decl -> state_variable_decl
-rule 136  multivalued_variable_decl -> observable_variable_decl
-rule 137  @8 ->		/* empty */
-rule 138  state_variable_decl -> TK_OPEN KW_VARIABLE variable_symbol @8 fluent_list_decl rest_state_variable TK_CLOSE
-rule 139  state_variable_decl -> TK_OPEN KW_VARIABLE error TK_CLOSE
-rule 140  rest_state_variable -> KW_OBSERVABLE
-rule 141  rest_state_variable ->		/* empty */
-rule 142  @9 ->		/* empty */
-rule 143  observable_variable_decl -> TK_OPEN KW_OBS_VARIABLE variable_symbol @9 fluent_list_decl TK_CLOSE
-rule 144  observable_variable_decl -> TK_OPEN KW_OBS_VARIABLE error TK_CLOSE
+rule 6    domain_elements -> domain_elements domain_requires
+rule 7    domain_elements -> domain_elements domain_types
+rule 8    domain_elements -> domain_elements domain_constants
+rule 9    domain_elements -> domain_elements domain_predicates
+rule 10   domain_elements -> domain_elements domain_schemas
+rule 11   domain_elements -> domain_elements domain_default_sensing_model
+rule 12   domain_elements ->		/* empty */
+rule 13   domain_name -> TK_OPEN KW_DOMAIN any_symbol TK_CLOSE
+rule 14   any_symbol -> TK_NEW_SYMBOL
+rule 15   any_symbol -> TK_OBJ_SYMBOL
+rule 16   any_symbol -> TK_TYPE_SYMBOL
+rule 17   any_symbol -> TK_PRED_SYMBOL
+rule 18   any_symbol -> TK_VAR_SYMBOL
+rule 19   any_symbol -> TK_ACTION_SYMBOL
+rule 20   any_symbol -> TK_AXIOM_SYMBOL
+rule 21   any_symbol -> TK_SENSOR_SYMBOL
+rule 22   any_symbol -> TK_MISC_SYMBOL
+rule 23   variable_symbol -> TK_NEW_SYMBOL
+rule 24   variable_symbol -> TK_VARNAME_SYMBOL
+rule 25   action_symbol -> TK_NEW_SYMBOL
+rule 26   action_symbol -> TK_ACTION_SYMBOL
+rule 27   sensor_symbol -> TK_NEW_SYMBOL
+rule 28   sensor_symbol -> TK_SENSOR_SYMBOL
+rule 29   axiom_symbol -> TK_NEW_SYMBOL
+rule 30   axiom_symbol -> TK_AXIOM_SYMBOL
+rule 31   domain_requires -> TK_OPEN KW_REQS require_list TK_CLOSE
+rule 32   domain_requires -> TK_OPEN KW_REQS error TK_CLOSE
+rule 33   require_list -> require_list KW_TRANSLATION
+rule 34   require_list -> require_list TK_KEYWORD
+rule 35   require_list ->		/* empty */
+rule 36   domain_predicates -> TK_OPEN KW_PREDS predicate_list TK_CLOSE
+rule 37   domain_predicates -> TK_OPEN KW_PREDS error TK_CLOSE
+rule 38   predicate_list -> predicate_list predicate_decl
+rule 39   predicate_list -> predicate_decl
+rule 40   predicate_decl -> TK_OPEN TK_NEW_SYMBOL param_list TK_CLOSE
+rule 41   predicate_decl -> TK_OPEN error TK_CLOSE
+rule 42   param_list -> untyped_param_list
+rule 43   param_list -> typed_param_list
+rule 44   param_list ->		/* empty */
+rule 45   untyped_param_list -> param_sym_list
+rule 46   typed_param_list -> param_sym_list TK_HYPHEN TK_TYPE_SYMBOL typed_param_list
+rule 47   typed_param_list -> param_sym_list TK_HYPHEN TK_TYPE_SYMBOL
+rule 48   param_sym_list -> param_sym_list new_var_symbol
+rule 49   param_sym_list -> new_var_symbol
+rule 50   new_var_symbol -> TK_NEW_VAR_SYMBOL
+rule 51   domain_types -> TK_OPEN KW_TYPES primitive_type_list TK_CLOSE
+rule 52   domain_types -> TK_OPEN KW_TYPES typed_type_list TK_CLOSE
+rule 53   typed_type_list -> primitive_type_list TK_HYPHEN TK_TYPE_SYMBOL typed_type_list
+rule 54   typed_type_list -> primitive_type_list TK_HYPHEN TK_NEW_SYMBOL typed_type_list
+rule 55   typed_type_list ->		/* empty */
+rule 56   primitive_type_list -> primitive_type_list primitive_type
+rule 57   primitive_type_list -> primitive_type
+rule 58   primitive_type -> TK_TYPE_SYMBOL
+rule 59   primitive_type -> TK_NEW_SYMBOL
+rule 60   domain_constants -> TK_OPEN KW_CONSTANTS typed_constant_list TK_CLOSE
+rule 61   domain_constants -> TK_OPEN KW_OBJECTS typed_constant_list TK_CLOSE
+rule 62   domain_constants -> TK_OPEN KW_CONSTANTS untyped_constant_list TK_CLOSE
+rule 63   domain_constants -> TK_OPEN KW_OBJECTS untyped_constant_list TK_CLOSE
+rule 64   @1 ->		/* empty */
+rule 65   typed_constant_list -> constant_sym_list TK_HYPHEN TK_TYPE_SYMBOL @1 typed_constant_list
+rule 66   typed_constant_list ->		/* empty */
+rule 67   untyped_constant_list -> constant_sym_list
+rule 68   constant_sym_list -> constant_sym_list TK_NEW_SYMBOL
+rule 69   constant_sym_list -> TK_NEW_SYMBOL
+rule 70   domain_schemas -> action_decl
+rule 71   domain_schemas -> axiom_decl
+rule 72   domain_schemas -> sensor_decl
+rule 73   domain_schemas -> observable_decl
+rule 74   domain_schemas -> sticky_decl
+rule 75   domain_schemas -> multivalued_variable_decl
+rule 76   @2 ->		/* empty */
+rule 77   action_decl -> TK_OPEN KW_ACTION action_symbol @2 action_elements TK_CLOSE
+rule 78   action_decl -> TK_OPEN KW_ACTION error TK_CLOSE
+rule 79   action_elements -> action_elements KW_ARGS TK_OPEN param_list TK_CLOSE
+rule 80   action_elements -> action_elements KW_PRE condition
+rule 81   action_elements -> action_elements KW_EFFECT action_effect
+rule 82   action_elements -> action_elements KW_OBSERVE positive_atomic_effect_list
+rule 83   action_elements -> action_elements KW_SENSING_MODEL sensing_model
+rule 84   action_elements ->		/* empty */
+rule 85   condition -> single_condition
+rule 86   condition -> TK_OPEN KW_AND condition_list TK_CLOSE
+rule 87   condition_list -> condition_list single_condition
+rule 88   condition_list -> single_condition
+rule 89   single_condition -> literal
+rule 90   literal -> positive_literal
+rule 91   literal -> negative_literal
+rule 92   positive_literal -> TK_OPEN TK_PRED_SYMBOL argument_list TK_CLOSE
+rule 93   positive_literal -> TK_OPEN TK_EQ argument_list TK_CLOSE
+rule 94   negative_literal -> TK_OPEN KW_NOT positive_literal TK_CLOSE
+rule 95   argument_list -> argument_list TK_VAR_SYMBOL
+rule 96   argument_list -> argument_list TK_OBJ_SYMBOL
+rule 97   argument_list ->		/* empty */
+rule 98   action_effect -> single_action_effect
+rule 99   action_effect -> TK_OPEN KW_AND action_effect_list TK_CLOSE
+rule 100  action_effect_list -> action_effect_list single_action_effect
+rule 101  action_effect_list -> single_action_effect
+rule 102  single_action_effect -> atomic_effect
+rule 103  single_action_effect -> conditional_effect
+rule 104  single_action_effect -> forall_effect
+rule 105  conditional_effect -> TK_OPEN KW_WHEN condition atomic_effect_kw_list TK_CLOSE
+rule 106  @3 ->		/* empty */
+rule 107  @4 ->		/* empty */
+rule 108  forall_effect -> TK_OPEN KW_FORALL TK_OPEN @3 param_list TK_CLOSE @4 action_effect TK_CLOSE
+rule 109  atomic_effect_kw_list -> TK_OPEN KW_AND atomic_effect_list TK_CLOSE
+rule 110  atomic_effect_kw_list -> atomic_effect
+rule 111  atomic_effect_list -> atomic_effect_list atomic_effect
+rule 112  atomic_effect_list -> atomic_effect
+rule 113  positive_atomic_effect_list -> positive_atomic_effect_list positive_atomic_effect
+rule 114  positive_atomic_effect_list -> positive_atomic_effect
+rule 115  atomic_effect -> literal
+rule 116  positive_atomic_effect -> positive_literal
+rule 117  sensing_model -> action_effect
+rule 118  sensing_model ->		/* empty */
+rule 119  @5 ->		/* empty */
+rule 120  axiom_decl -> TK_OPEN KW_AXIOM axiom_symbol @5 axiom_elements TK_CLOSE
+rule 121  axiom_decl -> TK_OPEN KW_AXIOM error TK_CLOSE
+rule 122  axiom_elements -> axiom_elements KW_ARGS TK_OPEN param_list TK_CLOSE
+rule 123  axiom_elements -> axiom_elements KW_BODY condition
+rule 124  axiom_elements -> axiom_elements KW_HEAD atomic_effect_kw_list
+rule 125  axiom_elements ->		/* empty */
+rule 126  @6 ->		/* empty */
+rule 127  sensor_decl -> TK_OPEN KW_SENSOR sensor_symbol @6 sensor_elements TK_CLOSE
+rule 128  sensor_decl -> TK_OPEN KW_SENSOR error TK_CLOSE
+rule 129  sensor_elements -> sensor_elements KW_ARGS TK_OPEN param_list TK_CLOSE
+rule 130  sensor_elements -> sensor_elements KW_COND condition
+rule 131  sensor_elements -> sensor_elements KW_SENSE positive_atomic_effect_list
+rule 132  sensor_elements ->		/* empty */
+rule 133  @7 ->		/* empty */
+rule 134  observable_decl -> TK_OPEN KW_OBSERVABLE @7 fluent_list_decl TK_CLOSE
+rule 135  observable_decl -> TK_OPEN KW_OBSERVABLE error TK_CLOSE
+rule 136  fluent_list_decl -> fluent_list_decl fluent_decl
+rule 137  fluent_list_decl -> fluent_decl
+rule 138  fluent_decl -> positive_atomic_effect
+rule 139  fluent_decl -> forall_effect
+rule 140  @8 ->		/* empty */
+rule 141  sticky_decl -> TK_OPEN KW_STICKY @8 fluent_list_decl TK_CLOSE
+rule 142  sticky_decl -> TK_OPEN KW_STICKY error TK_CLOSE
+rule 143  @9 ->		/* empty */
+rule 144  multivalued_variable_decl -> TK_OPEN multivalued_variable_type variable_symbol @9 optional_variable_parameters fluent_list_decl rest_variable_decl TK_CLOSE
 rule 145  @10 ->		/* empty */
-rule 146  pddl_problem -> TK_OPEN KW_DEFINE TK_OPEN KW_PROBLEM any_symbol TK_CLOSE @10 problem_elements TK_CLOSE
-rule 147  pddl_problem -> TK_OPEN KW_DEFINE TK_OPEN KW_PROBLEM error TK_CLOSE
-rule 148  problem_elements -> problem_elements TK_OPEN KW_FORDOMAIN any_symbol TK_CLOSE
-rule 149  problem_elements -> problem_elements domain_requires
-rule 150  problem_elements -> problem_elements domain_constants
-rule 151  problem_elements -> problem_elements initial_state
-rule 152  problem_elements -> problem_elements hidden_state
-rule 153  problem_elements -> problem_elements goal_spec
-rule 154  problem_elements ->		/* empty */
-rule 155  initial_state -> TK_OPEN KW_INIT TK_CLOSE
-rule 156  initial_state -> TK_OPEN KW_INIT init_elements TK_CLOSE
-rule 157  initial_state -> TK_OPEN KW_INIT TK_OPEN KW_AND init_elements TK_CLOSE TK_CLOSE
-rule 158  init_elements -> init_elements single_init_element
-rule 159  init_elements -> single_init_element
-rule 160  single_init_element -> literal
-rule 161  single_init_element -> invariant
-rule 162  single_init_element -> clause
-rule 163  single_init_element -> oneof
-rule 164  at_least_one_invariant -> TK_OPEN KW_INVARIANT condition_list TK_CLOSE
-rule 165  at_least_one_invariant -> TK_OPEN KW_AT_LEAST_ONE condition_list TK_CLOSE
-rule 166  at_most_one_invariant -> TK_OPEN KW_AT_MOST_ONE condition_list TK_CLOSE
-rule 167  exactly_one_invariant -> TK_OPEN KW_EXACTLY_ONE condition_list TK_CLOSE
-rule 168  invariant -> at_least_one_invariant
-rule 169  invariant -> at_most_one_invariant
-rule 170  invariant -> exactly_one_invariant
-rule 171  clause -> TK_OPEN KW_OR condition_list TK_CLOSE
-rule 172  oneof -> TK_OPEN KW_ONEOF condition_list TK_CLOSE
-rule 173  hidden_state -> TK_OPEN KW_HIDDEN init_elements TK_CLOSE
-rule 174  goal_spec -> TK_OPEN KW_GOAL single_goal TK_CLOSE
-rule 175  goal_spec -> TK_OPEN KW_GOAL TK_OPEN KW_AND goal_list TK_CLOSE TK_CLOSE
-rule 176  goal_list -> goal_list single_goal
-rule 177  goal_list -> single_goal
-rule 178  single_goal -> positive_literal
-rule 179  single_goal -> negative_literal
+rule 146  multivalued_variable_decl -> TK_OPEN multivalued_variable_type TK_OPEN variable_symbol param_list TK_CLOSE @10 fluent_list_decl rest_variable_decl TK_CLOSE
+rule 147  multivalued_variable_decl -> TK_OPEN KW_VARIABLE error TK_CLOSE
+rule 148  multivalued_variable_type -> KW_VARIABLE
+rule 149  multivalued_variable_type -> KW_OBS_VARIABLE
+rule 150  optional_variable_parameters -> KW_ARGS TK_OPEN param_list TK_CLOSE
+rule 151  optional_variable_parameters ->		/* empty */
+rule 152  rest_variable_decl -> KW_OBSERVABLE
+rule 153  rest_variable_decl ->		/* empty */
+rule 154  domain_default_sensing_model -> TK_OPEN KW_DEFAULT_SENSING_MODEL sensing_model TK_CLOSE
+rule 155  @11 ->		/* empty */
+rule 156  pddl_problem -> TK_OPEN KW_DEFINE TK_OPEN KW_PROBLEM any_symbol TK_CLOSE @11 problem_elements TK_CLOSE
+rule 157  pddl_problem -> TK_OPEN KW_DEFINE TK_OPEN KW_PROBLEM error TK_CLOSE
+rule 158  problem_elements -> problem_elements TK_OPEN KW_FORDOMAIN any_symbol TK_CLOSE
+rule 159  problem_elements -> problem_elements domain_requires
+rule 160  problem_elements -> problem_elements domain_constants
+rule 161  problem_elements -> problem_elements initial_state
+rule 162  problem_elements -> problem_elements hidden_state
+rule 163  problem_elements -> problem_elements goal_spec
+rule 164  problem_elements ->		/* empty */
+rule 165  initial_state -> TK_OPEN KW_INIT TK_CLOSE
+rule 166  initial_state -> TK_OPEN KW_INIT init_elements TK_CLOSE
+rule 167  initial_state -> TK_OPEN KW_INIT TK_OPEN KW_AND init_elements TK_CLOSE TK_CLOSE
+rule 168  init_elements -> init_elements single_init_element
+rule 169  init_elements -> single_init_element
+rule 170  single_init_element -> literal
+rule 171  single_init_element -> invariant
+rule 172  single_init_element -> clause
+rule 173  single_init_element -> oneof
+rule 174  at_least_one_invariant -> TK_OPEN KW_INVARIANT condition_list TK_CLOSE
+rule 175  at_least_one_invariant -> TK_OPEN KW_AT_LEAST_ONE condition_list TK_CLOSE
+rule 176  at_most_one_invariant -> TK_OPEN KW_AT_MOST_ONE condition_list TK_CLOSE
+rule 177  exactly_one_invariant -> TK_OPEN KW_EXACTLY_ONE condition_list TK_CLOSE
+rule 178  invariant -> at_least_one_invariant
+rule 179  invariant -> at_most_one_invariant
+rule 180  invariant -> exactly_one_invariant
+rule 181  clause -> TK_OPEN KW_OR condition_list TK_CLOSE
+rule 182  oneof -> TK_OPEN KW_ONEOF condition_list TK_CLOSE
+rule 183  hidden_state -> TK_OPEN KW_HIDDEN init_elements TK_CLOSE
+rule 184  goal_spec -> TK_OPEN KW_GOAL single_goal TK_CLOSE
+rule 185  goal_spec -> TK_OPEN KW_GOAL TK_OPEN KW_AND goal_list TK_CLOSE TK_CLOSE
+rule 186  goal_list -> goal_list single_goal
+rule 187  goal_list -> single_goal
+rule 188  single_goal -> positive_literal
+rule 189  single_goal -> negative_literal
 
 Terminals, with rules where they appear
 
 $ (-1)
-error (256) 5 31 36 40 69 112 119 126 134 139 144 147
-TK_OPEN (258) 4 5 12 30 31 35 36 39 40 46 54 55 68 69 70 77 83 84 85
-    90 96 99 100 111 112 113 118 119 120 125 126 133 134 138 139 143
-    144 146 147 148 155 156 157 164 165 166 167 171 172 173 174 175
-TK_CLOSE (259) 4 5 12 30 31 35 36 39 40 46 54 55 68 69 70 77 83 84
-    85 90 96 99 100 111 112 113 118 119 120 125 126 133 134 138 139
-    143 144 146 147 148 155 156 157 164 165 166 167 171 172 173 174
-    175
+error (256) 5 32 37 41 78 121 128 135 142 147 157
+TK_OPEN (258) 4 5 13 31 32 36 37 40 41 51 52 60 61 62 63 77 78 79 86
+    92 93 94 99 105 108 109 120 121 122 127 128 129 134 135 141 142
+    144 146 147 150 154 156 157 158 165 166 167 174 175 176 177 181
+    182 183 184 185
+TK_CLOSE (259) 4 5 13 31 32 36 37 40 41 51 52 60 61 62 63 77 78 79
+    86 92 93 94 99 105 108 109 120 121 122 127 128 129 134 135 141
+    142 144 146 147 150 154 156 157 158 165 166 167 174 175 176 177
+    181 182 183 184 185
 TK_OPEN_SQ (260)
 TK_CLOSE_SQ (261)
-TK_EQ (262) 84
-TK_HYPHEN (263) 41 47 48 56
-TK_NEW_SYMBOL (264) 13 22 24 26 28 39 48 52 59 60
-TK_OBJ_SYMBOL (265) 14 87
-TK_TYPE_SYMBOL (266) 15 41 47 51 56
-TK_PRED_SYMBOL (267) 16 83
-TK_VAR_SYMBOL (268) 17 86
-TK_ACTION_SYMBOL (269) 18 25
-TK_AXIOM_SYMBOL (270) 19 29
-TK_SENSOR_SYMBOL (271) 20 27
-TK_MISC_SYMBOL (272) 21
-TK_KEYWORD (273) 33
-TK_NEW_VAR_SYMBOL (274) 44
-TK_VARNAME_SYMBOL (275) 23
+TK_EQ (262) 93
+TK_HYPHEN (263) 46 47 53 54 65
+TK_NEW_SYMBOL (264) 14 23 25 27 29 40 54 59 68 69
+TK_OBJ_SYMBOL (265) 15 96
+TK_TYPE_SYMBOL (266) 16 46 47 53 58 65
+TK_PRED_SYMBOL (267) 17 92
+TK_VAR_SYMBOL (268) 18 95
+TK_ACTION_SYMBOL (269) 19 26
+TK_AXIOM_SYMBOL (270) 20 30
+TK_SENSOR_SYMBOL (271) 21 28
+TK_MISC_SYMBOL (272) 22
+TK_KEYWORD (273) 34
+TK_NEW_VAR_SYMBOL (274) 50
+TK_VARNAME_SYMBOL (275) 24
 TK_INT (276)
-KW_REQS (277) 30 31
-KW_TRANSLATION (278) 32
-KW_CONSTANTS (279) 54
-KW_PREDS (280) 35 36
-KW_TYPES (281) 46
-KW_DEFINE (282) 4 5 146 147
-KW_DOMAIN (283) 12
-KW_ACTION (284) 68 69
-KW_ARGS (285) 70 113 120
-KW_PRE (286) 71
-KW_EFFECT (287) 72
-KW_AND (288) 77 90 100 157 175
-KW_OR (289) 171
+KW_REQS (277) 31 32
+KW_TRANSLATION (278) 33
+KW_CONSTANTS (279) 60 62
+KW_PREDS (280) 36 37
+KW_TYPES (281) 51 52
+KW_DEFINE (282) 4 5 156 157
+KW_DOMAIN (283) 13
+KW_ACTION (284) 77 78
+KW_ARGS (285) 79 122 129 150
+KW_PRE (286) 80
+KW_EFFECT (287) 81
+KW_AND (288) 86 99 109 167 185
+KW_OR (289) 181
 KW_EXISTS (290)
-KW_FORALL (291) 99
-KW_NOT (292) 85
-KW_WHEN (293) 96
-KW_ONEOF (294) 172
-KW_PROBLEM (295) 146 147
-KW_FORDOMAIN (296) 148
-KW_OBJECTS (297) 55
-KW_INIT (298) 155 156 157
-KW_GOAL (299) 174 175
-KW_SENSOR (300) 118 119
-KW_SENSE (301) 122
-KW_OBSERVE (302) 73
-KW_AXIOM (303) 111 112
-KW_COND (304) 121
-KW_OBSERVABLE (305) 125 126 140
-KW_BODY (306) 114
-KW_HEAD (307) 115
-KW_STICKY (308) 133 134
+KW_FORALL (291) 108
+KW_NOT (292) 94
+KW_WHEN (293) 105
+KW_ONEOF (294) 182
+KW_PROBLEM (295) 156 157
+KW_FORDOMAIN (296) 158
+KW_OBJECTS (297) 61 63
+KW_INIT (298) 165 166 167
+KW_GOAL (299) 184 185
+KW_SENSOR (300) 127 128
+KW_SENSE (301) 131
+KW_OBSERVE (302) 82
+KW_AXIOM (303) 120 121
+KW_COND (304) 130
+KW_OBSERVABLE (305) 134 135 152
+KW_BODY (306) 123
+KW_HEAD (307) 124
+KW_STICKY (308) 141 142
 KW_FLUENTS (309)
-KW_HIDDEN (310) 173
-KW_INVARIANT (311) 164
-KW_AT_LEAST_ONE (312) 165
-KW_AT_MOST_ONE (313) 166
-KW_EXACTLY_ONE (314) 167
-KW_VARIABLE (315) 138 139
-KW_OBS_VARIABLE (316) 143 144
-KW_SENSING_MODEL (317) 74
+KW_HIDDEN (310) 183
+KW_INVARIANT (311) 174
+KW_AT_LEAST_ONE (312) 175
+KW_AT_MOST_ONE (313) 176
+KW_EXACTLY_ONE (314) 177
+KW_VARIABLE (315) 147 148
+KW_OBS_VARIABLE (316) 149
+KW_VALUES (317)
+KW_SENSING_MODEL (318) 83
+KW_DEFAULT_SENSING_MODEL (319) 154
 
 Nonterminals, with rules where they appear
 
-pddl_decls (63)
+pddl_decls (65)
     on left: 1 2 3, on right: 1 2
-pddl_domain (64)
+pddl_domain (66)
     on left: 4 5, on right: 1
-domain_elements (65)
-    on left: 6 7 8 9 10 11, on right: 4 6 7 8 9 10
-domain_name (66)
-    on left: 12, on right: 4 5
-any_symbol (67)
-    on left: 13 14 15 16 17 18 19 20 21, on right: 12 146 148
-variable_symbol (68)
-    on left: 22 23, on right: 138 143
-action_symbol (69)
-    on left: 24 25, on right: 68
-sensor_symbol (70)
-    on left: 26 27, on right: 118
-axiom_symbol (71)
-    on left: 28 29, on right: 111
-domain_requires (72)
-    on left: 30 31, on right: 6 149
-require_list (73)
-    on left: 32 33 34, on right: 30 32 33
-domain_predicates (74)
-    on left: 35 36, on right: 9
-predicate_list (75)
-    on left: 37 38, on right: 35 37
-predicate_decl (76)
-    on left: 39 40, on right: 37 38
-typed_param_list (77)
-    on left: 41 42 43, on right: 39 41 42 70 99 113 120
-typed_param_sym_list (78)
-    on left: 44 45, on right: 41 42 44
-domain_types (79)
-    on left: 46, on right: 7
-typed_type_list (80)
-    on left: 47 48 49 50, on right: 46 47 48 49
-primitive_type_list (81)
-    on left: 51 52 53, on right: 47 48 49 51 52
-domain_constants (82)
-    on left: 54 55, on right: 8 150
-typed_constant_list (83)
-    on left: 56 57 58, on right: 54 55 56 57
-ne_constant_sym_list (84)
-    on left: 59 60, on right: 56 57 59
-domain_structure (85)
-    on left: 61 62 63 64 65 66, on right: 10
-action_decl (86)
-    on left: 68 69, on right: 61
-@1 (87)
-    on left: 67, on right: 68
-action_elements (88)
-    on left: 70 71 72 73 74 75, on right: 68 70 71 72 73 74
-condition (89)
-    on left: 76 77, on right: 71 96 114 121
-condition_list (90)
-    on left: 78 79, on right: 77 78 164 165 166 167 171 172
-single_condition (91)
-    on left: 80, on right: 76 78 79
-literal (92)
-    on left: 81 82, on right: 80 106 160
-positive_literal (93)
-    on left: 83 84, on right: 81 85 107 178
-negative_literal (94)
-    on left: 85, on right: 82 179
-argument_list (95)
-    on left: 86 87 88, on right: 83 84 86 87
-action_effect (96)
-    on left: 89 90, on right: 72 99 108
-action_effect_list (97)
-    on left: 91 92, on right: 90 91
-single_action_effect (98)
-    on left: 93 94 95, on right: 89 91 92
-conditional_effect (99)
-    on left: 96, on right: 94
-forall_effect (100)
-    on left: 99, on right: 95 131
-@2 (101)
-    on left: 97, on right: 99
-@3 (102)
-    on left: 98, on right: 99
-atomic_effect_kw_list (103)
-    on left: 100 101, on right: 96 115
-atomic_effect_list (104)
-    on left: 102 103, on right: 100 102
-positive_atomic_effect_list (105)
-    on left: 104 105, on right: 73 104 122
-atomic_effect (106)
-    on left: 106, on right: 93 101 102 103
-positive_atomic_effect (107)
-    on left: 107, on right: 104 105 130
-sensing_model (108)
-    on left: 108 109, on right: 74
-axiom_decl (109)
-    on left: 111 112, on right: 62
+domain_elements (67)
+    on left: 6 7 8 9 10 11 12, on right: 4 6 7 8 9 10 11
+domain_name (68)
+    on left: 13, on right: 4 5
+any_symbol (69)
+    on left: 14 15 16 17 18 19 20 21 22, on right: 13 156 158
+variable_symbol (70)
+    on left: 23 24, on right: 144 146
+action_symbol (71)
+    on left: 25 26, on right: 77
+sensor_symbol (72)
+    on left: 27 28, on right: 127
+axiom_symbol (73)
+    on left: 29 30, on right: 120
+domain_requires (74)
+    on left: 31 32, on right: 6 159
+require_list (75)
+    on left: 33 34 35, on right: 31 33 34
+domain_predicates (76)
+    on left: 36 37, on right: 9
+predicate_list (77)
+    on left: 38 39, on right: 36 38
+predicate_decl (78)
+    on left: 40 41, on right: 38 39
+param_list (79)
+    on left: 42 43 44, on right: 40 79 108 122 129 146 150
+untyped_param_list (80)
+    on left: 45, on right: 42
+typed_param_list (81)
+    on left: 46 47, on right: 43 46
+param_sym_list (82)
+    on left: 48 49, on right: 45 46 47 48
+new_var_symbol (83)
+    on left: 50, on right: 48 49
+domain_types (84)
+    on left: 51 52, on right: 7
+typed_type_list (85)
+    on left: 53 54 55, on right: 52 53 54
+primitive_type_list (86)
+    on left: 56 57, on right: 51 53 54 56
+primitive_type (87)
+    on left: 58 59, on right: 56 57
+domain_constants (88)
+    on left: 60 61 62 63, on right: 8 160
+typed_constant_list (89)
+    on left: 65 66, on right: 60 61 65
+@1 (90)
+    on left: 64, on right: 65
+untyped_constant_list (91)
+    on left: 67, on right: 62 63
+constant_sym_list (92)
+    on left: 68 69, on right: 65 67 68
+domain_schemas (93)
+    on left: 70 71 72 73 74 75, on right: 10
+action_decl (94)
+    on left: 77 78, on right: 70
+@2 (95)
+    on left: 76, on right: 77
+action_elements (96)
+    on left: 79 80 81 82 83 84, on right: 77 79 80 81 82 83
+condition (97)
+    on left: 85 86, on right: 80 105 123 130
+condition_list (98)
+    on left: 87 88, on right: 86 87 174 175 176 177 181 182
+single_condition (99)
+    on left: 89, on right: 85 87 88
+literal (100)
+    on left: 90 91, on right: 89 115 170
+positive_literal (101)
+    on left: 92 93, on right: 90 94 116 188
+negative_literal (102)
+    on left: 94, on right: 91 189
+argument_list (103)
+    on left: 95 96 97, on right: 92 93 95 96
+action_effect (104)
+    on left: 98 99, on right: 81 108 117
+action_effect_list (105)
+    on left: 100 101, on right: 99 100
+single_action_effect (106)
+    on left: 102 103 104, on right: 98 100 101
+conditional_effect (107)
+    on left: 105, on right: 103
+forall_effect (108)
+    on left: 108, on right: 104 139
+@3 (109)
+    on left: 106, on right: 108
 @4 (110)
-    on left: 110, on right: 111
-axiom_elements (111)
-    on left: 113 114 115 116, on right: 111 113 114 115
-sensor_decl (112)
-    on left: 118 119, on right: 63
-@5 (113)
-    on left: 117, on right: 118
-sensor_elements (114)
-    on left: 120 121 122 123, on right: 118 120 121 122
-observable_decl (115)
-    on left: 125 126, on right: 64
-@6 (116)
-    on left: 124, on right: 125
-fluent_list_decl (117)
-    on left: 127 128 129, on right: 125 128 133 138 143
-fluent_decl (118)
-    on left: 130 131, on right: 128 129
-sticky_decl (119)
-    on left: 133 134, on right: 65
-@7 (120)
-    on left: 132, on right: 133
-multivalued_variable_decl (121)
-    on left: 135 136, on right: 66
-state_variable_decl (122)
-    on left: 138 139, on right: 135
-@8 (123)
-    on left: 137, on right: 138
-rest_state_variable (124)
-    on left: 140 141, on right: 138
-observable_variable_decl (125)
-    on left: 143 144, on right: 136
-@9 (126)
-    on left: 142, on right: 143
-pddl_problem (127)
-    on left: 146 147, on right: 2
-@10 (128)
+    on left: 107, on right: 108
+atomic_effect_kw_list (111)
+    on left: 109 110, on right: 105 124
+atomic_effect_list (112)
+    on left: 111 112, on right: 109 111
+positive_atomic_effect_list (113)
+    on left: 113 114, on right: 82 113 131
+atomic_effect (114)
+    on left: 115, on right: 102 110 111 112
+positive_atomic_effect (115)
+    on left: 116, on right: 113 114 138
+sensing_model (116)
+    on left: 117 118, on right: 83 154
+axiom_decl (117)
+    on left: 120 121, on right: 71
+@5 (118)
+    on left: 119, on right: 120
+axiom_elements (119)
+    on left: 122 123 124 125, on right: 120 122 123 124
+sensor_decl (120)
+    on left: 127 128, on right: 72
+@6 (121)
+    on left: 126, on right: 127
+sensor_elements (122)
+    on left: 129 130 131 132, on right: 127 129 130 131
+observable_decl (123)
+    on left: 134 135, on right: 73
+@7 (124)
+    on left: 133, on right: 134
+fluent_list_decl (125)
+    on left: 136 137, on right: 134 136 141 144 146
+fluent_decl (126)
+    on left: 138 139, on right: 136 137
+sticky_decl (127)
+    on left: 141 142, on right: 74
+@8 (128)
+    on left: 140, on right: 141
+multivalued_variable_decl (129)
+    on left: 144 146 147, on right: 75
+@9 (130)
+    on left: 143, on right: 144
+@10 (131)
     on left: 145, on right: 146
-problem_elements (129)
-    on left: 148 149 150 151 152 153 154, on right: 146 148 149 150
-    151 152 153
-initial_state (130)
-    on left: 155 156 157, on right: 151
-init_elements (131)
-    on left: 158 159, on right: 156 157 158 173
-single_init_element (132)
-    on left: 160 161 162 163, on right: 158 159
-at_least_one_invariant (133)
-    on left: 164 165, on right: 168
-at_most_one_invariant (134)
-    on left: 166, on right: 169
-exactly_one_invariant (135)
-    on left: 167, on right: 170
-invariant (136)
-    on left: 168 169 170, on right: 161
-clause (137)
-    on left: 171, on right: 162
-oneof (138)
-    on left: 172, on right: 163
-hidden_state (139)
-    on left: 173, on right: 152
-goal_spec (140)
-    on left: 174 175, on right: 153
-goal_list (141)
-    on left: 176 177, on right: 175 176
-single_goal (142)
-    on left: 178 179, on right: 174 176 177
+multivalued_variable_type (132)
+    on left: 148 149, on right: 144 146
+optional_variable_parameters (133)
+    on left: 150 151, on right: 144
+rest_variable_decl (134)
+    on left: 152 153, on right: 144 146
+domain_default_sensing_model (135)
+    on left: 154, on right: 11
+pddl_problem (136)
+    on left: 156 157, on right: 2
+@11 (137)
+    on left: 155, on right: 156
+problem_elements (138)
+    on left: 158 159 160 161 162 163 164, on right: 156 158 159 160
+    161 162 163
+initial_state (139)
+    on left: 165 166 167, on right: 161
+init_elements (140)
+    on left: 168 169, on right: 166 167 168 183
+single_init_element (141)
+    on left: 170 171 172 173, on right: 168 169
+at_least_one_invariant (142)
+    on left: 174 175, on right: 178
+at_most_one_invariant (143)
+    on left: 176, on right: 179
+exactly_one_invariant (144)
+    on left: 177, on right: 180
+invariant (145)
+    on left: 178 179 180, on right: 171
+clause (146)
+    on left: 181, on right: 172
+oneof (147)
+    on left: 182, on right: 173
+hidden_state (148)
+    on left: 183, on right: 162
+goal_spec (149)
+    on left: 184 185, on right: 163
+goal_list (150)
+    on left: 186 187, on right: 185 186
+single_goal (151)
+    on left: 188 189, on right: 184 186 187
 
 
 state 0
@@ -445,7 +460,7 @@ state 0
 
     $default	reduce using rule 3 (pddl_decls)
 
-    pddl_decls	go to state 305
+    pddl_decls	go to state 329
     pddl_domain	go to state 2
     pddl_problem	go to state 3
 
@@ -455,8 +470,8 @@ state 1
 
     pddl_domain  ->  TK_OPEN . KW_DEFINE domain_name domain_elements TK_CLOSE   (rule 4)
     pddl_domain  ->  TK_OPEN . KW_DEFINE domain_name error TK_CLOSE   (rule 5)
-    pddl_problem  ->  TK_OPEN . KW_DEFINE TK_OPEN KW_PROBLEM any_symbol TK_CLOSE @10 problem_elements TK_CLOSE   (rule 146)
-    pddl_problem  ->  TK_OPEN . KW_DEFINE TK_OPEN KW_PROBLEM error TK_CLOSE   (rule 147)
+    pddl_problem  ->  TK_OPEN . KW_DEFINE TK_OPEN KW_PROBLEM any_symbol TK_CLOSE @11 problem_elements TK_CLOSE   (rule 156)
+    pddl_problem  ->  TK_OPEN . KW_DEFINE TK_OPEN KW_PROBLEM error TK_CLOSE   (rule 157)
 
     KW_DEFINE	shift, and go to state 4
 
@@ -494,8 +509,8 @@ state 4
 
     pddl_domain  ->  TK_OPEN KW_DEFINE . domain_name domain_elements TK_CLOSE   (rule 4)
     pddl_domain  ->  TK_OPEN KW_DEFINE . domain_name error TK_CLOSE   (rule 5)
-    pddl_problem  ->  TK_OPEN KW_DEFINE . TK_OPEN KW_PROBLEM any_symbol TK_CLOSE @10 problem_elements TK_CLOSE   (rule 146)
-    pddl_problem  ->  TK_OPEN KW_DEFINE . TK_OPEN KW_PROBLEM error TK_CLOSE   (rule 147)
+    pddl_problem  ->  TK_OPEN KW_DEFINE . TK_OPEN KW_PROBLEM any_symbol TK_CLOSE @11 problem_elements TK_CLOSE   (rule 156)
+    pddl_problem  ->  TK_OPEN KW_DEFINE . TK_OPEN KW_PROBLEM error TK_CLOSE   (rule 157)
 
     TK_OPEN	shift, and go to state 7
 
@@ -521,9 +536,9 @@ state 6
 
 state 7
 
-    domain_name  ->  TK_OPEN . KW_DOMAIN any_symbol TK_CLOSE   (rule 12)
-    pddl_problem  ->  TK_OPEN KW_DEFINE TK_OPEN . KW_PROBLEM any_symbol TK_CLOSE @10 problem_elements TK_CLOSE   (rule 146)
-    pddl_problem  ->  TK_OPEN KW_DEFINE TK_OPEN . KW_PROBLEM error TK_CLOSE   (rule 147)
+    domain_name  ->  TK_OPEN . KW_DOMAIN any_symbol TK_CLOSE   (rule 13)
+    pddl_problem  ->  TK_OPEN KW_DEFINE TK_OPEN . KW_PROBLEM any_symbol TK_CLOSE @11 problem_elements TK_CLOSE   (rule 156)
+    pddl_problem  ->  TK_OPEN KW_DEFINE TK_OPEN . KW_PROBLEM error TK_CLOSE   (rule 157)
 
     KW_DOMAIN	shift, and go to state 9
     KW_PROBLEM	shift, and go to state 10
@@ -536,63 +551,51 @@ state 8
     pddl_domain  ->  TK_OPEN KW_DEFINE domain_name . error TK_CLOSE   (rule 5)
 
     error	shift, and go to state 11
-    TK_OPEN	shift, and go to state 12
 
-    TK_CLOSE	reduce using rule 11 (domain_elements)
-    KW_FORALL	reduce using rule 11 (domain_elements)
+    TK_OPEN	reduce using rule 12 (domain_elements)
+    TK_CLOSE	reduce using rule 12 (domain_elements)
+    KW_EXISTS	reduce using rule 12 (domain_elements)
+    KW_FORALL	reduce using rule 12 (domain_elements)
 
-    domain_elements	go to state 13
-    domain_requires	go to state 14
-    domain_predicates	go to state 15
-    domain_types	go to state 16
-    domain_constants	go to state 17
-    domain_structure	go to state 18
-    action_decl	go to state 19
-    axiom_decl	go to state 20
-    sensor_decl	go to state 21
-    observable_decl	go to state 22
-    sticky_decl	go to state 23
-    multivalued_variable_decl	go to state 24
-    state_variable_decl	go to state 25
-    observable_variable_decl	go to state 26
+    domain_elements	go to state 12
 
 
 
 state 9
 
-    domain_name  ->  TK_OPEN KW_DOMAIN . any_symbol TK_CLOSE   (rule 12)
+    domain_name  ->  TK_OPEN KW_DOMAIN . any_symbol TK_CLOSE   (rule 13)
 
-    TK_NEW_SYMBOL	shift, and go to state 27
-    TK_OBJ_SYMBOL	shift, and go to state 28
-    TK_TYPE_SYMBOL	shift, and go to state 29
-    TK_PRED_SYMBOL	shift, and go to state 30
-    TK_VAR_SYMBOL	shift, and go to state 31
-    TK_ACTION_SYMBOL	shift, and go to state 32
-    TK_AXIOM_SYMBOL	shift, and go to state 33
-    TK_SENSOR_SYMBOL	shift, and go to state 34
-    TK_MISC_SYMBOL	shift, and go to state 35
+    TK_NEW_SYMBOL	shift, and go to state 13
+    TK_OBJ_SYMBOL	shift, and go to state 14
+    TK_TYPE_SYMBOL	shift, and go to state 15
+    TK_PRED_SYMBOL	shift, and go to state 16
+    TK_VAR_SYMBOL	shift, and go to state 17
+    TK_ACTION_SYMBOL	shift, and go to state 18
+    TK_AXIOM_SYMBOL	shift, and go to state 19
+    TK_SENSOR_SYMBOL	shift, and go to state 20
+    TK_MISC_SYMBOL	shift, and go to state 21
 
-    any_symbol	go to state 36
+    any_symbol	go to state 22
 
 
 
 state 10
 
-    pddl_problem  ->  TK_OPEN KW_DEFINE TK_OPEN KW_PROBLEM . any_symbol TK_CLOSE @10 problem_elements TK_CLOSE   (rule 146)
-    pddl_problem  ->  TK_OPEN KW_DEFINE TK_OPEN KW_PROBLEM . error TK_CLOSE   (rule 147)
+    pddl_problem  ->  TK_OPEN KW_DEFINE TK_OPEN KW_PROBLEM . any_symbol TK_CLOSE @11 problem_elements TK_CLOSE   (rule 156)
+    pddl_problem  ->  TK_OPEN KW_DEFINE TK_OPEN KW_PROBLEM . error TK_CLOSE   (rule 157)
 
-    error	shift, and go to state 37
-    TK_NEW_SYMBOL	shift, and go to state 27
-    TK_OBJ_SYMBOL	shift, and go to state 28
-    TK_TYPE_SYMBOL	shift, and go to state 29
-    TK_PRED_SYMBOL	shift, and go to state 30
-    TK_VAR_SYMBOL	shift, and go to state 31
-    TK_ACTION_SYMBOL	shift, and go to state 32
-    TK_AXIOM_SYMBOL	shift, and go to state 33
-    TK_SENSOR_SYMBOL	shift, and go to state 34
-    TK_MISC_SYMBOL	shift, and go to state 35
+    error	shift, and go to state 23
+    TK_NEW_SYMBOL	shift, and go to state 13
+    TK_OBJ_SYMBOL	shift, and go to state 14
+    TK_TYPE_SYMBOL	shift, and go to state 15
+    TK_PRED_SYMBOL	shift, and go to state 16
+    TK_VAR_SYMBOL	shift, and go to state 17
+    TK_ACTION_SYMBOL	shift, and go to state 18
+    TK_AXIOM_SYMBOL	shift, and go to state 19
+    TK_SENSOR_SYMBOL	shift, and go to state 20
+    TK_MISC_SYMBOL	shift, and go to state 21
 
-    any_symbol	go to state 38
+    any_symbol	go to state 24
 
 
 
@@ -600,343 +603,135 @@ state 11
 
     pddl_domain  ->  TK_OPEN KW_DEFINE domain_name error . TK_CLOSE   (rule 5)
 
-    TK_CLOSE	shift, and go to state 39
+    TK_CLOSE	shift, and go to state 25
 
 
 
 state 12
 
-    domain_requires  ->  TK_OPEN . KW_REQS require_list TK_CLOSE   (rule 30)
-    domain_requires  ->  TK_OPEN . KW_REQS error TK_CLOSE   (rule 31)
-    domain_predicates  ->  TK_OPEN . KW_PREDS predicate_list TK_CLOSE   (rule 35)
-    domain_predicates  ->  TK_OPEN . KW_PREDS error TK_CLOSE   (rule 36)
-    domain_types  ->  TK_OPEN . KW_TYPES typed_type_list TK_CLOSE   (rule 46)
-    domain_constants  ->  TK_OPEN . KW_CONSTANTS typed_constant_list TK_CLOSE   (rule 54)
-    domain_constants  ->  TK_OPEN . KW_OBJECTS typed_constant_list TK_CLOSE   (rule 55)
-    action_decl  ->  TK_OPEN . KW_ACTION action_symbol @1 action_elements TK_CLOSE   (rule 68)
-    action_decl  ->  TK_OPEN . KW_ACTION error TK_CLOSE   (rule 69)
-    axiom_decl  ->  TK_OPEN . KW_AXIOM axiom_symbol @4 axiom_elements TK_CLOSE   (rule 111)
-    axiom_decl  ->  TK_OPEN . KW_AXIOM error TK_CLOSE   (rule 112)
-    sensor_decl  ->  TK_OPEN . KW_SENSOR sensor_symbol @5 sensor_elements TK_CLOSE   (rule 118)
-    sensor_decl  ->  TK_OPEN . KW_SENSOR error TK_CLOSE   (rule 119)
-    observable_decl  ->  TK_OPEN . KW_OBSERVABLE @6 fluent_list_decl TK_CLOSE   (rule 125)
-    observable_decl  ->  TK_OPEN . KW_OBSERVABLE error TK_CLOSE   (rule 126)
-    sticky_decl  ->  TK_OPEN . KW_STICKY @7 fluent_list_decl TK_CLOSE   (rule 133)
-    sticky_decl  ->  TK_OPEN . KW_STICKY error TK_CLOSE   (rule 134)
-    state_variable_decl  ->  TK_OPEN . KW_VARIABLE variable_symbol @8 fluent_list_decl rest_state_variable TK_CLOSE   (rule 138)
-    state_variable_decl  ->  TK_OPEN . KW_VARIABLE error TK_CLOSE   (rule 139)
-    observable_variable_decl  ->  TK_OPEN . KW_OBS_VARIABLE variable_symbol @9 fluent_list_decl TK_CLOSE   (rule 143)
-    observable_variable_decl  ->  TK_OPEN . KW_OBS_VARIABLE error TK_CLOSE   (rule 144)
+    pddl_domain  ->  TK_OPEN KW_DEFINE domain_name domain_elements . TK_CLOSE   (rule 4)
+    domain_elements  ->  domain_elements . domain_requires   (rule 6)
+    domain_elements  ->  domain_elements . domain_types   (rule 7)
+    domain_elements  ->  domain_elements . domain_constants   (rule 8)
+    domain_elements  ->  domain_elements . domain_predicates   (rule 9)
+    domain_elements  ->  domain_elements . domain_schemas   (rule 10)
+    domain_elements  ->  domain_elements . domain_default_sensing_model   (rule 11)
 
-    KW_REQS	shift, and go to state 40
-    KW_CONSTANTS	shift, and go to state 41
-    KW_PREDS	shift, and go to state 42
-    KW_TYPES	shift, and go to state 43
-    KW_ACTION	shift, and go to state 44
-    KW_OBJECTS	shift, and go to state 45
-    KW_SENSOR	shift, and go to state 46
-    KW_AXIOM	shift, and go to state 47
-    KW_OBSERVABLE	shift, and go to state 48
-    KW_STICKY	shift, and go to state 49
-    KW_VARIABLE	shift, and go to state 50
-    KW_OBS_VARIABLE	shift, and go to state 51
+    TK_OPEN	shift, and go to state 26
+    TK_CLOSE	shift, and go to state 27
+
+    domain_requires	go to state 28
+    domain_predicates	go to state 29
+    domain_types	go to state 30
+    domain_constants	go to state 31
+    domain_schemas	go to state 32
+    action_decl	go to state 33
+    axiom_decl	go to state 34
+    sensor_decl	go to state 35
+    observable_decl	go to state 36
+    sticky_decl	go to state 37
+    multivalued_variable_decl	go to state 38
+    domain_default_sensing_model	go to state 39
 
 
 
 state 13
 
-    pddl_domain  ->  TK_OPEN KW_DEFINE domain_name domain_elements . TK_CLOSE   (rule 4)
-
-    TK_CLOSE	shift, and go to state 52
-
-
-
-state 14
-
-    domain_elements  ->  domain_requires . domain_elements   (rule 6)
-
-    TK_OPEN	shift, and go to state 12
-
-    $default	reduce using rule 11 (domain_elements)
-
-    domain_elements	go to state 53
-    domain_requires	go to state 14
-    domain_predicates	go to state 15
-    domain_types	go to state 16
-    domain_constants	go to state 17
-    domain_structure	go to state 18
-    action_decl	go to state 19
-    axiom_decl	go to state 20
-    sensor_decl	go to state 21
-    observable_decl	go to state 22
-    sticky_decl	go to state 23
-    multivalued_variable_decl	go to state 24
-    state_variable_decl	go to state 25
-    observable_variable_decl	go to state 26
-
-
-
-state 15
-
-    domain_elements  ->  domain_predicates . domain_elements   (rule 9)
-
-    TK_OPEN	shift, and go to state 12
-
-    $default	reduce using rule 11 (domain_elements)
-
-    domain_elements	go to state 54
-    domain_requires	go to state 14
-    domain_predicates	go to state 15
-    domain_types	go to state 16
-    domain_constants	go to state 17
-    domain_structure	go to state 18
-    action_decl	go to state 19
-    axiom_decl	go to state 20
-    sensor_decl	go to state 21
-    observable_decl	go to state 22
-    sticky_decl	go to state 23
-    multivalued_variable_decl	go to state 24
-    state_variable_decl	go to state 25
-    observable_variable_decl	go to state 26
-
-
-
-state 16
-
-    domain_elements  ->  domain_types . domain_elements   (rule 7)
-
-    TK_OPEN	shift, and go to state 12
-
-    $default	reduce using rule 11 (domain_elements)
-
-    domain_elements	go to state 55
-    domain_requires	go to state 14
-    domain_predicates	go to state 15
-    domain_types	go to state 16
-    domain_constants	go to state 17
-    domain_structure	go to state 18
-    action_decl	go to state 19
-    axiom_decl	go to state 20
-    sensor_decl	go to state 21
-    observable_decl	go to state 22
-    sticky_decl	go to state 23
-    multivalued_variable_decl	go to state 24
-    state_variable_decl	go to state 25
-    observable_variable_decl	go to state 26
-
-
-
-state 17
-
-    domain_elements  ->  domain_constants . domain_elements   (rule 8)
-
-    TK_OPEN	shift, and go to state 12
-
-    $default	reduce using rule 11 (domain_elements)
-
-    domain_elements	go to state 56
-    domain_requires	go to state 14
-    domain_predicates	go to state 15
-    domain_types	go to state 16
-    domain_constants	go to state 17
-    domain_structure	go to state 18
-    action_decl	go to state 19
-    axiom_decl	go to state 20
-    sensor_decl	go to state 21
-    observable_decl	go to state 22
-    sticky_decl	go to state 23
-    multivalued_variable_decl	go to state 24
-    state_variable_decl	go to state 25
-    observable_variable_decl	go to state 26
-
-
-
-state 18
-
-    domain_elements  ->  domain_structure . domain_elements   (rule 10)
-
-    TK_OPEN	shift, and go to state 12
-
-    $default	reduce using rule 11 (domain_elements)
-
-    domain_elements	go to state 57
-    domain_requires	go to state 14
-    domain_predicates	go to state 15
-    domain_types	go to state 16
-    domain_constants	go to state 17
-    domain_structure	go to state 18
-    action_decl	go to state 19
-    axiom_decl	go to state 20
-    sensor_decl	go to state 21
-    observable_decl	go to state 22
-    sticky_decl	go to state 23
-    multivalued_variable_decl	go to state 24
-    state_variable_decl	go to state 25
-    observable_variable_decl	go to state 26
-
-
-
-state 19
-
-    domain_structure  ->  action_decl .   (rule 61)
-
-    $default	reduce using rule 61 (domain_structure)
-
-
-
-state 20
-
-    domain_structure  ->  axiom_decl .   (rule 62)
-
-    $default	reduce using rule 62 (domain_structure)
-
-
-
-state 21
-
-    domain_structure  ->  sensor_decl .   (rule 63)
-
-    $default	reduce using rule 63 (domain_structure)
-
-
-
-state 22
-
-    domain_structure  ->  observable_decl .   (rule 64)
-
-    $default	reduce using rule 64 (domain_structure)
-
-
-
-state 23
-
-    domain_structure  ->  sticky_decl .   (rule 65)
-
-    $default	reduce using rule 65 (domain_structure)
-
-
-
-state 24
-
-    domain_structure  ->  multivalued_variable_decl .   (rule 66)
-
-    $default	reduce using rule 66 (domain_structure)
-
-
-
-state 25
-
-    multivalued_variable_decl  ->  state_variable_decl .   (rule 135)
-
-    $default	reduce using rule 135 (multivalued_variable_decl)
-
-
-
-state 26
-
-    multivalued_variable_decl  ->  observable_variable_decl .   (rule 136)
-
-    $default	reduce using rule 136 (multivalued_variable_decl)
-
-
-
-state 27
-
-    any_symbol  ->  TK_NEW_SYMBOL .   (rule 13)
-
-    $default	reduce using rule 13 (any_symbol)
-
-
-
-state 28
-
-    any_symbol  ->  TK_OBJ_SYMBOL .   (rule 14)
+    any_symbol  ->  TK_NEW_SYMBOL .   (rule 14)
 
     $default	reduce using rule 14 (any_symbol)
 
 
 
-state 29
+state 14
 
-    any_symbol  ->  TK_TYPE_SYMBOL .   (rule 15)
+    any_symbol  ->  TK_OBJ_SYMBOL .   (rule 15)
 
     $default	reduce using rule 15 (any_symbol)
 
 
 
-state 30
+state 15
 
-    any_symbol  ->  TK_PRED_SYMBOL .   (rule 16)
+    any_symbol  ->  TK_TYPE_SYMBOL .   (rule 16)
 
     $default	reduce using rule 16 (any_symbol)
 
 
 
-state 31
+state 16
 
-    any_symbol  ->  TK_VAR_SYMBOL .   (rule 17)
+    any_symbol  ->  TK_PRED_SYMBOL .   (rule 17)
 
     $default	reduce using rule 17 (any_symbol)
 
 
 
-state 32
+state 17
 
-    any_symbol  ->  TK_ACTION_SYMBOL .   (rule 18)
+    any_symbol  ->  TK_VAR_SYMBOL .   (rule 18)
 
     $default	reduce using rule 18 (any_symbol)
 
 
 
-state 33
+state 18
 
-    any_symbol  ->  TK_AXIOM_SYMBOL .   (rule 19)
+    any_symbol  ->  TK_ACTION_SYMBOL .   (rule 19)
 
     $default	reduce using rule 19 (any_symbol)
 
 
 
-state 34
+state 19
 
-    any_symbol  ->  TK_SENSOR_SYMBOL .   (rule 20)
+    any_symbol  ->  TK_AXIOM_SYMBOL .   (rule 20)
 
     $default	reduce using rule 20 (any_symbol)
 
 
 
-state 35
+state 20
 
-    any_symbol  ->  TK_MISC_SYMBOL .   (rule 21)
+    any_symbol  ->  TK_SENSOR_SYMBOL .   (rule 21)
 
     $default	reduce using rule 21 (any_symbol)
 
 
 
-state 36
+state 21
 
-    domain_name  ->  TK_OPEN KW_DOMAIN any_symbol . TK_CLOSE   (rule 12)
+    any_symbol  ->  TK_MISC_SYMBOL .   (rule 22)
 
-    TK_CLOSE	shift, and go to state 58
-
-
-
-state 37
-
-    pddl_problem  ->  TK_OPEN KW_DEFINE TK_OPEN KW_PROBLEM error . TK_CLOSE   (rule 147)
-
-    TK_CLOSE	shift, and go to state 59
+    $default	reduce using rule 22 (any_symbol)
 
 
 
-state 38
+state 22
 
-    pddl_problem  ->  TK_OPEN KW_DEFINE TK_OPEN KW_PROBLEM any_symbol . TK_CLOSE @10 problem_elements TK_CLOSE   (rule 146)
+    domain_name  ->  TK_OPEN KW_DOMAIN any_symbol . TK_CLOSE   (rule 13)
 
-    TK_CLOSE	shift, and go to state 60
+    TK_CLOSE	shift, and go to state 40
 
 
 
-state 39
+state 23
+
+    pddl_problem  ->  TK_OPEN KW_DEFINE TK_OPEN KW_PROBLEM error . TK_CLOSE   (rule 157)
+
+    TK_CLOSE	shift, and go to state 41
+
+
+
+state 24
+
+    pddl_problem  ->  TK_OPEN KW_DEFINE TK_OPEN KW_PROBLEM any_symbol . TK_CLOSE @11 problem_elements TK_CLOSE   (rule 156)
+
+    TK_CLOSE	shift, and go to state 42
+
+
+
+state 25
 
     pddl_domain  ->  TK_OPEN KW_DEFINE domain_name error TK_CLOSE .   (rule 5)
 
@@ -944,38 +739,218 @@ state 39
 
 
 
+state 26
+
+    domain_requires  ->  TK_OPEN . KW_REQS require_list TK_CLOSE   (rule 31)
+    domain_requires  ->  TK_OPEN . KW_REQS error TK_CLOSE   (rule 32)
+    domain_predicates  ->  TK_OPEN . KW_PREDS predicate_list TK_CLOSE   (rule 36)
+    domain_predicates  ->  TK_OPEN . KW_PREDS error TK_CLOSE   (rule 37)
+    domain_types  ->  TK_OPEN . KW_TYPES primitive_type_list TK_CLOSE   (rule 51)
+    domain_types  ->  TK_OPEN . KW_TYPES typed_type_list TK_CLOSE   (rule 52)
+    domain_constants  ->  TK_OPEN . KW_CONSTANTS typed_constant_list TK_CLOSE   (rule 60)
+    domain_constants  ->  TK_OPEN . KW_OBJECTS typed_constant_list TK_CLOSE   (rule 61)
+    domain_constants  ->  TK_OPEN . KW_CONSTANTS untyped_constant_list TK_CLOSE   (rule 62)
+    domain_constants  ->  TK_OPEN . KW_OBJECTS untyped_constant_list TK_CLOSE   (rule 63)
+    action_decl  ->  TK_OPEN . KW_ACTION action_symbol @2 action_elements TK_CLOSE   (rule 77)
+    action_decl  ->  TK_OPEN . KW_ACTION error TK_CLOSE   (rule 78)
+    axiom_decl  ->  TK_OPEN . KW_AXIOM axiom_symbol @5 axiom_elements TK_CLOSE   (rule 120)
+    axiom_decl  ->  TK_OPEN . KW_AXIOM error TK_CLOSE   (rule 121)
+    sensor_decl  ->  TK_OPEN . KW_SENSOR sensor_symbol @6 sensor_elements TK_CLOSE   (rule 127)
+    sensor_decl  ->  TK_OPEN . KW_SENSOR error TK_CLOSE   (rule 128)
+    observable_decl  ->  TK_OPEN . KW_OBSERVABLE @7 fluent_list_decl TK_CLOSE   (rule 134)
+    observable_decl  ->  TK_OPEN . KW_OBSERVABLE error TK_CLOSE   (rule 135)
+    sticky_decl  ->  TK_OPEN . KW_STICKY @8 fluent_list_decl TK_CLOSE   (rule 141)
+    sticky_decl  ->  TK_OPEN . KW_STICKY error TK_CLOSE   (rule 142)
+    multivalued_variable_decl  ->  TK_OPEN . multivalued_variable_type variable_symbol @9 optional_variable_parameters fluent_list_decl rest_variable_decl TK_CLOSE   (rule 144)
+    multivalued_variable_decl  ->  TK_OPEN . multivalued_variable_type TK_OPEN variable_symbol param_list TK_CLOSE @10 fluent_list_decl rest_variable_decl TK_CLOSE   (rule 146)
+    multivalued_variable_decl  ->  TK_OPEN . KW_VARIABLE error TK_CLOSE   (rule 147)
+    domain_default_sensing_model  ->  TK_OPEN . KW_DEFAULT_SENSING_MODEL sensing_model TK_CLOSE   (rule 154)
+
+    KW_REQS	shift, and go to state 43
+    KW_CONSTANTS	shift, and go to state 44
+    KW_PREDS	shift, and go to state 45
+    KW_TYPES	shift, and go to state 46
+    KW_ACTION	shift, and go to state 47
+    KW_OBJECTS	shift, and go to state 48
+    KW_SENSOR	shift, and go to state 49
+    KW_AXIOM	shift, and go to state 50
+    KW_OBSERVABLE	shift, and go to state 51
+    KW_STICKY	shift, and go to state 52
+    KW_VARIABLE	shift, and go to state 53
+    KW_OBS_VARIABLE	shift, and go to state 54
+    KW_DEFAULT_SENSING_MODEL	shift, and go to state 55
+
+    multivalued_variable_type	go to state 56
+
+
+
+state 27
+
+    pddl_domain  ->  TK_OPEN KW_DEFINE domain_name domain_elements TK_CLOSE .   (rule 4)
+
+    $default	reduce using rule 4 (pddl_domain)
+
+
+
+state 28
+
+    domain_elements  ->  domain_elements domain_requires .   (rule 6)
+
+    $default	reduce using rule 6 (domain_elements)
+
+
+
+state 29
+
+    domain_elements  ->  domain_elements domain_predicates .   (rule 9)
+
+    $default	reduce using rule 9 (domain_elements)
+
+
+
+state 30
+
+    domain_elements  ->  domain_elements domain_types .   (rule 7)
+
+    $default	reduce using rule 7 (domain_elements)
+
+
+
+state 31
+
+    domain_elements  ->  domain_elements domain_constants .   (rule 8)
+
+    $default	reduce using rule 8 (domain_elements)
+
+
+
+state 32
+
+    domain_elements  ->  domain_elements domain_schemas .   (rule 10)
+
+    $default	reduce using rule 10 (domain_elements)
+
+
+
+state 33
+
+    domain_schemas  ->  action_decl .   (rule 70)
+
+    $default	reduce using rule 70 (domain_schemas)
+
+
+
+state 34
+
+    domain_schemas  ->  axiom_decl .   (rule 71)
+
+    $default	reduce using rule 71 (domain_schemas)
+
+
+
+state 35
+
+    domain_schemas  ->  sensor_decl .   (rule 72)
+
+    $default	reduce using rule 72 (domain_schemas)
+
+
+
+state 36
+
+    domain_schemas  ->  observable_decl .   (rule 73)
+
+    $default	reduce using rule 73 (domain_schemas)
+
+
+
+state 37
+
+    domain_schemas  ->  sticky_decl .   (rule 74)
+
+    $default	reduce using rule 74 (domain_schemas)
+
+
+
+state 38
+
+    domain_schemas  ->  multivalued_variable_decl .   (rule 75)
+
+    $default	reduce using rule 75 (domain_schemas)
+
+
+
+state 39
+
+    domain_elements  ->  domain_elements domain_default_sensing_model .   (rule 11)
+
+    $default	reduce using rule 11 (domain_elements)
+
+
+
 state 40
 
-    domain_requires  ->  TK_OPEN KW_REQS . require_list TK_CLOSE   (rule 30)
-    domain_requires  ->  TK_OPEN KW_REQS . error TK_CLOSE   (rule 31)
+    domain_name  ->  TK_OPEN KW_DOMAIN any_symbol TK_CLOSE .   (rule 13)
 
-    error	shift, and go to state 61
-
-    TK_CLOSE	reduce using rule 34 (require_list)
-    TK_KEYWORD	reduce using rule 34 (require_list)
-    KW_TRANSLATION	reduce using rule 34 (require_list)
-    KW_FORALL	reduce using rule 34 (require_list)
-    KW_OBSERVABLE	reduce using rule 34 (require_list)
-    KW_HIDDEN	reduce using rule 34 (require_list)
-
-    require_list	go to state 62
+    $default	reduce using rule 13 (domain_name)
 
 
 
 state 41
 
-    domain_constants  ->  TK_OPEN KW_CONSTANTS . typed_constant_list TK_CLOSE   (rule 54)
+    pddl_problem  ->  TK_OPEN KW_DEFINE TK_OPEN KW_PROBLEM error TK_CLOSE .   (rule 157)
 
-    $default	reduce using rule 58 (typed_constant_list)
-
-    typed_constant_list	go to state 63
+    $default	reduce using rule 157 (pddl_problem)
 
 
 
 state 42
 
-    domain_predicates  ->  TK_OPEN KW_PREDS . predicate_list TK_CLOSE   (rule 35)
-    domain_predicates  ->  TK_OPEN KW_PREDS . error TK_CLOSE   (rule 36)
+    pddl_problem  ->  TK_OPEN KW_DEFINE TK_OPEN KW_PROBLEM any_symbol TK_CLOSE . @11 problem_elements TK_CLOSE   (rule 156)
+
+    $default	reduce using rule 155 (@11)
+
+    @11 	go to state 57
+
+
+
+state 43
+
+    domain_requires  ->  TK_OPEN KW_REQS . require_list TK_CLOSE   (rule 31)
+    domain_requires  ->  TK_OPEN KW_REQS . error TK_CLOSE   (rule 32)
+
+    error	shift, and go to state 58
+
+    TK_CLOSE	reduce using rule 35 (require_list)
+    TK_KEYWORD	reduce using rule 35 (require_list)
+    KW_TRANSLATION	reduce using rule 35 (require_list)
+    KW_FORALL	reduce using rule 35 (require_list)
+    KW_OBSERVABLE	reduce using rule 35 (require_list)
+    KW_HIDDEN	reduce using rule 35 (require_list)
+
+    require_list	go to state 59
+
+
+
+state 44
+
+    domain_constants  ->  TK_OPEN KW_CONSTANTS . typed_constant_list TK_CLOSE   (rule 60)
+    domain_constants  ->  TK_OPEN KW_CONSTANTS . untyped_constant_list TK_CLOSE   (rule 62)
+
+    TK_NEW_SYMBOL	shift, and go to state 60
+
+    $default	reduce using rule 66 (typed_constant_list)
+
+    typed_constant_list	go to state 61
+    untyped_constant_list	go to state 62
+    constant_sym_list	go to state 63
+
+
+
+state 45
+
+    domain_predicates  ->  TK_OPEN KW_PREDS . predicate_list TK_CLOSE   (rule 36)
+    domain_predicates  ->  TK_OPEN KW_PREDS . error TK_CLOSE   (rule 37)
 
     error	shift, and go to state 64
     TK_OPEN	shift, and go to state 65
@@ -985,2807 +960,3027 @@ state 42
 
 
 
-state 43
-
-    domain_types  ->  TK_OPEN KW_TYPES . typed_type_list TK_CLOSE   (rule 46)
-
-    $default	reduce using rule 50 (typed_type_list)
-
-    typed_type_list	go to state 68
-
-
-
-state 44
-
-    action_decl  ->  TK_OPEN KW_ACTION . action_symbol @1 action_elements TK_CLOSE   (rule 68)
-    action_decl  ->  TK_OPEN KW_ACTION . error TK_CLOSE   (rule 69)
-
-    error	shift, and go to state 69
-    TK_NEW_SYMBOL	shift, and go to state 70
-    TK_ACTION_SYMBOL	shift, and go to state 71
-
-    action_symbol	go to state 72
-
-
-
-state 45
-
-    domain_constants  ->  TK_OPEN KW_OBJECTS . typed_constant_list TK_CLOSE   (rule 55)
-
-    $default	reduce using rule 58 (typed_constant_list)
-
-    typed_constant_list	go to state 73
-
-
-
 state 46
 
-    sensor_decl  ->  TK_OPEN KW_SENSOR . sensor_symbol @5 sensor_elements TK_CLOSE   (rule 118)
-    sensor_decl  ->  TK_OPEN KW_SENSOR . error TK_CLOSE   (rule 119)
+    domain_types  ->  TK_OPEN KW_TYPES . primitive_type_list TK_CLOSE   (rule 51)
+    domain_types  ->  TK_OPEN KW_TYPES . typed_type_list TK_CLOSE   (rule 52)
 
-    error	shift, and go to state 74
-    TK_NEW_SYMBOL	shift, and go to state 75
-    TK_SENSOR_SYMBOL	shift, and go to state 76
+    TK_NEW_SYMBOL	shift, and go to state 68
+    TK_TYPE_SYMBOL	shift, and go to state 69
 
-    sensor_symbol	go to state 77
+    $default	reduce using rule 55 (typed_type_list)
+
+    typed_type_list	go to state 70
+    primitive_type_list	go to state 71
+    primitive_type	go to state 72
 
 
 
 state 47
 
-    axiom_decl  ->  TK_OPEN KW_AXIOM . axiom_symbol @4 axiom_elements TK_CLOSE   (rule 111)
-    axiom_decl  ->  TK_OPEN KW_AXIOM . error TK_CLOSE   (rule 112)
+    action_decl  ->  TK_OPEN KW_ACTION . action_symbol @2 action_elements TK_CLOSE   (rule 77)
+    action_decl  ->  TK_OPEN KW_ACTION . error TK_CLOSE   (rule 78)
 
-    error	shift, and go to state 78
-    TK_NEW_SYMBOL	shift, and go to state 79
-    TK_AXIOM_SYMBOL	shift, and go to state 80
+    error	shift, and go to state 73
+    TK_NEW_SYMBOL	shift, and go to state 74
+    TK_ACTION_SYMBOL	shift, and go to state 75
 
-    axiom_symbol	go to state 81
+    action_symbol	go to state 76
 
 
 
 state 48
 
-    observable_decl  ->  TK_OPEN KW_OBSERVABLE . @6 fluent_list_decl TK_CLOSE   (rule 125)
-    observable_decl  ->  TK_OPEN KW_OBSERVABLE . error TK_CLOSE   (rule 126)
+    domain_constants  ->  TK_OPEN KW_OBJECTS . typed_constant_list TK_CLOSE   (rule 61)
+    domain_constants  ->  TK_OPEN KW_OBJECTS . untyped_constant_list TK_CLOSE   (rule 63)
 
-    error	shift, and go to state 82
+    TK_NEW_SYMBOL	shift, and go to state 60
 
-    TK_OPEN	reduce using rule 124 (@6)
-    TK_CLOSE	reduce using rule 124 (@6)
-    KW_EXISTS	reduce using rule 124 (@6)
-    KW_FORALL	reduce using rule 124 (@6)
+    $default	reduce using rule 66 (typed_constant_list)
 
-    @6  	go to state 83
+    typed_constant_list	go to state 77
+    untyped_constant_list	go to state 78
+    constant_sym_list	go to state 63
 
 
 
 state 49
 
-    sticky_decl  ->  TK_OPEN KW_STICKY . @7 fluent_list_decl TK_CLOSE   (rule 133)
-    sticky_decl  ->  TK_OPEN KW_STICKY . error TK_CLOSE   (rule 134)
+    sensor_decl  ->  TK_OPEN KW_SENSOR . sensor_symbol @6 sensor_elements TK_CLOSE   (rule 127)
+    sensor_decl  ->  TK_OPEN KW_SENSOR . error TK_CLOSE   (rule 128)
 
-    error	shift, and go to state 84
+    error	shift, and go to state 79
+    TK_NEW_SYMBOL	shift, and go to state 80
+    TK_SENSOR_SYMBOL	shift, and go to state 81
 
-    TK_OPEN	reduce using rule 132 (@7)
-    TK_CLOSE	reduce using rule 132 (@7)
-    KW_EXISTS	reduce using rule 132 (@7)
-    KW_FORALL	reduce using rule 132 (@7)
-
-    @7  	go to state 85
+    sensor_symbol	go to state 82
 
 
 
 state 50
 
-    state_variable_decl  ->  TK_OPEN KW_VARIABLE . variable_symbol @8 fluent_list_decl rest_state_variable TK_CLOSE   (rule 138)
-    state_variable_decl  ->  TK_OPEN KW_VARIABLE . error TK_CLOSE   (rule 139)
+    axiom_decl  ->  TK_OPEN KW_AXIOM . axiom_symbol @5 axiom_elements TK_CLOSE   (rule 120)
+    axiom_decl  ->  TK_OPEN KW_AXIOM . error TK_CLOSE   (rule 121)
 
-    error	shift, and go to state 86
-    TK_NEW_SYMBOL	shift, and go to state 87
-    TK_VARNAME_SYMBOL	shift, and go to state 88
+    error	shift, and go to state 83
+    TK_NEW_SYMBOL	shift, and go to state 84
+    TK_AXIOM_SYMBOL	shift, and go to state 85
 
-    variable_symbol	go to state 89
+    axiom_symbol	go to state 86
 
 
 
 state 51
 
-    observable_variable_decl  ->  TK_OPEN KW_OBS_VARIABLE . variable_symbol @9 fluent_list_decl TK_CLOSE   (rule 143)
-    observable_variable_decl  ->  TK_OPEN KW_OBS_VARIABLE . error TK_CLOSE   (rule 144)
+    observable_decl  ->  TK_OPEN KW_OBSERVABLE . @7 fluent_list_decl TK_CLOSE   (rule 134)
+    observable_decl  ->  TK_OPEN KW_OBSERVABLE . error TK_CLOSE   (rule 135)
 
-    error	shift, and go to state 90
-    TK_NEW_SYMBOL	shift, and go to state 87
-    TK_VARNAME_SYMBOL	shift, and go to state 88
+    error	shift, and go to state 87
 
-    variable_symbol	go to state 91
+    TK_OPEN	reduce using rule 133 (@7)
+    KW_EXISTS	reduce using rule 133 (@7)
+
+    @7  	go to state 88
 
 
 
 state 52
 
-    pddl_domain  ->  TK_OPEN KW_DEFINE domain_name domain_elements TK_CLOSE .   (rule 4)
+    sticky_decl  ->  TK_OPEN KW_STICKY . @8 fluent_list_decl TK_CLOSE   (rule 141)
+    sticky_decl  ->  TK_OPEN KW_STICKY . error TK_CLOSE   (rule 142)
 
-    $default	reduce using rule 4 (pddl_domain)
+    error	shift, and go to state 89
+
+    TK_OPEN	reduce using rule 140 (@8)
+    KW_EXISTS	reduce using rule 140 (@8)
+
+    @8  	go to state 90
 
 
 
 state 53
 
-    domain_elements  ->  domain_requires domain_elements .   (rule 6)
+    multivalued_variable_decl  ->  TK_OPEN KW_VARIABLE . error TK_CLOSE   (rule 147)
+    multivalued_variable_type  ->  KW_VARIABLE .   (rule 148)
 
-    $default	reduce using rule 6 (domain_elements)
+    error	shift, and go to state 91
+
+    TK_OPEN	reduce using rule 148 (multivalued_variable_type)
+    TK_NEW_SYMBOL	reduce using rule 148 (multivalued_variable_type)
+    TK_VARNAME_SYMBOL	reduce using rule 148 (multivalued_variable_type)
+    KW_EXISTS	reduce using rule 148 (multivalued_variable_type)
+    KW_FORDOMAIN	reduce using rule 148 (multivalued_variable_type)
+    KW_HEAD	reduce using rule 148 (multivalued_variable_type)
 
 
 
 state 54
 
-    domain_elements  ->  domain_predicates domain_elements .   (rule 9)
+    multivalued_variable_type  ->  KW_OBS_VARIABLE .   (rule 149)
 
-    $default	reduce using rule 9 (domain_elements)
+    $default	reduce using rule 149 (multivalued_variable_type)
 
 
 
 state 55
 
-    domain_elements  ->  domain_types domain_elements .   (rule 7)
+    domain_default_sensing_model  ->  TK_OPEN KW_DEFAULT_SENSING_MODEL . sensing_model TK_CLOSE   (rule 154)
 
-    $default	reduce using rule 7 (domain_elements)
+    TK_OPEN	shift, and go to state 92
+
+    $default	reduce using rule 118 (sensing_model)
+
+    literal	go to state 93
+    positive_literal	go to state 94
+    negative_literal	go to state 95
+    action_effect	go to state 96
+    single_action_effect	go to state 97
+    conditional_effect	go to state 98
+    forall_effect	go to state 99
+    atomic_effect	go to state 100
+    sensing_model	go to state 101
 
 
 
 state 56
 
-    domain_elements  ->  domain_constants domain_elements .   (rule 8)
+    multivalued_variable_decl  ->  TK_OPEN multivalued_variable_type . variable_symbol @9 optional_variable_parameters fluent_list_decl rest_variable_decl TK_CLOSE   (rule 144)
+    multivalued_variable_decl  ->  TK_OPEN multivalued_variable_type . TK_OPEN variable_symbol param_list TK_CLOSE @10 fluent_list_decl rest_variable_decl TK_CLOSE   (rule 146)
 
-    $default	reduce using rule 8 (domain_elements)
+    TK_OPEN	shift, and go to state 102
+    TK_NEW_SYMBOL	shift, and go to state 103
+    TK_VARNAME_SYMBOL	shift, and go to state 104
+
+    variable_symbol	go to state 105
 
 
 
 state 57
 
-    domain_elements  ->  domain_structure domain_elements .   (rule 10)
+    pddl_problem  ->  TK_OPEN KW_DEFINE TK_OPEN KW_PROBLEM any_symbol TK_CLOSE @11 . problem_elements TK_CLOSE   (rule 156)
 
-    $default	reduce using rule 10 (domain_elements)
+    $default	reduce using rule 164 (problem_elements)
+
+    problem_elements	go to state 106
 
 
 
 state 58
 
-    domain_name  ->  TK_OPEN KW_DOMAIN any_symbol TK_CLOSE .   (rule 12)
-
-    $default	reduce using rule 12 (domain_name)
-
-
-
-state 59
-
-    pddl_problem  ->  TK_OPEN KW_DEFINE TK_OPEN KW_PROBLEM error TK_CLOSE .   (rule 147)
-
-    $default	reduce using rule 147 (pddl_problem)
-
-
-
-state 60
-
-    pddl_problem  ->  TK_OPEN KW_DEFINE TK_OPEN KW_PROBLEM any_symbol TK_CLOSE . @10 problem_elements TK_CLOSE   (rule 146)
-
-    $default	reduce using rule 145 (@10)
-
-    @10 	go to state 92
-
-
-
-state 61
-
-    domain_requires  ->  TK_OPEN KW_REQS error . TK_CLOSE   (rule 31)
-
-    TK_CLOSE	shift, and go to state 93
-
-
-
-state 62
-
-    domain_requires  ->  TK_OPEN KW_REQS require_list . TK_CLOSE   (rule 30)
-    require_list  ->  require_list . KW_TRANSLATION   (rule 32)
-    require_list  ->  require_list . TK_KEYWORD   (rule 33)
-
-    TK_CLOSE	shift, and go to state 94
-    TK_KEYWORD	shift, and go to state 95
-    KW_TRANSLATION	shift, and go to state 96
-
-
-
-state 63
-
-    domain_constants  ->  TK_OPEN KW_CONSTANTS typed_constant_list . TK_CLOSE   (rule 54)
-    typed_constant_list  ->  typed_constant_list . ne_constant_sym_list TK_HYPHEN TK_TYPE_SYMBOL   (rule 56)
-    typed_constant_list  ->  typed_constant_list . ne_constant_sym_list   (rule 57)
-
-    TK_CLOSE	shift, and go to state 97
-    TK_NEW_SYMBOL	shift, and go to state 98
-
-    ne_constant_sym_list	go to state 99
-
-
-
-state 64
-
-    domain_predicates  ->  TK_OPEN KW_PREDS error . TK_CLOSE   (rule 36)
-
-    TK_CLOSE	shift, and go to state 100
-
-
-
-state 65
-
-    predicate_decl  ->  TK_OPEN . TK_NEW_SYMBOL typed_param_list TK_CLOSE   (rule 39)
-    predicate_decl  ->  TK_OPEN . error TK_CLOSE   (rule 40)
-
-    error	shift, and go to state 101
-    TK_NEW_SYMBOL	shift, and go to state 102
-
-
-
-state 66
-
-    domain_predicates  ->  TK_OPEN KW_PREDS predicate_list . TK_CLOSE   (rule 35)
-    predicate_list  ->  predicate_list . predicate_decl   (rule 37)
-
-    TK_OPEN	shift, and go to state 65
-    TK_CLOSE	shift, and go to state 103
-
-    predicate_decl	go to state 104
-
-
-
-state 67
-
-    predicate_list  ->  predicate_decl .   (rule 38)
-
-    $default	reduce using rule 38 (predicate_list)
-
-
-
-state 68
-
-    domain_types  ->  TK_OPEN KW_TYPES typed_type_list . TK_CLOSE   (rule 46)
-    typed_type_list  ->  typed_type_list . primitive_type_list TK_HYPHEN TK_TYPE_SYMBOL   (rule 47)
-    typed_type_list  ->  typed_type_list . primitive_type_list TK_HYPHEN TK_NEW_SYMBOL   (rule 48)
-    typed_type_list  ->  typed_type_list . primitive_type_list   (rule 49)
-
-    TK_CLOSE	shift, and go to state 105
-
-    TK_CLOSE	[reduce using rule 53 (primitive_type_list)]
-    $default	reduce using rule 53 (primitive_type_list)
-
-    primitive_type_list	go to state 106
-
-
-
-state 69
-
-    action_decl  ->  TK_OPEN KW_ACTION error . TK_CLOSE   (rule 69)
+    domain_requires  ->  TK_OPEN KW_REQS error . TK_CLOSE   (rule 32)
 
     TK_CLOSE	shift, and go to state 107
 
 
 
-state 70
+state 59
 
-    action_symbol  ->  TK_NEW_SYMBOL .   (rule 24)
+    domain_requires  ->  TK_OPEN KW_REQS require_list . TK_CLOSE   (rule 31)
+    require_list  ->  require_list . KW_TRANSLATION   (rule 33)
+    require_list  ->  require_list . TK_KEYWORD   (rule 34)
 
-    $default	reduce using rule 24 (action_symbol)
-
-
-
-state 71
-
-    action_symbol  ->  TK_ACTION_SYMBOL .   (rule 25)
-
-    $default	reduce using rule 25 (action_symbol)
+    TK_CLOSE	shift, and go to state 108
+    TK_KEYWORD	shift, and go to state 109
+    KW_TRANSLATION	shift, and go to state 110
 
 
 
-state 72
+state 60
 
-    action_decl  ->  TK_OPEN KW_ACTION action_symbol . @1 action_elements TK_CLOSE   (rule 68)
+    constant_sym_list  ->  TK_NEW_SYMBOL .   (rule 69)
 
-    $default	reduce using rule 67 (@1)
-
-    @1  	go to state 108
+    $default	reduce using rule 69 (constant_sym_list)
 
 
 
-state 73
+state 61
 
-    domain_constants  ->  TK_OPEN KW_OBJECTS typed_constant_list . TK_CLOSE   (rule 55)
-    typed_constant_list  ->  typed_constant_list . ne_constant_sym_list TK_HYPHEN TK_TYPE_SYMBOL   (rule 56)
-    typed_constant_list  ->  typed_constant_list . ne_constant_sym_list   (rule 57)
+    domain_constants  ->  TK_OPEN KW_CONSTANTS typed_constant_list . TK_CLOSE   (rule 60)
 
-    TK_CLOSE	shift, and go to state 109
-    TK_NEW_SYMBOL	shift, and go to state 98
-
-    ne_constant_sym_list	go to state 99
+    TK_CLOSE	shift, and go to state 111
 
 
 
-state 74
+state 62
 
-    sensor_decl  ->  TK_OPEN KW_SENSOR error . TK_CLOSE   (rule 119)
-
-    TK_CLOSE	shift, and go to state 110
-
-
-
-state 75
-
-    sensor_symbol  ->  TK_NEW_SYMBOL .   (rule 26)
-
-    $default	reduce using rule 26 (sensor_symbol)
-
-
-
-state 76
-
-    sensor_symbol  ->  TK_SENSOR_SYMBOL .   (rule 27)
-
-    $default	reduce using rule 27 (sensor_symbol)
-
-
-
-state 77
-
-    sensor_decl  ->  TK_OPEN KW_SENSOR sensor_symbol . @5 sensor_elements TK_CLOSE   (rule 118)
-
-    $default	reduce using rule 117 (@5)
-
-    @5  	go to state 111
-
-
-
-state 78
-
-    axiom_decl  ->  TK_OPEN KW_AXIOM error . TK_CLOSE   (rule 112)
+    domain_constants  ->  TK_OPEN KW_CONSTANTS untyped_constant_list . TK_CLOSE   (rule 62)
 
     TK_CLOSE	shift, and go to state 112
 
 
 
+state 63
+
+    typed_constant_list  ->  constant_sym_list . TK_HYPHEN TK_TYPE_SYMBOL @1 typed_constant_list   (rule 65)
+    untyped_constant_list  ->  constant_sym_list .   (rule 67)
+    constant_sym_list  ->  constant_sym_list . TK_NEW_SYMBOL   (rule 68)
+
+    TK_HYPHEN	shift, and go to state 113
+    TK_NEW_SYMBOL	shift, and go to state 114
+
+    $default	reduce using rule 67 (untyped_constant_list)
+
+
+
+state 64
+
+    domain_predicates  ->  TK_OPEN KW_PREDS error . TK_CLOSE   (rule 37)
+
+    TK_CLOSE	shift, and go to state 115
+
+
+
+state 65
+
+    predicate_decl  ->  TK_OPEN . TK_NEW_SYMBOL param_list TK_CLOSE   (rule 40)
+    predicate_decl  ->  TK_OPEN . error TK_CLOSE   (rule 41)
+
+    error	shift, and go to state 116
+    TK_NEW_SYMBOL	shift, and go to state 117
+
+
+
+state 66
+
+    domain_predicates  ->  TK_OPEN KW_PREDS predicate_list . TK_CLOSE   (rule 36)
+    predicate_list  ->  predicate_list . predicate_decl   (rule 38)
+
+    TK_OPEN	shift, and go to state 65
+    TK_CLOSE	shift, and go to state 118
+
+    predicate_decl	go to state 119
+
+
+
+state 67
+
+    predicate_list  ->  predicate_decl .   (rule 39)
+
+    $default	reduce using rule 39 (predicate_list)
+
+
+
+state 68
+
+    primitive_type  ->  TK_NEW_SYMBOL .   (rule 59)
+
+    $default	reduce using rule 59 (primitive_type)
+
+
+
+state 69
+
+    primitive_type  ->  TK_TYPE_SYMBOL .   (rule 58)
+
+    $default	reduce using rule 58 (primitive_type)
+
+
+
+state 70
+
+    domain_types  ->  TK_OPEN KW_TYPES typed_type_list . TK_CLOSE   (rule 52)
+
+    TK_CLOSE	shift, and go to state 120
+
+
+
+state 71
+
+    domain_types  ->  TK_OPEN KW_TYPES primitive_type_list . TK_CLOSE   (rule 51)
+    typed_type_list  ->  primitive_type_list . TK_HYPHEN TK_TYPE_SYMBOL typed_type_list   (rule 53)
+    typed_type_list  ->  primitive_type_list . TK_HYPHEN TK_NEW_SYMBOL typed_type_list   (rule 54)
+    primitive_type_list  ->  primitive_type_list . primitive_type   (rule 56)
+
+    TK_CLOSE	shift, and go to state 121
+    TK_HYPHEN	shift, and go to state 122
+    TK_NEW_SYMBOL	shift, and go to state 68
+    TK_TYPE_SYMBOL	shift, and go to state 69
+
+    primitive_type	go to state 123
+
+
+
+state 72
+
+    primitive_type_list  ->  primitive_type .   (rule 57)
+
+    $default	reduce using rule 57 (primitive_type_list)
+
+
+
+state 73
+
+    action_decl  ->  TK_OPEN KW_ACTION error . TK_CLOSE   (rule 78)
+
+    TK_CLOSE	shift, and go to state 124
+
+
+
+state 74
+
+    action_symbol  ->  TK_NEW_SYMBOL .   (rule 25)
+
+    $default	reduce using rule 25 (action_symbol)
+
+
+
+state 75
+
+    action_symbol  ->  TK_ACTION_SYMBOL .   (rule 26)
+
+    $default	reduce using rule 26 (action_symbol)
+
+
+
+state 76
+
+    action_decl  ->  TK_OPEN KW_ACTION action_symbol . @2 action_elements TK_CLOSE   (rule 77)
+
+    $default	reduce using rule 76 (@2)
+
+    @2  	go to state 125
+
+
+
+state 77
+
+    domain_constants  ->  TK_OPEN KW_OBJECTS typed_constant_list . TK_CLOSE   (rule 61)
+
+    TK_CLOSE	shift, and go to state 126
+
+
+
+state 78
+
+    domain_constants  ->  TK_OPEN KW_OBJECTS untyped_constant_list . TK_CLOSE   (rule 63)
+
+    TK_CLOSE	shift, and go to state 127
+
+
+
 state 79
 
-    axiom_symbol  ->  TK_NEW_SYMBOL .   (rule 28)
+    sensor_decl  ->  TK_OPEN KW_SENSOR error . TK_CLOSE   (rule 128)
 
-    $default	reduce using rule 28 (axiom_symbol)
+    TK_CLOSE	shift, and go to state 128
 
 
 
 state 80
 
-    axiom_symbol  ->  TK_AXIOM_SYMBOL .   (rule 29)
+    sensor_symbol  ->  TK_NEW_SYMBOL .   (rule 27)
 
-    $default	reduce using rule 29 (axiom_symbol)
+    $default	reduce using rule 27 (sensor_symbol)
 
 
 
 state 81
 
-    axiom_decl  ->  TK_OPEN KW_AXIOM axiom_symbol . @4 axiom_elements TK_CLOSE   (rule 111)
+    sensor_symbol  ->  TK_SENSOR_SYMBOL .   (rule 28)
 
-    $default	reduce using rule 110 (@4)
-
-    @4  	go to state 113
+    $default	reduce using rule 28 (sensor_symbol)
 
 
 
 state 82
 
-    observable_decl  ->  TK_OPEN KW_OBSERVABLE error . TK_CLOSE   (rule 126)
+    sensor_decl  ->  TK_OPEN KW_SENSOR sensor_symbol . @6 sensor_elements TK_CLOSE   (rule 127)
 
-    TK_CLOSE	shift, and go to state 114
+    $default	reduce using rule 126 (@6)
+
+    @6  	go to state 129
 
 
 
 state 83
 
-    observable_decl  ->  TK_OPEN KW_OBSERVABLE @6 . fluent_list_decl TK_CLOSE   (rule 125)
-
-    TK_OPEN	shift, and go to state 115
-
-    TK_OPEN	[reduce using rule 127 (fluent_list_decl)]
-    $default	reduce using rule 127 (fluent_list_decl)
-
-    positive_literal	go to state 116
-    forall_effect	go to state 117
-    positive_atomic_effect	go to state 118
-    fluent_list_decl	go to state 119
-    fluent_decl	go to state 120
-
-
-
-state 84
-
-    sticky_decl  ->  TK_OPEN KW_STICKY error . TK_CLOSE   (rule 134)
-
-    TK_CLOSE	shift, and go to state 121
-
-
-
-state 85
-
-    sticky_decl  ->  TK_OPEN KW_STICKY @7 . fluent_list_decl TK_CLOSE   (rule 133)
-
-    TK_OPEN	shift, and go to state 115
-
-    TK_OPEN	[reduce using rule 127 (fluent_list_decl)]
-    $default	reduce using rule 127 (fluent_list_decl)
-
-    positive_literal	go to state 116
-    forall_effect	go to state 117
-    positive_atomic_effect	go to state 118
-    fluent_list_decl	go to state 122
-    fluent_decl	go to state 120
-
-
-
-state 86
-
-    state_variable_decl  ->  TK_OPEN KW_VARIABLE error . TK_CLOSE   (rule 139)
-
-    TK_CLOSE	shift, and go to state 123
-
-
-
-state 87
-
-    variable_symbol  ->  TK_NEW_SYMBOL .   (rule 22)
-
-    $default	reduce using rule 22 (variable_symbol)
-
-
-
-state 88
-
-    variable_symbol  ->  TK_VARNAME_SYMBOL .   (rule 23)
-
-    $default	reduce using rule 23 (variable_symbol)
-
-
-
-state 89
-
-    state_variable_decl  ->  TK_OPEN KW_VARIABLE variable_symbol . @8 fluent_list_decl rest_state_variable TK_CLOSE   (rule 138)
-
-    $default	reduce using rule 137 (@8)
-
-    @8  	go to state 124
-
-
-
-state 90
-
-    observable_variable_decl  ->  TK_OPEN KW_OBS_VARIABLE error . TK_CLOSE   (rule 144)
-
-    TK_CLOSE	shift, and go to state 125
-
-
-
-state 91
-
-    observable_variable_decl  ->  TK_OPEN KW_OBS_VARIABLE variable_symbol . @9 fluent_list_decl TK_CLOSE   (rule 143)
-
-    $default	reduce using rule 142 (@9)
-
-    @9  	go to state 126
-
-
-
-state 92
-
-    pddl_problem  ->  TK_OPEN KW_DEFINE TK_OPEN KW_PROBLEM any_symbol TK_CLOSE @10 . problem_elements TK_CLOSE   (rule 146)
-
-    $default	reduce using rule 154 (problem_elements)
-
-    problem_elements	go to state 127
-
-
-
-state 93
-
-    domain_requires  ->  TK_OPEN KW_REQS error TK_CLOSE .   (rule 31)
-
-    $default	reduce using rule 31 (domain_requires)
-
-
-
-state 94
-
-    domain_requires  ->  TK_OPEN KW_REQS require_list TK_CLOSE .   (rule 30)
-
-    $default	reduce using rule 30 (domain_requires)
-
-
-
-state 95
-
-    require_list  ->  require_list TK_KEYWORD .   (rule 33)
-
-    $default	reduce using rule 33 (require_list)
-
-
-
-state 96
-
-    require_list  ->  require_list KW_TRANSLATION .   (rule 32)
-
-    $default	reduce using rule 32 (require_list)
-
-
-
-state 97
-
-    domain_constants  ->  TK_OPEN KW_CONSTANTS typed_constant_list TK_CLOSE .   (rule 54)
-
-    $default	reduce using rule 54 (domain_constants)
-
-
-
-state 98
-
-    ne_constant_sym_list  ->  TK_NEW_SYMBOL .   (rule 60)
-
-    $default	reduce using rule 60 (ne_constant_sym_list)
-
-
-
-state 99
-
-    typed_constant_list  ->  typed_constant_list ne_constant_sym_list . TK_HYPHEN TK_TYPE_SYMBOL   (rule 56)
-    typed_constant_list  ->  typed_constant_list ne_constant_sym_list .   (rule 57)
-    ne_constant_sym_list  ->  ne_constant_sym_list . TK_NEW_SYMBOL   (rule 59)
-
-    TK_HYPHEN	shift, and go to state 128
-    TK_NEW_SYMBOL	shift, and go to state 129
-
-    TK_NEW_SYMBOL	[reduce using rule 57 (typed_constant_list)]
-    $default	reduce using rule 57 (typed_constant_list)
-
-
-
-state 100
-
-    domain_predicates  ->  TK_OPEN KW_PREDS error TK_CLOSE .   (rule 36)
-
-    $default	reduce using rule 36 (domain_predicates)
-
-
-
-state 101
-
-    predicate_decl  ->  TK_OPEN error . TK_CLOSE   (rule 40)
+    axiom_decl  ->  TK_OPEN KW_AXIOM error . TK_CLOSE   (rule 121)
 
     TK_CLOSE	shift, and go to state 130
 
 
 
+state 84
+
+    axiom_symbol  ->  TK_NEW_SYMBOL .   (rule 29)
+
+    $default	reduce using rule 29 (axiom_symbol)
+
+
+
+state 85
+
+    axiom_symbol  ->  TK_AXIOM_SYMBOL .   (rule 30)
+
+    $default	reduce using rule 30 (axiom_symbol)
+
+
+
+state 86
+
+    axiom_decl  ->  TK_OPEN KW_AXIOM axiom_symbol . @5 axiom_elements TK_CLOSE   (rule 120)
+
+    $default	reduce using rule 119 (@5)
+
+    @5  	go to state 131
+
+
+
+state 87
+
+    observable_decl  ->  TK_OPEN KW_OBSERVABLE error . TK_CLOSE   (rule 135)
+
+    TK_CLOSE	shift, and go to state 132
+
+
+
+state 88
+
+    observable_decl  ->  TK_OPEN KW_OBSERVABLE @7 . fluent_list_decl TK_CLOSE   (rule 134)
+
+    TK_OPEN	shift, and go to state 133
+
+    positive_literal	go to state 134
+    forall_effect	go to state 135
+    positive_atomic_effect	go to state 136
+    fluent_list_decl	go to state 137
+    fluent_decl	go to state 138
+
+
+
+state 89
+
+    sticky_decl  ->  TK_OPEN KW_STICKY error . TK_CLOSE   (rule 142)
+
+    TK_CLOSE	shift, and go to state 139
+
+
+
+state 90
+
+    sticky_decl  ->  TK_OPEN KW_STICKY @8 . fluent_list_decl TK_CLOSE   (rule 141)
+
+    TK_OPEN	shift, and go to state 133
+
+    positive_literal	go to state 134
+    forall_effect	go to state 135
+    positive_atomic_effect	go to state 136
+    fluent_list_decl	go to state 140
+    fluent_decl	go to state 138
+
+
+
+state 91
+
+    multivalued_variable_decl  ->  TK_OPEN KW_VARIABLE error . TK_CLOSE   (rule 147)
+
+    TK_CLOSE	shift, and go to state 141
+
+
+
+state 92
+
+    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL argument_list TK_CLOSE   (rule 92)
+    positive_literal  ->  TK_OPEN . TK_EQ argument_list TK_CLOSE   (rule 93)
+    negative_literal  ->  TK_OPEN . KW_NOT positive_literal TK_CLOSE   (rule 94)
+    action_effect  ->  TK_OPEN . KW_AND action_effect_list TK_CLOSE   (rule 99)
+    conditional_effect  ->  TK_OPEN . KW_WHEN condition atomic_effect_kw_list TK_CLOSE   (rule 105)
+    forall_effect  ->  TK_OPEN . KW_FORALL TK_OPEN @3 param_list TK_CLOSE @4 action_effect TK_CLOSE   (rule 108)
+
+    TK_EQ	shift, and go to state 142
+    TK_PRED_SYMBOL	shift, and go to state 143
+    KW_AND	shift, and go to state 144
+    KW_FORALL	shift, and go to state 145
+    KW_NOT	shift, and go to state 146
+    KW_WHEN	shift, and go to state 147
+
+
+
+state 93
+
+    atomic_effect  ->  literal .   (rule 115)
+
+    $default	reduce using rule 115 (atomic_effect)
+
+
+
+state 94
+
+    literal  ->  positive_literal .   (rule 90)
+
+    $default	reduce using rule 90 (literal)
+
+
+
+state 95
+
+    literal  ->  negative_literal .   (rule 91)
+
+    $default	reduce using rule 91 (literal)
+
+
+
+state 96
+
+    sensing_model  ->  action_effect .   (rule 117)
+
+    $default	reduce using rule 117 (sensing_model)
+
+
+
+state 97
+
+    action_effect  ->  single_action_effect .   (rule 98)
+
+    $default	reduce using rule 98 (action_effect)
+
+
+
+state 98
+
+    single_action_effect  ->  conditional_effect .   (rule 103)
+
+    $default	reduce using rule 103 (single_action_effect)
+
+
+
+state 99
+
+    single_action_effect  ->  forall_effect .   (rule 104)
+
+    $default	reduce using rule 104 (single_action_effect)
+
+
+
+state 100
+
+    single_action_effect  ->  atomic_effect .   (rule 102)
+
+    $default	reduce using rule 102 (single_action_effect)
+
+
+
+state 101
+
+    domain_default_sensing_model  ->  TK_OPEN KW_DEFAULT_SENSING_MODEL sensing_model . TK_CLOSE   (rule 154)
+
+    TK_CLOSE	shift, and go to state 148
+
+
+
 state 102
 
-    predicate_decl  ->  TK_OPEN TK_NEW_SYMBOL . typed_param_list TK_CLOSE   (rule 39)
+    multivalued_variable_decl  ->  TK_OPEN multivalued_variable_type TK_OPEN . variable_symbol param_list TK_CLOSE @10 fluent_list_decl rest_variable_decl TK_CLOSE   (rule 146)
 
-    $default	reduce using rule 43 (typed_param_list)
+    TK_NEW_SYMBOL	shift, and go to state 103
+    TK_VARNAME_SYMBOL	shift, and go to state 104
 
-    typed_param_list	go to state 131
+    variable_symbol	go to state 149
 
 
 
 state 103
 
-    domain_predicates  ->  TK_OPEN KW_PREDS predicate_list TK_CLOSE .   (rule 35)
+    variable_symbol  ->  TK_NEW_SYMBOL .   (rule 23)
 
-    $default	reduce using rule 35 (domain_predicates)
+    $default	reduce using rule 23 (variable_symbol)
 
 
 
 state 104
 
-    predicate_list  ->  predicate_list predicate_decl .   (rule 37)
+    variable_symbol  ->  TK_VARNAME_SYMBOL .   (rule 24)
 
-    $default	reduce using rule 37 (predicate_list)
+    $default	reduce using rule 24 (variable_symbol)
 
 
 
 state 105
 
-    domain_types  ->  TK_OPEN KW_TYPES typed_type_list TK_CLOSE .   (rule 46)
+    multivalued_variable_decl  ->  TK_OPEN multivalued_variable_type variable_symbol . @9 optional_variable_parameters fluent_list_decl rest_variable_decl TK_CLOSE   (rule 144)
 
-    $default	reduce using rule 46 (domain_types)
+    $default	reduce using rule 143 (@9)
+
+    @9  	go to state 150
 
 
 
 state 106
 
-    typed_type_list  ->  typed_type_list primitive_type_list . TK_HYPHEN TK_TYPE_SYMBOL   (rule 47)
-    typed_type_list  ->  typed_type_list primitive_type_list . TK_HYPHEN TK_NEW_SYMBOL   (rule 48)
-    typed_type_list  ->  typed_type_list primitive_type_list .   (rule 49)
-    primitive_type_list  ->  primitive_type_list . TK_TYPE_SYMBOL   (rule 51)
-    primitive_type_list  ->  primitive_type_list . TK_NEW_SYMBOL   (rule 52)
+    pddl_problem  ->  TK_OPEN KW_DEFINE TK_OPEN KW_PROBLEM any_symbol TK_CLOSE @11 problem_elements . TK_CLOSE   (rule 156)
+    problem_elements  ->  problem_elements . TK_OPEN KW_FORDOMAIN any_symbol TK_CLOSE   (rule 158)
+    problem_elements  ->  problem_elements . domain_requires   (rule 159)
+    problem_elements  ->  problem_elements . domain_constants   (rule 160)
+    problem_elements  ->  problem_elements . initial_state   (rule 161)
+    problem_elements  ->  problem_elements . hidden_state   (rule 162)
+    problem_elements  ->  problem_elements . goal_spec   (rule 163)
 
-    TK_HYPHEN	shift, and go to state 132
-    TK_NEW_SYMBOL	shift, and go to state 133
-    TK_TYPE_SYMBOL	shift, and go to state 134
+    TK_OPEN	shift, and go to state 151
+    TK_CLOSE	shift, and go to state 152
 
-    TK_HYPHEN	[reduce using rule 49 (typed_type_list)]
-    TK_NEW_SYMBOL	[reduce using rule 49 (typed_type_list)]
-    TK_TYPE_SYMBOL	[reduce using rule 49 (typed_type_list)]
-    $default	reduce using rule 49 (typed_type_list)
+    domain_requires	go to state 153
+    domain_constants	go to state 154
+    initial_state	go to state 155
+    hidden_state	go to state 156
+    goal_spec	go to state 157
 
 
 
 state 107
 
-    action_decl  ->  TK_OPEN KW_ACTION error TK_CLOSE .   (rule 69)
+    domain_requires  ->  TK_OPEN KW_REQS error TK_CLOSE .   (rule 32)
 
-    $default	reduce using rule 69 (action_decl)
+    $default	reduce using rule 32 (domain_requires)
 
 
 
 state 108
 
-    action_decl  ->  TK_OPEN KW_ACTION action_symbol @1 . action_elements TK_CLOSE   (rule 68)
+    domain_requires  ->  TK_OPEN KW_REQS require_list TK_CLOSE .   (rule 31)
 
-    $default	reduce using rule 75 (action_elements)
-
-    action_elements	go to state 135
+    $default	reduce using rule 31 (domain_requires)
 
 
 
 state 109
 
-    domain_constants  ->  TK_OPEN KW_OBJECTS typed_constant_list TK_CLOSE .   (rule 55)
+    require_list  ->  require_list TK_KEYWORD .   (rule 34)
 
-    $default	reduce using rule 55 (domain_constants)
+    $default	reduce using rule 34 (require_list)
 
 
 
 state 110
 
-    sensor_decl  ->  TK_OPEN KW_SENSOR error TK_CLOSE .   (rule 119)
+    require_list  ->  require_list KW_TRANSLATION .   (rule 33)
 
-    $default	reduce using rule 119 (sensor_decl)
+    $default	reduce using rule 33 (require_list)
 
 
 
 state 111
 
-    sensor_decl  ->  TK_OPEN KW_SENSOR sensor_symbol @5 . sensor_elements TK_CLOSE   (rule 118)
+    domain_constants  ->  TK_OPEN KW_CONSTANTS typed_constant_list TK_CLOSE .   (rule 60)
 
-    $default	reduce using rule 123 (sensor_elements)
-
-    sensor_elements	go to state 136
+    $default	reduce using rule 60 (domain_constants)
 
 
 
 state 112
 
-    axiom_decl  ->  TK_OPEN KW_AXIOM error TK_CLOSE .   (rule 112)
+    domain_constants  ->  TK_OPEN KW_CONSTANTS untyped_constant_list TK_CLOSE .   (rule 62)
 
-    $default	reduce using rule 112 (axiom_decl)
+    $default	reduce using rule 62 (domain_constants)
 
 
 
 state 113
 
-    axiom_decl  ->  TK_OPEN KW_AXIOM axiom_symbol @4 . axiom_elements TK_CLOSE   (rule 111)
+    typed_constant_list  ->  constant_sym_list TK_HYPHEN . TK_TYPE_SYMBOL @1 typed_constant_list   (rule 65)
 
-    $default	reduce using rule 116 (axiom_elements)
-
-    axiom_elements	go to state 137
+    TK_TYPE_SYMBOL	shift, and go to state 158
 
 
 
 state 114
 
-    observable_decl  ->  TK_OPEN KW_OBSERVABLE error TK_CLOSE .   (rule 126)
+    constant_sym_list  ->  constant_sym_list TK_NEW_SYMBOL .   (rule 68)
 
-    $default	reduce using rule 126 (observable_decl)
+    $default	reduce using rule 68 (constant_sym_list)
 
 
 
 state 115
 
-    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL argument_list TK_CLOSE   (rule 83)
-    positive_literal  ->  TK_OPEN . TK_EQ argument_list TK_CLOSE   (rule 84)
-    forall_effect  ->  TK_OPEN . KW_FORALL TK_OPEN @2 typed_param_list TK_CLOSE @3 action_effect TK_CLOSE   (rule 99)
+    domain_predicates  ->  TK_OPEN KW_PREDS error TK_CLOSE .   (rule 37)
 
-    TK_EQ	shift, and go to state 138
-    TK_PRED_SYMBOL	shift, and go to state 139
-    KW_FORALL	shift, and go to state 140
+    $default	reduce using rule 37 (domain_predicates)
 
 
 
 state 116
 
-    positive_atomic_effect  ->  positive_literal .   (rule 107)
+    predicate_decl  ->  TK_OPEN error . TK_CLOSE   (rule 41)
 
-    $default	reduce using rule 107 (positive_atomic_effect)
+    TK_CLOSE	shift, and go to state 159
 
 
 
 state 117
 
-    fluent_decl  ->  forall_effect .   (rule 131)
+    predicate_decl  ->  TK_OPEN TK_NEW_SYMBOL . param_list TK_CLOSE   (rule 40)
 
-    $default	reduce using rule 131 (fluent_decl)
+    TK_NEW_VAR_SYMBOL	shift, and go to state 160
+
+    $default	reduce using rule 44 (param_list)
+
+    param_list	go to state 161
+    untyped_param_list	go to state 162
+    typed_param_list	go to state 163
+    param_sym_list	go to state 164
+    new_var_symbol	go to state 165
 
 
 
 state 118
 
-    fluent_decl  ->  positive_atomic_effect .   (rule 130)
+    domain_predicates  ->  TK_OPEN KW_PREDS predicate_list TK_CLOSE .   (rule 36)
 
-    $default	reduce using rule 130 (fluent_decl)
+    $default	reduce using rule 36 (domain_predicates)
 
 
 
 state 119
 
-    observable_decl  ->  TK_OPEN KW_OBSERVABLE @6 fluent_list_decl . TK_CLOSE   (rule 125)
-    fluent_list_decl  ->  fluent_list_decl . fluent_decl   (rule 128)
+    predicate_list  ->  predicate_list predicate_decl .   (rule 38)
 
-    TK_OPEN	shift, and go to state 115
-    TK_CLOSE	shift, and go to state 141
-
-    positive_literal	go to state 116
-    forall_effect	go to state 117
-    positive_atomic_effect	go to state 118
-    fluent_decl	go to state 142
+    $default	reduce using rule 38 (predicate_list)
 
 
 
 state 120
 
-    fluent_list_decl  ->  fluent_decl .   (rule 129)
+    domain_types  ->  TK_OPEN KW_TYPES typed_type_list TK_CLOSE .   (rule 52)
 
-    $default	reduce using rule 129 (fluent_list_decl)
+    $default	reduce using rule 52 (domain_types)
 
 
 
 state 121
 
-    sticky_decl  ->  TK_OPEN KW_STICKY error TK_CLOSE .   (rule 134)
+    domain_types  ->  TK_OPEN KW_TYPES primitive_type_list TK_CLOSE .   (rule 51)
 
-    $default	reduce using rule 134 (sticky_decl)
+    $default	reduce using rule 51 (domain_types)
 
 
 
 state 122
 
-    fluent_list_decl  ->  fluent_list_decl . fluent_decl   (rule 128)
-    sticky_decl  ->  TK_OPEN KW_STICKY @7 fluent_list_decl . TK_CLOSE   (rule 133)
+    typed_type_list  ->  primitive_type_list TK_HYPHEN . TK_TYPE_SYMBOL typed_type_list   (rule 53)
+    typed_type_list  ->  primitive_type_list TK_HYPHEN . TK_NEW_SYMBOL typed_type_list   (rule 54)
 
-    TK_OPEN	shift, and go to state 115
-    TK_CLOSE	shift, and go to state 143
-
-    positive_literal	go to state 116
-    forall_effect	go to state 117
-    positive_atomic_effect	go to state 118
-    fluent_decl	go to state 142
+    TK_NEW_SYMBOL	shift, and go to state 166
+    TK_TYPE_SYMBOL	shift, and go to state 167
 
 
 
 state 123
 
-    state_variable_decl  ->  TK_OPEN KW_VARIABLE error TK_CLOSE .   (rule 139)
+    primitive_type_list  ->  primitive_type_list primitive_type .   (rule 56)
 
-    $default	reduce using rule 139 (state_variable_decl)
+    $default	reduce using rule 56 (primitive_type_list)
 
 
 
 state 124
 
-    state_variable_decl  ->  TK_OPEN KW_VARIABLE variable_symbol @8 . fluent_list_decl rest_state_variable TK_CLOSE   (rule 138)
+    action_decl  ->  TK_OPEN KW_ACTION error TK_CLOSE .   (rule 78)
 
-    TK_OPEN	shift, and go to state 115
-
-    TK_OPEN	[reduce using rule 127 (fluent_list_decl)]
-    $default	reduce using rule 127 (fluent_list_decl)
-
-    positive_literal	go to state 116
-    forall_effect	go to state 117
-    positive_atomic_effect	go to state 118
-    fluent_list_decl	go to state 144
-    fluent_decl	go to state 120
+    $default	reduce using rule 78 (action_decl)
 
 
 
 state 125
 
-    observable_variable_decl  ->  TK_OPEN KW_OBS_VARIABLE error TK_CLOSE .   (rule 144)
+    action_decl  ->  TK_OPEN KW_ACTION action_symbol @2 . action_elements TK_CLOSE   (rule 77)
 
-    $default	reduce using rule 144 (observable_variable_decl)
+    $default	reduce using rule 84 (action_elements)
+
+    action_elements	go to state 168
 
 
 
 state 126
 
-    observable_variable_decl  ->  TK_OPEN KW_OBS_VARIABLE variable_symbol @9 . fluent_list_decl TK_CLOSE   (rule 143)
+    domain_constants  ->  TK_OPEN KW_OBJECTS typed_constant_list TK_CLOSE .   (rule 61)
 
-    TK_OPEN	shift, and go to state 115
-
-    TK_OPEN	[reduce using rule 127 (fluent_list_decl)]
-    $default	reduce using rule 127 (fluent_list_decl)
-
-    positive_literal	go to state 116
-    forall_effect	go to state 117
-    positive_atomic_effect	go to state 118
-    fluent_list_decl	go to state 145
-    fluent_decl	go to state 120
+    $default	reduce using rule 61 (domain_constants)
 
 
 
 state 127
 
-    pddl_problem  ->  TK_OPEN KW_DEFINE TK_OPEN KW_PROBLEM any_symbol TK_CLOSE @10 problem_elements . TK_CLOSE   (rule 146)
-    problem_elements  ->  problem_elements . TK_OPEN KW_FORDOMAIN any_symbol TK_CLOSE   (rule 148)
-    problem_elements  ->  problem_elements . domain_requires   (rule 149)
-    problem_elements  ->  problem_elements . domain_constants   (rule 150)
-    problem_elements  ->  problem_elements . initial_state   (rule 151)
-    problem_elements  ->  problem_elements . hidden_state   (rule 152)
-    problem_elements  ->  problem_elements . goal_spec   (rule 153)
+    domain_constants  ->  TK_OPEN KW_OBJECTS untyped_constant_list TK_CLOSE .   (rule 63)
 
-    TK_OPEN	shift, and go to state 146
-    TK_CLOSE	shift, and go to state 147
-
-    domain_requires	go to state 148
-    domain_constants	go to state 149
-    initial_state	go to state 150
-    hidden_state	go to state 151
-    goal_spec	go to state 152
+    $default	reduce using rule 63 (domain_constants)
 
 
 
 state 128
 
-    typed_constant_list  ->  typed_constant_list ne_constant_sym_list TK_HYPHEN . TK_TYPE_SYMBOL   (rule 56)
+    sensor_decl  ->  TK_OPEN KW_SENSOR error TK_CLOSE .   (rule 128)
 
-    TK_TYPE_SYMBOL	shift, and go to state 153
+    $default	reduce using rule 128 (sensor_decl)
 
 
 
 state 129
 
-    ne_constant_sym_list  ->  ne_constant_sym_list TK_NEW_SYMBOL .   (rule 59)
+    sensor_decl  ->  TK_OPEN KW_SENSOR sensor_symbol @6 . sensor_elements TK_CLOSE   (rule 127)
 
-    $default	reduce using rule 59 (ne_constant_sym_list)
+    $default	reduce using rule 132 (sensor_elements)
+
+    sensor_elements	go to state 169
 
 
 
 state 130
 
-    predicate_decl  ->  TK_OPEN error TK_CLOSE .   (rule 40)
+    axiom_decl  ->  TK_OPEN KW_AXIOM error TK_CLOSE .   (rule 121)
 
-    $default	reduce using rule 40 (predicate_decl)
+    $default	reduce using rule 121 (axiom_decl)
 
 
 
 state 131
 
-    predicate_decl  ->  TK_OPEN TK_NEW_SYMBOL typed_param_list . TK_CLOSE   (rule 39)
-    typed_param_list  ->  typed_param_list . typed_param_sym_list TK_HYPHEN TK_TYPE_SYMBOL   (rule 41)
-    typed_param_list  ->  typed_param_list . typed_param_sym_list   (rule 42)
+    axiom_decl  ->  TK_OPEN KW_AXIOM axiom_symbol @5 . axiom_elements TK_CLOSE   (rule 120)
 
-    TK_CLOSE	shift, and go to state 154
+    $default	reduce using rule 125 (axiom_elements)
 
-    TK_CLOSE	[reduce using rule 45 (typed_param_sym_list)]
-    $default	reduce using rule 45 (typed_param_sym_list)
-
-    typed_param_sym_list	go to state 155
+    axiom_elements	go to state 170
 
 
 
 state 132
 
-    typed_type_list  ->  typed_type_list primitive_type_list TK_HYPHEN . TK_TYPE_SYMBOL   (rule 47)
-    typed_type_list  ->  typed_type_list primitive_type_list TK_HYPHEN . TK_NEW_SYMBOL   (rule 48)
+    observable_decl  ->  TK_OPEN KW_OBSERVABLE error TK_CLOSE .   (rule 135)
 
-    TK_NEW_SYMBOL	shift, and go to state 156
-    TK_TYPE_SYMBOL	shift, and go to state 157
+    $default	reduce using rule 135 (observable_decl)
 
 
 
 state 133
 
-    primitive_type_list  ->  primitive_type_list TK_NEW_SYMBOL .   (rule 52)
+    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL argument_list TK_CLOSE   (rule 92)
+    positive_literal  ->  TK_OPEN . TK_EQ argument_list TK_CLOSE   (rule 93)
+    forall_effect  ->  TK_OPEN . KW_FORALL TK_OPEN @3 param_list TK_CLOSE @4 action_effect TK_CLOSE   (rule 108)
 
-    $default	reduce using rule 52 (primitive_type_list)
+    TK_EQ	shift, and go to state 142
+    TK_PRED_SYMBOL	shift, and go to state 143
+    KW_FORALL	shift, and go to state 145
 
 
 
 state 134
 
-    primitive_type_list  ->  primitive_type_list TK_TYPE_SYMBOL .   (rule 51)
+    positive_atomic_effect  ->  positive_literal .   (rule 116)
 
-    $default	reduce using rule 51 (primitive_type_list)
+    $default	reduce using rule 116 (positive_atomic_effect)
 
 
 
 state 135
 
-    action_decl  ->  TK_OPEN KW_ACTION action_symbol @1 action_elements . TK_CLOSE   (rule 68)
-    action_elements  ->  action_elements . KW_ARGS TK_OPEN typed_param_list TK_CLOSE   (rule 70)
-    action_elements  ->  action_elements . KW_PRE condition   (rule 71)
-    action_elements  ->  action_elements . KW_EFFECT action_effect   (rule 72)
-    action_elements  ->  action_elements . KW_OBSERVE positive_atomic_effect_list   (rule 73)
-    action_elements  ->  action_elements . KW_SENSING_MODEL sensing_model   (rule 74)
+    fluent_decl  ->  forall_effect .   (rule 139)
 
-    TK_CLOSE	shift, and go to state 158
-    KW_ARGS	shift, and go to state 159
-    KW_PRE	shift, and go to state 160
-    KW_EFFECT	shift, and go to state 161
-    KW_OBSERVE	shift, and go to state 162
-    KW_SENSING_MODEL	shift, and go to state 163
+    $default	reduce using rule 139 (fluent_decl)
 
 
 
 state 136
 
-    sensor_decl  ->  TK_OPEN KW_SENSOR sensor_symbol @5 sensor_elements . TK_CLOSE   (rule 118)
-    sensor_elements  ->  sensor_elements . KW_ARGS TK_OPEN typed_param_list TK_CLOSE   (rule 120)
-    sensor_elements  ->  sensor_elements . KW_COND condition   (rule 121)
-    sensor_elements  ->  sensor_elements . KW_SENSE positive_atomic_effect_list   (rule 122)
+    fluent_decl  ->  positive_atomic_effect .   (rule 138)
 
-    TK_CLOSE	shift, and go to state 164
-    KW_ARGS	shift, and go to state 165
-    KW_SENSE	shift, and go to state 166
-    KW_COND	shift, and go to state 167
+    $default	reduce using rule 138 (fluent_decl)
 
 
 
 state 137
 
-    axiom_decl  ->  TK_OPEN KW_AXIOM axiom_symbol @4 axiom_elements . TK_CLOSE   (rule 111)
-    axiom_elements  ->  axiom_elements . KW_ARGS TK_OPEN typed_param_list TK_CLOSE   (rule 113)
-    axiom_elements  ->  axiom_elements . KW_BODY condition   (rule 114)
-    axiom_elements  ->  axiom_elements . KW_HEAD atomic_effect_kw_list   (rule 115)
+    observable_decl  ->  TK_OPEN KW_OBSERVABLE @7 fluent_list_decl . TK_CLOSE   (rule 134)
+    fluent_list_decl  ->  fluent_list_decl . fluent_decl   (rule 136)
 
-    TK_CLOSE	shift, and go to state 168
-    KW_ARGS	shift, and go to state 169
-    KW_BODY	shift, and go to state 170
-    KW_HEAD	shift, and go to state 171
+    TK_OPEN	shift, and go to state 133
+    TK_CLOSE	shift, and go to state 171
+
+    positive_literal	go to state 134
+    forall_effect	go to state 135
+    positive_atomic_effect	go to state 136
+    fluent_decl	go to state 172
 
 
 
 state 138
 
-    positive_literal  ->  TK_OPEN TK_EQ . argument_list TK_CLOSE   (rule 84)
+    fluent_list_decl  ->  fluent_decl .   (rule 137)
 
-    $default	reduce using rule 88 (argument_list)
-
-    argument_list	go to state 172
+    $default	reduce using rule 137 (fluent_list_decl)
 
 
 
 state 139
 
-    positive_literal  ->  TK_OPEN TK_PRED_SYMBOL . argument_list TK_CLOSE   (rule 83)
+    sticky_decl  ->  TK_OPEN KW_STICKY error TK_CLOSE .   (rule 142)
 
-    $default	reduce using rule 88 (argument_list)
-
-    argument_list	go to state 173
+    $default	reduce using rule 142 (sticky_decl)
 
 
 
 state 140
 
-    forall_effect  ->  TK_OPEN KW_FORALL . TK_OPEN @2 typed_param_list TK_CLOSE @3 action_effect TK_CLOSE   (rule 99)
+    fluent_list_decl  ->  fluent_list_decl . fluent_decl   (rule 136)
+    sticky_decl  ->  TK_OPEN KW_STICKY @8 fluent_list_decl . TK_CLOSE   (rule 141)
 
-    TK_OPEN	shift, and go to state 174
+    TK_OPEN	shift, and go to state 133
+    TK_CLOSE	shift, and go to state 173
+
+    positive_literal	go to state 134
+    forall_effect	go to state 135
+    positive_atomic_effect	go to state 136
+    fluent_decl	go to state 172
 
 
 
 state 141
 
-    observable_decl  ->  TK_OPEN KW_OBSERVABLE @6 fluent_list_decl TK_CLOSE .   (rule 125)
+    multivalued_variable_decl  ->  TK_OPEN KW_VARIABLE error TK_CLOSE .   (rule 147)
 
-    $default	reduce using rule 125 (observable_decl)
+    $default	reduce using rule 147 (multivalued_variable_decl)
 
 
 
 state 142
 
-    fluent_list_decl  ->  fluent_list_decl fluent_decl .   (rule 128)
+    positive_literal  ->  TK_OPEN TK_EQ . argument_list TK_CLOSE   (rule 93)
 
-    $default	reduce using rule 128 (fluent_list_decl)
+    $default	reduce using rule 97 (argument_list)
+
+    argument_list	go to state 174
 
 
 
 state 143
 
-    sticky_decl  ->  TK_OPEN KW_STICKY @7 fluent_list_decl TK_CLOSE .   (rule 133)
+    positive_literal  ->  TK_OPEN TK_PRED_SYMBOL . argument_list TK_CLOSE   (rule 92)
 
-    $default	reduce using rule 133 (sticky_decl)
+    $default	reduce using rule 97 (argument_list)
+
+    argument_list	go to state 175
 
 
 
 state 144
 
-    fluent_list_decl  ->  fluent_list_decl . fluent_decl   (rule 128)
-    state_variable_decl  ->  TK_OPEN KW_VARIABLE variable_symbol @8 fluent_list_decl . rest_state_variable TK_CLOSE   (rule 138)
+    action_effect  ->  TK_OPEN KW_AND . action_effect_list TK_CLOSE   (rule 99)
 
-    TK_OPEN	shift, and go to state 115
-    KW_OBSERVABLE	shift, and go to state 175
+    TK_OPEN	shift, and go to state 176
 
-    $default	reduce using rule 141 (rest_state_variable)
-
-    positive_literal	go to state 116
-    forall_effect	go to state 117
-    positive_atomic_effect	go to state 118
-    fluent_decl	go to state 142
-    rest_state_variable	go to state 176
+    literal	go to state 93
+    positive_literal	go to state 94
+    negative_literal	go to state 95
+    action_effect_list	go to state 177
+    single_action_effect	go to state 178
+    conditional_effect	go to state 98
+    forall_effect	go to state 99
+    atomic_effect	go to state 100
 
 
 
 state 145
 
-    fluent_list_decl  ->  fluent_list_decl . fluent_decl   (rule 128)
-    observable_variable_decl  ->  TK_OPEN KW_OBS_VARIABLE variable_symbol @9 fluent_list_decl . TK_CLOSE   (rule 143)
+    forall_effect  ->  TK_OPEN KW_FORALL . TK_OPEN @3 param_list TK_CLOSE @4 action_effect TK_CLOSE   (rule 108)
 
-    TK_OPEN	shift, and go to state 115
-    TK_CLOSE	shift, and go to state 177
-
-    positive_literal	go to state 116
-    forall_effect	go to state 117
-    positive_atomic_effect	go to state 118
-    fluent_decl	go to state 142
+    TK_OPEN	shift, and go to state 179
 
 
 
 state 146
 
-    domain_requires  ->  TK_OPEN . KW_REQS require_list TK_CLOSE   (rule 30)
-    domain_requires  ->  TK_OPEN . KW_REQS error TK_CLOSE   (rule 31)
-    domain_constants  ->  TK_OPEN . KW_CONSTANTS typed_constant_list TK_CLOSE   (rule 54)
-    domain_constants  ->  TK_OPEN . KW_OBJECTS typed_constant_list TK_CLOSE   (rule 55)
-    problem_elements  ->  problem_elements TK_OPEN . KW_FORDOMAIN any_symbol TK_CLOSE   (rule 148)
-    initial_state  ->  TK_OPEN . KW_INIT TK_CLOSE   (rule 155)
-    initial_state  ->  TK_OPEN . KW_INIT init_elements TK_CLOSE   (rule 156)
-    initial_state  ->  TK_OPEN . KW_INIT TK_OPEN KW_AND init_elements TK_CLOSE TK_CLOSE   (rule 157)
-    hidden_state  ->  TK_OPEN . KW_HIDDEN init_elements TK_CLOSE   (rule 173)
-    goal_spec  ->  TK_OPEN . KW_GOAL single_goal TK_CLOSE   (rule 174)
-    goal_spec  ->  TK_OPEN . KW_GOAL TK_OPEN KW_AND goal_list TK_CLOSE TK_CLOSE   (rule 175)
+    negative_literal  ->  TK_OPEN KW_NOT . positive_literal TK_CLOSE   (rule 94)
 
-    KW_REQS	shift, and go to state 40
-    KW_CONSTANTS	shift, and go to state 41
-    KW_FORDOMAIN	shift, and go to state 178
-    KW_OBJECTS	shift, and go to state 45
-    KW_INIT	shift, and go to state 179
-    KW_GOAL	shift, and go to state 180
-    KW_HIDDEN	shift, and go to state 181
+    TK_OPEN	shift, and go to state 180
+
+    positive_literal	go to state 181
 
 
 
 state 147
 
-    pddl_problem  ->  TK_OPEN KW_DEFINE TK_OPEN KW_PROBLEM any_symbol TK_CLOSE @10 problem_elements TK_CLOSE .   (rule 146)
+    conditional_effect  ->  TK_OPEN KW_WHEN . condition atomic_effect_kw_list TK_CLOSE   (rule 105)
 
-    $default	reduce using rule 146 (pddl_problem)
+    TK_OPEN	shift, and go to state 182
+
+    condition	go to state 183
+    single_condition	go to state 184
+    literal	go to state 185
+    positive_literal	go to state 94
+    negative_literal	go to state 95
 
 
 
 state 148
 
-    problem_elements  ->  problem_elements domain_requires .   (rule 149)
+    domain_default_sensing_model  ->  TK_OPEN KW_DEFAULT_SENSING_MODEL sensing_model TK_CLOSE .   (rule 154)
 
-    $default	reduce using rule 149 (problem_elements)
+    $default	reduce using rule 154 (domain_default_sensing_model)
 
 
 
 state 149
 
-    problem_elements  ->  problem_elements domain_constants .   (rule 150)
+    multivalued_variable_decl  ->  TK_OPEN multivalued_variable_type TK_OPEN variable_symbol . param_list TK_CLOSE @10 fluent_list_decl rest_variable_decl TK_CLOSE   (rule 146)
 
-    $default	reduce using rule 150 (problem_elements)
+    TK_NEW_VAR_SYMBOL	shift, and go to state 160
+
+    $default	reduce using rule 44 (param_list)
+
+    param_list	go to state 186
+    untyped_param_list	go to state 162
+    typed_param_list	go to state 163
+    param_sym_list	go to state 164
+    new_var_symbol	go to state 165
 
 
 
 state 150
 
-    problem_elements  ->  problem_elements initial_state .   (rule 151)
+    multivalued_variable_decl  ->  TK_OPEN multivalued_variable_type variable_symbol @9 . optional_variable_parameters fluent_list_decl rest_variable_decl TK_CLOSE   (rule 144)
 
-    $default	reduce using rule 151 (problem_elements)
+    KW_ARGS	shift, and go to state 187
+
+    $default	reduce using rule 151 (optional_variable_parameters)
+
+    optional_variable_parameters	go to state 188
 
 
 
 state 151
 
-    problem_elements  ->  problem_elements hidden_state .   (rule 152)
+    domain_requires  ->  TK_OPEN . KW_REQS require_list TK_CLOSE   (rule 31)
+    domain_requires  ->  TK_OPEN . KW_REQS error TK_CLOSE   (rule 32)
+    domain_constants  ->  TK_OPEN . KW_CONSTANTS typed_constant_list TK_CLOSE   (rule 60)
+    domain_constants  ->  TK_OPEN . KW_OBJECTS typed_constant_list TK_CLOSE   (rule 61)
+    domain_constants  ->  TK_OPEN . KW_CONSTANTS untyped_constant_list TK_CLOSE   (rule 62)
+    domain_constants  ->  TK_OPEN . KW_OBJECTS untyped_constant_list TK_CLOSE   (rule 63)
+    problem_elements  ->  problem_elements TK_OPEN . KW_FORDOMAIN any_symbol TK_CLOSE   (rule 158)
+    initial_state  ->  TK_OPEN . KW_INIT TK_CLOSE   (rule 165)
+    initial_state  ->  TK_OPEN . KW_INIT init_elements TK_CLOSE   (rule 166)
+    initial_state  ->  TK_OPEN . KW_INIT TK_OPEN KW_AND init_elements TK_CLOSE TK_CLOSE   (rule 167)
+    hidden_state  ->  TK_OPEN . KW_HIDDEN init_elements TK_CLOSE   (rule 183)
+    goal_spec  ->  TK_OPEN . KW_GOAL single_goal TK_CLOSE   (rule 184)
+    goal_spec  ->  TK_OPEN . KW_GOAL TK_OPEN KW_AND goal_list TK_CLOSE TK_CLOSE   (rule 185)
 
-    $default	reduce using rule 152 (problem_elements)
+    KW_REQS	shift, and go to state 43
+    KW_CONSTANTS	shift, and go to state 44
+    KW_FORDOMAIN	shift, and go to state 189
+    KW_OBJECTS	shift, and go to state 48
+    KW_INIT	shift, and go to state 190
+    KW_GOAL	shift, and go to state 191
+    KW_HIDDEN	shift, and go to state 192
 
 
 
 state 152
 
-    problem_elements  ->  problem_elements goal_spec .   (rule 153)
+    pddl_problem  ->  TK_OPEN KW_DEFINE TK_OPEN KW_PROBLEM any_symbol TK_CLOSE @11 problem_elements TK_CLOSE .   (rule 156)
 
-    $default	reduce using rule 153 (problem_elements)
+    $default	reduce using rule 156 (pddl_problem)
 
 
 
 state 153
 
-    typed_constant_list  ->  typed_constant_list ne_constant_sym_list TK_HYPHEN TK_TYPE_SYMBOL .   (rule 56)
+    problem_elements  ->  problem_elements domain_requires .   (rule 159)
 
-    $default	reduce using rule 56 (typed_constant_list)
+    $default	reduce using rule 159 (problem_elements)
 
 
 
 state 154
 
-    predicate_decl  ->  TK_OPEN TK_NEW_SYMBOL typed_param_list TK_CLOSE .   (rule 39)
+    problem_elements  ->  problem_elements domain_constants .   (rule 160)
 
-    $default	reduce using rule 39 (predicate_decl)
+    $default	reduce using rule 160 (problem_elements)
 
 
 
 state 155
 
-    typed_param_list  ->  typed_param_list typed_param_sym_list . TK_HYPHEN TK_TYPE_SYMBOL   (rule 41)
-    typed_param_list  ->  typed_param_list typed_param_sym_list .   (rule 42)
-    typed_param_sym_list  ->  typed_param_sym_list . TK_NEW_VAR_SYMBOL   (rule 44)
+    problem_elements  ->  problem_elements initial_state .   (rule 161)
 
-    TK_HYPHEN	shift, and go to state 182
-    TK_NEW_VAR_SYMBOL	shift, and go to state 183
-
-    TK_HYPHEN	[reduce using rule 42 (typed_param_list)]
-    TK_NEW_VAR_SYMBOL	[reduce using rule 42 (typed_param_list)]
-    $default	reduce using rule 42 (typed_param_list)
+    $default	reduce using rule 161 (problem_elements)
 
 
 
 state 156
 
-    typed_type_list  ->  typed_type_list primitive_type_list TK_HYPHEN TK_NEW_SYMBOL .   (rule 48)
+    problem_elements  ->  problem_elements hidden_state .   (rule 162)
 
-    $default	reduce using rule 48 (typed_type_list)
+    $default	reduce using rule 162 (problem_elements)
 
 
 
 state 157
 
-    typed_type_list  ->  typed_type_list primitive_type_list TK_HYPHEN TK_TYPE_SYMBOL .   (rule 47)
+    problem_elements  ->  problem_elements goal_spec .   (rule 163)
 
-    $default	reduce using rule 47 (typed_type_list)
+    $default	reduce using rule 163 (problem_elements)
 
 
 
 state 158
 
-    action_decl  ->  TK_OPEN KW_ACTION action_symbol @1 action_elements TK_CLOSE .   (rule 68)
+    typed_constant_list  ->  constant_sym_list TK_HYPHEN TK_TYPE_SYMBOL . @1 typed_constant_list   (rule 65)
 
-    $default	reduce using rule 68 (action_decl)
+    $default	reduce using rule 64 (@1)
+
+    @1  	go to state 193
 
 
 
 state 159
 
-    action_elements  ->  action_elements KW_ARGS . TK_OPEN typed_param_list TK_CLOSE   (rule 70)
+    predicate_decl  ->  TK_OPEN error TK_CLOSE .   (rule 41)
 
-    TK_OPEN	shift, and go to state 184
+    $default	reduce using rule 41 (predicate_decl)
 
 
 
 state 160
 
-    action_elements  ->  action_elements KW_PRE . condition   (rule 71)
+    new_var_symbol  ->  TK_NEW_VAR_SYMBOL .   (rule 50)
 
-    TK_OPEN	shift, and go to state 185
-
-    condition	go to state 186
-    single_condition	go to state 187
-    literal	go to state 188
-    positive_literal	go to state 189
-    negative_literal	go to state 190
+    $default	reduce using rule 50 (new_var_symbol)
 
 
 
 state 161
 
-    action_elements  ->  action_elements KW_EFFECT . action_effect   (rule 72)
+    predicate_decl  ->  TK_OPEN TK_NEW_SYMBOL param_list . TK_CLOSE   (rule 40)
 
-    TK_OPEN	shift, and go to state 191
-
-    literal	go to state 192
-    positive_literal	go to state 189
-    negative_literal	go to state 190
-    action_effect	go to state 193
-    single_action_effect	go to state 194
-    conditional_effect	go to state 195
-    forall_effect	go to state 196
-    atomic_effect	go to state 197
+    TK_CLOSE	shift, and go to state 194
 
 
 
 state 162
 
-    action_elements  ->  action_elements KW_OBSERVE . positive_atomic_effect_list   (rule 73)
+    param_list  ->  untyped_param_list .   (rule 42)
 
-    TK_OPEN	shift, and go to state 198
-
-    positive_literal	go to state 116
-    positive_atomic_effect_list	go to state 199
-    positive_atomic_effect	go to state 200
+    $default	reduce using rule 42 (param_list)
 
 
 
 state 163
 
-    action_elements  ->  action_elements KW_SENSING_MODEL . sensing_model   (rule 74)
+    param_list  ->  typed_param_list .   (rule 43)
 
-    TK_OPEN	shift, and go to state 191
-
-    $default	reduce using rule 109 (sensing_model)
-
-    literal	go to state 192
-    positive_literal	go to state 189
-    negative_literal	go to state 190
-    action_effect	go to state 201
-    single_action_effect	go to state 194
-    conditional_effect	go to state 195
-    forall_effect	go to state 196
-    atomic_effect	go to state 197
-    sensing_model	go to state 202
+    $default	reduce using rule 43 (param_list)
 
 
 
 state 164
 
-    sensor_decl  ->  TK_OPEN KW_SENSOR sensor_symbol @5 sensor_elements TK_CLOSE .   (rule 118)
+    untyped_param_list  ->  param_sym_list .   (rule 45)
+    typed_param_list  ->  param_sym_list . TK_HYPHEN TK_TYPE_SYMBOL typed_param_list   (rule 46)
+    typed_param_list  ->  param_sym_list . TK_HYPHEN TK_TYPE_SYMBOL   (rule 47)
+    param_sym_list  ->  param_sym_list . new_var_symbol   (rule 48)
 
-    $default	reduce using rule 118 (sensor_decl)
+    TK_HYPHEN	shift, and go to state 195
+    TK_NEW_VAR_SYMBOL	shift, and go to state 160
+
+    $default	reduce using rule 45 (untyped_param_list)
+
+    new_var_symbol	go to state 196
 
 
 
 state 165
 
-    sensor_elements  ->  sensor_elements KW_ARGS . TK_OPEN typed_param_list TK_CLOSE   (rule 120)
+    param_sym_list  ->  new_var_symbol .   (rule 49)
 
-    TK_OPEN	shift, and go to state 203
+    $default	reduce using rule 49 (param_sym_list)
 
 
 
 state 166
 
-    sensor_elements  ->  sensor_elements KW_SENSE . positive_atomic_effect_list   (rule 122)
+    typed_type_list  ->  primitive_type_list TK_HYPHEN TK_NEW_SYMBOL . typed_type_list   (rule 54)
 
-    TK_OPEN	shift, and go to state 198
+    TK_NEW_SYMBOL	shift, and go to state 68
+    TK_TYPE_SYMBOL	shift, and go to state 69
 
-    positive_literal	go to state 116
-    positive_atomic_effect_list	go to state 204
-    positive_atomic_effect	go to state 200
+    $default	reduce using rule 55 (typed_type_list)
+
+    typed_type_list	go to state 197
+    primitive_type_list	go to state 198
+    primitive_type	go to state 72
 
 
 
 state 167
 
-    sensor_elements  ->  sensor_elements KW_COND . condition   (rule 121)
+    typed_type_list  ->  primitive_type_list TK_HYPHEN TK_TYPE_SYMBOL . typed_type_list   (rule 53)
 
-    TK_OPEN	shift, and go to state 185
+    TK_NEW_SYMBOL	shift, and go to state 68
+    TK_TYPE_SYMBOL	shift, and go to state 69
 
-    condition	go to state 205
-    single_condition	go to state 187
-    literal	go to state 188
-    positive_literal	go to state 189
-    negative_literal	go to state 190
+    $default	reduce using rule 55 (typed_type_list)
+
+    typed_type_list	go to state 199
+    primitive_type_list	go to state 198
+    primitive_type	go to state 72
 
 
 
 state 168
 
-    axiom_decl  ->  TK_OPEN KW_AXIOM axiom_symbol @4 axiom_elements TK_CLOSE .   (rule 111)
+    action_decl  ->  TK_OPEN KW_ACTION action_symbol @2 action_elements . TK_CLOSE   (rule 77)
+    action_elements  ->  action_elements . KW_ARGS TK_OPEN param_list TK_CLOSE   (rule 79)
+    action_elements  ->  action_elements . KW_PRE condition   (rule 80)
+    action_elements  ->  action_elements . KW_EFFECT action_effect   (rule 81)
+    action_elements  ->  action_elements . KW_OBSERVE positive_atomic_effect_list   (rule 82)
+    action_elements  ->  action_elements . KW_SENSING_MODEL sensing_model   (rule 83)
 
-    $default	reduce using rule 111 (axiom_decl)
+    TK_CLOSE	shift, and go to state 200
+    KW_ARGS	shift, and go to state 201
+    KW_PRE	shift, and go to state 202
+    KW_EFFECT	shift, and go to state 203
+    KW_OBSERVE	shift, and go to state 204
+    KW_SENSING_MODEL	shift, and go to state 205
 
 
 
 state 169
 
-    axiom_elements  ->  axiom_elements KW_ARGS . TK_OPEN typed_param_list TK_CLOSE   (rule 113)
+    sensor_decl  ->  TK_OPEN KW_SENSOR sensor_symbol @6 sensor_elements . TK_CLOSE   (rule 127)
+    sensor_elements  ->  sensor_elements . KW_ARGS TK_OPEN param_list TK_CLOSE   (rule 129)
+    sensor_elements  ->  sensor_elements . KW_COND condition   (rule 130)
+    sensor_elements  ->  sensor_elements . KW_SENSE positive_atomic_effect_list   (rule 131)
 
-    TK_OPEN	shift, and go to state 206
+    TK_CLOSE	shift, and go to state 206
+    KW_ARGS	shift, and go to state 207
+    KW_SENSE	shift, and go to state 208
+    KW_COND	shift, and go to state 209
 
 
 
 state 170
 
-    axiom_elements  ->  axiom_elements KW_BODY . condition   (rule 114)
+    axiom_decl  ->  TK_OPEN KW_AXIOM axiom_symbol @5 axiom_elements . TK_CLOSE   (rule 120)
+    axiom_elements  ->  axiom_elements . KW_ARGS TK_OPEN param_list TK_CLOSE   (rule 122)
+    axiom_elements  ->  axiom_elements . KW_BODY condition   (rule 123)
+    axiom_elements  ->  axiom_elements . KW_HEAD atomic_effect_kw_list   (rule 124)
 
-    TK_OPEN	shift, and go to state 185
-
-    condition	go to state 207
-    single_condition	go to state 187
-    literal	go to state 188
-    positive_literal	go to state 189
-    negative_literal	go to state 190
+    TK_CLOSE	shift, and go to state 210
+    KW_ARGS	shift, and go to state 211
+    KW_BODY	shift, and go to state 212
+    KW_HEAD	shift, and go to state 213
 
 
 
 state 171
 
-    axiom_elements  ->  axiom_elements KW_HEAD . atomic_effect_kw_list   (rule 115)
+    observable_decl  ->  TK_OPEN KW_OBSERVABLE @7 fluent_list_decl TK_CLOSE .   (rule 134)
 
-    TK_OPEN	shift, and go to state 208
-
-    literal	go to state 192
-    positive_literal	go to state 189
-    negative_literal	go to state 190
-    atomic_effect_kw_list	go to state 209
-    atomic_effect	go to state 210
+    $default	reduce using rule 134 (observable_decl)
 
 
 
 state 172
 
-    positive_literal  ->  TK_OPEN TK_EQ argument_list . TK_CLOSE   (rule 84)
-    argument_list  ->  argument_list . TK_VAR_SYMBOL   (rule 86)
-    argument_list  ->  argument_list . TK_OBJ_SYMBOL   (rule 87)
+    fluent_list_decl  ->  fluent_list_decl fluent_decl .   (rule 136)
 
-    TK_CLOSE	shift, and go to state 211
-    TK_OBJ_SYMBOL	shift, and go to state 212
-    TK_VAR_SYMBOL	shift, and go to state 213
+    $default	reduce using rule 136 (fluent_list_decl)
 
 
 
 state 173
 
-    positive_literal  ->  TK_OPEN TK_PRED_SYMBOL argument_list . TK_CLOSE   (rule 83)
-    argument_list  ->  argument_list . TK_VAR_SYMBOL   (rule 86)
-    argument_list  ->  argument_list . TK_OBJ_SYMBOL   (rule 87)
+    sticky_decl  ->  TK_OPEN KW_STICKY @8 fluent_list_decl TK_CLOSE .   (rule 141)
 
-    TK_CLOSE	shift, and go to state 214
-    TK_OBJ_SYMBOL	shift, and go to state 212
-    TK_VAR_SYMBOL	shift, and go to state 213
+    $default	reduce using rule 141 (sticky_decl)
 
 
 
 state 174
 
-    forall_effect  ->  TK_OPEN KW_FORALL TK_OPEN . @2 typed_param_list TK_CLOSE @3 action_effect TK_CLOSE   (rule 99)
+    positive_literal  ->  TK_OPEN TK_EQ argument_list . TK_CLOSE   (rule 93)
+    argument_list  ->  argument_list . TK_VAR_SYMBOL   (rule 95)
+    argument_list  ->  argument_list . TK_OBJ_SYMBOL   (rule 96)
 
-    $default	reduce using rule 97 (@2)
-
-    @2  	go to state 215
+    TK_CLOSE	shift, and go to state 214
+    TK_OBJ_SYMBOL	shift, and go to state 215
+    TK_VAR_SYMBOL	shift, and go to state 216
 
 
 
 state 175
 
-    rest_state_variable  ->  KW_OBSERVABLE .   (rule 140)
+    positive_literal  ->  TK_OPEN TK_PRED_SYMBOL argument_list . TK_CLOSE   (rule 92)
+    argument_list  ->  argument_list . TK_VAR_SYMBOL   (rule 95)
+    argument_list  ->  argument_list . TK_OBJ_SYMBOL   (rule 96)
 
-    $default	reduce using rule 140 (rest_state_variable)
+    TK_CLOSE	shift, and go to state 217
+    TK_OBJ_SYMBOL	shift, and go to state 215
+    TK_VAR_SYMBOL	shift, and go to state 216
 
 
 
 state 176
 
-    state_variable_decl  ->  TK_OPEN KW_VARIABLE variable_symbol @8 fluent_list_decl rest_state_variable . TK_CLOSE   (rule 138)
+    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL argument_list TK_CLOSE   (rule 92)
+    positive_literal  ->  TK_OPEN . TK_EQ argument_list TK_CLOSE   (rule 93)
+    negative_literal  ->  TK_OPEN . KW_NOT positive_literal TK_CLOSE   (rule 94)
+    conditional_effect  ->  TK_OPEN . KW_WHEN condition atomic_effect_kw_list TK_CLOSE   (rule 105)
+    forall_effect  ->  TK_OPEN . KW_FORALL TK_OPEN @3 param_list TK_CLOSE @4 action_effect TK_CLOSE   (rule 108)
 
-    TK_CLOSE	shift, and go to state 216
+    TK_EQ	shift, and go to state 142
+    TK_PRED_SYMBOL	shift, and go to state 143
+    KW_FORALL	shift, and go to state 145
+    KW_NOT	shift, and go to state 146
+    KW_WHEN	shift, and go to state 147
 
 
 
 state 177
 
-    observable_variable_decl  ->  TK_OPEN KW_OBS_VARIABLE variable_symbol @9 fluent_list_decl TK_CLOSE .   (rule 143)
+    action_effect  ->  TK_OPEN KW_AND action_effect_list . TK_CLOSE   (rule 99)
+    action_effect_list  ->  action_effect_list . single_action_effect   (rule 100)
 
-    $default	reduce using rule 143 (observable_variable_decl)
+    TK_OPEN	shift, and go to state 176
+    TK_CLOSE	shift, and go to state 218
+
+    literal	go to state 93
+    positive_literal	go to state 94
+    negative_literal	go to state 95
+    single_action_effect	go to state 219
+    conditional_effect	go to state 98
+    forall_effect	go to state 99
+    atomic_effect	go to state 100
 
 
 
 state 178
 
-    problem_elements  ->  problem_elements TK_OPEN KW_FORDOMAIN . any_symbol TK_CLOSE   (rule 148)
+    action_effect_list  ->  single_action_effect .   (rule 101)
 
-    TK_NEW_SYMBOL	shift, and go to state 27
-    TK_OBJ_SYMBOL	shift, and go to state 28
-    TK_TYPE_SYMBOL	shift, and go to state 29
-    TK_PRED_SYMBOL	shift, and go to state 30
-    TK_VAR_SYMBOL	shift, and go to state 31
-    TK_ACTION_SYMBOL	shift, and go to state 32
-    TK_AXIOM_SYMBOL	shift, and go to state 33
-    TK_SENSOR_SYMBOL	shift, and go to state 34
-    TK_MISC_SYMBOL	shift, and go to state 35
-
-    any_symbol	go to state 217
+    $default	reduce using rule 101 (action_effect_list)
 
 
 
 state 179
 
-    initial_state  ->  TK_OPEN KW_INIT . TK_CLOSE   (rule 155)
-    initial_state  ->  TK_OPEN KW_INIT . init_elements TK_CLOSE   (rule 156)
-    initial_state  ->  TK_OPEN KW_INIT . TK_OPEN KW_AND init_elements TK_CLOSE TK_CLOSE   (rule 157)
+    forall_effect  ->  TK_OPEN KW_FORALL TK_OPEN . @3 param_list TK_CLOSE @4 action_effect TK_CLOSE   (rule 108)
 
-    TK_OPEN	shift, and go to state 218
-    TK_CLOSE	shift, and go to state 219
+    $default	reduce using rule 106 (@3)
 
-    literal	go to state 220
-    positive_literal	go to state 189
-    negative_literal	go to state 190
-    init_elements	go to state 221
-    single_init_element	go to state 222
-    at_least_one_invariant	go to state 223
-    at_most_one_invariant	go to state 224
-    exactly_one_invariant	go to state 225
-    invariant	go to state 226
-    clause	go to state 227
-    oneof	go to state 228
+    @3  	go to state 220
 
 
 
 state 180
 
-    goal_spec  ->  TK_OPEN KW_GOAL . single_goal TK_CLOSE   (rule 174)
-    goal_spec  ->  TK_OPEN KW_GOAL . TK_OPEN KW_AND goal_list TK_CLOSE TK_CLOSE   (rule 175)
+    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL argument_list TK_CLOSE   (rule 92)
+    positive_literal  ->  TK_OPEN . TK_EQ argument_list TK_CLOSE   (rule 93)
 
-    TK_OPEN	shift, and go to state 229
-
-    positive_literal	go to state 230
-    negative_literal	go to state 231
-    single_goal	go to state 232
+    TK_EQ	shift, and go to state 142
+    TK_PRED_SYMBOL	shift, and go to state 143
 
 
 
 state 181
 
-    hidden_state  ->  TK_OPEN KW_HIDDEN . init_elements TK_CLOSE   (rule 173)
+    negative_literal  ->  TK_OPEN KW_NOT positive_literal . TK_CLOSE   (rule 94)
 
-    TK_OPEN	shift, and go to state 233
-
-    literal	go to state 220
-    positive_literal	go to state 189
-    negative_literal	go to state 190
-    init_elements	go to state 234
-    single_init_element	go to state 222
-    at_least_one_invariant	go to state 223
-    at_most_one_invariant	go to state 224
-    exactly_one_invariant	go to state 225
-    invariant	go to state 226
-    clause	go to state 227
-    oneof	go to state 228
+    TK_CLOSE	shift, and go to state 221
 
 
 
 state 182
 
-    typed_param_list  ->  typed_param_list typed_param_sym_list TK_HYPHEN . TK_TYPE_SYMBOL   (rule 41)
+    condition  ->  TK_OPEN . KW_AND condition_list TK_CLOSE   (rule 86)
+    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL argument_list TK_CLOSE   (rule 92)
+    positive_literal  ->  TK_OPEN . TK_EQ argument_list TK_CLOSE   (rule 93)
+    negative_literal  ->  TK_OPEN . KW_NOT positive_literal TK_CLOSE   (rule 94)
 
-    TK_TYPE_SYMBOL	shift, and go to state 235
+    TK_EQ	shift, and go to state 142
+    TK_PRED_SYMBOL	shift, and go to state 143
+    KW_AND	shift, and go to state 222
+    KW_NOT	shift, and go to state 146
 
 
 
 state 183
 
-    typed_param_sym_list  ->  typed_param_sym_list TK_NEW_VAR_SYMBOL .   (rule 44)
+    conditional_effect  ->  TK_OPEN KW_WHEN condition . atomic_effect_kw_list TK_CLOSE   (rule 105)
 
-    $default	reduce using rule 44 (typed_param_sym_list)
+    TK_OPEN	shift, and go to state 223
+
+    literal	go to state 93
+    positive_literal	go to state 94
+    negative_literal	go to state 95
+    atomic_effect_kw_list	go to state 224
+    atomic_effect	go to state 225
 
 
 
 state 184
 
-    action_elements  ->  action_elements KW_ARGS TK_OPEN . typed_param_list TK_CLOSE   (rule 70)
+    condition  ->  single_condition .   (rule 85)
 
-    $default	reduce using rule 43 (typed_param_list)
-
-    typed_param_list	go to state 236
+    $default	reduce using rule 85 (condition)
 
 
 
 state 185
 
-    condition  ->  TK_OPEN . KW_AND condition_list TK_CLOSE   (rule 77)
-    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL argument_list TK_CLOSE   (rule 83)
-    positive_literal  ->  TK_OPEN . TK_EQ argument_list TK_CLOSE   (rule 84)
-    negative_literal  ->  TK_OPEN . KW_NOT positive_literal TK_CLOSE   (rule 85)
+    single_condition  ->  literal .   (rule 89)
 
-    TK_EQ	shift, and go to state 138
-    TK_PRED_SYMBOL	shift, and go to state 139
-    KW_AND	shift, and go to state 237
-    KW_NOT	shift, and go to state 238
+    $default	reduce using rule 89 (single_condition)
 
 
 
 state 186
 
-    action_elements  ->  action_elements KW_PRE condition .   (rule 71)
+    multivalued_variable_decl  ->  TK_OPEN multivalued_variable_type TK_OPEN variable_symbol param_list . TK_CLOSE @10 fluent_list_decl rest_variable_decl TK_CLOSE   (rule 146)
 
-    $default	reduce using rule 71 (action_elements)
+    TK_CLOSE	shift, and go to state 226
 
 
 
 state 187
 
-    condition  ->  single_condition .   (rule 76)
+    optional_variable_parameters  ->  KW_ARGS . TK_OPEN param_list TK_CLOSE   (rule 150)
 
-    $default	reduce using rule 76 (condition)
+    TK_OPEN	shift, and go to state 227
 
 
 
 state 188
 
-    single_condition  ->  literal .   (rule 80)
+    multivalued_variable_decl  ->  TK_OPEN multivalued_variable_type variable_symbol @9 optional_variable_parameters . fluent_list_decl rest_variable_decl TK_CLOSE   (rule 144)
 
-    $default	reduce using rule 80 (single_condition)
+    TK_OPEN	shift, and go to state 133
+
+    positive_literal	go to state 134
+    forall_effect	go to state 135
+    positive_atomic_effect	go to state 136
+    fluent_list_decl	go to state 228
+    fluent_decl	go to state 138
 
 
 
 state 189
 
-    literal  ->  positive_literal .   (rule 81)
+    problem_elements  ->  problem_elements TK_OPEN KW_FORDOMAIN . any_symbol TK_CLOSE   (rule 158)
 
-    $default	reduce using rule 81 (literal)
+    TK_NEW_SYMBOL	shift, and go to state 13
+    TK_OBJ_SYMBOL	shift, and go to state 14
+    TK_TYPE_SYMBOL	shift, and go to state 15
+    TK_PRED_SYMBOL	shift, and go to state 16
+    TK_VAR_SYMBOL	shift, and go to state 17
+    TK_ACTION_SYMBOL	shift, and go to state 18
+    TK_AXIOM_SYMBOL	shift, and go to state 19
+    TK_SENSOR_SYMBOL	shift, and go to state 20
+    TK_MISC_SYMBOL	shift, and go to state 21
+
+    any_symbol	go to state 229
 
 
 
 state 190
 
-    literal  ->  negative_literal .   (rule 82)
+    initial_state  ->  TK_OPEN KW_INIT . TK_CLOSE   (rule 165)
+    initial_state  ->  TK_OPEN KW_INIT . init_elements TK_CLOSE   (rule 166)
+    initial_state  ->  TK_OPEN KW_INIT . TK_OPEN KW_AND init_elements TK_CLOSE TK_CLOSE   (rule 167)
 
-    $default	reduce using rule 82 (literal)
+    TK_OPEN	shift, and go to state 230
+    TK_CLOSE	shift, and go to state 231
+
+    literal	go to state 232
+    positive_literal	go to state 94
+    negative_literal	go to state 95
+    init_elements	go to state 233
+    single_init_element	go to state 234
+    at_least_one_invariant	go to state 235
+    at_most_one_invariant	go to state 236
+    exactly_one_invariant	go to state 237
+    invariant	go to state 238
+    clause	go to state 239
+    oneof	go to state 240
 
 
 
 state 191
 
-    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL argument_list TK_CLOSE   (rule 83)
-    positive_literal  ->  TK_OPEN . TK_EQ argument_list TK_CLOSE   (rule 84)
-    negative_literal  ->  TK_OPEN . KW_NOT positive_literal TK_CLOSE   (rule 85)
-    action_effect  ->  TK_OPEN . KW_AND action_effect_list TK_CLOSE   (rule 90)
-    conditional_effect  ->  TK_OPEN . KW_WHEN condition atomic_effect_kw_list TK_CLOSE   (rule 96)
-    forall_effect  ->  TK_OPEN . KW_FORALL TK_OPEN @2 typed_param_list TK_CLOSE @3 action_effect TK_CLOSE   (rule 99)
+    goal_spec  ->  TK_OPEN KW_GOAL . single_goal TK_CLOSE   (rule 184)
+    goal_spec  ->  TK_OPEN KW_GOAL . TK_OPEN KW_AND goal_list TK_CLOSE TK_CLOSE   (rule 185)
 
-    TK_EQ	shift, and go to state 138
-    TK_PRED_SYMBOL	shift, and go to state 139
-    KW_AND	shift, and go to state 239
-    KW_FORALL	shift, and go to state 140
-    KW_NOT	shift, and go to state 238
-    KW_WHEN	shift, and go to state 240
+    TK_OPEN	shift, and go to state 241
+
+    positive_literal	go to state 242
+    negative_literal	go to state 243
+    single_goal	go to state 244
 
 
 
 state 192
 
-    atomic_effect  ->  literal .   (rule 106)
+    hidden_state  ->  TK_OPEN KW_HIDDEN . init_elements TK_CLOSE   (rule 183)
 
-    $default	reduce using rule 106 (atomic_effect)
+    TK_OPEN	shift, and go to state 245
+
+    literal	go to state 232
+    positive_literal	go to state 94
+    negative_literal	go to state 95
+    init_elements	go to state 246
+    single_init_element	go to state 234
+    at_least_one_invariant	go to state 235
+    at_most_one_invariant	go to state 236
+    exactly_one_invariant	go to state 237
+    invariant	go to state 238
+    clause	go to state 239
+    oneof	go to state 240
 
 
 
 state 193
 
-    action_elements  ->  action_elements KW_EFFECT action_effect .   (rule 72)
+    typed_constant_list  ->  constant_sym_list TK_HYPHEN TK_TYPE_SYMBOL @1 . typed_constant_list   (rule 65)
 
-    $default	reduce using rule 72 (action_elements)
+    TK_NEW_SYMBOL	shift, and go to state 60
+
+    $default	reduce using rule 66 (typed_constant_list)
+
+    typed_constant_list	go to state 247
+    constant_sym_list	go to state 248
 
 
 
 state 194
 
-    action_effect  ->  single_action_effect .   (rule 89)
+    predicate_decl  ->  TK_OPEN TK_NEW_SYMBOL param_list TK_CLOSE .   (rule 40)
 
-    $default	reduce using rule 89 (action_effect)
+    $default	reduce using rule 40 (predicate_decl)
 
 
 
 state 195
 
-    single_action_effect  ->  conditional_effect .   (rule 94)
+    typed_param_list  ->  param_sym_list TK_HYPHEN . TK_TYPE_SYMBOL typed_param_list   (rule 46)
+    typed_param_list  ->  param_sym_list TK_HYPHEN . TK_TYPE_SYMBOL   (rule 47)
 
-    $default	reduce using rule 94 (single_action_effect)
+    TK_TYPE_SYMBOL	shift, and go to state 249
 
 
 
 state 196
 
-    single_action_effect  ->  forall_effect .   (rule 95)
+    param_sym_list  ->  param_sym_list new_var_symbol .   (rule 48)
 
-    $default	reduce using rule 95 (single_action_effect)
+    $default	reduce using rule 48 (param_sym_list)
 
 
 
 state 197
 
-    single_action_effect  ->  atomic_effect .   (rule 93)
+    typed_type_list  ->  primitive_type_list TK_HYPHEN TK_NEW_SYMBOL typed_type_list .   (rule 54)
 
-    $default	reduce using rule 93 (single_action_effect)
+    $default	reduce using rule 54 (typed_type_list)
 
 
 
 state 198
 
-    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL argument_list TK_CLOSE   (rule 83)
-    positive_literal  ->  TK_OPEN . TK_EQ argument_list TK_CLOSE   (rule 84)
+    typed_type_list  ->  primitive_type_list . TK_HYPHEN TK_TYPE_SYMBOL typed_type_list   (rule 53)
+    typed_type_list  ->  primitive_type_list . TK_HYPHEN TK_NEW_SYMBOL typed_type_list   (rule 54)
+    primitive_type_list  ->  primitive_type_list . primitive_type   (rule 56)
 
-    TK_EQ	shift, and go to state 138
-    TK_PRED_SYMBOL	shift, and go to state 139
+    TK_HYPHEN	shift, and go to state 122
+    TK_NEW_SYMBOL	shift, and go to state 68
+    TK_TYPE_SYMBOL	shift, and go to state 69
+
+    primitive_type	go to state 123
 
 
 
 state 199
 
-    action_elements  ->  action_elements KW_OBSERVE positive_atomic_effect_list .   (rule 73)
-    positive_atomic_effect_list  ->  positive_atomic_effect_list . positive_atomic_effect   (rule 104)
+    typed_type_list  ->  primitive_type_list TK_HYPHEN TK_TYPE_SYMBOL typed_type_list .   (rule 53)
 
-    TK_OPEN	shift, and go to state 198
-
-    $default	reduce using rule 73 (action_elements)
-
-    positive_literal	go to state 116
-    positive_atomic_effect	go to state 241
+    $default	reduce using rule 53 (typed_type_list)
 
 
 
 state 200
 
-    positive_atomic_effect_list  ->  positive_atomic_effect .   (rule 105)
+    action_decl  ->  TK_OPEN KW_ACTION action_symbol @2 action_elements TK_CLOSE .   (rule 77)
 
-    $default	reduce using rule 105 (positive_atomic_effect_list)
+    $default	reduce using rule 77 (action_decl)
 
 
 
 state 201
 
-    sensing_model  ->  action_effect .   (rule 108)
+    action_elements  ->  action_elements KW_ARGS . TK_OPEN param_list TK_CLOSE   (rule 79)
 
-    $default	reduce using rule 108 (sensing_model)
+    TK_OPEN	shift, and go to state 250
 
 
 
 state 202
 
-    action_elements  ->  action_elements KW_SENSING_MODEL sensing_model .   (rule 74)
+    action_elements  ->  action_elements KW_PRE . condition   (rule 80)
 
-    $default	reduce using rule 74 (action_elements)
+    TK_OPEN	shift, and go to state 182
+
+    condition	go to state 251
+    single_condition	go to state 184
+    literal	go to state 185
+    positive_literal	go to state 94
+    negative_literal	go to state 95
 
 
 
 state 203
 
-    sensor_elements  ->  sensor_elements KW_ARGS TK_OPEN . typed_param_list TK_CLOSE   (rule 120)
+    action_elements  ->  action_elements KW_EFFECT . action_effect   (rule 81)
 
-    $default	reduce using rule 43 (typed_param_list)
+    TK_OPEN	shift, and go to state 92
 
-    typed_param_list	go to state 242
+    literal	go to state 93
+    positive_literal	go to state 94
+    negative_literal	go to state 95
+    action_effect	go to state 252
+    single_action_effect	go to state 97
+    conditional_effect	go to state 98
+    forall_effect	go to state 99
+    atomic_effect	go to state 100
 
 
 
 state 204
 
-    positive_atomic_effect_list  ->  positive_atomic_effect_list . positive_atomic_effect   (rule 104)
-    sensor_elements  ->  sensor_elements KW_SENSE positive_atomic_effect_list .   (rule 122)
+    action_elements  ->  action_elements KW_OBSERVE . positive_atomic_effect_list   (rule 82)
 
-    TK_OPEN	shift, and go to state 198
+    TK_OPEN	shift, and go to state 180
 
-    $default	reduce using rule 122 (sensor_elements)
-
-    positive_literal	go to state 116
-    positive_atomic_effect	go to state 241
+    positive_literal	go to state 134
+    positive_atomic_effect_list	go to state 253
+    positive_atomic_effect	go to state 254
 
 
 
 state 205
 
-    sensor_elements  ->  sensor_elements KW_COND condition .   (rule 121)
+    action_elements  ->  action_elements KW_SENSING_MODEL . sensing_model   (rule 83)
 
-    $default	reduce using rule 121 (sensor_elements)
+    TK_OPEN	shift, and go to state 92
+
+    $default	reduce using rule 118 (sensing_model)
+
+    literal	go to state 93
+    positive_literal	go to state 94
+    negative_literal	go to state 95
+    action_effect	go to state 96
+    single_action_effect	go to state 97
+    conditional_effect	go to state 98
+    forall_effect	go to state 99
+    atomic_effect	go to state 100
+    sensing_model	go to state 255
 
 
 
 state 206
 
-    axiom_elements  ->  axiom_elements KW_ARGS TK_OPEN . typed_param_list TK_CLOSE   (rule 113)
+    sensor_decl  ->  TK_OPEN KW_SENSOR sensor_symbol @6 sensor_elements TK_CLOSE .   (rule 127)
 
-    $default	reduce using rule 43 (typed_param_list)
-
-    typed_param_list	go to state 243
+    $default	reduce using rule 127 (sensor_decl)
 
 
 
 state 207
 
-    axiom_elements  ->  axiom_elements KW_BODY condition .   (rule 114)
+    sensor_elements  ->  sensor_elements KW_ARGS . TK_OPEN param_list TK_CLOSE   (rule 129)
 
-    $default	reduce using rule 114 (axiom_elements)
+    TK_OPEN	shift, and go to state 256
 
 
 
 state 208
 
-    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL argument_list TK_CLOSE   (rule 83)
-    positive_literal  ->  TK_OPEN . TK_EQ argument_list TK_CLOSE   (rule 84)
-    negative_literal  ->  TK_OPEN . KW_NOT positive_literal TK_CLOSE   (rule 85)
-    atomic_effect_kw_list  ->  TK_OPEN . KW_AND atomic_effect_list TK_CLOSE   (rule 100)
+    sensor_elements  ->  sensor_elements KW_SENSE . positive_atomic_effect_list   (rule 131)
 
-    TK_EQ	shift, and go to state 138
-    TK_PRED_SYMBOL	shift, and go to state 139
-    KW_AND	shift, and go to state 244
-    KW_NOT	shift, and go to state 238
+    TK_OPEN	shift, and go to state 180
+
+    positive_literal	go to state 134
+    positive_atomic_effect_list	go to state 257
+    positive_atomic_effect	go to state 254
 
 
 
 state 209
 
-    axiom_elements  ->  axiom_elements KW_HEAD atomic_effect_kw_list .   (rule 115)
+    sensor_elements  ->  sensor_elements KW_COND . condition   (rule 130)
 
-    $default	reduce using rule 115 (axiom_elements)
+    TK_OPEN	shift, and go to state 182
+
+    condition	go to state 258
+    single_condition	go to state 184
+    literal	go to state 185
+    positive_literal	go to state 94
+    negative_literal	go to state 95
 
 
 
 state 210
 
-    atomic_effect_kw_list  ->  atomic_effect .   (rule 101)
+    axiom_decl  ->  TK_OPEN KW_AXIOM axiom_symbol @5 axiom_elements TK_CLOSE .   (rule 120)
 
-    $default	reduce using rule 101 (atomic_effect_kw_list)
+    $default	reduce using rule 120 (axiom_decl)
 
 
 
 state 211
 
-    positive_literal  ->  TK_OPEN TK_EQ argument_list TK_CLOSE .   (rule 84)
+    axiom_elements  ->  axiom_elements KW_ARGS . TK_OPEN param_list TK_CLOSE   (rule 122)
 
-    $default	reduce using rule 84 (positive_literal)
+    TK_OPEN	shift, and go to state 259
 
 
 
 state 212
 
-    argument_list  ->  argument_list TK_OBJ_SYMBOL .   (rule 87)
+    axiom_elements  ->  axiom_elements KW_BODY . condition   (rule 123)
 
-    $default	reduce using rule 87 (argument_list)
+    TK_OPEN	shift, and go to state 182
+
+    condition	go to state 260
+    single_condition	go to state 184
+    literal	go to state 185
+    positive_literal	go to state 94
+    negative_literal	go to state 95
 
 
 
 state 213
 
-    argument_list  ->  argument_list TK_VAR_SYMBOL .   (rule 86)
+    axiom_elements  ->  axiom_elements KW_HEAD . atomic_effect_kw_list   (rule 124)
 
-    $default	reduce using rule 86 (argument_list)
+    TK_OPEN	shift, and go to state 223
+
+    literal	go to state 93
+    positive_literal	go to state 94
+    negative_literal	go to state 95
+    atomic_effect_kw_list	go to state 261
+    atomic_effect	go to state 225
 
 
 
 state 214
 
-    positive_literal  ->  TK_OPEN TK_PRED_SYMBOL argument_list TK_CLOSE .   (rule 83)
+    positive_literal  ->  TK_OPEN TK_EQ argument_list TK_CLOSE .   (rule 93)
 
-    $default	reduce using rule 83 (positive_literal)
+    $default	reduce using rule 93 (positive_literal)
 
 
 
 state 215
 
-    forall_effect  ->  TK_OPEN KW_FORALL TK_OPEN @2 . typed_param_list TK_CLOSE @3 action_effect TK_CLOSE   (rule 99)
+    argument_list  ->  argument_list TK_OBJ_SYMBOL .   (rule 96)
 
-    $default	reduce using rule 43 (typed_param_list)
-
-    typed_param_list	go to state 245
+    $default	reduce using rule 96 (argument_list)
 
 
 
 state 216
 
-    state_variable_decl  ->  TK_OPEN KW_VARIABLE variable_symbol @8 fluent_list_decl rest_state_variable TK_CLOSE .   (rule 138)
+    argument_list  ->  argument_list TK_VAR_SYMBOL .   (rule 95)
 
-    $default	reduce using rule 138 (state_variable_decl)
+    $default	reduce using rule 95 (argument_list)
 
 
 
 state 217
 
-    problem_elements  ->  problem_elements TK_OPEN KW_FORDOMAIN any_symbol . TK_CLOSE   (rule 148)
+    positive_literal  ->  TK_OPEN TK_PRED_SYMBOL argument_list TK_CLOSE .   (rule 92)
 
-    TK_CLOSE	shift, and go to state 246
+    $default	reduce using rule 92 (positive_literal)
 
 
 
 state 218
 
-    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL argument_list TK_CLOSE   (rule 83)
-    positive_literal  ->  TK_OPEN . TK_EQ argument_list TK_CLOSE   (rule 84)
-    negative_literal  ->  TK_OPEN . KW_NOT positive_literal TK_CLOSE   (rule 85)
-    initial_state  ->  TK_OPEN KW_INIT TK_OPEN . KW_AND init_elements TK_CLOSE TK_CLOSE   (rule 157)
-    at_least_one_invariant  ->  TK_OPEN . KW_INVARIANT condition_list TK_CLOSE   (rule 164)
-    at_least_one_invariant  ->  TK_OPEN . KW_AT_LEAST_ONE condition_list TK_CLOSE   (rule 165)
-    at_most_one_invariant  ->  TK_OPEN . KW_AT_MOST_ONE condition_list TK_CLOSE   (rule 166)
-    exactly_one_invariant  ->  TK_OPEN . KW_EXACTLY_ONE condition_list TK_CLOSE   (rule 167)
-    clause  ->  TK_OPEN . KW_OR condition_list TK_CLOSE   (rule 171)
-    oneof  ->  TK_OPEN . KW_ONEOF condition_list TK_CLOSE   (rule 172)
+    action_effect  ->  TK_OPEN KW_AND action_effect_list TK_CLOSE .   (rule 99)
 
-    TK_EQ	shift, and go to state 138
-    TK_PRED_SYMBOL	shift, and go to state 139
-    KW_AND	shift, and go to state 247
-    KW_OR	shift, and go to state 248
-    KW_NOT	shift, and go to state 238
-    KW_ONEOF	shift, and go to state 249
-    KW_INVARIANT	shift, and go to state 250
-    KW_AT_LEAST_ONE	shift, and go to state 251
-    KW_AT_MOST_ONE	shift, and go to state 252
-    KW_EXACTLY_ONE	shift, and go to state 253
+    $default	reduce using rule 99 (action_effect)
 
 
 
 state 219
 
-    initial_state  ->  TK_OPEN KW_INIT TK_CLOSE .   (rule 155)
+    action_effect_list  ->  action_effect_list single_action_effect .   (rule 100)
 
-    $default	reduce using rule 155 (initial_state)
+    $default	reduce using rule 100 (action_effect_list)
 
 
 
 state 220
 
-    single_init_element  ->  literal .   (rule 160)
+    forall_effect  ->  TK_OPEN KW_FORALL TK_OPEN @3 . param_list TK_CLOSE @4 action_effect TK_CLOSE   (rule 108)
 
-    $default	reduce using rule 160 (single_init_element)
+    TK_NEW_VAR_SYMBOL	shift, and go to state 160
+
+    $default	reduce using rule 44 (param_list)
+
+    param_list	go to state 262
+    untyped_param_list	go to state 162
+    typed_param_list	go to state 163
+    param_sym_list	go to state 164
+    new_var_symbol	go to state 165
 
 
 
 state 221
 
-    initial_state  ->  TK_OPEN KW_INIT init_elements . TK_CLOSE   (rule 156)
-    init_elements  ->  init_elements . single_init_element   (rule 158)
+    negative_literal  ->  TK_OPEN KW_NOT positive_literal TK_CLOSE .   (rule 94)
 
-    TK_OPEN	shift, and go to state 233
-    TK_CLOSE	shift, and go to state 254
-
-    literal	go to state 220
-    positive_literal	go to state 189
-    negative_literal	go to state 190
-    single_init_element	go to state 255
-    at_least_one_invariant	go to state 223
-    at_most_one_invariant	go to state 224
-    exactly_one_invariant	go to state 225
-    invariant	go to state 226
-    clause	go to state 227
-    oneof	go to state 228
+    $default	reduce using rule 94 (negative_literal)
 
 
 
 state 222
 
-    init_elements  ->  single_init_element .   (rule 159)
+    condition  ->  TK_OPEN KW_AND . condition_list TK_CLOSE   (rule 86)
 
-    $default	reduce using rule 159 (init_elements)
+    TK_OPEN	shift, and go to state 263
+
+    condition_list	go to state 264
+    single_condition	go to state 265
+    literal	go to state 185
+    positive_literal	go to state 94
+    negative_literal	go to state 95
 
 
 
 state 223
 
-    invariant  ->  at_least_one_invariant .   (rule 168)
+    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL argument_list TK_CLOSE   (rule 92)
+    positive_literal  ->  TK_OPEN . TK_EQ argument_list TK_CLOSE   (rule 93)
+    negative_literal  ->  TK_OPEN . KW_NOT positive_literal TK_CLOSE   (rule 94)
+    atomic_effect_kw_list  ->  TK_OPEN . KW_AND atomic_effect_list TK_CLOSE   (rule 109)
 
-    $default	reduce using rule 168 (invariant)
+    TK_EQ	shift, and go to state 142
+    TK_PRED_SYMBOL	shift, and go to state 143
+    KW_AND	shift, and go to state 266
+    KW_NOT	shift, and go to state 146
 
 
 
 state 224
 
-    invariant  ->  at_most_one_invariant .   (rule 169)
+    conditional_effect  ->  TK_OPEN KW_WHEN condition atomic_effect_kw_list . TK_CLOSE   (rule 105)
 
-    $default	reduce using rule 169 (invariant)
+    TK_CLOSE	shift, and go to state 267
 
 
 
 state 225
 
-    invariant  ->  exactly_one_invariant .   (rule 170)
+    atomic_effect_kw_list  ->  atomic_effect .   (rule 110)
 
-    $default	reduce using rule 170 (invariant)
+    $default	reduce using rule 110 (atomic_effect_kw_list)
 
 
 
 state 226
 
-    single_init_element  ->  invariant .   (rule 161)
+    multivalued_variable_decl  ->  TK_OPEN multivalued_variable_type TK_OPEN variable_symbol param_list TK_CLOSE . @10 fluent_list_decl rest_variable_decl TK_CLOSE   (rule 146)
 
-    $default	reduce using rule 161 (single_init_element)
+    $default	reduce using rule 145 (@10)
+
+    @10 	go to state 268
 
 
 
 state 227
 
-    single_init_element  ->  clause .   (rule 162)
+    optional_variable_parameters  ->  KW_ARGS TK_OPEN . param_list TK_CLOSE   (rule 150)
 
-    $default	reduce using rule 162 (single_init_element)
+    TK_NEW_VAR_SYMBOL	shift, and go to state 160
+
+    $default	reduce using rule 44 (param_list)
+
+    param_list	go to state 269
+    untyped_param_list	go to state 162
+    typed_param_list	go to state 163
+    param_sym_list	go to state 164
+    new_var_symbol	go to state 165
 
 
 
 state 228
 
-    single_init_element  ->  oneof .   (rule 163)
+    fluent_list_decl  ->  fluent_list_decl . fluent_decl   (rule 136)
+    multivalued_variable_decl  ->  TK_OPEN multivalued_variable_type variable_symbol @9 optional_variable_parameters fluent_list_decl . rest_variable_decl TK_CLOSE   (rule 144)
 
-    $default	reduce using rule 163 (single_init_element)
+    TK_OPEN	shift, and go to state 133
+    KW_OBSERVABLE	shift, and go to state 270
+
+    $default	reduce using rule 153 (rest_variable_decl)
+
+    positive_literal	go to state 134
+    forall_effect	go to state 135
+    positive_atomic_effect	go to state 136
+    fluent_decl	go to state 172
+    rest_variable_decl	go to state 271
 
 
 
 state 229
 
-    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL argument_list TK_CLOSE   (rule 83)
-    positive_literal  ->  TK_OPEN . TK_EQ argument_list TK_CLOSE   (rule 84)
-    negative_literal  ->  TK_OPEN . KW_NOT positive_literal TK_CLOSE   (rule 85)
-    goal_spec  ->  TK_OPEN KW_GOAL TK_OPEN . KW_AND goal_list TK_CLOSE TK_CLOSE   (rule 175)
+    problem_elements  ->  problem_elements TK_OPEN KW_FORDOMAIN any_symbol . TK_CLOSE   (rule 158)
 
-    TK_EQ	shift, and go to state 138
-    TK_PRED_SYMBOL	shift, and go to state 139
-    KW_AND	shift, and go to state 256
-    KW_NOT	shift, and go to state 238
+    TK_CLOSE	shift, and go to state 272
 
 
 
 state 230
 
-    single_goal  ->  positive_literal .   (rule 178)
+    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL argument_list TK_CLOSE   (rule 92)
+    positive_literal  ->  TK_OPEN . TK_EQ argument_list TK_CLOSE   (rule 93)
+    negative_literal  ->  TK_OPEN . KW_NOT positive_literal TK_CLOSE   (rule 94)
+    initial_state  ->  TK_OPEN KW_INIT TK_OPEN . KW_AND init_elements TK_CLOSE TK_CLOSE   (rule 167)
+    at_least_one_invariant  ->  TK_OPEN . KW_INVARIANT condition_list TK_CLOSE   (rule 174)
+    at_least_one_invariant  ->  TK_OPEN . KW_AT_LEAST_ONE condition_list TK_CLOSE   (rule 175)
+    at_most_one_invariant  ->  TK_OPEN . KW_AT_MOST_ONE condition_list TK_CLOSE   (rule 176)
+    exactly_one_invariant  ->  TK_OPEN . KW_EXACTLY_ONE condition_list TK_CLOSE   (rule 177)
+    clause  ->  TK_OPEN . KW_OR condition_list TK_CLOSE   (rule 181)
+    oneof  ->  TK_OPEN . KW_ONEOF condition_list TK_CLOSE   (rule 182)
 
-    $default	reduce using rule 178 (single_goal)
+    TK_EQ	shift, and go to state 142
+    TK_PRED_SYMBOL	shift, and go to state 143
+    KW_AND	shift, and go to state 273
+    KW_OR	shift, and go to state 274
+    KW_NOT	shift, and go to state 146
+    KW_ONEOF	shift, and go to state 275
+    KW_INVARIANT	shift, and go to state 276
+    KW_AT_LEAST_ONE	shift, and go to state 277
+    KW_AT_MOST_ONE	shift, and go to state 278
+    KW_EXACTLY_ONE	shift, and go to state 279
 
 
 
 state 231
 
-    single_goal  ->  negative_literal .   (rule 179)
+    initial_state  ->  TK_OPEN KW_INIT TK_CLOSE .   (rule 165)
 
-    $default	reduce using rule 179 (single_goal)
+    $default	reduce using rule 165 (initial_state)
 
 
 
 state 232
 
-    goal_spec  ->  TK_OPEN KW_GOAL single_goal . TK_CLOSE   (rule 174)
+    single_init_element  ->  literal .   (rule 170)
 
-    TK_CLOSE	shift, and go to state 257
+    $default	reduce using rule 170 (single_init_element)
 
 
 
 state 233
 
-    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL argument_list TK_CLOSE   (rule 83)
-    positive_literal  ->  TK_OPEN . TK_EQ argument_list TK_CLOSE   (rule 84)
-    negative_literal  ->  TK_OPEN . KW_NOT positive_literal TK_CLOSE   (rule 85)
-    at_least_one_invariant  ->  TK_OPEN . KW_INVARIANT condition_list TK_CLOSE   (rule 164)
-    at_least_one_invariant  ->  TK_OPEN . KW_AT_LEAST_ONE condition_list TK_CLOSE   (rule 165)
-    at_most_one_invariant  ->  TK_OPEN . KW_AT_MOST_ONE condition_list TK_CLOSE   (rule 166)
-    exactly_one_invariant  ->  TK_OPEN . KW_EXACTLY_ONE condition_list TK_CLOSE   (rule 167)
-    clause  ->  TK_OPEN . KW_OR condition_list TK_CLOSE   (rule 171)
-    oneof  ->  TK_OPEN . KW_ONEOF condition_list TK_CLOSE   (rule 172)
+    initial_state  ->  TK_OPEN KW_INIT init_elements . TK_CLOSE   (rule 166)
+    init_elements  ->  init_elements . single_init_element   (rule 168)
 
-    TK_EQ	shift, and go to state 138
-    TK_PRED_SYMBOL	shift, and go to state 139
-    KW_OR	shift, and go to state 248
-    KW_NOT	shift, and go to state 238
-    KW_ONEOF	shift, and go to state 249
-    KW_INVARIANT	shift, and go to state 250
-    KW_AT_LEAST_ONE	shift, and go to state 251
-    KW_AT_MOST_ONE	shift, and go to state 252
-    KW_EXACTLY_ONE	shift, and go to state 253
+    TK_OPEN	shift, and go to state 245
+    TK_CLOSE	shift, and go to state 280
+
+    literal	go to state 232
+    positive_literal	go to state 94
+    negative_literal	go to state 95
+    single_init_element	go to state 281
+    at_least_one_invariant	go to state 235
+    at_most_one_invariant	go to state 236
+    exactly_one_invariant	go to state 237
+    invariant	go to state 238
+    clause	go to state 239
+    oneof	go to state 240
 
 
 
 state 234
 
-    init_elements  ->  init_elements . single_init_element   (rule 158)
-    hidden_state  ->  TK_OPEN KW_HIDDEN init_elements . TK_CLOSE   (rule 173)
+    init_elements  ->  single_init_element .   (rule 169)
 
-    TK_OPEN	shift, and go to state 233
-    TK_CLOSE	shift, and go to state 258
-
-    literal	go to state 220
-    positive_literal	go to state 189
-    negative_literal	go to state 190
-    single_init_element	go to state 255
-    at_least_one_invariant	go to state 223
-    at_most_one_invariant	go to state 224
-    exactly_one_invariant	go to state 225
-    invariant	go to state 226
-    clause	go to state 227
-    oneof	go to state 228
+    $default	reduce using rule 169 (init_elements)
 
 
 
 state 235
 
-    typed_param_list  ->  typed_param_list typed_param_sym_list TK_HYPHEN TK_TYPE_SYMBOL .   (rule 41)
+    invariant  ->  at_least_one_invariant .   (rule 178)
 
-    $default	reduce using rule 41 (typed_param_list)
+    $default	reduce using rule 178 (invariant)
 
 
 
 state 236
 
-    typed_param_list  ->  typed_param_list . typed_param_sym_list TK_HYPHEN TK_TYPE_SYMBOL   (rule 41)
-    typed_param_list  ->  typed_param_list . typed_param_sym_list   (rule 42)
-    action_elements  ->  action_elements KW_ARGS TK_OPEN typed_param_list . TK_CLOSE   (rule 70)
+    invariant  ->  at_most_one_invariant .   (rule 179)
 
-    TK_CLOSE	shift, and go to state 259
-
-    TK_CLOSE	[reduce using rule 45 (typed_param_sym_list)]
-    $default	reduce using rule 45 (typed_param_sym_list)
-
-    typed_param_sym_list	go to state 155
+    $default	reduce using rule 179 (invariant)
 
 
 
 state 237
 
-    condition  ->  TK_OPEN KW_AND . condition_list TK_CLOSE   (rule 77)
+    invariant  ->  exactly_one_invariant .   (rule 180)
 
-    TK_OPEN	shift, and go to state 260
-
-    condition_list	go to state 261
-    single_condition	go to state 262
-    literal	go to state 188
-    positive_literal	go to state 189
-    negative_literal	go to state 190
+    $default	reduce using rule 180 (invariant)
 
 
 
 state 238
 
-    negative_literal  ->  TK_OPEN KW_NOT . positive_literal TK_CLOSE   (rule 85)
+    single_init_element  ->  invariant .   (rule 171)
 
-    TK_OPEN	shift, and go to state 198
-
-    positive_literal	go to state 263
+    $default	reduce using rule 171 (single_init_element)
 
 
 
 state 239
 
-    action_effect  ->  TK_OPEN KW_AND . action_effect_list TK_CLOSE   (rule 90)
+    single_init_element  ->  clause .   (rule 172)
 
-    TK_OPEN	shift, and go to state 264
-
-    literal	go to state 192
-    positive_literal	go to state 189
-    negative_literal	go to state 190
-    action_effect_list	go to state 265
-    single_action_effect	go to state 266
-    conditional_effect	go to state 195
-    forall_effect	go to state 196
-    atomic_effect	go to state 197
+    $default	reduce using rule 172 (single_init_element)
 
 
 
 state 240
 
-    conditional_effect  ->  TK_OPEN KW_WHEN . condition atomic_effect_kw_list TK_CLOSE   (rule 96)
+    single_init_element  ->  oneof .   (rule 173)
 
-    TK_OPEN	shift, and go to state 185
-
-    condition	go to state 267
-    single_condition	go to state 187
-    literal	go to state 188
-    positive_literal	go to state 189
-    negative_literal	go to state 190
+    $default	reduce using rule 173 (single_init_element)
 
 
 
 state 241
 
-    positive_atomic_effect_list  ->  positive_atomic_effect_list positive_atomic_effect .   (rule 104)
+    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL argument_list TK_CLOSE   (rule 92)
+    positive_literal  ->  TK_OPEN . TK_EQ argument_list TK_CLOSE   (rule 93)
+    negative_literal  ->  TK_OPEN . KW_NOT positive_literal TK_CLOSE   (rule 94)
+    goal_spec  ->  TK_OPEN KW_GOAL TK_OPEN . KW_AND goal_list TK_CLOSE TK_CLOSE   (rule 185)
 
-    $default	reduce using rule 104 (positive_atomic_effect_list)
+    TK_EQ	shift, and go to state 142
+    TK_PRED_SYMBOL	shift, and go to state 143
+    KW_AND	shift, and go to state 282
+    KW_NOT	shift, and go to state 146
 
 
 
 state 242
 
-    typed_param_list  ->  typed_param_list . typed_param_sym_list TK_HYPHEN TK_TYPE_SYMBOL   (rule 41)
-    typed_param_list  ->  typed_param_list . typed_param_sym_list   (rule 42)
-    sensor_elements  ->  sensor_elements KW_ARGS TK_OPEN typed_param_list . TK_CLOSE   (rule 120)
+    single_goal  ->  positive_literal .   (rule 188)
 
-    TK_CLOSE	shift, and go to state 268
-
-    TK_CLOSE	[reduce using rule 45 (typed_param_sym_list)]
-    $default	reduce using rule 45 (typed_param_sym_list)
-
-    typed_param_sym_list	go to state 155
+    $default	reduce using rule 188 (single_goal)
 
 
 
 state 243
 
-    typed_param_list  ->  typed_param_list . typed_param_sym_list TK_HYPHEN TK_TYPE_SYMBOL   (rule 41)
-    typed_param_list  ->  typed_param_list . typed_param_sym_list   (rule 42)
-    axiom_elements  ->  axiom_elements KW_ARGS TK_OPEN typed_param_list . TK_CLOSE   (rule 113)
+    single_goal  ->  negative_literal .   (rule 189)
 
-    TK_CLOSE	shift, and go to state 269
-
-    TK_CLOSE	[reduce using rule 45 (typed_param_sym_list)]
-    $default	reduce using rule 45 (typed_param_sym_list)
-
-    typed_param_sym_list	go to state 155
+    $default	reduce using rule 189 (single_goal)
 
 
 
 state 244
 
-    atomic_effect_kw_list  ->  TK_OPEN KW_AND . atomic_effect_list TK_CLOSE   (rule 100)
+    goal_spec  ->  TK_OPEN KW_GOAL single_goal . TK_CLOSE   (rule 184)
 
-    TK_OPEN	shift, and go to state 260
-
-    literal	go to state 192
-    positive_literal	go to state 189
-    negative_literal	go to state 190
-    atomic_effect_list	go to state 270
-    atomic_effect	go to state 271
+    TK_CLOSE	shift, and go to state 283
 
 
 
 state 245
 
-    typed_param_list  ->  typed_param_list . typed_param_sym_list TK_HYPHEN TK_TYPE_SYMBOL   (rule 41)
-    typed_param_list  ->  typed_param_list . typed_param_sym_list   (rule 42)
-    forall_effect  ->  TK_OPEN KW_FORALL TK_OPEN @2 typed_param_list . TK_CLOSE @3 action_effect TK_CLOSE   (rule 99)
+    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL argument_list TK_CLOSE   (rule 92)
+    positive_literal  ->  TK_OPEN . TK_EQ argument_list TK_CLOSE   (rule 93)
+    negative_literal  ->  TK_OPEN . KW_NOT positive_literal TK_CLOSE   (rule 94)
+    at_least_one_invariant  ->  TK_OPEN . KW_INVARIANT condition_list TK_CLOSE   (rule 174)
+    at_least_one_invariant  ->  TK_OPEN . KW_AT_LEAST_ONE condition_list TK_CLOSE   (rule 175)
+    at_most_one_invariant  ->  TK_OPEN . KW_AT_MOST_ONE condition_list TK_CLOSE   (rule 176)
+    exactly_one_invariant  ->  TK_OPEN . KW_EXACTLY_ONE condition_list TK_CLOSE   (rule 177)
+    clause  ->  TK_OPEN . KW_OR condition_list TK_CLOSE   (rule 181)
+    oneof  ->  TK_OPEN . KW_ONEOF condition_list TK_CLOSE   (rule 182)
 
-    TK_CLOSE	shift, and go to state 272
-
-    TK_CLOSE	[reduce using rule 45 (typed_param_sym_list)]
-    $default	reduce using rule 45 (typed_param_sym_list)
-
-    typed_param_sym_list	go to state 155
+    TK_EQ	shift, and go to state 142
+    TK_PRED_SYMBOL	shift, and go to state 143
+    KW_OR	shift, and go to state 274
+    KW_NOT	shift, and go to state 146
+    KW_ONEOF	shift, and go to state 275
+    KW_INVARIANT	shift, and go to state 276
+    KW_AT_LEAST_ONE	shift, and go to state 277
+    KW_AT_MOST_ONE	shift, and go to state 278
+    KW_EXACTLY_ONE	shift, and go to state 279
 
 
 
 state 246
 
-    problem_elements  ->  problem_elements TK_OPEN KW_FORDOMAIN any_symbol TK_CLOSE .   (rule 148)
+    init_elements  ->  init_elements . single_init_element   (rule 168)
+    hidden_state  ->  TK_OPEN KW_HIDDEN init_elements . TK_CLOSE   (rule 183)
 
-    $default	reduce using rule 148 (problem_elements)
+    TK_OPEN	shift, and go to state 245
+    TK_CLOSE	shift, and go to state 284
+
+    literal	go to state 232
+    positive_literal	go to state 94
+    negative_literal	go to state 95
+    single_init_element	go to state 281
+    at_least_one_invariant	go to state 235
+    at_most_one_invariant	go to state 236
+    exactly_one_invariant	go to state 237
+    invariant	go to state 238
+    clause	go to state 239
+    oneof	go to state 240
 
 
 
 state 247
 
-    initial_state  ->  TK_OPEN KW_INIT TK_OPEN KW_AND . init_elements TK_CLOSE TK_CLOSE   (rule 157)
+    typed_constant_list  ->  constant_sym_list TK_HYPHEN TK_TYPE_SYMBOL @1 typed_constant_list .   (rule 65)
 
-    TK_OPEN	shift, and go to state 233
-
-    literal	go to state 220
-    positive_literal	go to state 189
-    negative_literal	go to state 190
-    init_elements	go to state 273
-    single_init_element	go to state 222
-    at_least_one_invariant	go to state 223
-    at_most_one_invariant	go to state 224
-    exactly_one_invariant	go to state 225
-    invariant	go to state 226
-    clause	go to state 227
-    oneof	go to state 228
+    $default	reduce using rule 65 (typed_constant_list)
 
 
 
 state 248
 
-    clause  ->  TK_OPEN KW_OR . condition_list TK_CLOSE   (rule 171)
+    typed_constant_list  ->  constant_sym_list . TK_HYPHEN TK_TYPE_SYMBOL @1 typed_constant_list   (rule 65)
+    constant_sym_list  ->  constant_sym_list . TK_NEW_SYMBOL   (rule 68)
 
-    TK_OPEN	shift, and go to state 260
-
-    condition_list	go to state 274
-    single_condition	go to state 262
-    literal	go to state 188
-    positive_literal	go to state 189
-    negative_literal	go to state 190
+    TK_HYPHEN	shift, and go to state 113
+    TK_NEW_SYMBOL	shift, and go to state 114
 
 
 
 state 249
 
-    oneof  ->  TK_OPEN KW_ONEOF . condition_list TK_CLOSE   (rule 172)
+    typed_param_list  ->  param_sym_list TK_HYPHEN TK_TYPE_SYMBOL . typed_param_list   (rule 46)
+    typed_param_list  ->  param_sym_list TK_HYPHEN TK_TYPE_SYMBOL .   (rule 47)
 
-    TK_OPEN	shift, and go to state 260
+    TK_NEW_VAR_SYMBOL	shift, and go to state 160
 
-    condition_list	go to state 275
-    single_condition	go to state 262
-    literal	go to state 188
-    positive_literal	go to state 189
-    negative_literal	go to state 190
+    $default	reduce using rule 47 (typed_param_list)
+
+    typed_param_list	go to state 285
+    param_sym_list	go to state 286
+    new_var_symbol	go to state 165
 
 
 
 state 250
 
-    at_least_one_invariant  ->  TK_OPEN KW_INVARIANT . condition_list TK_CLOSE   (rule 164)
+    action_elements  ->  action_elements KW_ARGS TK_OPEN . param_list TK_CLOSE   (rule 79)
 
-    TK_OPEN	shift, and go to state 260
+    TK_NEW_VAR_SYMBOL	shift, and go to state 160
 
-    condition_list	go to state 276
-    single_condition	go to state 262
-    literal	go to state 188
-    positive_literal	go to state 189
-    negative_literal	go to state 190
+    $default	reduce using rule 44 (param_list)
+
+    param_list	go to state 287
+    untyped_param_list	go to state 162
+    typed_param_list	go to state 163
+    param_sym_list	go to state 164
+    new_var_symbol	go to state 165
 
 
 
 state 251
 
-    at_least_one_invariant  ->  TK_OPEN KW_AT_LEAST_ONE . condition_list TK_CLOSE   (rule 165)
+    action_elements  ->  action_elements KW_PRE condition .   (rule 80)
 
-    TK_OPEN	shift, and go to state 260
-
-    condition_list	go to state 277
-    single_condition	go to state 262
-    literal	go to state 188
-    positive_literal	go to state 189
-    negative_literal	go to state 190
+    $default	reduce using rule 80 (action_elements)
 
 
 
 state 252
 
-    at_most_one_invariant  ->  TK_OPEN KW_AT_MOST_ONE . condition_list TK_CLOSE   (rule 166)
+    action_elements  ->  action_elements KW_EFFECT action_effect .   (rule 81)
 
-    TK_OPEN	shift, and go to state 260
-
-    condition_list	go to state 278
-    single_condition	go to state 262
-    literal	go to state 188
-    positive_literal	go to state 189
-    negative_literal	go to state 190
+    $default	reduce using rule 81 (action_elements)
 
 
 
 state 253
 
-    exactly_one_invariant  ->  TK_OPEN KW_EXACTLY_ONE . condition_list TK_CLOSE   (rule 167)
+    action_elements  ->  action_elements KW_OBSERVE positive_atomic_effect_list .   (rule 82)
+    positive_atomic_effect_list  ->  positive_atomic_effect_list . positive_atomic_effect   (rule 113)
 
-    TK_OPEN	shift, and go to state 260
+    TK_OPEN	shift, and go to state 180
 
-    condition_list	go to state 279
-    single_condition	go to state 262
-    literal	go to state 188
-    positive_literal	go to state 189
-    negative_literal	go to state 190
+    $default	reduce using rule 82 (action_elements)
+
+    positive_literal	go to state 134
+    positive_atomic_effect	go to state 288
 
 
 
 state 254
 
-    initial_state  ->  TK_OPEN KW_INIT init_elements TK_CLOSE .   (rule 156)
+    positive_atomic_effect_list  ->  positive_atomic_effect .   (rule 114)
 
-    $default	reduce using rule 156 (initial_state)
+    $default	reduce using rule 114 (positive_atomic_effect_list)
 
 
 
 state 255
 
-    init_elements  ->  init_elements single_init_element .   (rule 158)
+    action_elements  ->  action_elements KW_SENSING_MODEL sensing_model .   (rule 83)
 
-    $default	reduce using rule 158 (init_elements)
+    $default	reduce using rule 83 (action_elements)
 
 
 
 state 256
 
-    goal_spec  ->  TK_OPEN KW_GOAL TK_OPEN KW_AND . goal_list TK_CLOSE TK_CLOSE   (rule 175)
+    sensor_elements  ->  sensor_elements KW_ARGS TK_OPEN . param_list TK_CLOSE   (rule 129)
 
-    TK_OPEN	shift, and go to state 260
+    TK_NEW_VAR_SYMBOL	shift, and go to state 160
 
-    positive_literal	go to state 230
-    negative_literal	go to state 231
-    goal_list	go to state 280
-    single_goal	go to state 281
+    $default	reduce using rule 44 (param_list)
+
+    param_list	go to state 289
+    untyped_param_list	go to state 162
+    typed_param_list	go to state 163
+    param_sym_list	go to state 164
+    new_var_symbol	go to state 165
 
 
 
 state 257
 
-    goal_spec  ->  TK_OPEN KW_GOAL single_goal TK_CLOSE .   (rule 174)
+    positive_atomic_effect_list  ->  positive_atomic_effect_list . positive_atomic_effect   (rule 113)
+    sensor_elements  ->  sensor_elements KW_SENSE positive_atomic_effect_list .   (rule 131)
 
-    $default	reduce using rule 174 (goal_spec)
+    TK_OPEN	shift, and go to state 180
+
+    $default	reduce using rule 131 (sensor_elements)
+
+    positive_literal	go to state 134
+    positive_atomic_effect	go to state 288
 
 
 
 state 258
 
-    hidden_state  ->  TK_OPEN KW_HIDDEN init_elements TK_CLOSE .   (rule 173)
+    sensor_elements  ->  sensor_elements KW_COND condition .   (rule 130)
 
-    $default	reduce using rule 173 (hidden_state)
+    $default	reduce using rule 130 (sensor_elements)
 
 
 
 state 259
 
-    action_elements  ->  action_elements KW_ARGS TK_OPEN typed_param_list TK_CLOSE .   (rule 70)
+    axiom_elements  ->  axiom_elements KW_ARGS TK_OPEN . param_list TK_CLOSE   (rule 122)
 
-    $default	reduce using rule 70 (action_elements)
+    TK_NEW_VAR_SYMBOL	shift, and go to state 160
+
+    $default	reduce using rule 44 (param_list)
+
+    param_list	go to state 290
+    untyped_param_list	go to state 162
+    typed_param_list	go to state 163
+    param_sym_list	go to state 164
+    new_var_symbol	go to state 165
 
 
 
 state 260
 
-    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL argument_list TK_CLOSE   (rule 83)
-    positive_literal  ->  TK_OPEN . TK_EQ argument_list TK_CLOSE   (rule 84)
-    negative_literal  ->  TK_OPEN . KW_NOT positive_literal TK_CLOSE   (rule 85)
+    axiom_elements  ->  axiom_elements KW_BODY condition .   (rule 123)
 
-    TK_EQ	shift, and go to state 138
-    TK_PRED_SYMBOL	shift, and go to state 139
-    KW_NOT	shift, and go to state 238
+    $default	reduce using rule 123 (axiom_elements)
 
 
 
 state 261
 
-    condition  ->  TK_OPEN KW_AND condition_list . TK_CLOSE   (rule 77)
-    condition_list  ->  condition_list . single_condition   (rule 78)
+    axiom_elements  ->  axiom_elements KW_HEAD atomic_effect_kw_list .   (rule 124)
 
-    TK_OPEN	shift, and go to state 260
-    TK_CLOSE	shift, and go to state 282
-
-    single_condition	go to state 283
-    literal	go to state 188
-    positive_literal	go to state 189
-    negative_literal	go to state 190
+    $default	reduce using rule 124 (axiom_elements)
 
 
 
 state 262
 
-    condition_list  ->  single_condition .   (rule 79)
+    forall_effect  ->  TK_OPEN KW_FORALL TK_OPEN @3 param_list . TK_CLOSE @4 action_effect TK_CLOSE   (rule 108)
 
-    $default	reduce using rule 79 (condition_list)
+    TK_CLOSE	shift, and go to state 291
 
 
 
 state 263
 
-    negative_literal  ->  TK_OPEN KW_NOT positive_literal . TK_CLOSE   (rule 85)
+    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL argument_list TK_CLOSE   (rule 92)
+    positive_literal  ->  TK_OPEN . TK_EQ argument_list TK_CLOSE   (rule 93)
+    negative_literal  ->  TK_OPEN . KW_NOT positive_literal TK_CLOSE   (rule 94)
 
-    TK_CLOSE	shift, and go to state 284
+    TK_EQ	shift, and go to state 142
+    TK_PRED_SYMBOL	shift, and go to state 143
+    KW_NOT	shift, and go to state 146
 
 
 
 state 264
 
-    positive_literal  ->  TK_OPEN . TK_PRED_SYMBOL argument_list TK_CLOSE   (rule 83)
-    positive_literal  ->  TK_OPEN . TK_EQ argument_list TK_CLOSE   (rule 84)
-    negative_literal  ->  TK_OPEN . KW_NOT positive_literal TK_CLOSE   (rule 85)
-    conditional_effect  ->  TK_OPEN . KW_WHEN condition atomic_effect_kw_list TK_CLOSE   (rule 96)
-    forall_effect  ->  TK_OPEN . KW_FORALL TK_OPEN @2 typed_param_list TK_CLOSE @3 action_effect TK_CLOSE   (rule 99)
+    condition  ->  TK_OPEN KW_AND condition_list . TK_CLOSE   (rule 86)
+    condition_list  ->  condition_list . single_condition   (rule 87)
 
-    TK_EQ	shift, and go to state 138
-    TK_PRED_SYMBOL	shift, and go to state 139
-    KW_FORALL	shift, and go to state 140
-    KW_NOT	shift, and go to state 238
-    KW_WHEN	shift, and go to state 240
+    TK_OPEN	shift, and go to state 263
+    TK_CLOSE	shift, and go to state 292
+
+    single_condition	go to state 293
+    literal	go to state 185
+    positive_literal	go to state 94
+    negative_literal	go to state 95
 
 
 
 state 265
 
-    action_effect  ->  TK_OPEN KW_AND action_effect_list . TK_CLOSE   (rule 90)
-    action_effect_list  ->  action_effect_list . single_action_effect   (rule 91)
+    condition_list  ->  single_condition .   (rule 88)
 
-    TK_OPEN	shift, and go to state 264
-    TK_CLOSE	shift, and go to state 285
-
-    literal	go to state 192
-    positive_literal	go to state 189
-    negative_literal	go to state 190
-    single_action_effect	go to state 286
-    conditional_effect	go to state 195
-    forall_effect	go to state 196
-    atomic_effect	go to state 197
+    $default	reduce using rule 88 (condition_list)
 
 
 
 state 266
 
-    action_effect_list  ->  single_action_effect .   (rule 92)
+    atomic_effect_kw_list  ->  TK_OPEN KW_AND . atomic_effect_list TK_CLOSE   (rule 109)
 
-    $default	reduce using rule 92 (action_effect_list)
+    TK_OPEN	shift, and go to state 263
+
+    literal	go to state 93
+    positive_literal	go to state 94
+    negative_literal	go to state 95
+    atomic_effect_list	go to state 294
+    atomic_effect	go to state 295
 
 
 
 state 267
 
-    conditional_effect  ->  TK_OPEN KW_WHEN condition . atomic_effect_kw_list TK_CLOSE   (rule 96)
+    conditional_effect  ->  TK_OPEN KW_WHEN condition atomic_effect_kw_list TK_CLOSE .   (rule 105)
 
-    TK_OPEN	shift, and go to state 208
-
-    literal	go to state 192
-    positive_literal	go to state 189
-    negative_literal	go to state 190
-    atomic_effect_kw_list	go to state 287
-    atomic_effect	go to state 210
+    $default	reduce using rule 105 (conditional_effect)
 
 
 
 state 268
 
-    sensor_elements  ->  sensor_elements KW_ARGS TK_OPEN typed_param_list TK_CLOSE .   (rule 120)
+    multivalued_variable_decl  ->  TK_OPEN multivalued_variable_type TK_OPEN variable_symbol param_list TK_CLOSE @10 . fluent_list_decl rest_variable_decl TK_CLOSE   (rule 146)
 
-    $default	reduce using rule 120 (sensor_elements)
+    TK_OPEN	shift, and go to state 133
+
+    positive_literal	go to state 134
+    forall_effect	go to state 135
+    positive_atomic_effect	go to state 136
+    fluent_list_decl	go to state 296
+    fluent_decl	go to state 138
 
 
 
 state 269
 
-    axiom_elements  ->  axiom_elements KW_ARGS TK_OPEN typed_param_list TK_CLOSE .   (rule 113)
+    optional_variable_parameters  ->  KW_ARGS TK_OPEN param_list . TK_CLOSE   (rule 150)
 
-    $default	reduce using rule 113 (axiom_elements)
+    TK_CLOSE	shift, and go to state 297
 
 
 
 state 270
 
-    atomic_effect_kw_list  ->  TK_OPEN KW_AND atomic_effect_list . TK_CLOSE   (rule 100)
-    atomic_effect_list  ->  atomic_effect_list . atomic_effect   (rule 102)
+    rest_variable_decl  ->  KW_OBSERVABLE .   (rule 152)
 
-    TK_OPEN	shift, and go to state 260
-    TK_CLOSE	shift, and go to state 288
-
-    literal	go to state 192
-    positive_literal	go to state 189
-    negative_literal	go to state 190
-    atomic_effect	go to state 289
+    $default	reduce using rule 152 (rest_variable_decl)
 
 
 
 state 271
 
-    atomic_effect_list  ->  atomic_effect .   (rule 103)
+    multivalued_variable_decl  ->  TK_OPEN multivalued_variable_type variable_symbol @9 optional_variable_parameters fluent_list_decl rest_variable_decl . TK_CLOSE   (rule 144)
 
-    $default	reduce using rule 103 (atomic_effect_list)
+    TK_CLOSE	shift, and go to state 298
 
 
 
 state 272
 
-    forall_effect  ->  TK_OPEN KW_FORALL TK_OPEN @2 typed_param_list TK_CLOSE . @3 action_effect TK_CLOSE   (rule 99)
+    problem_elements  ->  problem_elements TK_OPEN KW_FORDOMAIN any_symbol TK_CLOSE .   (rule 158)
 
-    $default	reduce using rule 98 (@3)
-
-    @3  	go to state 290
+    $default	reduce using rule 158 (problem_elements)
 
 
 
 state 273
 
-    initial_state  ->  TK_OPEN KW_INIT TK_OPEN KW_AND init_elements . TK_CLOSE TK_CLOSE   (rule 157)
-    init_elements  ->  init_elements . single_init_element   (rule 158)
+    initial_state  ->  TK_OPEN KW_INIT TK_OPEN KW_AND . init_elements TK_CLOSE TK_CLOSE   (rule 167)
 
-    TK_OPEN	shift, and go to state 233
-    TK_CLOSE	shift, and go to state 291
+    TK_OPEN	shift, and go to state 245
 
-    literal	go to state 220
-    positive_literal	go to state 189
-    negative_literal	go to state 190
-    single_init_element	go to state 255
-    at_least_one_invariant	go to state 223
-    at_most_one_invariant	go to state 224
-    exactly_one_invariant	go to state 225
-    invariant	go to state 226
-    clause	go to state 227
-    oneof	go to state 228
+    literal	go to state 232
+    positive_literal	go to state 94
+    negative_literal	go to state 95
+    init_elements	go to state 299
+    single_init_element	go to state 234
+    at_least_one_invariant	go to state 235
+    at_most_one_invariant	go to state 236
+    exactly_one_invariant	go to state 237
+    invariant	go to state 238
+    clause	go to state 239
+    oneof	go to state 240
 
 
 
 state 274
 
-    condition_list  ->  condition_list . single_condition   (rule 78)
-    clause  ->  TK_OPEN KW_OR condition_list . TK_CLOSE   (rule 171)
+    clause  ->  TK_OPEN KW_OR . condition_list TK_CLOSE   (rule 181)
 
-    TK_OPEN	shift, and go to state 260
-    TK_CLOSE	shift, and go to state 292
+    TK_OPEN	shift, and go to state 263
 
-    single_condition	go to state 283
-    literal	go to state 188
-    positive_literal	go to state 189
-    negative_literal	go to state 190
+    condition_list	go to state 300
+    single_condition	go to state 265
+    literal	go to state 185
+    positive_literal	go to state 94
+    negative_literal	go to state 95
 
 
 
 state 275
 
-    condition_list  ->  condition_list . single_condition   (rule 78)
-    oneof  ->  TK_OPEN KW_ONEOF condition_list . TK_CLOSE   (rule 172)
+    oneof  ->  TK_OPEN KW_ONEOF . condition_list TK_CLOSE   (rule 182)
 
-    TK_OPEN	shift, and go to state 260
-    TK_CLOSE	shift, and go to state 293
+    TK_OPEN	shift, and go to state 263
 
-    single_condition	go to state 283
-    literal	go to state 188
-    positive_literal	go to state 189
-    negative_literal	go to state 190
+    condition_list	go to state 301
+    single_condition	go to state 265
+    literal	go to state 185
+    positive_literal	go to state 94
+    negative_literal	go to state 95
 
 
 
 state 276
 
-    condition_list  ->  condition_list . single_condition   (rule 78)
-    at_least_one_invariant  ->  TK_OPEN KW_INVARIANT condition_list . TK_CLOSE   (rule 164)
+    at_least_one_invariant  ->  TK_OPEN KW_INVARIANT . condition_list TK_CLOSE   (rule 174)
 
-    TK_OPEN	shift, and go to state 260
-    TK_CLOSE	shift, and go to state 294
+    TK_OPEN	shift, and go to state 263
 
-    single_condition	go to state 283
-    literal	go to state 188
-    positive_literal	go to state 189
-    negative_literal	go to state 190
+    condition_list	go to state 302
+    single_condition	go to state 265
+    literal	go to state 185
+    positive_literal	go to state 94
+    negative_literal	go to state 95
 
 
 
 state 277
 
-    condition_list  ->  condition_list . single_condition   (rule 78)
-    at_least_one_invariant  ->  TK_OPEN KW_AT_LEAST_ONE condition_list . TK_CLOSE   (rule 165)
+    at_least_one_invariant  ->  TK_OPEN KW_AT_LEAST_ONE . condition_list TK_CLOSE   (rule 175)
 
-    TK_OPEN	shift, and go to state 260
-    TK_CLOSE	shift, and go to state 295
+    TK_OPEN	shift, and go to state 263
 
-    single_condition	go to state 283
-    literal	go to state 188
-    positive_literal	go to state 189
-    negative_literal	go to state 190
+    condition_list	go to state 303
+    single_condition	go to state 265
+    literal	go to state 185
+    positive_literal	go to state 94
+    negative_literal	go to state 95
 
 
 
 state 278
 
-    condition_list  ->  condition_list . single_condition   (rule 78)
-    at_most_one_invariant  ->  TK_OPEN KW_AT_MOST_ONE condition_list . TK_CLOSE   (rule 166)
+    at_most_one_invariant  ->  TK_OPEN KW_AT_MOST_ONE . condition_list TK_CLOSE   (rule 176)
 
-    TK_OPEN	shift, and go to state 260
-    TK_CLOSE	shift, and go to state 296
+    TK_OPEN	shift, and go to state 263
 
-    single_condition	go to state 283
-    literal	go to state 188
-    positive_literal	go to state 189
-    negative_literal	go to state 190
+    condition_list	go to state 304
+    single_condition	go to state 265
+    literal	go to state 185
+    positive_literal	go to state 94
+    negative_literal	go to state 95
 
 
 
 state 279
 
-    condition_list  ->  condition_list . single_condition   (rule 78)
-    exactly_one_invariant  ->  TK_OPEN KW_EXACTLY_ONE condition_list . TK_CLOSE   (rule 167)
+    exactly_one_invariant  ->  TK_OPEN KW_EXACTLY_ONE . condition_list TK_CLOSE   (rule 177)
 
-    TK_OPEN	shift, and go to state 260
-    TK_CLOSE	shift, and go to state 297
+    TK_OPEN	shift, and go to state 263
 
-    single_condition	go to state 283
-    literal	go to state 188
-    positive_literal	go to state 189
-    negative_literal	go to state 190
+    condition_list	go to state 305
+    single_condition	go to state 265
+    literal	go to state 185
+    positive_literal	go to state 94
+    negative_literal	go to state 95
 
 
 
 state 280
 
-    goal_spec  ->  TK_OPEN KW_GOAL TK_OPEN KW_AND goal_list . TK_CLOSE TK_CLOSE   (rule 175)
-    goal_list  ->  goal_list . single_goal   (rule 176)
+    initial_state  ->  TK_OPEN KW_INIT init_elements TK_CLOSE .   (rule 166)
 
-    TK_OPEN	shift, and go to state 260
-    TK_CLOSE	shift, and go to state 298
-
-    positive_literal	go to state 230
-    negative_literal	go to state 231
-    single_goal	go to state 299
+    $default	reduce using rule 166 (initial_state)
 
 
 
 state 281
 
-    goal_list  ->  single_goal .   (rule 177)
+    init_elements  ->  init_elements single_init_element .   (rule 168)
 
-    $default	reduce using rule 177 (goal_list)
+    $default	reduce using rule 168 (init_elements)
 
 
 
 state 282
 
-    condition  ->  TK_OPEN KW_AND condition_list TK_CLOSE .   (rule 77)
+    goal_spec  ->  TK_OPEN KW_GOAL TK_OPEN KW_AND . goal_list TK_CLOSE TK_CLOSE   (rule 185)
 
-    $default	reduce using rule 77 (condition)
+    TK_OPEN	shift, and go to state 263
+
+    positive_literal	go to state 242
+    negative_literal	go to state 243
+    goal_list	go to state 306
+    single_goal	go to state 307
 
 
 
 state 283
 
-    condition_list  ->  condition_list single_condition .   (rule 78)
+    goal_spec  ->  TK_OPEN KW_GOAL single_goal TK_CLOSE .   (rule 184)
 
-    $default	reduce using rule 78 (condition_list)
+    $default	reduce using rule 184 (goal_spec)
 
 
 
 state 284
 
-    negative_literal  ->  TK_OPEN KW_NOT positive_literal TK_CLOSE .   (rule 85)
+    hidden_state  ->  TK_OPEN KW_HIDDEN init_elements TK_CLOSE .   (rule 183)
 
-    $default	reduce using rule 85 (negative_literal)
+    $default	reduce using rule 183 (hidden_state)
 
 
 
 state 285
 
-    action_effect  ->  TK_OPEN KW_AND action_effect_list TK_CLOSE .   (rule 90)
+    typed_param_list  ->  param_sym_list TK_HYPHEN TK_TYPE_SYMBOL typed_param_list .   (rule 46)
 
-    $default	reduce using rule 90 (action_effect)
+    $default	reduce using rule 46 (typed_param_list)
 
 
 
 state 286
 
-    action_effect_list  ->  action_effect_list single_action_effect .   (rule 91)
+    typed_param_list  ->  param_sym_list . TK_HYPHEN TK_TYPE_SYMBOL typed_param_list   (rule 46)
+    typed_param_list  ->  param_sym_list . TK_HYPHEN TK_TYPE_SYMBOL   (rule 47)
+    param_sym_list  ->  param_sym_list . new_var_symbol   (rule 48)
 
-    $default	reduce using rule 91 (action_effect_list)
+    TK_HYPHEN	shift, and go to state 195
+    TK_NEW_VAR_SYMBOL	shift, and go to state 160
+
+    new_var_symbol	go to state 196
 
 
 
 state 287
 
-    conditional_effect  ->  TK_OPEN KW_WHEN condition atomic_effect_kw_list . TK_CLOSE   (rule 96)
+    action_elements  ->  action_elements KW_ARGS TK_OPEN param_list . TK_CLOSE   (rule 79)
 
-    TK_CLOSE	shift, and go to state 300
+    TK_CLOSE	shift, and go to state 308
 
 
 
 state 288
 
-    atomic_effect_kw_list  ->  TK_OPEN KW_AND atomic_effect_list TK_CLOSE .   (rule 100)
+    positive_atomic_effect_list  ->  positive_atomic_effect_list positive_atomic_effect .   (rule 113)
 
-    $default	reduce using rule 100 (atomic_effect_kw_list)
+    $default	reduce using rule 113 (positive_atomic_effect_list)
 
 
 
 state 289
 
-    atomic_effect_list  ->  atomic_effect_list atomic_effect .   (rule 102)
+    sensor_elements  ->  sensor_elements KW_ARGS TK_OPEN param_list . TK_CLOSE   (rule 129)
 
-    $default	reduce using rule 102 (atomic_effect_list)
+    TK_CLOSE	shift, and go to state 309
 
 
 
 state 290
 
-    forall_effect  ->  TK_OPEN KW_FORALL TK_OPEN @2 typed_param_list TK_CLOSE @3 . action_effect TK_CLOSE   (rule 99)
+    axiom_elements  ->  axiom_elements KW_ARGS TK_OPEN param_list . TK_CLOSE   (rule 122)
 
-    TK_OPEN	shift, and go to state 191
-
-    literal	go to state 192
-    positive_literal	go to state 189
-    negative_literal	go to state 190
-    action_effect	go to state 301
-    single_action_effect	go to state 194
-    conditional_effect	go to state 195
-    forall_effect	go to state 196
-    atomic_effect	go to state 197
+    TK_CLOSE	shift, and go to state 310
 
 
 
 state 291
 
-    initial_state  ->  TK_OPEN KW_INIT TK_OPEN KW_AND init_elements TK_CLOSE . TK_CLOSE   (rule 157)
+    forall_effect  ->  TK_OPEN KW_FORALL TK_OPEN @3 param_list TK_CLOSE . @4 action_effect TK_CLOSE   (rule 108)
 
-    TK_CLOSE	shift, and go to state 302
+    $default	reduce using rule 107 (@4)
+
+    @4  	go to state 311
 
 
 
 state 292
 
-    clause  ->  TK_OPEN KW_OR condition_list TK_CLOSE .   (rule 171)
+    condition  ->  TK_OPEN KW_AND condition_list TK_CLOSE .   (rule 86)
 
-    $default	reduce using rule 171 (clause)
+    $default	reduce using rule 86 (condition)
 
 
 
 state 293
 
-    oneof  ->  TK_OPEN KW_ONEOF condition_list TK_CLOSE .   (rule 172)
+    condition_list  ->  condition_list single_condition .   (rule 87)
 
-    $default	reduce using rule 172 (oneof)
+    $default	reduce using rule 87 (condition_list)
 
 
 
 state 294
 
-    at_least_one_invariant  ->  TK_OPEN KW_INVARIANT condition_list TK_CLOSE .   (rule 164)
+    atomic_effect_kw_list  ->  TK_OPEN KW_AND atomic_effect_list . TK_CLOSE   (rule 109)
+    atomic_effect_list  ->  atomic_effect_list . atomic_effect   (rule 111)
 
-    $default	reduce using rule 164 (at_least_one_invariant)
+    TK_OPEN	shift, and go to state 263
+    TK_CLOSE	shift, and go to state 312
+
+    literal	go to state 93
+    positive_literal	go to state 94
+    negative_literal	go to state 95
+    atomic_effect	go to state 313
 
 
 
 state 295
 
-    at_least_one_invariant  ->  TK_OPEN KW_AT_LEAST_ONE condition_list TK_CLOSE .   (rule 165)
+    atomic_effect_list  ->  atomic_effect .   (rule 112)
 
-    $default	reduce using rule 165 (at_least_one_invariant)
+    $default	reduce using rule 112 (atomic_effect_list)
 
 
 
 state 296
 
-    at_most_one_invariant  ->  TK_OPEN KW_AT_MOST_ONE condition_list TK_CLOSE .   (rule 166)
+    fluent_list_decl  ->  fluent_list_decl . fluent_decl   (rule 136)
+    multivalued_variable_decl  ->  TK_OPEN multivalued_variable_type TK_OPEN variable_symbol param_list TK_CLOSE @10 fluent_list_decl . rest_variable_decl TK_CLOSE   (rule 146)
 
-    $default	reduce using rule 166 (at_most_one_invariant)
+    TK_OPEN	shift, and go to state 133
+    KW_OBSERVABLE	shift, and go to state 270
+
+    $default	reduce using rule 153 (rest_variable_decl)
+
+    positive_literal	go to state 134
+    forall_effect	go to state 135
+    positive_atomic_effect	go to state 136
+    fluent_decl	go to state 172
+    rest_variable_decl	go to state 314
 
 
 
 state 297
 
-    exactly_one_invariant  ->  TK_OPEN KW_EXACTLY_ONE condition_list TK_CLOSE .   (rule 167)
+    optional_variable_parameters  ->  KW_ARGS TK_OPEN param_list TK_CLOSE .   (rule 150)
 
-    $default	reduce using rule 167 (exactly_one_invariant)
+    $default	reduce using rule 150 (optional_variable_parameters)
 
 
 
 state 298
 
-    goal_spec  ->  TK_OPEN KW_GOAL TK_OPEN KW_AND goal_list TK_CLOSE . TK_CLOSE   (rule 175)
+    multivalued_variable_decl  ->  TK_OPEN multivalued_variable_type variable_symbol @9 optional_variable_parameters fluent_list_decl rest_variable_decl TK_CLOSE .   (rule 144)
 
-    TK_CLOSE	shift, and go to state 303
+    $default	reduce using rule 144 (multivalued_variable_decl)
 
 
 
 state 299
 
-    goal_list  ->  goal_list single_goal .   (rule 176)
+    initial_state  ->  TK_OPEN KW_INIT TK_OPEN KW_AND init_elements . TK_CLOSE TK_CLOSE   (rule 167)
+    init_elements  ->  init_elements . single_init_element   (rule 168)
 
-    $default	reduce using rule 176 (goal_list)
+    TK_OPEN	shift, and go to state 245
+    TK_CLOSE	shift, and go to state 315
+
+    literal	go to state 232
+    positive_literal	go to state 94
+    negative_literal	go to state 95
+    single_init_element	go to state 281
+    at_least_one_invariant	go to state 235
+    at_most_one_invariant	go to state 236
+    exactly_one_invariant	go to state 237
+    invariant	go to state 238
+    clause	go to state 239
+    oneof	go to state 240
 
 
 
 state 300
 
-    conditional_effect  ->  TK_OPEN KW_WHEN condition atomic_effect_kw_list TK_CLOSE .   (rule 96)
+    condition_list  ->  condition_list . single_condition   (rule 87)
+    clause  ->  TK_OPEN KW_OR condition_list . TK_CLOSE   (rule 181)
 
-    $default	reduce using rule 96 (conditional_effect)
+    TK_OPEN	shift, and go to state 263
+    TK_CLOSE	shift, and go to state 316
+
+    single_condition	go to state 293
+    literal	go to state 185
+    positive_literal	go to state 94
+    negative_literal	go to state 95
 
 
 
 state 301
 
-    forall_effect  ->  TK_OPEN KW_FORALL TK_OPEN @2 typed_param_list TK_CLOSE @3 action_effect . TK_CLOSE   (rule 99)
+    condition_list  ->  condition_list . single_condition   (rule 87)
+    oneof  ->  TK_OPEN KW_ONEOF condition_list . TK_CLOSE   (rule 182)
 
-    TK_CLOSE	shift, and go to state 304
+    TK_OPEN	shift, and go to state 263
+    TK_CLOSE	shift, and go to state 317
+
+    single_condition	go to state 293
+    literal	go to state 185
+    positive_literal	go to state 94
+    negative_literal	go to state 95
 
 
 
 state 302
 
-    initial_state  ->  TK_OPEN KW_INIT TK_OPEN KW_AND init_elements TK_CLOSE TK_CLOSE .   (rule 157)
+    condition_list  ->  condition_list . single_condition   (rule 87)
+    at_least_one_invariant  ->  TK_OPEN KW_INVARIANT condition_list . TK_CLOSE   (rule 174)
 
-    $default	reduce using rule 157 (initial_state)
+    TK_OPEN	shift, and go to state 263
+    TK_CLOSE	shift, and go to state 318
+
+    single_condition	go to state 293
+    literal	go to state 185
+    positive_literal	go to state 94
+    negative_literal	go to state 95
 
 
 
 state 303
 
-    goal_spec  ->  TK_OPEN KW_GOAL TK_OPEN KW_AND goal_list TK_CLOSE TK_CLOSE .   (rule 175)
+    condition_list  ->  condition_list . single_condition   (rule 87)
+    at_least_one_invariant  ->  TK_OPEN KW_AT_LEAST_ONE condition_list . TK_CLOSE   (rule 175)
 
-    $default	reduce using rule 175 (goal_spec)
+    TK_OPEN	shift, and go to state 263
+    TK_CLOSE	shift, and go to state 319
+
+    single_condition	go to state 293
+    literal	go to state 185
+    positive_literal	go to state 94
+    negative_literal	go to state 95
 
 
 
 state 304
 
-    forall_effect  ->  TK_OPEN KW_FORALL TK_OPEN @2 typed_param_list TK_CLOSE @3 action_effect TK_CLOSE .   (rule 99)
+    condition_list  ->  condition_list . single_condition   (rule 87)
+    at_most_one_invariant  ->  TK_OPEN KW_AT_MOST_ONE condition_list . TK_CLOSE   (rule 176)
 
-    $default	reduce using rule 99 (forall_effect)
+    TK_OPEN	shift, and go to state 263
+    TK_CLOSE	shift, and go to state 320
+
+    single_condition	go to state 293
+    literal	go to state 185
+    positive_literal	go to state 94
+    negative_literal	go to state 95
 
 
 
 state 305
 
-    $   	go to state 306
+    condition_list  ->  condition_list . single_condition   (rule 87)
+    exactly_one_invariant  ->  TK_OPEN KW_EXACTLY_ONE condition_list . TK_CLOSE   (rule 177)
+
+    TK_OPEN	shift, and go to state 263
+    TK_CLOSE	shift, and go to state 321
+
+    single_condition	go to state 293
+    literal	go to state 185
+    positive_literal	go to state 94
+    negative_literal	go to state 95
 
 
 
 state 306
 
-    $   	go to state 307
+    goal_spec  ->  TK_OPEN KW_GOAL TK_OPEN KW_AND goal_list . TK_CLOSE TK_CLOSE   (rule 185)
+    goal_list  ->  goal_list . single_goal   (rule 186)
+
+    TK_OPEN	shift, and go to state 263
+    TK_CLOSE	shift, and go to state 322
+
+    positive_literal	go to state 242
+    negative_literal	go to state 243
+    single_goal	go to state 323
 
 
 
 state 307
+
+    goal_list  ->  single_goal .   (rule 187)
+
+    $default	reduce using rule 187 (goal_list)
+
+
+
+state 308
+
+    action_elements  ->  action_elements KW_ARGS TK_OPEN param_list TK_CLOSE .   (rule 79)
+
+    $default	reduce using rule 79 (action_elements)
+
+
+
+state 309
+
+    sensor_elements  ->  sensor_elements KW_ARGS TK_OPEN param_list TK_CLOSE .   (rule 129)
+
+    $default	reduce using rule 129 (sensor_elements)
+
+
+
+state 310
+
+    axiom_elements  ->  axiom_elements KW_ARGS TK_OPEN param_list TK_CLOSE .   (rule 122)
+
+    $default	reduce using rule 122 (axiom_elements)
+
+
+
+state 311
+
+    forall_effect  ->  TK_OPEN KW_FORALL TK_OPEN @3 param_list TK_CLOSE @4 . action_effect TK_CLOSE   (rule 108)
+
+    TK_OPEN	shift, and go to state 92
+
+    literal	go to state 93
+    positive_literal	go to state 94
+    negative_literal	go to state 95
+    action_effect	go to state 324
+    single_action_effect	go to state 97
+    conditional_effect	go to state 98
+    forall_effect	go to state 99
+    atomic_effect	go to state 100
+
+
+
+state 312
+
+    atomic_effect_kw_list  ->  TK_OPEN KW_AND atomic_effect_list TK_CLOSE .   (rule 109)
+
+    $default	reduce using rule 109 (atomic_effect_kw_list)
+
+
+
+state 313
+
+    atomic_effect_list  ->  atomic_effect_list atomic_effect .   (rule 111)
+
+    $default	reduce using rule 111 (atomic_effect_list)
+
+
+
+state 314
+
+    multivalued_variable_decl  ->  TK_OPEN multivalued_variable_type TK_OPEN variable_symbol param_list TK_CLOSE @10 fluent_list_decl rest_variable_decl . TK_CLOSE   (rule 146)
+
+    TK_CLOSE	shift, and go to state 325
+
+
+
+state 315
+
+    initial_state  ->  TK_OPEN KW_INIT TK_OPEN KW_AND init_elements TK_CLOSE . TK_CLOSE   (rule 167)
+
+    TK_CLOSE	shift, and go to state 326
+
+
+
+state 316
+
+    clause  ->  TK_OPEN KW_OR condition_list TK_CLOSE .   (rule 181)
+
+    $default	reduce using rule 181 (clause)
+
+
+
+state 317
+
+    oneof  ->  TK_OPEN KW_ONEOF condition_list TK_CLOSE .   (rule 182)
+
+    $default	reduce using rule 182 (oneof)
+
+
+
+state 318
+
+    at_least_one_invariant  ->  TK_OPEN KW_INVARIANT condition_list TK_CLOSE .   (rule 174)
+
+    $default	reduce using rule 174 (at_least_one_invariant)
+
+
+
+state 319
+
+    at_least_one_invariant  ->  TK_OPEN KW_AT_LEAST_ONE condition_list TK_CLOSE .   (rule 175)
+
+    $default	reduce using rule 175 (at_least_one_invariant)
+
+
+
+state 320
+
+    at_most_one_invariant  ->  TK_OPEN KW_AT_MOST_ONE condition_list TK_CLOSE .   (rule 176)
+
+    $default	reduce using rule 176 (at_most_one_invariant)
+
+
+
+state 321
+
+    exactly_one_invariant  ->  TK_OPEN KW_EXACTLY_ONE condition_list TK_CLOSE .   (rule 177)
+
+    $default	reduce using rule 177 (exactly_one_invariant)
+
+
+
+state 322
+
+    goal_spec  ->  TK_OPEN KW_GOAL TK_OPEN KW_AND goal_list TK_CLOSE . TK_CLOSE   (rule 185)
+
+    TK_CLOSE	shift, and go to state 327
+
+
+
+state 323
+
+    goal_list  ->  goal_list single_goal .   (rule 186)
+
+    $default	reduce using rule 186 (goal_list)
+
+
+
+state 324
+
+    forall_effect  ->  TK_OPEN KW_FORALL TK_OPEN @3 param_list TK_CLOSE @4 action_effect . TK_CLOSE   (rule 108)
+
+    TK_CLOSE	shift, and go to state 328
+
+
+
+state 325
+
+    multivalued_variable_decl  ->  TK_OPEN multivalued_variable_type TK_OPEN variable_symbol param_list TK_CLOSE @10 fluent_list_decl rest_variable_decl TK_CLOSE .   (rule 146)
+
+    $default	reduce using rule 146 (multivalued_variable_decl)
+
+
+
+state 326
+
+    initial_state  ->  TK_OPEN KW_INIT TK_OPEN KW_AND init_elements TK_CLOSE TK_CLOSE .   (rule 167)
+
+    $default	reduce using rule 167 (initial_state)
+
+
+
+state 327
+
+    goal_spec  ->  TK_OPEN KW_GOAL TK_OPEN KW_AND goal_list TK_CLOSE TK_CLOSE .   (rule 185)
+
+    $default	reduce using rule 185 (goal_spec)
+
+
+
+state 328
+
+    forall_effect  ->  TK_OPEN KW_FORALL TK_OPEN @3 param_list TK_CLOSE @4 action_effect TK_CLOSE .   (rule 108)
+
+    $default	reduce using rule 108 (forall_effect)
+
+
+
+state 329
+
+    $   	go to state 330
+
+
+
+state 330
+
+    $   	go to state 331
+
+
+
+state 331
 
     $default	accept

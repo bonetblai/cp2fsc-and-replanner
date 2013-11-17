@@ -200,6 +200,8 @@ class Instance {
 
     // reserve space
     void reserve_actions(int n) { actions.reserve(n); }
+    void reserve_sensors(int n) { sensors.reserve(n); }
+    void reserve_axioms(int n) { axioms.reserve(n); }
 
     // generate reachable state space
     void generate_reachable_state_space(StateSet &hash) const;

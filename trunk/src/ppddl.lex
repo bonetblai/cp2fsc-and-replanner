@@ -39,65 +39,67 @@ COMMENT ;.*$
 
 %%
 
-[ \t]+           ;
-";".*\n          { _line_no++;
-                   if( _trace_line )
-                       cerr << endl << "LINE: " << _line_no << endl;
-                 }
-{NL}             { _line_no++;
-                   if( _trace_line )
-                       cerr << endl << "LINE: " << _line_no << endl;
-                 }
+[ \t]+                     ;
+";".*\n                    { _line_no++;
+                             if( _trace_line )
+                                 cerr << endl << "LINE: " << _line_no << endl;
+                           }
+{NL}                       { _line_no++;
+                             if( _trace_line )
+                                 cerr << endl << "LINE: " << _line_no << endl;
+                           }
 
-"("              { return PDDL_Parser::TK_OPEN; }
-")"              { return PDDL_Parser::TK_CLOSE; }
-"["              { return PDDL_Parser::TK_OPEN_SQ; }
-"]"              { return PDDL_Parser::TK_CLOSE_SQ; }
-"-"              { return PDDL_Parser::TK_HYPHEN; }
-"="              { return PDDL_Parser::TK_EQ; }
+"("                        { return PDDL_Parser::TK_OPEN; }
+")"                        { return PDDL_Parser::TK_CLOSE; }
+"["                        { return PDDL_Parser::TK_OPEN_SQ; }
+"]"                        { return PDDL_Parser::TK_CLOSE_SQ; }
+"-"                        { return PDDL_Parser::TK_HYPHEN; }
+"="                        { return PDDL_Parser::TK_EQ; }
 
-"define"         { return PDDL_Parser::KW_DEFINE; }
-"domain"         { return PDDL_Parser::KW_DOMAIN; }
-":requirements"  { return PDDL_Parser::KW_REQS; }
-":types"         { return PDDL_Parser::KW_TYPES; }
-":constants"     { return PDDL_Parser::KW_CONSTANTS; }
-":predicates"    { return PDDL_Parser::KW_PREDS; }
-":observable"    { return PDDL_Parser::KW_OBSERVABLE; }
-":sticky"        { return PDDL_Parser::KW_STICKY; }
-":fluents"       { return PDDL_Parser::KW_FLUENTS; }
-":action"        { return PDDL_Parser::KW_ACTION; }
-":axiom"         { return PDDL_Parser::KW_AXIOM; }
-":sensor"        { return PDDL_Parser::KW_SENSOR; }
-":parameters"    { return PDDL_Parser::KW_ARGS; }
-":precondition"  { return PDDL_Parser::KW_PRE; }
-":effect"        { return PDDL_Parser::KW_EFFECT; }
-":condition"     { return PDDL_Parser::KW_COND; }
-":sense"         { return PDDL_Parser::KW_SENSE; }
-":observe"       { return PDDL_Parser::KW_OBSERVE; }
-":body"          { return PDDL_Parser::KW_BODY; }
-":head"          { return PDDL_Parser::KW_HEAD; }
-"and"            { return PDDL_Parser::KW_AND; }
-"exists"         { return PDDL_Parser::KW_EXISTS; }
-"forall"         { return PDDL_Parser::KW_FORALL; }
-"not"            { return PDDL_Parser::KW_NOT; }
-"when"           { return PDDL_Parser::KW_WHEN; }
-"invariant"      { return PDDL_Parser::KW_INVARIANT; }
-"at-least-one"   { return PDDL_Parser::KW_AT_LEAST_ONE; }
-"at-most-one"    { return PDDL_Parser::KW_AT_MOST_ONE; }
-"exactly-one"    { return PDDL_Parser::KW_EXACTLY_ONE; }
-"or"             { return PDDL_Parser::KW_OR; }
-"oneof"          { return PDDL_Parser::KW_ONEOF; }
-"problem"        { return PDDL_Parser::KW_PROBLEM; }
-":domain"        { return PDDL_Parser::KW_FORDOMAIN; }
-":objects"       { return PDDL_Parser::KW_OBJECTS; }
-":init"          { return PDDL_Parser::KW_INIT; }
-":hidden"        { return PDDL_Parser::KW_HIDDEN; }
-":goal"          { return PDDL_Parser::KW_GOAL; }
+"define"                   { return PDDL_Parser::KW_DEFINE; }
+"domain"                   { return PDDL_Parser::KW_DOMAIN; }
+":requirements"            { return PDDL_Parser::KW_REQS; }
+":types"                   { return PDDL_Parser::KW_TYPES; }
+":constants"               { return PDDL_Parser::KW_CONSTANTS; }
+":predicates"              { return PDDL_Parser::KW_PREDS; }
+":observable"              { return PDDL_Parser::KW_OBSERVABLE; }
+":sticky"                  { return PDDL_Parser::KW_STICKY; }
+":fluents"                 { return PDDL_Parser::KW_FLUENTS; }
+":action"                  { return PDDL_Parser::KW_ACTION; }
+":axiom"                   { return PDDL_Parser::KW_AXIOM; }
+":sensor"                  { return PDDL_Parser::KW_SENSOR; }
+":parameters"              { return PDDL_Parser::KW_ARGS; }
+":precondition"            { return PDDL_Parser::KW_PRE; }
+":effect"                  { return PDDL_Parser::KW_EFFECT; }
+":condition"               { return PDDL_Parser::KW_COND; }
+":sense"                   { return PDDL_Parser::KW_SENSE; }
+":observe"                 { return PDDL_Parser::KW_OBSERVE; }
+":body"                    { return PDDL_Parser::KW_BODY; }
+":head"                    { return PDDL_Parser::KW_HEAD; }
+"and"                      { return PDDL_Parser::KW_AND; }
+"exists"                   { return PDDL_Parser::KW_EXISTS; }
+"forall"                   { return PDDL_Parser::KW_FORALL; }
+"not"                      { return PDDL_Parser::KW_NOT; }
+"when"                     { return PDDL_Parser::KW_WHEN; }
+"invariant"                { return PDDL_Parser::KW_INVARIANT; }
+"at-least-one"             { return PDDL_Parser::KW_AT_LEAST_ONE; }
+"at-most-one"              { return PDDL_Parser::KW_AT_MOST_ONE; }
+"exactly-one"              { return PDDL_Parser::KW_EXACTLY_ONE; }
+"or"                       { return PDDL_Parser::KW_OR; }
+"oneof"                    { return PDDL_Parser::KW_ONEOF; }
+"problem"                  { return PDDL_Parser::KW_PROBLEM; }
+":domain"                  { return PDDL_Parser::KW_FORDOMAIN; }
+":objects"                 { return PDDL_Parser::KW_OBJECTS; }
+":init"                    { return PDDL_Parser::KW_INIT; }
+":hidden"                  { return PDDL_Parser::KW_HIDDEN; }
+":goal"                    { return PDDL_Parser::KW_GOAL; }
 
-":translation"   { return PDDL_Parser::KW_TRANSLATION; }
-":variable"      { return PDDL_Parser::KW_VARIABLE; }
-":obs-variable"  { return PDDL_Parser::KW_OBS_VARIABLE; }
-":sensing-model" { return PDDL_Parser::KW_SENSING_MODEL; }
+":translation"             { return PDDL_Parser::KW_TRANSLATION; }
+":variable"                { return PDDL_Parser::KW_VARIABLE; }
+":obs-variable"            { return PDDL_Parser::KW_OBS_VARIABLE; }
+":values"                  { return PDDL_Parser::KW_VALUES; }
+":sensing-model"           { return PDDL_Parser::KW_SENSING_MODEL; }
+":default-sensing-model"   { return PDDL_Parser::KW_DEFAULT_SENSING_MODEL; }
 
 
 \?{STRING} { val.sym = _tab.inserta(yytext);
