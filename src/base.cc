@@ -271,32 +271,12 @@ void PDDL_Base::instantiate_multivalued_variables() {
     if( !multivalued_variable_translation_ ) return;
 
     // instantiate state and observable variables
-    multivalued_domains_.resize(multivalued_variables_.size());
+    variable_vec grounded_variables;
     for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
-        effect_vec grounded_values;
-        grounded_values.reserve(multivalued_variables_[k]->values_.size());
-        for( size_t i = 0; i < multivalued_variables_[k]->values_.size(); ++i ) {
-            Effect *tmp = multivalued_variables_[k]->values_[i]->ground();
-            if( dynamic_cast<AtomicEffect*>(tmp) != 0 )
-                grounded_values.push_back(tmp);
-            else if( dynamic_cast<AndEffect*>(tmp) != 0 ) {
-                AndEffect &item_list = *static_cast<AndEffect*>(tmp);
-                grounded_values.reserve(grounded_values.capacity() + item_list.size());
-                for( size_t j = 0; j < item_list.size(); ++j )
-                    grounded_values.push_back(item_list[j]);
-            } else {
-                cout << "error: unrecognized format in variable '"
-                     << multivalued_variables_[k]->print_name_ << "'" << endl;
-                exit(255);
-            }
-            delete multivalued_variables_[k]->values_[i];
-        }
-        multivalued_variables_[k]->values_ = grounded_values;
-        cout << "mvv-translation: variable '" << multivalued_variables_[k]->print_name_ << "':";
-        for( size_t i = 0; i < multivalued_variables_[k]->values_.size(); ++i )
-            cout << " " << *multivalued_variables_[k]->values_[i];
-        cout << endl;
+        multivalued_variables_[k]->instantiate(grounded_variables);
+        delete multivalued_variables_[k];
     }
+    multivalued_variables_ = grounded_variables;
 }
 
 void PDDL_Base::translate_actions_for_multivalued_variable_formulation() {
@@ -347,8 +327,8 @@ void PDDL_Base::translate_actions_for_multivalued_variable_formulation() {
         for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
             Variable &var = *multivalued_variables_[k];
             if( var.is_observable() ) {
-                for( size_t i = 0; i < var.values_.size(); ++i )
-                    sense->push_back(new AtomicEffect(*dynamic_cast<const AtomicEffect*>(var.values_[i])));
+                for( size_t i = 0; i < var.grounded_values_.size(); ++i )
+                    sense->push_back(new AtomicEffect(*dynamic_cast<const AtomicEffect*>(var.grounded_values_[i])));
             }
         }
         sensor->sense_ = sense;
@@ -586,11 +566,11 @@ void PDDL_Base::create_invariants_for_multivalued_variables() {
         if( dynamic_cast<StateVariable*>(multivalued_variables_[k]) != 0 ) {
             // for each state variable with domain size > 1, generate (exactly-one <values>)
             StateVariable &var = *static_cast<StateVariable*>(multivalued_variables_[k]);
-            if( var.values_.size() > 1 ) {
-                exactly_one.reserve(var.values_.size());
+            if( var.grounded_values_.size() > 1 ) {
+                exactly_one.reserve(var.grounded_values_.size());
                 clone_parameters(var.param_, exactly_one.param_);
-                for( size_t i = 0; i < var.values_.size(); ++i )
-                    exactly_one.push_back(new Literal(*static_cast<const AtomicEffect*>(var.values_[i])));
+                for( size_t i = 0; i < var.grounded_values_.size(); ++i )
+                    exactly_one.push_back(new Literal(*static_cast<const AtomicEffect*>(var.grounded_values_[i])));
                 remap_parameters(exactly_one, var.param_, exactly_one.param_);
                 dom_init_.push_back(new InitInvariant(exactly_one));
                 cout << "invariant1 for var (ptr=" << dom_init_.back() << "): " << exactly_one << endl;
@@ -599,9 +579,9 @@ void PDDL_Base::create_invariants_for_multivalued_variables() {
             } else {
                 at_least_one.reserve(2);
                 clone_parameters(var.param_, at_least_one.param_);
-                Literal *literal = new Literal(*static_cast<const AtomicEffect*>(var.values_[0]));
+                Literal *literal = new Literal(*static_cast<const AtomicEffect*>(var.grounded_values_[0]));
                 at_least_one.push_back(literal);
-                literal = new Literal(*static_cast<const AtomicEffect*>(var.values_[0]));
+                literal = new Literal(*static_cast<const AtomicEffect*>(var.grounded_values_[0]));
                 literal->negated_ = true;
                 at_least_one.push_back(literal);
                 remap_parameters(at_least_one, var.param_, at_least_one.param_);
@@ -614,16 +594,16 @@ void PDDL_Base::create_invariants_for_multivalued_variables() {
             // for each observable variable, and values <value-i> and <value-j>
             // generate (at-least-one (not (sensing-is-on)) (not <value-i>) (not <value-j>))
             ObsVariable &var = *static_cast<ObsVariable*>(multivalued_variables_[k]);
-            if( var.values_.size() > 1 ) {
-                for( size_t i = 0; i < var.values_.size(); ++i ) {
-                    for( size_t j = i + 1; j < var.values_.size(); ++j ) {
+            if( var.grounded_values_.size() > 1 ) {
+                for( size_t i = 0; i < var.grounded_values_.size(); ++i ) {
+                    for( size_t j = i + 1; j < var.grounded_values_.size(); ++j ) {
                         at_least_one.reserve(3);
                         clone_parameters(var.param_, at_least_one.param_);
                         at_least_one.push_back(new Literal(*sensing_.second));
-                        Literal *literal = new Literal(*static_cast<const AtomicEffect*>(var.values_[i]));
+                        Literal *literal = new Literal(*static_cast<const AtomicEffect*>(var.grounded_values_[i]));
                         literal->negated_ = true;
                         at_least_one.push_back(literal);
-                        literal = new Literal(*static_cast<const AtomicEffect*>(var.values_[j]));
+                        literal = new Literal(*static_cast<const AtomicEffect*>(var.grounded_values_[j]));
                         literal->negated_ = true;
                         at_least_one.push_back(literal);
                         remap_parameters(at_least_one, var.param_, at_least_one.param_);
@@ -636,9 +616,9 @@ void PDDL_Base::create_invariants_for_multivalued_variables() {
             } else {
                 at_least_one.reserve(2);
                 clone_parameters(var.param_, at_least_one.param_);
-                Literal *literal = new Literal(*static_cast<const AtomicEffect*>(var.values_[0]));
+                Literal *literal = new Literal(*static_cast<const AtomicEffect*>(var.grounded_values_[0]));
                 at_least_one.push_back(literal);
-                literal = new Literal(*static_cast<const AtomicEffect*>(var.values_[0]));
+                literal = new Literal(*static_cast<const AtomicEffect*>(var.grounded_values_[0]));
                 literal->negated_ = true;
                 at_least_one.push_back(literal);
                 remap_parameters(at_least_one, var.param_, at_least_one.param_);
@@ -725,7 +705,7 @@ void PDDL_Base::create_invariants_for_sensing_model() {
                     remap_parameters(invariant2, parameters, invariant2.param_);
                     dom_init_.push_back(new InitInvariant(invariant2));
                     //cout << "invariant1 for literal " << it->first << ": " << invariant2 << endl;
-                    cout << "[sz=" << dom_init_.size() << "] inv1 (ptr=" << dom_init_.back() << "): " << invariant2 << endl;
+                    cout << "inv1 (ptr=" << dom_init_.back() << "): " << invariant2 << endl;
                     invariant2.clear();
                 } else {
                     invariant1_is_good = false;
@@ -748,7 +728,7 @@ void PDDL_Base::create_invariants_for_sensing_model() {
                     }
                     remap_parameters(invariant2, parameters, invariant2.param_);
                     dom_init_.push_back(new InitInvariant(invariant2));
-                    cout << "[sz=" << dom_init_.size() << "] inv2 (ptr=" << dom_init_.back() << "): " << invariant2 << endl;
+                    cout << "inv2 (ptr=" << dom_init_.back() << "): " << invariant2 << endl;
                     invariant2.clear();
                     //exit(255);
                 }
@@ -756,7 +736,7 @@ void PDDL_Base::create_invariants_for_sensing_model() {
             if( invariant1_is_good ) {
                 remap_parameters(invariant1, parameters, invariant1.param_);
                 dom_init_.push_back(new InitInvariant(invariant1));
-                cout << "[sz=" << dom_init_.size() << "] inv3 (ptr=" << dom_init_.back() << "): " << invariant1 << endl;
+                cout << "inv3 (ptr=" << dom_init_.back() << "): " << invariant1 << endl;
             } else {
                 for( size_t i = 0; i < invariant1.size(); ++i )
                     ;//delete invariant1[i];
@@ -1550,13 +1530,21 @@ void PDDL_Base::Action::instantiate(Instance &ins) const {
 }
 
 void PDDL_Base::Action::process_instance() const {
+    Condition *grounded_precondition = 0;
+    if( precondition_ != 0 ) {
+        grounded_precondition = precondition_->ground();
+        if( dynamic_cast<Constant*>(grounded_precondition) != 0 ) {
+            Constant *precondition_value = static_cast<Constant*>(grounded_precondition);
+            if( !precondition_value->value_ ) return;
+        }
+    }
+
     PDDL_Name name(this, param_, param_.size());
     Instance::Action &act = instance_ptr_->new_action(new CopyName(name.to_string()));
     act.cost = 1;
-
     //cout << "fully instantiated action " << name << endl;
-    if( precondition_ != 0 ) {
-        Condition *grounded_precondition = precondition_->ground();
+
+    if( grounded_precondition != 0 ) {
         grounded_precondition->instantiate(*instance_ptr_, act.precondition);
         //cout << "    pre=" << *grounded_precondition << endl;
         delete grounded_precondition;
@@ -1724,25 +1712,38 @@ void PDDL_Base::Sticky::print(std::ostream &os) const {
     os << ")";
 }
 
-void PDDL_Base::Variable::instantiate() const {
-    variable_vec instantiated_variables;
+void PDDL_Base::Variable::instantiate(vector<Variable*> &grounded_variables) const {
     enumerate(true);
-    instantiated_variables.reserve(count_);
-    variable_vec_ptr_ = &instantiated_variables;
+    grounded_variables.reserve(grounded_variables.size() + count_);
+    grounded_variables_ptr_ = &grounded_variables;
     enumerate();
-#if 0
-    var_values.clear();
-    for( size_t k = 0; k < values_.size(); ++k )
-        values_[k]->instantiate(ins, var_values);
-    cout << " " << var_values.size() << " value(s)" << endl;
-#endif
 }
 
 void PDDL_Base::Variable::process_instance() const {
     PDDL_Name name(this, param_, param_.size());
-    Variable *variable_instance = make_instance(name.to_string().c_str());
-    //variable_instance->values_ = values_->ground();
-    variable_vec_ptr_->push_back(variable_instance);
+    Variable *var = make_instance(strdup(name.to_string().c_str()));
+    grounded_variables_ptr_->push_back(var);
+
+    for( size_t k = 0; k < values_.size(); ++k ) {
+        Effect *grounded_value = values_[k]->ground();
+        if( dynamic_cast<AtomicEffect*>(grounded_value) != 0 )
+            var->grounded_values_.push_back(grounded_value);
+        else if( dynamic_cast<AndEffect*>(grounded_value) != 0 ) {
+            AndEffect &item_list = *static_cast<AndEffect*>(grounded_value);
+            var->grounded_values_.reserve(var->grounded_values_.size() + item_list.size());
+            for( size_t i = 0; i < item_list.size(); ++i )
+                var->grounded_values_.push_back(item_list[i]);
+        } else {
+            cout << "error: unrecognized format in variable '"
+                 << print_name_ << "'" << endl;
+            exit(255);
+        }
+    }
+
+    cout << "mvv-translation: create variable '" << var->print_name_ << "':";
+    for( size_t k = 0; k < var->grounded_values_.size(); ++k )
+        cout << " " << *var->grounded_values_[k];
+    cout << endl;
 }
 
 void PDDL_Base::StateVariable::print(std::ostream &os) const {
@@ -1758,8 +1759,6 @@ void PDDL_Base::ObsVariable::print(std::ostream &os) const {
           os << " " << *values_[k];
     os << ")";
 }
-
-
 
 PDDL_Name::PDDL_Name(const PDDL_Base::Symbol *sym, const PDDL_Base::symbol_vec &arg, size_t n)
   : negated_(false), sym_(sym), arg_(arg) {
