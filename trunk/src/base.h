@@ -355,15 +355,21 @@ class PDDL_Base {
 
     struct Variable : public Symbol, Schema {
         effect_vec values_;
+        mutable effect_vec grounded_values_;
         Variable(const char *name) : Symbol(name, sym_varname) { }
-        virtual ~Variable() { for( size_t k = 0; k < values_.size(); ++k ) delete values_[k]; }
+        virtual ~Variable() {
+            for( size_t k = 0; k < values_.size(); ++k )
+                delete values_[k];
+            for( size_t k = 0; k < grounded_values_.size(); ++k )
+                delete grounded_values_[k];
+        }
         //void instantiate(Instance &ins, index_set &values) const;
-        void instantiate() const;
+        void instantiate(std::vector<Variable*> &grounded_variables) const;
         virtual void process_instance() const;
         virtual Variable* make_instance(const char *name) const = 0;
         virtual bool is_observable() const = 0;
         virtual void print(std::ostream &os) const = 0;
-        mutable std::vector<Variable*> *variable_vec_ptr_;
+        mutable std::vector<Variable*> *grounded_variables_ptr_;
     };
     struct variable_vec : public std::vector<Variable*> { };
 
@@ -413,7 +419,6 @@ class PDDL_Base {
     // For multivalued variables formulations
     bool                                      multivalued_variable_translation_;
     variable_vec                              multivalued_variables_;
-    index_set_vec                             multivalued_domains_;
     std::pair<const Atom*, const Atom*>       normal_execution_;
     std::pair<const Atom*, const Atom*>       sensing_;
     std::vector<std::pair<Atom*, Atom*> >     need_sense_;
