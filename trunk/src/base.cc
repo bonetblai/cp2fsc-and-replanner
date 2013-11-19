@@ -363,7 +363,7 @@ void PDDL_Base::translate_actions_for_multivalued_variable_formulation() {
         }
         sensor->sense_ = sense;
         dom_sensors_.push_back(sensor);
-        cout << *sensor;
+        //cout << *sensor;
 
         // create needed atoms for each action
         for( size_t k = 0; k < actions_to_translate.size(); ++k ) {
@@ -380,8 +380,6 @@ void PDDL_Base::translate_actions_for_multivalued_variable_formulation() {
                 need_sense_.back().second->param_.insert(need_sense_.back().second->param_.begin(),
                                                          sense->param_.begin(),
                                                          sense->param_.end());
-                assert(!need_sense_.back().first->has_free_variables(action.param_));
-                assert(!need_sense_.back().second->has_free_variables(action.param_));
             } else {
                 need_sense_.push_back(make_pair(static_cast<Atom*>(0), static_cast<Atom*>(0)));
             }
@@ -397,8 +395,6 @@ void PDDL_Base::translate_actions_for_multivalued_variable_formulation() {
             need_post_.back().second->param_.insert(need_post_.back().second->param_.begin(),
                                                     post->param_.begin(),
                                                     post->param_.end());
-            assert(!need_post_.back().first->has_free_variables(action.param_));
-            assert(!need_post_.back().second->has_free_variables(action.param_));
         }
 
         // extend preconditions of other actions with (normal-execution). In
@@ -418,9 +414,7 @@ void PDDL_Base::translate_actions_for_multivalued_variable_formulation() {
     // translate actions
     for( size_t k = 0; k < actions_to_translate.size(); ++k ) {
         Action *action = actions_to_translate[k];
-        assert(!action->sensing_model_->has_free_variables(action->param_));
         Effect *grounded_sensing_model = action->sensing_model_->ground();
-        assert(!grounded_sensing_model->has_free_variables(action->param_));
         delete action->sensing_model_;
         action->sensing_model_ = grounded_sensing_model;
         translation_for_multivalued_variable_formulation(*action, k);
@@ -450,7 +444,6 @@ static void calculate_free_variables(const PDDL_Base::Effect &effect, const PDDL
     for( size_t k = 0; k < param.size(); ++k )
         free_variable_map.insert(make_pair(param[k], k));
     effect.calculate_free_variables(free_variable_map, used_variables);
-
     cout << "Free variables in " << effect << ":";
     for( set<size_t>::const_iterator it = used_variables.begin(); it != used_variables.end(); ++it )
         cout << " " << *param[*it];
@@ -462,7 +455,6 @@ static void calculate_free_variables(const PDDL_Base::Condition &condition, cons
     for( size_t k = 0; k < param.size(); ++k )
         free_variable_map.insert(make_pair(param[k], k));
     condition.calculate_free_variables(free_variable_map, used_variables);
-
     cout << "FREE variables in " << condition << ":";
     for( set<size_t>::const_iterator it = used_variables.begin(); it != used_variables.end(); ++it )
         cout << " " << *param[*it];
@@ -479,14 +471,9 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
         clone_parameters(action.param_, effect_action->param_);
 
         // precondition
-        assert(!precondition.has_free_variables(action.param_));
         if( action.precondition_ != 0 ) precondition.push_back(action.precondition_);
-        assert(!precondition.has_free_variables(action.param_));
         precondition.push_back(new Literal(*normal_execution_.first));  // (normal-execution)
-        assert(!normal_execution_.first->has_free_variables(action.param_));
-        assert(!precondition.has_free_variables(action.param_));
         effect_action->precondition_ = precondition.ground();
-        assert(!effect_action->precondition_->has_free_variables(action.param_));
         delete precondition.back();
         precondition.clear();
 
@@ -495,7 +482,6 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
         effect.push_back(new AtomicEffect(*normal_execution_.second));  // (not (normal-execution))
         effect.push_back(new AtomicEffect(*need_sense_[index].first));  // (need-set-sense <param>)
         effect_action->effect_ = effect.ground();
-        assert(!effect_action->effect_->has_free_variables(action.param_));
         delete effect[2];
         delete effect[1];
         effect.clear();
@@ -506,7 +492,7 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
         assert(!effect_action->precondition_->has_free_variables(effect_action->param_));
         assert(!effect_action->effect_->has_free_variables(effect_action->param_));
         dom_actions_.push_back(effect_action);
-        cout << *effect_action;
+        //cout << *effect_action;
 
         // Action that computes the effects on observables (i.e. sensing model)
         Action *set_sensing_action = new Action(strdup((string(action.print_name_) + "__set_sensing__").c_str()));
@@ -520,13 +506,9 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
 
         // effect
         effect.push_back(action.sensing_model_);
-        assert(!effect.has_free_variables(action.param_));
         effect.push_back(new AtomicEffect(*sensing_.first));            // (sensing-is-on)
-        assert(!effect.has_free_variables(action.param_));
         effect.push_back(new AtomicEffect(*need_post_[index].first));   // (need-post <param>)
-        assert(!effect.has_free_variables(action.param_));
         effect.push_back(new AtomicEffect(*need_sense_[index].second)); // (not (need-set-sense <param>))
-        assert(!effect.has_free_variables(action.param_));
         set_sensing_action->effect_ = effect.ground();
         delete effect[3];
         delete effect[2];
@@ -539,7 +521,7 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
         assert(!set_sensing_action->precondition_->has_free_variables(set_sensing_action->param_));
         assert(!set_sensing_action->effect_->has_free_variables(set_sensing_action->param_));
         dom_actions_.push_back(set_sensing_action);
-        cout << *set_sensing_action;
+        //cout << *set_sensing_action;
 
         // store sensing model for generating invariants later
         sensing_models_.push_back(make_pair(make_pair(new var_symbol_vec(action.param_), action.sensing_model_->ground()), index));
@@ -567,8 +549,10 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
         // remap parameters and insert
         const_cast<Condition*>(post_action->precondition_)->remap_parameters(action.param_, post_action->param_);
         const_cast<Effect*>(post_action->effect_)->remap_parameters(action.param_, post_action->param_);
+        assert(!post_action->precondition_->has_free_variables(post_action->param_));
+        assert(!post_action->effect_->has_free_variables(post_action->param_));
         dom_actions_.push_back(post_action);
-        cout << *post_action;
+        //cout << *post_action;
     } else {
         // Action that computes the effects on observables (i.e. sensing model)
         Action *set_sensing_action = new Action(strdup((string(action.print_name_) + "__set_sensing__").c_str()));
@@ -595,8 +579,10 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
         // remap parameters and insert
         const_cast<Condition*>(set_sensing_action->precondition_)->remap_parameters(action.param_, set_sensing_action->param_);
         const_cast<Effect*>(set_sensing_action->effect_)->remap_parameters(action.param_, set_sensing_action->param_);
+        assert(!set_sensing_action->precondition_->has_free_variables(set_sensing_action->param_));
+        assert(!set_sensing_action->effect_->has_free_variables(set_sensing_action->param_));
         dom_actions_.push_back(set_sensing_action);
-        cout << *set_sensing_action;
+        //cout << *set_sensing_action;
 
         // store sensing model for generating invariants later
         sensing_models_.push_back(make_pair(make_pair(new var_symbol_vec(action.param_), action.sensing_model_->ground()), index));
@@ -624,8 +610,10 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
         // remap parameters and insert
         const_cast<Condition*>(post_action->precondition_)->remap_parameters(action.param_, post_action->param_);
         const_cast<Effect*>(post_action->effect_)->remap_parameters(action.param_, post_action->param_);
+        assert(!post_action->precondition_->has_free_variables(post_action->param_));
+        assert(!post_action->effect_->has_free_variables(post_action->param_));
         dom_actions_.push_back(post_action);
-        cout << *post_action;
+        //cout << *post_action;
     }
 }
 
@@ -646,8 +634,9 @@ void PDDL_Base::create_invariants_for_multivalued_variables() {
                 for( size_t i = 0; i < var.grounded_values_.size(); ++i )
                     exactly_one.push_back(new Literal(*static_cast<const AtomicEffect*>(var.grounded_values_[i])));
                 remap_parameters(exactly_one, var.param_, exactly_one.param_);
+                assert(!exactly_one.has_free_variables());
                 dom_init_.push_back(new InitInvariant(exactly_one));
-                cout << "invariant1 for var (ptr=" << dom_init_.back() << "): " << exactly_one << endl;
+                //cout << "invariant1 for var (ptr=" << dom_init_.back() << "): " << exactly_one << endl;
                 //cout << "variable '" << var.print_name_ << "': " << exactly_one << endl;
                 exactly_one.clear();
             } else {
@@ -659,8 +648,9 @@ void PDDL_Base::create_invariants_for_multivalued_variables() {
                 literal->negated_ = true;
                 at_least_one.push_back(literal);
                 remap_parameters(at_least_one, var.param_, at_least_one.param_);
+                assert(!at_least_one.has_free_variables());
                 dom_init_.push_back(new InitInvariant(at_least_one));
-                cout << "invariant2 for var (ptr=" << dom_init_.back() << "): " << at_least_one << endl;
+                //cout << "invariant2 for var (ptr=" << dom_init_.back() << "): " << at_least_one << endl;
                 //cout << "variable '" << var.print_name_ << "': " << at_least_one << endl;
                 at_least_one.clear();
             }
@@ -681,8 +671,9 @@ void PDDL_Base::create_invariants_for_multivalued_variables() {
                         literal->negated_ = true;
                         at_least_one.push_back(literal);
                         remap_parameters(at_least_one, var.param_, at_least_one.param_);
+                        assert(!at_least_one.has_free_variables());
                         dom_init_.push_back(new InitInvariant(at_least_one));
-                        cout << "invariant3 for var (ptr=" << dom_init_.back() << "): " << at_least_one << endl;
+                        //cout << "invariant3 for var (ptr=" << dom_init_.back() << "): " << at_least_one << endl;
                         //cout << "variable '" << var.print_name_ << "': " << at_least_one << endl;
                         at_least_one.clear();
                     }
@@ -696,8 +687,9 @@ void PDDL_Base::create_invariants_for_multivalued_variables() {
                 literal->negated_ = true;
                 at_least_one.push_back(literal);
                 remap_parameters(at_least_one, var.param_, at_least_one.param_);
+                assert(!at_least_one.has_free_variables());
                 dom_init_.push_back(new InitInvariant(at_least_one));
-                cout << "invariant4 for var (ptr=" << dom_init_.back() << "): " << at_least_one << endl;
+                //cout << "invariant4 for var (ptr=" << dom_init_.back() << "): " << at_least_one << endl;
                 //cout << "variable '" << var.print_name_ << "': " << at_least_one << endl;
                 at_least_one.clear();
             }
@@ -719,9 +711,6 @@ void PDDL_Base::create_invariants_for_sensing_model() {
         const var_symbol_vec &parameters = *sensing_models_[k].first.first;
         const AndEffect &effect = *static_cast<const AndEffect*>(sensing_models_[k].first.second);
         size_t index = sensing_models_[k].second;
-
-        set<size_t> used_vars;
-        calculate_free_variables(effect, parameters, used_vars);
 
         // collect conditions for each observable literal (head of conditional effects)
         map<string, condition_vec> sensing_map;
@@ -780,9 +769,10 @@ void PDDL_Base::create_invariants_for_sensing_model() {
                     literal->negated_ = !literal->negated_;
                     invariant2.push_back(literal);
                     remap_parameters(invariant2, parameters, invariant2.param_);
+                    assert(!invariant2.has_free_variables());
                     dom_init_.push_back(new InitInvariant(invariant2));
                     //cout << "invariant1 for literal " << it->first << ": " << invariant2 << endl;
-                    cout << "inv1 (ptr=" << dom_init_.back() << "): " << invariant2 << endl;
+                    //cout << "inv1 (ptr=" << dom_init_.back() << "): " << invariant2 << endl;
                     invariant2.clear();
                 } else {
                     invariant1_is_good = false;
@@ -804,16 +794,18 @@ void PDDL_Base::create_invariants_for_sensing_model() {
                         invariant2.push_back(literal);
                     }
                     remap_parameters(invariant2, parameters, invariant2.param_);
+                    assert(!invariant2.has_free_variables());
                     dom_init_.push_back(new InitInvariant(invariant2));
-                    cout << "inv2 (ptr=" << dom_init_.back() << "): " << invariant2 << endl;
+                    //cout << "inv2 (ptr=" << dom_init_.back() << "): " << invariant2 << endl;
                     invariant2.clear();
                     //exit(255);
                 }
             }
             if( invariant1_is_good ) {
                 remap_parameters(invariant1, parameters, invariant1.param_);
+                assert(!invariant1.has_free_variables());
                 dom_init_.push_back(new InitInvariant(invariant1));
-                cout << "inv3 (ptr=" << dom_init_.back() << "): " << invariant1 << endl;
+                //cout << "inv3 (ptr=" << dom_init_.back() << "): " << invariant1 << endl;
             } else {
                 for( size_t i = 0; i < invariant1.size(); ++i )
                     ;//delete invariant1[i];
@@ -923,7 +915,6 @@ void PDDL_Base::TypeSymbol::add_element(Symbol *e) {
 }
 
 void PDDL_Base::TypeSymbol::print(ostream &os) const {
-    os << "[sym_typename]";
     os << "(:type " << print_name_;
     if( sym_type_ ) os << " - " << sym_type_->print_name_;
     os << "): {";
@@ -950,7 +941,6 @@ PDDL_Base::Symbol* PDDL_Base::VariableSymbol::clone() const {
 }
 
 void PDDL_Base::VariableSymbol::print(ostream &os) const {
-    os << "[sym_variable]";
     if( value_ == 0 ) {
         os << print_name_;
         if( sym_type_ ) os << " - " << sym_type_->print_name_;
@@ -967,7 +957,6 @@ PDDL_Base::Symbol* PDDL_Base::PredicateSymbol::clone() const {
 }
 
 void PDDL_Base::PredicateSymbol::print(ostream &os) const {
-    os << "[sym_predicate]";
     os << "(:predicate " << print_name_;
     for( size_t k = 0; k < param_.size(); ++k )
         os << " " << *param_[k];
@@ -1025,6 +1014,7 @@ bool PDDL_Base::Atom::operator==(const Atom &atom) const {
 }
 
 Instance::Atom* PDDL_Base::Atom::find_prop(Instance &ins, bool negated, bool create) const {
+    //cout << "find_prop: " << *this << endl;
     ptr_table *r = negated ? &(pred_->neg_prop_) : &(pred_->pos_prop_);
     for( size_t k = 0; k < param_.size(); ++k ) {
         if( param_[k]->sym_class_ == sym_variable )
@@ -1055,7 +1045,7 @@ PDDL_Base::Atom* PDDL_Base::Atom::ground(bool clone_variables) const {
         if( c == sym_variable ) {
             const VariableSymbol *var = static_cast<const VariableSymbol*>(param_[k]);
             if( var->value_ != 0 )
-                result->param_[k] = var->clone();
+                result->param_[k] = var->value_;
             else if( clone_variables )
                 result->param_[k] = new VariableSymbol(strdup(var->print_name_));
         }
@@ -1278,7 +1268,7 @@ PDDL_Base::Condition* PDDL_Base::And::ground(bool clone_variables) const {
 
 bool PDDL_Base::And::has_free_variables(const var_symbol_vec &param) const {
     for( size_t k = 0; k < size(); ++k ) {
-        if( !(*this)[k]->has_free_variables(param) )
+        if( (*this)[k]->has_free_variables(param) )
             return true;
     }
     return false;
@@ -1368,7 +1358,7 @@ PDDL_Base::Effect* PDDL_Base::AndEffect::ground(bool clone_variables) const {
 
 bool PDDL_Base::AndEffect::has_free_variables(const var_symbol_vec &param) const {
     for( size_t k = 0; k < size(); ++k ) {
-        if( !(*this)[k]->has_free_variables(param) )
+        if( (*this)[k]->has_free_variables(param) )
             return true;
     }
     return false;
@@ -1508,16 +1498,30 @@ void PDDL_Base::ForallEffect::print(ostream &os) const {
 
 void PDDL_Base::Invariant::process_instance() const {
     Instance::Invariant invariant(type_);
+    bool remove_invariant = false;
     for( size_t k = 0; k < size(); ++k ) {
         assert(dynamic_cast<const Literal*>((*this)[k]) != 0);
-        const Literal *literal = static_cast<const Literal*>((*this)[k]->ground());
+        Condition *grounded_literal = (*this)[k]->ground();
+        if( dynamic_cast<const Constant*>(grounded_literal) ) {
+            bool value = static_cast<const Constant*>(grounded_literal)->value_;
+            delete grounded_literal;
+            if( !value ) {
+                continue;
+            } else {
+                remove_invariant = true;
+                break;
+            }
+        }
+        const Literal *literal = dynamic_cast<const Literal*>(grounded_literal);
+        assert(literal != 0);
         Instance::Atom *p = literal->find_prop(*instance_ptr_, false, true);
+        delete literal;
         if( !literal->negated_ )
             invariant.push_back(1 + p->index);
         else
             invariant.push_back(-(1 + p->index));
     }
-    invariant_vec_ptr_->push_back(invariant);
+    if( !remove_invariant ) invariant_vec_ptr_->push_back(invariant);
 }
 
 void PDDL_Base::Invariant::print(ostream &os) const {
@@ -1535,6 +1539,14 @@ void PDDL_Base::Invariant::print(ostream &os) const {
     for( size_t k = 0; k < size(); ++k )
         os << " " << *(*this)[k];
     os << ")";
+}
+
+bool PDDL_Base::Invariant::has_free_variables() const {
+    for( size_t k = 0; k < size(); ++k ) {
+        if( (*this)[k]->has_free_variables(param_) )
+            return true;
+    }
+    return false;
 }
 
 void PDDL_Base::Clause::instantiate(Instance &ins, Instance::Clause &clause) const {
@@ -1598,16 +1610,8 @@ bool PDDL_Base::InitLiteral::is_strongly_static(const PredicateSymbol &p) const 
 }
 
 void PDDL_Base::InitInvariant::instantiate(Instance &ins) const {
-    cout << "About to instantiate invariant (" << this << "): " << *(const Invariant*)this << endl;
-
-    cout << "Parameters:";
-    for( size_t k = 0; k < param_.size(); ++k )
-        cout << " " << *param_[k];
-    cout << endl;
-    set<size_t> used_variables;
-    for( size_t k = 0; k < size(); ++k )
-        calculate_free_variables(*(*this)[k], param_, used_variables);
-
+    //cout << "About to instantiate invariant (" << this << "): " << *(const Invariant*)this << endl;
+    assert(!Invariant::has_free_variables());
     Instance::invariant_vec instantiated_invariants;
     enumerate(true);
     instantiated_invariants.reserve(count_);
