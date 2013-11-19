@@ -410,7 +410,7 @@ single_condition:
       literal {
           // if literal is for equality, construct EQ
           if( $1->pred_ == dom_eq_pred_ )
-              $$ = new EQ(static_cast<VariableSymbol*>($1->param_[0]), static_cast<VariableSymbol*>($1->param_[1]), $1->negated_);
+              $$ = new EQ(dynamic_cast<VariableSymbol*>($1->param_[0]), dynamic_cast<VariableSymbol*>($1->param_[1]), $1->negated_);
           else
               $$ = new Literal(*$1);
           delete $1;

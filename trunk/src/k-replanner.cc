@@ -160,17 +160,8 @@ int main(int argc, char *argv[]) {
         reader->print(cout);
     }
 
-    // translate oneofs into invariants and observe effects in actions (CLG-compatibility mode)
-    reader->map_oneofs_to_invariants();
-    reader->translate_observe_effects_into_sensors();
-
-    // translate multivalued variable formulations
-    reader->instantiate_multivalued_variables();
-    reader->translate_actions_for_multivalued_variable_formulation();
-    reader->create_invariants_for_multivalued_variables();
-    reader->create_invariants_for_sensing_model();
-
-    // print translated problem
+    // perform necessary translations
+    reader->do_translations();
     if( options.is_enabled("print:parser:translated") ) {
         reader->print(cout);
     }
