@@ -34,7 +34,7 @@ class PDDL_Base {
         Symbol(const char *n, symbol_class c = sym_object) : sym_class_(c), print_name_(n), sym_type_(0) { }
         virtual ~Symbol() { /*delete sym_type_;*/ }
         virtual Symbol* clone() const;
-        virtual void print(std::ostream &os) const { os << "[sym_class=" << sym_class_ << "]" << print_name_; }
+        virtual void print(std::ostream &os) const { os << print_name_; }
     };
     struct symbol_vec : public std::vector<Symbol*> { };
 
@@ -249,6 +249,7 @@ class PDDL_Base {
         virtual ~Invariant() { for( size_t k = 0; k < size(); ++k ) delete (*this)[k]; }
         virtual void process_instance() const;
         virtual void print(std::ostream &os) const;
+        bool has_free_variables() const;
         mutable Instance::invariant_vec *invariant_vec_ptr_;
         mutable Instance *instance_ptr_;
     };
