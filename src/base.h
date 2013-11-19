@@ -34,7 +34,7 @@ class PDDL_Base {
         Symbol(const char *n, symbol_class c = sym_object) : sym_class_(c), print_name_(n), sym_type_(0) { }
         virtual ~Symbol() { /*delete sym_type_;*/ }
         virtual Symbol* clone() const;
-        virtual void print(std::ostream &os) const { os << print_name_; }
+        virtual void print(std::ostream &os) const { os << "[sym_class=" << sym_class_ << "]" << print_name_; }
     };
     struct symbol_vec : public std::vector<Symbol*> { };
 
@@ -92,6 +92,7 @@ class PDDL_Base {
         Instance::Atom* find_prop(Instance &ins, bool negated, bool create) const;
         void instantiate(Instance &ins, index_set &atoms) const;
         Atom* ground(bool clone_variables = false) const;
+        bool has_free_variables(const var_symbol_vec &param) const;
         bool is_fully_instantiated() const;
 
         std::string print_name(bool extra_neg = false) const;
@@ -108,6 +109,7 @@ class PDDL_Base {
         virtual void calculate_free_variables(const std::map<const Symbol*, size_t> &free_variable_map, std::set<size_t> &used_variables) const = 0;
         virtual void instantiate(Instance &ins, index_set &condition) const = 0;
         virtual Condition* ground(bool clone_variables = false) const = 0;
+        virtual bool has_free_variables(const var_symbol_vec &param) const = 0;
         virtual void print(std::ostream &os) const = 0;
     };
     struct condition_vec : public std::vector<const Condition*> { };
@@ -120,6 +122,7 @@ class PDDL_Base {
         virtual void calculate_free_variables(const std::map<const Symbol*, size_t> &free_variable_map, std::set<size_t> &used_variables) const { }
         virtual void instantiate(Instance &ins, index_set &condition) const { }
         virtual Condition* ground(bool clone_variables = false) const { return new Constant(value_); }
+        virtual bool has_free_variables(const var_symbol_vec &param) const { return true; }
         virtual void print(std::ostream &os) const { os << (value_ ? "true" : "false"); }
     };
 
@@ -130,18 +133,20 @@ class PDDL_Base {
         virtual void calculate_free_variables(const std::map<const Symbol*, size_t> &free_variable_map, std::set<size_t> &used_variables) const;
         virtual void instantiate(Instance &ins, index_set &condition) const;
         virtual Condition* ground(bool clone_variables = false) const;
+        virtual bool has_free_variables(const var_symbol_vec &param) const;
         virtual void print(std::ostream &os) const { Atom::print(os); }
     };
 
-    struct EQ : public Condition, std::pair<const VariableSymbol*,const VariableSymbol*> {
+    struct EQ : public Condition, std::pair<const Symbol*,const Symbol*> {
         bool negated_;
-        EQ(const VariableSymbol *x, const VariableSymbol *y, bool negated = false)
-          : std::pair<const VariableSymbol*,const VariableSymbol*>(x, y), negated_(negated) { }
+        EQ(const Symbol *x, const Symbol *y, bool negated = false)
+          : std::pair<const Symbol*,const Symbol*>(x, y), negated_(negated) { }
         virtual ~EQ() { }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         virtual void calculate_free_variables(const std::map<const Symbol*, size_t> &free_variable_map, std::set<size_t> &used_variables) const;
         virtual void instantiate(Instance &ins, index_set &condition) const { }
         virtual Condition* ground(bool clone_variables = false) const;
+        virtual bool has_free_variables(const var_symbol_vec &param) const;
         virtual void print(std::ostream &os) const;
     };
 
@@ -152,6 +157,7 @@ class PDDL_Base {
         virtual void calculate_free_variables(const std::map<const Symbol*, size_t> &free_variable_map, std::set<size_t> &used_variables) const;
         virtual void instantiate(Instance &ins, index_set &condition) const;
         virtual Condition* ground(bool clone_variables = false) const;
+        virtual bool has_free_variables(const var_symbol_vec &param) const;
         virtual void print(std::ostream &os) const;
     };
 
@@ -162,6 +168,7 @@ class PDDL_Base {
         virtual void calculate_free_variables(const std::map<const Symbol*, size_t> &free_variable_map, std::set<size_t> &used_variables) const = 0;
         virtual void instantiate(Instance &ins, index_set &eff, Instance::when_vec &when = dummy_when_vec_) const = 0;
         virtual Effect* ground(bool clone_variables = false) const = 0;
+        virtual bool has_free_variables(const var_symbol_vec &param) const = 0;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const = 0;
         virtual void print(std::ostream &os) const = 0;
     };
@@ -174,6 +181,7 @@ class PDDL_Base {
         virtual void calculate_free_variables(const std::map<const Symbol*, size_t> &free_variable_map, std::set<size_t> &used_variables) const { }
         virtual void instantiate(Instance &ins, index_set &eff, Instance::when_vec &when = dummy_when_vec_) const { }
         virtual Effect* ground(bool clone_variables = false) const { return new NullEffect; }
+        virtual bool has_free_variables(const var_symbol_vec &param) const { return true; }
         virtual bool is_strongly_static(const PredicateSymbol &pred) const { return true; }
         virtual void print(std::ostream &os) const { os << "<null>"; }
     };
@@ -185,6 +193,7 @@ class PDDL_Base {
         virtual void calculate_free_variables(const std::map<const Symbol*, size_t> &free_variable_map, std::set<size_t> &used_variables) const;
         virtual void instantiate(Instance &ins, index_set &eff, Instance::when_vec &when = dummy_when_vec_) const;
         virtual Effect* ground(bool clone_variables = false) const;
+        virtual bool has_free_variables(const var_symbol_vec &param) const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
         virtual void print(std::ostream &os) const { Atom::print(os); }
     };
@@ -196,6 +205,7 @@ class PDDL_Base {
         virtual void calculate_free_variables(const std::map<const Symbol*, size_t> &free_variable_map, std::set<size_t> &used_variables) const;
         virtual void instantiate(Instance &ins, index_set &eff, Instance::when_vec &when = dummy_when_vec_) const;
         virtual Effect* ground(bool clone_variables = false) const;
+        virtual bool has_free_variables(const var_symbol_vec &param) const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
         virtual void print(std::ostream &os) const;
     };
@@ -210,6 +220,7 @@ class PDDL_Base {
         virtual void calculate_free_variables(const std::map<const Symbol*, size_t> &free_variable_map, std::set<size_t> &used_variables) const;
         virtual void instantiate(Instance &ins, index_set &eff, Instance::when_vec &when = dummy_when_vec_) const;
         virtual Effect* ground(bool clone_variables = false) const;
+        virtual bool has_free_variables(const var_symbol_vec &param) const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
         virtual void print(std::ostream &os) const;
     };
@@ -223,6 +234,7 @@ class PDDL_Base {
         virtual void instantiate(Instance &ins, index_set &eff, Instance::when_vec &when = dummy_when_vec_) const;
         virtual void process_instance() const;
         virtual Effect* ground(bool clone_variables = false) const;
+        virtual bool has_free_variables(const var_symbol_vec &param) const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
         virtual void print(std::ostream &os) const;
         mutable std::vector<AndEffect*> result_stack_;
