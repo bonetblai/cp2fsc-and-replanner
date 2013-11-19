@@ -6,7 +6,7 @@
   */
 
 
-#line 1 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc"
+#line 1 "/usr/local/lib/bison.cc"
 /* -*-C-*-  Note some compilers choke on comments on `#line' lines.  */
 /* Skeleton output parser for bison,
    Copyright (C) 1984, 1989, 1990 Bob Corbett and Richard Stallman
@@ -80,7 +80,7 @@ void *alloca ();
 #include <stdio.h>
 #define YYBISON 1  
 
-/* #line 73 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc" */
+/* #line 73 "/usr/local/lib/bison.cc" */
 #line 85 "grammar.cc"
 #define YY_PDDL_Parser_ERROR  log_error
 #define YY_PDDL_Parser_ERROR_BODY  = 0
@@ -126,7 +126,7 @@ typedef union {
 } yy_PDDL_Parser_stype;
 #define YY_PDDL_Parser_STYPE yy_PDDL_Parser_stype
 
-#line 73 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc"
+#line 73 "/usr/local/lib/bison.cc"
 /* %{ and %header{ and %union, during decl */
 #define YY_PDDL_Parser_BISON 1
 #ifndef YY_PDDL_Parser_COMPATIBILITY
@@ -172,36 +172,36 @@ typedef union {
 
 #ifndef YY_PDDL_Parser_PURE
 
-/* #line 117 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc" */
+/* #line 117 "/usr/local/lib/bison.cc" */
 #line 177 "grammar.cc"
 
-#line 117 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc"
+#line 117 "/usr/local/lib/bison.cc"
 /*  YY_PDDL_Parser_PURE */
 #endif
 
 /* section apres lecture def, avant lecture grammaire S2 */
 
-/* #line 121 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc" */
+/* #line 121 "/usr/local/lib/bison.cc" */
 #line 186 "grammar.cc"
 
-#line 121 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc"
+#line 121 "/usr/local/lib/bison.cc"
 /* prefix */
 #ifndef YY_PDDL_Parser_DEBUG
 
-/* #line 123 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc" */
+/* #line 123 "/usr/local/lib/bison.cc" */
 #line 193 "grammar.cc"
 
-#line 123 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc"
+#line 123 "/usr/local/lib/bison.cc"
 /* YY_PDDL_Parser_DEBUG */
 #endif
 
 
 #ifndef YY_PDDL_Parser_LSP_NEEDED
 
-/* #line 128 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc" */
+/* #line 128 "/usr/local/lib/bison.cc" */
 #line 203 "grammar.cc"
 
-#line 128 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc"
+#line 128 "/usr/local/lib/bison.cc"
  /* YY_PDDL_Parser_LSP_NEEDED*/
 #endif
 
@@ -311,7 +311,7 @@ typedef
 #ifndef YY_USE_CLASS
 /* TOKEN C */
 
-/* #line 236 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc" */
+/* #line 236 "/usr/local/lib/bison.cc" */
 #line 316 "grammar.cc"
 #define	TK_OPEN	258
 #define	TK_CLOSE	259
@@ -377,7 +377,7 @@ typedef
 #define	KW_DEFAULT_SENSING_MODEL	319
 
 
-#line 236 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc"
+#line 236 "/usr/local/lib/bison.cc"
  /* #defines tokens */
 #else
 /* CLASS */
@@ -423,7 +423,7 @@ public:
 #if YY_PDDL_Parser_USE_CONST_TOKEN != 0
 /* static const int token ... */
 
-/* #line 280 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc" */
+/* #line 280 "/usr/local/lib/bison.cc" */
 #line 428 "grammar.cc"
 static const int TK_OPEN;
 static const int TK_CLOSE;
@@ -489,12 +489,12 @@ static const int KW_SENSING_MODEL;
 static const int KW_DEFAULT_SENSING_MODEL;
 
 
-#line 280 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc"
+#line 280 "/usr/local/lib/bison.cc"
  /* decl const */
 #else
 enum YY_PDDL_Parser_ENUM_TOKEN { YY_PDDL_Parser_NULL_TOKEN=0
 
-/* #line 283 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc" */
+/* #line 283 "/usr/local/lib/bison.cc" */
 #line 499 "grammar.cc"
 	,TK_OPEN=258
 	,TK_CLOSE=259
@@ -560,7 +560,7 @@ enum YY_PDDL_Parser_ENUM_TOKEN { YY_PDDL_Parser_NULL_TOKEN=0
 	,KW_DEFAULT_SENSING_MODEL=319
 
 
-#line 283 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc"
+#line 283 "/usr/local/lib/bison.cc"
  /* enum token */
      }; /* end of enum declaration */
 #endif
@@ -593,7 +593,7 @@ public:
 /* other declare folow */
 #if YY_PDDL_Parser_USE_CONST_TOKEN != 0
 
-/* #line 314 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc" */
+/* #line 314 "/usr/local/lib/bison.cc" */
 #line 598 "grammar.cc"
 const int YY_PDDL_Parser_CLASS::TK_OPEN=258;
 const int YY_PDDL_Parser_CLASS::TK_CLOSE=259;
@@ -659,7 +659,7 @@ const int YY_PDDL_Parser_CLASS::KW_SENSING_MODEL=318;
 const int YY_PDDL_Parser_CLASS::KW_DEFAULT_SENSING_MODEL=319;
 
 
-#line 314 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc"
+#line 314 "/usr/local/lib/bison.cc"
  /* const YY_PDDL_Parser_CLASS::token */
 #endif
 /*apres const  */
@@ -672,7 +672,7 @@ YY_PDDL_Parser_CONSTRUCTOR_CODE;
 };
 #endif
 
-/* #line 325 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc" */
+/* #line 325 "/usr/local/lib/bison.cc" */
 #line 677 "grammar.cc"
 
 
@@ -1089,7 +1089,7 @@ static const short yycheck[] = {    55,
    106,   193,   143,   213,    46,   208,   205,   296,    48
 };
 
-#line 325 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc"
+#line 325 "/usr/local/lib/bison.cc"
  /* fattrs + tables */
 
 /* parser code folow  */
@@ -1577,7 +1577,7 @@ YYLABEL(yyreduce)
 #endif
 
 
-/* #line 811 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc" */
+/* #line 811 "/usr/local/lib/bison.cc" */
 #line 1582 "grammar.cc"
 
   switch (yyn) {
@@ -1933,7 +1933,7 @@ case 89:
 {
           // if literal is for equality, construct EQ
           if( yyvsp[0].atom->pred_ == dom_eq_pred_ )
-              yyval.condition = new EQ(static_cast<VariableSymbol*>(yyvsp[0].atom->param_[0]), static_cast<VariableSymbol*>(yyvsp[0].atom->param_[1]), yyvsp[0].atom->negated_);
+              yyval.condition = new EQ(dynamic_cast<VariableSymbol*>(yyvsp[0].atom->param_[0]), dynamic_cast<VariableSymbol*>(yyvsp[0].atom->param_[1]), yyvsp[0].atom->negated_);
           else
               yyval.condition = new Literal(*yyvsp[0].atom);
           delete yyvsp[0].atom;
@@ -2450,7 +2450,7 @@ case 189:
     break;}
 }
 
-#line 811 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc"
+#line 811 "/usr/local/lib/bison.cc"
    /* the action file gets copied in in place of this dollarsign  */
   yyvsp -= yylen;
   yyssp -= yylen;
@@ -2651,7 +2651,7 @@ YYLABEL(yyerrhandle)
 
 /* END */
 
-/* #line 1010 "/home/bonet/space/software/bison++-1.21-8/lib/bison.cc" */
+/* #line 1010 "/usr/local/lib/bison.cc" */
 #line 2656 "grammar.cc"
 #line 876 "ppddl.y"
 
