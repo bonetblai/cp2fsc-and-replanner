@@ -161,8 +161,8 @@ bool PDDL_Base::truth_value_in_initial_situation(const Atom &literal) const {
             }
         }
     }
-    //cout << "value of " << print_name << " at init is FALSE" << endl;
-    return false;
+    //cout << "value of " << print_name << " at init is " << (literal.negated_ ? "TRUE" : "FALSE") << endl;
+    return literal.negated_ ? true : false;
 }
 
 void PDDL_Base::declare_clg_translation() {
@@ -1508,6 +1508,7 @@ void PDDL_Base::Invariant::process_instance() const {
             if( !value ) {
                 continue;
             } else {
+                //cout << "Removing invariant " << *this << " because is tautological" << endl;
                 remove_invariant = true;
                 break;
             }
