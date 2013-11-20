@@ -113,6 +113,7 @@ class PDDL_Base {
         virtual bool has_free_variables(const var_symbol_vec &param) const = 0;
         virtual void print(std::ostream &os) const = 0;
         Condition* negate() const { return ground(false, true); }
+        Condition* copy() const { return ground(false, false); }
     };
     struct condition_vec : public std::vector<const Condition*> { };
 
@@ -218,15 +219,19 @@ class PDDL_Base {
     };
 
     struct AtomicEffect : public Effect, Atom {
-        AtomicEffect(const Atom &atom) : Atom(atom) { }
+        AtomicEffect(const Atom &atom, bool complemented = false) : Atom(atom, complemented) { }
         virtual ~AtomicEffect() { }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         virtual void calculate_free_variables(const std::map<const Symbol*, size_t> &free_variable_map, std::set<size_t> &used_variables) const;
         virtual void instantiate(Instance &ins, index_set &eff, Instance::when_vec &when = dummy_when_vec_) const;
-        virtual Effect* ground(bool clone_variables = false) const;
+        virtual Effect* ground(bool clone_variables = false) const { return internal_ground(clone_variables, false); }
         virtual bool has_free_variables(const var_symbol_vec &param) const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
         virtual void print(std::ostream &os) const { Atom::print(os); }
+        AtomicEffect* negate() const { return internal_ground(false, true); }
+        AtomicEffect* copy() const { return internal_ground(false, false); }
+      private:
+        AtomicEffect* internal_ground(bool clone_variables, bool negate) const;
     };
 
     struct AndEffect : public Effect, effect_vec {

@@ -41,7 +41,7 @@
             )
         :sensing-model
             (and (forall (?p - pos) (when (and (at ?j) (adj ?j ?p) (wumpus-at ?p)) (stench ?j)))
-                 ;(when (and (at ?j) (forall (?p - pos) (or (not (adj ?p ?j)) (not (wumpus-at ?p))))) (not (stench ?j)))
+                 (when (and (at ?j) (forall (?p - pos) (or (not (adj ?p ?j)) (not (wumpus-at ?p))))) (not (stench ?j)))
                  ;(forall (?p - pos) (when (and (at ?p) (gold-at ?p)) (glitter ?p)))
             )
     )
