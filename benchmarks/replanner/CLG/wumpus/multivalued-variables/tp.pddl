@@ -47,7 +47,8 @@
         (adj p4-4 p4-5) (adj p4-5 p4-4)
         (adj p5-4 p5-5) (adj p5-5 p5-4)
     )
-    (:hidden (wumpus-at p2-3) (wumpus-at p4-3) (wumpus-at p4-5))
+    ;(:hidden (wumpus-at p2-3) (wumpus-at p4-3) (wumpus-at p4-5))
+    (:hidden (wumpus-at p4-3))
     (:goal (and (got-the-treasure) (alive)))
 ) 
 
