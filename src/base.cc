@@ -1281,6 +1281,74 @@ void PDDL_Base::And::print(ostream &os) const {
     os << ")";
 }
 
+void PDDL_Base::Or::remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param) {
+    for( size_t k = 0; k < size(); ++k )
+        const_cast<Condition*>((*this)[k])->remap_parameters(old_param, new_param);
+}
+
+void PDDL_Base::Or::calculate_free_variables(const map<const Symbol*, size_t> &free_variable_map, set<size_t> &used_variables) const {
+    for( size_t k = 0; k < size(); ++k )
+        (*this)[k]->calculate_free_variables(free_variable_map, used_variables);
+}
+
+void PDDL_Base::Or::instantiate(Instance &ins, index_set &condition) const {
+    cout << "error: Or should have dissapeared before instantiating: " << *this << endl;
+    exit(255);
+}
+
+PDDL_Base::Condition* PDDL_Base::Or::ground(bool clone_variables) const {
+    Or *result = new Or;
+    for( size_t k = 0; k < size(); ++k ) {
+        Condition *item = (*this)[k]->ground(clone_variables);
+        if( dynamic_cast<Constant*>(item) != 0 ) {
+            Constant &constant = *static_cast<Constant*>(item);
+            if( constant.value_ ) {
+                delete item;
+                delete result;
+                return new Constant(true);
+            } else {
+                delete item;
+            }
+        } else if( dynamic_cast<Or*>(item) != 0 ) {
+            Or &item_list = *static_cast<Or*>(item);
+            for( size_t i = 0; i < item_list.size(); ++i)
+                result->push_back(item_list[i]);
+            item_list.clear();
+            delete item;
+        } else {
+            result->push_back(item);
+        }
+    }
+
+    // check if result can be reduced to constant or single condition
+    if( result->empty() ) {
+        delete result;
+        return new Constant(false);
+    } else if( result->size() == 1 ) {
+        Condition *single = const_cast<Condition*>((*result)[0]);
+        result->clear();
+        delete result;
+        return single;
+    } else {
+        return result;
+    }
+}
+
+bool PDDL_Base::Or::has_free_variables(const var_symbol_vec &param) const {
+    for( size_t k = 0; k < size(); ++k ) {
+        if( (*this)[k]->has_free_variables(param) )
+            return true;
+    }
+    return false;
+}
+
+void PDDL_Base::Or::print(ostream &os) const {
+    os << "(or";
+    for( size_t k = 0; k < size(); ++k )
+        os << " " << *(*this)[k];
+    os << ")";
+}
+
 void PDDL_Base::AtomicEffect::remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param) {
     Atom::remap_parameters(old_param, new_param);
 }

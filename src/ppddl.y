@@ -392,6 +392,12 @@ action_elements:
 condition:
       single_condition
     | TK_OPEN KW_AND condition_list TK_CLOSE { $$ = $3; }
+    | TK_OPEN KW_OR condition_list TK_CLOSE {
+          Or *cond = new Or(*static_cast<const condition_vec*>(static_cast<const And*>($3)));
+          const_cast<And*>(static_cast<const And*>($3))->clear();
+          delete $3;
+          $$ = cond;
+      }
     ;
 
 condition_list:

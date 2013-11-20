@@ -161,6 +161,18 @@ class PDDL_Base {
         virtual void print(std::ostream &os) const;
     };
 
+    struct Or : public Condition, condition_vec {
+        Or() { }
+        Or(const condition_vec &vec) : condition_vec(vec) { }
+        virtual ~Or() { for( size_t k = 0; k < size(); ++k ) delete (*this)[k]; }
+        virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
+        virtual void calculate_free_variables(const std::map<const Symbol*, size_t> &free_variable_map, std::set<size_t> &used_variables) const;
+        virtual void instantiate(Instance &ins, index_set &condition) const;
+        virtual Condition* ground(bool clone_variables = false) const;
+        virtual bool has_free_variables(const var_symbol_vec &param) const;
+        virtual void print(std::ostream &os) const;
+    };
+
     struct Effect {
         Effect() { }
         virtual ~Effect() { }
