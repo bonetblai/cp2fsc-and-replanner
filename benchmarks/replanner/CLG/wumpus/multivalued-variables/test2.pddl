@@ -3,6 +3,7 @@
     (:types pos)
     (:predicates
         (adj ?p ?q - pos)
+        (need-start)
         (at ?p - pos)
         (alive)
         ;(pit-at ?p - pos)
@@ -24,7 +25,8 @@
 
     (:action start
         :parameters (?j - pos)
-        :precondition (at ?j)
+        :precondition (and (need-start) (at ?j))
+        :effect (not (need-start))
         :sensing-model
             ;(and (forall (?p ?q - pos) (when (and (at ?p) (adj ?p ?q) (wumpus-at ?q)) (stench ?p)))
             ;     ;(forall (?p ?q - pos) (when (and (at ?p) (adj ?p ?q) (pit-at ?q)) (breeze ?p)))
