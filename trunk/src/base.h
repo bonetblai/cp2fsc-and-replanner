@@ -84,7 +84,8 @@ class PDDL_Base {
         symbol_vec param_;
         bool negated_;
         Atom(PredicateSymbol *pred, bool negated = false) : pred_(pred), negated_(negated) { }
-        Atom(const Atom &atom) : pred_(atom.pred_), param_(atom.param_), negated_(atom.negated_) { }
+        Atom(const Atom &atom, bool complemented = false)
+          : pred_(atom.pred_), param_(atom.param_), negated_(complemented ? !atom.negated_ : atom.negated_) { }
         ~Atom() { /*delete pred_; for( size_t k = 0; k < param_.size(); ++k ) delete param_[k];*/ }
         void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         void calculate_free_variables(const std::map<const Symbol*, size_t> &free_variable_map, std::set<size_t> &used_variables) const;
@@ -108,9 +109,10 @@ class PDDL_Base {
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param) = 0;
         virtual void calculate_free_variables(const std::map<const Symbol*, size_t> &free_variable_map, std::set<size_t> &used_variables) const = 0;
         virtual void instantiate(Instance &ins, index_set &condition) const = 0;
-        virtual Condition* ground(bool clone_variables = false) const = 0;
+        virtual Condition* ground(bool clone_variables = false, bool negate = false) const = 0;
         virtual bool has_free_variables(const var_symbol_vec &param) const = 0;
         virtual void print(std::ostream &os) const = 0;
+        Condition* negate() const { return ground(false, true); }
     };
     struct condition_vec : public std::vector<const Condition*> { };
 
@@ -121,18 +123,18 @@ class PDDL_Base {
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param) { }
         virtual void calculate_free_variables(const std::map<const Symbol*, size_t> &free_variable_map, std::set<size_t> &used_variables) const { }
         virtual void instantiate(Instance &ins, index_set &condition) const { }
-        virtual Condition* ground(bool clone_variables = false) const { return new Constant(value_); }
+        virtual Condition* ground(bool clone_variables = false, bool negate = false) const { return new Constant(negate ? !value_ : value_); }
         virtual bool has_free_variables(const var_symbol_vec &param) const { return true; }
         virtual void print(std::ostream &os) const { os << (value_ ? "true" : "false"); }
     };
 
     struct Literal : public Condition, Atom {
-        Literal(const Atom &atom) : Atom(atom) { }
+        Literal(const Atom &atom, bool complemented = false) : Atom(atom, complemented) { }
         virtual ~Literal() { }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         virtual void calculate_free_variables(const std::map<const Symbol*, size_t> &free_variable_map, std::set<size_t> &used_variables) const;
         virtual void instantiate(Instance &ins, index_set &condition) const;
-        virtual Condition* ground(bool clone_variables = false) const;
+        virtual Condition* ground(bool clone_variables = false, bool negate = false) const;
         virtual bool has_free_variables(const var_symbol_vec &param) const;
         virtual void print(std::ostream &os) const { Atom::print(os); }
     };
@@ -145,18 +147,19 @@ class PDDL_Base {
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         virtual void calculate_free_variables(const std::map<const Symbol*, size_t> &free_variable_map, std::set<size_t> &used_variables) const;
         virtual void instantiate(Instance &ins, index_set &condition) const { }
-        virtual Condition* ground(bool clone_variables = false) const;
+        virtual Condition* ground(bool clone_variables = false, bool negate = false) const;
         virtual bool has_free_variables(const var_symbol_vec &param) const;
         virtual void print(std::ostream &os) const;
     };
 
     struct And : public Condition, condition_vec {
         And() { }
+        And(const condition_vec &vec) : condition_vec(vec) { }
         virtual ~And() { for( size_t k = 0; k < size(); ++k ) delete (*this)[k]; }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         virtual void calculate_free_variables(const std::map<const Symbol*, size_t> &free_variable_map, std::set<size_t> &used_variables) const;
         virtual void instantiate(Instance &ins, index_set &condition) const;
-        virtual Condition* ground(bool clone_variables = false) const;
+        virtual Condition* ground(bool clone_variables = false, bool negate = false) const;
         virtual bool has_free_variables(const var_symbol_vec &param) const;
         virtual void print(std::ostream &os) const;
     };
@@ -168,9 +171,25 @@ class PDDL_Base {
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         virtual void calculate_free_variables(const std::map<const Symbol*, size_t> &free_variable_map, std::set<size_t> &used_variables) const;
         virtual void instantiate(Instance &ins, index_set &condition) const;
-        virtual Condition* ground(bool clone_variables = false) const;
+        virtual Condition* ground(bool clone_variables = false, bool negate = false) const;
         virtual bool has_free_variables(const var_symbol_vec &param) const;
         virtual void print(std::ostream &os) const;
+    };
+
+    struct ForallCondition : public Condition, Schema {
+        const Condition *condition_;
+        ForallCondition() : condition_(0) { }
+        virtual ~ForallCondition() { delete condition_; }
+        virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
+        virtual void calculate_free_variables(const std::map<const Symbol*, size_t> &free_variable_map, std::set<size_t> &used_variables) const;
+        virtual void instantiate(Instance &ins, index_set &condition) const;
+        virtual void process_instance() const;
+        virtual Condition* ground(bool clone_variables = false, bool negate = false) const;
+        virtual bool has_free_variables(const var_symbol_vec &param) const;
+        virtual void print(std::ostream &os) const;
+        mutable std::vector<bool> negate_stack_;
+        mutable std::vector<bool> clone_variables_stack_;
+        mutable std::vector<Condition*> result_stack_;
     };
 
     struct Effect {
@@ -212,6 +231,7 @@ class PDDL_Base {
 
     struct AndEffect : public Effect, effect_vec {
         AndEffect() { }
+        AndEffect(const effect_vec &vec) : effect_vec(vec) { }
         virtual ~AndEffect() { for( size_t k = 0; k < size(); ++k ) delete (*this)[k]; }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         virtual void calculate_free_variables(const std::map<const Symbol*, size_t> &free_variable_map, std::set<size_t> &used_variables) const;

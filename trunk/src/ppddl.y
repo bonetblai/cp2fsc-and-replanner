@@ -17,7 +17,8 @@
     bool error_flag_; \
     int type_; \
   private: \
-    std::vector<ForallEffect*> forall_effects;
+    std::vector<ForallEffect*> forall_effects; \
+    std::vector<ForallCondition*> forall_conditions;
 
 %header{
 #include <stdlib.h>
@@ -33,6 +34,8 @@
     PDDL_Base::Atom                   *atom;
     PDDL_Base::symbol_vec             *param;
     PDDL_Base::var_symbol_vec         *vparam;
+    PDDL_Base::condition_vec          *condition_vec;
+    PDDL_Base::effect_vec             *effect_vec;
     const PDDL_Base::Condition        *condition;
     const PDDL_Base::Effect           *effect;
     const PDDL_Base::Invariant        *invariant;
@@ -43,48 +46,50 @@
     int                               ival;
 }
 
-%token             TK_OPEN TK_CLOSE TK_OPEN_SQ TK_CLOSE_SQ TK_EQ TK_HYPHEN
+%token                  TK_OPEN TK_CLOSE TK_OPEN_SQ TK_CLOSE_SQ TK_EQ TK_HYPHEN
 
-%token <sym>       TK_NEW_SYMBOL TK_OBJ_SYMBOL TK_TYPE_SYMBOL TK_PRED_SYMBOL
-                   TK_VAR_SYMBOL TK_ACTION_SYMBOL TK_AXIOM_SYMBOL TK_SENSOR_SYMBOL
-                   TK_MISC_SYMBOL TK_KEYWORD TK_NEW_VAR_SYMBOL
-                   TK_VARNAME_SYMBOL
+%token <sym>            TK_NEW_SYMBOL TK_OBJ_SYMBOL TK_TYPE_SYMBOL TK_PRED_SYMBOL
+                        TK_VAR_SYMBOL TK_ACTION_SYMBOL TK_AXIOM_SYMBOL TK_SENSOR_SYMBOL
+                        TK_MISC_SYMBOL TK_KEYWORD TK_NEW_VAR_SYMBOL
+                        TK_VARNAME_SYMBOL
 
-%token <ival>      TK_INT
+%token <ival>           TK_INT
 
-%token             KW_REQS KW_TRANSLATION
-                   KW_CONSTANTS KW_PREDS KW_TYPES KW_DEFINE KW_DOMAIN
-                   KW_ACTION KW_ARGS KW_PRE KW_EFFECT KW_AND
-                   KW_OR KW_EXISTS KW_FORALL KW_NOT KW_WHEN KW_ONEOF
-                   KW_PROBLEM KW_FORDOMAIN KW_OBJECTS KW_INIT KW_GOAL
-                   KW_SENSOR KW_SENSE KW_OBSERVE KW_AXIOM KW_COND KW_OBSERVABLE
-                   KW_BODY KW_HEAD KW_STICKY KW_FLUENTS KW_HIDDEN
-                   KW_INVARIANT KW_AT_LEAST_ONE KW_AT_MOST_ONE KW_EXACTLY_ONE
+%token                  KW_REQS KW_TRANSLATION
+                        KW_CONSTANTS KW_PREDS KW_TYPES KW_DEFINE KW_DOMAIN
+                        KW_ACTION KW_ARGS KW_PRE KW_EFFECT KW_AND
+                        KW_OR KW_EXISTS KW_FORALL KW_NOT KW_WHEN KW_ONEOF
+                        KW_PROBLEM KW_FORDOMAIN KW_OBJECTS KW_INIT KW_GOAL
+                        KW_SENSOR KW_SENSE KW_OBSERVE KW_AXIOM KW_COND KW_OBSERVABLE
+                        KW_BODY KW_HEAD KW_STICKY KW_FLUENTS KW_HIDDEN
+                        KW_INVARIANT KW_AT_LEAST_ONE KW_AT_MOST_ONE KW_EXACTLY_ONE
 
-%token             KW_TRANSLATION
-                   KW_VARIABLE KW_OBS_VARIABLE KW_VALUES
-                   KW_SENSING_MODEL KW_DEFAULT_SENSING_MODEL
+%token                  KW_TRANSLATION
+                        KW_VARIABLE KW_OBS_VARIABLE KW_VALUES
+                        KW_SENSING_MODEL KW_DEFAULT_SENSING_MODEL
 
-%type <vsym>       new_var_symbol
-%type <sym>        action_symbol any_symbol sensor_symbol axiom_symbol variable_symbol
-%type <param>      argument_list
-%type <vparam>     param_list typed_param_list untyped_param_list param_sym_list
+%type <vsym>            new_var_symbol
+%type <sym>             action_symbol any_symbol sensor_symbol axiom_symbol variable_symbol
+%type <param>           argument_list
+%type <vparam>          param_list typed_param_list untyped_param_list param_sym_list
 
-%type <sym>        primitive_type
-%type <atom>       positive_literal negative_literal literal
-%type <condition>  condition single_condition condition_list
-%type <condition>  goal_list single_goal
-%type <invariant>  invariant at_least_one_invariant at_most_one_invariant exactly_one_invariant
-%type <clause>     clause
-%type <oneof>      oneof
-%type <effect>     atomic_effect positive_atomic_effect positive_atomic_effect_list
-%type <effect>     action_effect action_effect_list single_action_effect conditional_effect forall_effect
-%type <effect>     atomic_effect_kw_list atomic_effect_list
-%type <effect>     sensing_model fluent_decl
-%type <ilist>      init_elements
-%type <ielem>      single_init_element
+%type <sym>             primitive_type
+%type <atom>            positive_literal negative_literal literal
+%type <condition_vec>   single_condition_list condition_list
+%type <condition>       condition single_condition and_condition or_condition forall_condition
+%type <condition>       goal_list single_goal
+%type <invariant>       invariant at_least_one_invariant at_most_one_invariant exactly_one_invariant
+%type <clause>          clause
+%type <oneof>           oneof
+%type <effect_vec>      positive_atomic_effect_list atomic_effect_list action_effect_list
+%type <effect>          atomic_effect positive_atomic_effect
+%type <effect>          action_effect single_action_effect conditional_effect forall_effect
+%type <effect>          atomic_effect_kw_list
+%type <effect>          sensing_model fluent_decl
+%type <ilist>           init_elements
+%type <ielem>           single_init_element
 
-%type <ival>       multivalued_variable_type
+%type <ival>            multivalued_variable_type
 
 %start pddl_decls
 
@@ -380,7 +385,8 @@ action_elements:
     | action_elements KW_EFFECT action_effect { dom_actions_.back()->effect_ = $3; }
     | action_elements KW_OBSERVE positive_atomic_effect_list {
           declare_clg_translation();
-          dom_actions_.back()->observe_ = $3;
+          dom_actions_.back()->observe_ = new AndEffect(*$3);
+          delete $3;
       }
     | action_elements KW_SENSING_MODEL sensing_model {
           declare_multivalued_variable_translation();
@@ -391,25 +397,9 @@ action_elements:
 
 condition:
       single_condition
-    | TK_OPEN KW_AND condition_list TK_CLOSE { $$ = $3; }
-    | TK_OPEN KW_OR condition_list TK_CLOSE {
-          Or *cond = new Or(*static_cast<const condition_vec*>(static_cast<const And*>($3)));
-          const_cast<And*>(static_cast<const And*>($3))->clear();
-          delete $3;
-          $$ = cond;
-      }
-    ;
-
-condition_list:
-      condition_list single_condition {
-          const_cast<And*>(static_cast<const And*>($1))->push_back($2);
-          $$ = $1;
-      }
-    | single_condition {
-          And *cond = new And();
-          cond->push_back($1);
-          $$ = cond;
-      }
+    | and_condition
+    | or_condition
+    | forall_condition
     ;
 
 single_condition:
@@ -474,20 +464,76 @@ argument_list:
     | /* empty */ { $$ = new PDDL_Base::symbol_vec; }
     ;
 
+and_condition:
+      TK_OPEN KW_AND condition_list TK_CLOSE {
+          $$ = new And(*$3);
+          delete $3;
+      }
+    ;
+
+or_condition:
+      TK_OPEN KW_OR condition_list TK_CLOSE {
+          $$ = new Or(*$3);
+          delete $3;
+      }
+    ;
+
+forall_condition:
+      TK_OPEN KW_FORALL TK_OPEN {
+          forall_conditions.push_back(new ForallCondition);
+      }
+      param_list TK_CLOSE {
+          forall_conditions.back()->param_ = *$5;
+          delete $5;
+      }
+      condition TK_CLOSE {
+          forall_conditions.back()->condition_ = $8;
+          clear_param(forall_conditions.back()->param_);
+          $$ = forall_conditions.back();
+          forall_conditions.pop_back();
+      }
+    ;
+
+single_condition_list:
+      single_condition_list single_condition {
+          $1->push_back($2);
+          $$ = $1;
+      }
+    | single_condition {
+          condition_vec *cond_vec = new condition_vec;
+          cond_vec->push_back($1);
+          $$ = cond_vec;
+      }
+    ;
+
+condition_list:
+      condition_list condition {
+          $1->push_back($2);
+          $$ = $1;
+      }
+    | condition {
+          condition_vec *cond_vec = new condition_vec;
+          cond_vec->push_back($1);
+          $$ = cond_vec;
+      }
+    ;
+
 action_effect:
       single_action_effect
-    | TK_OPEN KW_AND action_effect_list TK_CLOSE { $$ = $3; }
+    | TK_OPEN KW_AND action_effect_list TK_CLOSE {
+          $$ = new AndEffect(*$3);
+          delete $3;
+      }
     ;
 
 action_effect_list:
       action_effect_list single_action_effect {
-          const_cast<AndEffect*>(static_cast<const AndEffect*>($1))->push_back($2);
+          $1->push_back($2);
           $$ = $1;
       }
     | single_action_effect {
-          AndEffect *eff = new AndEffect;
-          eff->push_back($1);
-          $$ = eff;
+          $$ = new effect_vec;
+          $$->push_back($1);
       }
     ;
 
@@ -518,31 +564,32 @@ forall_effect:
     ;
 
 atomic_effect_kw_list:
-      TK_OPEN KW_AND atomic_effect_list TK_CLOSE { $$ = $3; }
+      TK_OPEN KW_AND atomic_effect_list TK_CLOSE {
+          $$ = new AndEffect(*$3);
+          delete $3;
+      }
     | atomic_effect
     ;
 
 atomic_effect_list:
       atomic_effect_list atomic_effect {
-          const_cast<AndEffect*>(static_cast<const AndEffect*>($1))->push_back($2);
+          $1->push_back($2);
           $$ = $1;
       }
     | atomic_effect {
-          AndEffect *eff = new AndEffect;
-          eff->push_back($1);
-          $$ = eff;
+          $$ = new effect_vec;
+          $$->push_back($1);
       }
     ;
 
 positive_atomic_effect_list:
       positive_atomic_effect_list positive_atomic_effect {
-          const_cast<AndEffect*>(static_cast<const AndEffect*>($1))->push_back($2);
+          $1->push_back($2);
           $$ = $1;
       }
     | positive_atomic_effect {
-          AndEffect *eff = new AndEffect;
-          eff->push_back($1);
-          $$ = eff;
+          $$ = new effect_vec;
+          $$->push_back($1);
       }
     ;
 
@@ -604,8 +651,13 @@ sensor_elements:
           dom_sensors_.back()->param_ = *$4;
           delete $4;
       }
-    | sensor_elements KW_COND condition { dom_sensors_.back()->condition_ = $3; }
-    | sensor_elements KW_SENSE positive_atomic_effect_list { dom_sensors_.back()->sense_ = $3; }
+    | sensor_elements KW_COND condition {
+          dom_sensors_.back()->condition_ = $3;
+      }
+    | sensor_elements KW_SENSE positive_atomic_effect_list {
+          dom_sensors_.back()->sense_ = new AndEffect(*$3);
+          delete $3;
+      }
     | /* empty */
     ;
 
@@ -794,30 +846,29 @@ single_init_element:
     ;
 
 at_least_one_invariant:
-      TK_OPEN KW_INVARIANT condition_list TK_CLOSE {
-          $$ = new Invariant(Invariant::AT_LEAST_ONE, *static_cast<const And*>($3));
-          const_cast<And*>(static_cast<const And*>($3))->clear();
+      TK_OPEN KW_INVARIANT single_condition_list TK_CLOSE {
+          //$$ = new Invariant(Invariant::AT_LEAST_ONE, *static_cast<const And*>($3));
+          $$ = new Invariant(Invariant::AT_LEAST_ONE, *$3);
           delete $3;
       }
-    | TK_OPEN KW_AT_LEAST_ONE condition_list TK_CLOSE {
-          $$ = new Invariant(Invariant::AT_LEAST_ONE, *static_cast<const And*>($3));
-          const_cast<And*>(static_cast<const And*>($3))->clear();
+    | TK_OPEN KW_AT_LEAST_ONE single_condition_list TK_CLOSE {
+          //$$ = new Invariant(Invariant::AT_LEAST_ONE, *static_cast<const And*>($3));
+          $$ = new Invariant(Invariant::AT_LEAST_ONE, *$3);
           delete $3;
       }
     ;
 
 at_most_one_invariant:
-      TK_OPEN KW_AT_MOST_ONE condition_list TK_CLOSE {
-          $$ = new Invariant(Invariant::AT_MOST_ONE, *static_cast<const And*>($3));
-          const_cast<And*>(static_cast<const And*>($3))->clear();
+      TK_OPEN KW_AT_MOST_ONE single_condition_list TK_CLOSE {
+          //$$ = new Invariant(Invariant::AT_MOST_ONE, *static_cast<const And*>($3));
+          $$ = new Invariant(Invariant::AT_MOST_ONE, *$3);
           delete $3;
       }
     ;
 
 exactly_one_invariant:
-      TK_OPEN KW_EXACTLY_ONE condition_list TK_CLOSE {
-          $$ = new Invariant(Invariant::EXACTLY_ONE, *static_cast<const And*>($3));
-          const_cast<And*>(static_cast<const And*>($3))->clear();
+      TK_OPEN KW_EXACTLY_ONE single_condition_list TK_CLOSE {
+          $$ = new Invariant(Invariant::EXACTLY_ONE, *$3);
           delete $3;
       }
     ;
@@ -829,17 +880,15 @@ invariant:
     ;
 
 clause:
-      TK_OPEN KW_OR condition_list TK_CLOSE {
-          $$ = new Clause(*static_cast<const And*>($3));
-          const_cast<And*>(static_cast<const And*>($3))->clear();
+      TK_OPEN KW_OR single_condition_list TK_CLOSE {
+          $$ = new Clause(*$3);
           delete $3;
       }
     ;
 
 oneof:
-      TK_OPEN KW_ONEOF condition_list TK_CLOSE {
-          $$ = new Oneof(*static_cast<const And*>($3));
-          const_cast<And*>(static_cast<const And*>($3))->clear();
+      TK_OPEN KW_ONEOF single_condition_list TK_CLOSE {
+          $$ = new Oneof(*$3);
           delete $3;
       }
     ;
