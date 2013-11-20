@@ -342,7 +342,7 @@ void PDDL_Base::translate_actions_for_multivalued_variable_formulation() {
             delete dom_goal_;
             dom_goal_ = new_goal;
         }
-        static_cast<And*>(const_cast<Condition*>(dom_goal_))->push_back(new Literal(*normal_execution_.first));
+        static_cast<And*>(const_cast<Condition*>(dom_goal_))->push_back(Literal(*normal_execution_.first).copy());
 
         // create atoms for sensing
         PredicateSymbol *sensing_status = new PredicateSymbol("sensing-is-on");
@@ -352,13 +352,13 @@ void PDDL_Base::translate_actions_for_multivalued_variable_formulation() {
 
         // create sensor (unique)
         Sensor *sensor = new Sensor(strdup("unique_sensor"));
-        sensor->condition_ = new Literal(*sensing_.first);                // (sensing-is-on)
+        sensor->condition_ = Literal(*sensing_.first).copy();               // (sensing-is-on)
         AndEffect *sense = new AndEffect;
         for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
             Variable &var = *multivalued_variables_[k];
             if( var.is_observable() ) {
                 for( size_t i = 0; i < var.grounded_values_.size(); ++i )
-                    sense->push_back(new AtomicEffect(*dynamic_cast<const AtomicEffect*>(var.grounded_values_[i])));
+                    sense->push_back(AtomicEffect(*dynamic_cast<const AtomicEffect*>(var.grounded_values_[i])).copy());
             }
         }
         sensor->sense_ = sense;
@@ -472,15 +472,15 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
 
         // precondition
         if( action.precondition_ != 0 ) precondition.push_back(action.precondition_);
-        precondition.push_back(new Literal(*normal_execution_.first));  // (normal-execution)
+        precondition.push_back(Literal(*normal_execution_.first).copy());   // (normal-execution)
         effect_action->precondition_ = precondition.ground();
         delete precondition.back();
         precondition.clear();
 
         // effect
         effect.push_back(action.effect_);
-        effect.push_back(new AtomicEffect(*normal_execution_.second));  // (not (normal-execution))
-        effect.push_back(new AtomicEffect(*need_sense_[index].first));  // (need-set-sense <param>)
+        effect.push_back(AtomicEffect(*normal_execution_.first).negate());  // (not (normal-execution))
+        effect.push_back(AtomicEffect(*need_sense_[index].first).copy());   // (need-set-sense <param>)
         effect_action->effect_ = effect.ground();
         delete effect[2];
         delete effect[1];
@@ -499,16 +499,16 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
         clone_parameters(action.param_, set_sensing_action->param_);
 
         // precondition
-        precondition.push_back(new Literal(*need_sense_[index].first)); // (need-set-sense <param>)
+        precondition.push_back(Literal(*need_sense_[index].first).copy());  // (need-set-sense <param>)
         set_sensing_action->precondition_ = precondition.ground();
         delete precondition[0];
         precondition.clear();
 
         // effect
         effect.push_back(action.sensing_model_);
-        effect.push_back(new AtomicEffect(*sensing_.first));            // (sensing-is-on)
-        effect.push_back(new AtomicEffect(*need_post_[index].first));   // (need-post <param>)
-        effect.push_back(new AtomicEffect(*need_sense_[index].second)); // (not (need-set-sense <param>))
+        effect.push_back(AtomicEffect(*sensing_.first).copy());             // (sensing-is-on)
+        effect.push_back(AtomicEffect(*need_post_[index].first).copy());    // (need-post <param>)
+        effect.push_back(AtomicEffect(*need_sense_[index].first).negate()); // (not (need-set-sense <param>))
         set_sensing_action->effect_ = effect.ground();
         delete effect[3];
         delete effect[2];
@@ -531,15 +531,15 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
         clone_parameters(action.param_, post_action->param_);
 
         // precondition
-        precondition.push_back(new Literal(*need_post_[index].first));  // (need-post <param>)
+        precondition.push_back(Literal(*need_post_[index].first).copy());   // (need-post <param>)
         post_action->precondition_ = precondition.ground();
         delete precondition[0];
         precondition.clear();
 
         // effect
-        effect.push_back(new AtomicEffect(*normal_execution_.first));   // (normal-execution)
-        effect.push_back(new AtomicEffect(*sensing_.second));           // (not (sensing-is-on))
-        effect.push_back(new AtomicEffect(*need_post_[index].second));  // (not (need-post <param))
+        effect.push_back(AtomicEffect(*normal_execution_.first).copy());    // (normal-execution)
+        effect.push_back(AtomicEffect(*sensing_.first).negate());           // (not (sensing-is-on))
+        effect.push_back(AtomicEffect(*need_post_[index].first).negate());  // (not (need-post <param))
         post_action->effect_ = effect.ground();
         delete effect[2];
         delete effect[1];
@@ -560,16 +560,16 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
 
         // precondition
         if( action.precondition_ != 0 ) precondition.push_back(action.precondition_);
-        precondition.push_back(new Literal(*normal_execution_.first));  // (normal-execution)
+        precondition.push_back(Literal(*normal_execution_.first).copy());   // (normal-execution)
         set_sensing_action->precondition_ = precondition.ground();
         delete precondition.back();
         precondition.clear();
 
         // effect
         effect.push_back(action.sensing_model_);
-        effect.push_back(new AtomicEffect(*normal_execution_.second));  // (not (normal-execution))
-        effect.push_back(new AtomicEffect(*sensing_.first));            // (sensing-is-on)
-        effect.push_back(new AtomicEffect(*need_post_[index].first));   // (need-post <param>)
+        effect.push_back(AtomicEffect(*normal_execution_.first).negate());  // (not (normal-execution))
+        effect.push_back(AtomicEffect(*sensing_.first).copy());             // (sensing-is-on)
+        effect.push_back(AtomicEffect(*need_post_[index].first).copy());    // (need-post <param>)
         set_sensing_action->effect_ = effect.ground();
         delete effect[3];
         delete effect[2];
@@ -592,15 +592,15 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
         clone_parameters(action.param_, post_action->param_);
 
         // precondition
-        precondition.push_back(new Literal(*need_post_[index].first));  // (need-post <param>)
+        precondition.push_back(Literal(*need_post_[index].first).copy());   // (need-post <param>)
         post_action->precondition_ = precondition.ground();
         delete precondition[0];
         precondition.clear();
 
         // effect
-        effect.push_back(new AtomicEffect(*normal_execution_.first));   // (normal-execution)
-        effect.push_back(new AtomicEffect(*sensing_.second));           // (not (sensing-is-on))
-        effect.push_back(new AtomicEffect(*need_post_[index].second));  // (not (need-post <param))
+        effect.push_back(AtomicEffect(*normal_execution_.first).copy());    // (normal-execution)
+        effect.push_back(AtomicEffect(*sensing_.first).negate());           // (not (sensing-is-on))
+        effect.push_back(AtomicEffect(*need_post_[index].first).negate());  // (not (need-post <param))
         post_action->effect_ = effect.ground();
         delete effect[2];
         delete effect[1];
@@ -630,9 +630,9 @@ void PDDL_Base::create_invariants_for_multivalued_variables() {
             StateVariable &var = *static_cast<StateVariable*>(multivalued_variables_[k]);
             if( var.grounded_values_.size() > 1 ) {
                 exactly_one.reserve(var.grounded_values_.size());
-                clone_parameters(var.param_, exactly_one.param_);
                 for( size_t i = 0; i < var.grounded_values_.size(); ++i )
-                    exactly_one.push_back(new Literal(*static_cast<const AtomicEffect*>(var.grounded_values_[i])));
+                    exactly_one.push_back(Literal(*static_cast<const AtomicEffect*>(var.grounded_values_[i])).copy());
+                clone_parameters(var.param_, exactly_one.param_);
                 remap_parameters(exactly_one, var.param_, exactly_one.param_);
                 assert(!exactly_one.has_free_variables());
                 dom_init_.push_back(new InitInvariant(exactly_one));
@@ -641,12 +641,9 @@ void PDDL_Base::create_invariants_for_multivalued_variables() {
                 exactly_one.clear();
             } else {
                 at_least_one.reserve(2);
+                at_least_one.push_back(Literal(*static_cast<const AtomicEffect*>(var.grounded_values_[0])).copy());
+                at_least_one.push_back(Literal(*static_cast<const AtomicEffect*>(var.grounded_values_[0])).negate());
                 clone_parameters(var.param_, at_least_one.param_);
-                Literal *literal = new Literal(*static_cast<const AtomicEffect*>(var.grounded_values_[0]));
-                at_least_one.push_back(literal);
-                literal = new Literal(*static_cast<const AtomicEffect*>(var.grounded_values_[0]));
-                literal->negated_ = true;
-                at_least_one.push_back(literal);
                 remap_parameters(at_least_one, var.param_, at_least_one.param_);
                 assert(!at_least_one.has_free_variables());
                 dom_init_.push_back(new InitInvariant(at_least_one));
@@ -662,14 +659,10 @@ void PDDL_Base::create_invariants_for_multivalued_variables() {
                 for( size_t i = 0; i < var.grounded_values_.size(); ++i ) {
                     for( size_t j = i + 1; j < var.grounded_values_.size(); ++j ) {
                         at_least_one.reserve(3);
+                        at_least_one.push_back(Literal(*sensing_.first).negate());
+                        at_least_one.push_back(Literal(*static_cast<const AtomicEffect*>(var.grounded_values_[i])).negate());
+                        at_least_one.push_back(Literal(*static_cast<const AtomicEffect*>(var.grounded_values_[j])).negate());
                         clone_parameters(var.param_, at_least_one.param_);
-                        at_least_one.push_back(new Literal(*sensing_.second));
-                        Literal *literal = new Literal(*static_cast<const AtomicEffect*>(var.grounded_values_[i]));
-                        literal->negated_ = true;
-                        at_least_one.push_back(literal);
-                        literal = new Literal(*static_cast<const AtomicEffect*>(var.grounded_values_[j]));
-                        literal->negated_ = true;
-                        at_least_one.push_back(literal);
                         remap_parameters(at_least_one, var.param_, at_least_one.param_);
                         assert(!at_least_one.has_free_variables());
                         dom_init_.push_back(new InitInvariant(at_least_one));
@@ -680,12 +673,9 @@ void PDDL_Base::create_invariants_for_multivalued_variables() {
                 }
             } else {
                 at_least_one.reserve(2);
+                at_least_one.push_back(Literal(*static_cast<const AtomicEffect*>(var.grounded_values_[0])).copy());
+                at_least_one.push_back(Literal(*static_cast<const AtomicEffect*>(var.grounded_values_[0])).negate());
                 clone_parameters(var.param_, at_least_one.param_);
-                Literal *literal = new Literal(*static_cast<const AtomicEffect*>(var.grounded_values_[0]));
-                at_least_one.push_back(literal);
-                literal = new Literal(*static_cast<const AtomicEffect*>(var.grounded_values_[0]));
-                literal->negated_ = true;
-                at_least_one.push_back(literal);
                 remap_parameters(at_least_one, var.param_, at_least_one.param_);
                 assert(!at_least_one.has_free_variables());
                 dom_init_.push_back(new InitInvariant(at_least_one));
@@ -749,30 +739,52 @@ void PDDL_Base::create_invariants_for_sensing_model() {
         //    the implication ~L => ~Ci
 
         Invariant invariant1(Invariant::AT_LEAST_ONE);
+        Invariant invariant2(Invariant::AT_LEAST_ONE);
         for( map<string, condition_vec>::iterator it = sensing_map.begin(); it != sensing_map.end(); ++it ) {
             bool invariant1_is_good = true;
-            clone_parameters(parameters, invariant1.param_);
-            invariant1.push_back(new Literal(*need_post_[index].second));
-            Literal *literal = new Literal(*sensed_literal[it->first]);
-            literal->negated_ = !literal->negated_;
-            invariant1.push_back(literal);
+            invariant1.push_back(Literal(*need_post_[index].first).negate());
+            invariant1.push_back(Literal(*sensed_literal[it->first]).negate());
             for( size_t i = 0; i < it->second.size(); ++i ) {
+                invariant1.push_back(it->second[i]->copy());
+                invariant2.push_back(Literal(*need_post_[index].first).negate());
+                invariant2.push_back(Literal(*sensed_literal[it->first]).copy());
+                Condition *c = it->second[i]->negate();
+                if( dynamic_cast<Or*>(c) != 0 ) {
+                    Or *or_condition = static_cast<Or*>(c);
+                    for( size_t j = 0; j < or_condition->size(); ++j )
+                        invariant2.push_back((*or_condition)[j]);
+                    or_condition->clear();
+                    delete or_condition;
+                } else {
+                    invariant2.push_back(c);
+                }
+                clone_parameters(parameters, invariant2.param_);
+                remap_parameters(invariant2, parameters, invariant2.param_);
+                assert(!invariant2.has_free_variables());
+                dom_init_.push_back(new InitInvariant(invariant2));
+                //cout << "inv1 (ptr=" << dom_init_.back() << "): " << invariant2 << endl;
+                invariant2.clear();
+#if 0
                 if( dynamic_cast<const Literal*>(it->second[i]) != 0 ) {
                     const Literal &single_condition = *static_cast<const Literal*>(it->second[i]);
-                    invariant1.push_back(new Literal(single_condition));
+                    //invariant1.push_back(new Literal(single_condition));
+                    invariant1.push_back(Literal(single_condition).copy());
 
                     Invariant invariant2(Invariant::AT_LEAST_ONE);
+                    //invariant2.push_back(new Literal(*need_post_[index].second));
+                    //invariant2.push_back(new Literal(*sensed_literal[it->first]));
+                    //Literal *literal = new Literal(single_condition);
+                    //literal->negated_ = !literal->negated_;
+                    //invariant2.push_back(literal);
+                    invariant2.push_back(Literal(*need_post_[index].first).negate());
+                    invariant2.push_back(Literal(*sensed_literal[it->first]).copy());
+                    invariant2.push_back(Literal(single_condition).negate());
                     clone_parameters(parameters, invariant2.param_);
-                    invariant2.push_back(new Literal(*need_post_[index].second));
-                    invariant2.push_back(new Literal(*sensed_literal[it->first]));
-                    Literal *literal = new Literal(single_condition);
-                    literal->negated_ = !literal->negated_;
-                    invariant2.push_back(literal);
                     remap_parameters(invariant2, parameters, invariant2.param_);
                     assert(!invariant2.has_free_variables());
                     dom_init_.push_back(new InitInvariant(invariant2));
-                    cout << "invariant1 for literal " << it->first << ": " << invariant2 << endl;
-                    //cout << "inv1 (ptr=" << dom_init_.back() << "): " << invariant2 << endl;
+                    //cout << "invariant1 for literal " << it->first << ": " << invariant2 << endl;
+                    cout << "inv1 (ptr=" << dom_init_.back() << "): " << invariant2 << endl;
                     invariant2.clear();
                 } else {
                     invariant1_is_good = false;
@@ -783,18 +795,21 @@ void PDDL_Base::create_invariants_for_sensing_model() {
                     //     << "         generating only invariants of type ~L => ~Ci" << endl;
 
                     Invariant invariant2(Invariant::AT_LEAST_ONE);
-                    clone_parameters(parameters, invariant2.param_);
-                    invariant2.push_back(new Literal(*need_post_[index].second));
-                    invariant2.push_back(new Literal(*sensed_literal[it->first]));
+                    //invariant2.push_back(new Literal(*need_post_[index].second));
+                    //invariant2.push_back(new Literal(*sensed_literal[it->first]));
+                    invariant2.push_back(Literal(*need_post_[index].first).negate());
+                    invariant2.push_back(Literal(*sensed_literal[it->first]).copy());
                     for( size_t j = 0; j < condition.size(); ++j ) {
                         //cout << "CONDITION[" << j << "/" << condition.size() << "]=" << *condition[j] << endl;
-                        //cout << "NEGATED=" << *condition[j]->negate() << endl;
+                        cout << "NEGATED=" << *condition[j]->negate() << endl;
                         assert(dynamic_cast<const Literal*>(condition[j]) != 0);
                         const Literal &single_condition = *static_cast<const Literal*>(condition[j]);
-                        Literal *literal = new Literal(single_condition);
-                        literal->negated_ = !literal->negated_;
-                        invariant2.push_back(literal);
+                        //Literal *literal = new Literal(single_condition);
+                        //literal->negated_ = !literal->negated_;
+                        //invariant2.push_back(literal);
+                        invariant2.push_back(Literal(single_condition).negate());
                     }
+                    clone_parameters(parameters, invariant2.param_);
                     remap_parameters(invariant2, parameters, invariant2.param_);
                     assert(!invariant2.has_free_variables());
                     dom_init_.push_back(new InitInvariant(invariant2));
@@ -802,15 +817,17 @@ void PDDL_Base::create_invariants_for_sensing_model() {
                     invariant2.clear();
                     //exit(255);
                 }
+#endif
             }
             if( invariant1_is_good ) {
+                clone_parameters(parameters, invariant1.param_);
                 remap_parameters(invariant1, parameters, invariant1.param_);
                 assert(!invariant1.has_free_variables());
                 dom_init_.push_back(new InitInvariant(invariant1));
-                cout << "inv3 (ptr=" << dom_init_.back() << "): " << invariant1 << endl;
+                //cout << "inv3 (ptr=" << dom_init_.back() << "): " << invariant1 << endl;
             } else {
                 for( size_t i = 0; i < invariant1.size(); ++i )
-                    ;//delete invariant1[i];
+                    delete invariant1[i];
             }
             invariant1.clear();
         }
@@ -1299,7 +1316,7 @@ void PDDL_Base::Or::calculate_free_variables(const map<const Symbol*, size_t> &f
 }
 
 void PDDL_Base::Or::instantiate(Instance &ins, index_set &condition) const {
-    cout << "error: Or should have dissapeared before instantiating: " << *this << endl;
+    cout << "error: 'Or' should have dissapeared before instantiating: " << *this << endl;
     exit(255);
 }
 
@@ -1369,7 +1386,7 @@ void PDDL_Base::ForallCondition::calculate_free_variables(const map<const Symbol
 }
 
 void PDDL_Base::ForallCondition::instantiate(Instance &ins, index_set &condition) const {
-    cout << "error: ForallCondition should have dissapeared before instantiating: " << *this << endl;
+    cout << "error: 'ForallCondition' should have dissapeared before instantiating: " << *this << endl;
     exit(255);
 }
 
@@ -1501,13 +1518,6 @@ void PDDL_Base::AtomicEffect::instantiate(Instance &ins, index_set &eff, Instanc
     Atom::instantiate(ins, eff);
 }
 
-PDDL_Base::Effect* PDDL_Base::AtomicEffect::ground(bool clone_variables) const {
-    Atom *atom = Atom::ground(clone_variables);
-    AtomicEffect *result = new AtomicEffect(*atom);
-    delete atom;
-    return result;
-}
-
 bool PDDL_Base::AtomicEffect::has_free_variables(const var_symbol_vec &param) const {
     return Atom::has_free_variables(param);
 }
@@ -1516,6 +1526,13 @@ bool PDDL_Base::AtomicEffect::is_strongly_static(const PredicateSymbol &p) const
     assert((pred_->print_name_ != p.print_name_) || (pred_ == &p));
     assert((pred_->print_name_ == p.print_name_) || (pred_ != &p));
     return pred_ != &p;
+}
+
+PDDL_Base::AtomicEffect* PDDL_Base::AtomicEffect::internal_ground(bool clone_variables, bool negate) const {
+    Atom *atom = Atom::ground(clone_variables);
+    AtomicEffect *result = new AtomicEffect(*atom, negate);
+    delete atom;
+    return result;
 }
 
 void PDDL_Base::AndEffect::remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param) {
@@ -1705,11 +1722,10 @@ void PDDL_Base::Invariant::process_instance() const {
     Instance::Invariant invariant(type_);
     bool remove_invariant = false;
     for( size_t k = 0; k < size(); ++k ) {
-        assert(dynamic_cast<const Literal*>((*this)[k]) != 0);
-        Condition *grounded_literal = (*this)[k]->ground();
-        if( dynamic_cast<const Constant*>(grounded_literal) ) {
-            bool value = static_cast<const Constant*>(grounded_literal)->value_;
-            delete grounded_literal;
+        Condition *grounded = (*this)[k]->ground();
+        if( dynamic_cast<const Constant*>(grounded) ) {
+            bool value = static_cast<const Constant*>(grounded)->value_;
+            delete grounded;
             if( !value ) {
                 continue;
             } else {
@@ -1717,15 +1733,21 @@ void PDDL_Base::Invariant::process_instance() const {
                 remove_invariant = true;
                 break;
             }
+        } else if( dynamic_cast<const Literal*>(grounded) ) {
+            const Literal *literal = static_cast<const Literal*>(grounded);
+            Instance::Atom *p = literal->find_prop(*instance_ptr_, false, true);
+            delete grounded;
+            if( !literal->negated_ )
+                invariant.push_back(1 + p->index);
+            else
+                invariant.push_back(-(1 + p->index));
+        } else {
+            //cout << "error: invariant must be clause at time of instantiation (skipping): got " << *grounded << endl;
+            remove_invariant = true;
+            delete grounded;
+            break;
+            //exit(255);
         }
-        const Literal *literal = dynamic_cast<const Literal*>(grounded_literal);
-        assert(literal != 0);
-        Instance::Atom *p = literal->find_prop(*instance_ptr_, false, true);
-        delete literal;
-        if( !literal->negated_ )
-            invariant.push_back(1 + p->index);
-        else
-            invariant.push_back(-(1 + p->index));
     }
     if( !remove_invariant ) invariant_vec_ptr_->push_back(invariant);
 }
