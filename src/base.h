@@ -96,7 +96,7 @@ class PDDL_Base {
         bool has_free_variables(const var_symbol_vec &param) const;
         bool is_fully_instantiated() const;
 
-        std::string to_string(bool extra_neg = false) const;
+        std::string to_string(bool extra_neg = false, bool mangled = false) const;
         void print(std::ostream &os, bool extra_neg = false) const { os << to_string(extra_neg); }
         static PDDL_Base *pddl_base_;
     };
@@ -137,7 +137,8 @@ class PDDL_Base {
         virtual void instantiate(Instance &ins, index_set &condition) const;
         virtual Condition* ground(bool clone_variables = false, bool negate = false) const;
         virtual bool has_free_variables(const var_symbol_vec &param) const;
-        virtual std::string to_string() const { return Atom::to_string(); }
+        virtual std::string to_string() const { return to_string(false); }
+        std::string to_string(bool mangled) const { return Atom::to_string(false, mangled); }
     };
 
     struct EQ : public Condition, std::pair<const Symbol*,const Symbol*> {
@@ -228,7 +229,8 @@ class PDDL_Base {
         virtual Effect* ground(bool clone_variables = false) const { return internal_ground(clone_variables, false); }
         virtual bool has_free_variables(const var_symbol_vec &param) const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
-        virtual std::string to_string() const { return Atom::to_string(); }
+        virtual std::string to_string() const { return to_string(false); }
+        std::string to_string(bool mangled) const { return Atom::to_string(false, mangled); }
         AtomicEffect* negate() const { return internal_ground(false, true); }
         AtomicEffect* copy() const { return internal_ground(false, false); }
       private:
