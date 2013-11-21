@@ -5,7 +5,9 @@
 
 using namespace std;
 
-KP_Instance::KP_Instance(const Instance &ins, const Options::Mode &options)
+KP_Instance::KP_Instance(const Instance &ins,
+                         const vector<string> &no_cancellation_rules_for,
+                         const Options::Mode &options)
   : Instance(options), po_instance_(ins),
     n_standard_actions_(0), n_sensor_actions_(0), n_invariant_actions_(0) {
 
@@ -16,12 +18,17 @@ KP_Instance::KP_Instance(const Instance &ins, const Options::Mode &options)
         set_name(new CopyName(ins.name->to_string()));
     }
 
-    // create K0 atoms
+    // create K0 atoms and set of atoms for which no cancellation rules must be generated
     atoms.reserve(2*ins.n_atoms());
-    for( size_t k = 0; k < ins.n_atoms(); k++ ) {
+    set<int> set_no_cancellation_rules_for;
+    for( size_t k = 0; k < ins.n_atoms(); ++k ) {
         string name = ins.atoms[k]->name->to_string();
-        new_atom(new CopyName("(K_" + name + ")"));
-        new_atom(new CopyName("(K_not_" + name + ")"));
+        new_atom(new CopyName("(K_" + name + ")"));      // even-numbered atoms
+        new_atom(new CopyName("(K_not_" + name + ")"));  // odd-numbered atoms
+        for( size_t i = 0; i < no_cancellation_rules_for.size(); ++i ) {
+            if( no_cancellation_rules_for[i] == name )
+                set_no_cancellation_rules_for.insert(k);
+        }
     }
 
     // set initial atoms
@@ -43,7 +50,7 @@ KP_Instance::KP_Instance(const Instance &ins, const Options::Mode &options)
     }
 
     // add known literals in initial situation
-    for( size_t k = 0; k < ins.n_atoms(); k++ ) {
+    for( size_t k = 0; k < ins.n_atoms(); ++k ) {
         const Atom &atom = *ins.atoms[k];
         if( (init.literals.find(1 + 2*k) == init.literals.end()) &&
             (init.literals.find(1 + 2*k+1) == init.literals.end()) ) {
@@ -71,7 +78,7 @@ KP_Instance::KP_Instance(const Instance &ins, const Options::Mode &options)
 
     // create K-actions
     remap_ = vector<int>(ins.n_actions(),-1);
-    for( size_t k = 0; k < ins.n_actions(); k++ ) {
+    for( size_t k = 0; k < ins.n_actions(); ++k ) {
         const Action &act = *ins.actions[k];
         Action &nact = new_action(new CopyName(act.name->to_string()));
         remap_[k] = k;
@@ -85,7 +92,7 @@ KP_Instance::KP_Instance(const Instance &ins, const Options::Mode &options)
                 nact.precondition.insert(1 + 2*idx+1);
         }
 
-        // support and cancellation rules for effects
+        // support rules for unconditional effects (no cancellation)
         for( index_set::const_iterator it = act.effect.begin(); it != act.effect.end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
             if( *it > 0 ) {
@@ -115,14 +122,16 @@ KP_Instance::KP_Instance(const Instance &ins, const Options::Mode &options)
                 int idx = *it > 0 ? *it-1 : -*it-1;
                 if( *it > 0 ) {
                     sup_eff.effect.insert(1 + 2*idx);
-                    can_eff.effect.insert(-(1 + 2*idx+1));
+                    if( set_no_cancellation_rules_for.find(idx) == set_no_cancellation_rules_for.end() )
+                        can_eff.effect.insert(-(1 + 2*idx+1));
                 } else {
                     sup_eff.effect.insert(1 + 2*idx+1);
-                    can_eff.effect.insert(-(1 + 2*idx));
+                    if( set_no_cancellation_rules_for.find(idx) == set_no_cancellation_rules_for.end() )
+                        can_eff.effect.insert(-(1 + 2*idx));
                 }
             }
             nact.when.push_back(sup_eff);
-            nact.when.push_back(can_eff);
+            if( !can_eff.effect.empty() ) nact.when.push_back(can_eff);
         }
 
         if( options_.is_enabled("print:kp:action:regular") ) {
@@ -132,7 +141,7 @@ KP_Instance::KP_Instance(const Instance &ins, const Options::Mode &options)
     n_standard_actions_ = n_actions();
 
     // create sensor rules
-    for( size_t k = 0; k < ins.n_sensors(); k++ ) {
+    for( size_t k = 0; k < ins.n_sensors(); ++k ) {
         const Sensor &r = *ins.sensors[k];
         assert(!r.sense.empty());
 
@@ -222,7 +231,8 @@ KP_Instance::KP_Instance(const Instance &ins, const Options::Mode &options)
                     }
                 }
             } else {
-                // This should be dead code.
+                cout << "warning: only AT_LEAST_ONE-type invariants should exist at this stage" << endl;
+#if 0
                 assert(invariant.type == Invariant::AT_MOST_ONE);
                 for( size_t i = 0; i < invariant.size(); ++i ) {
                     int lit = invariant[i];
@@ -243,6 +253,7 @@ KP_Instance::KP_Instance(const Instance &ins, const Options::Mode &options)
                         }
                     }
                 }
+#endif
             }
 
             // push conditional effect

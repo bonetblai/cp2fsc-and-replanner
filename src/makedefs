@@ -11,10 +11,10 @@ LINK   = g++
 # Last I checked, they were available from
 # ftp://ftp.th-darmstadt.de/pub/programming/languages/C++/tools/flex++bison++/
 
-BISON  = bison++
-FLEX    = /usr/local/bin/flex++
-#BISON   = /home/bonet/software/bison++-1.21-8/bison++
-#FLEX    = /home/bonet/software/flex++-2.3.8-7/flex++
+#BISON  = bison++
+#FLEX    = /usr/local/bin/flex++
+BISON   = /home/bonet/software/bison++-1.21-8/bison++
+FLEX    = /home/bonet/software/flex++-2.3.8-7/flex++
 
 # If you can not find/compile bison++/flex++, try using the "fake" programs
 # as shown below. These are simple scripts that just copy pregenerated files.

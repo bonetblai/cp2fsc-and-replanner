@@ -491,18 +491,20 @@ class PDDL_Base {
     void insert_atom(ptr_table &t, Atom *a);
     void calculate_strongly_static_predicates() const;
     bool truth_value_in_initial_situation(const Atom &literal) const;
-    void do_translations();
+    void do_translations(std::vector<std::string> &no_cancellation_rules_for);
     void instantiate(Instance &ins) const;
     void print(std::ostream &os) const;
     PredicateSymbol* find_type_predicate(Symbol *type_sym);
 
     // methods for formulations in CLG-like syntax
     void declare_clg_translation();
+    bool clg_translation() const { return clg_translation_; }
     void clg_map_oneofs_to_invariants();
     void clg_translate_observe_effects_into_sensors();
 
     // methods for formulations in terms of multivalued variables
     void declare_multivalued_variable_translation();
+    bool multivalued_variable_translation() const { return multivalued_variable_translation_; }
     void instantiate_multivalued_variables();
     void translate_actions_for_multivalued_variable_formulation();
     void translation_for_multivalued_variable_formulation(Action &action, size_t index);
