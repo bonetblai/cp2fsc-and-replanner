@@ -250,7 +250,10 @@ new_var_symbol:
           $$ = var;
       }
     | TK_VAR_SYMBOL {
-          log_error((char*)"variable shadows another variable in outer scope: this is not supported");
+          std::string msg("variable '");
+          msg += $1->text;
+          msg += "' shadows variable in outer scope: this is not supported!";
+          log_error((char*)msg.c_str());
           yyerrok;
       }
     ;

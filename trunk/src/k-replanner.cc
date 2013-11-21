@@ -161,7 +161,8 @@ int main(int argc, char *argv[]) {
     }
 
     // perform necessary translations
-    reader->do_translations();
+    vector<string> no_cancellation_rules_for;
+    reader->do_translations(no_cancellation_rules_for);
     if( options.is_enabled("print:parser:translated") ) {
         reader->print(cout);
     }
@@ -188,7 +189,7 @@ int main(int argc, char *argv[]) {
     }
 
     cout << "creating KP translation..." << endl;
-    KP_Instance kp_instance(instance, options);
+    KP_Instance kp_instance(instance, no_cancellation_rules_for, options);
     if( options.is_enabled("print:kp:raw") ) {
         kp_instance.print(cout);
         kp_instance.write_domain(cout);

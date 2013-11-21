@@ -16,7 +16,9 @@ class KP_Instance : public Instance {
     std::vector<int> remap_;
 
     std::map<std::string, int> obs_rules_by_name_;
-    KP_Instance(const Instance &instance, const Options::Mode &options = Options::Mode());
+    KP_Instance(const Instance &instance,
+                const std::vector<std::string> &no_cancellation_rules_for,
+                const Options::Mode &options = Options::Mode());
     ~KP_Instance();
 
     virtual void cross_reference();

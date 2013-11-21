@@ -834,7 +834,7 @@ void PDDL_Base::create_invariants_for_sensing_model() {
     }
 }
 
-void PDDL_Base::do_translations() {
+void PDDL_Base::do_translations(vector<string> &no_cancellation_rules_for) {
 
     // calculate strongly-static predicates. Used to instantiate
     // things more efficiently by not generating objects with
@@ -851,6 +851,13 @@ void PDDL_Base::do_translations() {
     translate_actions_for_multivalued_variable_formulation();
     create_invariants_for_multivalued_variables();
     create_invariants_for_sensing_model();
+
+    if( multivalued_variable_translation_ ) {
+        cout << "mvv-translation: no cancellation rules for:";
+        for( size_t k = 0; k < no_cancellation_rules_for.size(); ++k )
+            cout << " " << no_cancellation_rules_for[k];
+        cout << endl;
+    }
 }
 
 void PDDL_Base::instantiate(Instance &ins) const {
