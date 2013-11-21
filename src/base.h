@@ -33,7 +33,8 @@ class PDDL_Base {
         Symbol(const char *n, symbol_class c = sym_object) : sym_class_(c), print_name_(n), sym_type_(0) { }
         virtual ~Symbol() { /*delete sym_type_;*/ }
         virtual Symbol* clone() const;
-        virtual void print(std::ostream &os) const { os << print_name_; }
+        virtual std::string to_string() const { return std::string(print_name_); }
+        void print(std::ostream &os) const { os << to_string(); }
     };
     struct symbol_vec : public std::vector<Symbol*> { };
 
@@ -43,7 +44,7 @@ class PDDL_Base {
         virtual ~TypeSymbol() { /*for( size_t k = 0; k < elements_.size(); ++k ) delete elements_[k];*/ }
         virtual Symbol* clone() const;
         void add_element(Symbol* e);
-        virtual void print(std::ostream &os) const;
+        virtual std::string to_string() const;
     };
     struct type_symbol_vec : public std::vector<TypeSymbol*> { };
 
@@ -52,7 +53,7 @@ class PDDL_Base {
         VariableSymbol(const char *n) : Symbol(n, sym_variable), value_(0) { }
         virtual ~VariableSymbol() { /*delete value_;*/ }
         virtual Symbol* clone() const;
-        virtual void print(std::ostream &os) const;
+        virtual std::string to_string() const;
     };
     struct var_symbol_vec : public std::vector<VariableSymbol*> { };
 
@@ -64,7 +65,7 @@ class PDDL_Base {
         PredicateSymbol(const char *n) : Symbol(n, sym_predicate), strongly_static_(false) { }
         virtual ~PredicateSymbol() { for( size_t k = 0; k < param_.size(); ++k ) delete param_[k]; }
         virtual Symbol* clone() const;
-        virtual void print(std::ostream &os) const;
+        virtual std::string to_string() const;
     };
     struct predicate_symbol_vec : public std::vector<PredicateSymbol*> { };
 
@@ -95,9 +96,8 @@ class PDDL_Base {
         bool has_free_variables(const var_symbol_vec &param) const;
         bool is_fully_instantiated() const;
 
-        std::string print_name(bool extra_neg = false) const;
-        void print(std::ostream &os, bool extra_neg) const;
-        void print(std::ostream &os) const { print(os, false); }
+        std::string to_string(bool extra_neg = false) const;
+        void print(std::ostream &os, bool extra_neg = false) const { os << to_string(extra_neg); }
         static PDDL_Base *pddl_base_;
     };
     struct atom_vec : public std::vector<Atom*> { };
@@ -110,7 +110,8 @@ class PDDL_Base {
         virtual void instantiate(Instance &ins, index_set &condition) const = 0;
         virtual Condition* ground(bool clone_variables = false, bool negate = false) const = 0;
         virtual bool has_free_variables(const var_symbol_vec &param) const = 0;
-        virtual void print(std::ostream &os) const = 0;
+        virtual std::string to_string() const = 0;
+        void print(std::ostream &os) const { os << to_string(); }
         Condition* negate() const { return ground(false, true); }
         Condition* copy() const { return ground(false, false); }
     };
@@ -125,7 +126,7 @@ class PDDL_Base {
         virtual void instantiate(Instance &ins, index_set &condition) const { }
         virtual Condition* ground(bool clone_variables = false, bool negate = false) const { return new Constant(negate ? !value_ : value_); }
         virtual bool has_free_variables(const var_symbol_vec &param) const { return true; }
-        virtual void print(std::ostream &os) const { os << (value_ ? "true" : "false"); }
+        virtual std::string to_string() const { return std::string(value_ ? "true" : "false"); }
     };
 
     struct Literal : public Condition, Atom {
@@ -136,7 +137,7 @@ class PDDL_Base {
         virtual void instantiate(Instance &ins, index_set &condition) const;
         virtual Condition* ground(bool clone_variables = false, bool negate = false) const;
         virtual bool has_free_variables(const var_symbol_vec &param) const;
-        virtual void print(std::ostream &os) const { Atom::print(os); }
+        virtual std::string to_string() const { return Atom::to_string(); }
     };
 
     struct EQ : public Condition, std::pair<const Symbol*,const Symbol*> {
@@ -149,7 +150,7 @@ class PDDL_Base {
         virtual void instantiate(Instance &ins, index_set &condition) const { }
         virtual Condition* ground(bool clone_variables = false, bool negate = false) const;
         virtual bool has_free_variables(const var_symbol_vec &param) const;
-        virtual void print(std::ostream &os) const;
+        virtual std::string to_string() const;
     };
 
     struct And : public Condition, condition_vec {
@@ -161,7 +162,7 @@ class PDDL_Base {
         virtual void instantiate(Instance &ins, index_set &condition) const;
         virtual Condition* ground(bool clone_variables = false, bool negate = false) const;
         virtual bool has_free_variables(const var_symbol_vec &param) const;
-        virtual void print(std::ostream &os) const;
+        virtual std::string to_string() const;
     };
 
     struct Or : public Condition, condition_vec {
@@ -173,7 +174,7 @@ class PDDL_Base {
         virtual void instantiate(Instance &ins, index_set &condition) const;
         virtual Condition* ground(bool clone_variables = false, bool negate = false) const;
         virtual bool has_free_variables(const var_symbol_vec &param) const;
-        virtual void print(std::ostream &os) const;
+        virtual std::string to_string() const;
     };
 
     struct ForallCondition : public Condition, Schema {
@@ -186,7 +187,7 @@ class PDDL_Base {
         virtual void process_instance() const;
         virtual Condition* ground(bool clone_variables = false, bool negate = false) const;
         virtual bool has_free_variables(const var_symbol_vec &param) const;
-        virtual void print(std::ostream &os) const;
+        virtual std::string to_string() const;
         mutable std::vector<bool> negate_stack_;
         mutable std::vector<bool> clone_variables_stack_;
         mutable std::vector<Condition*> result_stack_;
@@ -201,7 +202,8 @@ class PDDL_Base {
         virtual Effect* ground(bool clone_variables = false) const = 0;
         virtual bool has_free_variables(const var_symbol_vec &param) const = 0;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const = 0;
-        virtual void print(std::ostream &os) const = 0;
+        virtual std::string to_string() const = 0;
+        void print(std::ostream &os) const { os << to_string(); }
     };
     struct effect_vec : public std::vector<const Effect*> { };
 
@@ -214,7 +216,7 @@ class PDDL_Base {
         virtual Effect* ground(bool clone_variables = false) const { return new NullEffect; }
         virtual bool has_free_variables(const var_symbol_vec &param) const { return true; }
         virtual bool is_strongly_static(const PredicateSymbol &pred) const { return true; }
-        virtual void print(std::ostream &os) const { os << "<null>"; }
+        virtual std::string to_string() const { return std::string("<null>"); }
     };
 
     struct AtomicEffect : public Effect, Atom {
@@ -226,7 +228,7 @@ class PDDL_Base {
         virtual Effect* ground(bool clone_variables = false) const { return internal_ground(clone_variables, false); }
         virtual bool has_free_variables(const var_symbol_vec &param) const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
-        virtual void print(std::ostream &os) const { Atom::print(os); }
+        virtual std::string to_string() const { return Atom::to_string(); }
         AtomicEffect* negate() const { return internal_ground(false, true); }
         AtomicEffect* copy() const { return internal_ground(false, false); }
       private:
@@ -243,7 +245,7 @@ class PDDL_Base {
         virtual Effect* ground(bool clone_variables = false) const;
         virtual bool has_free_variables(const var_symbol_vec &param) const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
-        virtual void print(std::ostream &os) const;
+        virtual std::string to_string() const;
     };
 
     struct ConditionalEffect : public Effect {
@@ -258,7 +260,7 @@ class PDDL_Base {
         virtual Effect* ground(bool clone_variables = false) const;
         virtual bool has_free_variables(const var_symbol_vec &param) const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
-        virtual void print(std::ostream &os) const;
+        virtual std::string to_string() const;
     };
 
     struct ForallEffect : public Effect, Schema {
@@ -272,7 +274,7 @@ class PDDL_Base {
         virtual Effect* ground(bool clone_variables = false) const;
         virtual bool has_free_variables(const var_symbol_vec &param) const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
-        virtual void print(std::ostream &os) const;
+        virtual std::string to_string() const;
         mutable std::vector<AndEffect*> result_stack_;
         mutable std::vector<bool> clone_variables_stack_;
     };
@@ -544,11 +546,6 @@ inline std::ostream& operator<<(std::ostream &os, const PDDL_Base::Clause &claus
 
 inline std::ostream& operator<<(std::ostream &os, const PDDL_Base::Oneof &oneof) {
     oneof.print(os);
-    return os;
-}
-
-inline std::ostream& operator<<(std::ostream &os, const PDDL_Base::InitElement &element) {
-    element.print(os);
     return os;
 }
 
