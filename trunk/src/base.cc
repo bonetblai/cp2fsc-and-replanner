@@ -800,9 +800,10 @@ void PDDL_Base::do_translations(vector<string> &no_cancellation_rules_for) {
 
     // HACK: to be removed
     for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
-        if( multivalued_variables_[k]->is_observable() ) {
-            for( size_t i = 0; i < multivalued_variables_[k]->grounded_values_.size(); ++i )
-                no_cancellation_rules_for.push_back(multivalued_variables_[k]->grounded_values_[i]->to_string());
+        const Variable &var = *multivalued_variables_[k];
+        if( var.is_observable() ) {
+            for( size_t i = 0; i < var.grounded_values_.size(); ++i )
+                no_cancellation_rules_for.push_back(static_cast<const AtomicEffect*>(var.grounded_values_[i])->to_string(true));
         }
     }
 
@@ -1072,19 +1073,19 @@ void PDDL_Base::Atom::instantiate(Instance &ins, index_set &atoms) const {
         atoms.insert(-(1 + p->index));
 }
 
-string PDDL_Base::Atom::to_string(bool extra_neg) const {
-    string str;
+string PDDL_Base::Atom::to_string(bool extra_neg, bool mangled) const {
+    string str, sep(mangled ? "_" : " "), beg(mangled ? "" : "("), end(mangled ? "" : ")");
     extra_neg = extra_neg ? !negated_ : negated_;
-    if( extra_neg ) str += "(not ";
-    str += string("(") + pred_->print_name_;
+    if( extra_neg ) str += beg + "not" + sep;
+    str += beg + pred_->print_name_;
     for (size_t k = 0; k < param_.size(); ++k) {
         if( (param_[k]->sym_class_ == sym_variable) && (static_cast<VariableSymbol*>(param_[k])->value_ != 0) )
-            str += " " + static_cast<VariableSymbol*>(param_[k])->value_->to_string();
+            str += sep + static_cast<VariableSymbol*>(param_[k])->value_->to_string();
         else
-            str += " " + param_[k]->to_string();
+            str += sep + param_[k]->to_string();
     }
-    str += ")";
-    if( extra_neg ) str += ")";
+    str += end;
+    if( extra_neg ) str += end;
     return str;
 }
 
