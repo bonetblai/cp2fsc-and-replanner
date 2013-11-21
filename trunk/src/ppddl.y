@@ -249,6 +249,10 @@ new_var_symbol:
           $1->val = var;
           $$ = var;
       }
+    | TK_VAR_SYMBOL {
+          log_error((char*)"variable shadows another variable in outer scope: this is not supported");
+          yyerrok;
+      }
     ;
 
 // type declarations
