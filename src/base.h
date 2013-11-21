@@ -15,7 +15,6 @@ class PDDL_Base {
     static bool write_info_;
     static Instance::when_vec dummy_when_vec_;
 
-
     enum symbol_class {
         sym_object,
         sym_typename,
