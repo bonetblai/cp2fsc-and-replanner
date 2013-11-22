@@ -14,13 +14,9 @@ class Name {
     static bool problem_name_only;
 
     virtual ~Name() { }
-    virtual void write(std::ostream &os, bool cat) const = 0;
+    virtual std::string to_string(bool cat = false) const = 0;
 
-    std::string to_string() const {
-        std::ostringstream s;
-        write(s, true);
-        return s.str();
-    }
+    void write(std::ostream &os, bool cat) const { os << to_string(cat); }
     bool equals(const Name *name) const { return to_string() == name->to_string(); }
 };
 
@@ -41,7 +37,7 @@ class StringName : public Name {
   public:
     StringName(const char *s) : _string(s) { }
     virtual ~StringName() { }
-    virtual void write(std::ostream &os, bool cat) const { os << _string; }
+    virtual std::string to_string(bool cat = false) const { return std::string(_string); }
 };
 
 class CopyName : public Name {
@@ -50,7 +46,7 @@ class CopyName : public Name {
     CopyName(const char *s) : _string(strdup(s)) { }
     CopyName(const std::string &s) : _string(strdup(s.c_str())) { }
     virtual ~CopyName() { free(_string); }
-    virtual void write(std::ostream &os, bool cat) const { os << _string; }
+    virtual std::string to_string(bool cat = false) const { return std::string(_string); }
 };
 
 class InstanceName : public Name {
@@ -60,13 +56,13 @@ class InstanceName : public Name {
     InstanceName(const char *d, const char *p) : domain_name(strdup(d)), problem_name(strdup(p)) { }
     InstanceName(const InstanceName &name) : domain_name(strdup(name.domain_name)), problem_name(strdup(name.problem_name)) { }
     virtual ~InstanceName() { free((char*)domain_name); free((char*)problem_name); }
-    virtual void write(std::ostream &os, bool cat) const {
+    virtual std::string to_string(bool cat = false) const {
         if( domain_name_only )
-            os << domain_name;
+            return std::string(domain_name);
         else if( problem_name_only )
-            os << problem_name;
+            return std::string(problem_name);
         else
-            os << domain_name << "::" << problem_name;
+            return std::string(domain_name) + "::" + problem_name;
     }
 };
 

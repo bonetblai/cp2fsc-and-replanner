@@ -5,6 +5,7 @@
 #include "string_table.h"
 #include "problem.h"
 #include <cassert>
+#include <list>
 #include <map>
 #include <set>
 #include <vector>
@@ -292,9 +293,11 @@ class PDDL_Base {
         bool has_free_variables() const;
         mutable Instance::invariant_vec *invariant_vec_ptr_;
         mutable Instance *instance_ptr_;
+        mutable std::list<Invariant*> *invariant_list_ptr_;
     };
 
     struct Clause : public condition_vec {
+        Clause() { }
         Clause(const condition_vec &clause) : condition_vec(clause) { }
         virtual ~Clause() { for( size_t k = 0; k < size(); ++k ) delete (*this)[k]; }
         void instantiate(Instance &ins, Instance::Clause &clause) const;
@@ -309,19 +312,24 @@ class PDDL_Base {
         virtual void print(std::ostream &os) const;
     };
 
+    struct InitElement;
+    struct init_element_vec : public std::vector<InitElement*> { };
+    struct init_element_list : public std::list<InitElement*> { };
+
     struct InitElement {
         InitElement() { }
         virtual ~InitElement() { }
+        virtual void instantiate(init_element_list &ilist) const = 0;
         virtual void instantiate(Instance &ins) const = 0;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const = 0;
         virtual void print(std::ostream &os) const = 0;
     };
-    struct init_element_vec : public std::vector<InitElement*> { };
 
     struct InitLiteral : public InitElement, Atom {
         InitLiteral(const Atom &atom) : Atom(atom) { }
         virtual ~InitLiteral() { }
         void instantiate(Instance &ins, Instance::Init &state) const;
+        virtual void instantiate(init_element_list &ilist) const;
         virtual void instantiate(Instance &ins) const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
         virtual void print(std::ostream &os) const { Atom::print(os); }
@@ -330,6 +338,7 @@ class PDDL_Base {
     struct InitInvariant : public InitElement, Invariant {
         InitInvariant(const Invariant &invariant) : Invariant(invariant) { }
         virtual ~InitInvariant() { }
+        virtual void instantiate(init_element_list &ilist) const;
         virtual void instantiate(Instance &ins) const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
         virtual void print(std::ostream &os) const { Invariant::print(os); }
@@ -338,6 +347,7 @@ class PDDL_Base {
     struct InitClause : public InitElement, Clause {
         InitClause(const Clause &clause) : Clause(clause) { }
         virtual ~InitClause() { }
+        virtual void instantiate(init_element_list &ilist) const;
         virtual void instantiate(Instance &ins) const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
         virtual void print(std::ostream &os) const { Clause::print(os); }
@@ -347,11 +357,16 @@ class PDDL_Base {
     struct InitOneof : public InitElement, Oneof {
         InitOneof(const Oneof &oneof) : Oneof(oneof) { }
         virtual ~InitOneof() { }
+        virtual void instantiate(init_element_list &ilist) const;
         virtual void instantiate(Instance &ins) const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
         virtual void print(std::ostream &os) const { Oneof::print(os); }
         using Oneof::instantiate;
     };
+
+    struct Action;
+    struct action_vec : public std::vector<Action*> { };
+    struct action_list : public std::list<Action*> { };
 
     struct Action : public Symbol, Schema {
         const Condition *precondition_;
@@ -362,36 +377,47 @@ class PDDL_Base {
           : Symbol(name, sym_action), precondition_(0), effect_(0), observe_(0), sensing_model_(0) {
         }
         virtual ~Action() { delete precondition_; delete effect_; delete observe_; delete sensing_model_; }
+        void instantiate(action_list &alist) const;
         void instantiate(Instance &ins) const;
         virtual void process_instance() const;
         virtual void print(std::ostream &os) const;
         mutable Instance *instance_ptr_;
+        mutable std::list<Action*> *action_list_ptr_;
     };
-    struct action_vec : public std::vector<Action*> { };
+
+    struct Sensor;
+    struct sensor_vec : public std::vector<Sensor*> { };
+    struct sensor_list : public std::list<Sensor*> { };
 
     struct Sensor : public Symbol, Schema {
         const Condition *condition_;
         const Effect *sense_;
         Sensor(const char *name) : Symbol(name, sym_sensor), condition_(0), sense_(0) { }
         virtual ~Sensor() { delete condition_; delete sense_; }
+        void instantiate(sensor_list &slist) const;
         void instantiate(Instance &ins) const;
         virtual void process_instance() const;
         virtual void print(std::ostream &os) const;
         mutable Instance *instance_ptr_;
+        mutable sensor_list *sensor_list_ptr_;
     };
-    struct sensor_vec : public std::vector<Sensor*> { };
+
+    struct Axiom;
+    struct axiom_vec : public std::vector<Axiom*> { };
+    struct axiom_list : public std::list<Axiom*> { };
 
     struct Axiom : public Symbol, Schema {
         const Condition *body_;
         const Effect *head_;
         Axiom(const char *name) : Symbol(name, sym_axiom), body_(0), head_(0) { }
         virtual ~Axiom() { delete body_; delete head_; }
+        void instantiate(axiom_list &alist) const;
         void instantiate(Instance &ins) const;
         virtual void process_instance() const;
         virtual void print(std::ostream &os) const;
         mutable Instance *instance_ptr_;
+        mutable axiom_list *axiom_list_ptr_;
     };
-    struct axiom_vec : public std::vector<Axiom*> { };
 
     struct Observable {
         effect_vec observables_;
@@ -510,6 +536,7 @@ class PDDL_Base {
     void declare_multivalued_variable_translation();
     bool multivalued_variable_translation() const { return multivalued_variable_translation_; }
     void instantiate_multivalued_variables();
+    void instantiate_elements();
     void translate_actions_for_multivalued_variable_formulation();
     void translation_for_multivalued_variable_formulation(Action &action, size_t index);
     void create_invariants_for_multivalued_variables();
@@ -577,7 +604,7 @@ class PDDL_Name : public Name {
     PDDL_Name(const PDDL_Base::Symbol *sym, const PDDL_Base::var_symbol_vec &arg, size_t n);
     virtual ~PDDL_Name() { }
     void add(PDDL_Base::Symbol *s);
-    virtual void write(std::ostream &os, bool cat) const;
+    std::string to_string(bool cat = false) const;
 };
 
 #endif

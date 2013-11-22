@@ -309,6 +309,35 @@ void PDDL_Base::instantiate_multivalued_variables() {
     multivalued_variables_ = grounded_variables;
 }
 
+void PDDL_Base::instantiate_elements() {
+    action_list alist;
+    for( size_t k = 0; k < dom_actions_.size(); ++k ) {
+        dom_actions_[k]->instantiate(alist);
+        delete dom_actions_[k];
+    }
+    dom_actions_.clear();
+    dom_actions_.reserve(alist.size());
+    dom_actions_.insert(dom_actions_.begin(), alist.begin(), alist.end());
+
+    sensor_list slist;
+    for( size_t k = 0; k < dom_sensors_.size(); ++k ) {
+        dom_sensors_[k]->instantiate(slist);
+        delete dom_sensors_[k];
+    }
+    dom_sensors_.clear();
+    dom_sensors_.reserve(slist.size());
+    dom_sensors_.insert(dom_sensors_.begin(), slist.begin(), slist.end());
+
+    axiom_list xlist;
+    for( size_t k = 0; k < dom_axioms_.size(); ++k ) {
+        dom_axioms_[k]->instantiate(xlist);
+        delete dom_axioms_[k];
+    }
+    dom_axioms_.clear();
+    dom_axioms_.reserve(slist.size());
+    dom_axioms_.insert(dom_axioms_.begin(), xlist.begin(), xlist.end());
+}
+
 void PDDL_Base::translate_actions_for_multivalued_variable_formulation() {
     if( !multivalued_variable_translation_ ) return;
 
@@ -794,6 +823,7 @@ void PDDL_Base::do_translations(vector<string> &no_cancellation_rules_for) {
 
     // translate multivalued variable formulations
     instantiate_multivalued_variables();
+    instantiate_elements();
     translate_actions_for_multivalued_variable_formulation();
     create_invariants_for_multivalued_variables();
     create_invariants_for_sensing_model();
@@ -1017,7 +1047,7 @@ Instance::Atom* PDDL_Base::Atom::find_prop(Instance &ins, bool negated, bool cre
             else
 	        a_name.add(param_[k]);
         }
-        Instance::Atom &p = ins.new_atom(new CopyName(a_name.to_string()));
+        Instance::Atom &p = ins.new_atom(new CopyName(a_name.to_string(true)));
         r->val = &p;
     }
     return static_cast<Instance::Atom*>(r->val);
@@ -1688,6 +1718,38 @@ string PDDL_Base::ForallEffect::to_string() const {
 }
 
 void PDDL_Base::Invariant::process_instance() const {
+    if( invariant_list_ptr_ != 0 ) {
+        Invariant invariant(type_);
+        bool remove_invariant = false;
+        for( size_t k = 0; k < size(); ++k ) {
+            Condition *grounded = (*this)[k]->ground();
+            if( dynamic_cast<const Constant*>(grounded) ) {
+                bool value = static_cast<const Constant*>(grounded)->value_;
+                delete grounded;
+                if( !value ) {
+                    continue;
+                } else {
+                    //cout << "Removing invariant " << *this << " because is tautological" << endl;
+                    remove_invariant = true;
+                    break;
+                }
+            } else if( dynamic_cast<const Literal*>(grounded) ) {
+                invariant.push_back(grounded);
+            } else {
+                //cout << "error: invariant must be clause at time of instantiation (skipping): got " << *grounded << endl;
+                remove_invariant = true;
+                delete grounded;
+                break;
+                //exit(255);
+            }
+        }
+        if( !remove_invariant ) {
+            invariant_list_ptr_->push_back(new Invariant(invariant));
+            invariant.clear();
+        }
+        return;
+    }
+
     Instance::Invariant invariant(type_);
     bool remove_invariant = false;
     for( size_t k = 0; k < size(); ++k ) {
@@ -1793,6 +1855,12 @@ void PDDL_Base::InitLiteral::instantiate(Instance &ins, Instance::Init &state) c
     }
 }
 
+void PDDL_Base::InitLiteral::instantiate(init_element_list &ilist) const {
+    Atom *atom = ground();
+    ilist.push_back(new InitLiteral(*atom));
+    delete atom;
+}
+
 void PDDL_Base::InitLiteral::instantiate(Instance &ins) const {
     Instance::Atom *p = find_prop(ins, false, true);
     if( !negated_ ) {
@@ -1806,12 +1874,21 @@ bool PDDL_Base::InitLiteral::is_strongly_static(const PredicateSymbol &p) const 
     return true;
 }
 
+void PDDL_Base::InitInvariant::instantiate(init_element_list &ilist) const {
+    cout << "About to instantiate invariant: " << *this << endl;
+    assert(!Invariant::has_free_variables());
+    list<Invariant*> invariant_list;
+    invariant_list_ptr_ = &invariant_list;
+    enumerate();
+}
+
 void PDDL_Base::InitInvariant::instantiate(Instance &ins) const {
     cout << "About to instantiate invariant: " << *this << endl;
     assert(!Invariant::has_free_variables());
     Instance::invariant_vec instantiated_invariants;
     enumerate(true);
     instantiated_invariants.reserve(count_);
+    invariant_list_ptr_ = 0;
     invariant_vec_ptr_ = &instantiated_invariants;
     instance_ptr_ = &ins;
     enumerate();
@@ -1869,6 +1946,14 @@ bool PDDL_Base::InitInvariant::is_strongly_static(const PredicateSymbol &p) cons
     return true;
 }
 
+void PDDL_Base::InitClause::instantiate(init_element_list &ilist) const {
+    Clause clause;
+    for( size_t k = 0; k < size(); ++k )
+        clause.push_back((*this)[k]->ground());
+    ilist.push_back(new InitClause(clause));
+    clause.clear();
+}
+
 void PDDL_Base::InitClause::instantiate(Instance &ins) const {
     Instance::Clause clause;
     Clause::instantiate(ins, clause);
@@ -1884,6 +1969,14 @@ bool PDDL_Base::InitClause::is_strongly_static(const PredicateSymbol &p) const {
         if( lit->pred_ == &p ) return false;
     }
     return true;
+}
+
+void PDDL_Base::InitOneof::instantiate(init_element_list &ilist) const {
+    Oneof oneof;
+    for( size_t k = 0; k < size(); ++k )
+        oneof.push_back((*this)[k]->ground());
+    ilist.push_back(new InitOneof(oneof));
+    oneof.clear();
 }
 
 void PDDL_Base::InitOneof::instantiate(Instance &ins) const {
@@ -1903,9 +1996,19 @@ bool PDDL_Base::InitOneof::is_strongly_static(const PredicateSymbol &p) const {
     return true;
 }
 
+void PDDL_Base::Action::instantiate(action_list &alist) const {
+    size_t base_count = alist.size();
+    instance_ptr_ = 0;
+    action_list_ptr_ = &alist;
+    cout << "instantiating '" << print_name_ << "' ..." << flush;
+    enumerate();
+    cout << " " << alist.size() - base_count  << " action(s)" << endl;
+}
+
 void PDDL_Base::Action::instantiate(Instance &ins) const {
     size_t base = ins.n_actions();
     instance_ptr_ = &ins;
+    action_list_ptr_ = 0;
     cout << "instantiating '" << print_name_ << "' ..." << flush;
     enumerate(true);
     cout << " (reserve " << count_ << ") ..." << flush;
@@ -1920,15 +2023,26 @@ void PDDL_Base::Action::process_instance() const {
         grounded_precondition = precondition_->ground();
         if( dynamic_cast<Constant*>(grounded_precondition) != 0 ) {
             Constant *precondition_value = static_cast<Constant*>(grounded_precondition);
-            if( !precondition_value->value_ ) {
-                delete grounded_precondition;
+            delete grounded_precondition;
+            if( !precondition_value->value_ )
                 return;
-            }
+            else
+                grounded_precondition = 0;
         }
     }
 
     PDDL_Name name(this, param_, param_.size());
-    Instance::Action &act = instance_ptr_->new_action(new CopyName(name.to_string()));
+    if( action_list_ptr_ != 0 ) {
+        Action *action = new Action(strdup(name.to_string(true).c_str()));
+        action->precondition_ = grounded_precondition;
+        if( effect_ != 0 ) action->effect_ = effect_->ground();
+        if( observe_ != 0 ) action->observe_ = observe_->ground();
+        if( sensing_model_ != 0 ) action->sensing_model_ = sensing_model_->ground();
+        action_list_ptr_->push_back(action);
+        return;
+    }
+
+    Instance::Action &act = instance_ptr_->new_action(new CopyName(name.to_string(true)));
     act.cost = 1;
     //cout << "fully instantiated action " << name << endl;
 
@@ -1974,22 +2088,52 @@ void PDDL_Base::Action::print(ostream &os) const {
     os << ")" << endl;
 }
 
+void PDDL_Base::Sensor::instantiate(sensor_list &slist) const {
+    size_t base_count = slist.size();
+    sensor_list_ptr_ = &slist;
+    instance_ptr_ = 0;
+    cout << "instantiating '" << print_name_ << "' ..." << flush;
+    enumerate();
+    cout << " " << slist.size() - base_count << " sensor(s)" << endl;
+}
+
 void PDDL_Base::Sensor::instantiate(Instance &ins) const {
-    size_t base = ins.n_sensors();
+    size_t base_count = ins.n_sensors();
+    sensor_list_ptr_ = 0;
     instance_ptr_ = &ins;
     cout << "instantiating '" << print_name_ << "' ..." << flush;
     enumerate(true);
-    ins.reserve_sensors(base + count_);
+    ins.reserve_sensors(base_count + count_);
     enumerate();
-    cout << " " << ins.n_sensors()-base << " sensor(s)" << endl;
+    cout << " " << ins.n_sensors() - base_count << " sensor(s)" << endl;
 }
 
 void PDDL_Base::Sensor::process_instance() const {
-    PDDL_Name name(this, param_, param_.size());
-    Instance::Sensor &sensor = instance_ptr_->new_sensor(new CopyName(name.to_string()));
-    //cout << "fully instantiated sensor " << name << endl;
+    Condition *grounded_condition = 0;
     if( condition_ != 0 ) {
         Condition *grounded_condition = condition_->ground();
+        if( dynamic_cast<Constant*>(grounded_condition) != 0 ) {
+            Constant *condition_value = static_cast<Constant*>(grounded_condition);
+            delete grounded_condition;
+            if( !condition_value->value_ )
+                return;
+            else
+                grounded_condition = 0;
+        }
+    }
+
+    PDDL_Name name(this, param_, param_.size());
+    if( sensor_list_ptr_ != 0 ) {
+        Sensor *sensor = new Sensor(strdup(name.to_string(true).c_str()));
+        sensor->condition_ = grounded_condition;
+        if( sense_ != 0 ) sensor->sense_ = sense_->ground();
+        sensor_list_ptr_->push_back(sensor);
+        return;
+    }
+
+    Instance::Sensor &sensor = instance_ptr_->new_sensor(new CopyName(name.to_string(true)));
+    //cout << "fully instantiated sensor " << name << endl;
+    if( grounded_condition != 0 ) {
         grounded_condition->instantiate(*instance_ptr_, sensor.condition);
         //cout << "    :condition " << *grounded_condition << endl;
         delete grounded_condition;
@@ -2021,22 +2165,52 @@ void PDDL_Base::Sensor::print(ostream &os) const {
        << ")" << endl;
 }
 
+void PDDL_Base::Axiom::instantiate(axiom_list &alist) const {
+    size_t base_count = alist.size();
+    instance_ptr_ = 0;
+    axiom_list_ptr_ = &alist;
+    cout << "instantiating '" << print_name_ << "' ..." << flush;
+    enumerate();
+    cout << " " << alist.size() - base_count << " axiom(s)" << endl;
+}
+
 void PDDL_Base::Axiom::instantiate(Instance &ins) const {
-    size_t base = ins.n_axioms();
+    size_t base_count = ins.n_axioms();
     instance_ptr_ = &ins;
+    axiom_list_ptr_ = 0;
     cout << "instantiating '" << print_name_ << "' ..." << flush;
     enumerate(true);
-    ins.reserve_axioms(base + count_);
+    ins.reserve_axioms(base_count + count_);
     enumerate();
-    cout << " " << ins.n_axioms()-base << " axiom(s)" << endl;
+    cout << " " << ins.n_axioms() - base_count << " axiom(s)" << endl;
 }
 
 void PDDL_Base::Axiom::process_instance() const {
-    PDDL_Name name(this, param_, param_.size());
-    Instance::Axiom &axiom = instance_ptr_->new_axiom(new CopyName(name.to_string()));
-    //cout << "fully instantiated axiom " << name << endl;
+    Condition *grounded_body = 0;
     if( body_ != 0 ) {
         Condition *grounded_body = body_->ground();
+        if( dynamic_cast<Constant*>(grounded_body) != 0 ) {
+            Constant *body_value = static_cast<Constant*>(grounded_body);
+            delete grounded_body;
+            if( !body_value->value_ )
+                return;
+            else
+                grounded_body = 0;
+        }
+    }
+
+    PDDL_Name name(this, param_, param_.size());
+    if( axiom_list_ptr_ != 0 ) {
+        Axiom *axiom = new Axiom(strdup(name.to_string(true).c_str()));
+        axiom->body_ = grounded_body;
+        if( head_ != 0 ) axiom->head_ = head_->ground();
+        axiom_list_ptr_->push_back(axiom);
+        return;
+    }
+
+    Instance::Axiom &axiom = instance_ptr_->new_axiom(new CopyName(name.to_string(true)));
+    //cout << "fully instantiated axiom " << name << endl;
+    if( grounded_body != 0 ) {
         grounded_body->instantiate(*instance_ptr_, axiom.body);
         //cout << "    :body " << *grounded_body << endl;
         delete grounded_body;
@@ -2109,7 +2283,7 @@ void PDDL_Base::Variable::instantiate(vector<Variable*> &grounded_variables) con
 
 void PDDL_Base::Variable::process_instance() const {
     PDDL_Name name(this, param_, param_.size());
-    Variable *var = make_instance(strdup(name.to_string().c_str()));
+    Variable *var = make_instance(strdup(name.to_string(true).c_str()));
     grounded_variables_ptr_->push_back(var);
 
     for( size_t k = 0; k < values_.size(); ++k ) {
@@ -2164,21 +2338,23 @@ void PDDL_Name::add(PDDL_Base::Symbol *s) {
     arg_.push_back(s);
 }
 
-void PDDL_Name::write(ostream &os, bool cat) const {
+string PDDL_Name::to_string(bool cat) const {
+    string str;
     if( cat ) {
         if( negated_ )
-            os << "not_" << sym_->print_name_;
+            str += string("not_") + sym_->print_name_;
         else
-            os << sym_->print_name_;
+            str += sym_->print_name_;
         for( size_t k = 0; k < arg_.size(); ++k )
-            os << '_' << arg_[k]->print_name_;
+            str += string("_") + arg_[k]->print_name_;
     } else {
-        if( negated_ ) os << "(not ";
-        os << '(' << sym_->print_name_;
+        if( negated_ ) str += "(not ";
+        str += string("(") + sym_->print_name_;
         for( size_t k = 0; k < arg_.size(); ++k )
-            os << ' ' << arg_[k]->print_name_;
-        os << ')';
-        if( negated_ ) os << ')';
+            str += string(" ") + arg_[k]->print_name_;
+        str += ")";
+        if( negated_ ) str += ")";
     }
+    return str;
 }
 
