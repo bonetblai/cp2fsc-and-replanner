@@ -27,7 +27,7 @@
         :precondition (and (need-start) (at ?j))
         :effect (not (need-start))
         :sensing-model
-            (and (forall (?p - pos) (when (and (at ?j) (adj ?j ?p) (wumpus-at ?p)) (stench ?j)))
+            (and (forall (?p - pos) (when (and (adj ?j ?p) (wumpus-at ?p)) (stench ?j)))
                  ;(forall (?p - pos) (when (and (at ?p) (gold-at ?p)) (glitter ?p)))
             )
     )
@@ -40,8 +40,8 @@
                  (when (wumpus-at ?j) (not (alive)))
             )
         :sensing-model
-            (and (forall (?p - pos) (when (and (at ?j) (adj ?j ?p) (wumpus-at ?p)) (stench ?j)))
-                 (when (and (at ?j) (forall (?p - pos) (or (not (adj ?p ?j)) (not (wumpus-at ?p))))) (not (stench ?j)))
+            (and (forall (?p - pos) (when (and (adj ?j ?p) (wumpus-at ?p)) (stench ?j)))
+                 (when (forall (?p - pos) (or (not (adj ?p ?j)) (not (wumpus-at ?p)))) (not (stench ?j)))
                  ;(forall (?p - pos) (when (and (at ?p) (gold-at ?p)) (glitter ?p)))
             )
     )

@@ -20,6 +20,7 @@ int Solver::solve(const State &initial_hidden_state,
 
     // set initial state
     kp_instance_.set_initial_state(state);
+    cout << ">>> INIT="; state.print(cout, kp_instance_); cout << endl;
     compute_and_add_observations(hidden, state, sensors, sensed);
     fired_sensors.push_back(sensors);
     sensed_literals.push_back(sensed);
@@ -196,6 +197,7 @@ void Solver::compute_and_add_observations(const State &hidden,
         for( size_t k = kp_instance_.first_deductive_action(); k < kp_instance_.last_deductive_action(); ++k ) {
             const Instance::Action &act = *kp_instance_.actions[k];
             if( state.applicable(act) ) {
+                cout << "applying " << act.name << endl;
                 state.apply(act);
             }
         }
