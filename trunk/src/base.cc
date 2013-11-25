@@ -265,9 +265,11 @@ void PDDL_Base::calculate_static_atoms() {
     for( unsigned_atom_set::iterator it = affected_atoms.begin(); it != affected_atoms.end(); ++it )
         dom_static_atoms_.erase(*it);
 
-    cout << "Static atoms:";
-    for( unsigned_atom_set::iterator it = dom_static_atoms_.begin(); it != dom_static_atoms_.end(); ++it )
-        cout << " " << *it;
+    cout << "static atoms:";
+    for( unsigned_atom_set::iterator it = dom_static_atoms_.begin(); it != dom_static_atoms_.end(); ++it ) {
+        if( !it->pred_->strongly_static_ )
+            cout << " " << *it;
+    }
     cout << endl;
 }
 
@@ -638,7 +640,7 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
         assert(!effect_action->precondition_->has_free_variables(effect_action->param_));
         assert(!effect_action->effect_->has_free_variables(effect_action->param_));
         dom_actions_.push_back(effect_action);
-        cout << *effect_action;
+        //cout << *effect_action;
 
         // Action that computes the effects on observables (i.e. sensing model)
         Action *set_sensing_action = new Action(strdup((string(action.print_name_) + "__set_sensing__").c_str()));
@@ -667,7 +669,7 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
         assert(!set_sensing_action->precondition_->has_free_variables(set_sensing_action->param_));
         assert(!set_sensing_action->effect_->has_free_variables(set_sensing_action->param_));
         dom_actions_.push_back(set_sensing_action);
-        cout << *set_sensing_action;
+        //cout << *set_sensing_action;
 
         // store sensing model for generating invariants later
         sensing_models_.push_back(make_pair(make_pair(new var_symbol_vec(action.param_), action.sensing_model_->ground()), index));
@@ -725,7 +727,7 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
         assert(!post_action->precondition_->has_free_variables(post_action->param_));
         assert(!post_action->effect_->has_free_variables(post_action->param_));
         dom_actions_.push_back(post_action);
-        cout << *post_action;
+        //cout << *post_action;
     } else {
         // Action that computes the effects on observables (i.e. sensing model)
         Action *set_sensing_action = new Action(strdup((string(action.print_name_) + "__set_sensing__").c_str()));
@@ -2124,7 +2126,7 @@ void PDDL_Base::InitLiteral::extract_atoms(unsigned_atom_set &atoms) const {
 }
 
 void PDDL_Base::InitInvariant::instantiate(init_element_list &ilist) const {
-    cout << "About to instantiate invariant: " << *this << endl;
+    //cout << "About to instantiate invariant: " << *this << endl;
     assert(!Invariant::has_free_variables());
     list<Invariant*> invariant_list;
     invariant_list_ptr_ = &invariant_list;
@@ -2132,7 +2134,7 @@ void PDDL_Base::InitInvariant::instantiate(init_element_list &ilist) const {
 }
 
 void PDDL_Base::InitInvariant::instantiate(Instance &ins) const {
-    cout << "About to instantiate invariant: " << *this << endl;
+    //cout << "About to instantiate invariant: " << *this << endl;
     assert(!Invariant::has_free_variables());
     Instance::invariant_vec instantiated_invariants;
     enumerate(true);
@@ -2375,7 +2377,7 @@ void PDDL_Base::Sensor::instantiate(Instance &ins) const {
 void PDDL_Base::Sensor::process_instance() const {
     Condition *grounded_condition = 0;
     if( condition_ != 0 ) {
-        Condition *grounded_condition = condition_->ground();
+        grounded_condition = condition_->ground();
         if( dynamic_cast<Constant*>(grounded_condition) != 0 ) {
             Constant *condition_value = static_cast<Constant*>(grounded_condition);
             delete grounded_condition;
@@ -2452,7 +2454,7 @@ void PDDL_Base::Axiom::instantiate(Instance &ins) const {
 void PDDL_Base::Axiom::process_instance() const {
     Condition *grounded_body = 0;
     if( body_ != 0 ) {
-        Condition *grounded_body = body_->ground();
+        grounded_body = body_->ground();
         if( dynamic_cast<Constant*>(grounded_body) != 0 ) {
             Constant *body_value = static_cast<Constant*>(grounded_body);
             delete grounded_body;

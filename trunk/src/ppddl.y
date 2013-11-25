@@ -8,7 +8,7 @@
 
 %define INHERIT : public PDDL_Base
 %define CONSTRUCTOR_PARAM StringTable& t, int type
-%define CONSTRUCTOR_INIT : PDDL_Base(t), type_(type), error_flag_(false)
+%define CONSTRUCTOR_INIT : PDDL_Base(t), error_flag_(false), type_(type)
 %define MEMBERS \
   public: \
     typedef enum { replanner, cp2fsc } Type; \
