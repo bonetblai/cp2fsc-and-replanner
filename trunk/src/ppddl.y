@@ -852,7 +852,6 @@ single_init_element:
           delete $1;
       }
     | unknown {
-          std::cout << "WARNING: ignoring (unknown ...)" << std::endl;
           $$ = 0; // when fixing this, remove condition '$2 != 0' and '$1 != 0' above
       }
     ;
@@ -907,6 +906,8 @@ oneof:
 
 unknown:
       TK_OPEN KW_UNKNOWN positive_literal TK_CLOSE {
+          std::cout << "WARNING: ignoring '(unknown " << $3->to_string() << ")'" << std::endl;
+          delete $3;
       }
     ;
 
