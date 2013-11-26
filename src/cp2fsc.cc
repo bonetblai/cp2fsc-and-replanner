@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
     Instance instance(options);
 
     cout << "instantiating control problem..." << endl;
-    reader->instantiate(instance);
+    reader->emit_instance(instance);
     //delete reader;
     if( options.is_enabled("print:problem:raw") ) {
         instance.print(cout);

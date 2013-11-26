@@ -5,8 +5,32 @@
 
 using namespace std;
 
+static int get_atom_index(const Instance &ins, string atom_name) {
+    for( size_t k = 0; k < ins.n_atoms(); ++k ) {
+        if( atom_name == ins.atoms[k]->name->to_string() ) {
+            //cout << "atom '" << atom_name << "' = " << k << endl;
+            return k;
+        }
+    }
+    //cout << "atom '" << atom_name << "' not found!" << endl;
+    return -1;
+}
+
+static void mvv_extend_effect_with_ramifications_on_observables(int index,
+                                                                const map<int, set<int> > &beams_for_observable_atoms,
+                                                                set<int> &effect) {
+    for( map<int, set<int> >::const_iterator it = beams_for_observable_atoms.begin(); it != beams_for_observable_atoms.end(); ++it) {
+        int observable_index = it->first;
+        const set<int> &beam = it->second;
+        if( beam.find(index) != beam.end() ) {
+            effect.insert(-(1 + 2*observable_index));
+            effect.insert(-(1 + 2*observable_index + 1));
+        }
+    }
+}
+
 KP_Instance::KP_Instance(const Instance &ins,
-                         const vector<string> &no_cancellation_rules_for,
+                         const PDDL_Base::variable_vec &multivalued_variables,
                          const Options::Mode &options)
   : Instance(options), po_instance_(ins),
     n_standard_actions_(0), n_sensor_actions_(0), n_invariant_actions_(0) {
@@ -18,16 +42,34 @@ KP_Instance::KP_Instance(const Instance &ins,
         set_name(new CopyName(ins.name->to_string()));
     }
 
-    // create K0 atoms and set of atoms for which no cancellation rules must be generated
+    // create K0 atoms
     atoms.reserve(2*ins.n_atoms());
-    set<int> set_no_cancellation_rules_for;
     for( size_t k = 0; k < ins.n_atoms(); ++k ) {
         string name = ins.atoms[k]->name->to_string();
         new_atom(new CopyName("(K_" + name + ")"));      // even-numbered atoms
         new_atom(new CopyName("(K_not_" + name + ")"));  // odd-numbered atoms
-        for( size_t i = 0; i < no_cancellation_rules_for.size(); ++i ) {
-            if( no_cancellation_rules_for[i] == name )
-                set_no_cancellation_rules_for.insert(k);
+    }
+
+    // prepare data for handling problems with multivalued variables
+    set<int> observable_atoms;
+    map<int, set<int> > beams_for_observable_atoms;
+    for( size_t k = 0; k < multivalued_variables.size(); ++k ) {
+        const PDDL_Base::Variable &var = *multivalued_variables[k];
+        if( var.is_observable_variable() ) {
+            for( size_t i = 0; i < var.grounded_values_.size(); ++i ) {
+                string atom_name = static_cast<const PDDL_Base::AtomicEffect*>(var.grounded_values_[i])->to_string(true);
+                int atom_index = get_atom_index(ins, atom_name);
+                if( atom_index != -1 ) {
+                    observable_atoms.insert(atom_index);
+
+                    set<int> beam;
+                    for( PDDL_Base::unsigned_atom_set::const_iterator it = var.beam_[i].begin(); it != var.beam_[i].end(); ++it ) {
+                        int index = get_atom_index(ins, it->to_string(false, true));
+                        if( index != -1 ) beam.insert(index);
+                    }
+                    beams_for_observable_atoms[atom_index] = beam;
+                }
+            }
         }
     }
 
@@ -92,7 +134,7 @@ KP_Instance::KP_Instance(const Instance &ins,
                 nact.precondition.insert(1 + 2*idx+1);
         }
 
-        // support rules for unconditional effects (no cancellation)
+        // support rules for unconditional effects (no cancellation rules for unconditial effects)
         for( index_set::const_iterator it = act.effect.begin(); it != act.effect.end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
             if( *it > 0 ) {
@@ -102,6 +144,7 @@ KP_Instance::KP_Instance(const Instance &ins,
                 nact.effect.insert(1 + 2*idx+1);
                 nact.effect.insert(-(1 + 2*idx));
             }
+            mvv_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, nact.effect);
         }
 
         // support and cancellation rules for conditional effects
@@ -122,13 +165,15 @@ KP_Instance::KP_Instance(const Instance &ins,
                 int idx = *it > 0 ? *it-1 : -*it-1;
                 if( *it > 0 ) {
                     sup_eff.effect.insert(1 + 2*idx);
-                    if( set_no_cancellation_rules_for.find(idx) == set_no_cancellation_rules_for.end() )
+                    if( observable_atoms.find(idx) == observable_atoms.end() )
                         can_eff.effect.insert(-(1 + 2*idx+1));
                 } else {
                     sup_eff.effect.insert(1 + 2*idx+1);
-                    if( set_no_cancellation_rules_for.find(idx) == set_no_cancellation_rules_for.end() )
+                    if( observable_atoms.find(idx) == observable_atoms.end() )
                         can_eff.effect.insert(-(1 + 2*idx));
                 }
+                mvv_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, sup_eff.effect);
+                mvv_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, can_eff.effect);
             }
             nact.when.push_back(sup_eff);
             if( !can_eff.effect.empty() ) nact.when.push_back(can_eff);
