@@ -523,7 +523,7 @@ class PDDL_Base {
 
     // For CLG-type syntax and translations
     bool                                      clg_translation_;
-    Atom                                      *clg_disable_actions_atom_;
+    Atom                                      *clg_disable_actions_;
 
     // For multivalued variables formulations
     bool                                      multivalued_variable_translation_;

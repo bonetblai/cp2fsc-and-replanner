@@ -18,12 +18,29 @@ static void copy_symbol_vec(const vector<T> &src, vector<T> &dst) {
     }
 }
 
+static void clone_parameters(const PDDL_Base::var_symbol_vec &param, PDDL_Base::var_symbol_vec &clone) {
+    clone.clear();
+    clone.reserve(param.size());
+    for( size_t k = 0; k < param.size(); ++k ) {
+        clone.push_back(dynamic_cast<PDDL_Base::VariableSymbol*>(param[k]->clone()));
+        if( clone.back() == 0 ) {
+            cout << "error: parameter conversion failed for " << *param[k] << endl;
+            exit(255);
+        }
+    }
+}
+
+static void remap_parameters(PDDL_Base::condition_vec &vec, const PDDL_Base::var_symbol_vec &old_param, const PDDL_Base::var_symbol_vec &new_param) {
+    for( size_t k = 0; k < vec.size(); ++k )
+        const_cast<PDDL_Base::Condition*>(vec[k])->remap_parameters(old_param, new_param);
+}
+
 PDDL_Base::PDDL_Base(StringTable &t, const Options::Mode &options)
   : domain_name_(0), problem_name_(0),
     tab_(t), options_(options),
     dom_top_type_(0), dom_goal_(0),
     clg_translation_(false),
-    clg_disable_actions_atom_(0),
+    clg_disable_actions_(0),
     multivalued_variable_translation_(false),
     default_sensing_model_(0) {
 
@@ -315,11 +332,11 @@ void PDDL_Base::clg_map_oneofs_to_invariants() {
         }
     }
 
-    // make oneof into exactly-one invariant
+    // make oneofs into exactly-one invariants
     for( size_t k = 0; k < oneofs.size(); ++k ) {
         Invariant invariant(Invariant::EXACTLY_ONE, *oneofs[k].second);
         dom_init_[oneofs[k].first] = new InitInvariant(invariant);
-        invariant.clear(); // to avoid destruction of elements
+        invariant.clear();         // to avoid destruction of elements
         oneofs[k].second->clear(); // to avoid destruction of elements
         delete oneofs[k].second;
     }
@@ -328,10 +345,13 @@ void PDDL_Base::clg_map_oneofs_to_invariants() {
 void PDDL_Base::clg_translate_observe_effects_into_sensors() {
     if( !clg_translation_ ) return;
 
-    PredicateSymbol *dap = new PredicateSymbol("disable-actions");
-    Atom da_pos(dap), da_neg(dap, true);
+    PredicateSymbol *disable_actions_pred = new PredicateSymbol("disable-actions");
+    Atom disable_actions(disable_actions_pred);
 
-    set<Action*> fixed_actions;
+    And precondition;
+    AndEffect effect;
+
+    set<Action*> patched_actions;
     cout << "clg-translation: translating observe effects into sensors:";
     for( size_t k = 0; k < dom_actions_.size(); ++k ) {
         Action *action = dom_actions_[k];
@@ -340,87 +360,105 @@ void PDDL_Base::clg_translate_observe_effects_into_sensors() {
 
             // save observations and create (do-post-sense-for-<action> <args>) predicate
             const Effect *observe = action->observe_;
-            PredicateSymbol *ps = new PredicateSymbol(strdup((string("do-post-sense-for-") + action->print_name_).c_str()));
-            //copy_symbol_vec<VariableSymbol*>(action->param_, ps->param_);
-            ps->param_ = action->param_;
-            dom_predicates_.push_back(ps);
-            //cout << *ps;
-
-            Atom ps_pos(ps), ps_neg(ps, true);
-            ps_pos.param_.insert(ps_pos.param_.begin(), ps->param_.begin(), ps->param_.end());
-            ps_neg.param_.insert(ps_neg.param_.begin(), ps->param_.begin(), ps->param_.end());
-            //cout << ps_pos << " " << ps_neg << endl;
+            PredicateSymbol *post_sense_pred = new PredicateSymbol(strdup((string("need-post-for-") + action->print_name_).c_str()));
+            post_sense_pred->param_ = action->param_;
+            dom_predicates_.push_back(post_sense_pred);
+            Atom need_post(post_sense_pred);
+            need_post.param_.insert(need_post.param_.begin(), post_sense_pred->param_.begin(), post_sense_pred->param_.end());
 
             // Must do 3 things for this action:
             // 1) modify the action to add precondition (not (disable-actions)), and
             //    effects (do-post-sense-for-<action> <args>) and (disable-actions)
-            And *new_precondition = dynamic_cast<And*>(const_cast<Condition*>(action->precondition_));
-            if( new_precondition == 0 ) {
-                new_precondition = new And;
-                if( action->precondition_ != 0 ) new_precondition->push_back(action->precondition_);
-            }
-            new_precondition->push_back(new Literal(da_neg));
-            action->precondition_ = new_precondition;
 
-            AndEffect *new_effect = dynamic_cast<AndEffect*>(const_cast<Effect*>(action->effect_));
-            if( new_effect == 0 ) {
-                new_effect = new AndEffect;
-                if( action->effect_ != 0 ) new_effect->push_back(action->effect_);
-            }
-            new_effect->push_back(new AtomicEffect(da_pos));
-            new_effect->push_back(new AtomicEffect(ps_pos));
-            action->effect_ = new_effect;
+            if( action->precondition_ != 0 ) precondition.push_back(action->precondition_);
+            precondition.push_back(Literal(disable_actions).negate());
+            action->precondition_ = precondition.ground();
+            for( size_t k = 0; k < precondition.size(); ++k )
+                delete precondition[k];
+            precondition.clear();
+
+            if( action->effect_ != 0 ) effect.push_back(action->effect_);
+            effect.push_back(AtomicEffect(disable_actions).copy());
+            effect.push_back(AtomicEffect(need_post).copy());
+            action->effect_ = effect.ground();
+            for( size_t k = 0; k < effect.size(); ++k )
+                delete effect[k];
+            effect.clear();
+
             action->observe_ = 0;
-            fixed_actions.insert(action);
-            //cout << *action;
+            patched_actions.insert(action);
+            if( options_.is_enabled("print:clg:effect") || options_.is_enabled("print:clg:generated") )
+                cout << *action;
 
             // 2) create sensor sensor-<action> with same arguments, condition
             //    (do-post-sense-for-<action> <args>), and sense <observation>
-            Sensor *sensor = new Sensor(strdup((string("sensor-for-") + action->print_name_).c_str()));
-            dom_sensors_.push_back(sensor);
-            sensor->param_ = action->param_;
-            sensor->condition_ = new Literal(ps_pos);
+
+            Sensor *sensor = new Sensor(strdup((string(action->print_name_) + "__sensor__").c_str()));
+            clone_parameters(action->param_, sensor->param_);
+            sensor->condition_ = new Literal(need_post);
             sensor->sense_ = observe;
-            //cout << *sensor;
+
+            // remap parameters and insert
+            const_cast<Condition*>(sensor->condition_)->remap_parameters(action->param_, sensor->param_);
+            const_cast<Effect*>(sensor->sense_)->remap_parameters(action->param_, sensor->param_);
+            assert(!sensor->condition_->has_free_variables(sensor->param_));
+            assert(!sensor->sense_->has_free_variables(sensor->param_));
+            dom_sensors_.push_back(sensor);
+            if( options_.is_enabled("print:clg:sensor") || options_.is_enabled("print:clg:generated") )
+                cout << *sensor;
 
             // 3) create action (post-sense-<action> <args>) with precondition
             //    (do-post-sense-for-<action> <args>) and effects that remove
             //    precondition and remove (disable-actions)
-            AndEffect *post_effect = new AndEffect;
-            post_effect->push_back(new AtomicEffect(da_neg));
-            post_effect->push_back(new AtomicEffect(ps_neg));
 
-            Action *post_action = new Action(strdup((string("post-sense-for-") + action->print_name_).c_str()));
+            Action *post_action = new Action(strdup((string(action->print_name_) + "__post__").c_str()));
+            clone_parameters(action->param_, post_action->param_);
+
+            precondition.push_back(Literal(need_post).copy());
+            post_action->precondition_ = precondition.ground();
+            delete precondition[0];
+            precondition.clear();
+
+            effect.push_back(AtomicEffect(disable_actions).negate());
+            effect.push_back(AtomicEffect(need_post).negate());
+            post_action->effect_ = effect.ground();
+            delete effect[1];
+            delete effect[0];
+            effect.clear();
+
+            // remap parameters and insert
+            const_cast<Condition*>(post_action->precondition_)->remap_parameters(action->param_, post_action->param_);
+            const_cast<Effect*>(post_action->effect_)->remap_parameters(action->param_, post_action->param_);
+            assert(!post_action->precondition_->has_free_variables(post_action->param_));
+            assert(!post_action->effect_->has_free_variables(post_action->param_));
             dom_actions_.push_back(post_action);
-            post_action->param_ = action->param_;
-            post_action->precondition_ = new Literal(ps_pos);
-            post_action->effect_ = post_effect;
-            fixed_actions.insert(post_action);
-            //cout << *post_action;
+            patched_actions.insert(post_action);
+            if( options_.is_enabled("print:clg:post") || options_.is_enabled("print:clg:generated") )
+                cout << *post_action;
         }
     }
 
     // if some translation was done, add precondition (not (disable-actions))
     // to all other actions
-    if( !fixed_actions.empty() ) {
-        clg_disable_actions_atom_ = new Literal(da_pos);
+    if( !patched_actions.empty() ) {
+        clg_disable_actions_ = new Atom(disable_actions);
         for( size_t k = 0; k < dom_actions_.size(); ++k ) {
             Action *action = dom_actions_[k];
-            if( fixed_actions.find(action) == fixed_actions.end() ) {
-                And *new_precondition = dynamic_cast<And*>(const_cast<Condition*>(action->precondition_));
-                if( new_precondition == 0 ) {
-                    new_precondition = new And;
-                    if( action->precondition_ != 0 ) new_precondition->push_back(action->precondition_);
+            if( patched_actions.find(action) == patched_actions.end() ) {
+                And *precondition = dynamic_cast<And*>(const_cast<Condition*>(action->precondition_));
+                if( precondition == 0 ) {
+                    precondition = new And;
+                    if( action->precondition_ != 0 ) precondition->push_back(action->precondition_);
                 }
-                new_precondition->push_back(new Literal(da_neg));
-                action->precondition_ = new_precondition;
+                precondition->push_back(Literal(disable_actions).negate());
+                action->precondition_ = precondition;
                 //cout << *action;
             }
         }
-        dom_predicates_.push_back(dap);
+        dom_predicates_.push_back(disable_actions_pred);
     } else {
         cout << " <none>";
-        delete dap;
+        delete disable_actions_pred;
     }
     cout << endl;
 }
@@ -568,23 +606,6 @@ void PDDL_Base::translate_actions_for_multivalued_variable_formulation() {
         translation_for_multivalued_variable_formulation(*action, k);
         //delete action; // NEED FIX: guess: delete params that are needed in sensing model (invariants)
     }
-}
-
-static void clone_parameters(const PDDL_Base::var_symbol_vec &param, PDDL_Base::var_symbol_vec &clone) {
-    clone.clear();
-    clone.reserve(param.size());
-    for( size_t k = 0; k < param.size(); ++k ) {
-        clone.push_back(dynamic_cast<PDDL_Base::VariableSymbol*>(param[k]->clone()));
-        if( clone.back() == 0 ) {
-            cout << "error: parameter conversion failed for " << *param[k] << endl;
-            exit(255);
-        }
-    }
-}
-
-static void remap_parameters(PDDL_Base::condition_vec &vec, const PDDL_Base::var_symbol_vec &old_param, const PDDL_Base::var_symbol_vec &new_param) {
-    for( size_t k = 0; k < vec.size(); ++k )
-        const_cast<PDDL_Base::Condition*>(vec[k])->remap_parameters(old_param, new_param);
 }
 
 #if 0
@@ -942,8 +963,8 @@ void PDDL_Base::emit_instance(Instance &ins) const {
     delete[] pname;
 
     // set atom (disable-actions) (only when processing CLG syntax)
-    if( clg_disable_actions_atom_ != 0 ) {
-        Instance::Atom *p = clg_disable_actions_atom_->find_prop(ins, false, true);
+    if( clg_disable_actions_ != 0 ) {
+        Instance::Atom *p = clg_disable_actions_->find_prop(ins, false, true);
         ins.disable_actions_atom_index = p->index;
     }
 
