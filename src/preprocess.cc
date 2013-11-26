@@ -8,8 +8,8 @@ using namespace std;
 // TODO: implement proper cross-references (and update functions) and
 //       relevance of atoms wrt goal
 
-Preprocessor::Preprocessor(Instance &ins, const Options::Mode &options)
-  : instance_(ins), options_(options) {
+Preprocessor::Preprocessor(Instance &ins)
+  : instance_(ins), options_(ins.options_) {
     for( size_t k = 0; k < instance_.n_atoms(); k++ ) atom_map_.push_back(k);
     for( size_t k = 0; k < instance_.n_actions(); k++ ) action_map_.push_back(k);
 }

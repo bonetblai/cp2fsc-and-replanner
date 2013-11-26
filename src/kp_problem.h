@@ -17,9 +17,7 @@ class KP_Instance : public Instance {
     std::vector<int> remap_;
 
     std::map<std::string, int> obs_rules_by_name_;
-    KP_Instance(const Instance &instance,
-                const PDDL_Base::variable_vec &multivalued_variables,
-                const Options::Mode &options = Options::Mode());
+    KP_Instance(const Instance &instance, const PDDL_Base::variable_vec &multivalued_variables);
     ~KP_Instance();
 
     virtual void cross_reference();

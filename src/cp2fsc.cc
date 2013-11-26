@@ -55,7 +55,7 @@ void print_usage(ostream &os, const char *exec_name, const char **cmdline_option
     }
     os << endl;
 
-    os << "The components {cp,ks0} belong to cp2fsc while {kp} to k-replanner."
+    os << "The components {cp,ks0} belong to cp2fsc while {kp,clg,mvv} to k-replanner."
        << endl << endl;
 }
 
@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
     }
 
     int nfiles = 0;
-    Parser* reader = new Parser(Parser::cp2fsc, symbols);
+    Parser* reader = new Parser(Parser::cp2fsc, symbols, options);
 
     // parse options
     bool skip_options = false;
@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
     }
 
     cout << "preprocessing control problem..." << endl;
-    Preprocessor prep(instance, options);
+    Preprocessor prep(instance);
     prep.preprocess(true);
     if( options.is_enabled("print:problem:preprocessed") ) {
         instance.print(cout);
@@ -183,7 +183,7 @@ int main(int argc, char *argv[]) {
     }
 
     cout << "preprocessing CP translation..." << endl;
-    Preprocessor cp_prep(cp_instance, options);
+    Preprocessor cp_prep(cp_instance);
 
     // For some reason, true instead of false works better in some hard problems such as
     // visual marker. This flag instruct the preprocessor to remove unreachable and
@@ -196,14 +196,14 @@ int main(int argc, char *argv[]) {
     }
 
     cout << "creating KS0 translation..." << endl;
-    KS0_Instance ks0_instance(cp_instance, options, opt_tag_all_literals);
+    KS0_Instance ks0_instance(cp_instance, opt_tag_all_literals);
     if( options.is_enabled("print:ks0-translation:raw") ) {
         ks0_instance.write_domain(cout);
         ks0_instance.write_problem(cout);
     }
 
     cout << "preprocessing KS0 translation..." << endl;
-    Preprocessor ks0_prep(ks0_instance, options);
+    Preprocessor ks0_prep(ks0_instance);
     ks0_prep.preprocess(true);
     if( options.is_enabled("print:ks0-translation:preprocessed") ) {
         ks0_instance.write_domain(cout);

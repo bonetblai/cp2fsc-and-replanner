@@ -4,10 +4,7 @@
 
 using namespace std;
 
-KS0_Instance::KS0_Instance(const CP_Instance &instance,
-                           const Options::Mode &options,
-                           bool tag_all_literals) : Instance(options) {
-
+KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals) : Instance(instance.options_) {
     // set name
     if( dynamic_cast<const InstanceName*>(instance.name) != 0 ) {
         set_name(new InstanceName(*dynamic_cast<const InstanceName*>(instance.name)));

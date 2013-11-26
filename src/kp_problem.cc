@@ -29,10 +29,8 @@ static void mvv_extend_effect_with_ramifications_on_observables(int index,
     }
 }
 
-KP_Instance::KP_Instance(const Instance &ins,
-                         const PDDL_Base::variable_vec &multivalued_variables,
-                         const Options::Mode &options)
-  : Instance(options), po_instance_(ins),
+KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &multivalued_variables)
+  : Instance(ins.options_), po_instance_(ins),
     n_standard_actions_(0), n_sensor_actions_(0), n_invariant_actions_(0) {
 
     // set name

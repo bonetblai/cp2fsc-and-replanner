@@ -7,8 +7,8 @@
 %define DEBUG 1
 
 %define INHERIT : public PDDL_Base
-%define CONSTRUCTOR_PARAM StringTable& t, int type
-%define CONSTRUCTOR_INIT : PDDL_Base(t), error_flag_(false), type_(type)
+%define CONSTRUCTOR_PARAM StringTable& t, int type, const Options::Mode &options
+%define CONSTRUCTOR_INIT : PDDL_Base(t, options), error_flag_(false), type_(type)
 %define MEMBERS \
   public: \
     typedef enum { replanner, cp2fsc } Type; \
@@ -237,9 +237,9 @@ typed_param_list:
     ;
 
 param_sym_list:
-      param_sym_list new_var_symbol {
-          $1->push_back(static_cast<VariableSymbol*>($2));
-          $$ = $1;
+      new_var_symbol param_sym_list {
+          $2->push_back(static_cast<VariableSymbol*>($1));
+          $$ = $2;
       }
     | new_var_symbol { $$ = new var_symbol_vec; $$->push_back($1); }
     ;

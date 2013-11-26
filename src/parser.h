@@ -5,12 +5,14 @@
 #include <stdio.h>
 #include "scanner.h"
 #include "grammar.h"
+#include "options.h"
 
 class Parser : public PDDL_Parser {
     PDDL_Scanner scanner;
 
   public:
-    Parser(PDDL_Parser::Type type, StringTable &t) : PDDL_Parser(t, type), scanner(t) { }
+    Parser(PDDL_Parser::Type type, StringTable &t, const Options::Mode &options)
+      : PDDL_Parser(t, type, options), scanner(t) { }
     virtual ~Parser() { }
 
     void read(char *name, bool trace) {
