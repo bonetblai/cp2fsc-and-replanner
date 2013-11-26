@@ -13,7 +13,7 @@
     (:hidden (at p4-3))
     (:hidden (at p5-3))
     (:hidden (at p1-4))
-    (:hidden (at p5-5))
+    (:hidden (at p5-4))
     (:hidden (at p1-5))
     (:hidden (at p2-5))
     (:hidden (at p3-5))
