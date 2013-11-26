@@ -10,7 +10,7 @@ using namespace std;
 CP_Instance::CP_Instance(const Instance &ins, size_t fsc_states,
                          bool forbid_inconsistent_tuples,
                          bool compound_obs_as_fluents)
-  : Instance(), fsc_states_(fsc_states),
+  : Instance(ins.options_), fsc_states_(fsc_states),
     forbid_inconsistent_tuples_(forbid_inconsistent_tuples),
     compound_obs_as_fluents_(compound_obs_as_fluents),
     instance_(ins) {

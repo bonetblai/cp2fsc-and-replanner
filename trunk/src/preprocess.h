@@ -16,9 +16,9 @@ class Preprocessor {
     void mark_unreachable_actions(const bool_vec &reachable_atoms, const bool_vec &static_atoms, bool_vec &actions_to_remove);
 
   public:
-    const Options::Mode options_;
+    const Options::Mode &options_;
 
-    Preprocessor(Instance &ins, const Options::Mode &options = Options::Mode());
+    Preprocessor(Instance &ins);
     ~Preprocessor();
 
     // methods that do NOT change the instance:

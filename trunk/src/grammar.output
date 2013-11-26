@@ -59,7 +59,7 @@ rule 44   param_list ->		/* empty */
 rule 45   untyped_param_list -> param_sym_list
 rule 46   typed_param_list -> param_sym_list TK_HYPHEN TK_TYPE_SYMBOL typed_param_list
 rule 47   typed_param_list -> param_sym_list TK_HYPHEN TK_TYPE_SYMBOL
-rule 48   param_sym_list -> param_sym_list new_var_symbol
+rule 48   param_sym_list -> new_var_symbol param_sym_list
 rule 49   param_sym_list -> new_var_symbol
 rule 50   new_var_symbol -> TK_NEW_VAR_SYMBOL
 rule 51   new_var_symbol -> TK_VAR_SYMBOL
@@ -2169,23 +2169,25 @@ state 165
     untyped_param_list  ->  param_sym_list .   (rule 45)
     typed_param_list  ->  param_sym_list . TK_HYPHEN TK_TYPE_SYMBOL typed_param_list   (rule 46)
     typed_param_list  ->  param_sym_list . TK_HYPHEN TK_TYPE_SYMBOL   (rule 47)
-    param_sym_list  ->  param_sym_list . new_var_symbol   (rule 48)
 
     TK_HYPHEN	shift, and go to state 199
-    TK_VAR_SYMBOL	shift, and go to state 160
-    TK_NEW_VAR_SYMBOL	shift, and go to state 161
 
     $default	reduce using rule 45 (untyped_param_list)
-
-    new_var_symbol	go to state 200
 
 
 
 state 166
 
+    param_sym_list  ->  new_var_symbol . param_sym_list   (rule 48)
     param_sym_list  ->  new_var_symbol .   (rule 49)
 
+    TK_VAR_SYMBOL	shift, and go to state 160
+    TK_NEW_VAR_SYMBOL	shift, and go to state 161
+
     $default	reduce using rule 49 (param_sym_list)
+
+    param_sym_list	go to state 200
+    new_var_symbol	go to state 166
 
 
 
@@ -2591,7 +2593,7 @@ state 199
 
 state 200
 
-    param_sym_list  ->  param_sym_list new_var_symbol .   (rule 48)
+    param_sym_list  ->  new_var_symbol param_sym_list .   (rule 48)
 
     $default	reduce using rule 48 (param_sym_list)
 
@@ -3665,13 +3667,8 @@ state 293
 
     typed_param_list  ->  param_sym_list . TK_HYPHEN TK_TYPE_SYMBOL typed_param_list   (rule 46)
     typed_param_list  ->  param_sym_list . TK_HYPHEN TK_TYPE_SYMBOL   (rule 47)
-    param_sym_list  ->  param_sym_list . new_var_symbol   (rule 48)
 
     TK_HYPHEN	shift, and go to state 199
-    TK_VAR_SYMBOL	shift, and go to state 160
-    TK_NEW_VAR_SYMBOL	shift, and go to state 161
-
-    new_var_symbol	go to state 200
 
 
 

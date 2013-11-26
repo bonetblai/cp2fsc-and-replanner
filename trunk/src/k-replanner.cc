@@ -55,7 +55,7 @@ void print_usage(ostream &os, const char *exec_name, const char **cmdline_option
     }
     os << endl;
 
-    os << "The components {cp,ks0} belong to cp2fsc while {kp} to k-replanner."
+    os << "The components {cp,ks0} belong to cp2fsc while {kp,clg,mvv} to k-replanner."
        << endl << endl;
 }
 
@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
     }
 
     int nfiles = 0;
-    Parser* reader = new Parser(Parser::replanner, symbols);
+    Parser* reader = new Parser(Parser::replanner, symbols, options);
 
     // parse options
     bool skip_options = false;
@@ -180,7 +180,7 @@ int main(int argc, char *argv[]) {
     }
 
     cout << "preprocessing p.o. problem..." << endl;
-    Preprocessor prep(instance, options);
+    Preprocessor prep(instance);
     prep.preprocess(true, true); // turn off action compilation
     if( options.is_enabled("print:problem:preprocessed") ) {
         //instance.print(cout);
@@ -197,7 +197,7 @@ int main(int argc, char *argv[]) {
     }
 
     cout << "preprocessing KP translation..." << endl;
-    Preprocessor kp_prep(kp_instance, options);
+    Preprocessor kp_prep(kp_instance);
     kp_prep.preprocess(false);
     if( options.is_enabled("print:kp:preprocessed") ) {
         kp_instance.write_domain(cout);

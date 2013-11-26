@@ -23,7 +23,13 @@ namespace Options {
           desc_ = opt.desc_;
           return *this;
       }
+      void print(std::ostream &os) const { os << name_; }
   };
+
+  inline std::ostream& operator<<(std::ostream &os, const Option &opt) {
+      opt.print(os);
+      return os;
+  }
 
   struct Mode {
       std::vector<Option> options_;
@@ -80,8 +86,18 @@ namespace Options {
               return false;
       }
       bool clear(const std::string &opt) { return clear(Option(opt)); }
+
+      void print(std::ostream &os) const {
+          std::cout << "xxx=" << options_.size() << std::endl;
+          for( size_t k = 0; k < options_.size(); ++k ) {
+              std::cout << "option: " << options_[k] << " = "
+                        << (is_enabled(options_[k]) ? "on" : "off")
+                        << std::endl;
+          }
+      }
   };
 
 };
 
 #endif
+

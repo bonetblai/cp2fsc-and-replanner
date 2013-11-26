@@ -150,9 +150,9 @@ class Instance {
     // deductive rules to apply to hidden state
     action_vec  deductive_rules;
 
-    const Options::Mode options_;
+    const Options::Mode &options_;
 
-    Instance(Name *n = 0, const Options::Mode &options = Options::Mode())
+    Instance(Name *n, const Options::Mode &options)
       : cross_referenced(false), name(n), disable_actions_atom_index(-1), options_(options) {
     }
     Instance(const Options::Mode &options)

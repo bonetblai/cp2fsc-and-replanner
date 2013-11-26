@@ -15,7 +15,7 @@ class Solver {
     const KP_Instance &kp_instance_;
     const ClassicalPlanner &planner_;
     const int time_bound_;
-    const Options::Mode options_;
+    const Options::Mode &options_;
   public:
     Solver(const Instance &instance,
            const KP_Instance &kp_instance,

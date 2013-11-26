@@ -66,6 +66,28 @@ const char *available_options[] = {
     "print:problem:raw",                   "[GEN] print the problem before preprocessing",
     "print:problem:preprocessed",          "[GEN] print the problem after preprocessing",
 
+    // clg translation
+    "print:clg:effect",                    "[CLG] print effect actions",
+    "print:clg:set-sensing",               "[CLG] print set-sensing actions",
+    "print:clg:post",                      "[CLG] print post actions",
+    "print:clg:sensors",                   "[CLG] print sensors",
+    "print:clg:generated",                 "[CLG] print all actions and sensors",
+    "print:clg:invariants:var",            "[CLG] print variable invariants",
+    "print:clg:invariants:sensing",        "[CLG] print sensing invariants",
+    "print:clg:invariants",                "[CLG] print all invariants",
+
+    // multivalued variable translation
+    "print:mvv:variables",                 "[MVV] print valued for instantiated variables",
+    "print:mvv:beams",                     "[MVV] print beams for observable literals",
+    "print:mvv:effect",                    "[MVV] print effect actions",
+    "print:mvv:set-sensing",               "[MVV] print set-sensing actions",
+    "print:mvv:post",                      "[MVV] print post actions",
+    "print:mvv:sensors",                   "[MVV] print sensors",
+    "print:mvv:generated",                 "[MVV] print all actions and sensors",
+    "print:mvv:invariants:var",            "[MVV] print variable invariants",
+    "print:mvv:invariants:sensing",        "[MVV] print sensing invariants",
+    "print:mvv:invariants",                "[MVV] print all invariants",
+
     0
 };
 
