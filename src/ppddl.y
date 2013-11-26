@@ -59,7 +59,7 @@
 %token                  KW_REQS KW_TRANSLATION
                         KW_CONSTANTS KW_PREDS KW_TYPES KW_DEFINE KW_DOMAIN
                         KW_ACTION KW_ARGS KW_PRE KW_EFFECT KW_AND
-                        KW_OR KW_EXISTS KW_FORALL KW_NOT KW_WHEN KW_ONEOF
+                        KW_OR KW_EXISTS KW_FORALL KW_NOT KW_WHEN KW_ONEOF KW_UNKNOWN
                         KW_PROBLEM KW_FORDOMAIN KW_OBJECTS KW_INIT KW_GOAL
                         KW_SENSOR KW_SENSE KW_OBSERVE KW_AXIOM KW_COND KW_OBSERVABLE
                         KW_BODY KW_HEAD KW_STICKY KW_FLUENTS KW_HIDDEN
@@ -806,12 +806,12 @@ initial_state:
 init_elements:
       init_elements single_init_element {
           init_element_vec *ilist = const_cast<init_element_vec*>($1);
-          ilist->push_back(const_cast<InitElement*>($2));
+          if( $2 != 0 ) ilist->push_back(const_cast<InitElement*>($2));
           $$ = ilist;
       }
     | single_init_element {
           init_element_vec *ilist = new init_element_vec;
-          ilist->push_back(const_cast<InitElement*>($1));
+          if( $1 != 0 ) ilist->push_back(const_cast<InitElement*>($1));
           $$ = ilist;
       }
     ;
@@ -850,6 +850,10 @@ single_init_element:
           $$ = new InitOneof(*$1);
           const_cast<Oneof*>($1)->clear();
           delete $1;
+      }
+    | unknown {
+          std::cout << "WARNING: ignoring (unknown ...)" << std::endl;
+          $$ = 0; // when fixing this, remove condition '$2 != 0' and '$1 != 0' above
       }
     ;
 
@@ -898,6 +902,11 @@ oneof:
       TK_OPEN KW_ONEOF single_condition_list TK_CLOSE {
           $$ = new Oneof(*$3);
           delete $3;
+      }
+    ;
+
+unknown:
+      TK_OPEN KW_UNKNOWN positive_literal TK_CLOSE {
       }
     ;
 

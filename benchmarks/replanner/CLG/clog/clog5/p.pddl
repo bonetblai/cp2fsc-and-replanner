@@ -20,12 +20,12 @@
  		phx - CITY
 	)
  (:init 
-;(unknown (at_ol package1 pgh_po))
-;(unknown (at_ol package1 phx_po))
-;(unknown (at_ol package2 pgh_po))
-;(unknown (at_ol package2 bos_po))
-;(unknown (at_ol package3 bos_po))
-;(unknown (at_ol package3 phx_po))
+(unknown (at_ol package1 pgh_po))
+(unknown (at_ol package1 phx_po))
+(unknown (at_ol package2 pgh_po))
+(unknown (at_ol package2 bos_po))
+(unknown (at_ol package3 bos_po))
+(unknown (at_ol package3 phx_po))
 
 
 	(oneof

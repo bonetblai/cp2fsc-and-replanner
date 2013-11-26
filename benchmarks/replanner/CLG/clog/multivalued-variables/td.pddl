@@ -89,21 +89,21 @@
         :parameters (?truck - TRUCK ?loc1 - LOCATION ?loc2 - AIRPORT ?city - CITY)
         :precondition (and (at_tl ?truck ?loc1) (in_city_l ?loc1 ?city) (in_city_a ?loc2 ?city) (in_city_t ?truck ?city))
         :effect (and (not (at_tl ?truck ?loc1)) (at_ta ?truck ?loc2))
-        :sensing-model (at_ol ?obj ?loc)
+        :sensing-model (forall (?obj - OBJ) (at_ol ?obj ?loc2))
     )
 
     (:action DRIVE_TRUCK_AP_LOC
         :parameters (?truck - TRUCK ?loc1 - AIRPORT ?loc2 - LOCATION ?city - CITY)
         :precondition (and (at_ta ?truck ?loc1) (in_city_a ?loc1 ?city) (in_city_l ?loc2 ?city) (in_city_t ?truck ?city))
         :effect (and (not (at_ta ?truck ?loc1)) (at_tl ?truck ?loc2))
-        :sensing-model (at_oa ?obj ?loc)
+        :sensing-model (forall (?obj - OBJ) (at_oa ?obj ?loc2))
     ) 
 
     (:action FLY_AIRPLANE
         :parameters (?airplane - AIRPLANE ?loc1 - AIRPORT ?loc2 - AIRPORT)
         :precondition (and (at_aa ?airplane ?loc1))
         :effect (and (not (at_aa ?airplane ?loc1)) (at_aa ?airplane ?loc2))
-        :sensing-model (at_oa ?obj ?loc)
+        :sensing-model (forall (?obj - OBJ) (at_oa ?obj ?loc2))
     )
 )
  

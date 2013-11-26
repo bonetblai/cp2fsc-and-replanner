@@ -87,6 +87,7 @@ COMMENT ;.*$
 "exactly-one"              { return PDDL_Parser::KW_EXACTLY_ONE; }
 "or"                       { return PDDL_Parser::KW_OR; }
 "oneof"                    { return PDDL_Parser::KW_ONEOF; }
+"unknown"                  { return PDDL_Parser::KW_UNKNOWN; }
 "problem"                  { return PDDL_Parser::KW_PROBLEM; }
 ":domain"                  { return PDDL_Parser::KW_FORDOMAIN; }
 ":objects"                 { return PDDL_Parser::KW_OBJECTS; }

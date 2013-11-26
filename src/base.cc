@@ -852,7 +852,7 @@ void PDDL_Base::create_invariants_for_sensing_model() {
             } else {
                 assert(dynamic_cast<const AtomicEffect*>(effect[i]) != 0);
                 //const AtomicEffect &atomic_effect = *static_cast<const AtomicEffect*>(effect[i]);
-                cout << "WARNING-1: unconditional sensing for " << *effect[i] << endl;
+                cout << "WARNING: unconditional sensing for " << *effect[i] << endl;
                 exit(255);
             }
         }
@@ -1281,7 +1281,7 @@ PDDL_Base::Condition* PDDL_Base::EQ::ground(bool clone_variables, bool negate) c
     }
     if( second->sym_class_ == sym_variable ) {
         if( static_cast<const VariableSymbol*>(second)->value_ != 0 )
-            result->first = static_cast<const VariableSymbol*>(second)->value_;
+            result->second = static_cast<const VariableSymbol*>(second)->value_;
         else if( clone_variables )
             result->second = new VariableSymbol(strdup(second->print_name_));
     }
@@ -1324,7 +1324,7 @@ bool PDDL_Base::EQ::has_free_variables(const var_symbol_vec &param) const {
 string PDDL_Base::EQ::to_string() const {
     string str;
     if( negated_ ) str += "(not ";
-    str += "(=" + first->to_string() + " " + second->to_string() + ")";
+    str += "(= " + first->to_string() + " " + second->to_string() + ")";
     if( negated_ ) str += ")";
     return str;
 }
@@ -1937,6 +1937,8 @@ bool PDDL_Base::Invariant::reduce() {
             if( value ) {
                 //cout << "Removing invariant " << *this << " because is tautological" << endl;
                 remove_invariant = true;
+            } else {
+                //cout << "Pruning condition " << *condition << "because is false" << endl;
             }
         } else if( dynamic_cast<const Literal*>(condition) ) {
             reduced_invariant.push_back(condition);
@@ -2056,6 +2058,11 @@ void PDDL_Base::InitInvariant::instantiate(init_element_list &ilist) const {
     list<Invariant*> invariant_list;
     invariant_list_ptr_ = &invariant_list;
     enumerate();
+    for( list<Invariant*>::iterator it = invariant_list.begin(); it != invariant_list.end(); ++it ) {
+        ilist.push_back(new InitInvariant(**it));
+        (*it)->clear();
+        delete *it;
+    }
 }
 
 void PDDL_Base::InitInvariant::emit(Instance &ins) const {
@@ -2231,6 +2238,7 @@ void PDDL_Base::Action::process_instance() const {
     if( observe_ != 0 ) action->observe_ = observe_->ground();
     if( sensing_model_ != 0 ) action->sensing_model_ = sensing_model_->ground();
     action_list_ptr_->push_back(action);
+    //cout << *action;
 }
 
 void PDDL_Base::Action::print(ostream &os) const {

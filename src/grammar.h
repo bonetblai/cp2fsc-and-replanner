@@ -256,31 +256,32 @@ extern YY_PDDL_Parser_STYPE YY_PDDL_Parser_LVAL;
 #define	KW_NOT	292
 #define	KW_WHEN	293
 #define	KW_ONEOF	294
-#define	KW_PROBLEM	295
-#define	KW_FORDOMAIN	296
-#define	KW_OBJECTS	297
-#define	KW_INIT	298
-#define	KW_GOAL	299
-#define	KW_SENSOR	300
-#define	KW_SENSE	301
-#define	KW_OBSERVE	302
-#define	KW_AXIOM	303
-#define	KW_COND	304
-#define	KW_OBSERVABLE	305
-#define	KW_BODY	306
-#define	KW_HEAD	307
-#define	KW_STICKY	308
-#define	KW_FLUENTS	309
-#define	KW_HIDDEN	310
-#define	KW_INVARIANT	311
-#define	KW_AT_LEAST_ONE	312
-#define	KW_AT_MOST_ONE	313
-#define	KW_EXACTLY_ONE	314
-#define	KW_VARIABLE	315
-#define	KW_OBS_VARIABLE	316
-#define	KW_VALUES	317
-#define	KW_SENSING_MODEL	318
-#define	KW_DEFAULT_SENSING_MODEL	319
+#define	KW_UNKNOWN	295
+#define	KW_PROBLEM	296
+#define	KW_FORDOMAIN	297
+#define	KW_OBJECTS	298
+#define	KW_INIT	299
+#define	KW_GOAL	300
+#define	KW_SENSOR	301
+#define	KW_SENSE	302
+#define	KW_OBSERVE	303
+#define	KW_AXIOM	304
+#define	KW_COND	305
+#define	KW_OBSERVABLE	306
+#define	KW_BODY	307
+#define	KW_HEAD	308
+#define	KW_STICKY	309
+#define	KW_FLUENTS	310
+#define	KW_HIDDEN	311
+#define	KW_INVARIANT	312
+#define	KW_AT_LEAST_ONE	313
+#define	KW_AT_MOST_ONE	314
+#define	KW_EXACTLY_ONE	315
+#define	KW_VARIABLE	316
+#define	KW_OBS_VARIABLE	317
+#define	KW_VALUES	318
+#define	KW_SENSING_MODEL	319
+#define	KW_DEFAULT_SENSING_MODEL	320
 
 
 #line 143 "/home/bonet/space/software/bison++-1.21-8/lib/bison.h"
@@ -325,7 +326,7 @@ public:
 /* static const int token ... */
 
 /* #line 182 "/home/bonet/space/software/bison++-1.21-8/lib/bison.h" */
-#line 329 "grammar.h"
+#line 330 "grammar.h"
 static const int TK_OPEN;
 static const int TK_CLOSE;
 static const int TK_OPEN_SQ;
@@ -363,6 +364,7 @@ static const int KW_FORALL;
 static const int KW_NOT;
 static const int KW_WHEN;
 static const int KW_ONEOF;
+static const int KW_UNKNOWN;
 static const int KW_PROBLEM;
 static const int KW_FORDOMAIN;
 static const int KW_OBJECTS;
@@ -396,7 +398,7 @@ static const int KW_DEFAULT_SENSING_MODEL;
 enum YY_PDDL_Parser_ENUM_TOKEN { YY_PDDL_Parser_NULL_TOKEN=0
 
 /* #line 185 "/home/bonet/space/software/bison++-1.21-8/lib/bison.h" */
-#line 400 "grammar.h"
+#line 402 "grammar.h"
 	,TK_OPEN=258
 	,TK_CLOSE=259
 	,TK_OPEN_SQ=260
@@ -434,31 +436,32 @@ enum YY_PDDL_Parser_ENUM_TOKEN { YY_PDDL_Parser_NULL_TOKEN=0
 	,KW_NOT=292
 	,KW_WHEN=293
 	,KW_ONEOF=294
-	,KW_PROBLEM=295
-	,KW_FORDOMAIN=296
-	,KW_OBJECTS=297
-	,KW_INIT=298
-	,KW_GOAL=299
-	,KW_SENSOR=300
-	,KW_SENSE=301
-	,KW_OBSERVE=302
-	,KW_AXIOM=303
-	,KW_COND=304
-	,KW_OBSERVABLE=305
-	,KW_BODY=306
-	,KW_HEAD=307
-	,KW_STICKY=308
-	,KW_FLUENTS=309
-	,KW_HIDDEN=310
-	,KW_INVARIANT=311
-	,KW_AT_LEAST_ONE=312
-	,KW_AT_MOST_ONE=313
-	,KW_EXACTLY_ONE=314
-	,KW_VARIABLE=315
-	,KW_OBS_VARIABLE=316
-	,KW_VALUES=317
-	,KW_SENSING_MODEL=318
-	,KW_DEFAULT_SENSING_MODEL=319
+	,KW_UNKNOWN=295
+	,KW_PROBLEM=296
+	,KW_FORDOMAIN=297
+	,KW_OBJECTS=298
+	,KW_INIT=299
+	,KW_GOAL=300
+	,KW_SENSOR=301
+	,KW_SENSE=302
+	,KW_OBSERVE=303
+	,KW_AXIOM=304
+	,KW_COND=305
+	,KW_OBSERVABLE=306
+	,KW_BODY=307
+	,KW_HEAD=308
+	,KW_STICKY=309
+	,KW_FLUENTS=310
+	,KW_HIDDEN=311
+	,KW_INVARIANT=312
+	,KW_AT_LEAST_ONE=313
+	,KW_AT_MOST_ONE=314
+	,KW_EXACTLY_ONE=315
+	,KW_VARIABLE=316
+	,KW_OBS_VARIABLE=317
+	,KW_VALUES=318
+	,KW_SENSING_MODEL=319
+	,KW_DEFAULT_SENSING_MODEL=320
 
 
 #line 185 "/home/bonet/space/software/bison++-1.21-8/lib/bison.h"
@@ -515,5 +518,5 @@ public:
 /* END */
 
 /* #line 236 "/home/bonet/space/software/bison++-1.21-8/lib/bison.h" */
-#line 519 "grammar.h"
+#line 522 "grammar.h"
 #endif
