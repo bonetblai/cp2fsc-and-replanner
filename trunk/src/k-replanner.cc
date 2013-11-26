@@ -161,8 +161,8 @@ int main(int argc, char *argv[]) {
     }
 
     // perform necessary translations
-    vector<string> no_cancellation_rules_for;
-    reader->do_translations(no_cancellation_rules_for);
+    PDDL_Base::variable_vec multivalued_variables;
+    reader->do_translations(multivalued_variables);
     if( options.is_enabled("print:parser:translated") ) {
         reader->print(cout);
     }
@@ -171,7 +171,7 @@ int main(int argc, char *argv[]) {
     Instance instance(options);
 
     cout << "instantiating p.o. problem..." << endl;
-    reader->instantiate(instance);
+    reader->emit_instance(instance);
     //delete reader;
     if( options.is_enabled("print:problem:raw") ) {
         instance.print(cout);
@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
     }
 
     cout << "creating KP translation..." << endl;
-    KP_Instance kp_instance(instance, no_cancellation_rules_for, options);
+    KP_Instance kp_instance(instance, multivalued_variables);
     if( options.is_enabled("print:kp:raw") ) {
         kp_instance.print(cout);
         kp_instance.write_domain(cout);

@@ -17,8 +17,9 @@
     bool error_flag_; \
     int type_; \
   private: \
-    std::vector<ForallEffect*> forall_effects; \
-    std::vector<ForallCondition*> forall_conditions;
+    std::vector<ForallEffect*> forall_effects_; \
+    std::vector<ForallCondition*> forall_conditions_; \
+    effect_vec *effect_vec_ptr_;
 
 %header{
 #include <stdlib.h>
@@ -487,17 +488,17 @@ or_condition:
 
 forall_condition:
       TK_OPEN KW_FORALL TK_OPEN {
-          forall_conditions.push_back(new ForallCondition);
+          forall_conditions_.push_back(new ForallCondition);
       }
       param_list TK_CLOSE {
-          forall_conditions.back()->param_ = *$5;
+          forall_conditions_.back()->param_ = *$5;
           delete $5;
       }
       condition TK_CLOSE {
-          forall_conditions.back()->condition_ = $8;
-          clear_param(forall_conditions.back()->param_);
-          $$ = forall_conditions.back();
-          forall_conditions.pop_back();
+          forall_conditions_.back()->condition_ = $8;
+          clear_param(forall_conditions_.back()->param_);
+          $$ = forall_conditions_.back();
+          forall_conditions_.pop_back();
       }
     ;
 
@@ -556,17 +557,17 @@ conditional_effect:
 
 forall_effect:
       TK_OPEN KW_FORALL TK_OPEN {
-          forall_effects.push_back(new ForallEffect);
+          forall_effects_.push_back(new ForallEffect);
       }
       param_list TK_CLOSE {
-          forall_effects.back()->param_ = *$5;
+          forall_effects_.back()->param_ = *$5;
           delete $5;
       }
       action_effect TK_CLOSE {
-          forall_effects.back()->effect_ = $8;
-          clear_param(forall_effects.back()->param_);
-          $$ = forall_effects.back();
-          forall_effects.pop_back();
+          forall_effects_.back()->effect_ = $8;
+          clear_param(forall_effects_.back()->param_);
+          $$ = forall_effects_.back();
+          forall_effects_.pop_back();
       }
     ;
 
@@ -672,7 +673,7 @@ observable_decl:
       TK_OPEN KW_OBSERVABLE {
           Observable *obs = new Observable;
           dom_observables_.push_back(obs);
-          tmp_effect_vec_ptr_ = &obs->observables_;
+          effect_vec_ptr_ = &obs->observables_;
       }
       fluent_list_decl TK_CLOSE
     | TK_OPEN KW_OBSERVABLE error TK_CLOSE {
@@ -683,10 +684,10 @@ observable_decl:
 
 fluent_list_decl:
       fluent_list_decl fluent_decl {
-          tmp_effect_vec_ptr_->push_back($2);
+          effect_vec_ptr_->push_back($2);
       }
     | fluent_decl {
-          tmp_effect_vec_ptr_->push_back($1);
+          effect_vec_ptr_->push_back($1);
       }
     ;
 
@@ -699,7 +700,7 @@ sticky_decl:
       TK_OPEN KW_STICKY {
           Sticky *sticky = new Sticky;
           dom_stickies_.push_back(sticky);
-          tmp_effect_vec_ptr_ = &sticky->stickies_;
+          effect_vec_ptr_ = &sticky->stickies_;
       }
       fluent_list_decl TK_CLOSE
     | TK_OPEN KW_STICKY error TK_CLOSE {
@@ -716,7 +717,7 @@ multivalued_variable_decl:
           else
               var = new ObsVariable($3->text);
           multivalued_variables_.push_back(var);
-          tmp_effect_vec_ptr_ = &var->values_;
+          effect_vec_ptr_ = &var->values_;
       }
       optional_variable_parameters fluent_list_decl rest_variable_decl TK_CLOSE {
           $3->val = multivalued_variables_.back();
@@ -730,7 +731,7 @@ multivalued_variable_decl:
           var->param_ = *$5;
           delete $5;
           multivalued_variables_.push_back(var);
-          tmp_effect_vec_ptr_ = &var->values_;
+          effect_vec_ptr_ = &var->values_;
       }
       fluent_list_decl rest_variable_decl TK_CLOSE {
           clear_param(multivalued_variables_.back()->param_);
