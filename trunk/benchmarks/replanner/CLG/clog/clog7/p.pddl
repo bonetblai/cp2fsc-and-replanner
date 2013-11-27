@@ -68,7 +68,6 @@
 	 (in_city_t bos_truck bos)
 	 (in_city_t phx_truck phx)
 )
-(:hidden (at_ol package1 phx_po) (at_ol package2 pgh_po)   (at_ol package3 phx_po)  )
 (:goal
   (and 
 	(at_oa package1 bos_airport)

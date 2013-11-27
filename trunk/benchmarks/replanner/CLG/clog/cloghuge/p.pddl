@@ -119,7 +119,6 @@
    (at_ol p4 l44)
 )
 )
-(:hidden (at_ol p0 l03) (at_oa p1 l20) (at_ol p2 l13)  (at_ol p3 l24)  (at_ol p4 l43) )
 (:goal
 (and
 (at_oa p0 l10)
