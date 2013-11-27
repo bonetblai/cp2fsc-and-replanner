@@ -558,7 +558,7 @@ class PDDL_Base {
     // methods for formulations in CLG-like syntax
     void declare_clg_translation();
     bool clg_translation() const { return clg_translation_; }
-    void clg_map_oneofs_to_invariants();
+    void clg_map_oneofs_and_clauses_to_invariants();
     void clg_translate_observe_effects_into_sensors();
 
     // methods for formulations in terms of multivalued variables

@@ -321,13 +321,17 @@ void PDDL_Base::declare_clg_translation() {
     clg_translation_ = true;
 }
 
-void PDDL_Base::clg_map_oneofs_to_invariants() {
-    // extract oneofs
+void PDDL_Base::clg_map_oneofs_and_clauses_to_invariants() {
+    // extract oneofs and clauses
     vector<pair<int, InitOneof*> > oneofs;
+    vector<pair<int, InitClause*> > clauses;
     for( size_t k = 0; k < dom_init_.size(); ++k ) {
         InitElement *ie = dom_init_[k];
         if( dynamic_cast<InitOneof*>(ie) != 0 ) {
             oneofs.push_back(make_pair(k, static_cast<InitOneof*>(ie)));
+            dom_init_[k] = 0;
+        } else if( dynamic_cast<InitClause*>(ie) != 0 ) {
+            clauses.push_back(make_pair(k, static_cast<InitClause*>(ie)));
             dom_init_[k] = 0;
         }
     }
@@ -339,6 +343,15 @@ void PDDL_Base::clg_map_oneofs_to_invariants() {
         invariant.clear();         // to avoid destruction of elements
         oneofs[k].second->clear(); // to avoid destruction of elements
         delete oneofs[k].second;
+    }
+
+    // make clauses into at-least-one invariants
+    for( size_t k = 0; k < clauses.size(); ++k ) {
+        Invariant invariant(Invariant::AT_LEAST_ONE, *clauses[k].second);
+        dom_init_[clauses[k].first] = new InitInvariant(invariant);
+        invariant.clear();         // to avoid destruction of elements
+        clauses[k].second->clear(); // to avoid destruction of elements
+        delete clauses[k].second;
     }
 }
 
@@ -352,12 +365,10 @@ void PDDL_Base::clg_translate_observe_effects_into_sensors() {
     AndEffect effect;
 
     set<Action*> patched_actions;
-    cout << "clg-translation: translating observe effects into sensors:";
+    cout << "clg-translation: translating observe effects into sensors..." << endl;
     for( size_t k = 0; k < dom_actions_.size(); ++k ) {
         Action *action = dom_actions_[k];
         if( action->observe_ != 0 ) {
-            cout << " '" << action->print_name_ << "'";
-
             // save observations and create (do-post-sense-for-<action> <args>) predicate
             const Effect *observe = action->observe_;
             PredicateSymbol *post_sense_pred = new PredicateSymbol(strdup((string("need-post-for-") + action->print_name_).c_str()));
@@ -457,10 +468,8 @@ void PDDL_Base::clg_translate_observe_effects_into_sensors() {
         }
         dom_predicates_.push_back(disable_actions_pred);
     } else {
-        cout << " <none>";
         delete disable_actions_pred;
     }
-    cout << endl;
 }
 
 void PDDL_Base::declare_multivalued_variable_translation() {
@@ -941,7 +950,7 @@ void PDDL_Base::do_translations(variable_vec &multivalued_variables) {
 
     // translate oneofs into invariants and observe effects in actions (CLG-compatibility mode)
     if( clg_translation_ ) {
-        clg_map_oneofs_to_invariants();
+        clg_map_oneofs_and_clauses_to_invariants();
         clg_translate_observe_effects_into_sensors();
     }
 
