@@ -20,6 +20,5 @@
         (file-in-dir my-file sub12)
         (file-in-dir my-file sub22))
    )
-(:hidden (file-in-dir my-file sub12) )
    (:goal (file-in-dir my-file root))
 )

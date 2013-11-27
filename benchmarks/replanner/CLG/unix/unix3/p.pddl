@@ -96,6 +96,5 @@
         (file_in_dir my_file sub2222)
         )
      )
-   (:hidden (file_in_dir my_file sub1111))
    (:goal (file_in_dir my_file root))
 )

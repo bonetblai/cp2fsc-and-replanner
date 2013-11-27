@@ -204,6 +204,5 @@
         (file-in-dir my-file sub22222)
         )
      )
-(:hidden (file-in-dir my-file sub11212))
    (:goal (file-in-dir my-file root))
 )
