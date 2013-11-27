@@ -831,14 +831,14 @@ single_init_element:
       }
     | clause {
           if( type_ == replanner ) {
-              log_error((char*)"'clause' is not a valid element in k-replanner.");
-              delete $1;
-              yyerrok;
-          } else {
-              $$ = new InitClause(*$1);
-              const_cast<Clause*>($1)->clear();
-              delete $1;
+              // We let oneofs pass in k-replanner as they are later mapped 
+              // into invariants of type at-least-one. This is to support
+              // CLG compatibility mode.
+              declare_clg_translation();
           }
+          $$ = new InitClause(*$1);
+          const_cast<Clause*>($1)->clear();
+          delete $1;
       }
     | oneof {
           if( type_ == replanner ) {

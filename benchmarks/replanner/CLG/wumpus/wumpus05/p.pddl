@@ -238,10 +238,5 @@
 
      )
     )
-(:hidden (safe p3-2) (safe p3-4) (safe p5-4)
-         (wumpus-at p2-3) (stench p2-2) (stench p1-3) (stench p2-4) (stench p3-3)
-         (wumpus-at p4-3) (stench p4-2) (stench p4-4) (stench p5-3)
-         (wumpus-at p4-5) (stench p3-5) (stench p5-5)
-)
       (:goal (and (got-the-treasure) (alive)) )
 ) 
