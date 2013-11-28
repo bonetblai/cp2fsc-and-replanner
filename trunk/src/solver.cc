@@ -106,6 +106,7 @@ int Solver::solve(const State &initial_hidden_state,
 
                     return ERROR;
                 }
+
                 hidden.apply(act);
                 //instance_.apply_deductive_rules(hidden);
                 compute_and_add_observations(hidden, state, sensors, sensed);
