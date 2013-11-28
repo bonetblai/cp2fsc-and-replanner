@@ -79,6 +79,7 @@ const char *available_options[] = {
 
     // multivalued variable translation
     "print:mvv:observable-atoms",          "[MVV] print observable atoms",
+    "print:mvv:atoms-for-state-variables", "[MVV] print atoms for state variables",
     "print:mvv:variables",                 "[MVV] print valued for instantiated variables",
     "print:mvv:beams",                     "[MVV] print beams for observable literals",
     "print:mvv:effect",                    "[MVV] print effect actions",

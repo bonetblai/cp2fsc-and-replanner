@@ -45,8 +45,9 @@
 #include <list>
 #include <sstream>
 #include "base.h"
+#include "utils.h"
 
-#line 32 "ppddl.y"
+#line 33 "ppddl.y"
 typedef union {
     StringTable::Cell                 *sym;
     PDDL_Base::VariableSymbol         *vsym;
@@ -118,21 +119,21 @@ typedef union {
 #ifndef YY_PDDL_Parser_PURE
 
 /* #line 63 "/home/bonet/space/software/bison++-1.21-8/lib/bison.h" */
-#line 122 "grammar.h"
+#line 123 "grammar.h"
 
 #line 63 "/home/bonet/space/software/bison++-1.21-8/lib/bison.h"
 /* YY_PDDL_Parser_PURE */
 #endif
 
 /* #line 65 "/home/bonet/space/software/bison++-1.21-8/lib/bison.h" */
-#line 129 "grammar.h"
+#line 130 "grammar.h"
 
 #line 65 "/home/bonet/space/software/bison++-1.21-8/lib/bison.h"
 /* prefix */
 #ifndef YY_PDDL_Parser_DEBUG
 
 /* #line 67 "/home/bonet/space/software/bison++-1.21-8/lib/bison.h" */
-#line 136 "grammar.h"
+#line 137 "grammar.h"
 
 #line 67 "/home/bonet/space/software/bison++-1.21-8/lib/bison.h"
 /* YY_PDDL_Parser_DEBUG */
@@ -140,7 +141,7 @@ typedef union {
 #ifndef YY_PDDL_Parser_LSP_NEEDED
 
 /* #line 70 "/home/bonet/space/software/bison++-1.21-8/lib/bison.h" */
-#line 144 "grammar.h"
+#line 145 "grammar.h"
 
 #line 70 "/home/bonet/space/software/bison++-1.21-8/lib/bison.h"
  /* YY_PDDL_Parser_LSP_NEEDED*/
@@ -218,7 +219,7 @@ extern YY_PDDL_Parser_STYPE YY_PDDL_Parser_LVAL;
 
 
 /* #line 143 "/home/bonet/space/software/bison++-1.21-8/lib/bison.h" */
-#line 222 "grammar.h"
+#line 223 "grammar.h"
 #define	TK_OPEN	258
 #define	TK_CLOSE	259
 #define	TK_OPEN_SQ	260
@@ -326,7 +327,7 @@ public:
 /* static const int token ... */
 
 /* #line 182 "/home/bonet/space/software/bison++-1.21-8/lib/bison.h" */
-#line 330 "grammar.h"
+#line 331 "grammar.h"
 static const int TK_OPEN;
 static const int TK_CLOSE;
 static const int TK_OPEN_SQ;
@@ -398,7 +399,7 @@ static const int KW_DEFAULT_SENSING_MODEL;
 enum YY_PDDL_Parser_ENUM_TOKEN { YY_PDDL_Parser_NULL_TOKEN=0
 
 /* #line 185 "/home/bonet/space/software/bison++-1.21-8/lib/bison.h" */
-#line 402 "grammar.h"
+#line 403 "grammar.h"
 	,TK_OPEN=258
 	,TK_CLOSE=259
 	,TK_OPEN_SQ=260
@@ -518,5 +519,5 @@ public:
 /* END */
 
 /* #line 236 "/home/bonet/space/software/bison++-1.21-8/lib/bison.h" */
-#line 522 "grammar.h"
+#line 523 "grammar.h"
 #endif

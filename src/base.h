@@ -577,9 +577,6 @@ class PDDL_Base {
     void calculate_beams_for_grounded_observable_variables();
     void calculate_beam_for_grounded_variable(Variable &var);
     void translate_actions_for_multivalued_variable_formulation();
-    bool is_effect_action_needed(const Action &action) const;
-    bool is_set_sensing_action_needed(const Action &action) const;
-    bool is_post_action_needed(const Action &action) const;
     void translation_for_multivalued_variable_formulation(Action &action, size_t index);
     void create_invariants_for_multivalued_variables();
     void create_invariants_for_sensing_model();
