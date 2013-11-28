@@ -1,4 +1,4 @@
-(define (problem sd-3)
+(define (problem sd-5)
     (:domain sliding-doors)
     (:hidden (at p1-1))
     (:hidden (at p2-1))
