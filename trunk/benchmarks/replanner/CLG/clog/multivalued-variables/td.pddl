@@ -27,21 +27,21 @@
         (forall (?a - AIRPORT) (at_aa ?airplane ?a))
     )
                       
-;   (:action sense_package_loc_t
-;       :parameters (?obj - OBJ ?loc - LOCATION ?truck - TRUCK)
-;       :precondition (at_tl ?truck ?loc)
-;       :observe (at_ol ?obj ?loc)
-;   )
-;   (:action sense_package_ap_t
-;       :parameters (?obj - OBJ ?loc - AIRPORT ?truck - TRUCK)
-;       :precondition (at_ta ?truck ?loc)
-;       :observe (at_oa ?obj ?loc)
-;   )
-;   (:action sense_package_ap_a
-;       :parameters (?obj - OBJ ?loc - AIRPORT ?airplane - AIRPLANE)
-;       :precondition (at_aa ?airplane ?loc)
-;       :observe (at_oa ?obj ?loc)
-;   )
+    (:action sense_package_loc_t
+        :parameters (?truck - TRUCK ?loc - LOCATION)
+        :precondition (at_tl ?truck ?loc)
+        :sensing-model (forall (?obj - OBJ) (at_ol ?obj ?loc))
+    )
+    (:action sense_package_ap_t
+        :parameters (?truck - TRUCK ?airport - AIRPORT)
+        :precondition (at_ta ?truck ?airport)
+        :sensing-model (forall (?obj - OBJ) (at_oa ?obj ?airport))
+    )
+    (:action sense_package_ap_a
+        :parameters (?airplane - AIRPLANE ?airport - AIRPORT)
+        :precondition (at_aa ?airplane ?airport)
+        :sensing-model (forall (?obj - OBJ) (at_oa ?obj ?airport))
+    )
 
     (:action LOAD_TRUCK_LOC
         :parameters (?obj - OBJ ?truck - TRUCK ?loc - LOCATION ?city - CITY)
