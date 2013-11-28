@@ -719,7 +719,8 @@ multivalued_variable_decl:
           multivalued_variables_.push_back(var);
           effect_vec_ptr_ = &var->values_;
       }
-      optional_variable_parameters fluent_list_decl rest_variable_decl TK_CLOSE {
+      /*optional_variable_parameters fluent_list_decl rest_variable_decl TK_CLOSE*/
+      fluent_list_decl TK_CLOSE {
           $3->val = multivalued_variables_.back();
       }
     | TK_OPEN multivalued_variable_type TK_OPEN variable_symbol param_list TK_CLOSE {
@@ -733,7 +734,8 @@ multivalued_variable_decl:
           multivalued_variables_.push_back(var);
           effect_vec_ptr_ = &var->values_;
       }
-      fluent_list_decl rest_variable_decl TK_CLOSE {
+      /*fluent_list_decl rest_variable_decl TK_CLOSE*/
+      fluent_list_decl TK_CLOSE {
           clear_param(multivalued_variables_.back()->param_);
           $4->val = multivalued_variables_.back();
       }

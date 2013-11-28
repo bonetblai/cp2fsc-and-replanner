@@ -631,7 +631,7 @@ void PDDL_Base::translate_actions_for_multivalued_variable_formulation() {
             for( size_t k = 0; k < dom_actions_.size(); ++k ) {
                 Action &action = *dom_actions_[k];
                 And *precondition = new And;
-                precondition->push_back(action.precondition_);
+                if( action.precondition_ != 0 ) precondition->push_back(action.precondition_);
                 precondition->push_back(new Literal(*normal_execution_));
                 action.precondition_ = precondition->ground();
                 delete precondition;
@@ -674,26 +674,54 @@ static void calculate_free_variables(const PDDL_Base::Condition &condition, cons
 }
 #endif
 
+bool PDDL_Base::is_effect_action_needed(const Action &action) const {
+    if( action.effect_ == 0 ) cout << "Don't need __effect__ action for '" << action.print_name_ << endl;
+    return action.effect_ != 0;
+}
+
+bool PDDL_Base::is_set_sensing_action_needed(const Action &action) const {
+    assert(action.sensing_model_ != 0);
+    unsigned_atom_set affected_atoms;
+    action.sensing_model_->extract_atoms(affected_atoms, true);
+    for( unsigned_atom_set::const_iterator it = affected_atoms.begin(); it != affected_atoms.end(); ++it ) {
+        if( atoms_for_state_variables_.find(*it) == atoms_for_state_variables_.end() )
+            return true;
+    }
+    cout << "Don't need __set_sensing__ action for '" << action.print_name_ << endl;
+    return false;
+}
+
+bool PDDL_Base::is_post_action_needed(const Action &action) const {
+    return true;
+}
+
 void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action, size_t index) {
     And precondition, condition;
     AndEffect effect, sense;
 
-    if( action.effect_ != 0 ) {
+    Effect *reduced_sensing_model = action.sensing_model_->reduce_sensing_model(atoms_for_state_variables_);
+    bool need_effect_action = action.effect_ != 0;
+    bool need_set_sensing_action = reduced_sensing_model != 0;
+
+    if( need_effect_action ) {
         // Action that execute only the effects on state variables (i.e. no sensing model involved)
         Action *effect_action = new Action(strdup((string(action.print_name_) + "__effect__").c_str()));
         clone_parameters(action.param_, effect_action->param_);
 
         // precondition
         if( action.precondition_ != 0 ) precondition.push_back(action.precondition_);
-        precondition.push_back(Literal(*normal_execution_).copy());   // (normal-execution)
+        precondition.push_back(Literal(*normal_execution_).copy());       // (normal-execution)
         effect_action->precondition_ = precondition.ground();
         delete precondition.back();
         precondition.clear();
 
         // effect
         effect.push_back(action.effect_);
-        effect.push_back(AtomicEffect(*normal_execution_).negate());  // (not (normal-execution))
-        effect.push_back(AtomicEffect(*need_sense_[index]).copy());   // (need-set-sense <param>)
+        effect.push_back(AtomicEffect(*normal_execution_).negate());      // (not (normal-execution))
+        if( need_set_sensing_action )
+            effect.push_back(AtomicEffect(*need_sense_[index]).copy());   // (need-set-sense <param>)
+        else
+            effect.push_back(AtomicEffect(*need_post_[index]).copy());    // (need-post <param>)
         effect_action->effect_ = effect.ground();
         delete effect[2];
         delete effect[1];
@@ -709,74 +737,82 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
             cout << *effect_action;
     }
 
-    // Action that computes the effects on observables (i.e. sensing model)
-    Action *set_sensing_action = new Action(strdup((string(action.print_name_) + "__set_sensing__").c_str()));
-    clone_parameters(action.param_, set_sensing_action->param_);
+    if( need_set_sensing_action ) {
+        // Action that computes the effects on observables (i.e. sensing model)
+        Action *set_sensing_action = new Action(strdup((string(action.print_name_) + "__set_sensing__").c_str()));
+        clone_parameters(action.param_, set_sensing_action->param_);
 
-    // precondition
-    if( action.effect_ != 0 ) {
-        precondition.push_back(Literal(*need_sense_[index]).copy());  // (need-set-sense <param>)
-    } else {
+        // precondition
+        if( need_effect_action ) {
+            precondition.push_back(Literal(*need_sense_[index]).copy());  // (need-set-sense <param>)
+        } else {
+            if( action.precondition_ != 0 ) precondition.push_back(action.precondition_);
+            precondition.push_back(Literal(*normal_execution_).copy());   // (normal-execution)
+        }
+        set_sensing_action->precondition_ = precondition.ground();
+        delete precondition.back();
+        precondition.clear();
+
+        // effects
+        effect.push_back(reduced_sensing_model);
+        if( need_effect_action )
+            effect.push_back(AtomicEffect(*need_sense_[index]).negate()); // (not (need-set-sense <param>))
+        else
+            effect.push_back(AtomicEffect(*normal_execution_).negate());  // (not (normal-execution))
+        effect.push_back(AtomicEffect(*need_post_[index]).copy());        // (need-post <param>)
+        set_sensing_action->effect_ = effect.ground();
+        delete effect[2];
+        delete effect[1];
+        delete effect[0];
+        effect.clear();
+
+        // remap parameters and insert
+        const_cast<Condition*>(set_sensing_action->precondition_)->remap_parameters(action.param_, set_sensing_action->param_);
+        const_cast<Effect*>(set_sensing_action->effect_)->remap_parameters(action.param_, set_sensing_action->param_);
+        assert(!set_sensing_action->precondition_->has_free_variables(set_sensing_action->param_));
+        assert(!set_sensing_action->effect_->has_free_variables(set_sensing_action->param_));
+        dom_actions_.push_back(set_sensing_action);
+        if( options_.is_enabled("print:mvv:set-sensing") || options_.is_enabled("print:mvv:generated") )
+            cout << *set_sensing_action;
+
+        // store sensing model for generating invariants later
+        sensing_models_.push_back(make_pair(new var_symbol_vec(action.param_), action.sensing_model_->ground()));
+    }
+
+    if( !need_effect_action && !need_set_sensing_action ) {
+        // Action that only turns on the sensor
+        Action *turn_on_sensor_action = new Action(strdup((string(action.print_name_) + "__turn_on_sensor__").c_str()));
+        clone_parameters(action.param_, turn_on_sensor_action->param_);
+
+        // precondition
         if( action.precondition_ != 0 ) precondition.push_back(action.precondition_);
         precondition.push_back(Literal(*normal_execution_).copy());   // (normal-execution)
+        turn_on_sensor_action->precondition_ = precondition.ground();
+        delete precondition.back();
+        precondition.clear();
+
+        // effects
+        effect.push_back(AtomicEffect(*need_post_[index]).copy());        // (need-post <param>)
+        turn_on_sensor_action->effect_ = effect.ground();
+        delete effect[0];
+        effect.clear();
+
+        // remap parameters and insert
+        const_cast<Condition*>(turn_on_sensor_action->precondition_)->remap_parameters(action.param_, turn_on_sensor_action->param_);
+        const_cast<Effect*>(turn_on_sensor_action->effect_)->remap_parameters(action.param_, turn_on_sensor_action->param_);
+        assert(!turn_on_sensor_action->precondition_->has_free_variables(turn_on_sensor_action->param_));
+        assert(!turn_on_sensor_action->effect_->has_free_variables(turn_on_sensor_action->param_));
+        dom_actions_.push_back(turn_on_sensor_action);
+        if( options_.is_enabled("print:mvv:turn-on-sensor") || options_.is_enabled("print:mvv:generated") )
+            cout << *turn_on_sensor_action;
     }
-    set_sensing_action->precondition_ = precondition.ground();
-    delete precondition.back();
-    precondition.clear();
-
-    // effect
-    if( dynamic_cast<const AndEffect*>(action.sensing_model_) != 0 ) {
-        const AndEffect &sensing_model = *static_cast<const AndEffect*>(action.sensing_model_);
-        for( size_t k = 0; k < sensing_model.size(); ++k ) {
-            if( dynamic_cast<const AtomicEffect*>(sensing_model[k]) != 0 ) {
-                const AtomicEffect &atom = *static_cast<const AtomicEffect*>(sensing_model[k]);
-                if( atoms_for_state_variables_.find(atom) == atoms_for_state_variables_.end() ) {
-                    cout << "error: can't directly observe a non-state variable atom '" << (Atom&)atom << "'" << endl;
-                    exit(255);
-                }
-            } else {
-                effect.push_back(sensing_model[k]);
-            }
-        }
-    } else if( dynamic_cast<const AtomicEffect*>(action.sensing_model_) != 0 ) {
-        const AtomicEffect &atom = *static_cast<const AtomicEffect*>(action.sensing_model_);
-        if( atoms_for_state_variables_.find(atom) == atoms_for_state_variables_.end() ) {
-            cout << "error: can't directly observe a non-state variable atom '" << (Atom&)atom << "'" << endl;
-            exit(255);
-        }
-    } else {
-        effect.push_back(action.sensing_model_);
-    }
-    if( action.effect_ != 0 )
-        effect.push_back(AtomicEffect(*need_sense_[index]).negate()); // (not (need-set-sense <param>))
-    else
-        effect.push_back(AtomicEffect(*normal_execution_).negate());  // (not (normal-execution))
-    effect.push_back(AtomicEffect(*need_post_[index]).copy());        // (need-post <param>)
-    set_sensing_action->effect_ = effect.ground();
-    delete effect.back();
-    effect.pop_back();
-    delete effect.back();
-    effect.pop_back();
-    effect.clear();
-
-    // remap parameters and insert
-    const_cast<Condition*>(set_sensing_action->precondition_)->remap_parameters(action.param_, set_sensing_action->param_);
-    const_cast<Effect*>(set_sensing_action->effect_)->remap_parameters(action.param_, set_sensing_action->param_);
-    assert(!set_sensing_action->precondition_->has_free_variables(set_sensing_action->param_));
-    assert(!set_sensing_action->effect_->has_free_variables(set_sensing_action->param_));
-    dom_actions_.push_back(set_sensing_action);
-    if( options_.is_enabled("print:mvv:set-sensing") || options_.is_enabled("print:mvv:generated") )
-        cout << *set_sensing_action;
-
-    // store sensing model for generating invariants later
-    sensing_models_.push_back(make_pair(new var_symbol_vec(action.param_), action.sensing_model_->ground()));
 
     // Sensor for this action
     Sensor *sensor_for_action = new Sensor(strdup((string(action.print_name_) + "__sensor__").c_str()));
     clone_parameters(action.param_, sensor_for_action->param_);
 
     // condition
-    condition.push_back(Literal(*need_post_[index]).copy());          // (need-post <param)
+    condition.push_back(Literal(*need_post_[index]).copy());              // (need-post <param)
     sensor_for_action->condition_ = condition.ground();
     delete condition[0];
     condition.clear();
@@ -804,14 +840,14 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
     clone_parameters(action.param_, post_action->param_);
 
     // precondition
-    precondition.push_back(Literal(*need_post_[index]).copy());       // (need-post <param>)
+    precondition.push_back(Literal(*need_post_[index]).copy());           // (need-post <param>)
     post_action->precondition_ = precondition.ground();
     delete precondition[0];
     precondition.clear();
 
     // effect
-    effect.push_back(AtomicEffect(*normal_execution_).copy());        // (normal-execution)
-    effect.push_back(AtomicEffect(*need_post_[index]).negate());      // (not (need-post <param))
+    effect.push_back(AtomicEffect(*normal_execution_).copy());            // (normal-execution)
+    effect.push_back(AtomicEffect(*need_post_[index]).negate());          // (not (need-post <param))
     post_action->effect_ = effect.ground();
     delete effect[1];
     delete effect[0];
@@ -1760,6 +1796,10 @@ void PDDL_Base::AtomicEffect::extract_atoms(unsigned_atom_set &atoms, bool only_
     atoms.insert(*this);
 }
 
+PDDL_Base::Effect* PDDL_Base::AtomicEffect::reduce_sensing_model(const unsigned_atom_set &atoms_for_state_variables) const {
+    return atoms_for_state_variables.find(*this) != atoms_for_state_variables.end() ? 0 : ground();
+}
+
 PDDL_Base::AtomicEffect* PDDL_Base::AtomicEffect::internal_ground(bool clone_variables, bool negate) const {
     Atom *atom = Atom::ground(clone_variables);
     AtomicEffect *result = new AtomicEffect(*atom, negate);
@@ -1788,27 +1828,30 @@ PDDL_Base::Effect* PDDL_Base::AndEffect::ground(bool clone_variables) const {
     effect_vec effects;
     for( size_t k = 0; k < size(); ++k ) {
         Effect *item = (*this)[k]->ground(clone_variables);
-        if( dynamic_cast<NullEffect*>(item) != 0 ) {
-            delete item;
-        } else if( dynamic_cast<AndEffect*>(item) != 0 ) {
-            AndEffect &item_list = *static_cast<AndEffect*>(item);
-            for( size_t i = 0; i < item_list.size(); ++i)
-                effects.push_back(item_list[i]);
-            item_list.clear();
-            delete item;
-        } else {
-            effects.push_back(item);
+        if( item != 0 ) {
+            assert(dynamic_cast<NullEffect*>(item) == 0);
+            if( dynamic_cast<AndEffect*>(item) != 0 ) {
+                AndEffect &item_list = *static_cast<AndEffect*>(item);
+                for( size_t i = 0; i < item_list.size(); ++i)
+                    effects.push_back(item_list[i]);
+                item_list.clear();
+                delete item;
+            } else {
+                effects.push_back(item);
+            }
         }
     }
 
     // check if result can be reduced to null or single effect
-    if( effects.empty() ) {
-        return new NullEffect;
-    } else if( effects.size() == 1 ) {
-        return const_cast<Effect*>(effects[0]);
-    } else {
-        return new AndEffect(effects);
+    Effect *result = 0;
+    if( !effects.empty() ) {
+        if( effects.size() == 1 )
+            result = const_cast<Effect*>(effects[0]);
+        else
+            result = new AndEffect(effects);
+        effects.clear();
     }
+    return result;
 }
 
 bool PDDL_Base::AndEffect::has_free_variables(const var_symbol_vec &param) const {
@@ -1834,6 +1877,25 @@ void PDDL_Base::AndEffect::calculate_beam_for_grounded_variable(Variable &var, c
 void PDDL_Base::AndEffect::extract_atoms(unsigned_atom_set &atoms, bool only_affected) const {
     for( size_t k = 0; k < size(); ++k )
         (*this)[k]->extract_atoms(atoms, only_affected);
+}
+
+PDDL_Base::Effect* PDDL_Base::AndEffect::reduce_sensing_model(const unsigned_atom_set &atoms_for_state_variables) const {
+    effect_vec effects;
+    for( size_t k = 0; k < size(); ++k ) {
+        Effect *reduced = (*this)[k]->reduce_sensing_model(atoms_for_state_variables);
+        if( reduced != 0 ) effects.push_back(reduced);
+    }
+
+    // check if result can be reduced to null or single effect
+    Effect *result = 0;
+    if( !effects.empty() ) {
+        if( effects.size() == 1 )
+            result = const_cast<Effect*>(effects[0]);
+        else
+            result = new AndEffect(effects);
+        effects.clear();
+    }
+    return result;
 }
 
 string PDDL_Base::AndEffect::to_string() const {
@@ -1863,25 +1925,22 @@ void PDDL_Base::ConditionalEffect::emit(Instance &ins, index_set &eff, Instance:
 }
 
 PDDL_Base::Effect* PDDL_Base::ConditionalEffect::ground(bool clone_variables) const {
+    Effect *result = 0;
     Effect *grounded_effect = effect_->ground(clone_variables);
-    if( dynamic_cast<NullEffect*>(grounded_effect) != 0 ) {
-        return grounded_effect;
-    } else {
+    if( grounded_effect != 0 ) {
         Condition *grounded_condition = condition_->ground(clone_variables);
         if( dynamic_cast<Constant*>(grounded_condition) != 0 ) {
-            Constant &constant = *static_cast<Constant*>(grounded_condition);
-            if( constant.value_ ) {
-                delete grounded_condition;
-                return grounded_effect;
-            } else {
-                delete grounded_condition;
+            bool value = static_cast<Constant*>(grounded_condition)->value_;
+            delete grounded_condition;
+            if( value )
+                result = grounded_effect;
+            else
                 delete grounded_effect;
-                return new NullEffect;
-            }
         } else {
-            return new ConditionalEffect(grounded_condition, grounded_effect);
+            result = new ConditionalEffect(grounded_condition, grounded_effect);
         }
     }
+    return result;
 }
 
 bool PDDL_Base::ConditionalEffect::has_free_variables(const var_symbol_vec &param) const {
@@ -1913,6 +1972,11 @@ void PDDL_Base::ConditionalEffect::calculate_beam_for_grounded_variable(Variable
 void PDDL_Base::ConditionalEffect::extract_atoms(unsigned_atom_set &atoms, bool only_affected) const {
     if( !only_affected ) condition_->extract_atoms(atoms);
     effect_->extract_atoms(atoms, only_affected);
+}
+
+PDDL_Base::Effect* PDDL_Base::ConditionalEffect::reduce_sensing_model(const unsigned_atom_set &atoms_for_state_variables) const {
+    Effect *effect = effect_->reduce_sensing_model(atoms_for_state_variables);
+    return effect == 0 ? 0 : new ConditionalEffect(condition_->ground(), effect);
 }
 
 string PDDL_Base::ConditionalEffect::to_string() const {
@@ -1949,7 +2013,7 @@ PDDL_Base::Effect* PDDL_Base::ForallEffect::ground(bool clone_variables) const {
     // check if result can be reduced to null or single effect
     if( result->empty() ) {
         delete result;
-        return new NullEffect;
+        return 0;
     } else if( result->size() == 1 ) {
         Effect *single = const_cast<Effect*>((*result)[0]);
         result->clear();
@@ -1962,16 +2026,17 @@ PDDL_Base::Effect* PDDL_Base::ForallEffect::ground(bool clone_variables) const {
 
 void PDDL_Base::ForallEffect::process_instance() const {
     Effect *item = effect_->ground(clone_variables_stack_.back());
-    if( dynamic_cast<NullEffect*>(item) != 0 ) {
-        delete item;
-    } else if( dynamic_cast<AndEffect*>(item) != 0 ) {
-        AndEffect &item_list = *static_cast<AndEffect*>(item);
-        for( size_t i = 0; i < item_list.size(); ++i)
-            result_stack_.back()->push_back(item_list[i]);
-        item_list.clear();
-        delete item;
-    } else {
-        result_stack_.back()->push_back(item);
+    if( item != 0 ) {
+        assert(dynamic_cast<NullEffect*>(item) == 0);
+        if( dynamic_cast<AndEffect*>(item) != 0 ) {
+            AndEffect &item_list = *static_cast<AndEffect*>(item);
+            for( size_t i = 0; i < item_list.size(); ++i)
+                result_stack_.back()->push_back(item_list[i]);
+            item_list.clear();
+            delete item;
+        } else {
+            result_stack_.back()->push_back(item);
+        }
     }
 }
 
@@ -1993,6 +2058,12 @@ void PDDL_Base::ForallEffect::calculate_beam_for_grounded_variable(Variable &var
 void PDDL_Base::ForallEffect::extract_atoms(unsigned_atom_set &atoms, bool only_affected) const {
     cout << "error: extract_atoms() should not be called on ForallEffect: first ground the effect!" << endl;
     exit(255);
+}
+
+PDDL_Base::Effect* PDDL_Base::ForallEffect::reduce_sensing_model(const unsigned_atom_set &atoms_for_state_variables) const {
+    cout << "error: reduce_sensing_model() should not be called on ForallEffect: first ground the effect!" << endl;
+    exit(255);
+    return 0;
 }
 
 string PDDL_Base::ForallEffect::to_string() const {
