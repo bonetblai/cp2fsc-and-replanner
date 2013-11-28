@@ -6,6 +6,7 @@
 #include "scanner.h"
 #include "grammar.h"
 #include "options.h"
+#include "utils.h"
 
 class Parser : public PDDL_Parser {
     PDDL_Scanner scanner;
@@ -35,10 +36,10 @@ class Parser : public PDDL_Parser {
     }
 
     virtual std::ostream& syntax_errors() {
-        std::cerr << "syntax error at ";
+        std::cout << Utils::red << "syntax error at " << Utils::normal;
         if( scanner.current_file() )
-            std::cerr << scanner.current_file() << ":";
-        return std::cerr << scanner.current_line() << ": ";
+            std::cout << scanner.current_file() << ":";
+        return std::cout << scanner.current_line() << ": ";
     }
 };
 
