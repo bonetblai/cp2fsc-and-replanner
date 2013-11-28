@@ -213,7 +213,7 @@ void PDDL_Base::instantiate_elements() {
     if( options_.is_enabled("print:mvv:variables") ) {
         for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
             const Variable &var = *multivalued_variables_[k];
-            cout << "mvv-translation: variable '" << var.print_name_ << "':";
+            cout << "(mvv) variable '" << var.print_name_ << "':";
             for( size_t i = 0; i < var.grounded_values_.size(); ++i )
                 cout << " " << *var.grounded_values_[i];
             cout << endl;
@@ -365,7 +365,7 @@ void PDDL_Base::clg_translate_observe_effects_into_sensors() {
     AndEffect effect;
 
     set<Action*> patched_actions;
-    cout << "clg-translation: translating observe effects into sensors..." << endl;
+    cout << "(clg) translating observe effects into sensors..." << endl;
     for( size_t k = 0; k < dom_actions_.size(); ++k ) {
         Action *action = dom_actions_[k];
         if( action->observe_ != 0 ) {
@@ -478,6 +478,39 @@ void PDDL_Base::declare_multivalued_variable_translation() {
     multivalued_variable_translation_ = true;
 }
 
+void PDDL_Base::calculate_atoms_for_state_variables() {
+    atoms_for_state_variables_.clear();
+    for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
+        const Variable &var = *multivalued_variables_[k];
+        for( size_t i = 0; i < var.grounded_values_.size(); ++i )
+            atoms_for_state_variables_.insert(*static_cast<const AtomicEffect*>(var.grounded_values_[i]));
+    }
+}
+
+void PDDL_Base::calculate_observable_atoms() {
+    for( size_t k = 0; k < dom_actions_.size(); ++k ) {
+        const Action &action = *dom_actions_[k];
+        if( action.sensing_model_ != 0 ) {
+            if( dynamic_cast<const AndEffect*>(action.sensing_model_) != 0 ) {
+                const AndEffect &sensing_model = *static_cast<const AndEffect*>(action.sensing_model_);
+                for( size_t i = 0; i < sensing_model.size(); ++i ) {
+                    if( dynamic_cast<const AtomicEffect*>(sensing_model[i]) != 0 )
+                        observable_atoms_.insert(*static_cast<const AtomicEffect*>(sensing_model[i]));
+                }
+            } else if( dynamic_cast<const AtomicEffect*>(action.sensing_model_) != 0 ) {
+                observable_atoms_.insert(*static_cast<const AtomicEffect*>(action.sensing_model_));
+            }
+        }
+    }
+
+    if( options_.is_enabled("print:mvv:observable-atoms") ) {
+        cout << "(mvv) observable atoms:";
+        for( unsigned_atom_set::iterator it = observable_atoms_.begin(); it != observable_atoms_.end(); ++it )
+            cout << " " << *it;
+        cout << endl;
+    }
+}
+
 void PDDL_Base::calculate_beams_for_grounded_observable_variables() {
     for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
         Variable &var = *multivalued_variables_[k];
@@ -488,7 +521,7 @@ void PDDL_Base::calculate_beams_for_grounded_observable_variables() {
             // print beam (if requested)
             if( options_.is_enabled("print:mvv:beams") ) {
                 for( size_t i = 0; i < var.grounded_values_.size(); ++i ) {
-                    cout << "beam for " << var.print_name_ << "::" << var.grounded_values_[i]->to_string() << ":";
+                    cout << "(mvv) beam for " << var.print_name_ << "::" << var.grounded_values_[i]->to_string() << ":";
                     for( unsigned_atom_set::iterator it = var.beam_[i].begin(); it != var.beam_[i].end(); ++it )
                         cout << " " << *it << (is_static_atom(*it) ? "*" : "");
                     cout << endl;
@@ -593,7 +626,7 @@ void PDDL_Base::translate_actions_for_multivalued_variable_formulation() {
         // extend preconditions of other actions with (normal-execution). In a pure
         // multivalued setting, there should be none of such actions
         if( !dom_actions_.empty() ) {
-            cout << "mvv-translation: extending preconditions with '(normal-execution)' for "
+            cout << "(mvv) extending preconditions with '(normal-execution)' for "
                  << dom_actions_.size() << " action(s)" << endl;
             for( size_t k = 0; k < dom_actions_.size(); ++k ) {
                 Action &action = *dom_actions_[k];
@@ -692,15 +725,38 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
     precondition.clear();
 
     // effect
-    effect.push_back(action.sensing_model_);
+    if( dynamic_cast<const AndEffect*>(action.sensing_model_) != 0 ) {
+        const AndEffect &sensing_model = *static_cast<const AndEffect*>(action.sensing_model_);
+        for( size_t k = 0; k < sensing_model.size(); ++k ) {
+            if( dynamic_cast<const AtomicEffect*>(sensing_model[k]) != 0 ) {
+                const AtomicEffect &atom = *static_cast<const AtomicEffect*>(sensing_model[k]);
+                if( atoms_for_state_variables_.find(atom) == atoms_for_state_variables_.end() ) {
+                    cout << "error: can't directly observe a non-state variable atom '" << (Atom&)atom << "'" << endl;
+                    exit(255);
+                }
+            } else {
+                effect.push_back(sensing_model[k]);
+            }
+        }
+    } else if( dynamic_cast<const AtomicEffect*>(action.sensing_model_) != 0 ) {
+        const AtomicEffect &atom = *static_cast<const AtomicEffect*>(action.sensing_model_);
+        if( atoms_for_state_variables_.find(atom) == atoms_for_state_variables_.end() ) {
+            cout << "error: can't directly observe a non-state variable atom '" << (Atom&)atom << "'" << endl;
+            exit(255);
+        }
+    } else {
+        effect.push_back(action.sensing_model_);
+    }
     if( action.effect_ != 0 )
         effect.push_back(AtomicEffect(*need_sense_[index]).negate()); // (not (need-set-sense <param>))
     else
         effect.push_back(AtomicEffect(*normal_execution_).negate());  // (not (normal-execution))
     effect.push_back(AtomicEffect(*need_post_[index]).copy());        // (need-post <param>)
     set_sensing_action->effect_ = effect.ground();
-    delete effect[2];
-    delete effect[1];
+    delete effect.back();
+    effect.pop_back();
+    delete effect.back();
+    effect.pop_back();
     effect.clear();
 
     // remap parameters and insert
@@ -773,7 +829,7 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
 
 void PDDL_Base::create_invariants_for_multivalued_variables() {
     if( !multivalued_variable_translation_ ) return;
-    cout << "mvv-translation: creating invariants for multivalued variables..." << endl;
+    cout << "(mvv) creating invariants for multivalued variables..." << endl;
 
     Invariant exactly_one(Invariant::EXACTLY_ONE);
     Invariant at_least_one(Invariant::AT_LEAST_ONE);
@@ -792,7 +848,7 @@ void PDDL_Base::create_invariants_for_multivalued_variables() {
                 dom_init_.push_back(new InitInvariant(exactly_one));
                 exactly_one.clear();
                 if( options_.is_enabled("print:mvv:invariants") || options_.is_enabled("print:mvv:invariants:var") )
-                    cout << "invariant for variable '" << var.print_name_ << "': " << *dom_init_.back() << endl;
+                    cout << "(mvv) invariant for variable '" << var.print_name_ << "': " << *dom_init_.back() << endl;
             } else {
                 // NOTE: should remove this later when preprocessing is fixed. This is only
                 // here to avoid preprocessing to mark the variable as 'static'
@@ -805,7 +861,7 @@ void PDDL_Base::create_invariants_for_multivalued_variables() {
                 dom_init_.push_back(new InitInvariant(at_least_one));
                 at_least_one.clear();
                 if( options_.is_enabled("print:mvv:invariants") || options_.is_enabled("print:mvv:invariants:var") )
-                    cout << "invariant for variable '" << var.print_name_ << "': " << *dom_init_.back() << endl;
+                    cout << "(mvv) invariant for variable '" << var.print_name_ << "': " << *dom_init_.back() << endl;
             }
         } else {
             // for each observable variable, and values <value-i> and <value-j>
@@ -823,7 +879,7 @@ void PDDL_Base::create_invariants_for_multivalued_variables() {
                         dom_init_.push_back(new InitInvariant(at_least_one));
                         at_least_one.clear();
                         if( options_.is_enabled("print:mvv:invariants") || options_.is_enabled("print:mvv:invariants:var") )
-                            cout << "invariant for variable '" << var.print_name_ << "': " << *dom_init_.back() << endl;
+                            cout << "(mvv) invariant for variable '" << var.print_name_ << "': " << *dom_init_.back() << endl;
                     }
                 }
             } else {
@@ -838,7 +894,7 @@ void PDDL_Base::create_invariants_for_multivalued_variables() {
                 dom_init_.push_back(new InitInvariant(at_least_one));
                 at_least_one.clear();
                 if( options_.is_enabled("print:mvv:invariants") || options_.is_enabled("print:mvv:invariants:var") )
-                    cout << "invariant for variable '" << var.print_name_ << "': " << *dom_init_.back() << endl;
+                    cout << "(mvv) invariant for variable '" << var.print_name_ << "': " << *dom_init_.back() << endl;
             }
         }
     }
@@ -846,7 +902,7 @@ void PDDL_Base::create_invariants_for_multivalued_variables() {
 
 void PDDL_Base::create_invariants_for_sensing_model() {
     if( !multivalued_variable_translation_ ) return;
-    cout << "mvv-translation: creating invariants for sensing model" << endl;
+    cout << "(mvv) creating invariants for sensing model..." << endl;
 
     set<string> generated_invariants;
     for( size_t k = 0; k < sensing_models_.size(); ++k ) {
@@ -881,9 +937,10 @@ void PDDL_Base::create_invariants_for_sensing_model() {
                 }
             } else {
                 assert(dynamic_cast<const AtomicEffect*>(effect[i]) != 0);
-                //const AtomicEffect &atomic_effect = *static_cast<const AtomicEffect*>(effect[i]);
-                cout << "WARNING: unconditional sensing for " << *effect[i] << endl;
-                exit(255);
+                //const AtomicEffect &observable_atom = *static_cast<const AtomicEffect*>(effect[i]);
+                //assert(observable_atoms_.find(observable_atom) != observable_atoms_.end());
+                //cout << "WARNING: unconditional sensing for " << *effect[i] << endl;
+                //exit(255);
             }
         }
 
@@ -919,7 +976,7 @@ void PDDL_Base::create_invariants_for_sensing_model() {
                     dom_init_.push_back(new InitInvariant(invariant2));
                     generated_invariants.insert(invariant2.to_string());
                     if( options_.is_enabled("print:mvv:invariants") || options_.is_enabled("print:mvv:invariants:sensing") )
-                        cout << "invariant: " << *dom_init_.back() << endl;
+                        cout << "(mvv) invariant: " << *dom_init_.back() << endl;
                 } else {
                     for( size_t i = 0; i < invariant2.size(); ++i )
                         delete invariant2[i];
@@ -935,7 +992,7 @@ void PDDL_Base::create_invariants_for_sensing_model() {
                 dom_init_.push_back(new InitInvariant(invariant1));
                 generated_invariants.insert(invariant1.to_string());
                 if( options_.is_enabled("print:mvv:invariants") || options_.is_enabled("print:mvv:invariants:sensing") )
-                    cout << "invariant: " << *dom_init_.back() << endl;
+                    cout << "(mvv) invariant: " << *dom_init_.back() << endl;
             } else {
                 for( size_t i = 0; i < invariant1.size(); ++i )
                     delete invariant1[i];
@@ -956,6 +1013,8 @@ void PDDL_Base::do_translations(variable_vec &multivalued_variables) {
 
     // translate multivalued variable formulations
     if( multivalued_variable_translation_ ) {
+        calculate_atoms_for_state_variables();
+        //calculate_observable_atoms();
         calculate_beams_for_grounded_observable_variables();
         translate_actions_for_multivalued_variable_formulation();
         create_invariants_for_multivalued_variables();

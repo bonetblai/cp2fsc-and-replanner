@@ -77,6 +77,7 @@ const char *available_options[] = {
     "print:clg:invariants",                "[CLG] print all invariants",
 
     // multivalued variable translation
+    "print:mvv:observable-atoms",          "[MVV] print observable atoms",
     "print:mvv:variables",                 "[MVV] print valued for instantiated variables",
     "print:mvv:beams",                     "[MVV] print beams for observable literals",
     "print:mvv:effect",                    "[MVV] print effect actions",

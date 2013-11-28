@@ -533,6 +533,8 @@ class PDDL_Base {
     std::vector<const Atom*>                  need_post_;
     const Effect                              *default_sensing_model_;
     std::vector<std::pair<const var_symbol_vec*, const Effect*> > sensing_models_;
+    unsigned_atom_set                         observable_atoms_;
+    unsigned_atom_set                         atoms_for_state_variables_;
 
 
     PDDL_Base(StringTable& t, const Options::Mode &options);
@@ -564,6 +566,8 @@ class PDDL_Base {
     // methods for formulations in terms of multivalued variables
     void declare_multivalued_variable_translation();
     bool multivalued_variable_translation() const { return multivalued_variable_translation_; }
+    void calculate_atoms_for_state_variables();
+    void calculate_observable_atoms();
     void calculate_beams_for_grounded_observable_variables();
     void calculate_beam_for_grounded_variable(Variable &var);
     void translate_actions_for_multivalued_variable_formulation();
