@@ -27,40 +27,40 @@
     (:action move-up
         :precondition (free-up)
         :effect
-            (and (when (and (at p1-1)) (and (at p1-2) (not (at p1-1))))
-                 (when (and (at p3-1)) (and (at p3-2) (not (at p3-1))))
-                 (when (and (at p1-2)) (and (at p1-3) (not (at p1-2))))
-                 (when (and (at p3-2)) (and (at p3-3) (not (at p3-2))))
+            (and (when (at p1-1) (and (at p1-2) (not (at p1-1))))
+                 (when (at p3-1) (and (at p3-2) (not (at p3-1))))
+                 (when (at p1-2) (and (at p1-3) (not (at p1-2))))
+                 (when (at p3-2) (and (at p3-3) (not (at p3-2))))
             )
     )
 
     (:action move-down
         :precondition (free-down)
         :effect
-            (and (when (and (at p1-2)) (and (at p1-1) (not (at p1-2))))
-                 (when (and (at p3-2)) (and (at p3-1) (not (at p3-2))))
-                 (when (and (at p1-3)) (and (at p1-2) (not (at p1-3))))
-                 (when (and (at p3-3)) (and (at p3-2) (not (at p3-3))))
+            (and (when (at p1-2) (and (at p1-1) (not (at p1-2))))
+                 (when (at p3-2) (and (at p3-1) (not (at p3-2))))
+                 (when (at p1-3) (and (at p1-2) (not (at p1-3))))
+                 (when (at p3-3) (and (at p3-2) (not (at p3-3))))
             )
     )
 
     (:action move-left
         :precondition (free-left)
         :effect
-            (and (when (and (at p2-1)) (and (at p1-1) (not (at p2-1))))
-                 (when (and (at p3-1)) (and (at p2-1) (not (at p3-1))))
-                 (when (and (at p2-3)) (and (at p1-3) (not (at p2-3))))
-                 (when (and (at p3-3)) (and (at p2-3) (not (at p3-3))))
+            (and (when (at p2-1) (and (at p1-1) (not (at p2-1))))
+                 (when (at p3-1) (and (at p2-1) (not (at p3-1))))
+                 (when (at p2-3) (and (at p1-3) (not (at p2-3))))
+                 (when (at p3-3) (and (at p2-3) (not (at p3-3))))
             )
     )
 
     (:action move-right
         :precondition (free-right)
         :effect
-            (and (when (and (at p1-1)) (and (at p2-1) (not (at p1-1))))
-                 (when (and (at p2-1)) (and (at p3-1) (not (at p2-1))))
-                 (when (and (at p1-3)) (and (at p2-3) (not (at p1-3))))
-                 (when (and (at p2-3)) (and (at p3-3) (not (at p2-3))))
+            (and (when (at p1-1) (and (at p2-1) (not (at p1-1))))
+                 (when (at p2-1) (and (at p3-1) (not (at p2-1))))
+                 (when (at p1-3) (and (at p2-3) (not (at p1-3))))
+                 (when (at p2-3) (and (at p3-3) (not (at p2-3))))
             )
     )
 )
