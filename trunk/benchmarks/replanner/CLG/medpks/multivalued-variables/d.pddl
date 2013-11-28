@@ -1,5 +1,4 @@
 (define (domain medical)
-    (:requirements :translation)
     (:types ILLNESS)
     (:predicates 
         (dead) (cured) (no-stain)
@@ -7,7 +6,7 @@
         (ill ?i - ILLNESS)    
     )
 
-    (:variable alive (dead) :observable)
+    (:variable alive (dead))
     (:variable disease (cured) (forall (?i - ILLNESS) (ill ?i)))
     (:obs-variable result (no-stain) (forall (?i - ILLNESS) (stain ?i)))
 
@@ -21,8 +20,6 @@
                      )
                  )
             )
-        :sensing-model
-            ; empty: a fixed arbitrary value of each observable variable is set
     )
 
     (:action do-test
