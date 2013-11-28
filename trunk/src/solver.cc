@@ -84,6 +84,8 @@ int Solver::solve(const State &initial_hidden_state,
                 cout << endl;
             }
 
+            //cout << ">>> kp-action=" << kp_act.name << endl;
+
             assert(state.applicable(kp_act));
             state.apply(kp_act);
             if( !kp_instance_.is_obs_rule(plan[k]) && !kp_instance_.is_static_rule(plan[k]) ) {

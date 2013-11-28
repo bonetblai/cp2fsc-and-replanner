@@ -210,6 +210,7 @@ class PDDL_Base {
         virtual bool is_strongly_static(const PredicateSymbol &pred) const = 0;
         virtual void calculate_beam_for_grounded_variable(Variable &var, const unsigned_atom_vec &context) const = 0;
         virtual void extract_atoms(unsigned_atom_set &atoms, bool only_affected = false) const = 0;
+        virtual Effect* reduce_sensing_model(const unsigned_atom_set &atoms_for_state_variables) const = 0;
         virtual std::string to_string() const = 0;
         void print(std::ostream &os) const { os << to_string(); }
     };
@@ -220,11 +221,12 @@ class PDDL_Base {
         virtual ~NullEffect() { }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param) { }
         virtual void emit(Instance &ins, index_set &eff, Instance::when_vec &when = dummy_when_vec_) const { }
-        virtual Effect* ground(bool clone_variables = false) const { return new NullEffect; }
+        virtual Effect* ground(bool clone_variables = false) const { return 0; }
         virtual bool has_free_variables(const var_symbol_vec &param) const { return true; }
         virtual bool is_strongly_static(const PredicateSymbol &pred) const { return true; }
         virtual void calculate_beam_for_grounded_variable(Variable &var, const unsigned_atom_vec &context) const { }
         virtual void extract_atoms(unsigned_atom_set &atoms, bool only_affected = false) const { }
+        virtual Effect* reduce_sensing_model(const unsigned_atom_set &atoms_for_state_variables) const { return 0; }
         virtual std::string to_string() const { return std::string("<null>"); }
     };
 
@@ -238,6 +240,7 @@ class PDDL_Base {
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
         virtual void calculate_beam_for_grounded_variable(Variable &var, const unsigned_atom_vec &context) const;
         virtual void extract_atoms(unsigned_atom_set &atoms, bool only_affected = false) const;
+        virtual Effect* reduce_sensing_model(const unsigned_atom_set &atoms_for_state_variables) const;
         virtual std::string to_string() const { return to_string(false); }
         std::string to_string(bool mangled) const { return Atom::to_string(false, mangled); }
         AtomicEffect* negate() const { return internal_ground(false, true); }
@@ -257,6 +260,7 @@ class PDDL_Base {
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
         virtual void calculate_beam_for_grounded_variable(Variable &var, const unsigned_atom_vec &context) const;
         virtual void extract_atoms(unsigned_atom_set &atoms, bool only_affected = false) const;
+        virtual Effect* reduce_sensing_model(const unsigned_atom_set &atoms_for_state_variables) const;
         virtual std::string to_string() const;
     };
 
@@ -273,6 +277,7 @@ class PDDL_Base {
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
         virtual void calculate_beam_for_grounded_variable(Variable &var, const unsigned_atom_vec &context) const;
         virtual void extract_atoms(unsigned_atom_set &atoms, bool only_affected = false) const;
+        virtual Effect* reduce_sensing_model(const unsigned_atom_set &atoms_for_state_variables) const;
         virtual std::string to_string() const;
     };
 
@@ -288,6 +293,7 @@ class PDDL_Base {
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
         virtual void calculate_beam_for_grounded_variable(Variable &var, const unsigned_atom_vec &context) const;
         virtual void extract_atoms(unsigned_atom_set &atoms, bool only_affected = false) const;
+        virtual Effect* reduce_sensing_model(const unsigned_atom_set &atoms_for_state_variables) const;
         virtual std::string to_string() const;
         mutable std::vector<AndEffect*> result_stack_;
         mutable std::vector<bool> clone_variables_stack_;
@@ -571,6 +577,9 @@ class PDDL_Base {
     void calculate_beams_for_grounded_observable_variables();
     void calculate_beam_for_grounded_variable(Variable &var);
     void translate_actions_for_multivalued_variable_formulation();
+    bool is_effect_action_needed(const Action &action) const;
+    bool is_set_sensing_action_needed(const Action &action) const;
+    bool is_post_action_needed(const Action &action) const;
     void translation_for_multivalued_variable_formulation(Action &action, size_t index);
     void create_invariants_for_multivalued_variables();
     void create_invariants_for_sensing_model();

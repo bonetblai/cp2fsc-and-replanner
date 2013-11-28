@@ -69,6 +69,7 @@ const char *available_options[] = {
     // clg translation
     "print:clg:effect",                    "[CLG] print effect actions",
     "print:clg:set-sensing",               "[CLG] print set-sensing actions",
+    "print:clg:turn-on-sensor",            "[CLG] print turn-on-sensor actions (only when no effect and set-sensing actions)",
     "print:clg:post",                      "[CLG] print post actions",
     "print:clg:sensor",                    "[CLG] print sensors",
     "print:clg:generated",                 "[CLG] print all actions and sensors",
