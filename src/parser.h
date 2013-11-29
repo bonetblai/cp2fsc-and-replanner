@@ -36,7 +36,7 @@ class Parser : public PDDL_Parser {
     }
 
     virtual std::ostream& syntax_errors() {
-        std::cout << Utils::red << "syntax error at " << Utils::normal;
+        std::cout << Utils::red() << "syntax error at " << Utils::normal();
         if( scanner.current_file() )
             std::cout << scanner.current_file() << ":";
         return std::cout << scanner.current_line() << ": ";

@@ -20,7 +20,7 @@ void parse_options(const char *options_str) {
     char *opt = strtok(opts, ",");
     while( opt != 0 ) {
         if( !options.enable(opt) )
-            cout << "warning: unrecognized option '" << opt << "' (ignored)." << endl;
+            cout << Utils::warning() << "unrecognized option '" << opt << "' (ignored)." << endl;
         opt = strtok(0, ",");
     }
     free(opts);
@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
             opt_debug_parser = true;
         } else if( !skip_options && !strcmp(argv[k], "--max-time") ) {
             if( k == argc-1 ) {
-                cout << "error: not enough arguments for '" << argv[k] << "'." << endl;
+                cout << Utils::error() << "not enough arguments for '" << argv[k] << "'." << endl;
                 exit(-1);
             }
             opt_time_bound = atoi(argv[++k]);
@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
             opt_print_plan = false;
         } else if( !skip_options && !strcmp(argv[k], "--prefix") ) {
             if( k == argc-1 ) {
-                cout << "error: not enough arguments for '" << argv[k] << "'." << endl;
+                cout << Utils::error() << "not enough arguments for '" << argv[k] << "'." << endl;
                 exit(-1);
             }
             opt_prefix = argv[++k];
@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
 
         // unrecognized option.
         } else if( !skip_options && argv[k][0] == '-' ) {
-            cout << "error: unrecognized option '" << argv[k] << "'." << endl;
+            cout << Utils::error() << "unrecognized option '" << argv[k] << "'." << endl;
             exit(-1);
 
         // read input file
@@ -144,14 +144,14 @@ int main(int argc, char *argv[]) {
             ++nfiles;
         } else {
             cout << argv[k] << endl;
-            cout << "error: reading from stdin not yet implemented." << endl;
+            cout << Utils::error() << "reading from stdin not yet implemented." << endl;
             exit(-1);
         }
     }
 
     // check that there is at least one input file
     if( nfiles == 0 ) {
-        cout << "error: need an input file." << endl;
+        cout << Utils::error() << "need an input file." << endl;
         exit(-1);
     }
 

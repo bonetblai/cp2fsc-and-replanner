@@ -20,7 +20,7 @@ void parse_options(const char *options_str) {
     char *opt = strtok(opts, ",");
     while( opt != 0 ) {
         if( !options.enable(opt) )
-            cout << "warning: unrecognized option '" << opt << "' (ignored)." << endl;
+            cout << Utils::warning() << "unrecognized option '" << opt << "' (ignored)." << endl;
         opt = strtok(0, ",");
     }
     free(opts);
@@ -91,11 +91,11 @@ int main(int argc, char *argv[]) {
     for( int k = 1; k < argc; ++k ) {
         if( !skip_options && !strcmp(argv[k], "--compound-obs-as-fluents") ) {
             opt_compound_obs_as_fluents = true;
-            cout << "error: '" << argv[k] << "' is currently not implemented." << endl;
+            cout << Utils::error() << "'" << argv[k] << "' is currently not implemented." << endl;
             exit(-1);
         } else if( !skip_options && !strcmp(argv[k], "--fsc-states") ) {
             if( k == argc-1 ) {
-                cout << "error: not enough arguments for '" << argv[k] << "'." << endl;
+                cout << Utils::error() << "not enough arguments for '" << argv[k] << "'." << endl;
                 exit(-1);
             }
             opt_fsc_states = atoi(argv[++k]);
@@ -106,13 +106,13 @@ int main(int argc, char *argv[]) {
             opt_forbid_inconsistent_tuples = false;
         } else if( !skip_options && !strcmp(argv[k], "--output-metadata") ) {
             if( k == argc-1 ) {
-                cout << "error: not enough arguments for '" << argv[k] << "'." << endl;
+                cout << Utils::error() << "not enough arguments for '" << argv[k] << "'." << endl;
                 exit(-1);
             }
             opt_metadata_filename = argv[++k];
         } else if( !skip_options && !strcmp(argv[k], "--prefix") ) {
             if( k == argc-1 ) {
-                cout << "error: not enough arguments for '" << argv[k] << "'." << endl;
+                cout << Utils::error() << "not enough arguments for '" << argv[k] << "'." << endl;
                 exit(-1);
             }
             opt_prefix = argv[++k];
@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
 
         // unrecognized option.
         } else if( !skip_options && argv[k][0] == '-' ) {
-            cout << "error: unrecognized option '" << argv[k] << "'." << endl;
+            cout << Utils::error() << "unrecognized option '" << argv[k] << "'." << endl;
             exit(-1);
 
         // read input file
@@ -138,14 +138,14 @@ int main(int argc, char *argv[]) {
             ++nfiles;
         } else {
             cout << argv[k] << endl;
-            cout << "error: reading from stdin not yet implemented." << endl;
+            cout << Utils::error() << "reading from stdin not yet implemented." << endl;
             exit(-1);
         }
     }
 
     // check that there is at least one input file
     if( nfiles == 0 ) {
-        cout << "error: need an input file." << endl;
+        cout << Utils::error() << "need an input file." << endl;
         exit(-1);
     }
 

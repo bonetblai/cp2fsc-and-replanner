@@ -6,13 +6,6 @@
 
 namespace Utils {
 
-static const char *red = "\x1B[31;1m";
-static const char *blue = "\x1B[34;1m";
-static const char *magenta = "\x1B[35;1m";
-static const char *normal = "\x1B[0m";
-static const char *error = "\x1B[31;1merror: \x1B[0m";
-static const char *warning = "\x1B[33;1mwarning: \x1B[0m";
-
 inline float read_time_in_seconds(bool add_stime = false) {
     struct rusage r_usage;
     float time = 0;
@@ -35,6 +28,13 @@ inline float read_time_in_seconds(bool add_stime = false) {
 
     return time;
 }
+
+inline const char *red() { return "\x1B[31;1m"; }
+inline const char *blue() { return "\x1B[34;1m"; }
+inline const char *magenta() { return "\x1B[35;1m"; }
+inline const char *normal() { return "\x1B[0m"; }
+inline const char *error() { return "\x1B[31;1merror: \x1B[0m"; }
+inline const char *warning() { return "\x1B[33;1mwarning: \x1B[0m"; }
 
 };
 
