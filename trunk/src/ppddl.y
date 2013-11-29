@@ -276,7 +276,7 @@ typed_type_list:
     | primitive_type_list TK_HYPHEN TK_NEW_SYMBOL typed_type_list {
           $3->val = new TypeSymbol($3->text);
           if( write_warnings_ )
-              std::cout << Utils::warning << "assuming " << $3->text << " - object" << std::endl;
+              std::cout << Utils::warning() << "assuming " << $3->text << " - object" << std::endl;
           static_cast<TypeSymbol*>($3->val)->sym_type_ = dom_top_type_;
           set_type_type(dom_types_, dom_types_.size(), static_cast<TypeSymbol*>($3->val));
           dom_types_.push_back(static_cast<TypeSymbol*>($3->val));
@@ -909,7 +909,9 @@ oneof:
 
 unknown:
       TK_OPEN KW_UNKNOWN positive_literal TK_CLOSE {
-          std::cout << "WARNING: ignoring '(unknown " << $3->to_string() << ")'" << std::endl;
+          std::cout << Utils::warning()
+                    << Utils::magenta() << "(clg) ignoring '(unknown " << $3->to_string() << ")'"
+                    << Utils::normal() << std::endl;
           delete $3;
       }
     ;
