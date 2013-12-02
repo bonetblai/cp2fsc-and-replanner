@@ -546,6 +546,10 @@ void PDDL_Base::calculate_beams_for_grounded_observable_variables() {
                     if( !is_static_atom(*it) ) reduced_beam.insert(*it);
                 }
                 var.beam_[i] = reduced_beam;
+                if( var.beam_[i].empty() ) {
+                    cout << Utils::blue() << "(mvv) observable '" << *var.grounded_values_[i] << "' is static"
+                         << Utils::normal() << endl;
+                }
             }
         }
     }
