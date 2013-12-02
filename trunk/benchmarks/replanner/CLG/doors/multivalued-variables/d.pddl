@@ -3,7 +3,7 @@
    (:types col pos)
    (:predicates (adj ?i ?j - pos) (at ?i - pos)  (opened ?i - pos) (at-col ?c - col ?i - pos))
 
-   (:variable (doot-at ?c - col) (forall (?i - pos) (when (at-col ?c ?i) (opened ?i))))
+   (:variable (door-at ?c - col) (forall (?i - pos) (when (at-col ?c ?i) (opened ?i))))
                 
    (:action sense
       :parameters (?i - pos)
