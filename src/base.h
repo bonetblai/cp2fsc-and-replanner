@@ -95,7 +95,7 @@ class PDDL_Base {
         const Atom& operator=(const Atom &atom);
         Instance::Atom* find_prop(Instance &ins, bool negated, bool create) const;
         void emit(Instance &ins, index_set &atoms) const;
-        Atom* ground(bool clone_variables = false) const;
+        Atom* ground(bool clone_variables) const;
         bool has_free_variables(const var_symbol_vec &param) const;
         bool is_fully_instantiated() const;
 
@@ -108,10 +108,11 @@ class PDDL_Base {
     struct unsigned_atom_set : public std::set<Atom> { };
 
     struct Condition {
-        Condition() { }
-        virtual ~Condition() { }
+        Condition() : grounded_pos_(0), grounded_neg_(0) { }
+        virtual ~Condition() { delete grounded_pos_; delete grounded_neg_; }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param) = 0;
         virtual void emit(Instance &ins, index_set &condition) const = 0;
+        virtual Condition* clone(bool clone_variables = false) const = 0;
         virtual Condition* ground(bool clone_variables = false, bool negate = false) const = 0;
         virtual bool has_free_variables(const var_symbol_vec &param) const = 0;
         virtual void extract_atoms(unsigned_atom_set &atoms) const = 0;
@@ -119,6 +120,19 @@ class PDDL_Base {
         void print(std::ostream &os) const { os << to_string(); }
         Condition* negate() const { return ground(false, true); }
         Condition* copy() const { return ground(false, false); }
+
+        // cache for grounded conditions
+        mutable const Condition *grounded_pos_;
+        mutable const Condition *grounded_neg_;
+        const Condition* fetch_cache(bool negate) const { return 0; }//negate ? grounded_neg_ : grounded_pos_; }
+        void update_cache(bool negate, const Condition *grounded) const {
+          /*
+            if( negate )
+                grounded_neg_ = grounded;
+            else
+                grounded_pos_ = grounded;
+          */
+        }
     };
     struct condition_vec : public std::vector<const Condition*> { };
 
@@ -128,7 +142,8 @@ class PDDL_Base {
         virtual ~Constant() { }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param) { }
         virtual void emit(Instance &ins, index_set &condition) const { }
-        virtual Condition* ground(bool clone_variables = false, bool negate = false) const { return new Constant(negate ? !value_ : value_); }
+        virtual Condition* clone(bool clone_variables = false) const;
+        virtual Condition* ground(bool clone_variables = false, bool negate = false) const;
         virtual bool has_free_variables(const var_symbol_vec &param) const { return true; }
         virtual void extract_atoms(unsigned_atom_set &atoms) const { }
         virtual std::string to_string() const { return std::string(value_ ? "true" : "false"); }
@@ -139,6 +154,7 @@ class PDDL_Base {
         virtual ~Literal() { }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         virtual void emit(Instance &ins, index_set &condition) const;
+        virtual Condition* clone(bool clone_variables = false) const;
         virtual Condition* ground(bool clone_variables = false, bool negate = false) const;
         virtual bool has_free_variables(const var_symbol_vec &param) const;
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
@@ -153,6 +169,7 @@ class PDDL_Base {
         virtual ~EQ() { }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         virtual void emit(Instance &ins, index_set &condition) const { }
+        virtual Condition* clone(bool clone_variables = false) const;
         virtual Condition* ground(bool clone_variables = false, bool negate = false) const;
         virtual bool has_free_variables(const var_symbol_vec &param) const;
         virtual void extract_atoms(unsigned_atom_set &atoms) const { }
@@ -165,6 +182,7 @@ class PDDL_Base {
         virtual ~And() { for( size_t k = 0; k < size(); ++k ) delete (*this)[k]; }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         virtual void emit(Instance &ins, index_set &condition) const;
+        virtual Condition* clone(bool clone_variables = false) const;
         virtual Condition* ground(bool clone_variables = false, bool negate = false) const;
         virtual bool has_free_variables(const var_symbol_vec &param) const;
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
@@ -177,6 +195,7 @@ class PDDL_Base {
         virtual ~Or() { for( size_t k = 0; k < size(); ++k ) delete (*this)[k]; }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         virtual void emit(Instance &ins, index_set &condition) const;
+        virtual Condition* clone(bool clone_variables = false) const;
         virtual Condition* ground(bool clone_variables = false, bool negate = false) const;
         virtual bool has_free_variables(const var_symbol_vec &param) const;
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
@@ -190,6 +209,24 @@ class PDDL_Base {
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         virtual void emit(Instance &ins, index_set &condition) const;
         virtual void process_instance() const;
+        virtual Condition* clone(bool clone_variables = false) const;
+        virtual Condition* ground(bool clone_variables = false, bool negate = false) const;
+        virtual bool has_free_variables(const var_symbol_vec &param) const;
+        virtual void extract_atoms(unsigned_atom_set &atoms) const;
+        virtual std::string to_string() const;
+        mutable std::vector<bool> negate_stack_;
+        mutable std::vector<bool> clone_variables_stack_;
+        mutable std::vector<Condition*> result_stack_;
+    };
+
+    struct ExistCondition : public Condition, Schema {
+        const Condition *condition_;
+        ExistCondition() : condition_(0) { }
+        virtual ~ExistCondition() { delete condition_; }
+        virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
+        virtual void emit(Instance &ins, index_set &condition) const;
+        virtual void process_instance() const;
+        virtual Condition* clone(bool clone_variables = false) const;
         virtual Condition* ground(bool clone_variables = false, bool negate = false) const;
         virtual bool has_free_variables(const var_symbol_vec &param) const;
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
