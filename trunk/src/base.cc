@@ -2277,7 +2277,7 @@ PDDL_Base::Effect* PDDL_Base::ForallEffect::reduce_sensing_model(const unsigned_
 }
 
 string PDDL_Base::ForallEffect::to_string() const {
-    string str("forall (");
+    string str("(forall (");
     for( size_t k = 0; k < param_.size(); ++k )
         str += (k > 0 ? " " : "") + param_[k]->to_string();
     return str + ") " + effect_->to_string() + ")";
@@ -2820,7 +2820,8 @@ void PDDL_Base::Variable::process_instance() const {
             delete grounded_value;
         } else {
             cout << *values_[k] << endl;
-            cout << "gdd-ptr=" << values_[k]->ground(true) << endl;
+            Effect *e = values_[k]->ground(true);
+            cout << "gdd-ptr=" << e << endl;
             cout << Utils::error() << "unrecognized format in variable '"
                  << print_name_ << "'" << endl;
             exit(255);

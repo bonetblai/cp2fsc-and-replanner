@@ -124,14 +124,15 @@ class PDDL_Base {
         // cache for grounded conditions
         mutable const Condition *grounded_pos_;
         mutable const Condition *grounded_neg_;
-        const Condition* fetch_cache(bool negate) const { return 0; }//negate ? grounded_neg_ : grounded_pos_; }
+        //const Condition* fetch_cache(bool negate) const { return 0; }
+        const Condition* fetch_cache(bool negate) const { return negate ? grounded_neg_ : grounded_pos_; }
         void update_cache(bool negate, const Condition *grounded) const {
-          /*
+#if 1
             if( negate )
                 grounded_neg_ = grounded;
             else
                 grounded_pos_ = grounded;
-          */
+#endif
         }
     };
     struct condition_vec : public std::vector<const Condition*> { };
