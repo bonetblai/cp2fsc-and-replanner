@@ -43,6 +43,7 @@
     const PDDL_Base::Invariant        *invariant;
     const PDDL_Base::Clause           *clause;
     const PDDL_Base::Oneof            *oneof;
+    const PDDL_Base::Unknown          *unknown;
     const PDDL_Base::init_element_vec *ilist;
     const PDDL_Base::InitElement      *ielem;
     int                               ival;
@@ -83,6 +84,7 @@
 %type <invariant>       invariant at_least_one_invariant at_most_one_invariant exactly_one_invariant
 %type <clause>          clause
 %type <oneof>           oneof
+%type <unknown>         unknown
 %type <effect_vec>      positive_atomic_effect_list atomic_effect_list action_effect_list
 %type <effect>          atomic_effect positive_atomic_effect
 %type <effect>          action_effect single_action_effect conditional_effect forall_effect
@@ -855,7 +857,12 @@ single_init_element:
           delete $1;
       }
     | unknown {
-          $$ = 0; // when fixing this, remove condition '$2 != 0' and '$1 != 0' above
+          $$ = 0; // when fixing this, remove condition '$2 != 0' and '$1 != 0' above (in single_init_element)
+          std::cout << Utils::warning()
+                    << Utils::magenta() << "(clg) ignoring '" << $1->to_string() << "'"
+                    << Utils::normal() << std::endl;
+          //$$ = new InitUnknown(*$1);
+          delete $1;
       }
     ;
 
@@ -909,9 +916,7 @@ oneof:
 
 unknown:
       TK_OPEN KW_UNKNOWN positive_literal TK_CLOSE {
-          std::cout << Utils::warning()
-                    << Utils::magenta() << "(clg) ignoring '(unknown " << $3->to_string() << ")'"
-                    << Utils::normal() << std::endl;
+          $$ = new Unknown(*$3);
           delete $3;
       }
     ;
