@@ -90,6 +90,8 @@ const char *available_options[] = {
     "print:mvv:invariants:var",            "[MVV] print variable invariants",
     "print:mvv:invariants:sensing",        "[MVV] print sensing invariants",
     "print:mvv:invariants",                "[MVV] print all invariants",
+    "print:mvv:axioms",                    "[MVV] print axioms generated when compiling static observable fluents",
+    "mvv:compile-static-observables",      "[MVV] compile the value of static observable fluents at init",
 
     0
 };

@@ -29,10 +29,13 @@ inline float read_time_in_seconds(bool add_stime = false) {
     return time;
 }
 
+inline const char *normal() { return "\x1B[0m"; }
 inline const char *red() { return "\x1B[31;1m"; }
+inline const char *green() { return "\x1B[32;1m"; }
+inline const char *yellow() { return "\x1B[33;1m"; }
 inline const char *blue() { return "\x1B[34;1m"; }
 inline const char *magenta() { return "\x1B[35;1m"; }
-inline const char *normal() { return "\x1B[0m"; }
+inline const char *cyan() { return "\x1B[36;1m"; }
 inline const char *error() { return "\x1B[31;1merror: \x1B[0m"; }
 inline const char *warning() { return "\x1B[33;1mwarning: \x1B[0m"; }
 
