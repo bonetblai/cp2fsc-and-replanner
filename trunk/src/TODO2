@@ -1,0 +1,12 @@
+* Axioms must be translated into invariants and rules
+  for completing the hidden initial state
+
+* Remove unnecessary trivial invariants p => p. For this,
+  may need to introduce (unknown ?p) constructs and revise
+  preprocessing step
+
+* Optimize grounding of formulas as it is taking too much
+  time, the problem is the repeatedly grounding of same
+  formula, which implies a to_string() call when computing
+  the value of static atoms at initial state.
+
