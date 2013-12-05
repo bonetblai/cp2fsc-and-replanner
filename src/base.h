@@ -387,6 +387,14 @@ class PDDL_Base {
         void print(std::ostream &os) const { os << to_string(); }
     };
 
+    struct Unknown : public Atom, Schema {
+        Unknown(const Atom &atom) : Atom(atom) { }
+        virtual ~Unknown() { }
+        virtual void process_instance() const;
+        std::string to_string() const;
+        void print(std::ostream &os) const { os << to_string(); }
+    };
+
     struct InitElement;
     struct init_element_vec : public std::vector<InitElement*> { };
     struct init_element_list : public std::list<InitElement*> { };
@@ -442,6 +450,17 @@ class PDDL_Base {
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
         virtual void print(std::ostream &os) const { Oneof::print(os); }
         using Oneof::emit;
+    };
+
+    struct InitUnknown : public InitElement, Unknown {
+        InitUnknown(const Unknown &unknown) : Unknown(unknown) { }
+        virtual ~InitUnknown() { }
+        virtual void instantiate(init_element_list &ilist) const;
+        virtual void emit(Instance &ins) const;
+        virtual bool is_strongly_static(const PredicateSymbol &pred) const;
+        virtual void extract_atoms(unsigned_atom_set &atoms) const;
+        virtual void print(std::ostream &os) const { Unknown::print(os); }
+        using Unknown::emit;
     };
 
     struct Action;
