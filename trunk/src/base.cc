@@ -546,13 +546,19 @@ void PDDL_Base::calculate_beams_for_grounded_observable_variables() {
                     if( !is_static_atom(*it) ) reduced_beam.insert(*it);
                 }
                 var.beam_[i] = reduced_beam;
-                if( var.beam_[i].empty() ) {
-                    cout << Utils::blue() << "(mvv) observable '" << *var.grounded_values_[i] << "' is static"
-                         << Utils::normal() << endl;
-                }
+                if( var.beam_[i].empty() && options_.is_enabled("mvv:compile-static-observables") )
+                    compile_static_observable_fluents(*static_cast<const AtomicEffect*>(var.grounded_values_[i]));
             }
         }
     }
+
+    cout << "hola: begin" << endl;
+    for( size_t k = 0; k < dom_actions_.size(); ++k ) {
+        const Action &action = *dom_actions_[k];
+        if( action.sensing_model_ != 0 )
+            cout << action.print_name_ << ": " << *action.sensing_model_ << endl;
+    }
+    cout << "hola: end" << endl;
 }
 
 void PDDL_Base::calculate_beam_for_grounded_variable(Variable &var) {
@@ -572,6 +578,105 @@ void PDDL_Base::calculate_beam_for_grounded_variable(Variable &var) {
         if( default_sensing_model_ != 0 ) {
             unsigned_atom_vec context;
             default_sensing_model_->calculate_beam_for_grounded_variable(var, context);
+        }
+    }
+}
+
+void PDDL_Base::compile_static_observable_fluents(const Atom &atom) {
+    cout << Utils::blue() << "(mvv) compiling static observable '" << atom << "'"
+         << Utils::normal() << endl;
+
+    // iterate over all sensing models extracting those relevant to atom
+    effect_list sensing_models;
+    for( size_t k = 0; k < dom_actions_.size(); ++k ) {
+        const Action &action = *dom_actions_[k];
+        if( action.sensing_model_ != 0 )
+            action.sensing_model_->extract_sensing_model_for_atom(atom, sensing_models);
+    }
+    if( default_sensing_model_ != 0 ) {
+        default_sensing_model_->extract_sensing_model_for_atom(atom, sensing_models);
+    }
+
+    // remove duplicate sensing models
+    set<string> sensing_models_str;
+    for( effect_list::iterator it = sensing_models.begin(); it != sensing_models.end(); ++it ) {
+        string str = (*it)->to_string();
+        if( sensing_models_str.find(str) == sensing_models_str.end() ) {
+            sensing_models_str.insert(str);
+        } else {
+            delete *it;
+            it = --sensing_models.erase(it);
+        }
+    }
+
+    // print sensing models
+    if( options_.is_enabled("print:mvv:compiled-sensing-models") ) {
+        cout << Utils::blue() << "(mvv) sensing models for '" << atom << "':" << endl;
+        for( effect_list::iterator it = sensing_models.begin(); it != sensing_models.end(); ++it )
+            cout << "    " << **it << endl;
+        cout << Utils::normal();
+    }
+
+    // generate axioms for filtered sensing models
+    for( effect_list::iterator it = sensing_models.begin(); it != sensing_models.end(); ++it ) {
+        assert(dynamic_cast<const ConditionalEffect*>(*it) != 0);
+        const ConditionalEffect *effect = static_cast<const ConditionalEffect*>(*it);
+        Axiom *axiom = new Axiom(strdup("[compiled]"));
+        axiom->body_ = effect->condition_;
+        axiom->head_ = effect->effect_;
+        axioms_for_compiled_sensing_models_.push_back(axiom);
+        const_cast<ConditionalEffect*>(effect)->condition_ = 0;
+        const_cast<ConditionalEffect*>(effect)->effect_ = 0;
+        delete effect;
+        if( options_.is_enabled("print:mvv:axioms") ) cout << *axiom;
+    }
+
+    // insert atom into set of static observable atoms
+    static_observable_atoms_.insert(atom);
+
+    // update sensing models for this atom
+    AtomicEffect observed_atom(atom);
+    unsigned_atom_set atoms_to_remove;
+    atoms_to_remove.insert(atom);
+    for( size_t k = 0; k < dom_actions_.size(); ++k ) {
+        Action &action = *dom_actions_[k];
+        if( action.sensing_model_ != 0 ) {
+            Effect *reduced_model = action.sensing_model_->reduce_sensing_model(atoms_to_remove);
+            if( (reduced_model == 0) || (reduced_model->to_string() != action.sensing_model_->to_string()) ) {
+                if( reduced_model == 0 ) {
+                    reduced_model = observed_atom.clone();
+                } else {
+                    if( dynamic_cast<AndEffect*>(reduced_model) == 0 ) {
+                        AndEffect *and_effect = new AndEffect;
+                        and_effect->push_back(reduced_model);
+                        reduced_model = and_effect;
+                    }
+                    static_cast<AndEffect*>(reduced_model)->push_back(observed_atom.clone());
+                }
+                delete action.sensing_model_;
+                action.sensing_model_ = reduced_model;
+            } else {
+                delete reduced_model;
+            }
+        }
+    }
+    if( default_sensing_model_ != 0 ) {
+        Effect *reduced_model = default_sensing_model_->reduce_sensing_model(atoms_to_remove);
+        if( (reduced_model == 0) || (reduced_model->to_string() != default_sensing_model_->to_string()) ) {
+            if( reduced_model == 0 ) {
+                reduced_model = observed_atom.clone();
+            } else {
+                if( dynamic_cast<AndEffect*>(reduced_model) == 0 ) {
+                    AndEffect *and_effect = new AndEffect;
+                    and_effect->push_back(reduced_model);
+                    reduced_model = and_effect;
+                }
+                static_cast<AndEffect*>(reduced_model)->push_back(observed_atom.clone());
+            }
+            delete default_sensing_model_;
+            default_sensing_model_ = reduced_model;
+        } else {
+            delete reduced_model;
         }
     }
 }
@@ -665,37 +770,16 @@ void PDDL_Base::translate_actions_for_multivalued_variable_formulation() {
     }
 }
 
-#if 0
-static void calculate_free_variables(const PDDL_Base::Effect &effect, const PDDL_Base::var_symbol_vec &param, set<size_t> &used_variables) {
-    map<const PDDL_Base::Symbol*, size_t> free_variable_map;
-    for( size_t k = 0; k < param.size(); ++k )
-        free_variable_map.insert(make_pair(param[k], k));
-    effect.calculate_free_variables(free_variable_map, used_variables);
-    cout << "Free variables in " << effect << ":";
-    for( set<size_t>::const_iterator it = used_variables.begin(); it != used_variables.end(); ++it )
-        cout << " " << *param[*it];
-    cout << endl;
-}
-
-static void calculate_free_variables(const PDDL_Base::Condition &condition, const PDDL_Base::var_symbol_vec &param, set<size_t> &used_variables) {
-    map<const PDDL_Base::Symbol*, size_t> free_variable_map;
-    for( size_t k = 0; k < param.size(); ++k )
-        free_variable_map.insert(make_pair(param[k], k));
-    condition.calculate_free_variables(free_variable_map, used_variables);
-    cout << "FREE variables in " << condition << ":";
-    for( set<size_t>::const_iterator it = used_variables.begin(); it != used_variables.end(); ++it )
-        cout << " " << *param[*it];
-    cout << endl;
-}
-#endif
-
 void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action, size_t index) {
     And precondition, condition;
     AndEffect effect, sense;
 
-    Effect *reduced_sensing_model = action.sensing_model_->reduce_sensing_model(atoms_for_state_variables_);
+    unsigned_atom_set atoms_to_remove(atoms_for_state_variables_);
+    atoms_to_remove.insert(static_observable_atoms_.begin(), static_observable_atoms_.end());
+    Effect *reduced_sensing_model = action.sensing_model_->reduce_sensing_model(atoms_to_remove);
     bool need_effect_action = action.effect_ != 0;
     bool need_set_sensing_action = reduced_sensing_model != 0;
+    cout << action.print_name_ << ": need-effect-action=" << need_effect_action << ", need-set-sensing-action=" << need_set_sensing_action << endl;
 
     if( need_effect_action ) {
         // Action that execute only the effects on state variables (i.e. no sensing model involved)
@@ -799,7 +883,7 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
         assert(!turn_on_sensor_action->precondition_->has_free_variables(turn_on_sensor_action->param_));
         assert(!turn_on_sensor_action->effect_->has_free_variables(turn_on_sensor_action->param_));
         dom_actions_.push_back(turn_on_sensor_action);
-        if( options_.is_enabled("print:mvv:turn-on-sensor") || options_.is_enabled("print:mvv:generated") )
+        if( true || options_.is_enabled("print:mvv:turn-on-sensor") || options_.is_enabled("print:mvv:generated") )
             cout << Utils::blue() << *turn_on_sensor_action << Utils::normal();
     }
 
@@ -1217,15 +1301,6 @@ void PDDL_Base::Atom::remap_parameters(const var_symbol_vec &old_param, const va
     }
 }
 
-#if 0
-void PDDL_Base::Atom::calculate_free_variables(const map<const Symbol*, size_t> &free_variable_map, set<size_t> &used_variables) const {
-    for( size_t k = 0; k < param_.size(); ++k ) {
-        map<const Symbol*, size_t>::const_iterator it = free_variable_map.find(param_[k]);
-        if( it != free_variable_map.end() ) used_variables.insert(it->second);
-    }
-}
-#endif
-
 bool PDDL_Base::Atom::operator==(const Atom &atom) const {
     if( pred_ != atom.pred_ ) return false;
     if( param_.size() != atom.param_.size() ) return false;
@@ -1358,12 +1433,6 @@ void PDDL_Base::Literal::remap_parameters(const var_symbol_vec &old_param, const
     Atom::remap_parameters(old_param, new_param);
 }
 
-#if 0
-void PDDL_Base::Literal::calculate_free_variables(const map<const Symbol*, size_t> &free_variable_map, set<size_t> &used_variables) const {
-    Atom::calculate_free_variables(free_variable_map, used_variables);
-}
-#endif
-
 void PDDL_Base::Literal::emit(Instance &ins, index_set &condition) const {
     Atom::emit(ins, condition);
 }
@@ -1414,16 +1483,8 @@ void PDDL_Base::EQ::remap_parameters(const var_symbol_vec &old_param, const var_
     }
 }
 
-#if 0
-void PDDL_Base::EQ::calculate_free_variables(const map<const Symbol*, size_t> &free_variable_map, set<size_t> &used_variables) const {
-    map<const Symbol*, size_t>::const_iterator it = free_variable_map.find(first);
-    if( it != free_variable_map.end() ) used_variables.insert(it->second);
-    it = free_variable_map.find(second);
-    if( it != free_variable_map.end() ) used_variables.insert(it->second);
-}
-#endif
-
 PDDL_Base::Condition* PDDL_Base::EQ::clone(bool clone_variables) const {
+    assert(0);
     return 0;
 }
 
@@ -1489,13 +1550,6 @@ void PDDL_Base::And::remap_parameters(const var_symbol_vec &old_param, const var
     for( size_t k = 0; k < size(); ++k )
         const_cast<Condition*>((*this)[k])->remap_parameters(old_param, new_param);
 }
-
-#if 0
-void PDDL_Base::And::calculate_free_variables(const map<const Symbol*, size_t> &free_variable_map, set<size_t> &used_variables) const {
-    for( size_t k = 0; k < size(); ++k )
-        (*this)[k]->calculate_free_variables(free_variable_map, used_variables);
-}
-#endif
 
 void PDDL_Base::And::emit(Instance &ins, index_set &condition) const {
     for( size_t k = 0; k < size(); ++k )
@@ -1588,13 +1642,6 @@ void PDDL_Base::Or::remap_parameters(const var_symbol_vec &old_param, const var_
         const_cast<Condition*>((*this)[k])->remap_parameters(old_param, new_param);
 }
 
-#if 0
-void PDDL_Base::Or::calculate_free_variables(const map<const Symbol*, size_t> &free_variable_map, set<size_t> &used_variables) const {
-    for( size_t k = 0; k < size(); ++k )
-        (*this)[k]->calculate_free_variables(free_variable_map, used_variables);
-}
-#endif
-
 void PDDL_Base::Or::emit(Instance &ins, index_set &condition) const {
     cout << Utils::error() << "'Or' should have dissapeared before instantiating: " << *this << endl;
     exit(255);
@@ -1684,12 +1731,6 @@ string PDDL_Base::Or::to_string() const {
 void PDDL_Base::ForallCondition::remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param) {
     const_cast<Condition*>(condition_)->remap_parameters(old_param, new_param);
 }
-
-#if 0
-void PDDL_Base::ForallCondition::calculate_free_variables(const map<const Symbol*, size_t> &free_variable_map, set<size_t> &used_variables) const {
-    condition_->calculate_free_variables(free_variable_map, used_variables);
-}
-#endif
 
 void PDDL_Base::ForallCondition::emit(Instance &ins, index_set &condition) const {
     cout << Utils::error() << "'ForallCondition' should have dissapeared before instantiating: " << *this << endl;
@@ -1963,14 +2004,16 @@ void PDDL_Base::AtomicEffect::remap_parameters(const var_symbol_vec &old_param, 
     Atom::remap_parameters(old_param, new_param);
 }
 
-#if 0
-void PDDL_Base::AtomicEffect::calculate_free_variables(const map<const Symbol*, size_t> &free_variable_map, set<size_t> &used_variables) const {
-    Atom::calculate_free_variables(free_variable_map, used_variables);
-}
-#endif
-
 void PDDL_Base::AtomicEffect::emit(Instance &ins, index_set &eff, Instance::when_vec&) const {
     Atom::emit(ins, eff);
+}
+
+PDDL_Base::Effect* PDDL_Base::AtomicEffect::clone(bool clone_variables) const {
+    return internal_ground(clone_variables, false);
+}
+
+PDDL_Base::Effect* PDDL_Base::AtomicEffect::ground(bool clone_variables) const {
+    return internal_ground(clone_variables, false);
 }
 
 bool PDDL_Base::AtomicEffect::has_free_variables(const var_symbol_vec &param) const {
@@ -2006,8 +2049,12 @@ void PDDL_Base::AtomicEffect::extract_atoms(unsigned_atom_set &atoms, bool only_
     atoms.insert(*this);
 }
 
-PDDL_Base::Effect* PDDL_Base::AtomicEffect::reduce_sensing_model(const unsigned_atom_set &atoms_for_state_variables) const {
-    return atoms_for_state_variables.find(*this) != atoms_for_state_variables.end() ? 0 : ground();
+PDDL_Base::Effect* PDDL_Base::AtomicEffect::reduce_sensing_model(const unsigned_atom_set &atoms_to_remove) const {
+    return atoms_to_remove.find(*this) != atoms_to_remove.end() ? 0 : ground();
+}
+
+void PDDL_Base::AtomicEffect::extract_sensing_model_for_atom(const Atom &atom, effect_list &sensing_models) const {
+    if( atom == *this ) sensing_models.push_back(clone());
 }
 
 PDDL_Base::AtomicEffect* PDDL_Base::AtomicEffect::internal_ground(bool clone_variables, bool negate) const {
@@ -2022,16 +2069,17 @@ void PDDL_Base::AndEffect::remap_parameters(const var_symbol_vec &old_param, con
         const_cast<Effect*>((*this)[k])->remap_parameters(old_param, new_param);
 }
 
-#if 0
-void PDDL_Base::AndEffect::calculate_free_variables(const map<const Symbol*, size_t> &free_variable_map, set<size_t> &used_variables) const {
-    for( size_t k = 0; k < size(); ++k )
-        (*this)[k]->calculate_free_variables(free_variable_map, used_variables);
-}
-#endif
-
 void PDDL_Base::AndEffect::emit(Instance &ins, index_set &eff, Instance::when_vec &when) const {
     for( size_t k = 0; k < size(); ++k )
         (*this)[k]->emit(ins, eff, when);
+}
+
+PDDL_Base::Effect* PDDL_Base::AndEffect::clone(bool clone_variables) const {
+    effect_vec effects;
+    effects.reserve(size());
+    for( size_t k = 0; k < size(); ++k )
+        effects.push_back((*this)[k]->clone(clone_variables));
+    return new AndEffect(effects);
 }
 
 PDDL_Base::Effect* PDDL_Base::AndEffect::ground(bool clone_variables) const {
@@ -2089,10 +2137,10 @@ void PDDL_Base::AndEffect::extract_atoms(unsigned_atom_set &atoms, bool only_aff
         (*this)[k]->extract_atoms(atoms, only_affected);
 }
 
-PDDL_Base::Effect* PDDL_Base::AndEffect::reduce_sensing_model(const unsigned_atom_set &atoms_for_state_variables) const {
+PDDL_Base::Effect* PDDL_Base::AndEffect::reduce_sensing_model(const unsigned_atom_set &atoms_to_remove) const {
     effect_vec effects;
     for( size_t k = 0; k < size(); ++k ) {
-        Effect *reduced = (*this)[k]->reduce_sensing_model(atoms_for_state_variables);
+        Effect *reduced = (*this)[k]->reduce_sensing_model(atoms_to_remove);
         if( reduced != 0 ) effects.push_back(reduced);
     }
 
@@ -2108,6 +2156,11 @@ PDDL_Base::Effect* PDDL_Base::AndEffect::reduce_sensing_model(const unsigned_ato
     return result;
 }
 
+void PDDL_Base::AndEffect::extract_sensing_model_for_atom(const Atom &atom, effect_list &sensing_models) const {
+    for( size_t k = 0; k < size(); ++k )
+        (*this)[k]->extract_sensing_model_for_atom(atom, sensing_models);
+}
+
 string PDDL_Base::AndEffect::to_string() const {
     string str("(and");
     for( size_t k = 0; k < size(); ++k )
@@ -2120,18 +2173,15 @@ void PDDL_Base::ConditionalEffect::remap_parameters(const var_symbol_vec &old_pa
     const_cast<Effect*>(effect_)->remap_parameters(old_param, new_param);
 }
 
-#if 0
-void PDDL_Base::ConditionalEffect::calculate_free_variables(const map<const Symbol*, size_t> &free_variable_map, set<size_t> &used_variables) const {
-    condition_->calculate_free_variables(free_variable_map, used_variables);
-    effect_->calculate_free_variables(free_variable_map, used_variables);
-}
-#endif
-
 void PDDL_Base::ConditionalEffect::emit(Instance &ins, index_set &eff, Instance::when_vec &when) const {
     Instance::When single_when;
     condition_->emit(ins, single_when.condition);
     effect_->emit(ins, single_when.effect, when);
     when.push_back(single_when);
+}
+
+PDDL_Base::Effect* PDDL_Base::ConditionalEffect::clone(bool clone_variables) const {
+    return new ConditionalEffect(condition_->clone(clone_variables), effect_->clone(clone_variables));
 }
 
 PDDL_Base::Effect* PDDL_Base::ConditionalEffect::ground(bool clone_variables) const {
@@ -2184,9 +2234,20 @@ void PDDL_Base::ConditionalEffect::extract_atoms(unsigned_atom_set &atoms, bool 
     effect_->extract_atoms(atoms, only_affected);
 }
 
-PDDL_Base::Effect* PDDL_Base::ConditionalEffect::reduce_sensing_model(const unsigned_atom_set &atoms_for_state_variables) const {
-    Effect *effect = effect_->reduce_sensing_model(atoms_for_state_variables);
+PDDL_Base::Effect* PDDL_Base::ConditionalEffect::reduce_sensing_model(const unsigned_atom_set &atoms_to_remove) const {
+    Effect *effect = effect_->reduce_sensing_model(atoms_to_remove);
     return effect == 0 ? 0 : new ConditionalEffect(condition_->ground(), effect);
+}
+
+void PDDL_Base::ConditionalEffect::extract_sensing_model_for_atom(const Atom &atom, effect_list &sensing_models) const {
+    effect_list smodels;
+    effect_->extract_sensing_model_for_atom(atom, smodels);
+    if( !smodels.empty() ) {
+        assert(smodels.size() == 1);
+        const Effect *effect = *smodels.begin();
+        sensing_models.push_back(new ConditionalEffect(condition_->clone(), effect->clone()));
+        delete effect;
+    }
 }
 
 string PDDL_Base::ConditionalEffect::to_string() const {
@@ -2199,14 +2260,13 @@ void PDDL_Base::ForallEffect::remap_parameters(const var_symbol_vec &old_param, 
     const_cast<Effect*>(effect_)->remap_parameters(old_param, new_param);
 }
 
-#if 0
-void PDDL_Base::ForallEffect::calculate_free_variables(const map<const Symbol*, size_t> &free_variable_map, set<size_t> &used_variables) const {
-    effect_->calculate_free_variables(free_variable_map, used_variables);
-}
-#endif
-
 void PDDL_Base::ForallEffect::emit(Instance &ins, index_set &eff, Instance::when_vec &when) const {
     cout << Utils::error() << "emit() should not be called on ForallEffect: first ground the effect!" << endl;
+    exit(255);
+}
+
+PDDL_Base::Effect* PDDL_Base::ForallEffect::clone(bool clone_variables) const {
+    cout << Utils::error() << "clone() should not be called on ForallEffect: first ground the effect!" << endl;
     exit(255);
 }
 
@@ -2270,10 +2330,14 @@ void PDDL_Base::ForallEffect::extract_atoms(unsigned_atom_set &atoms, bool only_
     exit(255);
 }
 
-PDDL_Base::Effect* PDDL_Base::ForallEffect::reduce_sensing_model(const unsigned_atom_set &atoms_for_state_variables) const {
+PDDL_Base::Effect* PDDL_Base::ForallEffect::reduce_sensing_model(const unsigned_atom_set &atoms_to_remove) const {
     cout << Utils::error() << "reduce_sensing_model() should not be called on ForallEffect: first ground the effect!" << endl;
     exit(255);
-    return 0;
+}
+
+void PDDL_Base::ForallEffect::extract_sensing_model_for_atom(const Atom &atom, effect_list &sensing_models) const {
+    cout << Utils::error() << "extract_sensing_model() should not be called on ForallEffect: first ground the effect!" << endl;
+    exit(255);
 }
 
 string PDDL_Base::ForallEffect::to_string() const {
