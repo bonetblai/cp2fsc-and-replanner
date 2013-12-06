@@ -618,7 +618,8 @@ void PDDL_Base::compile_static_observable_fluents(const Atom &atom) {
         Axiom *axiom = new Axiom(strdup("[compiled]"));
         axiom->body_ = effect->condition_;
         axiom->head_ = effect->effect_;
-        axioms_for_compiled_sensing_models_.push_back(axiom);
+        //axioms_for_compiled_sensing_models_.push_back(axiom);
+        dom_axioms_.push_back(axiom);
         if( options_.is_enabled("print:mvv:axioms") )
           cout << Utils::cyan() << *axiom << Utils::normal();
 
@@ -2669,7 +2670,7 @@ void PDDL_Base::InitUnknown::extract_atoms(unsigned_atom_set &atoms) const {
 void PDDL_Base::Action::instantiate(action_list &alist) const {
     size_t base_count = alist.size();
     action_list_ptr_ = &alist;
-    cout << "instantiating '" << print_name_ << "' ..." << flush;
+    cout << "instantiating action '" << print_name_ << "' ..." << flush;
     enumerate();
     cout << " " << alist.size() - base_count  << " action(s)";
     if( alist.size() - base_count == 0 ) cout << " [" << Utils::warning() << "no action instantiated!]";
@@ -2740,7 +2741,7 @@ void PDDL_Base::Action::print(ostream &os) const {
 void PDDL_Base::Sensor::instantiate(sensor_list &slist) const {
     size_t base_count = slist.size();
     sensor_list_ptr_ = &slist;
-    cout << "instantiating '" << print_name_ << "' ..." << flush;
+    cout << "instantiating sensor '" << print_name_ << "' ..." << flush;
     enumerate();
     cout << " " << slist.size() - base_count << " sensor(s)";
     if( slist.size() - base_count == 0 ) cout << " [" << Utils::warning() << "no sensor instantiated!]";
@@ -2804,7 +2805,7 @@ void PDDL_Base::Sensor::print(ostream &os) const {
 void PDDL_Base::Axiom::instantiate(axiom_list &alist) const {
     size_t base_count = alist.size();
     axiom_list_ptr_ = &alist;
-    cout << "instantiating '" << print_name_ << "' ..." << flush;
+    cout << "instantiating axiom '" << print_name_ << "' ..." << flush;
     enumerate();
     cout << " " << alist.size() - base_count << " axiom(s)";
     if( alist.size() - base_count == 0 ) cout << " [" << Utils::warning() << "no axiom instantiated!]";
@@ -2814,14 +2815,14 @@ void PDDL_Base::Axiom::instantiate(axiom_list &alist) const {
 void PDDL_Base::Axiom::emit(Instance &ins) const {
     PDDL_Name name(this, param_, param_.size());
     Instance::Axiom &axiom = ins.new_axiom(new CopyName(name.to_string(true)));
-    //cout << "fully instantiated axiom " << name << endl;
+    cout << "fully instantiated axiom " << name << endl;
     if( body_ != 0 ) {
         body_->emit(ins, axiom.body);
-        //cout << "    :body " << *body_ << endl;
+        cout << "    :body " << *body_ << endl;
     }
     if( head_ != 0 ) {
         head_->emit(ins, axiom.head);
-        //cout << "    :head " << *head_ << endl;
+        cout << "    :head " << *head_ << endl;
     }
 }
 
@@ -2900,7 +2901,7 @@ void PDDL_Base::Sticky::print(ostream &os) const {
 void PDDL_Base::Variable::instantiate(variable_list &vlist) const {
     size_t base_count = vlist.size();
     variable_list_ptr_ = &vlist;
-    cout << "instantiating '" << print_name_ << "' ..." << flush;
+    cout << "instantiating variable '" << print_name_ << "' ..." << flush;
     enumerate();
     cout << " " << vlist.size() - base_count  << " variable(s)";
     if( vlist.size() - base_count == 0 ) cout << " [" << Utils::warning() << "no variable instantiated!]";
