@@ -246,10 +246,11 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
         //cout << "processing invariant: "; invariant.write(cout, 0, ins);
 
         for( size_t k = 0; k < invariant.size(); ++k ) {
-            ostringstream s;
+            ostringstream s, head;
             s << "invariant-" << invariant_no++;
             Action &nact = new_action(new CopyName(s.str()));
             nact.precondition = precondition;
+            s.clear(); // from now on, s and head store the "comment" for the action
 
             // conditional effects
             When c_eff;
@@ -258,18 +259,22 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
                     int lit = invariant[i];
                     int idx = lit > 0 ? lit-1 : -lit-1;
                     if( lit > 0 ) {
-                        if( i != k )
+                        if( i != k ) {
                             c_eff.condition.insert(1 + 2*idx+1);
-                        else {
+                            s << atoms[1 + 2*idx+1] << " ";
+                        } else {
                             c_eff.condition.insert(-(1 + 2*idx+1)); // TODO: check if necessary
                             c_eff.effect.insert(1 + 2*idx);
+                            head << atoms[1 + 2*idx]->name;
                         }
                     } else {
-                        if( i != k )
+                        if( i != k ) {
                             c_eff.condition.insert(1 + 2*idx);
-                        else {
+                            s << atoms[1 + 2*idx] << " ";
+                        } else {
                             c_eff.condition.insert(-(1 + 2*idx)); // TODO: check if necessary
                             c_eff.effect.insert(1 + 2*idx+1);
+                            head << atoms[1 + 2*idx+1]->name;
                         }
                     }
                 }
@@ -300,6 +305,7 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
             }
 
             // push conditional effect
+            nact.comment = s.str() + "==> " + head.str();
             nact.when.push_back(c_eff);
             if( options_.is_enabled("print:kp:action:invariant") ) {
                 nact.print(cout, *this);

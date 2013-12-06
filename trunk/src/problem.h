@@ -42,12 +42,13 @@ class Instance {
     struct when_vec : public std::vector<When> { };
 
     struct Action {
-        Name*      name;
-        size_t     index;
-        index_set  precondition;
-        index_set  effect;
-        when_vec   when;
-        size_t     cost;
+        Name*       name;
+        size_t      index;
+        index_set   precondition;
+        index_set   effect;
+        when_vec    when;
+        size_t      cost;
+        std::string comment;
         Action(Name* n = 0, size_t i = 0) : name(n), index(i), cost(1) { }
         ~Action() { delete name; }
         const Action& operator=(const Action &a) {

@@ -1,5 +1,4 @@
-        Axioms must be translated into rules for completing the
-        hidden initial state
+[DONE]  Axioms must be used to complete the hidden initial states
 
 [DONE]  Invariants must also be generated from axioms
 
