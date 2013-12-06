@@ -13,12 +13,21 @@ int Solver::solve(const State &initial_hidden_state,
     Instance::Plan plan;
     vector<int> sensors, sensed;
 
+    // the initial hidden state is already closed with the axioms
+    // (see set_initial_state in problem.cc).
+    // Axioms appear in k-replanner only in translations of multivalued
+    // variable problems when compiling static observables. These axioms
+    // are only present in the original problem (instance_) and not in
+    // the kp-problem (kp_instance_). The axioms are only used once to
+    // complete the initial *hidden* state with the hidden observable
+    // fluents.
+
     // close hidden state with deductive rule.
     // (Disabled since if hidden is not corect, result is a propositional
     // model of invariants that can be unintended hidden state.)
     //instance_.apply_deductive_rules(hidden);
 
-    // set initial state
+    // set the initial state
     kp_instance_.set_initial_state(state);
     compute_and_add_observations(hidden, state, sensors, sensed);
     fired_sensors.push_back(sensors);

@@ -613,20 +613,30 @@ void PDDL_Base::compile_static_observable_fluents(const Atom &atom) {
     for( effect_list::iterator it = sensing_models.begin(); it != sensing_models.end(); ++it ) {
         assert(dynamic_cast<const ConditionalEffect*>(*it) != 0);
         const ConditionalEffect *effect = static_cast<const ConditionalEffect*>(*it);
+        assert(dynamic_cast<const AtomicEffect*>(effect->effect_) != 0);
+        const AtomicEffect *head = static_cast<const AtomicEffect*>(effect->effect_);
+        const Condition *condition = effect->condition_;
+        assert((dynamic_cast<const Literal*>(condition) != 0) || (dynamic_cast<const And*>(condition) != 0));
+        const_cast<ConditionalEffect*>(effect)->effect_ = 0;
+        const_cast<ConditionalEffect*>(effect)->condition_ = 0;
+        delete effect;
 
-        // axiom
-        Axiom *axiom = new Axiom(strdup("[compiled]"));
-        axiom->body_ = effect->condition_;
-        axiom->head_ = effect->effect_;
-        //axioms_for_compiled_sensing_models_.push_back(axiom);
-        dom_axioms_.push_back(axiom);
-        if( options_.is_enabled("print:mvv:axioms") )
-          cout << Utils::cyan() << *axiom << Utils::normal();
+        // axioms are used to complete initial hidden states with the static observable
+        // fluents. Hence, only generate axioms for positive heads as the static fluents
+        // for observables are assumed to be false by default.
+        if( !head->negated_ ) {
+            Axiom *axiom = new Axiom(strdup("[compiled]"));
+            axiom->body_ = condition;
+            axiom->head_ = head;
+            //axioms_for_compiled_sensing_models_.push_back(axiom);
+            dom_axioms_.push_back(axiom);
+            if( options_.is_enabled("print:mvv:axioms") )
+                cout << Utils::cyan() << *axiom << Utils::normal();
+        }
 
         // invariant
         Invariant invariant(Invariant::AT_LEAST_ONE);
-        Condition *negated_condition = effect->condition_->ground(false, true);
-        assert((dynamic_cast<Literal*>(negated_condition) != 0) || (dynamic_cast<Or*>(negated_condition) != 0));
+        Condition *negated_condition = condition->ground(false, true);
         if( dynamic_cast<Literal*>(negated_condition) != 0 ) {
             invariant.push_back(negated_condition);
         } else {
@@ -636,19 +646,13 @@ void PDDL_Base::compile_static_observable_fluents(const Atom &atom) {
             or_condition.clear();
             delete negated_condition;
         }
-        assert(dynamic_cast<const AtomicEffect*>(effect->effect_) != 0);
-        invariant.push_back(Literal(*static_cast<const AtomicEffect*>(effect->effect_)).clone());
+        invariant.push_back(Literal(*head).clone());
         dom_init_.push_back(new InitInvariant(invariant));
         invariant.clear();
         if( options_.is_enabled("print:mvv:invariants") || options_.is_enabled("print:mvv:invariants:compilation") )
             cout << Utils::cyan()
                  << "invariant for compiled sensing model: " << *dom_init_.back()
                  << Utils::normal() << endl;
-
-        // clean up
-        const_cast<ConditionalEffect*>(effect)->condition_ = 0;
-        const_cast<ConditionalEffect*>(effect)->effect_ = 0;
-        delete effect;
     }
 
     // insert atom into set of static observable atoms
@@ -2815,14 +2819,14 @@ void PDDL_Base::Axiom::instantiate(axiom_list &alist) const {
 void PDDL_Base::Axiom::emit(Instance &ins) const {
     PDDL_Name name(this, param_, param_.size());
     Instance::Axiom &axiom = ins.new_axiom(new CopyName(name.to_string(true)));
-    cout << "fully instantiated axiom " << name << endl;
+    //cout << "fully instantiated axiom " << name << endl;
     if( body_ != 0 ) {
         body_->emit(ins, axiom.body);
-        cout << "    :body " << *body_ << endl;
+        //cout << "    :body " << *body_ << endl;
     }
     if( head_ != 0 ) {
         head_->emit(ins, axiom.head);
-        cout << "    :head " << *head_ << endl;
+        //cout << "    :head " << *head_ << endl;
     }
 }
 
