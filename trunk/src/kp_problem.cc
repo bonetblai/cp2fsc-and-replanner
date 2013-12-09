@@ -234,7 +234,7 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
     // create precondition for invariant actions (non-empty only
     // when dealing with CLG syntax)
     index_set precondition;
-    if( po_instance_.disable_actions_atom_index >= 0 ) {
+    if( false && po_instance_.disable_actions_atom_index >= 0 ) {
         precondition.insert(1 + 2*po_instance_.disable_actions_atom_index + 1);
     }
 
