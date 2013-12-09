@@ -7,7 +7,7 @@ using namespace std;
 
 static int get_atom_index(const Instance &ins, string atom_name) {
     for( size_t k = 0; k < ins.n_atoms(); ++k ) {
-        if( atom_name == ins.atoms[k]->name->to_string() ) {
+        if( atom_name == ins.atoms_[k]->name_->to_string() ) {
             //cout << "atom '" << atom_name << "' = " << k << endl;
             return k;
         }
@@ -34,16 +34,16 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
     n_standard_actions_(0), n_sensor_actions_(0), n_invariant_actions_(0) {
 
     // set name
-    if( dynamic_cast<const InstanceName*>(ins.name) != 0 ) {
-        set_name(new InstanceName(*dynamic_cast<const InstanceName*>(ins.name)));
+    if( dynamic_cast<const InstanceName*>(ins.name_) != 0 ) {
+        set_name(new InstanceName(*dynamic_cast<const InstanceName*>(ins.name_)));
     } else {
-        set_name(new CopyName(ins.name->to_string()));
+        set_name(new CopyName(ins.name_->to_string()));
     }
 
     // create K0 atoms
-    atoms.reserve(2*ins.n_atoms());
+    atoms_.reserve(2*ins.n_atoms());
     for( size_t k = 0; k < ins.n_atoms(); ++k ) {
-        string name = ins.atoms[k]->name->to_string();
+        string name = ins.atoms_[k]->name_->to_string();
         new_atom(new CopyName("(K_" + name + ")"));      // even-numbered atoms
         new_atom(new CopyName("(K_not_" + name + ")"));  // odd-numbered atoms
     }
@@ -72,34 +72,34 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
     }
 
     // set initial atoms
-    for( index_set::const_iterator it = ins.init.literals.begin(); it != ins.init.literals.end(); ++it ) {
+    for( index_set::const_iterator it = ins.init_.literals_.begin(); it != ins.init_.literals_.end(); ++it ) {
         int idx = *it > 0 ? *it-1 : -*it-1;
         if( *it > 0 )
-            init.literals.insert(1 + 2*idx);
+            init_.literals_.insert(1 + 2*idx);
         else
-            init.literals.insert(1 + 2*idx+1);
+            init_.literals_.insert(1 + 2*idx+1);
     }
 
     // set goal atoms
-    for( index_set::const_iterator it = ins.goal_literals.begin(); it != ins.goal_literals.end(); ++it ) {
+    for( index_set::const_iterator it = ins.goal_literals_.begin(); it != ins.goal_literals_.end(); ++it ) {
         int idx = *it > 0 ? *it-1 : -*it-1;
         if( *it > 0 )
-            goal_literals.insert(1 + 2*idx);
+            goal_literals_.insert(1 + 2*idx);
         else
-            goal_literals.insert(1 + 2*idx+1);
+            goal_literals_.insert(1 + 2*idx+1);
     }
 
     // add known literals in initial situation
     for( size_t k = 0; k < ins.n_atoms(); ++k ) {
-        const Atom &atom = *ins.atoms[k];
-        if( (init.literals.find(1 + 2*k) == init.literals.end()) &&
-            (init.literals.find(1 + 2*k+1) == init.literals.end()) ) {
+        const Atom &atom = *ins.atoms_[k];
+        if( (init_.literals_.find(1 + 2*k) == init_.literals_.end()) &&
+            (init_.literals_.find(1 + 2*k+1) == init_.literals_.end()) ) {
             // check that atom does not appear in invariants
             bool in_invariant = false;
-            for( size_t i = 0; !in_invariant && (i < ins.init.invariants.size()); ++i ) {
-                for( size_t j = 0; j < ins.init.invariants[i].size(); ++j ) {
-                    int lit = ins.init.invariants[i][j];
-                    if( (lit > 0) && ((int)atom.index == lit-1) ) {
+            for( size_t i = 0; !in_invariant && (i < ins.init_.invariants_.size()); ++i ) {
+                for( size_t j = 0; j < ins.init_.invariants_[i].size(); ++j ) {
+                    int lit = ins.init_.invariants_[i][j];
+                    if( (lit > 0) && ((int)atom.index_ == lit-1) ) {
                         in_invariant = true;
                         break;
                     }
@@ -108,9 +108,9 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
 
             // if not in some invariant, add K_not_<atom> to init
             if( !in_invariant ) {
-                init.literals.insert(1 + 2*k+1);
+                init_.literals_.insert(1 + 2*k+1);
                 if( options_.is_enabled("print:kp:atom:init") ) {
-                    cout << "Atom " << atoms[2*k+1]->name << " added to init" << endl;
+                    cout << "Atom " << atoms_[2*k+1]->name_ << " added to init" << endl;
                 }
             }
         }
@@ -119,62 +119,62 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
     // create K-actions
     remap_ = vector<int>(ins.n_actions(),-1);
     for( size_t k = 0; k < ins.n_actions(); ++k ) {
-        const Action &act = *ins.actions[k];
-        Action &nact = new_action(new CopyName(act.name->to_string()));
+        const Action &act = *ins.actions_[k];
+        Action &nact = new_action(new CopyName(act.name_->to_string()));
         remap_[k] = k;
 
         // preconditions
-        for( index_set::const_iterator it = act.precondition.begin(); it != act.precondition.end(); ++it ) {
+        for( index_set::const_iterator it = act.precondition_.begin(); it != act.precondition_.end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
             if( *it > 0 )
-                nact.precondition.insert(1 + 2*idx);
+                nact.precondition_.insert(1 + 2*idx);
             else
-                nact.precondition.insert(1 + 2*idx+1);
+                nact.precondition_.insert(1 + 2*idx+1);
         }
 
         // support rules for unconditional effects (no cancellation rules for unconditial effects)
-        for( index_set::const_iterator it = act.effect.begin(); it != act.effect.end(); ++it ) {
+        for( index_set::const_iterator it = act.effect_.begin(); it != act.effect_.end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
             if( *it > 0 ) {
-                nact.effect.insert(1 + 2*idx);
-                nact.effect.insert(-(1 + 2*idx+1));
+                nact.effect_.insert(1 + 2*idx);
+                nact.effect_.insert(-(1 + 2*idx+1));
             } else {
-                nact.effect.insert(1 + 2*idx+1);
-                nact.effect.insert(-(1 + 2*idx));
+                nact.effect_.insert(1 + 2*idx+1);
+                nact.effect_.insert(-(1 + 2*idx));
             }
-            mvv_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, nact.effect);
+            mvv_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, nact.effect_);
         }
 
         // support and cancellation rules for conditional effects
-        for( size_t i = 0; i < act.when.size(); ++i ) {
-            const When &when = act.when[i];
+        for( size_t i = 0; i < act.when_.size(); ++i ) {
+            const When &when = act.when_[i];
             When sup_eff, can_eff;
-            for( index_set::const_iterator it = when.condition.begin(); it != when.condition.end(); ++it ) {
+            for( index_set::const_iterator it = when.condition_.begin(); it != when.condition_.end(); ++it ) {
                 int idx = *it > 0 ? *it-1 : -*it-1;
                 if( *it > 0 ) {
-                    sup_eff.condition.insert(1 + 2*idx);
-                    can_eff.condition.insert(-(1 + 2*idx+1));
+                    sup_eff.condition_.insert(1 + 2*idx);
+                    can_eff.condition_.insert(-(1 + 2*idx+1));
                 } else {
-                    sup_eff.condition.insert(1 + 2*idx+1);
-                    can_eff.condition.insert(-(1 + 2*idx));
+                    sup_eff.condition_.insert(1 + 2*idx+1);
+                    can_eff.condition_.insert(-(1 + 2*idx));
                 }
             }
-            for( index_set::const_iterator it = when.effect.begin(); it != when.effect.end(); ++it ) {
+            for( index_set::const_iterator it = when.effect_.begin(); it != when.effect_.end(); ++it ) {
                 int idx = *it > 0 ? *it-1 : -*it-1;
                 if( *it > 0 ) {
-                    sup_eff.effect.insert(1 + 2*idx);
+                    sup_eff.effect_.insert(1 + 2*idx);
                     if( observable_atoms.find(idx) == observable_atoms.end() )
-                        can_eff.effect.insert(-(1 + 2*idx+1));
+                        can_eff.effect_.insert(-(1 + 2*idx+1));
                 } else {
-                    sup_eff.effect.insert(1 + 2*idx+1);
+                    sup_eff.effect_.insert(1 + 2*idx+1);
                     if( observable_atoms.find(idx) == observable_atoms.end() )
-                        can_eff.effect.insert(-(1 + 2*idx));
+                        can_eff.effect_.insert(-(1 + 2*idx));
                 }
-                mvv_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, sup_eff.effect);
-                mvv_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, can_eff.effect);
+                mvv_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, sup_eff.effect_);
+                mvv_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, can_eff.effect_);
             }
-            nact.when.push_back(sup_eff);
-            if( !can_eff.effect.empty() ) nact.when.push_back(can_eff);
+            nact.when_.push_back(sup_eff);
+            if( !can_eff.effect_.empty() ) nact.when_.push_back(can_eff);
         }
 
         if( options_.is_enabled("print:kp:action:regular") ) {
@@ -185,12 +185,12 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
 
     // create sensor rules
     for( size_t k = 0; k < ins.n_sensors(); ++k ) {
-        const Sensor &r = *ins.sensors[k];
-        assert(!r.sense.empty());
+        const Sensor &r = *ins.sensors_[k];
+        assert(!r.sense_.empty());
 
         // create common condition
         index_set common_condition;
-        for( index_set::const_iterator it = r.condition.begin(); it != r.condition.end(); ++it ) {
+        for( index_set::const_iterator it = r.condition_.begin(); it != r.condition_.end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
             if( *it > 0 )
                 common_condition.insert(1 + 2*idx);
@@ -200,28 +200,28 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
 
         // generate different rule for every sensed fluent
         int obs = 0;
-        for( index_set::const_iterator it = r.sense.begin(); it != r.sense.end(); ++it ) {
+        for( index_set::const_iterator it = r.sense_.begin(); it != r.sense_.end(); ++it ) {
             assert(*it > 0);
             int idx = *it-1;
             for( size_t n = 0; n < 2; ++n ) {
                 ostringstream s;
-                s << "sensor-" << r.name->to_string() << "-obs" << obs << "-ver" << n;
+                s << "sensor-" << r.name_->to_string() << "-obs" << obs << "-ver" << n;
                 Action &nact = new_action(new CopyName(s.str()));
 
                 // conditional effect
                 When c_eff;
-                c_eff.condition.insert(common_condition.begin(), common_condition.end());
-                c_eff.condition.insert(-(1 + 2*idx));
-                c_eff.condition.insert(-(1 + 2*idx+1));
+                c_eff.condition_.insert(common_condition.begin(), common_condition.end());
+                c_eff.condition_.insert(-(1 + 2*idx));
+                c_eff.condition_.insert(-(1 + 2*idx+1));
                 if( n == 0 ) {
-                    c_eff.effect.insert(1 + 2*idx);
+                    c_eff.effect_.insert(1 + 2*idx);
                 } else {
-                    c_eff.effect.insert(1 + 2*idx+1);
+                    c_eff.effect_.insert(1 + 2*idx+1);
                 }
 
                 // add conditional effect to rule
-                obs_rules_by_name_[nact.name->to_string()] = n_actions();
-                nact.when.push_back(c_eff);
+                obs_rules_by_name_[nact.name_->to_string()] = n_actions();
+                nact.when_.push_back(c_eff);
                 if( options_.is_enabled("print:kp:action:sensor") ) {
                     nact.print(cout, *this);
                 }
@@ -234,70 +234,70 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
     // create precondition for invariant actions (non-empty only
     // when dealing with CLG syntax)
     index_set precondition;
-    if( false && po_instance_.disable_actions_atom_index >= 0 ) {
-        precondition.insert(1 + 2*po_instance_.disable_actions_atom_index + 1);
+    if( false && po_instance_.index_for_atom_normal_execution_ >= 0 ) {
+        precondition.insert(1 + 2*po_instance_.index_for_atom_normal_execution_ + 1);
     }
 
     // create invariant rules
     size_t invariant_no = 0;
-    for( invariant_vec::const_iterator it = ins.init.invariants.begin(); it != ins.init.invariants.end(); ++it ) {
+    for( invariant_vec::const_iterator it = ins.init_.invariants_.begin(); it != ins.init_.invariants_.end(); ++it ) {
         const Invariant &invariant = *it;
-        assert(invariant.type == Invariant::AT_LEAST_ONE);
+        assert(invariant.type_ == Invariant::AT_LEAST_ONE);
         //cout << "processing invariant: "; invariant.write(cout, 0, ins);
 
         for( size_t k = 0; k < invariant.size(); ++k ) {
             ostringstream s, head;
             s << "invariant-" << invariant_no++;
             Action &nact = new_action(new CopyName(s.str()));
-            nact.precondition = precondition;
+            nact.precondition_ = precondition;
             s.clear(); // from now on, s and head store the "comment" for the action
 
             // conditional effects
             When c_eff;
-            if( invariant.type == Invariant::AT_LEAST_ONE ) {
+            if( invariant.type_ == Invariant::AT_LEAST_ONE ) {
                 for( size_t i = 0; i < invariant.size(); ++i ) {
                     int lit = invariant[i];
                     int idx = lit > 0 ? lit-1 : -lit-1;
                     if( lit > 0 ) {
                         if( i != k ) {
-                            c_eff.condition.insert(1 + 2*idx+1);
-                            s << atoms[1 + 2*idx+1] << " ";
+                            c_eff.condition_.insert(1 + 2*idx+1);
+                            s << atoms_[1 + 2*idx+1] << " ";
                         } else {
-                            c_eff.condition.insert(-(1 + 2*idx+1)); // TODO: check if necessary
-                            c_eff.effect.insert(1 + 2*idx);
-                            head << atoms[1 + 2*idx]->name;
+                            c_eff.condition_.insert(-(1 + 2*idx+1)); // TODO: check if necessary
+                            c_eff.effect_.insert(1 + 2*idx);
+                            head << atoms_[1 + 2*idx]->name_;
                         }
                     } else {
                         if( i != k ) {
-                            c_eff.condition.insert(1 + 2*idx);
-                            s << atoms[1 + 2*idx] << " ";
+                            c_eff.condition_.insert(1 + 2*idx);
+                            s << atoms_[1 + 2*idx] << " ";
                         } else {
-                            c_eff.condition.insert(-(1 + 2*idx)); // TODO: check if necessary
-                            c_eff.effect.insert(1 + 2*idx+1);
-                            head << atoms[1 + 2*idx+1]->name;
+                            c_eff.condition_.insert(-(1 + 2*idx)); // TODO: check if necessary
+                            c_eff.effect_.insert(1 + 2*idx+1);
+                            head << atoms_[1 + 2*idx+1]->name_;
                         }
                     }
                 }
             } else {
                 cout << "warning: only AT_LEAST_ONE-type invariants should exist at this stage" << endl;
 #if 0
-                assert(invariant.type == Invariant::AT_MOST_ONE);
+                assert(invariant.type_ == Invariant::AT_MOST_ONE);
                 for( size_t i = 0; i < invariant.size(); ++i ) {
                     int lit = invariant[i];
                     int idx = lit > 0 ? lit-1 : -lit-1;
                     if( lit > 0 ) {
                         if( i == k ) {
-                            c_eff.condition.insert(1 + 2*idx);
+                            c_eff.condition_.insert(1 + 2*idx);
                         } else {
-                            c_eff.condition.insert(-(1 + 2*idx)); // TODO: check if necessary
-                            c_eff.effect.insert(1 + 2*idx+1);
+                            c_eff.condition_.insert(-(1 + 2*idx)); // TODO: check if necessary
+                            c_eff.effect_.insert(1 + 2*idx+1);
                         }
                     } else {
                         if( i == k ) {
-                            c_eff.condition.insert(1 + 2*idx+1);
+                            c_eff.condition_.insert(1 + 2*idx+1);
                         } else {
-                            c_eff.condition.insert(-(1 + 2*idx+1)); // TODO: check if necessary
-                            c_eff.effect.insert(1 + 2*idx);
+                            c_eff.condition_.insert(-(1 + 2*idx+1)); // TODO: check if necessary
+                            c_eff.effect_.insert(1 + 2*idx);
                         }
                     }
                 }
@@ -305,8 +305,8 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
             }
 
             // push conditional effect
-            nact.comment = s.str() + "==> " + head.str();
-            nact.when.push_back(c_eff);
+            nact.comment_ = s.str() + "==> " + head.str();
+            nact.when_.push_back(c_eff);
             if( options_.is_enabled("print:kp:action:invariant") ) {
                 nact.print(cout, *this);
             }
@@ -325,14 +325,14 @@ void KP_Instance::cross_reference() {
 
     size_t k = 0;
     while( k < n_actions() ) {
-        if( actions[k]->name->to_string().compare(0, 7, "sensor-") == 0 ) {
+        if( actions_[k]->name_->to_string().compare(0, 7, "sensor-") == 0 ) {
             n_standard_actions_ = k;
             break;
         }
         ++k;
     }
     while( k < n_actions() ) {
-        if( actions[k]->name->to_string().compare(0, 10, "invariant-") == 0 ) {
+        if( actions_[k]->name_->to_string().compare(0, 10, "invariant-") == 0 ) {
             n_sensor_actions_ = k - n_standard_actions_;
             break;
         }
@@ -344,14 +344,14 @@ void KP_Instance::cross_reference() {
     for( size_t k = 0; k < n_standard_actions_; ++k ) {
         remap_[k] = -1;
         for( size_t j = 0; j < po_instance_.n_actions(); ++j ) {
-            if( actions[k]->name->to_string() == po_instance_.actions[j]->name->to_string() ) {
+            if( actions_[k]->name_->to_string() == po_instance_.actions_[j]->name_->to_string() ) {
                 remap_[k] = j;
                 break;
             }
         }
     }
 
-    Instance::cross_referenced = true;
+    Instance::cross_referenced_ = true;
 }
 
 // This function apply given plan at given initial state and returns the final
@@ -364,17 +364,17 @@ bool KP_Instance::apply_plan(const Plan &plan, const State &initial_state, State
 
     final_state = initial_state;
     for( size_t k = 0; k < plan.size(); ++k ) {
-        const Instance::Action &act = *actions[plan[k]];
+        const Instance::Action &act = *actions_[plan[k]];
         assert(final_state.applicable(act));
 
         // check that preconditions hold at current state (final_state)
-        if( !final_state.satisfy(act.precondition) ) return false;
+        if( !final_state.satisfy(act.precondition_) ) return false;
 
         State assumption;
         State support;
 
         // add positive preconditions to support
-        for( index_set::const_iterator it = act.precondition.begin(); it != act.precondition.end(); ++it ) {
+        for( index_set::const_iterator it = act.precondition_.begin(); it != act.precondition_.end(); ++it ) {
             if( *it > 0 ) {
                 support.add(*it-1);
             }
@@ -382,16 +382,16 @@ bool KP_Instance::apply_plan(const Plan &plan, const State &initial_state, State
 
         // add positive conditions of triggered conditional effects to support and
         // the assumptions made with observations rules
-        for( size_t i = 0; i < act.when.size(); ++i ) {
-            const Instance::When &w = act.when[i];
-            if( final_state.satisfy(w.condition) ) {
-                for( index_set::const_iterator it = w.condition.begin(); it != w.condition.end(); ++it ) {
+        for( size_t i = 0; i < act.when_.size(); ++i ) {
+            const Instance::When &w = act.when_[i];
+            if( final_state.satisfy(w.condition_) ) {
+                for( index_set::const_iterator it = w.condition_.begin(); it != w.condition_.end(); ++it ) {
                     if( *it > 0 ) {
                         support.add(*it-1);
                     }
                 }
                 if( is_obs_rule(plan[k]) ) {
-                    for( index_set::const_iterator it = w.effect.begin(); it != w.effect.end(); ++it ) {
+                    for( index_set::const_iterator it = w.effect_.begin(); it != w.effect_.end(); ++it ) {
                         assert(*it > 0);
                         if( !final_state.satisfy(*it-1) ) {
                             assumption.add(*it-1);

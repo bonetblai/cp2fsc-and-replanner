@@ -15,8 +15,8 @@ ClassicalPlanner::ClassicalPlanner(const char *name,
   : name_(name), tmpfile_path_(tmpfile_path), planner_path_(planner_path), planner_name_(planner_name),
     instance_(instance), total_search_time_(0), total_time_(0), n_calls_(0) {
     for( size_t k = 0; k < instance_.n_actions(); ++k ) {
-        const Instance::Action &act = *instance_.actions[k];
-        action_map_.insert(make_pair(act.name->to_string(), k));
+        const Instance::Action &act = *instance_.actions_[k];
+        action_map_.insert(make_pair(act.name_->to_string(), k));
     }
 
     int pid = getpid();
@@ -177,8 +177,8 @@ LAMA_Planner::LAMA_Planner(const Instance &instance, const char *tmpfile_path, c
     other_cmd_ = strdup(cmd.str().c_str());
 
     for( size_t k = 0; k < instance_.n_atoms(); ++k ) {
-        const Instance::Atom &atom = *instance_.atoms[k];
-        string name = atom.name->to_string();
+        const Instance::Atom &atom = *instance_.atoms_[k];
+        string name = atom.name_->to_string();
         for( size_t i = 0; i < name.length(); ++i )
             name[i] = tolower(name[i]);
         atom_map_.insert(make_pair(name.substr(1, name.length()-2), k));

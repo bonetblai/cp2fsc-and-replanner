@@ -125,8 +125,8 @@ class State {
     }
 
     void clear_non_primitive_fluents(const Instance &instance) {
-        for( index_set::const_iterator it = instance.non_primitive_fluents.begin(); it != instance.non_primitive_fluents.end(); ++it ) {
-            if( instance.given_stickies.find(*it+1) == instance.given_stickies.end() )
+        for( index_set::const_iterator it = instance.non_primitive_fluents_.begin(); it != instance.non_primitive_fluents_.end(); ++it ) {
+            if( instance.given_stickies_.find(*it+1) == instance.given_stickies_.end() )
                 remove(*it);
         }
     }
@@ -152,13 +152,13 @@ class State {
     }
     void apply(const Instance::Action &act) {
         State clone(*this);
-        apply(act.effect);
-        for( size_t j = 0; j < act.when.size(); ++j )
-            conditional_apply(clone, act.when[j].condition, act.when[j].effect);
+        apply(act.effect_);
+        for( size_t j = 0; j < act.when_.size(); ++j )
+            conditional_apply(clone, act.when_[j].condition_, act.when_[j].effect_);
     }
     void apply_axioms(const Instance &ins) {
-        for( Instance::axiom_vec::const_iterator it = ins.axioms.begin(); it != ins.axioms.end(); ++it ) {
-            conditional_apply(*this, (*it)->body, (*it)->head);
+        for( Instance::axiom_vec::const_iterator it = ins.axioms_.begin(); it != ins.axioms_.end(); ++it ) {
+            conditional_apply(*this, (*it)->body_, (*it)->head_);
         }
     }
     void apply(const Instance::Action &act, const Instance &ins) {
@@ -168,7 +168,7 @@ class State {
     }
 
     bool goal(const Instance &ins) const {
-        for( index_set::const_iterator p = ins.goal_literals.begin(); p != ins.goal_literals.end(); ++p ) {
+        for( index_set::const_iterator p = ins.goal_literals_.begin(); p != ins.goal_literals_.end(); ++p ) {
             int idx = *p > 0 ? *p-1 : -*p-1;
             if( *p > 0 ) {
                 if( !satisfy(idx) ) return false;
@@ -179,7 +179,7 @@ class State {
         return true;
         //return satisfy(ins.goal_cls);
     }
-    bool applicable(const Instance::Action &act) const { return satisfy(act.precondition); }
+    bool applicable(const Instance::Action &act) const { return satisfy(act.precondition_); }
 
     bool operator==(const State &s) const {
         if( size_ != s.size_ ) return false;
@@ -208,7 +208,7 @@ class State {
     void print(std::ostream &os, const Instance &ins) const {
         os << "{";
         for( unsigned *p = atoms_; *p; ++p )
-            os << ins.atoms[(*p)-1]->name << (*(p+1) ? "," : "");
+            os << ins.atoms_[(*p)-1]->name_ << (*(p+1) ? "," : "");
         os << "}";
     }
     void print_bits(std::ostream &os) const {

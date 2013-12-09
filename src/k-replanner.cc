@@ -244,7 +244,7 @@ int main(int argc, char *argv[]) {
                     if( sensors.size() > 0 ) {
                         cout << "init*:" << flush;
                         for( int i = 0, isz = sensors.size(); i < isz; ++i ) {
-                            cout << " " << instance.sensors[sensors[i]]->name;
+                            cout << " " << instance.sensors_[sensors[i]]->name_;
                         }
                         cout << endl;
                         need_indent = true;
@@ -259,7 +259,7 @@ int main(int argc, char *argv[]) {
                         for( int i = 0, isz = sensed.size(); i < isz; ++i ) {
                             int atom = sensed[i] < 0 ? -sensed[i] - 1 : sensed[i] - 1;
                             cout << (sensed[i] < 0 ? " (not " : " ")
-                                 << instance.atoms[atom]->name
+                                 << instance.atoms_[atom]->name_
                                  << (sensed[i] < 0 ? ")" : "");
                         }
                         cout << endl;
@@ -269,13 +269,13 @@ int main(int argc, char *argv[]) {
 
                 for( size_t k = 0; k < plan.size(); ++k ) {
                     if( need_indent ) cout << "      ";
-                    cout << setw(4) << k << " : " << instance.actions[plan[k]]->name << endl;
+                    cout << setw(4) << k << " : " << instance.actions_[plan[k]]->name_ << endl;
                     if( options.is_enabled("print:fired-sensors") ) {
                         const vector<int> &sensors = fired_sensors[1+k];
                         if( sensors.size() > 0 ) {
                             cout << "      " << setw(4) << k << "*:";
                             for( int i = 0, isz = sensors.size(); i < isz; ++i ) {
-                                cout << " " << instance.sensors[sensors[i]]->name;
+                                cout << " " << instance.sensors_[sensors[i]]->name_;
                             }
                             cout << endl;
                         }
@@ -287,7 +287,7 @@ int main(int argc, char *argv[]) {
                             for( int i = 0, isz = sensed.size(); i < isz; ++i ) {
                                 int atom = sensed[i] < 0 ? -sensed[i] - 1 : sensed[i] - 1;
                                 cout << (sensed[i] < 0 ? " (not " : " ")
-                                     << instance.atoms[atom]->name
+                                     << instance.atoms_[atom]->name_
                                      << (sensed[i] < 0 ? ")" : "");
                             }
                             cout << endl;
