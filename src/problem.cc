@@ -36,7 +36,7 @@ Instance::~Instance() {
 }
 
 Instance::Atom& Instance::new_atom(Name *name) {
-    Atom *a = new Atom(name_, atoms_.size());
+    Atom *a = new Atom(name, atoms_.size());
     atoms_.push_back(a);
     if( options_.is_enabled("print:atom:creation") )
         cout << "atom " << a->index_ << "." << a->name_ << " created" << endl;
@@ -537,7 +537,9 @@ void Instance::write_atom_set(ostream &os, const bool_vec &set) const {
     for( size_t k = 0; k < n_atoms(); k++ ) {
         if( set[k] ) {
             if( need_comma ) os << ',';
+            cout << "idx=" << k << endl;
             os << atoms_[k]->name_;
+            cout << endl;
             need_comma = true;
         }
     }

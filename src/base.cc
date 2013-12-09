@@ -1367,7 +1367,9 @@ Instance::Atom* PDDL_Base::Atom::find_prop(Instance &ins, bool negated, bool cre
             else
 	        a_name.add(param_[k]);
         }
+        cout << "ATOM=" << a_name.to_string(true) << endl;
         Instance::Atom &p = ins.new_atom(new CopyName(a_name.to_string(true)));
+        cout << "Instance::ATOM=" << p.name_ << endl;
         r->val = &p;
     }
     return static_cast<Instance::Atom*>(r->val);
