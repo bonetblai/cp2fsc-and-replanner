@@ -608,9 +608,13 @@ void Preprocessor::preprocess(bool remove_atoms, bool do_action_completion) {
     for( index_set::const_iterator it = instance_.init_.literals_.begin(); it != instance_.init_.literals_.end(); ++it ) {
         atoms_to_remove[*it > 0 ? *it-1 : -*it-1] = true;
     }
+    cout << "ZZZZZ" << endl;
     atoms_to_remove.bitwise_and(static_atoms);
+    cout << "ZZZZZ" << endl;
     reachable_atoms.bitwise_complement();
+    cout << "ZZZZZ" << endl;
     atoms_to_remove.bitwise_or(reachable_atoms);
+    cout << "ZZZZZ" << endl;
 
 #if 0
     // make sure we don't remove unreachable goals and hidden fluents!
