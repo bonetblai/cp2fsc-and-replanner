@@ -68,7 +68,7 @@ int Solver::solve(const State &initial_hidden_state,
             int step = 0;
             for( Instance::Plan::const_iterator a = plan.begin(); a != plan.end(); ++a, ++step ) {
                 cout << "    step " << step << ": "
-                     << *a << "." << kp_instance_.actions[*a]->name
+                     << *a << "." << kp_instance_.actions_[*a]->name_
                      << endl;
             }
         }
@@ -83,12 +83,12 @@ int Solver::solve(const State &initial_hidden_state,
 
         // apply plan until an inconsistency is found or termination
         for( size_t k = 0; k < plan.size(); ++k ) {
-            const Instance::Action &kp_act = *kp_instance_.actions[plan[k]];
+            const Instance::Action &kp_act = *kp_instance_.actions_[plan[k]];
 
             if( options_.is_enabled("print:solver:steps") ) {
-                cout << ">>> kp-action=" << kp_act.name;
+                cout << ">>> kp-action=" << kp_act.name_;
                 if( !kp_instance_.is_obs_rule(plan[k]) && !kp_instance_.is_static_rule(plan[k]) ) {
-                    cout << " [action=" << instance_.actions[kp_instance_.remap_[plan[k]]]->name << "]";
+                    cout << " [action=" << instance_.actions_[kp_instance_.remap_[plan[k]]]->name_ << "]";
                 }
                 cout << endl;
             }
@@ -102,16 +102,16 @@ int Solver::solve(const State &initial_hidden_state,
                 final_plan.push_back(plan[k]);
 
                 // apply action at hidden state
-                const Instance::Action &act = *instance_.actions[kp_instance_.remap_[plan[k]]];
+                const Instance::Action &act = *instance_.actions_[kp_instance_.remap_[plan[k]]];
                 if( !hidden.applicable(act) ) {
-                    cout << "error: action " << act.name
+                    cout << "error: action " << act.name_
                          << " isn't applicable at hidden state: "
                          << "check whether hidden specification is correct!"
                          << endl;
 
                     //cout << endl << "Plan:" << endl;
                     //for( Instance::Plan::const_iterator a = plan.begin(); a != plan.end(); ++a )
-                    //    cout << "  " << kp_instance_.actions[*a]->name << endl;
+                    //    cout << "  " << kp_instance_.actions_[*a]->name << endl;
                     //cout << "HIDDEN="; hidden.print(cout, instance_); cout << endl;
                     //cout << "STATE="; state.print(cout, kp_instance_); cout << endl << endl;
 
@@ -139,7 +139,7 @@ int Solver::solve(const State &initial_hidden_state,
                     if( options_.is_enabled("print:solver:inconsistency") ||
                         options_.is_enabled("print:solver:inconsistency:details") ) {
                         cout << "*** inconsistency found with action "
-                             << plan[k+1] << "." << kp_instance_.actions[plan[k+1]]->name
+                             << plan[k+1] << "." << kp_instance_.actions_[plan[k+1]]->name_
                              << endl;
                         if( options_.is_enabled("print:solver:inconsistency:details") ) {
                             cout << "    details:" << endl;
@@ -184,10 +184,10 @@ void Solver::compute_and_add_observations(const State &hidden,
     // fire observation rules
     index_set observations;
     for( size_t k = 0; k < instance_.n_sensors(); ++k ) {
-        const Instance::Sensor &r = *instance_.sensors[k];
-        if( hidden.satisfy(r.condition) ) {
+        const Instance::Sensor &r = *instance_.sensors_[k];
+        if( hidden.satisfy(r.condition_) ) {
             sensors.push_back(k);
-            for( index_set::const_iterator it = r.sense.begin(); it != r.sense.end(); ++it ) {
+            for( index_set::const_iterator it = r.sense_.begin(); it != r.sense_.end(); ++it ) {
                 assert(*it > 0);
                 int obs = *it - 1;
                 if( hidden.satisfy(obs) ) {
@@ -206,7 +206,7 @@ void Solver::compute_and_add_observations(const State &hidden,
     while( !fix_point_reached ) {
         State old_state(state);
         for( size_t k = kp_instance_.first_deductive_action(); k < kp_instance_.last_deductive_action(); ++k ) {
-            const Instance::Action &act = *kp_instance_.actions[k];
+            const Instance::Action &act = *kp_instance_.actions_[k];
             if( state.applicable(act) ) {
                 state.apply(act);
             }
@@ -221,7 +221,7 @@ bool Solver::inconsistent(const State &state, const vector<State> &assumption_ve
         int atom = *it/2;
 
         if( verbose ) {
-            cout << "*** checking consistency of " << instance_.atoms[atom]->name << ": ";
+            cout << "*** checking consistency of " << instance_.atoms_[atom]->name_ << ": ";
         }
 
         if( instance_.is_observable(atom) ) {

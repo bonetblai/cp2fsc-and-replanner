@@ -16,14 +16,14 @@ CP_Instance::CP_Instance(const Instance &ins, size_t fsc_states,
     instance_(ins) {
 
     // set name
-    if( dynamic_cast<const InstanceName*>(ins.name) != 0 ) {
-        set_name(new InstanceName(*dynamic_cast<const InstanceName*>(ins.name)));
+    if( dynamic_cast<const InstanceName*>(ins.name_) != 0 ) {
+        set_name(new InstanceName(*dynamic_cast<const InstanceName*>(ins.name_)));
     } else {
-        set_name(new CopyName(ins.name->to_string()));
+        set_name(new CopyName(ins.name_->to_string()));
     }
 
     // set description of init
-    init = ins.init;
+    init_ = ins.init_;
 
     // calculate reachable state space
     ins.generate_initial_states(initial_states_);
@@ -42,7 +42,7 @@ CP_Instance::CP_Instance(const Instance &ins, size_t fsc_states,
     int state_idx = 0;
     for( StateSet::const_iterator it = reachable_space_.begin(); it != reachable_space_.end(); ++it ) {
         index_set obs;
-        for( index_set::const_iterator jt = ins.observable_fluents.begin(); jt != ins.observable_fluents.end(); ++jt ) {
+        for( index_set::const_iterator jt = ins.observable_fluents_.begin(); jt != ins.observable_fluents_.end(); ++jt ) {
             if( (*it)->satisfy(*jt) ) obs.insert(1 + *jt);
         }
         if( reachable_obs_.find(obs) == reachable_obs_.end() ) {
@@ -65,14 +65,14 @@ CP_Instance::CP_Instance(const Instance &ins, size_t fsc_states,
         }
         cout << "obs" << it->second << ":";
         for( index_set::const_iterator jt = it->first.begin(); jt != it->first.end(); ++jt )
-            cout << " " << ins.atoms[*jt-1]->name;
+            cout << " " << ins.atoms_[*jt-1]->name_;
         cout << endl;
     }
 
     // create atoms
-    atoms.reserve(ins.n_atoms() + fsc_states_);
+    atoms_.reserve(ins.n_atoms() + fsc_states_);
     for( size_t k = 0; k < ins.n_atoms(); ++k )
-        new_atom(new CopyName(ins.atoms[k]->name->to_string()));
+        new_atom(new CopyName(ins.atoms_[k]->name_->to_string()));
 
     // fluents for obs
     if( compound_obs_as_fluents_ ) {
@@ -111,28 +111,28 @@ CP_Instance::CP_Instance(const Instance &ins, size_t fsc_states,
     }
 
     // add q0 to initial state
-    init.literals.insert(1 + q0_);
+    init_.literals_.insert(1 + q0_);
     add_to_initial_states(q0_);
 
     // extend initial situation with fluents to remove inconsistent tuples
     if( forbid_inconsistent_tuples_ ) {
         for( size_t k = 0; k < n_unused_fluents_; ++k ) {
-            init.literals.insert(1 + unused0_+k);
+            init_.literals_.insert(1 + unused0_+k);
             add_to_initial_states(unused0_ + k);
         }
     }
 
     // set goal atoms
-    for( index_set::const_iterator it = ins.goal_literals.begin(); it != ins.goal_literals.end(); ++it ) {
+    for( index_set::const_iterator it = ins.goal_literals_.begin(); it != ins.goal_literals_.end(); ++it ) {
         assert(*it > 0);
-        goal_literals.insert(1 + *it-1);
+        goal_literals_.insert(1 + *it-1);
     }
 
     // create common effect for non-primitive non-sticky and non-observable fluents
     index_set np_ns_effect;
-    for( index_set::const_iterator it = ins.non_primitive_fluents.begin(); it != ins.non_primitive_fluents.end(); ++it ) {
-        if( (ins.given_stickies.find(*it+1) == ins.given_stickies.end()) && //) {
-            (ins.observable_fluents.find(*it) == ins.observable_fluents.end()) ) {
+    for( index_set::const_iterator it = ins.non_primitive_fluents_.begin(); it != ins.non_primitive_fluents_.end(); ++it ) {
+        if( (ins.given_stickies_.find(*it+1) == ins.given_stickies_.end()) && //) {
+            (ins.observable_fluents_.find(*it) == ins.observable_fluents_.end()) ) {
             np_ns_effect.insert(-(1 + *it));
         }
     }
@@ -143,7 +143,7 @@ CP_Instance::CP_Instance(const Instance &ins, size_t fsc_states,
         int obs_idx = it->second;
         for( size_t q = 0; q < fsc_states_; ++q ) {
             for( size_t k = 0; k < ins.n_actions(); ++k ) {
-                const Action &act = *ins.actions[k];
+                const Action &act = *ins.actions_[k];
                 for( size_t qp = 0; qp < fsc_states_; ++qp ) {
 
                     // create map actions if inconsistent tuples must be forbidden
@@ -152,18 +152,18 @@ CP_Instance::CP_Instance(const Instance &ins, size_t fsc_states,
                                            q*ins.n_actions()*fsc_states_ + k*fsc_states_ + qp;
                     if( forbid_inconsistent_tuples_ ) {
                         ostringstream map_act_name;
-                        map_act_name << "map_" << act.name->to_string()
+                        map_act_name << "map_" << act.name_->to_string()
                                      << "_obs" << obs_idx
                                      << "_q" << q
                                      << "_q" << qp;
                         Action &map_act = new_action(new CopyName(map_act_name.str()));
-                        map_act.precondition.insert(1 + unused0_+unused_fluent);
-                        map_act.effect.insert(-(1 + unused0_+unused_fluent));
-                        map_act.effect.insert(1 + mapped0_+mapped_fluent);
+                        map_act.precondition_.insert(1 + unused0_+unused_fluent);
+                        map_act.effect_.insert(-(1 + unused0_+unused_fluent));
+                        map_act.effect_.insert(1 + mapped0_+mapped_fluent);
                     }
 
                     ostringstream app_act_name;
-                    app_act_name << "app_" << act.name->to_string()
+                    app_act_name << "app_" << act.name_->to_string()
                                  << "_obs" << obs_idx
                                  << "_q" << q
                                  << "_q" << qp;
@@ -171,62 +171,62 @@ CP_Instance::CP_Instance(const Instance &ins, size_t fsc_states,
 
                     // the action has precondition if inconsistent tuples are forbidden
                     if( forbid_inconsistent_tuples_ ) {
-                        nact.precondition.insert(1 + mapped0_+mapped_fluent);
+                        nact.precondition_.insert(1 + mapped0_+mapped_fluent);
                     }
 
                     // unconditional effects of action
-                    if( !act.effect.empty() ) {
+                    if( !act.effect_.empty() ) {
                         When base_c_eff;
 
                         // condition
-                        base_c_eff.condition.insert(1 + q0_+q);
-                        base_c_eff.condition.insert(obs.begin(), obs.end());
+                        base_c_eff.condition_.insert(1 + q0_+q);
+                        base_c_eff.condition_.insert(obs.begin(), obs.end());
 
                         // effects
-                        base_c_eff.effect.insert(act.effect.begin(), act.effect.end());
+                        base_c_eff.effect_.insert(act.effect_.begin(), act.effect_.end());
 
                         // effects for non-primitive fluents for base conditional effect
-                        base_c_eff.effect.insert(np_ns_effect.begin(), np_ns_effect.end());
+                        base_c_eff.effect_.insert(np_ns_effect.begin(), np_ns_effect.end());
 
                         // effect for clearing observation
                         for( index_set::const_iterator it = obs.begin(); it != obs.end(); ++it )
-                            base_c_eff.effect.insert(-*it);
+                            base_c_eff.effect_.insert(-*it);
 
                         // effects for changing (FSC) state
                         if( q != qp ) {
-                            base_c_eff.effect.insert(-(1 + q0_+q));
-                            base_c_eff.effect.insert(1 + q0_+qp);
+                            base_c_eff.effect_.insert(-(1 + q0_+q));
+                            base_c_eff.effect_.insert(1 + q0_+qp);
                         }
-                        nact.when.push_back(base_c_eff);
+                        nact.when_.push_back(base_c_eff);
                     }
 
                     // conditional effects of action
-                    for( size_t i = 0; i < act.when.size(); ++i ) {
-                        const When &w = act.when[i];
-                        if( consistent_with_obs(obs_idx, w.condition) ) {
+                    for( size_t i = 0; i < act.when_.size(); ++i ) {
+                        const When &w = act.when_[i];
+                        if( consistent_with_obs(obs_idx, w.condition_) ) {
                             When c_eff;
 
                             // condition
-                            c_eff.condition.insert(1 + q0_+q);
-                            c_eff.condition.insert(obs.begin(), obs.end());
-                            c_eff.condition.insert(w.condition.begin(), w.condition.end());
+                            c_eff.condition_.insert(1 + q0_+q);
+                            c_eff.condition_.insert(obs.begin(), obs.end());
+                            c_eff.condition_.insert(w.condition_.begin(), w.condition_.end());
 
                             // effects
-                            c_eff.effect.insert(w.effect.begin(), w.effect.end());
-                            c_eff.effect.insert(np_ns_effect.begin(), np_ns_effect.end());
+                            c_eff.effect_.insert(w.effect_.begin(), w.effect_.end());
+                            c_eff.effect_.insert(np_ns_effect.begin(), np_ns_effect.end());
 
                             // effect for clearing observation
                             for( index_set::const_iterator it = obs.begin(); it != obs.end(); ++it )
-                                c_eff.effect.insert(-*it);
+                                c_eff.effect_.insert(-*it);
 
                             // effects for changing (FSC) state
                             if( q != qp ) {
-                                c_eff.effect.insert(-(1 + q0_+q));
-                                c_eff.effect.insert(1 + q0_+qp);
+                                c_eff.effect_.insert(-(1 + q0_+q));
+                                c_eff.effect_.insert(1 + q0_+qp);
                             }
 
                             // add conditional effect to new action
-                            nact.when.push_back(c_eff);
+                            nact.when_.push_back(c_eff);
                         }
                     }
                 }
@@ -237,11 +237,11 @@ CP_Instance::CP_Instance(const Instance &ins, size_t fsc_states,
     // create ramification action
     Action &ramif = new_action(new CopyName("ramification"));
     for( size_t k = 0; k < ins.n_axioms(); ++k ) {
-        Axiom &axiom = *ins.axioms[k];
+        Axiom &axiom = *ins.axioms_[k];
         When eff;
-        eff.condition = axiom.body;
-        eff.effect = axiom.head;
-        ramif.when.push_back(eff);
+        eff.condition_ = axiom.body_;
+        eff.effect_ = axiom.head_;
+        ramif.when_.push_back(eff);
     }
 }
 
@@ -274,11 +274,11 @@ bool CP_Instance::consistent_with_obs(int obs_idx, const index_set &condition) c
 }
 
 void CP_Instance::remove_atoms(const bool_vec &set, index_vec &map) {
-    index_vec rm_map(atoms.size());
+    index_vec rm_map(atoms_.size());
 
     // mark atoms to remove and re-index
     size_t j = 0;
-    for( size_t k = 0; k < atoms.size(); ++k ) {
+    for( size_t k = 0; k < atoms_.size(); ++k ) {
         if( !set[k] ) {
             rm_map[k] = j;
             ++j;
@@ -326,7 +326,7 @@ void CP_Instance::remove_atoms(const bool_vec &set, index_vec &map) {
     int state_idx = 0;
     for( StateSet::const_iterator it = reachable_space_.begin(); it != reachable_space_.end(); ++it ) {
         index_set obs;
-        for( index_set::const_iterator jt = instance_.observable_fluents.begin(); jt != instance_.observable_fluents.end(); ++jt ) {
+        for( index_set::const_iterator jt = instance_.observable_fluents_.begin(); jt != instance_.observable_fluents_.end(); ++jt ) {
             if( (*it)->satisfy(*jt) ) obs.insert(1 + *jt);
         }
         if( reachable_obs_.find(obs) == reachable_obs_.end() ) {
@@ -350,7 +350,7 @@ void CP_Instance::remove_atoms(const bool_vec &set, index_vec &map) {
         }
         cout << "obs" << it->second << ":";
         for( index_set::const_iterator jt = it->first.begin(); jt != it->first.end(); ++jt )
-            cout << " " << atoms[*jt-1]->name;
+            cout << " " << atoms[*jt-1]->name_;
         cout << endl;
     }
     */

@@ -601,14 +601,15 @@ class PDDL_Base {
     observable_vec                            dom_observables_;
     sticky_vec                                dom_stickies_;
 
+    // For CLG and multivalued variables translations
+    const Atom                                *normal_execution_;
+
     // For CLG-type syntax and translations
     bool                                      clg_translation_;
-    Atom                                      *clg_disable_actions_;
 
     // For multivalued variables formulations
     bool                                      multivalued_variable_translation_;
     variable_vec                              multivalued_variables_;
-    const Atom                                *normal_execution_;
     std::vector<const Atom*>                  need_sense_;
     std::vector<const Atom*>                  need_post_;
     const Effect                              *default_sensing_model_;
