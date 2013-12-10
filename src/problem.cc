@@ -537,9 +537,7 @@ void Instance::write_atom_set(ostream &os, const bool_vec &set) const {
     for( size_t k = 0; k < n_atoms(); k++ ) {
         if( set[k] ) {
             if( need_comma ) os << ',';
-            cout << "idx=" << k << endl;
             os << atoms_[k]->name_;
-            cout << endl;
             need_comma = true;
         }
     }

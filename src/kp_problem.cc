@@ -33,14 +33,12 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
   : Instance(ins.options_), po_instance_(ins),
     n_standard_actions_(0), n_sensor_actions_(0), n_invariant_actions_(0) {
 
-    cout << "ZZZZZ" << endl;
     // set name
     if( dynamic_cast<const InstanceName*>(ins.name_) != 0 ) {
         set_name(new InstanceName(*dynamic_cast<const InstanceName*>(ins.name_)));
     } else {
         set_name(new CopyName(ins.name_->to_string()));
     }
-    cout << "ZZZZZ" << endl;
 
     // create K0 atoms
     atoms_.reserve(2*ins.n_atoms());
@@ -49,7 +47,6 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
         new_atom(new CopyName("(K_" + name + ")"));      // even-numbered atoms
         new_atom(new CopyName("(K_not_" + name + ")"));  // odd-numbered atoms
     }
-    cout << "ZZZZZ" << endl;
 
     // prepare data for handling problems with multivalued variables
     set<int> observable_atoms;
@@ -73,7 +70,6 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
             }
         }
     }
-    cout << "ZZZZZ" << endl;
 
     // set initial atoms
     for( index_set::const_iterator it = ins.init_.literals_.begin(); it != ins.init_.literals_.end(); ++it ) {
@@ -83,7 +79,6 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
         else
             init_.literals_.insert(1 + 2*idx+1);
     }
-    cout << "ZZZZZ" << endl;
 
     // set goal atoms
     for( index_set::const_iterator it = ins.goal_literals_.begin(); it != ins.goal_literals_.end(); ++it ) {
@@ -93,7 +88,6 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
         else
             goal_literals_.insert(1 + 2*idx+1);
     }
-    cout << "ZZZZZ" << endl;
 
     // add known literals in initial situation
     for( size_t k = 0; k < ins.n_atoms(); ++k ) {
@@ -121,7 +115,6 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
             }
         }
     }
-    cout << "ZZZZZ" << endl;
 
     // create K-actions
     remap_ = vector<int>(ins.n_actions(),-1);
@@ -188,7 +181,6 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
             nact.print(cout, *this);
         }
     }
-    cout << "ZZZZZ" << endl;
     n_standard_actions_ = n_actions();
 
     // create sensor rules
@@ -237,7 +229,6 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
             ++obs;
         }
     }
-    cout << "ZZZZZ" << endl;
     n_sensor_actions_ = n_actions() - n_standard_actions_;
 
     // create precondition for invariant actions (non-empty only
@@ -246,56 +237,46 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
     if( false && po_instance_.index_for_atom_normal_execution_ >= 0 ) {
         precondition.insert(1 + 2*po_instance_.index_for_atom_normal_execution_ + 1);
     }
-    cout << "ZZZZZ.10" << endl;
 
     // create invariant rules
     size_t invariant_no = 0;
     for( invariant_vec::const_iterator it = ins.init_.invariants_.begin(); it != ins.init_.invariants_.end(); ++it ) {
         const Invariant &invariant = *it;
         assert(invariant.type_ == Invariant::AT_LEAST_ONE);
-        cout << "processing invariant: "; invariant.write(cout, 0, ins);
+        //cout << "processing invariant: "; invariant.write(cout, 0, ins);
 
         for( size_t k = 0; k < invariant.size(); ++k ) {
-            ostringstream s, head;
+            ostringstream s, comment_body, comment_head;
             s << "invariant-" << invariant_no++;
-            cout << "INV=" << s.str() << endl;
             Action &nact = new_action(new CopyName(s.str()));
             nact.precondition_ = precondition;
-            s.clear(); // from now on, s and head store the "comment" for the action
-            cout << "CLEARED=" << s.str() << endl;
 
             // conditional effects
             When c_eff;
-            cout << "STEP" << endl;
             if( invariant.type_ == Invariant::AT_LEAST_ONE ) {
-                cout << "HOLA.1=" << invariant.size() << endl;
                 for( size_t i = 0; i < invariant.size(); ++i ) {
                     int lit = invariant[i];
                     int idx = lit > 0 ? lit-1 : -lit-1;
                     if( lit > 0 ) {
-                        cout << "LIT > 0" << endl;
                         if( i != k ) {
                             c_eff.condition_.insert(1 + 2*idx+1);
-                            s << atoms_[2*idx+1]->name_ << " ";
+                            comment_body << atoms_[2*idx+1]->name_ << " ";
                         } else {
                             c_eff.condition_.insert(-(1 + 2*idx+1)); // TODO: check if necessary
                             c_eff.effect_.insert(1 + 2*idx);
-                            head << atoms_[2*idx]->name_;
+                            comment_head << atoms_[2*idx]->name_;
                         }
                     } else {
-                        cout << "LIT < 0: lit=" << lit << ", idx=" << idx << ", i=" << i << ", k=" << k << endl;
                         if( i != k ) {
                             c_eff.condition_.insert(1 + 2*idx);
-                            s << atoms_[2*idx]->name_ << " ";
+                            comment_body << atoms_[2*idx]->name_ << " ";
                         } else {
                             c_eff.condition_.insert(-(1 + 2*idx)); // TODO: check if necessary
                             c_eff.effect_.insert(1 + 2*idx+1);
-                            cout << "atoms.size=" << atoms_.size() << ", off=" << (1 + 2*idx+1) << endl;
-                            head << atoms_[2*idx+1]->name_;
+                            comment_head << atoms_[2*idx+1]->name_;
                         }
                     }
                 }
-                cout << "HOLA.2" << endl;
             } else {
                 cout << "warning: only AT_LEAST_ONE-type invariants should exist at this stage" << endl;
 #if 0
@@ -323,16 +304,13 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
             }
 
             // push conditional effect
-            nact.comment_ = s.str() + "==> " + head.str();
-            cout << "Comment: " << nact.comment_ << endl;
+            nact.comment_ = comment_body.str() + "==> " + comment_head.str();
             nact.when_.push_back(c_eff);
             if( options_.is_enabled("print:kp:action:invariant") ) {
                 nact.print(cout, *this);
             }
         }
-        cout << "DONE" << endl;
     }
-    cout << "ZZZZZ.11" << endl;
     n_invariant_actions_ = n_actions() - n_standard_actions_ - n_sensor_actions_;
 }
 
