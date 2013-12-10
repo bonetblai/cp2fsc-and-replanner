@@ -451,10 +451,24 @@ void PDDL_Base::clg_translate_observe_effects_into_sensors() {
         }
     }
 
-    // if some translation was done, add precondition (normal-execution)
+    // if some translation was done, extend initial and goal situations
+    // with  (normal-execution), and add precondition (normal-execution)
     // to all other actions
     if( !patched_actions.empty() ) {
         normal_execution_ = new Atom(normal_execution);
+
+        dom_init_.push_back(new InitLiteral(*normal_execution_));
+        if( dom_goal_ == 0 ) {
+            dom_goal_ = new And;
+        } else if( dynamic_cast<const And*>(dom_goal_) == 0 ) {
+            And *new_goal = new And;
+            new_goal->push_back(dom_goal_->ground());
+            delete dom_goal_;
+            dom_goal_ = new_goal;
+        }
+        static_cast<And*>(const_cast<Condition*>(dom_goal_))->push_back(Literal(*normal_execution_).copy());
+
+
         for( size_t k = 0; k < dom_actions_.size(); ++k ) {
             Action *action = dom_actions_[k];
             if( patched_actions.find(action) == patched_actions.end() ) {
@@ -1367,9 +1381,7 @@ Instance::Atom* PDDL_Base::Atom::find_prop(Instance &ins, bool negated, bool cre
             else
 	        a_name.add(param_[k]);
         }
-        cout << "ATOM=" << a_name.to_string(true) << endl;
         Instance::Atom &p = ins.new_atom(new CopyName(a_name.to_string(true)));
-        cout << "Instance::ATOM=" << p.name_ << endl;
         r->val = &p;
     }
     return static_cast<Instance::Atom*>(r->val);

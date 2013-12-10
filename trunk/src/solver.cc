@@ -93,7 +93,7 @@ int Solver::solve(const State &initial_hidden_state,
                 cout << endl;
             }
 
-            //cout << ">>> kp-action=" << kp_act.name << endl;
+            //cout << ">>> kp-action=" << kp_act.name_ << endl;
 
             assert(state.applicable(kp_act));
             state.apply(kp_act);

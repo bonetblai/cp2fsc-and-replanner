@@ -172,37 +172,29 @@ int main(int argc, char *argv[]) {
 
     cout << "instantiating p.o. problem..." << endl;
     reader->emit_instance(instance);
-    cout << "XXXX" << endl;
     //delete reader;
     if( options.is_enabled("print:problem:raw") ) {
         instance.print(cout);
         instance.write_domain(cout);
         instance.write_problem(cout);
     }
-    cout << "XXXX" << endl;
 
     cout << "preprocessing p.o. problem..." << endl;
     Preprocessor prep(instance);
-    cout << "XXXX" << endl;
     prep.preprocess(true, true); // turn off action compilation
-    cout << "XXXX" << endl;
     if( options.is_enabled("print:problem:preprocessed") ) {
         //instance.print(cout);
         instance.write_domain(cout);
         instance.write_problem(cout);
     }
-    cout << "XXXX" << endl;
 
     cout << "creating KP translation..." << endl;
-    cout << "XXXX" << endl;
     KP_Instance kp_instance(instance, multivalued_variables);
-    cout << "XXXX" << endl;
     if( options.is_enabled("print:kp:raw") ) {
         kp_instance.print(cout);
         kp_instance.write_domain(cout);
         kp_instance.write_problem(cout);
     }
-    cout << "XXXX" << endl;
 
     cout << "preprocessing KP translation..." << endl;
     Preprocessor kp_prep(kp_instance);

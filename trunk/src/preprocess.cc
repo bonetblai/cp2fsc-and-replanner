@@ -461,7 +461,7 @@ void Preprocessor::compute_irrelevant_atoms() {
     compute_relevance(instance_.goal_literals, relevant);
     for( size_t k = 0; k < instance_.n_atoms(); k++ ) {
         assert(k < relevant.size());
-        //if( !relevant[k] ) instance_.atoms[k]->irrelevant = true;
+        //if( !relevant[k] ) instance_.atoms_[k]->irrelevant = true;
     }
 #endif
 }
@@ -470,7 +470,7 @@ void Preprocessor::remove_irrelevant_atoms() {
 #if 0
     bool_vec atoms_to_remove(false, instance_.n_atoms());
     for( size_t k = 0; k < instance_.n_atoms(); k++ )
-        ;//if( instance_.atoms[k]->irrelevant ) atoms_to_remove[k] = true;
+        ;//if( instance_.atoms_[k]->irrelevant ) atoms_to_remove[k] = true;
 
     if( trace_level > 0 ) {
         cout << "removing irrelevant atoms..." << endl;
@@ -608,19 +608,15 @@ void Preprocessor::preprocess(bool remove_atoms, bool do_action_completion) {
     for( index_set::const_iterator it = instance_.init_.literals_.begin(); it != instance_.init_.literals_.end(); ++it ) {
         atoms_to_remove[*it > 0 ? *it-1 : -*it-1] = true;
     }
-    cout << "ZZZZZ" << endl;
     atoms_to_remove.bitwise_and(static_atoms);
-    cout << "ZZZZZ" << endl;
     reachable_atoms.bitwise_complement();
-    cout << "ZZZZZ" << endl;
     atoms_to_remove.bitwise_or(reachable_atoms);
-    cout << "ZZZZZ" << endl;
 
 #if 0
     // make sure we don't remove unreachable goals and hidden fluents!
-    for( index_set::const_iterator it = instance_.goal_literals.begin(); it != instance_.goal_literals.end(); ++it ) {
+    for( index_set::const_iterator it = instance_.goal_literals_.begin(); it != instance_.goal_literals_.end(); ++it ) {
         int idx = *it > 0 ? *it-1 : -*it-1;
-        //if( atoms_to_remove[idx] == true ) cout << instance_.atoms[idx]->name << endl;
+        //if( atoms_to_remove[idx] == true ) cout << instance_.atoms_[idx]->name_ << endl;
         atoms_to_remove[idx] = false;
     }
 
