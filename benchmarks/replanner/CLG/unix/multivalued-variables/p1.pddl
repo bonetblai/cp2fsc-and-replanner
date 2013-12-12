@@ -15,10 +15,6 @@
         (sub-dir sub2 sub22)
         (is-cur-dir root)
     )
-    (:hidden (file-in-dir my-file sub11))
-    (:hidden (file-in-dir my-file sub21))
-    (:hidden (file-in-dir my-file sub12))
-    (:hidden (file-in-dir my-file sub22))
     (:goal (file-in-dir my-file root))
 )
 
