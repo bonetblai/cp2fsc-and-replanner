@@ -11,3 +11,5 @@
         formula, which implies a to_string() call when computing
         the value of static atoms at initial state.
 
+        Check detection/handling of static fluents in preprocessing.
+
