@@ -74,5 +74,5 @@
         (not (wumpus-at p5-5))
     )
     (:goal (and (got-the-treasure) (alive)))
-) 
+)
 
