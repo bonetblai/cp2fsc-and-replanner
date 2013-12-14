@@ -35,7 +35,7 @@ int Solver::solve(const State &initial_hidden_state,
     sensors.clear();
     sensed.clear();
 
-    if( options_.is_enabled("print:solver:steps") ) {
+    if( options_.is_enabled("solver:print:steps") ) {
         cout << ">>> initial state=";
         state.print(cout, kp_instance_);
         cout << endl << ">>> initial hidden=";
@@ -63,7 +63,7 @@ int Solver::solve(const State &initial_hidden_state,
         calculate_relevant_assumptions(plan, state, assumption_vec);
         ++planner_calls;
 
-        if( options_.is_enabled("print:solver:plan") ) {
+        if( options_.is_enabled("solver:print:plan") ) {
             cout << "Classical plan:" << endl;
             int step = 0;
             for( Instance::Plan::const_iterator a = plan.begin(); a != plan.end(); ++a, ++step ) {
@@ -72,7 +72,7 @@ int Solver::solve(const State &initial_hidden_state,
                      << endl;
             }
         }
-        if( options_.is_enabled("print:solver:assumptions") ) {
+        if( options_.is_enabled("solver:print:assumptions") ) {
             cout << "Assumptions:" << endl;
             for( size_t k = 0; k < assumption_vec.size(); ++k ) {
                 cout << "    step " << k << ": ";
@@ -85,7 +85,7 @@ int Solver::solve(const State &initial_hidden_state,
         for( size_t k = 0; k < plan.size(); ++k ) {
             const Instance::Action &kp_act = *kp_instance_.actions_[plan[k]];
 
-            if( options_.is_enabled("print:solver:steps") ) {
+            if( options_.is_enabled("solver:print:steps") ) {
                 cout << ">>> kp-action=" << kp_act.name_;
                 if( !kp_instance_.is_obs_rule(plan[k]) && !kp_instance_.is_static_rule(plan[k]) ) {
                     cout << " [action=" << instance_.actions_[kp_instance_.remap_[plan[k]]]->name_ << "]";
@@ -99,7 +99,8 @@ int Solver::solve(const State &initial_hidden_state,
             state.apply(kp_act);
             if( !kp_instance_.is_obs_rule(plan[k]) && !kp_instance_.is_static_rule(plan[k]) ) {
                 // insert action into final plan
-                final_plan.push_back(plan[k]);
+                //final_plan.push_back(plan[k]);
+                final_plan.push_back(kp_instance_.remap_[plan[k]]);
 
                 // apply action at hidden state
                 const Instance::Action &act = *instance_.actions_[kp_instance_.remap_[plan[k]]];
@@ -126,7 +127,7 @@ int Solver::solve(const State &initial_hidden_state,
                 sensors.clear();
                 sensed.clear();
 
-                if( options_.is_enabled("print:solver:steps") ) {
+                if( options_.is_enabled("solver:print:steps") ) {
                     cout << ">>> state=";
                     state.print(cout, kp_instance_);
                     cout << endl << ">>> hidden=";
@@ -136,12 +137,12 @@ int Solver::solve(const State &initial_hidden_state,
 
                 // check for consistency of remaining plan
                 if( inconsistent(state, assumption_vec, k+1) ) {
-                    if( options_.is_enabled("print:solver:inconsistency") ||
-                        options_.is_enabled("print:solver:inconsistency:details") ) {
+                    if( options_.is_enabled("solver:print:inconsistency") ||
+                        options_.is_enabled("solver:print:inconsistency:details") ) {
                         cout << "*** inconsistency found with action "
                              << plan[k+1] << "." << kp_instance_.actions_[plan[k+1]]->name_
                              << endl;
-                        if( options_.is_enabled("print:solver:inconsistency:details") ) {
+                        if( options_.is_enabled("solver:print:inconsistency:details") ) {
                             cout << "    details:" << endl;
                             cout << "        state=";
                             state.print(cout, kp_instance_);
@@ -161,7 +162,7 @@ int Solver::solve(const State &initial_hidden_state,
         }
     }
 
-    if( options_.is_enabled("print:solver:steps") ) {
+    if( options_.is_enabled("solver:print:steps") ) {
         cout << " state=";
         state.print(cout, kp_instance_);
         cout << endl;
@@ -216,7 +217,7 @@ void Solver::compute_and_add_observations(const State &hidden,
 }
 
 bool Solver::inconsistent(const State &state, const vector<State> &assumption_vec, size_t k) const {
-    bool verbose = options_.is_enabled("print:solver:consistency:check");
+    bool verbose = options_.is_enabled("solver:print:consistency:check");
     for( State::const_iterator it = state.begin(); it != state.end(); ++it ) {
         int atom = *it/2;
 

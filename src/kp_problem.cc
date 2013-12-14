@@ -109,7 +109,7 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
             // if not in some invariant, add K_not_<atom> to init
             if( !in_invariant ) {
                 init_.literals_.insert(1 + 2*k+1);
-                if( options_.is_enabled("print:kp:atom:init") ) {
+                if( options_.is_enabled("kp:print:atom:init") ) {
                     cout << "Atom " << atoms_[2*k+1]->name_ << " added to init" << endl;
                 }
             }
@@ -177,7 +177,7 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
             if( !can_eff.effect_.empty() ) nact.when_.push_back(can_eff);
         }
 
-        if( options_.is_enabled("print:kp:action:regular") ) {
+        if( options_.is_enabled("kp:print:action:regular") ) {
             nact.print(cout, *this);
         }
     }
@@ -222,7 +222,7 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
                 // add conditional effect to rule
                 obs_rules_by_name_[nact.name_->to_string()] = n_actions();
                 nact.when_.push_back(c_eff);
-                if( options_.is_enabled("print:kp:action:sensor") ) {
+                if( options_.is_enabled("kp:print:action:sensor") ) {
                     nact.print(cout, *this);
                 }
             }
@@ -306,7 +306,7 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
             // push conditional effect
             nact.comment_ = comment_body.str() + "==> " + comment_head.str();
             nact.when_.push_back(c_eff);
-            if( options_.is_enabled("print:kp:action:invariant") ) {
+            if( options_.is_enabled("kp:print:action:invariant") ) {
                 nact.print(cout, *this);
             }
         }

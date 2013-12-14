@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
         const char *desc = *opt;
         options.add(name, desc);
     }
-    options.enable("remove-intermediate-files");
+    options.enable("solver:remove-intermediate-files");
 
     // check correct number of parameters
     const char *exec_name = argv[0];
@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
             }
             opt_prefix = argv[++k];
         } else if( !skip_options && !strcmp(argv[k], "--keep-intermediate-files") ) {
-            options.clear("remove-intermediate-files");
+            options.clear("solver:remove-intermediate-files");
         } else if( !skip_options && !strcmp(argv[k], "--use-ff") ) {
             opt_planner = 0;
         } else if( !skip_options && !strcmp(argv[k], "--use-lama") ) {
@@ -156,14 +156,14 @@ int main(int argc, char *argv[]) {
     }
 
     // print file read by parser
-    if( options.is_enabled("print:parser:raw") ) {
+    if( options.is_enabled("parser:print:raw") ) {
         reader->print(cout);
     }
 
     // perform necessary translations
     PDDL_Base::variable_vec multivalued_variables;
     reader->do_translations(multivalued_variables);
-    if( options.is_enabled("print:parser:translated") ) {
+    if( options.is_enabled("parser:print:translated") ) {
         reader->print(cout);
     }
 
@@ -173,7 +173,7 @@ int main(int argc, char *argv[]) {
     cout << "instantiating p.o. problem..." << endl;
     reader->emit_instance(instance);
     //delete reader;
-    if( options.is_enabled("print:problem:raw") ) {
+    if( options.is_enabled("problem:print:raw") ) {
         instance.print(cout);
         instance.write_domain(cout);
         instance.write_problem(cout);
@@ -181,8 +181,8 @@ int main(int argc, char *argv[]) {
 
     cout << "preprocessing p.o. problem..." << endl;
     Preprocessor prep(instance);
-    prep.preprocess(true, true); // turn off action compilation
-    if( options.is_enabled("print:problem:preprocessed") ) {
+    prep.preprocess(true, true);
+    if( options.is_enabled("problem:print:preprocessed") ) {
         //instance.print(cout);
         instance.write_domain(cout);
         instance.write_problem(cout);
@@ -190,7 +190,7 @@ int main(int argc, char *argv[]) {
 
     cout << "creating KP translation..." << endl;
     KP_Instance kp_instance(instance, multivalued_variables);
-    if( options.is_enabled("print:kp:raw") ) {
+    if( options.is_enabled("kp:print:raw") ) {
         kp_instance.print(cout);
         kp_instance.write_domain(cout);
         kp_instance.write_problem(cout);
@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
     cout << "preprocessing KP translation..." << endl;
     Preprocessor kp_prep(kp_instance);
     kp_prep.preprocess(false);
-    if( options.is_enabled("print:kp:preprocessed") ) {
+    if( options.is_enabled("kp:print:preprocessed") ) {
         kp_instance.write_domain(cout);
         kp_instance.write_problem(cout);
     }
@@ -239,7 +239,7 @@ int main(int argc, char *argv[]) {
                 cout << "PLAN: ";
                 bool need_indent = false;
 
-                if( options.is_enabled("print:fired-sensors") ) {
+                if( options.is_enabled("solver:print:fired-sensors") ) {
                     const vector<int> &sensors = fired_sensors[0];
                     if( sensors.size() > 0 ) {
                         cout << "init*:" << flush;
@@ -251,7 +251,7 @@ int main(int argc, char *argv[]) {
                     }
                 }
 
-                if( options.is_enabled("print:sensed-literals") ) {
+                if( options.is_enabled("solver:print:sensed-literals") ) {
                     const vector<int> &sensed = sensed_literals[0];
                     if( sensed.size() > 0 ) {
                         if( need_indent ) cout << "      ";
@@ -270,7 +270,7 @@ int main(int argc, char *argv[]) {
                 for( size_t k = 0; k < plan.size(); ++k ) {
                     if( need_indent ) cout << "      ";
                     cout << setw(4) << k << " : " << instance.actions_[plan[k]]->name_ << endl;
-                    if( options.is_enabled("print:fired-sensors") ) {
+                    if( options.is_enabled("solver:print:fired-sensors") ) {
                         const vector<int> &sensors = fired_sensors[1+k];
                         if( sensors.size() > 0 ) {
                             cout << "      " << setw(4) << k << "*:";
@@ -280,7 +280,7 @@ int main(int argc, char *argv[]) {
                             cout << endl;
                         }
                     }
-                    if( options.is_enabled("print:sensed-literals") ) {
+                    if( options.is_enabled("solver:print:sensed-literals") ) {
                         const vector<int> &sensed = sensed_literals[1+k];
                         if( sensed.size() > 0 ) {
                             cout << "      " << setw(4) << k << "@:";
