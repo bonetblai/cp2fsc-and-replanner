@@ -38,7 +38,7 @@ Instance::~Instance() {
 Instance::Atom& Instance::new_atom(Name *name) {
     Atom *a = new Atom(name, atoms_.size());
     atoms_.push_back(a);
-    if( options_.is_enabled("print:atom:creation") )
+    if( options_.is_enabled("problem:print:atom:creation") )
         cout << "atom " << a->index_ << "." << a->name_ << " created" << endl;
     return *a;
 }
@@ -46,7 +46,7 @@ Instance::Atom& Instance::new_atom(Name *name) {
 Instance::Action& Instance::new_action(Name *name) {
     Action *a = new Action(name, actions_.size());
     actions_.push_back(a);
-    if( options_.is_enabled("print:action:creation") )
+    if( options_.is_enabled("problem:print:action:creation") )
         cout << "action " << a->index_ << "." << a->name_ << " created" << endl;
     return *a;
 }
@@ -54,7 +54,7 @@ Instance::Action& Instance::new_action(Name *name) {
 Instance::Sensor& Instance::new_sensor(Name* name) {
     Sensor *r = new Sensor(name, sensors_.size());
     sensors_.push_back(r);
-    if( options_.is_enabled("print:sensor:creation") )
+    if( options_.is_enabled("problem:print:sensor:creation") )
         cout << "sensor " << r->index_ << "." << r->name_ << " created" << endl;
     return *r;
 }
@@ -62,7 +62,7 @@ Instance::Sensor& Instance::new_sensor(Name* name) {
 Instance::Axiom& Instance::new_axiom(Name* name) {
     Axiom *r = new Axiom(name, axioms_.size());
     axioms_.push_back(r);
-    if( options_.is_enabled("print:axiom:creation") )
+    if( options_.is_enabled("problem:print:axiom:creation") )
         cout << "axiom " << r->index_ << "." << r->name_ << " created" << endl;
     return *r;
 }
@@ -132,7 +132,7 @@ void Instance::remove_unreachable_axioms(const bool_vec &reachable_atoms, const 
             }
         }
         if( !reachable_axiom ) {
-            if( options_.is_enabled("print:axiom:removal") )
+            if( options_.is_enabled("problem:print:axiom:removal") )
                 cout << "removing axiom " << k << "." << axioms_[k]->name_ << endl;
             delete axioms_[k];
             axioms_[k] = axioms_.back();
@@ -166,7 +166,7 @@ void Instance::remove_unreachable_sensors(const bool_vec &reachable_atoms, const
             }
         }
         if( !reachable_sensor ) {
-            if( options_.is_enabled("print:sensor:removal") )
+            if( options_.is_enabled("problem:print:sensor:removal") )
                 cout << "removing sensor " << k << "." << sensors_[k]->name_ << endl;
             delete sensors_[k];
             sensors_[k] = sensors_.back();
@@ -313,7 +313,7 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
             }
 
             // remove invariant
-            if( options_.is_enabled("print:invariant:removal") ) {
+            if( options_.is_enabled("problem:print:invariant:removal") ) {
                 cout << "removing ";
                 init_.invariants_[k].write(cout, 0, *this);
             }
@@ -338,7 +338,7 @@ void Instance::remove_actions(const bool_vec &set, index_vec &map) {
             rm_map[k] = j;
             ++j;
         } else {
-            if( options_.is_enabled("print:action:removal") )
+            if( options_.is_enabled("problem:print:action:removal") )
                 cout << "removing action " << k << "." << actions_[k]->name_ << endl;
             delete actions_[k];
             rm_map[k] = no_such_index;
@@ -1140,7 +1140,7 @@ void Instance::create_deductive_rules() {
             if( !c_eff.effect_.empty() ) {
                 rule->when_.push_back(c_eff);
                 deductive_rules_.push_back(rule);
-                if( options_.is_enabled("print:deductive-rule") ) {
+                if( options_.is_enabled("problem:print:deductive-rule:creation") ) {
                     rule->print(cout, *this);
                 }
             } else {

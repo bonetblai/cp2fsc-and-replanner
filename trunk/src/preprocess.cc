@@ -50,7 +50,7 @@ void Preprocessor::mark_inconsistent_actions(bool_vec &actions_to_remove) {
             }
         }
 
-        if( actions_to_remove[k] && options_.is_enabled("print:action:inconsistent") ) {
+        if( actions_to_remove[k] && options_.is_enabled("problem:print:action:inconsistent") ) {
             cout << "  action " << k << "." << act.name_ << " is inconsistent." << endl;
         }
     }
@@ -98,7 +98,7 @@ void Preprocessor::mark_useless_actions(bool_vec &actions_to_remove) {
 
         if( useless[k] ) {
             actions_to_remove[k] = true;
-            if( options_.is_enabled("print:action:useless") )
+            if( options_.is_enabled("problem:print:action:useless") )
                 cout << "action " << k << "." << act.name_ << " is useless." << endl;
         }
     }
@@ -262,23 +262,23 @@ void Preprocessor::compute_reachability(bool_vec &reachable_atoms, bool_vec &rea
     }
 
     // generate feedback
-    if( options_.is_enabled("print:atom:reachable") ) {
+    if( options_.is_enabled("problem:print:atom:reachable") ) {
         for( size_t k = 0; k < instance_.n_atoms(); k++ )
             if( reachable_atoms[k] ) cout << "  reachable atom " << k << "." << instance_.atoms_[k]->name_ << endl;
     }
-    if( options_.is_enabled("print:atom:unreachable") ) {
+    if( options_.is_enabled("problem:print:atom:unreachable") ) {
         for( size_t k = 0; k < instance_.n_atoms(); k++ )
             if( !reachable_atoms[k] ) cout << "  unreachable atom " << k << "." << instance_.atoms_[k]->name_ << endl;
     }
-    if( options_.is_enabled("print:action:unreachable") ) {
+    if( options_.is_enabled("problem:print:action:unreachable") ) {
         for( size_t k = 0; k < instance_.actions_.size(); k++ )
             if( !reachable_actions[k] ) cout << "  unreachable action " << k << "." << instance_.actions_[k]->name_ << endl;
     }
-    if( options_.is_enabled("print:sensor:unreachable") ) {
+    if( options_.is_enabled("problem:print:sensor:unreachable") ) {
         for( size_t k = 0; k < instance_.sensors_.size(); k++ )
             if( !reachable_sensors[k] ) cout << "  unreachable sensor " << k << "." << instance_.sensors_[k]->name_ << endl;
     }
-    if( options_.is_enabled("print:axiom:unreachable") ) {
+    if( options_.is_enabled("problem:print:axiom:unreachable") ) {
         for( size_t k = 0; k < instance_.axioms_.size(); k++ )
             if( !reachable_axioms[k] ) cout << "  unreachable axiom " << k << "." << instance_.axioms_[k]->name_ << endl;
     }
@@ -355,7 +355,7 @@ void Preprocessor::compute_static_atoms(const bool_vec &reachable_actions, bool_
         }
     }
 
-    if( options_.is_enabled("print:atom:static") ) {
+    if( options_.is_enabled("problem:print:atom:static") ) {
         for( size_t k = 0; k < instance_.n_atoms(); k++ ) {
             if( static_atoms[k] )
                 cout << "  static atom " << k << "." << instance_.atoms_[k]->name_ << endl;
@@ -418,7 +418,7 @@ void Preprocessor::compute_action_completion(Instance::Action &action) {
 
         // If valid completion, add new conditional effect
         if( valid_completion ) {
-            if( options_.is_enabled("print:literal-completion") ) {
+            if( options_.is_enabled("problem:print:literal-completion") ) {
                 cout << "completion for action=" << action.name_ << " and literal=";
                 if( lit > 0 )
                     cout << instance_.atoms_[lit-1]->name_;
@@ -497,12 +497,12 @@ void Preprocessor::remove_irrelevant_atoms() {
 
 
 void Preprocessor::preprocess(bool remove_atoms, bool do_action_completion) {
-    if( options_.is_enabled("print:preprocess:stage") )
+    if( options_.is_enabled("problem:print:preprocess:stage") )
         cout << "Preprocessing..." << endl;
 
     // stage 1: Remove inconsistent and useless actions
     bool_vec actions_to_remove(instance_.n_actions(), false);
-    if( options_.is_enabled("print:preprocess:stage") )
+    if( options_.is_enabled("problem:print:preprocess:stage") )
         cout << "  Stage 1: removing inconsistent & useless actions..." << endl;
     mark_inconsistent_actions(actions_to_remove);
     mark_useless_actions(actions_to_remove);
@@ -510,7 +510,7 @@ void Preprocessor::preprocess(bool remove_atoms, bool do_action_completion) {
 
 
     // stage 2: Compute reachable atoms, actions, sensors and axioms
-    if( options_.is_enabled("print:preprocess:stage") )
+    if( options_.is_enabled("problem:print:preprocess:stage") )
         cout << "  Stage 2: computing reachability..." << endl;
     bool_vec reachable_atoms(instance_.n_atoms(), false);
     bool_vec reachable_actions(instance_.n_actions(), false);
@@ -521,13 +521,13 @@ void Preprocessor::preprocess(bool remove_atoms, bool do_action_completion) {
 
     // stage 3: remove unreachable conditional effects, axioms and sensors, and
     // compute static atoms until fix point.
-    if( options_.is_enabled("print:preprocess:stage") )
+    if( options_.is_enabled("problem:print:preprocess:stage") )
         cout << "  Stage 3: removing unreachable conditional effects, axioms and sensors..." << endl;
     bool_vec static_atoms(instance_.n_atoms(), false);
     bool fix_point_reached = false;
     while( !fix_point_reached ) {
         fix_point_reached = true;
-        if( options_.is_enabled("print:preprocess:stage") )
+        if( options_.is_enabled("problem:print:preprocess:stage") )
             cout << "           new iteration..." << endl;
 
         instance_.remove_unreachable_conditional_effects(reachable_atoms, static_atoms);
@@ -587,7 +587,7 @@ void Preprocessor::preprocess(bool remove_atoms, bool do_action_completion) {
 
 
     // stage 4: Remove unreachable and useless actions
-    if( options_.is_enabled("print:preprocess:stage") )
+    if( options_.is_enabled("problem:print:preprocess:stage") )
         cout << "  Stage 4: removing unreachable actions..." << endl;
     reachable_actions.bitwise_complement();
     mark_useless_actions(reachable_actions);
@@ -596,13 +596,13 @@ void Preprocessor::preprocess(bool remove_atoms, bool do_action_completion) {
 
 
     // stage 5: Simplify conditions and invariants
-    if( options_.is_enabled("print:preprocess:stage") )
+    if( options_.is_enabled("problem:print:preprocess:stage") )
         cout << "  Stage 5: simplify conditions and invariants..." << endl;
     instance_.simplify_conditions_and_invariants(reachable_atoms, static_atoms);
 
 
     // stage 6: Remove unreachable and 'known' static atoms
-    if( options_.is_enabled("print:preprocess:stage") )
+    if( options_.is_enabled("problem:print:preprocess:stage") )
         cout << "  Stage 6: removing unreachable and static atoms..." << endl;
     bool_vec atoms_to_remove(instance_.n_atoms(), false);
     for( index_set::const_iterator it = instance_.init_.literals_.begin(); it != instance_.init_.literals_.end(); ++it ) {
@@ -649,7 +649,7 @@ void Preprocessor::preprocess(bool remove_atoms, bool do_action_completion) {
 #endif
 
     if( remove_atoms && !atoms_to_remove.empty() ) {
-        if( options_.is_enabled("print:atom:removal") ) {
+        if( options_.is_enabled("problem:print:atom:removal") ) {
             cout << "atoms to remove = ";
             instance_.write_atom_set(cout, atoms_to_remove);
             cout << endl;
@@ -662,14 +662,14 @@ void Preprocessor::preprocess(bool remove_atoms, bool do_action_completion) {
 
 #if 0 // This old stuff. It should not be necessary
     // stage 7: Create deductive rules
-    if( options_.is_enabled("print:preprocess:stage") )
+    if( options_.is_enabled("problem:print:preprocess:stage") )
         cout << "  Stage 7: computing deductive rules..." << endl;
     instance_.create_deductive_rules();
 #endif
 
     // stage 7: Perform action completion. This is only valid for k-replanner.
     if( do_action_completion ) {
-        if( options_.is_enabled("print:preprocess:stage") )
+        if( options_.is_enabled("problem:print:preprocess:stage") )
             cout << "  Stage 7: computing action completion..." << endl;
         for( size_t k = 0; k < instance_.n_actions(); ++k ) {
             compute_action_completion(*instance_.actions_[k]);

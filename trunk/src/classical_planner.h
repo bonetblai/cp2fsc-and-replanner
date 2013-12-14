@@ -43,6 +43,9 @@ class ClassicalPlanner {
         total_time_ = 0;
         n_calls_ = 0;
     }
+
+    void generate_pddl_domain() const;
+    void generate_pddl_problem(const State &state) const;
 };
 
 class FF_Planner : public ClassicalPlanner {

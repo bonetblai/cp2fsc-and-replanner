@@ -150,7 +150,7 @@ int main(int argc, char *argv[]) {
     }
 
     // print file read by parser
-    if( options.is_enabled("print:parser:raw") ) {
+    if( options.is_enabled("parser:print:raw") ) {
         reader->print(cout);
     }
 
@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
     cout << "instantiating control problem..." << endl;
     reader->emit_instance(instance);
     //delete reader;
-    if( options.is_enabled("print:problem:raw") ) {
+    if( options.is_enabled("problem:print:raw") ) {
         instance.print(cout);
         instance.write_domain(cout);
         instance.write_problem(cout);
@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
     cout << "preprocessing control problem..." << endl;
     Preprocessor prep(instance);
     prep.preprocess(true);
-    if( options.is_enabled("print:problem:preprocessed") ) {
+    if( options.is_enabled("problem:print:preprocessed") ) {
         instance.print(cout);
         instance.write_domain(cout);
         instance.write_problem(cout);
@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
     cout << "creating CP translation..." << endl;
     CP_Instance cp_instance(instance, opt_fsc_states,
                             opt_forbid_inconsistent_tuples, opt_compound_obs_as_fluents);
-    if( options.is_enabled("print:cp-translation:raw") ) {
+    if( options.is_enabled("cp:print:raw") ) {
         cp_instance.write_domain(cout);
         cp_instance.write_problem(cout);
     }
@@ -190,14 +190,14 @@ int main(int argc, char *argv[]) {
     // static atoms. This odd behaviour could be a bug somewhere...
     cp_prep.preprocess(false);
   
-    if( options.is_enabled("print:cp-translation:preprocessed") ) {
+    if( options.is_enabled("cp:print:preprocessed") ) {
         cp_instance.write_domain(cout);
         cp_instance.write_problem(cout);
     }
 
     cout << "creating KS0 translation..." << endl;
     KS0_Instance ks0_instance(cp_instance, opt_tag_all_literals);
-    if( options.is_enabled("print:ks0-translation:raw") ) {
+    if( options.is_enabled("ks0:print:raw") ) {
         ks0_instance.write_domain(cout);
         ks0_instance.write_problem(cout);
     }
@@ -205,7 +205,7 @@ int main(int argc, char *argv[]) {
     cout << "preprocessing KS0 translation..." << endl;
     Preprocessor ks0_prep(ks0_instance);
     ks0_prep.preprocess(true);
-    if( options.is_enabled("print:ks0-translation:preprocessed") ) {
+    if( options.is_enabled("ks0:print:preprocessed") ) {
         ks0_instance.write_domain(cout);
         ks0_instance.write_problem(cout);
     }

@@ -211,7 +211,7 @@ void PDDL_Base::instantiate_elements() {
     multivalued_variables_.reserve(vlist.size());
     multivalued_variables_.insert(multivalued_variables_.end(), vlist.begin(), vlist.end());
 
-    if( options_.is_enabled("print:mvv:variables") ) {
+    if( options_.is_enabled("mvv:print:variables") ) {
         for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
             const Variable &var = *multivalued_variables_[k];
             cout << Utils::cyan() << "variable '" << var.print_name_ << "':";
@@ -400,7 +400,7 @@ void PDDL_Base::clg_translate_observe_effects_into_sensors() {
 
             action->observe_ = 0;
             patched_actions.insert(action);
-            if( options_.is_enabled("print:clg:effect") || options_.is_enabled("print:clg:generated") )
+            if( options_.is_enabled("clg:print:effect") || options_.is_enabled("clg:print:generated") )
                 cout << Utils::cyan() << *action << Utils::normal();
 
             // 2) create sensor sensor-<action> with same arguments, condition
@@ -417,7 +417,7 @@ void PDDL_Base::clg_translate_observe_effects_into_sensors() {
             assert(!sensor->condition_->has_free_variables(sensor->param_));
             assert(!sensor->sense_->has_free_variables(sensor->param_));
             dom_sensors_.push_back(sensor);
-            if( options_.is_enabled("print:clg:sensor") || options_.is_enabled("print:clg:generated") )
+            if( options_.is_enabled("clg:print:sensor") || options_.is_enabled("clg:print:generated") )
                 cout << Utils::cyan() << *sensor << Utils::normal();
 
             // 3) create action (post-sense-<action> <args>) with precondition
@@ -446,7 +446,7 @@ void PDDL_Base::clg_translate_observe_effects_into_sensors() {
             assert(!post_action->effect_->has_free_variables(post_action->param_));
             dom_actions_.push_back(post_action);
             patched_actions.insert(post_action);
-            if( options_.is_enabled("print:clg:post") || options_.is_enabled("print:clg:generated") )
+            if( options_.is_enabled("clg:print:post") || options_.is_enabled("clg:print:generated") )
                 cout << Utils::cyan() << *post_action << Utils::normal();
         }
     }
@@ -503,7 +503,7 @@ void PDDL_Base::calculate_atoms_for_state_variables() {
         }
     }
 
-    if( options_.is_enabled("print:mvv:atoms-for-state-variables") ) {
+    if( options_.is_enabled("mvv:print:atoms-for-state-variables") ) {
         cout << Utils::cyan() << "atoms for state variables:";
         for( unsigned_atom_set::iterator it = atoms_for_state_variables_.begin(); it != atoms_for_state_variables_.end(); ++it )
             cout << " " << *it;
@@ -527,7 +527,7 @@ void PDDL_Base::calculate_observable_atoms() {
         }
     }
 
-    if( options_.is_enabled("print:mvv:observable-atoms") ) {
+    if( options_.is_enabled("mvv:print:observable-atoms") ) {
         cout << Utils::cyan() << "observable atoms:";
         for( unsigned_atom_set::iterator it = observable_atoms_.begin(); it != observable_atoms_.end(); ++it )
             cout << " " << *it;
@@ -543,7 +543,7 @@ void PDDL_Base::calculate_beams_for_grounded_observable_variables() {
             calculate_beam_for_grounded_variable(var);
 
             // print beam (if requested)
-            if( options_.is_enabled("print:mvv:beams") ) {
+            if( options_.is_enabled("mvv:print:beams") ) {
                 for( size_t i = 0; i < var.grounded_values_.size(); ++i ) {
                     cout << Utils::cyan() << "beam for "
                          << var.print_name_ << "::" << var.grounded_values_[i]->to_string() << ":";
@@ -616,7 +616,7 @@ void PDDL_Base::compile_static_observable_fluents(const Atom &atom) {
     }
 
     // print sensing models
-    if( options_.is_enabled("print:mvv:compiled-sensing-models") ) {
+    if( options_.is_enabled("mvv:print:compiled-sensing-models") ) {
         cout << Utils::cyan() << "sensing models for '" << atom << "':" << endl;
         for( effect_list::iterator it = sensing_models.begin(); it != sensing_models.end(); ++it )
             cout << "    " << **it << endl;
@@ -644,7 +644,7 @@ void PDDL_Base::compile_static_observable_fluents(const Atom &atom) {
             axiom->head_ = head;
             //axioms_for_compiled_sensing_models_.push_back(axiom);
             dom_axioms_.push_back(axiom);
-            if( options_.is_enabled("print:mvv:axioms") )
+            if( options_.is_enabled("mvv:print:axioms") )
                 cout << Utils::cyan() << *axiom << Utils::normal();
         }
 
@@ -663,7 +663,7 @@ void PDDL_Base::compile_static_observable_fluents(const Atom &atom) {
         invariant.push_back(Literal(*head).clone());
         dom_init_.push_back(new InitInvariant(invariant));
         invariant.clear();
-        if( options_.is_enabled("print:mvv:invariants") || options_.is_enabled("print:mvv:invariants:compilation") )
+        if( options_.is_enabled("mvv:print:invariants") || options_.is_enabled("mvv:print:invariants:compilation") )
             cout << Utils::cyan()
                  << "invariant for compiled sensing model: " << *dom_init_.back()
                  << Utils::normal() << endl;
@@ -848,7 +848,7 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
         assert(!effect_action->precondition_->has_free_variables(effect_action->param_));
         assert(!effect_action->effect_->has_free_variables(effect_action->param_));
         dom_actions_.push_back(effect_action);
-        if( options_.is_enabled("print:mvv:effect") || options_.is_enabled("print:mvv:generated") )
+        if( options_.is_enabled("mvv:print:effect") || options_.is_enabled("mvv:print:generated") )
             cout << Utils::cyan() << *effect_action << Utils::normal();
     }
 
@@ -887,7 +887,7 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
         assert(!set_sensing_action->precondition_->has_free_variables(set_sensing_action->param_));
         assert(!set_sensing_action->effect_->has_free_variables(set_sensing_action->param_));
         dom_actions_.push_back(set_sensing_action);
-        if( options_.is_enabled("print:mvv:set-sensing") || options_.is_enabled("print:mvv:generated") )
+        if( options_.is_enabled("mvv:print:set-sensing") || options_.is_enabled("mvv:print:generated") )
             cout << Utils::cyan() << *set_sensing_action << Utils::normal();
 
         // store sensing model for generating invariants later
@@ -920,7 +920,7 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
         assert(!turn_on_sensor_action->precondition_->has_free_variables(turn_on_sensor_action->param_));
         assert(!turn_on_sensor_action->effect_->has_free_variables(turn_on_sensor_action->param_));
         dom_actions_.push_back(turn_on_sensor_action);
-        if( options_.is_enabled("print:mvv:turn-on-sensor") || options_.is_enabled("print:mvv:generated") )
+        if( options_.is_enabled("mvv:print:turn-on-sensor") || options_.is_enabled("mvv:print:generated") )
             cout << Utils::cyan() << *turn_on_sensor_action << Utils::normal();
     }
 
@@ -949,7 +949,7 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
     assert(!sensor_for_action->condition_->has_free_variables(sensor_for_action->param_));
     assert(!sensor_for_action->sense_->has_free_variables(sensor_for_action->param_));
     dom_sensors_.push_back(sensor_for_action);
-    if( options_.is_enabled("print:mvv:sensor") || options_.is_enabled("print:mvv:generated") )
+    if( options_.is_enabled("mvv:print:sensor") || options_.is_enabled("mvv:print:generated") )
         cout << Utils::cyan() << *sensor_for_action << Utils::normal();
 
     // Post action that re-establish normal execution
@@ -976,7 +976,7 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
     assert(!post_action->precondition_->has_free_variables(post_action->param_));
     assert(!post_action->effect_->has_free_variables(post_action->param_));
     dom_actions_.push_back(post_action);
-    if( options_.is_enabled("print:mvv:post") || options_.is_enabled("print:mvv:generated") )
+    if( options_.is_enabled("mvv:print:post") || options_.is_enabled("mvv:print:generated") )
         cout << Utils::cyan() << *post_action << Utils::normal();
 }
 
@@ -1000,7 +1000,7 @@ void PDDL_Base::create_invariants_for_multivalued_variables() {
                 assert(!exactly_one.has_free_variables());
                 dom_init_.push_back(new InitInvariant(exactly_one));
                 exactly_one.clear();
-                if( options_.is_enabled("print:mvv:invariants") || options_.is_enabled("print:mvv:invariants:var") )
+                if( options_.is_enabled("mvv:print:invariants") || options_.is_enabled("mvv:print:invariants:var") )
                     cout << Utils::cyan()
                          << "invariant for variable '" << var.print_name_ << "': " << *dom_init_.back()
                          << Utils::normal() << endl;
@@ -1015,7 +1015,7 @@ void PDDL_Base::create_invariants_for_multivalued_variables() {
                 assert(!at_least_one.has_free_variables());
                 dom_init_.push_back(new InitInvariant(at_least_one));
                 at_least_one.clear();
-                if( options_.is_enabled("print:mvv:invariants") || options_.is_enabled("print:mvv:invariants:var") )
+                if( options_.is_enabled("mvv:print:invariants") || options_.is_enabled("mvv:print:invariants:var") )
                     cout << Utils::cyan()
                          << "invariant for variable '" << var.print_name_ << "': " << *dom_init_.back()
                          << Utils::normal() << endl;
@@ -1035,7 +1035,7 @@ void PDDL_Base::create_invariants_for_multivalued_variables() {
                         assert(!at_least_one.has_free_variables());
                         dom_init_.push_back(new InitInvariant(at_least_one));
                         at_least_one.clear();
-                        if( options_.is_enabled("print:mvv:invariants") || options_.is_enabled("print:mvv:invariants:var") )
+                        if( options_.is_enabled("mvv:print:invariants") || options_.is_enabled("mvv:print:invariants:var") )
                             cout << Utils::cyan()
                                  << "invariant for variable '" << var.print_name_ << "': " << *dom_init_.back()
                                  << Utils::normal() << endl;
@@ -1052,7 +1052,7 @@ void PDDL_Base::create_invariants_for_multivalued_variables() {
                 assert(!at_least_one.has_free_variables());
                 dom_init_.push_back(new InitInvariant(at_least_one));
                 at_least_one.clear();
-                if( options_.is_enabled("print:mvv:invariants") || options_.is_enabled("print:mvv:invariants:var") )
+                if( options_.is_enabled("mvv:print:invariants") || options_.is_enabled("mvv:print:invariants:var") )
                     cout << Utils::cyan()
                          << "invariant for variable '" << var.print_name_ << "': " << *dom_init_.back()
                          << Utils::normal() << endl;
@@ -1136,7 +1136,7 @@ void PDDL_Base::create_invariants_for_sensing_model() {
                     assert(!invariant2.has_free_variables());
                     dom_init_.push_back(new InitInvariant(invariant2));
                     generated_invariants.insert(invariant2.to_string());
-                    if( options_.is_enabled("print:mvv:invariants") || options_.is_enabled("print:mvv:invariants:sensing") )
+                    if( options_.is_enabled("mvv:print:invariants") || options_.is_enabled("mvv:print:invariants:sensing") )
                         cout << Utils::cyan() << "invariant: " << *dom_init_.back() << Utils::normal() << endl;
                 } else {
                     for( size_t i = 0; i < invariant2.size(); ++i )
@@ -1152,7 +1152,7 @@ void PDDL_Base::create_invariants_for_sensing_model() {
                 assert(!invariant1.has_free_variables());
                 dom_init_.push_back(new InitInvariant(invariant1));
                 generated_invariants.insert(invariant1.to_string());
-                if( options_.is_enabled("print:mvv:invariants") || options_.is_enabled("print:mvv:invariants:sensing") )
+                if( options_.is_enabled("mvv:print:invariants") || options_.is_enabled("mvv:print:invariants:sensing") )
                     cout << Utils::cyan() << "invariant: " << *dom_init_.back() << Utils::normal() << endl;
             } else {
                 for( size_t i = 0; i < invariant1.size(); ++i )

@@ -55,6 +55,20 @@ ClassicalPlanner::~ClassicalPlanner() {
     free((char*)domain_fn_);
 }
 
+void ClassicalPlanner::generate_pddl_domain() const {
+    ofstream ofs(domain_fn_);
+    assert(ofs.is_open());
+    instance_.write_domain(ofs);
+    ofs.close();
+}
+
+void ClassicalPlanner::generate_pddl_problem(const State &state) const {
+    ofstream ofs(problem_fn_);
+    assert(ofs.is_open());
+    instance_.write_problem(ofs, &state);
+    ofs.close();
+}
+
 FF_Planner::~FF_Planner() {
     if( instance_.options_.is_enabled("remove-intermediate-files") ) {
         if( !first_call_ ) unlink(domain_fn_);
@@ -68,19 +82,10 @@ int FF_Planner::get_plan(const State &state, Instance::Plan &plan) const {
     ++n_calls_;
 
     if( first_call_ ) {    
-        // generate domain file
-        ofstream ofs(domain_fn_);
-        assert(ofs.is_open());
-        instance_.write_domain(ofs);
-        ofs.close();
+        generate_pddl_domain();
         first_call_ = false;
     }
-
-    // generate problem file
-    ofstream ofs(problem_fn_);
-    assert(ofs.is_open());
-    instance_.write_problem(ofs, &state);
-    ofs.close();
+    generate_pddl_problem(state);
 
     // call FF planner
     ostringstream cmd("");
@@ -197,18 +202,9 @@ int LAMA_Planner::get_plan(const State &state, Instance::Plan &plan) const {
     ++n_calls_;
   
     ostringstream fname; 
-    if( first_call_ ) { 
-        // generate domain file
-        ofstream ofs(domain_fn_);
-        assert(ofs.is_open());
-        instance_.write_domain(ofs);
-        ofs.close();
-
-        // generate problem file
-        ofs.open(problem_fn_);
-        assert(ofs.is_open());
-        instance_.write_problem(ofs, &state);
-        ofs.close();
+    if( first_call_ ) {
+        generate_pddl_domain();
+        generate_pddl_problem(state);
 
         // call LAMA planner including translation, preprocessing and search
         int rv = system(first_cmd_);
@@ -398,19 +394,10 @@ int M_Planner::get_plan(const State &state, Instance::Plan &plan) const {
     ++n_calls_;
 
     if( first_call_ ) {    
-        // generate domain file
-        ofstream ofs(domain_fn_);
-        assert(ofs.is_open());
-        instance_.write_domain(ofs);
-        ofs.close();
+        generate_pddl_domain();
         first_call_ = false;
     }
-
-    // generate problem file
-    ofstream ofs(problem_fn_);
-    assert(ofs.is_open());
-    instance_.write_problem(ofs, &state);
-    ofs.close();
+    generate_pddl_problem(state);
 
     // call M/Mp planner. Flag '-W' sets the random seed using time.
     ostringstream cmd("");
