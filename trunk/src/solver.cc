@@ -87,7 +87,7 @@ int Solver::solve(const State &initial_hidden_state,
 
             if( options_.is_enabled("solver:print:steps") ) {
                 cout << ">>> kp-action=" << kp_act.name_;
-                if( !kp_instance_.is_obs_rule(plan[k]) && !kp_instance_.is_static_rule(plan[k]) ) {
+                if( !kp_instance_.is_obs_rule(plan[k]) && !kp_instance_.is_static_rule(plan[k]) && !kp_instance_.is_subgoaling_rule(plan[k]) ) {
                     cout << " [action=" << instance_.actions_[kp_instance_.remap_[plan[k]]]->name_ << "]";
                 }
                 cout << endl;
@@ -97,7 +97,7 @@ int Solver::solve(const State &initial_hidden_state,
 
             assert(state.applicable(kp_act));
             state.apply(kp_act);
-            if( !kp_instance_.is_obs_rule(plan[k]) && !kp_instance_.is_static_rule(plan[k]) ) {
+            if( !kp_instance_.is_obs_rule(plan[k]) && !kp_instance_.is_static_rule(plan[k]) && !kp_instance_.is_subgoaling_rule(plan[k]) ) {
                 // insert action into final plan
                 //final_plan.push_back(plan[k]);
                 final_plan.push_back(kp_instance_.remap_[plan[k]]);

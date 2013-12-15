@@ -12,11 +12,16 @@ class KP_Instance : public Instance {
     size_t n_standard_actions_;
     size_t n_sensor_actions_;
     size_t n_invariant_actions_;
+    size_t n_subgoaling_actions_;
 
     // maps standard actions in kp-problem into standard actions in po problem
     std::vector<int> remap_;
-
     std::map<std::string, int> obs_rules_by_name_;
+
+    // for subgoaling
+    Atom *new_goal_;
+    std::vector<Atom*> atoms_for_unknown_observables_at_init_;
+
     KP_Instance(const Instance &instance, const PDDL_Base::variable_vec &multivalued_variables);
     ~KP_Instance();
 
@@ -37,10 +42,17 @@ class KP_Instance : public Instance {
         size_t upper = lower + n_invariant_actions_;
         return (a >= lower) && (a < upper);
     }
+    bool is_subgoaling_rule(size_t a) const {
+        size_t lower = n_standard_actions_ + n_sensor_actions_ + n_invariant_actions_;
+        size_t upper = lower + n_subgoaling_actions_;
+        return (a >= lower) && (a < upper);
+    }
+
     bool apply_plan(const Plan &plan,
                     const State &initial_state,
                     State &final_state,
                     std::vector<State> &support_vec) const;
+    virtual void write_problem(std::ostream &os, const State *state = 0, int indent = 4) const;
 };
 
 #endif

@@ -80,15 +80,6 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
             init_.literals_.insert(1 + 2*idx+1);
     }
 
-    // set goal atoms
-    for( index_set::const_iterator it = ins.goal_literals_.begin(); it != ins.goal_literals_.end(); ++it ) {
-        int idx = *it > 0 ? *it-1 : -*it-1;
-        if( *it > 0 )
-            goal_literals_.insert(1 + 2*idx);
-        else
-            goal_literals_.insert(1 + 2*idx+1);
-    }
-
     // add known literals in initial situation
     for( size_t k = 0; k < ins.n_atoms(); ++k ) {
         const Atom &atom = *ins.atoms_[k];
@@ -115,6 +106,25 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
             }
         }
     }
+
+    // set goal
+    new_goal_ = &new_atom(new CopyName("(new-goal)"));
+    goal_literals_.insert(1 + new_goal_->index_);
+#if 0
+    if( options_.is_enabled("kp:subgoals") ) {
+        new_goal_ = &new_atom(new CopyName("(new-goal)"));
+        goal_literals_.insert(1 + new_goal_->index_);
+    } else {
+        new_goal_ = 0;
+        for( index_set::const_iterator it = ins.goal_literals_.begin(); it != ins.goal_literals_.end(); ++it ) {
+            int idx = *it > 0 ? *it-1 : -*it-1;
+            if( *it > 0 )
+                goal_literals_.insert(1 + 2*idx);
+            else
+                goal_literals_.insert(1 + 2*idx+1);
+        }
+    }
+#endif
 
     // create K-actions
     remap_ = vector<int>(ins.n_actions(),-1);
@@ -312,6 +322,47 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
         }
     }
     n_invariant_actions_ = n_actions() - n_standard_actions_ - n_sensor_actions_;
+
+    // create goal-achieving actions
+    Action &goal_action = new_action(new CopyName("reach_new_goal_through_original_goal__"));
+    for( index_set::const_iterator it = ins.goal_literals_.begin(); it != ins.goal_literals_.end(); ++it ) {
+        int idx = *it > 0 ? *it-1 : -*it-1;
+        if( *it > 0 )
+            goal_action.precondition_.insert(1 + 2*idx);
+        else
+            goal_action.precondition_.insert(1 + 2*idx+1);
+    }
+    goal_action.effect_.insert(1 + new_goal_->index_);
+    cout << goal_action.index_ << "."; goal_action.print(cout, *this);
+
+    if( options_.is_enabled("kp:subgoals") ) {
+        // Other actions are for observable literals that are unknown at initial state
+        atoms_for_unknown_observables_at_init_ = vector<Atom*>(ins.n_atoms());
+        for( size_t k = 0; k < ins.n_sensors(); ++k ) {
+            const Sensor &r = *ins.sensors_[k];
+            assert(!r.sense_.empty());
+
+            for( index_set::const_iterator it = r.sense_.begin(); it != r.sense_.end(); ++it ) {
+                assert(*it > 0);
+                int idx = *it - 1;
+                if( atoms_for_unknown_observables_at_init_[idx] == 0 ) {
+                    string atom_name("(unknown_");
+                    atom_name += ins.atoms_[idx]->name_->to_string() + ")";
+                    atoms_for_unknown_observables_at_init_[idx] = &new_atom(new CopyName(atom_name));
+                    for( int n = 0; n < 2; ++n ) {
+                        string action_name("reach_goal_through_knowledge_of_");
+                        action_name += ins.atoms_[idx]->name_->to_string() + "_" + (n == 0 ? "0__" : "1__");
+                        Action &nact = new_action(new CopyName(action_name));
+                        nact.precondition_.insert(1 + atoms_for_unknown_observables_at_init_[idx]->index_);
+                        nact.precondition_.insert(1 + 2*idx+n);
+                        nact.effect_.insert(1 + new_goal_->index_);
+                        cout << nact.index_ << "."; nact.print(cout, *this);
+                    }
+                }
+            }
+        }
+    }
+    n_subgoaling_actions_ = n_actions() - n_standard_actions_ - n_sensor_actions_ - n_invariant_actions_;
 }
 
 KP_Instance::~KP_Instance() {
@@ -356,7 +407,6 @@ void KP_Instance::cross_reference() {
 // This function apply given plan at given initial state and returns the final
 // state and the assumptions made by the plan. If plan is applicable, returns
 // true. Otherwise, returns false.
-
 bool KP_Instance::apply_plan(const Plan &plan, const State &initial_state, State &final_state, vector<State> &assumption_vec) const {
     assumption_vec.clear();
     vector<State> support_vec;
@@ -420,5 +470,15 @@ bool KP_Instance::apply_plan(const Plan &plan, const State &initial_state, State
     }
 
     return true;
+}
+
+void KP_Instance::write_problem(ostream &os, const State *state, int indent) const {
+    if( options_.is_enabled("kp:subgoals") ) {
+        cout << "XXXXXXXXX" << endl;
+    }
+    Instance::write_problem(os, state, indent);
+    if( options_.is_enabled("kp:subgoals") ) {
+        cout << "XXXXXXXXX" << endl;
+    }
 }
 

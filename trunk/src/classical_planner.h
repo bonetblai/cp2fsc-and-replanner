@@ -46,6 +46,7 @@ class ClassicalPlanner {
 
     void generate_pddl_domain() const;
     void generate_pddl_problem(const State &state) const;
+    void remove_file(const char *filename) const;
 };
 
 class FF_Planner : public ClassicalPlanner {
