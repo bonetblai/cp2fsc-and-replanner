@@ -54,7 +54,7 @@ const char *available_options[] = {
     "kp:print:action:regular",             "[KP] print the name of regular actions",
     "kp:print:action:sensor",              "[KP] print the name of actions added for sensors",
     "kp:print:action:invariant",           "[KP] print the name of actions added for invariants",
-    "kp:use-subgoals",                     "[KP] goal of KP problem is either goal or unknown  tatic fluents",
+    "kp:subgoals",                         "[KP] goal of KP problem is either goal or unknown static fluents",
 
     // solver options (k_replanner)
     "solver:print:plan",                   "[SOLV] print classical plan",

@@ -218,7 +218,7 @@ class Instance {
     void write_action_set(std::ostream &os, const bool* set) const;
     void write_action_set(std::ostream &os, const bool_vec &set) const;
     void write_domain(std::ostream &os, int indent = 4) const;
-    void write_problem(std::ostream &os, const State *state, int indent = 4) const;
+    virtual void write_problem(std::ostream &os, const State *state, int indent = 4) const;
     void write_problem(std::ostream &os, int indent = 4) const { write_problem(os, 0, indent); }
     void print_atoms(std::ostream &os) const;
     void print_actions(std::ostream &os) const;
