@@ -2,17 +2,15 @@
 #include <cstdlib>
 #include "kp_problem.h"
 #include "state.h"
+#include "utils.h"
 
 using namespace std;
 
 static int get_atom_index(const Instance &ins, string atom_name) {
     for( size_t k = 0; k < ins.n_atoms(); ++k ) {
-        if( atom_name == ins.atoms_[k]->name_->to_string() ) {
-            //cout << "atom '" << atom_name << "' = " << k << endl;
+        if( atom_name == ins.atoms_[k]->name_->to_string() )
             return k;
-        }
     }
-    //cout << "atom '" << atom_name << "' not found!" << endl;
     return -1;
 }
 
@@ -288,7 +286,8 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
                     }
                 }
             } else {
-                cout << "warning: only AT_LEAST_ONE-type invariants should exist at this stage" << endl;
+                cout << Utils::error() << "only AT_LEAST_ONE-type invariants should exist at this stage" << endl;
+                exit(255);
 #if 0
                 assert(invariant.type_ == Invariant::AT_MOST_ONE);
                 for( size_t i = 0; i < invariant.size(); ++i ) {
@@ -333,7 +332,7 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
             goal_action.precondition_.insert(1 + 2*idx+1);
     }
     goal_action.effect_.insert(1 + new_goal_->index_);
-    cout << goal_action.index_ << "."; goal_action.print(cout, *this);
+    //cout << goal_action.index_ << "."; goal_action.print(cout, *this);
 
     if( options_.is_enabled("kp:subgoals") ) {
         // Other actions are for observable literals that are unknown at initial state
