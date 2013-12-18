@@ -76,10 +76,6 @@ class MP_Planner : public M_Planner {
 };
 
 class LAMA_Planner : public ClassicalPlanner {
-    const char *LAMA_path_;
-    const char *solver_path_;
-    const char *first_cmd_;
-    const char *other_cmd_;
     mutable bool first_call_;
     mutable std::streampos begin_state_pos_;
     mutable std::vector<std::vector<int> > variables_;
@@ -88,27 +84,9 @@ class LAMA_Planner : public ClassicalPlanner {
     LAMA_Planner(const Instance &instance, const char *tmpfile_path, const char *planner_path);
     virtual ~LAMA_Planner();
     virtual int get_plan(const State &state, Instance::Plan &plan) const;
-    void patch_output_sas(std::fstream &iofs, const State &state) const;
-    void determine_seek_pos(std::ifstream &ifs) const;
-    void read_variables(std::ifstream &ifs) const;
-};
-
-class LAMA2_Planner : public ClassicalPlanner {
-    const char *LAMA_path_;
-    const char *solver_path_;
-    const char *first_cmd_;
-    const char *other_cmd_;
-    mutable bool first_call_;
-    mutable std::streampos begin_state_pos_;
-    mutable std::vector<std::vector<int> > variables_;
-    std::map<std::string, size_t> atom_map_;
-  public:
-    LAMA2_Planner(const Instance &instance, const char *tmpfile_path, const char *planner_path);
-    virtual ~LAMA2_Planner();
-    virtual int get_plan(const State &state, Instance::Plan &plan) const;
     void patch_state_in_sas(std::fstream &iofs, const State &state) const;
     void determine_seek_pos(std::ifstream &ifs) const;
-    void read_variable(std::ifstream &ifs) const;
+    void read_variable(std::ifstream &ifs, std::vector<std::pair<int, std::vector<int> > > &variables) const;
     void read_variables(std::ifstream &ifs) const;
 };
 

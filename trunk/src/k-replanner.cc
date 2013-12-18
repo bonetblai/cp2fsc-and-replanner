@@ -203,7 +203,7 @@ int main(int argc, char *argv[]) {
     if( opt_planner == "ff" ) {
         planner = new FF_Planner(kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
     } else if( opt_planner == "lama" ) {
-        planner = new LAMA2_Planner(kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+        planner = new LAMA_Planner(kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
     } else if( opt_planner == "m" ) {
         planner = new M_Planner(kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
     } else if( opt_planner == "mp" ) {
