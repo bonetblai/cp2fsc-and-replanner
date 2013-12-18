@@ -58,6 +58,23 @@ class FF_Planner : public ClassicalPlanner {
     virtual int get_plan(const State &state, Instance::Plan &plan) const;
 };
 
+class M_Planner : public ClassicalPlanner {
+  protected:
+    mutable bool first_call_;
+  public:
+    M_Planner(const Instance &instance, const char *tmpfile_path, const char *planner_path, const char *planner_name = "M")
+      : ClassicalPlanner(planner_name, tmpfile_path, planner_path, planner_name, instance), first_call_(true) { }
+    virtual ~M_Planner();
+    virtual int get_plan(const State &state, Instance::Plan &plan) const;
+};
+
+class MP_Planner : public M_Planner {
+  public:
+    MP_Planner(const Instance &instance, const char *tmpfile_path, const char *planner_path)
+      : M_Planner(instance, tmpfile_path, planner_path, "Mp") { }
+    virtual ~MP_Planner();
+};
+
 class LAMA_Planner : public ClassicalPlanner {
     const char *LAMA_path_;
     const char *solver_path_;
@@ -76,21 +93,23 @@ class LAMA_Planner : public ClassicalPlanner {
     void read_variables(std::ifstream &ifs) const;
 };
 
-class M_Planner : public ClassicalPlanner {
-  protected:
+class LAMA2_Planner : public ClassicalPlanner {
+    const char *LAMA_path_;
+    const char *solver_path_;
+    const char *first_cmd_;
+    const char *other_cmd_;
     mutable bool first_call_;
+    mutable std::streampos begin_state_pos_;
+    mutable std::vector<std::vector<int> > variables_;
+    std::map<std::string, size_t> atom_map_;
   public:
-    M_Planner(const Instance &instance, const char *tmpfile_path, const char *planner_path, const char *planner_name = "M")
-      : ClassicalPlanner(planner_name, tmpfile_path, planner_path, planner_name, instance), first_call_(true) { }
-    virtual ~M_Planner();
+    LAMA2_Planner(const Instance &instance, const char *tmpfile_path, const char *planner_path);
+    virtual ~LAMA2_Planner();
     virtual int get_plan(const State &state, Instance::Plan &plan) const;
-};
-
-class MP_Planner : public M_Planner {
-  public:
-    MP_Planner(const Instance &instance, const char *tmpfile_path, const char *planner_path)
-      : M_Planner(instance, tmpfile_path, planner_path, "Mp") { }
-    virtual ~MP_Planner();
+    void patch_state_in_sas(std::fstream &iofs, const State &state) const;
+    void determine_seek_pos(std::ifstream &ifs) const;
+    void read_variable(std::ifstream &ifs) const;
+    void read_variables(std::ifstream &ifs) const;
 };
 
 #endif

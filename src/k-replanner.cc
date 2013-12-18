@@ -13,7 +13,6 @@
 using namespace std;
 
 Options::Mode options;
-const char *planner_name[] = { "ff", "lama", "m", "mp" };
 
 void parse_options(const char *options_str) {
     char *opts = strdup(options_str);
@@ -63,7 +62,7 @@ int main(int argc, char *argv[]) {
     StringTable symbols(50, lowercase_map);
     bool        opt_debug_parser = false;
     bool        opt_print_plan = true;
-    int         opt_planner = 0;
+    string      opt_planner = "ff";
     int         opt_time_bound = 3600;
     string      opt_prefix = "";
     float       start_time = Utils::read_time_in_seconds();
@@ -112,14 +111,8 @@ int main(int argc, char *argv[]) {
             opt_prefix = argv[++k];
         } else if( !skip_options && !strcmp(argv[k], "--keep-intermediate-files") ) {
             options.clear("solver:remove-intermediate-files");
-        } else if( !skip_options && !strcmp(argv[k], "--use-ff") ) {
-            opt_planner = 0;
-        } else if( !skip_options && !strcmp(argv[k], "--use-lama") ) {
-            opt_planner = 1;
-        } else if( !skip_options && !strcmp(argv[k], "--use-m") ) {
-            opt_planner = 2;
-        } else if( !skip_options && !strcmp(argv[k], "--use-mp") ) {
-            opt_planner = 3;
+        } else if( !skip_options && !strcmp(argv[k], "--planner") ) {
+            opt_planner = argv[++k];
         } else if( !skip_options && !strcmp(argv[k], "--planner-path") ) {
             opt_planner_path = argv[++k];
         } else if( !skip_options && !strcmp(argv[k], "--tmpfile-path") ) {
@@ -207,13 +200,13 @@ int main(int argc, char *argv[]) {
 
     // construct classical planner
     const ClassicalPlanner *planner = 0;
-    if( opt_planner == 0 ) {
+    if( opt_planner == "ff" ) {
         planner = new FF_Planner(kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
-    } else if( opt_planner == 1 ) {
-        planner = new LAMA_Planner(kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
-    } else if( opt_planner == 2 ) {
+    } else if( opt_planner == "lama" ) {
+        planner = new LAMA2_Planner(kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+    } else if( opt_planner == "m" ) {
         planner = new M_Planner(kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
-    } else if( opt_planner == 3 ) {
+    } else if( opt_planner == "mp" ) {
         planner = new MP_Planner(kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
     }
 
@@ -312,7 +305,7 @@ int main(int argc, char *argv[]) {
 
         // print some stats
         cout << "stats: "
-             << planner_name[opt_planner] << " (planner) "
+             << opt_planner << " (planner) "
              << (int)(status != Solver::SOLVED ? -1 : plan.size()) << " (plan size) "
              << planner->n_calls() << " (planner calls) "
              << preprocessing_time << " (preprocessing time) "
