@@ -137,7 +137,7 @@ int FF_Planner::get_plan(const State &state, Instance::Plan &plan) const {
     ifs.open(plan_fn_);
     char line[2048];
     while( !ifs.eof() ) {
-        ifs.getline(line, 1024);
+        ifs.getline(line, 2048);
         if( line[0] != '\0' ) {
             map<string, size_t>::const_iterator it = action_map_.find(line);
             assert(it != action_map_.end());
@@ -209,7 +209,7 @@ int M_Planner::get_plan(const State &state, Instance::Plan &plan) const {
     ifs.open(plan_fn_);
     char line[2048];
     while( !ifs.eof() ) {
-        ifs.getline(line, 1024);
+        ifs.getline(line, 2048);
         if( line[0] != '\0' ) {
             map<string, size_t>::const_iterator it = action_map_.find(line);
             assert(it != action_map_.end());
@@ -228,35 +228,16 @@ MP_Planner::~MP_Planner() {
 
 LAMA_Planner::LAMA_Planner(const Instance &instance, const char *tmpfile_path, const char *planner_path)
   : ClassicalPlanner("LAMA", tmpfile_path, planner_path, "lama", instance), first_call_(true) {
-
-    LAMA_path_ = "/home/bonet/LAMA/seq-sat-lama";
-    solver_path_ = "/home/bonet/translator-X0+/source";
-
-    ostringstream cmd;
-    cmd << "(cd " << LAMA_path_ << "; ./plan "
-        << solver_path_ << "/" << domain_fn_
-        << " " << solver_path_ << "/" << problem_fn_
-        << " " << solver_path_ << "/" << plan_fn_ << ")"
-        << " > " << output_fn_;
-    first_cmd_ = strdup(cmd.str().c_str());
-
-    cmd.str("");
-    cmd << "(cd " << LAMA_path_ << "; ./myplan output.sas"
-        << " " << solver_path_ << "/" << plan_fn_ << ")"
-        << " > " << output_fn_;
-    other_cmd_ = strdup(cmd.str().c_str());
-
     for( size_t k = 0; k < instance_.n_atoms(); ++k ) {
         const Instance::Atom &atom = *instance_.atoms_[k];
         string name = atom.name_->to_string();
         transform(name.begin(), name.end(), name.begin(), ::tolower);
-        atom_map_.insert(make_pair(name.substr(1, name.length()-2), k));
+        atom_map_.insert(make_pair(name.substr(1, name.length() - 2), k));
     }
 }
 
 LAMA_Planner::~LAMA_Planner() {
-    free((char*)other_cmd_);
-    free((char*)first_cmd_);
+    if( !first_call_ ) remove_file("output");
 }
 
 int LAMA_Planner::get_plan(const State &state, Instance::Plan &plan) const {
@@ -270,218 +251,10 @@ int LAMA_Planner::get_plan(const State &state, Instance::Plan &plan) const {
         generate_pddl_domain();
         generate_pddl_problem(state);
 
-        // call LAMA planner including translation, preprocessing and search
-        int rv = system(first_cmd_);
-        remove_file(domain_fn_);
-        remove_file(problem_fn_);
-
-        if( rv != 0 ) {
-            total_time_ += Utils::read_time_in_seconds() - start_time;
-            return ERROR;
-        }
-
-        // update search time
-        ostringstream cmd;
-        cmd << "grep \"Search time\" " << output_fn_ << " | awk '{print $3;}' > " << tmp_fn_;
-        rv = system(cmd.str().c_str());
-        assert(rv == 0);
-        ifstream ifs(tmp_fn_);
-        float search_time;
-        ifs >> search_time;
-        total_search_time_ += search_time;
-        ifs.close();
-
-        remove_file(output_fn_);
-        remove_file(tmp_fn_);
-
-        // save result from translation: output.sas, all.groups, test.groups
-        //system("cp ~/software/seq-sat-lama/output.sas output.sas");
-        //system("cp ~/software/seq-sat-lama/all.groups all.groups");
-
-        // read variables from file 'test.groups'
-        fname.str("");
-        fname << LAMA_path_ << "/test.groups";
-        ifs.open(fname.str().c_str());
-        read_variables(ifs);
-        ifs.close();
-
-        // determine position of begin-state in output.sas
-        fname.str("");
-        fname << LAMA_path_ << "/output.sas";
-        ifs.open(fname.str().c_str());
-        determine_seek_pos(ifs);
-        ifs.close();
-
-        // next time, don't do translation
-        first_call_ = false;
-    } else {
-        // modify output.sas according to given state
-        fname.str("");
-        fname << LAMA_path_ << "/output.sas";
-        fstream iofs(fname.str().c_str(), ios::in|ios::out);
-        assert(!iofs.fail());
-        patch_output_sas(iofs, state);
-        iofs.close();
-
-        // restore needed files
-        //system("cp output.sas ~/software/seq-sat-lama/output.sas");
-        //system("cp all.groups  ~/software/seq-sat-lama/all.groups");
-        //system("cp test.groups ~/software/seq-sat-lama/test.groups");
-
-        // call partial LAMA that only includes preprocessing and search
-        int rv = system(other_cmd_);
-        if( rv != 0 ) {
-            total_time_ += Utils::read_time_in_seconds() - start_time;
-            return ERROR;
-        }
-
-        // update search time
-        ostringstream cmd;
-        cmd << "grep \"Search time\" " << output_fn_ << " | awk '{print $3;}' > " << tmp_fn_;
-        rv = system(cmd.str().c_str());
-        assert(rv == 0);
-        ifstream ifs(tmp_fn_);
-        float search_time;
-        ifs >> search_time;
-        total_search_time_ += search_time;
-        ifs.close();
-
-        remove_file(output_fn_);
-        remove_file(tmp_fn_);
-    }
-
-    // read plan from file
-    plan.clear();
-    fname.str("");
-    fname << plan_fn_ << ".1";
-    ifstream ifs(fname.str().c_str());
-    char line[2048];
-    while( !ifs.eof() ) {
-        ifs.getline(line, 1024);
-        // remove any trailing blank inserted by LAMA
-        for( char *p = &line[strlen(line)-1]; *p == ' '; *p-- = '\0' );
-        if( line[0] != '\0' ) {
-            map<string, size_t>::const_iterator it = action_map_.find(line);
-            assert(it != action_map_.end());
-            plan.push_back(it->second);
-        }
-    }
-    ifs.close();
-    remove_file(fname.str().c_str());
-    total_time_ += Utils::read_time_in_seconds() - start_time;
-    return SOLVED;
-}
-
-void LAMA_Planner::patch_output_sas(fstream &iofs, const State &state) const {
-    assert(iofs.is_open());
-    iofs.seekp(begin_state_pos_, ios_base::beg);
-    for( size_t k = 0; k < variables_.size(); ++k ) {
-        bool wrote = false;
-        for( size_t j = 0; j < variables_[k].size(); ++j ) {
-            int atom = variables_[k][j];
-            if( (atom >= 0) && state.satisfy(atom) ) {
-                iofs << j << endl;
-                wrote = true;
-                break;
-            }
-        }
-        if( !wrote )
-            iofs << variables_[k].size()-1 << endl;
-    }
-}
-
-void LAMA_Planner::determine_seek_pos(ifstream &ifs) const {
-    assert(ifs.is_open());
-    string token;
-    while( token != "begin_state" ) ifs >> token;
-    char c;
-    ifs >> c;
-    ifs.putback(c);
-    begin_state_pos_ = ifs.tellg();
-}
-
-void LAMA_Planner::read_variables(ifstream &ifs) const {
-    assert(ifs.is_open());
-    string var, token, dummy, atom;
-    ifs >> var;
-    while( !ifs.eof() ) {
-        assert(strncmp(var.c_str(), "var", 3) == 0);
-        vector<int> variable;
-        //cout << "VAR=" << var << endl;
-        ifs >> token;
-        //cout << "TOKEN=" << token << endl;
-        while( !ifs.eof() && isdigit(token.c_str()[0]) ) {
-            ifs >> dummy >> atom;
-            //cout << "DUMMY=" << dummy << endl;
-            //cout << "ATOM=" << atom << endl;
-            if( dummy == "Atom" ) {
-                atom.erase(atom.length()-2, 2);
-                map<string, size_t>::const_iterator it = atom_map_.find(atom);
-                assert(it != atom_map_.end());
-                variable.push_back(it->second);
-                //cout << "ATOM=" << atom << ", IDX=" << it->second << endl;
-            } else {
-                assert(dummy == "<none");
-                assert(atom == "of");
-                ifs >> dummy;
-                variable.push_back(-1);
-            }
-            ifs >> token;
-            //cout << "TOKEN=" << token << endl;
-        }
-        variables_.push_back(variable);
-        var = token;
-    }
-}
-
-LAMA2_Planner::LAMA2_Planner(const Instance &instance, const char *tmpfile_path, const char *planner_path)
-  : ClassicalPlanner("LAMA2", tmpfile_path, planner_path, "lama2", instance), first_call_(true) {
-
-    LAMA_path_ = "/home/bonet/LAMA/seq-sat-lama";
-    solver_path_ = "/home/bonet/translator-X0+/source";
-
-    ostringstream cmd;
-    cmd << "(cd " << LAMA_path_ << "; ./plan "
-        << solver_path_ << "/" << domain_fn_
-        << " " << solver_path_ << "/" << problem_fn_
-        << " " << solver_path_ << "/" << plan_fn_ << ")"
-        << " > " << output_fn_;
-    first_cmd_ = strdup(cmd.str().c_str());
-
-    cmd.str("");
-    cmd << "(cd " << LAMA_path_ << "; ./myplan output.sas"
-        << " " << solver_path_ << "/" << plan_fn_ << ")"
-        << " > " << output_fn_;
-    other_cmd_ = strdup(cmd.str().c_str());
-
-    for( size_t k = 0; k < instance_.n_atoms(); ++k ) {
-        const Instance::Atom &atom = *instance_.atoms_[k];
-        string name = atom.name_->to_string();
-        transform(name.begin(), name.end(), name.begin(), ::tolower);
-        atom_map_.insert(make_pair(name.substr(1, name.length()-2), k));
-    }
-}
-
-LAMA2_Planner::~LAMA2_Planner() {
-    free((char*)other_cmd_);
-    free((char*)first_cmd_);
-}
-
-int LAMA2_Planner::get_plan(const State &state, Instance::Plan &plan) const {
-
-    cout << "calling " << name() << " (n=" << 1+n_calls() << ", acc-time=" << get_time() << ")..." << endl;
-    float start_time = Utils::read_time_in_seconds();
-    ++n_calls_;
-  
-    ostringstream fname; 
-    if( first_call_ ) {
-        generate_pddl_domain();
-        generate_pddl_problem(state);
-
         // translate domain + problem into SAS+ problem
         string cmd;
         if( planner_path_ != "" ) cmd += planner_path_ + "/";
-        cmd += string("lama simple-conversion ") + domain_fn_ + " " + problem_fn_;
+        cmd += string("lama simple-conversion ") + domain_fn_ + " " + problem_fn_ + " >/dev/null";
         int rv = system(cmd.c_str());
         remove_file(domain_fn_);
         remove_file(problem_fn_);
@@ -493,7 +266,7 @@ int LAMA2_Planner::get_plan(const State &state, Instance::Plan &plan) const {
         // preprocess SAS+ problem
         cmd = "";
         if( planner_path_ != "" ) cmd += planner_path_ + "/";
-        cmd += "lama translate output.sas";
+        cmd += "lama preprocess output.sas >/dev/null";
         rv = system(cmd.c_str());
         remove_file("output.sas");
         if( rv != 0 ) {
@@ -501,88 +274,57 @@ int LAMA2_Planner::get_plan(const State &state, Instance::Plan &plan) const {
             return ERROR;
         }
 
-        // solve SAS+ problem
-        cmd = "";
-        if( planner_path_ != "" ) cmd += planner_path_ + "/";
-        cmd += string("lama search seq-sat-lama-2011-single-plan output ") + plan_fn_ + " > " + output_fn_;
-        rv = system(cmd.c_str());
-        if( rv != 0 ) {
-            total_time_ += Utils::read_time_in_seconds() - start_time;
-            return ERROR;
-        }
-
-        // update search time
-        cmd = "";
-        cmd += string("grep \"Search time\" ") + output_fn_ + " | awk '{print $3;}' > " + tmp_fn_;
-        rv = system(cmd.c_str());
-        assert(rv == 0);
-        ifstream ifs(tmp_fn_);
-        float search_time;
-        ifs >> search_time;
-        total_search_time_ += search_time;
-        ifs.close();
-
-        remove_file(output_fn_);
-        remove_file(tmp_fn_);
-
-        // read variables from file 'test.groups'
-        ifs.open("output");
+        // read variables from 'output'
+        ifstream ifs("output");
         read_variables(ifs);
         ifs.close();
 
-        // determine position of begin-state in output.sas
+        // determine position of begin-state in 'output'
         ifs.open("output");
         determine_seek_pos(ifs);
         ifs.close();
-        exit(-1);
 
         // next time, don't do translation + preprocessing
         first_call_ = false;
-    } else {
-        // modify output.sas according to given state
-        fname.str("");
-        fname << LAMA_path_ << "/output.sas";
-        fstream iofs(fname.str().c_str(), ios::in|ios::out);
-        assert(!iofs.fail());
-        patch_state_in_sas(iofs, state);
-        iofs.close();
-
-        // restore needed files
-        //system("cp output.sas ~/software/seq-sat-lama/output.sas");
-        //system("cp all.groups  ~/software/seq-sat-lama/all.groups");
-        //system("cp test.groups ~/software/seq-sat-lama/test.groups");
-
-        // solve SAS+ problem
-        string cmd;
-        if( planner_path_ != "" ) cmd += planner_path_ + "/";
-        cmd += string("lama search seq-sat-lama-2011-single-plan output > ") + output_fn_;
-        int rv = system(cmd.c_str());
-        if( rv != 0 ) {
-            total_time_ += Utils::read_time_in_seconds() - start_time;
-            return ERROR;
-        }
-
-        // update search time
-        cmd = "";
-        cmd += string("grep \"Search time\" ") + output_fn_ + " | awk '{print $3;}' > " + tmp_fn_;
-        rv = system(cmd.c_str());
-        assert(rv == 0);
-        ifstream ifs(tmp_fn_);
-        float search_time;
-        ifs >> search_time;
-        total_search_time_ += search_time;
-        ifs.close();
-
-        remove_file(output_fn_);
-        remove_file(tmp_fn_);
     }
+
+    // patch state in 'output'
+    fstream iofs("output", ios::in | ios::out);
+    assert(!iofs.fail());
+    patch_state_in_sas(iofs, state);
+    iofs.close();
+
+    // solve SAS+ problem
+    string cmd;
+    if( planner_path_ != "" ) cmd += planner_path_ + "/";
+    cmd += string("lama search seq-sat-lama-2011-single-plan output ") + plan_fn_ + " > " + output_fn_;
+    int rv = system(cmd.c_str());
+    if( rv != 0 ) {
+        total_time_ += Utils::read_time_in_seconds() - start_time;
+        return ERROR;
+    }
+
+    // update search time
+    cmd = "";
+    cmd += string("grep \"Search time\" ") + output_fn_ + " | awk '{print $3;}' > " + tmp_fn_;
+    rv = system(cmd.c_str());
+    assert(rv == 0);
+    ifstream ifs(tmp_fn_);
+    float search_time;
+    ifs >> search_time;
+    total_search_time_ += search_time;
+    ifs.close();
+
+    // clean temporary files
+    remove_file(output_fn_);
+    remove_file(tmp_fn_);
 
     // read plan from file
     plan.clear();
-    ifstream ifs(plan_fn_);
+    ifs.open(plan_fn_);
     char line[2048];
     while( !ifs.eof() ) {
-        ifs.getline(line, 1024);
+        ifs.getline(line, 2048);
         // remove any trailing blank inserted by LAMA
         for( char *p = &line[strlen(line)-1]; *p == ' '; *p-- = '\0' );
         if( line[0] != '\0' ) {
@@ -597,25 +339,25 @@ int LAMA2_Planner::get_plan(const State &state, Instance::Plan &plan) const {
     return SOLVED;
 }
 
-void LAMA2_Planner::patch_state_in_sas(fstream &iofs, const State &state) const {
+void LAMA_Planner::patch_state_in_sas(fstream &iofs, const State &state) const {
     assert(iofs.is_open());
     iofs.seekp(begin_state_pos_, ios_base::beg);
     for( size_t k = 0; k < variables_.size(); ++k ) {
         bool wrote = false;
         for( size_t j = 0; j < variables_[k].size(); ++j ) {
-            int atom = variables_[k][j];
-            if( (atom >= 0) && state.satisfy(atom) ) {
+            int lit = variables_[k][j];
+            int atom = lit > 0 ? lit - 1 : -lit - 1;
+            if( ((lit > 0) && state.satisfy(atom)) || ((lit < 0) && !state.satisfy(atom)) ) {
                 iofs << j << endl;
                 wrote = true;
                 break;
             }
         }
-        if( !wrote )
-            iofs << variables_[k].size()-1 << endl;
+        if( !wrote ) iofs << variables_[k].size() << endl;
     }
 }
 
-void LAMA2_Planner::determine_seek_pos(ifstream &ifs) const {
+void LAMA_Planner::determine_seek_pos(ifstream &ifs) const {
     assert(ifs.is_open());
     string token;
     while( token != "begin_state" ) ifs >> token;
@@ -625,13 +367,13 @@ void LAMA2_Planner::determine_seek_pos(ifstream &ifs) const {
     begin_state_pos_ = ifs.tellg();
 }
 
-void LAMA2_Planner::read_variable(ifstream &ifs) const {
+void LAMA_Planner::read_variable(ifstream &ifs, vector<pair<int, vector<int> > > &variables) const {
     string varname, type, atom, trailer;
     int axiom_layer, range, varno;
     ifs >> varname >> axiom_layer >> range;
     assert(strncmp(varname.c_str(), "var", 3) == 0);
     varno = atoi(varname.substr(3).c_str());
-    cout << "Variable #" << varno << " is " << varname << ": " << range << " value(s)" << endl;
+    //cout << "Variable #" << varno << " is " << varname << ": " << range << " value(s)" << endl;
 
     vector<int> variable;
     for( int i = 0; i < range; ++i ) {
@@ -655,18 +397,34 @@ void LAMA2_Planner::read_variable(ifstream &ifs) const {
             //cout << "    <none of those> -1" << endl;
         }
     }
+    variables.push_back(make_pair(varno, variable));
 
     ifs >> trailer;
     assert(trailer == "end_variable");
 }
 
-void LAMA2_Planner::read_variables(ifstream &ifs) const {
+struct variable_order {
+    bool operator()(const pair<int, vector<int> > &a, const pair<int, vector<int> > &b) const {
+        return a.first < b.first;
+    }
+};
+
+void LAMA_Planner::read_variables(ifstream &ifs) const {
     assert(ifs.is_open());
+    vector<pair<int, vector<int> > > unordered_variables;
     char line[2048];
     while( !ifs.eof() ) {
-        ifs.getline(line, 1024);
+        ifs.getline(line, 2048);
         if( !strcmp(line, "begin_variable") )
-            read_variable(ifs);
+            read_variable(ifs, unordered_variables);
+    }
+
+    // sort variables according to their index
+    variables_.reserve(unordered_variables.size());
+    //sort(unordered_variables.begin(), unordered_variables.end(), variable_order());
+    for( size_t i = 0; i < unordered_variables.size(); ++i ) {
+        //cout << "Variable #" << unordered_variables[i].first << endl;
+        variables_.push_back(unordered_variables[i].second);
     }
 }
 
