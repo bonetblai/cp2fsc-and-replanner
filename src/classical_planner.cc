@@ -253,7 +253,7 @@ int LAMA_Planner::get_plan(const State &state, Instance::Plan &plan) const {
 
         // translate domain + problem into SAS+ problem
         string cmd;
-        if( planner_path_ != "" ) cmd += planner_path_ + "/";
+        if( planner_path_ != "" ) cmd += planner_path_ + "/src/search/";
         cmd += string("lama simple-conversion ") + domain_fn_ + " " + problem_fn_ + " >/dev/null";
         int rv = system(cmd.c_str());
         remove_file(domain_fn_);
@@ -265,7 +265,7 @@ int LAMA_Planner::get_plan(const State &state, Instance::Plan &plan) const {
 
         // preprocess SAS+ problem
         cmd = "";
-        if( planner_path_ != "" ) cmd += planner_path_ + "/";
+        if( planner_path_ != "" ) cmd += planner_path_ + "/src/search/";
         cmd += "lama preprocess output.sas >/dev/null";
         rv = system(cmd.c_str());
         remove_file("output.sas");
@@ -296,7 +296,7 @@ int LAMA_Planner::get_plan(const State &state, Instance::Plan &plan) const {
 
     // solve SAS+ problem
     string cmd;
-    if( planner_path_ != "" ) cmd += planner_path_ + "/";
+    if( planner_path_ != "" ) cmd += planner_path_ + "/src/search/";
     cmd += string("lama search seq-sat-lama-2011-single-plan output ") + plan_fn_ + " > " + output_fn_;
     int rv = system(cmd.c_str());
     if( rv != 0 ) {
