@@ -1,6 +1,6 @@
-(define (problem sd-11)
+(define (problem sd-13)
     (:domain sliding-doors)
     (:init (need-start))
-    (:goal (at p11-11))
+    (:goal (at p13-13))
 )
 

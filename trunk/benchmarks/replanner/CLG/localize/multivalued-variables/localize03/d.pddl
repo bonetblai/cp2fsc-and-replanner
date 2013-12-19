@@ -22,10 +22,13 @@
         )
     )
 
-    (:action start)
+    (:action start
+        :precondition (need-start)
+        :effect (not (need-start))
+    )
  
     (:action move-up
-        :precondition (free-up)
+        :precondition (and (not (need-start)) (free-up))
         :effect
             (and (when (at p1-1) (and (at p1-2) (not (at p1-1))))
                  (when (at p3-1) (and (at p3-2) (not (at p3-1))))
@@ -35,7 +38,7 @@
     )
 
     (:action move-down
-        :precondition (free-down)
+        :precondition (and (not (need-start)) (free-down))
         :effect
             (and (when (at p1-2) (and (at p1-1) (not (at p1-2))))
                  (when (at p3-2) (and (at p3-1) (not (at p3-2))))
@@ -45,7 +48,7 @@
     )
 
     (:action move-left
-        :precondition (free-left)
+        :precondition (and (not (need-start)) (free-left))
         :effect
             (and (when (at p2-1) (and (at p1-1) (not (at p2-1))))
                  (when (at p3-1) (and (at p2-1) (not (at p3-1))))
@@ -55,7 +58,7 @@
     )
 
     (:action move-right
-        :precondition (free-right)
+        :precondition (and (not (need-start)) (free-right))
         :effect
             (and (when (at p1-1) (and (at p2-1) (not (at p1-1))))
                  (when (at p2-1) (and (at p3-1) (not (at p2-1))))

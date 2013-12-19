@@ -135,7 +135,6 @@
     )
 
     (:action move-down
-        ;:precondition (free-down)
         :precondition (and (not (need-start)) (free-down))
         :effect
             (and
@@ -163,7 +162,6 @@
     )
 
     (:action move-left
-        ;:precondition (free-left)
         :precondition (and (not (need-start)) (free-left))
         :effect
             (and
@@ -231,7 +229,6 @@
     )
 
     (:action move-right
-        ;:precondition (free-right)
         :precondition (and (not (need-start)) (free-right))
         :effect
             (and
