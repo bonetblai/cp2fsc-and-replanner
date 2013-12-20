@@ -395,6 +395,19 @@
         (at-col c10 p10-11)
         (at-col c10 p10-12)
         (at-col c10 p10-13)
+        (at-col c12 p12-1)
+        (at-col c12 p12-2)
+        (at-col c12 p12-3)
+        (at-col c12 p12-4)
+        (at-col c12 p12-5)
+        (at-col c12 p12-6)
+        (at-col c12 p12-7)
+        (at-col c12 p12-8)
+        (at-col c12 p12-9)
+        (at-col c12 p12-10)
+        (at-col c12 p12-11)
+        (at-col c12 p12-12)
+        (at-col c12 p12-13)
 
         (at p1-7)
 
@@ -496,6 +509,6 @@
         (opened p13-12)
         (opened p13-13)
     )
-    (:goal (at p13-7)
+    (:goal (at p13-7))
 )
 
