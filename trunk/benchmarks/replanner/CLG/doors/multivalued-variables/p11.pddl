@@ -366,6 +366,6 @@
         (opened p11-10)
         (opened p11-11)
     )
-    (:goal (at p11-6)
+    (:goal (at p11-6))
 )
 
