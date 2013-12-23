@@ -34,7 +34,8 @@ class Solver {
                                       State &state,
                                       std::vector<int> &sensors,
                                       std::vector<int> &sensed) const;
-    void calculate_relevant_assumptions(const Instance::Plan &plan,
+    void calculate_relevant_assumptions(const Instance::Plan &raw_plan,
+                                        const Instance::Plan &plan,
                                         const State &state,
                                         std::vector<State> &assumption_vec) const;
     bool inconsistent(const State &state, const std::vector<State> &assumption_vec, size_t k) const;

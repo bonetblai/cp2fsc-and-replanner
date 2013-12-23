@@ -12,11 +12,11 @@ ClassicalPlanner::ClassicalPlanner(const char *name,
                                    const char *tmpfile_path,
                                    const char *planner_path,
                                    const char *planner_name,
-                                   const Instance &instance)
+                                   const KP_Instance &instance)
   : name_(name), tmpfile_path_(tmpfile_path), planner_path_(planner_path), planner_name_(planner_name),
-    instance_(instance), total_search_time_(0), total_time_(0), n_calls_(0) {
-    for( size_t k = 0; k < instance_.n_actions(); ++k ) {
-        const Instance::Action &act = *instance_.actions_[k];
+    kp_instance_(instance), total_search_time_(0), total_time_(0), n_calls_(0) {
+    for( size_t k = 0; k < kp_instance_.n_actions(); ++k ) {
+        const Instance::Action &act = *kp_instance_.actions_[k];
         action_map_.insert(make_pair(act.name_->to_string(), k));
     }
 
@@ -59,27 +59,61 @@ ClassicalPlanner::~ClassicalPlanner() {
 void ClassicalPlanner::generate_pddl_domain() const {
     ofstream ofs(domain_fn_);
     assert(ofs.is_open());
-    instance_.write_domain(ofs);
+    kp_instance_.write_domain(ofs);
     ofs.close();
 }
 
 void ClassicalPlanner::generate_pddl_problem(const State &state) const {
     ofstream ofs(problem_fn_);
     assert(ofs.is_open());
-    instance_.write_problem(ofs, &state);
+    kp_instance_.write_problem(ofs, &state);
     ofs.close();
 }
 
 void ClassicalPlanner::remove_file(const char *filename) const {
-    if( instance_.options_.is_enabled("solver:remove-intermediate-files") )
+    if( kp_instance_.options_.is_enabled("planner:remove-intermediate-files") )
         unlink(filename);
+}
+
+void ClassicalPlanner::reduce_plan(const KP_Instance::Plan &raw_plan, Instance::Plan &plan) const {
+    plan.clear();
+    for( Instance::Plan::const_iterator a = raw_plan.begin(); a != raw_plan.end(); ++a ) {
+        if( kp_instance_.is_regular_action(*a) )
+            plan.push_back(*a);
+    }
+}
+
+int ClassicalPlanner::get_plan(const State &state, Instance::Plan &raw_plan, Instance::Plan &plan) const {
+    int status = get_raw_plan(state, raw_plan);
+    if( status == SOLVED ) {
+        if( kp_instance_.options_.is_enabled("planner:print:plan:raw") ) {
+            cout << "Classical plan (raw):" << endl;
+            int step = 0;
+            for( Instance::Plan::const_iterator a = raw_plan.begin(); a != raw_plan.end(); ++a, ++step ) {
+                cout << "    step " << step << ": "
+                     << *a << "." << kp_instance_.actions_[*a]->name_
+                     << endl;
+            }
+        }
+        reduce_plan(raw_plan, plan);
+        if( kp_instance_.options_.is_enabled("planner:print:plan") ) {
+            cout << "Classical plan (reduced):" << endl;
+            int step = 0;
+            for( Instance::Plan::const_iterator a = plan.begin(); a != plan.end(); ++a, ++step ) {
+                cout << "    step " << step << ": "
+                     << *a << "." << kp_instance_.actions_[*a]->name_
+                     << endl;
+            }
+        }
+    }
+    return status;
 }
 
 FF_Planner::~FF_Planner() {
     if( !first_call_ ) remove_file(domain_fn_);
 }
 
-int FF_Planner::get_plan(const State &state, Instance::Plan &plan) const {
+int FF_Planner::get_raw_plan(const State &state, Instance::Plan &raw_plan) const {
 
     cout << "calling " << name() << " (n=" << 1+n_calls() << ", acc-time=" << get_time() << ")..." << endl;
     float start_time = Utils::read_time_in_seconds();
@@ -100,6 +134,7 @@ int FF_Planner::get_plan(const State &state, Instance::Plan &plan) const {
 
     if( rv != 0 ) {
         total_time_ += Utils::read_time_in_seconds() - start_time;
+        remove_file(output_fn_);
         return ERROR;
     }
 
@@ -133,7 +168,7 @@ int FF_Planner::get_plan(const State &state, Instance::Plan &plan) const {
     assert(rv == 0);
 
     // read plan from file
-    plan.clear();
+    raw_plan.clear();
     ifs.open(plan_fn_);
     char line[2048];
     while( !ifs.eof() ) {
@@ -141,7 +176,7 @@ int FF_Planner::get_plan(const State &state, Instance::Plan &plan) const {
         if( line[0] != '\0' ) {
             map<string, size_t>::const_iterator it = action_map_.find(line);
             assert(it != action_map_.end());
-            plan.push_back(it->second);
+            raw_plan.push_back(it->second);
         }
     }
     ifs.close();
@@ -154,7 +189,7 @@ M_Planner::~M_Planner() {
     if( !first_call_ ) remove_file(domain_fn_);
 }
 
-int M_Planner::get_plan(const State &state, Instance::Plan &plan) const {
+int M_Planner::get_raw_plan(const State &state, Instance::Plan &raw_plan) const {
 
     cout << "calling " << name() << " (n=" << 1+n_calls() << ", acc-time=" << get_time() << ")..." << endl;
     float start_time = Utils::read_time_in_seconds();
@@ -175,6 +210,7 @@ int M_Planner::get_plan(const State &state, Instance::Plan &plan) const {
 
     if( rv != 0 ) {
         total_time_ += Utils::read_time_in_seconds() - start_time;
+        remove_file(output_fn_);
         return ERROR;
     }
 
@@ -205,7 +241,7 @@ int M_Planner::get_plan(const State &state, Instance::Plan &plan) const {
     }
 
     // read plan from file
-    plan.clear();
+    raw_plan.clear();
     ifs.open(plan_fn_);
     char line[2048];
     while( !ifs.eof() ) {
@@ -213,7 +249,7 @@ int M_Planner::get_plan(const State &state, Instance::Plan &plan) const {
         if( line[0] != '\0' ) {
             map<string, size_t>::const_iterator it = action_map_.find(line);
             assert(it != action_map_.end());
-            plan.push_back(it->second);
+            raw_plan.push_back(it->second);
         }
     }
     ifs.close();
@@ -226,10 +262,10 @@ MP_Planner::~MP_Planner() {
     if( !first_call_ ) remove_file(domain_fn_);
 }
 
-LAMA_Planner::LAMA_Planner(const Instance &instance, const char *tmpfile_path, const char *planner_path)
+LAMA_Planner::LAMA_Planner(const KP_Instance &instance, const char *tmpfile_path, const char *planner_path)
   : ClassicalPlanner("LAMA", tmpfile_path, planner_path, "lama", instance), first_call_(true) {
-    for( size_t k = 0; k < instance_.n_atoms(); ++k ) {
-        const Instance::Atom &atom = *instance_.atoms_[k];
+    for( size_t k = 0; k < kp_instance_.n_atoms(); ++k ) {
+        const Instance::Atom &atom = *kp_instance_.atoms_[k];
         string name = atom.name_->to_string();
         transform(name.begin(), name.end(), name.begin(), ::tolower);
         atom_map_.insert(make_pair(name.substr(1, name.length() - 2), k));
@@ -240,7 +276,7 @@ LAMA_Planner::~LAMA_Planner() {
     if( !first_call_ ) remove_file("output");
 }
 
-int LAMA_Planner::get_plan(const State &state, Instance::Plan &plan) const {
+int LAMA_Planner::get_raw_plan(const State &state, Instance::Plan &raw_plan) const {
 
     cout << "calling " << name() << " (n=" << 1+n_calls() << ", acc-time=" << get_time() << ")..." << endl;
     float start_time = Utils::read_time_in_seconds();
@@ -301,6 +337,7 @@ int LAMA_Planner::get_plan(const State &state, Instance::Plan &plan) const {
     int rv = system(cmd.c_str());
     if( rv != 0 ) {
         total_time_ += Utils::read_time_in_seconds() - start_time;
+        remove_file(output_fn_);
         return ERROR;
     }
 
@@ -320,7 +357,7 @@ int LAMA_Planner::get_plan(const State &state, Instance::Plan &plan) const {
     remove_file(tmp_fn_);
 
     // read plan from file
-    plan.clear();
+    raw_plan.clear();
     ifs.open(plan_fn_);
     char line[2048];
     while( !ifs.eof() ) {
@@ -330,7 +367,7 @@ int LAMA_Planner::get_plan(const State &state, Instance::Plan &plan) const {
         if( line[0] != '\0' ) {
             map<string, size_t>::const_iterator it = action_map_.find(line);
             assert(it != action_map_.end());
-            plan.push_back(it->second);
+            raw_plan.push_back(it->second);
         }
     }
     ifs.close();

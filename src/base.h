@@ -90,14 +90,16 @@ class PDDL_Base {
           : pred_(atom.pred_), param_(atom.param_), negated_(complemented ? !atom.negated_ : atom.negated_) { }
         ~Atom() { /*delete pred_; for( size_t k = 0; k < param_.size(); ++k ) delete param_[k];*/ }
         void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
-        bool operator==(const Atom &atom) const;
-        bool operator<(const Atom &atom) const;
-        const Atom& operator=(const Atom &atom);
         Instance::Atom* find_prop(Instance &ins, bool negated, bool create) const;
         void emit(Instance &ins, index_set &atoms) const;
         Atom* ground(bool clone_variables) const;
         bool has_free_variables(const var_symbol_vec &param) const;
         bool is_fully_instantiated() const;
+
+        // the comparison operators don't consider the field negated_
+        bool operator==(const Atom &atom) const;
+        bool operator<(const Atom &atom) const;
+        const Atom& operator=(const Atom &atom);
 
         std::string to_string(bool extra_neg = false, bool mangled = false) const;
         void print(std::ostream &os, bool extra_neg = false) const { os << to_string(extra_neg); }
@@ -108,34 +110,18 @@ class PDDL_Base {
     struct unsigned_atom_set : public std::set<Atom> { };
 
     struct Condition {
-        Condition() : grounded_pos_(0), grounded_neg_(0) { }
-        virtual ~Condition() { delete grounded_pos_; delete grounded_neg_; }
+        Condition() { }
+        virtual ~Condition() { }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param) = 0;
         virtual void emit(Instance &ins, index_set &condition) const = 0;
-        virtual Condition* clone(bool clone_variables = false) const = 0;
-        virtual Condition* ground(bool clone_variables = false, bool negate = false) const = 0;
-        virtual bool has_free_variables(const var_symbol_vec &param) const = 0;
+        virtual Condition* ground(bool clone_variables = false, bool negate = false, bool replace_static_values = true) const = 0;
+        virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const = 0;
         virtual void extract_atoms(unsigned_atom_set &atoms) const = 0;
         virtual std::string to_string() const = 0;
         void print(std::ostream &os) const { os << to_string(); }
-        Condition* negate() const { return ground(false, true); }
-        Condition* copy() const { return ground(false, false); }
-
-        // cache for grounded conditions
-        mutable const Condition *grounded_pos_;
-        mutable const Condition *grounded_neg_;
-#if 0
-        const Condition* fetch_cache(bool negate) const { return negate ? grounded_neg_ : grounded_pos_; }
-        void update_cache(bool negate, const Condition *grounded) const {
-            if( negate )
-                grounded_neg_ = grounded;
-            else
-                grounded_pos_ = grounded;
-        }
-#else
-        const Condition* fetch_cache(bool negate) const { return 0; }
-        void update_cache(bool negate, const Condition *grounded) const { }
-#endif
+        Condition* copy_and_simplify(bool negate = false) const { return ground(false, negate, false); }
+        Condition* negate_and_simplify() const { return copy_and_simplify(true); }
+        bool is_grounded() const { var_symbol_vec empty_param; return !has_free_variables(empty_param, true); }
     };
     struct condition_vec : public std::vector<const Condition*> { };
 
@@ -145,9 +131,8 @@ class PDDL_Base {
         virtual ~Constant() { }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param) { }
         virtual void emit(Instance &ins, index_set &condition) const { }
-        virtual Condition* clone(bool clone_variables = false) const;
-        virtual Condition* ground(bool clone_variables = false, bool negate = false) const;
-        virtual bool has_free_variables(const var_symbol_vec &param) const { return true; }
+        virtual Condition* ground(bool clone_variables = false, bool negate = false, bool replace_static_values = true) const;
+        virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const { return false; }
         virtual void extract_atoms(unsigned_atom_set &atoms) const { }
         virtual std::string to_string() const { return std::string(value_ ? "true" : "false"); }
     };
@@ -157,12 +142,13 @@ class PDDL_Base {
         virtual ~Literal() { }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         virtual void emit(Instance &ins, index_set &condition) const;
-        virtual Condition* clone(bool clone_variables = false) const;
-        virtual Condition* ground(bool clone_variables = false, bool negate = false) const;
-        virtual bool has_free_variables(const var_symbol_vec &param) const;
+        virtual Condition* ground(bool clone_variables = false, bool negate = false, bool replace_static_values = true) const;
+        virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const;
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
         virtual std::string to_string() const { return to_string(false, false); }
         std::string to_string(bool extra_negation, bool mangled) const { return Atom::to_string(false, mangled); }
+        Condition *copy(bool clone_variables = false, bool negate = false, bool replace_static_values = false) const;
+        Condition *negate(bool clone_variables = false) const { return copy(clone_variables, true); }
     };
 
     struct EQ : public Condition, std::pair<const Symbol*,const Symbol*> {
@@ -172,9 +158,8 @@ class PDDL_Base {
         virtual ~EQ() { }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         virtual void emit(Instance &ins, index_set &condition) const { }
-        virtual Condition* clone(bool clone_variables = false) const;
-        virtual Condition* ground(bool clone_variables = false, bool negate = false) const;
-        virtual bool has_free_variables(const var_symbol_vec &param) const;
+        virtual Condition* ground(bool clone_variables = false, bool negate = false, bool replace_static_values = true) const;
+        virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const;
         virtual void extract_atoms(unsigned_atom_set &atoms) const { }
         virtual std::string to_string() const;
     };
@@ -185,9 +170,8 @@ class PDDL_Base {
         virtual ~And() { for( size_t k = 0; k < size(); ++k ) delete (*this)[k]; }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         virtual void emit(Instance &ins, index_set &condition) const;
-        virtual Condition* clone(bool clone_variables = false) const;
-        virtual Condition* ground(bool clone_variables = false, bool negate = false) const;
-        virtual bool has_free_variables(const var_symbol_vec &param) const;
+        virtual Condition* ground(bool clone_variables = false, bool negate = false, bool replace_static_values = true) const;
+        virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const;
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
         virtual std::string to_string() const;
     };
@@ -198,9 +182,8 @@ class PDDL_Base {
         virtual ~Or() { for( size_t k = 0; k < size(); ++k ) delete (*this)[k]; }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         virtual void emit(Instance &ins, index_set &condition) const;
-        virtual Condition* clone(bool clone_variables = false) const;
-        virtual Condition* ground(bool clone_variables = false, bool negate = false) const;
-        virtual bool has_free_variables(const var_symbol_vec &param) const;
+        virtual Condition* ground(bool clone_variables = false, bool negate = false, bool replace_static_values = true) const;
+        virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const;
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
         virtual std::string to_string() const;
     };
@@ -212,9 +195,8 @@ class PDDL_Base {
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         virtual void emit(Instance &ins, index_set &condition) const;
         virtual void process_instance() const;
-        virtual Condition* clone(bool clone_variables = false) const;
-        virtual Condition* ground(bool clone_variables = false, bool negate = false) const;
-        virtual bool has_free_variables(const var_symbol_vec &param) const;
+        virtual Condition* ground(bool clone_variables = false, bool negate = false, bool replace_static_values = true) const;
+        virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const;
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
         virtual std::string to_string() const;
         mutable std::vector<bool> negate_stack_;
@@ -229,9 +211,8 @@ class PDDL_Base {
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         virtual void emit(Instance &ins, index_set &condition) const;
         virtual void process_instance() const;
-        virtual Condition* clone(bool clone_variables = false) const;
-        virtual Condition* ground(bool clone_variables = false, bool negate = false) const;
-        virtual bool has_free_variables(const var_symbol_vec &param) const;
+        virtual Condition* ground(bool clone_variables = false, bool negate = false, bool replace_static_values = true) const;
+        virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const;
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
         virtual std::string to_string() const;
         mutable std::vector<bool> negate_stack_;
@@ -249,9 +230,8 @@ class PDDL_Base {
         virtual ~Effect() { }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param) = 0;
         virtual void emit(Instance &ins, index_set &eff, Instance::when_vec &when = dummy_when_vec_) const = 0;
-        virtual Effect* clone(bool clone_variables = false) const = 0;
-        virtual Effect* ground(bool clone_variables = false) const = 0;
-        virtual bool has_free_variables(const var_symbol_vec &param) const = 0;
+        virtual Effect* ground(bool clone_variables = false, bool replace_static_values = true) const = 0;
+        virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const = 0;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const = 0;
         virtual void calculate_beam_for_grounded_variable(Variable &var, const unsigned_atom_vec &context) const = 0;
         virtual void extract_atoms(unsigned_atom_set &atoms, bool only_affected = false) const = 0;
@@ -259,6 +239,8 @@ class PDDL_Base {
         virtual void extract_sensing_model_for_atom(const Atom &atom, effect_list &sensing_models) const = 0;
         virtual std::string to_string() const = 0;
         void print(std::ostream &os) const { os << to_string(); }
+        Effect* copy_and_simplify() const { return ground(false, false); }
+        bool is_grounded() const { var_symbol_vec empty_param; return !has_free_variables(empty_param, true); }
     };
 
     struct NullEffect : public Effect {
@@ -266,9 +248,8 @@ class PDDL_Base {
         virtual ~NullEffect() { }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param) { }
         virtual void emit(Instance &ins, index_set &eff, Instance::when_vec &when = dummy_when_vec_) const { }
-        virtual Effect* clone(bool clone_variables = false) const { return 0; }
-        virtual Effect* ground(bool clone_variables = false) const { return 0; }
-        virtual bool has_free_variables(const var_symbol_vec &param) const { return true; }
+        virtual Effect* ground(bool clone_variables = false, bool replace_static_values = true) const { return 0; }
+        virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const { return false; }
         virtual bool is_strongly_static(const PredicateSymbol &pred) const { return true; }
         virtual void calculate_beam_for_grounded_variable(Variable &var, const unsigned_atom_vec &context) const { }
         virtual void extract_atoms(unsigned_atom_set &atoms, bool only_affected = false) const { }
@@ -282,9 +263,8 @@ class PDDL_Base {
         virtual ~AtomicEffect() { }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         virtual void emit(Instance &ins, index_set &eff, Instance::when_vec &when = dummy_when_vec_) const;
-        virtual Effect* clone(bool clone_variables = false) const;
-        virtual Effect* ground(bool clone_variables = false) const;
-        virtual bool has_free_variables(const var_symbol_vec &param) const;
+        virtual Effect* ground(bool clone_variables = false, bool replace_static_values = true) const;
+        virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
         virtual void calculate_beam_for_grounded_variable(Variable &var, const unsigned_atom_vec &context) const;
         virtual void extract_atoms(unsigned_atom_set &atoms, bool only_affected = false) const;
@@ -292,10 +272,8 @@ class PDDL_Base {
         virtual void extract_sensing_model_for_atom(const Atom &atom, effect_list &sensing_models) const;
         virtual std::string to_string() const { return to_string(false); }
         std::string to_string(bool mangled) const { return Atom::to_string(false, mangled); }
-        AtomicEffect* negate() const { return internal_ground(false, true); }
-        AtomicEffect* copy() const { return internal_ground(false, false); }
-      private:
-        AtomicEffect* internal_ground(bool clone_variables, bool negate) const;
+        AtomicEffect* negate() const { return copy(false, true); }
+        AtomicEffect* copy(bool clone_variables = false, bool negate = false) const;
     };
 
     struct AndEffect : public Effect, effect_vec {
@@ -304,9 +282,8 @@ class PDDL_Base {
         virtual ~AndEffect() { for( size_t k = 0; k < size(); ++k ) delete (*this)[k]; }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         virtual void emit(Instance &ins, index_set &eff, Instance::when_vec &when = dummy_when_vec_) const;
-        virtual Effect* clone(bool clone_variables = false) const;
-        virtual Effect* ground(bool clone_variables = false) const;
-        virtual bool has_free_variables(const var_symbol_vec &param) const;
+        virtual Effect* ground(bool clone_variables = false, bool replace_static_values = true) const;
+        virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
         virtual void calculate_beam_for_grounded_variable(Variable &var, const unsigned_atom_vec &context) const;
         virtual void extract_atoms(unsigned_atom_set &atoms, bool only_affected = false) const;
@@ -323,9 +300,8 @@ class PDDL_Base {
         virtual ~ConditionalEffect() { delete condition_; delete effect_; }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         virtual void emit(Instance &ins, index_set &eff, Instance::when_vec &when = dummy_when_vec_) const;
-        virtual Effect* clone(bool clone_variables = false) const;
-        virtual Effect* ground(bool clone_variables = false) const;
-        virtual bool has_free_variables(const var_symbol_vec &param) const;
+        virtual Effect* ground(bool clone_variables = false, bool replace_static_values = true) const;
+        virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
         virtual void calculate_beam_for_grounded_variable(Variable &var, const unsigned_atom_vec &context) const;
         virtual void extract_atoms(unsigned_atom_set &atoms, bool only_affected = false) const;
@@ -341,9 +317,8 @@ class PDDL_Base {
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         virtual void emit(Instance &ins, index_set &eff, Instance::when_vec &when = dummy_when_vec_) const;
         virtual void process_instance() const;
-        virtual Effect* clone(bool clone_variables = false) const;
-        virtual Effect* ground(bool clone_variables = false) const;
-        virtual bool has_free_variables(const var_symbol_vec &param) const;
+        virtual Effect* ground(bool clone_variables = false, bool replace_static_values = true) const;
+        virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
         virtual void calculate_beam_for_grounded_variable(Variable &var, const unsigned_atom_vec &context) const;
         virtual void extract_atoms(unsigned_atom_set &atoms, bool only_affected = false) const;
@@ -514,23 +489,31 @@ class PDDL_Base {
         mutable axiom_list *axiom_list_ptr_;
     };
 
+    struct Observable;
+    struct observable_vec : public std::vector<Observable*> { };
+    struct observable_list : public std::list<Observable*> { };
+
     struct Observable {
         effect_vec observables_;
         Observable() { }
         ~Observable() { for( size_t k = 0; k < observables_.size(); ++k ) delete observables_[k]; }
+        void instantiate(observable_list &olist) const;
         void emit(Instance &ins) const;
         void print(std::ostream &os) const;
     };
-    struct observable_vec : public std::vector<Observable*> { };
+
+    struct Sticky;
+    struct sticky_vec : public std::vector<Sticky*> { };
+    struct sticky_list : public std::list<Sticky*> { };
 
     struct Sticky {
         effect_vec stickies_;
         Sticky() { }
         ~Sticky() { for( size_t k = 0; k < stickies_.size(); ++k ) delete stickies_[k]; }
+        void instantiate(sticky_list &slist) const;
         void emit(Instance &ins) const;
         void print(std::ostream &os) const;
     };
-    struct sticky_vec : public std::vector<Sticky*> { };
 
     struct Variable;
     struct variable_vec : public std::vector<Variable*> { };
@@ -601,6 +584,9 @@ class PDDL_Base {
     observable_vec                            dom_observables_;
     sticky_vec                                dom_stickies_;
 
+    // set of initial literals (extracted from InitElements in dom_init_
+    unsigned_atom_set                         set_of_initial_literals_;
+
     // For CLG and multivalued variables translations
     const Atom                                *normal_execution_;
 
@@ -617,7 +603,6 @@ class PDDL_Base {
     unsigned_atom_set                         observable_atoms_;
     unsigned_atom_set                         atoms_for_state_variables_;
     unsigned_atom_set                         static_observable_atoms_;
-    axiom_list                                axioms_for_compiled_sensing_models_;
 
 
     PDDL_Base(StringTable& t, const Options::Mode &options);

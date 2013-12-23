@@ -24,7 +24,7 @@ const char *available_options[] = {
     "problem:print:axiom:unreachable",     "[PREP] print the name of unreachable axioms",
     "problem:print:action:inconsistent",   "[PREP] print the name of inconsistent actions",
     "problem:print:action:useless",        "[PREP] print the name of useless actions",
-    "problrm:print:atom:static",           "[PREP] print the name of static atoms",
+    "problem:print:atom:static",           "[PREP] print the name of static atoms",
 
     "problem:print:atom:removal",          "[PREP] print the name of the atoms that are removed",
     "problem:print:action:removal",        "[PREP] print the name of the actions that are removed",
@@ -54,18 +54,21 @@ const char *available_options[] = {
     "kp:print:action:regular",             "[KP] print the name of regular actions",
     "kp:print:action:sensor",              "[KP] print the name of actions added for sensors",
     "kp:print:action:invariant",           "[KP] print the name of actions added for invariants",
-    "kp:subgoals",                         "[KP] goal of KP problem is either goal or unknown static fluents",
+    "kp:subgoaling",                       "[KP] goal of KP problem is either goal or unknown static fluents",
+
+    // planner options (k_replanner)
+    "planner:print:plan",                  "[PLANNER] print classical plan (reduced)",
+    "planner:print:plan:raw",              "[PLANNER] print classical plan (raw)",
+    "planner:remove-intermediate-files",   "[PLANNER] remove the files created for calling the classical planner",
 
     // solver options (k_replanner)
-    "solver:print:plan",                   "[SOLV] print classical plan",
-    "solver:print:assumptions",            "[SOLV] print assumptions made in classical plan",
-    "solver:print:steps",                  "[SOLV] print the result of each action in the plan",
-    "solver:print:inconsistency",          "[SOLV] print when detecting an inconsistency",
-    "solver:print:inconsistency:details",  "[SOLV] print details of the inconsistency",
-    "solver:print:consistency:check",      "[SOLV] print each consistency check",
-    "solver:print:fired-sensors",          "[SOLV] print the fired sensors at each step of the plan",
-    "solver:print:sensed-literals",        "[SOLV] print the sensed literals at each step of the plan",
-    "solver:remove-intermediate-files",    "[SOLV] remove the files created for calling the classical planner",
+    //"solver:print:assumptions",            "[SOLVER] print assumptions made in classical plan",
+    "solver:print:steps",                  "[SOLVER] print the result of each action in the plan",
+    //"solver:print:inconsistency",          "[SOLVER] print when detecting an inconsistency",
+    //"solver:print:inconsistency:details",  "[SOLVER] print details of the inconsistency",
+    //"solver:print:consistency:check",      "[SOLVER] print each consistency check",
+    "solver:print:fired-sensors",          "[SOLVER] print the fired sensors at each step of the plan",
+    "solver:print:sensed-literals",        "[SOLVER] print the sensed literals at each step of the plan",
 
     // clg translation
     "clg:print:effect",                    "[CLG] print effect actions",
