@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
         const char *desc = *opt;
         options.add(name, desc);
     }
-    options.enable("solver:remove-intermediate-files");
+    options.enable("planner:remove-intermediate-files");
 
     // check correct number of parameters
     const char *exec_name = argv[0];
@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
             }
             opt_prefix = argv[++k];
         } else if( !skip_options && !strcmp(argv[k], "--keep-intermediate-files") ) {
-            options.clear("solver:remove-intermediate-files");
+            options.clear("planner:remove-intermediate-files");
         } else if( !skip_options && !strcmp(argv[k], "--planner") ) {
             opt_planner = argv[++k];
         } else if( !skip_options && !strcmp(argv[k], "--planner-path") ) {

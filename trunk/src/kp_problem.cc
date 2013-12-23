@@ -105,24 +105,9 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
         }
     }
 
-    // set goal
+    // create new goal
     new_goal_ = &new_atom(new CopyName("(new-goal)"));
     goal_literals_.insert(1 + new_goal_->index_);
-#if 0
-    if( options_.is_enabled("kp:subgoals") ) {
-        new_goal_ = &new_atom(new CopyName("(new-goal)"));
-        goal_literals_.insert(1 + new_goal_->index_);
-    } else {
-        new_goal_ = 0;
-        for( index_set::const_iterator it = ins.goal_literals_.begin(); it != ins.goal_literals_.end(); ++it ) {
-            int idx = *it > 0 ? *it-1 : -*it-1;
-            if( *it > 0 )
-                goal_literals_.insert(1 + 2*idx);
-            else
-                goal_literals_.insert(1 + 2*idx+1);
-        }
-    }
-#endif
 
     // create K-actions
     remap_ = vector<int>(ins.n_actions(),-1);
@@ -288,28 +273,6 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
             } else {
                 cout << Utils::error() << "only AT_LEAST_ONE-type invariants should exist at this stage" << endl;
                 exit(255);
-#if 0
-                assert(invariant.type_ == Invariant::AT_MOST_ONE);
-                for( size_t i = 0; i < invariant.size(); ++i ) {
-                    int lit = invariant[i];
-                    int idx = lit > 0 ? lit-1 : -lit-1;
-                    if( lit > 0 ) {
-                        if( i == k ) {
-                            c_eff.condition_.insert(1 + 2*idx);
-                        } else {
-                            c_eff.condition_.insert(-(1 + 2*idx)); // TODO: check if necessary
-                            c_eff.effect_.insert(1 + 2*idx+1);
-                        }
-                    } else {
-                        if( i == k ) {
-                            c_eff.condition_.insert(1 + 2*idx+1);
-                        } else {
-                            c_eff.condition_.insert(-(1 + 2*idx+1)); // TODO: check if necessary
-                            c_eff.effect_.insert(1 + 2*idx);
-                        }
-                    }
-                }
-#endif
             }
 
             // push conditional effect
@@ -322,7 +285,7 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
     }
     n_invariant_actions_ = n_actions() - n_standard_actions_ - n_sensor_actions_;
 
-    // create goal-achieving actions
+    // create new goal-achieving actions
     Action &goal_action = new_action(new CopyName("reach_new_goal_through_original_goal__"));
     for( index_set::const_iterator it = ins.goal_literals_.begin(); it != ins.goal_literals_.end(); ++it ) {
         int idx = *it > 0 ? *it-1 : -*it-1;
@@ -332,9 +295,12 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
             goal_action.precondition_.insert(1 + 2*idx+1);
     }
     goal_action.effect_.insert(1 + new_goal_->index_);
-    //cout << goal_action.index_ << "."; goal_action.print(cout, *this);
+    index_for_goal_action_ = goal_action.index_;
+    //cout << index_for_goal_action_ << "."; goal_action.print(cout, *this);
 
-    if( options_.is_enabled("kp:subgoals") ) {
+    if( options_.is_enabled("kp:subgoaling") ) {
+        cout << Utils::error() << "subgoaling feature not yet supported." << endl;
+        exit(255);
         // Other actions are for observable literals that are unknown at initial state
         atoms_for_unknown_observables_at_init_ = vector<Atom*>(ins.n_atoms());
         for( size_t k = 0; k < ins.n_sensors(); ++k ) {
@@ -371,23 +337,38 @@ void KP_Instance::cross_reference() {
     n_standard_actions_ = 0;
     n_sensor_actions_ = 0;
     n_invariant_actions_ = 0;
+    n_subgoaling_actions_ = 0;
 
     size_t k = 0;
     while( k < n_actions() ) {
-        if( actions_[k]->name_->to_string().compare(0, 7, "sensor-") == 0 ) {
+        string aname = actions_[k]->name_->to_string();
+        if( (aname.compare(0, 7, "sensor-") == 0) ||
+            (aname.compare(0, 10, "invariant-") == 0) ||
+            (aname == "reach_new_goal_through_original_goal__") ) {
             n_standard_actions_ = k;
             break;
         }
         ++k;
     }
     while( k < n_actions() ) {
-        if( actions_[k]->name_->to_string().compare(0, 10, "invariant-") == 0 ) {
+        string aname = actions_[k]->name_->to_string();
+        if( (aname.compare(0, 10, "invariant-") == 0) ||
+            (aname == "reach_new_goal_through_original_goal__") ) {
             n_sensor_actions_ = k - n_standard_actions_;
             break;
         }
         ++k;
     }
-    n_invariant_actions_ = n_actions() - n_standard_actions_ - n_sensor_actions_;
+    while( k < n_actions() ) {
+        string aname = actions_[k]->name_->to_string();
+        if( (aname == "reach_new_goal_through_original_goal__") ) {
+            n_invariant_actions_ = k - n_standard_actions_ - n_sensor_actions_;
+            index_for_goal_action_ = k;
+            break;
+        }
+        ++k;
+    }
+    n_subgoaling_actions_ = n_actions() - n_standard_actions_ - n_sensor_actions_ - n_invariant_actions_;
 
     // remap actions into po instance
     for( size_t k = 0; k < n_standard_actions_; ++k ) {
@@ -424,7 +405,7 @@ bool KP_Instance::apply_plan(const Plan &plan, const State &initial_state, State
         // add positive preconditions to support
         for( index_set::const_iterator it = act.precondition_.begin(); it != act.precondition_.end(); ++it ) {
             if( *it > 0 ) {
-                support.add(*it-1);
+                support.add(*it - 1);
             }
         }
 
@@ -435,19 +416,21 @@ bool KP_Instance::apply_plan(const Plan &plan, const State &initial_state, State
             if( final_state.satisfy(w.condition_) ) {
                 for( index_set::const_iterator it = w.condition_.begin(); it != w.condition_.end(); ++it ) {
                     if( *it > 0 ) {
-                        support.add(*it-1);
+                        support.add(*it - 1);
                     }
                 }
                 if( is_obs_rule(plan[k]) ) {
                     for( index_set::const_iterator it = w.effect_.begin(); it != w.effect_.end(); ++it ) {
                         assert(*it > 0);
-                        if( !final_state.satisfy(*it-1) ) {
-                            assumption.add(*it-1);
+                        if( !final_state.satisfy(*it - 1) ) {
+                            assumption.add(*it - 1);
                         }
                     }
                 }
             }
         }
+        cout << "support="; support.print(cout, *this);  cout << endl;
+        cout << "assumption ="; assumption.print(cout, *this);  cout << endl;
         support_vec.push_back(support);
         assumption_vec.push_back(assumption);
 
@@ -458,7 +441,7 @@ bool KP_Instance::apply_plan(const Plan &plan, const State &initial_state, State
     // calculate and consolidate the relevant assumptions
     assert(support_vec.size() == assumption_vec.size());
     State relevant, support;
-    for( int i = assumption_vec.size()-1; i >= 0; --i ) {
+    for( int i = assumption_vec.size() - 1; i >= 0; --i ) {
         support.add(support_vec[i]);
         for( State::const_iterator it = assumption_vec[i].begin(); it != assumption_vec[i].end(); ++it ) {
             if( support.satisfy(*it) ) {
@@ -472,11 +455,11 @@ bool KP_Instance::apply_plan(const Plan &plan, const State &initial_state, State
 }
 
 void KP_Instance::write_problem(ostream &os, const State *state, int indent) const {
-    if( options_.is_enabled("kp:subgoals") ) {
+    if( options_.is_enabled("kp:subgoaling") ) {
         cout << "XXXXXXXXX" << endl;
     }
     Instance::write_problem(os, state, indent);
-    if( options_.is_enabled("kp:subgoals") ) {
+    if( options_.is_enabled("kp:subgoaling") ) {
         cout << "XXXXXXXXX" << endl;
     }
 }

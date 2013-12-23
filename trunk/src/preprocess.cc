@@ -294,7 +294,7 @@ void Preprocessor::compute_static_atoms(const bool_vec &reachable_actions, bool_
         if( *it > 0 ) init[*it - 1] = true;
     }
 
-#if 0
+#if 1
     // atoms in the invariants are non-static
     for( size_t k = 0; k < instance_.init_.invariants_.size(); ++k ) {
         const Instance::Invariant &invariant = instance_.init_.invariants_[k];
@@ -670,7 +670,7 @@ void Preprocessor::preprocess(bool remove_atoms, bool do_action_completion) {
     // stage 7: Perform action completion. This is only valid for k-replanner.
     if( do_action_completion ) {
         if( options_.is_enabled("problem:print:preprocess:stage") )
-            cout << "  Stage 7: computing action completion..." << endl;
+            cout << "  Stage 7: computing action completion for " << instance_.n_actions() << " action(s) ..." << endl;
         for( size_t k = 0; k < instance_.n_actions(); ++k ) {
             compute_action_completion(*instance_.actions_[k]);
         }

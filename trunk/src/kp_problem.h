@@ -20,6 +20,7 @@ class KP_Instance : public Instance {
 
     // for subgoaling
     Atom *new_goal_;
+    size_t index_for_goal_action_;
     std::vector<Atom*> atoms_for_unknown_observables_at_init_;
 
     KP_Instance(const Instance &instance, const PDDL_Base::variable_vec &multivalued_variables);
@@ -31,6 +32,9 @@ class KP_Instance : public Instance {
     size_t last_deductive_action() const { return first_deductive_action() + n_invariant_actions_; }
     bool is_obs_rule(const std::string &name) const {
         return obs_rules_by_name_.find(name) != obs_rules_by_name_.end();
+    }
+    bool is_regular_action(size_t a) const {
+        return (a < n_standard_actions_) || is_subgoaling_rule(a);
     }
     bool is_obs_rule(size_t a) const {
         size_t lower = n_standard_actions_;
@@ -47,6 +51,7 @@ class KP_Instance : public Instance {
         size_t upper = lower + n_subgoaling_actions_;
         return (a >= lower) && (a < upper);
     }
+    bool is_goal_action(size_t a) const { return a == index_for_goal_action_; }
 
     bool apply_plan(const Plan &plan,
                     const State &initial_state,

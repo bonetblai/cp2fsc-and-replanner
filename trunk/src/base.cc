@@ -172,26 +172,16 @@ void PDDL_Base::calculate_strongly_static_predicates() const {
 }
 
 bool PDDL_Base::truth_value_in_initial_situation(const Atom &literal) const {
-    //cout << "Fetching truth value of " << literal << endl;
+    //cout << "Fetching truth value of " << literal << " at init: " << flush;
     assert(literal.pred_->strongly_static_);
-    string print_name = literal.to_string();
-    string neg_print_name = literal.to_string(true);
-    for( size_t k = 0; k < dom_init_.size(); ++k ) {
-        const InitElement *init_element = dom_init_[k];
-        if( dynamic_cast<const InitLiteral*>(init_element) != 0 ) {
-            const InitLiteral &init_literal = *static_cast<const InitLiteral*>(init_element);
-            string pname = init_literal.to_string();
-            if( print_name == pname ) {
-                //cout << "value of " << print_name << " at init is TRUE" << endl;
-                return true;
-            } else if( neg_print_name == pname ) {
-                //cout << "value of " << print_name << " at init is FALSE" << endl;
-                return false;
-            }
-        }
+    unsigned_atom_set::const_iterator it = set_of_initial_literals_.find(literal);
+    if( it != set_of_initial_literals_.end() ) {
+        //cout << "value=" << (literal.negated_ == it->negated_ ? "true" : "false") << endl;
+        return literal.negated_ == it->negated_;
+    } else {
+        //cout << "value=" << (literal.negated_ ? "true" : "false") << endl;
+        return literal.negated_;
     }
-    //cout << "value of " << print_name << " at init is " << (literal.negated_ ? "TRUE" : "FALSE") << endl;
-    return literal.negated_ ? true : false;
 }
 
 void PDDL_Base::instantiate_elements() {
@@ -200,6 +190,23 @@ void PDDL_Base::instantiate_elements() {
     // false static conditions.
     calculate_strongly_static_predicates();
     Atom::pddl_base_ = this;
+
+    // instantiate init elements. We do this first to calculate set
+    // of initial literals so that formula grounding is more efficient
+    init_element_list ilist;
+    for( size_t k = 0; k < dom_init_.size(); ++k ) {
+        dom_init_[k]->instantiate(ilist);
+        delete dom_init_[k];
+    }
+    dom_init_.clear();
+    dom_init_.reserve(ilist.size());
+    dom_init_.insert(dom_init_.end(), ilist.begin(), ilist.end());
+
+    // extract set of initial literals
+    for( size_t k = 0; k < dom_init_.size(); ++k ) {
+        if( dynamic_cast<const InitLiteral*>(dom_init_[k]) != 0 )
+            set_of_initial_literals_.insert(*static_cast<const InitLiteral*>(dom_init_[k]));
+    }
 
     // instantiate multivalued variables (only for mvv translation)
     variable_list vlist;
@@ -219,6 +226,13 @@ void PDDL_Base::instantiate_elements() {
                 cout << " " << *var.grounded_values_[i];
             cout << Utils::normal() << endl;
         }
+    }
+
+    // ground sensing model
+    if( default_sensing_model_ != 0 ) {
+        Effect *grounded_default_sensing_model = default_sensing_model_->ground();
+        delete default_sensing_model_;
+        default_sensing_model_ = grounded_default_sensing_model;
     }
 
     // instantiate actions
@@ -251,15 +265,29 @@ void PDDL_Base::instantiate_elements() {
     dom_axioms_.reserve(xlist.size());
     dom_axioms_.insert(dom_axioms_.end(), xlist.begin(), xlist.end());
 
-    // instantiate init elements
-    init_element_list ilist;
-    for( size_t k = 0; k < dom_init_.size(); ++k ) {
-        dom_init_[k]->instantiate(ilist);
-        delete dom_init_[k];
+    // instantiate observables
+    cout << "instantiating observables ..." << flush;
+    observable_list olist;
+    for( size_t k = 0; k < dom_observables_.size(); ++k ) {
+        dom_observables_[k]->instantiate(olist);
+        delete dom_observables_[k];
     }
-    dom_init_.clear();
-    dom_init_.reserve(ilist.size());
-    dom_init_.insert(dom_init_.end(), ilist.begin(), ilist.end());
+    dom_observables_.clear();
+    dom_observables_.reserve(olist.size());
+    dom_observables_.insert(dom_observables_.end(), olist.begin(), olist.end());
+    cout << " done" << endl;
+
+    // instantiate stickies
+    cout << "instantiating stickies ..." << flush;
+    sticky_list tlist;
+    for( size_t k = 0; k < dom_stickies_.size(); ++k ) {
+        dom_stickies_[k]->instantiate(tlist);
+        delete dom_stickies_[k];
+    }
+    dom_stickies_.clear();
+    dom_stickies_.reserve(olist.size());
+    dom_stickies_.insert(dom_stickies_.end(), tlist.begin(), tlist.end());
+    cout << " done" << endl;
 
     // calculate static atoms
     calculate_static_atoms();
@@ -303,14 +331,14 @@ void PDDL_Base::calculate_static_atoms() {
     for( unsigned_atom_set::iterator it = affected_atoms.begin(); it != affected_atoms.end(); ++it )
         dom_static_atoms_.erase(*it);
 
-#if 0
-    cout << "static atoms:";
-    for( unsigned_atom_set::iterator it = dom_static_atoms_.begin(); it != dom_static_atoms_.end(); ++it ) {
-        if( !it->pred_->strongly_static_ )
-            cout << " " << *it;
+    if( options_.is_enabled("problem:print:atom:static") ) {
+        cout << "static atoms:";
+        for( unsigned_atom_set::iterator it = dom_static_atoms_.begin(); it != dom_static_atoms_.end(); ++it ) {
+            if( !it->pred_->strongly_static_ )
+                cout << " " << *it;
+        }
+        cout << (dom_static_atoms_.empty() ? " <none>" : "") << endl;
     }
-    cout << (dom_static_atoms_.empty() ? " <none>" : "") << endl;
-#endif
 }
 
 bool PDDL_Base::is_static_atom(const Atom &atom) const {
@@ -385,7 +413,8 @@ void PDDL_Base::clg_translate_observe_effects_into_sensors() {
 
             if( action->precondition_ != 0 ) precondition.push_back(action->precondition_);
             precondition.push_back(Literal(normal_execution).copy());
-            action->precondition_ = precondition.ground();
+            assert(precondition.is_grounded());
+            action->precondition_ = precondition.copy_and_simplify();
             for( size_t k = 0; k < precondition.size(); ++k )
                 delete precondition[k];
             precondition.clear();
@@ -393,7 +422,8 @@ void PDDL_Base::clg_translate_observe_effects_into_sensors() {
             if( action->effect_ != 0 ) effect.push_back(action->effect_);
             effect.push_back(AtomicEffect(normal_execution).negate());
             effect.push_back(AtomicEffect(need_post).copy());
-            action->effect_ = effect.ground();
+            assert(effect.is_grounded());
+            action->effect_ = effect.copy_and_simplify();
             for( size_t k = 0; k < effect.size(); ++k )
                 delete effect[k];
             effect.clear();
@@ -426,15 +456,10 @@ void PDDL_Base::clg_translate_observe_effects_into_sensors() {
 
             Action *post_action = new Action(strdup((string(action->print_name_) + "__post__").c_str()));
             clone_parameters(action->param_, post_action->param_);
-
-            precondition.push_back(Literal(need_post).copy());
-            post_action->precondition_ = precondition.ground();
-            delete precondition[0];
-            precondition.clear();
-
+            post_action->precondition_ = Literal(need_post).copy();
             effect.push_back(AtomicEffect(normal_execution).copy());
             effect.push_back(AtomicEffect(need_post).negate());
-            post_action->effect_ = effect.ground();
+            post_action->effect_ = effect.copy_and_simplify();
             delete effect[1];
             delete effect[0];
             effect.clear();
@@ -456,18 +481,17 @@ void PDDL_Base::clg_translate_observe_effects_into_sensors() {
     // to all other actions
     if( !patched_actions.empty() ) {
         normal_execution_ = new Atom(normal_execution);
-
         dom_init_.push_back(new InitLiteral(*normal_execution_));
         if( dom_goal_ == 0 ) {
             dom_goal_ = new And;
         } else if( dynamic_cast<const And*>(dom_goal_) == 0 ) {
             And *new_goal = new And;
-            new_goal->push_back(dom_goal_->ground());
+            assert(dom_goal_->is_grounded());
+            new_goal->push_back(dom_goal_->copy_and_simplify());
             delete dom_goal_;
             dom_goal_ = new_goal;
         }
         static_cast<And*>(const_cast<Condition*>(dom_goal_))->push_back(Literal(*normal_execution_).copy());
-
 
         for( size_t k = 0; k < dom_actions_.size(); ++k ) {
             Action *action = dom_actions_[k];
@@ -642,7 +666,6 @@ void PDDL_Base::compile_static_observable_fluents(const Atom &atom) {
             Axiom *axiom = new Axiom(strdup("[compiled]"));
             axiom->body_ = condition;
             axiom->head_ = head;
-            //axioms_for_compiled_sensing_models_.push_back(axiom);
             dom_axioms_.push_back(axiom);
             if( options_.is_enabled("mvv:print:axioms") )
                 cout << Utils::cyan() << *axiom << Utils::normal();
@@ -650,7 +673,7 @@ void PDDL_Base::compile_static_observable_fluents(const Atom &atom) {
 
         // invariant
         Invariant invariant(Invariant::AT_LEAST_ONE);
-        Condition *negated_condition = condition->ground(false, true);
+        Condition *negated_condition = condition->negate_and_simplify();
         if( dynamic_cast<Literal*>(negated_condition) != 0 ) {
             invariant.push_back(negated_condition);
         } else {
@@ -660,7 +683,7 @@ void PDDL_Base::compile_static_observable_fluents(const Atom &atom) {
             or_condition.clear();
             delete negated_condition;
         }
-        invariant.push_back(Literal(*head).clone());
+        invariant.push_back(Literal(*head).copy());
         dom_init_.push_back(new InitInvariant(invariant));
         invariant.clear();
         if( options_.is_enabled("mvv:print:invariants") || options_.is_enabled("mvv:print:invariants:compilation") )
@@ -682,14 +705,14 @@ void PDDL_Base::compile_static_observable_fluents(const Atom &atom) {
             Effect *reduced_model = action.sensing_model_->reduce_sensing_model(atoms_to_remove);
             if( (reduced_model == 0) || (reduced_model->to_string() != action.sensing_model_->to_string()) ) {
                 if( reduced_model == 0 ) {
-                    reduced_model = observed_atom.clone();
+                    reduced_model = observed_atom.copy();
                 } else {
                     if( dynamic_cast<AndEffect*>(reduced_model) == 0 ) {
                         AndEffect *and_effect = new AndEffect;
                         and_effect->push_back(reduced_model);
                         reduced_model = and_effect;
                     }
-                    static_cast<AndEffect*>(reduced_model)->push_back(observed_atom.clone());
+                    static_cast<AndEffect*>(reduced_model)->push_back(observed_atom.copy());
                 }
                 delete action.sensing_model_;
                 action.sensing_model_ = reduced_model;
@@ -702,14 +725,14 @@ void PDDL_Base::compile_static_observable_fluents(const Atom &atom) {
         Effect *reduced_model = default_sensing_model_->reduce_sensing_model(atoms_to_remove);
         if( (reduced_model == 0) || (reduced_model->to_string() != default_sensing_model_->to_string()) ) {
             if( reduced_model == 0 ) {
-                reduced_model = observed_atom.clone();
+                reduced_model = observed_atom.copy();
             } else {
                 if( dynamic_cast<AndEffect*>(reduced_model) == 0 ) {
                     AndEffect *and_effect = new AndEffect;
                     and_effect->push_back(reduced_model);
                     reduced_model = and_effect;
                 }
-                static_cast<AndEffect*>(reduced_model)->push_back(observed_atom.clone());
+                static_cast<AndEffect*>(reduced_model)->push_back(observed_atom.copy());
             }
             delete default_sensing_model_;
             default_sensing_model_ = reduced_model;
@@ -727,7 +750,7 @@ void PDDL_Base::translate_actions_for_multivalued_variable_formulation() {
     for( size_t k = 0; k < dom_actions_.size(); ++k ) {
         if( (dom_actions_[k]->sensing_model_ != 0) || (default_sensing_model_ != 0) ) {
             if( dom_actions_[k]->sensing_model_ == 0 )
-                dom_actions_[k]->sensing_model_ = default_sensing_model_->ground();
+                dom_actions_[k]->sensing_model_ = default_sensing_model_->copy_and_simplify();
             actions_to_translate.push_back(dom_actions_[k]);
             dom_actions_[k] = dom_actions_.back();
             dom_actions_.pop_back();
@@ -747,7 +770,8 @@ void PDDL_Base::translate_actions_for_multivalued_variable_formulation() {
             dom_goal_ = new And;
         } else if( dynamic_cast<const And*>(dom_goal_) == 0 ) {
             And *new_goal = new And;
-            new_goal->push_back(dom_goal_->ground());
+            assert(dom_goal_->is_grounded());
+            new_goal->push_back(dom_goal_->copy_and_simplify());
             delete dom_goal_;
             dom_goal_ = new_goal;
         }
@@ -791,7 +815,8 @@ void PDDL_Base::translate_actions_for_multivalued_variable_formulation() {
                 And *precondition = new And;
                 if( action.precondition_ != 0 ) precondition->push_back(action.precondition_);
                 precondition->push_back(new Literal(*normal_execution_));
-                action.precondition_ = precondition->ground();
+                assert(precondition->is_grounded());
+                action.precondition_ = precondition->copy_and_simplify();
                 delete precondition;
             }
         }
@@ -800,9 +825,7 @@ void PDDL_Base::translate_actions_for_multivalued_variable_formulation() {
     // translate actions
     for( size_t k = 0; k < actions_to_translate.size(); ++k ) {
         Action *action = actions_to_translate[k];
-        Effect *grounded_sensing_model = action->sensing_model_->ground();
-        delete action->sensing_model_;
-        action->sensing_model_ = grounded_sensing_model;
+        assert(action->sensing_model_->is_grounded());
         translation_for_multivalued_variable_formulation(*action, k);
         //delete action; // NEED FIX: guess: delete params that are needed in sensing model (invariants)
     }
@@ -826,7 +849,8 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
         // precondition
         if( action.precondition_ != 0 ) precondition.push_back(action.precondition_);
         precondition.push_back(Literal(*normal_execution_).copy());       // (normal-execution)
-        effect_action->precondition_ = precondition.ground();
+        assert(precondition.is_grounded());
+        effect_action->precondition_ = precondition.copy_and_simplify();
         delete precondition.back();
         precondition.clear();
 
@@ -837,7 +861,8 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
             effect.push_back(AtomicEffect(*need_sense_[index]).copy());   // (need-set-sense <param>)
         else
             effect.push_back(AtomicEffect(*need_post_[index]).copy());    // (need-post <param>)
-        effect_action->effect_ = effect.ground();
+        assert(effect.is_grounded());
+        effect_action->effect_ = effect.copy_and_simplify();
         delete effect[2];
         delete effect[1];
         effect.clear();
@@ -864,7 +889,8 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
             if( action.precondition_ != 0 ) precondition.push_back(action.precondition_);
             precondition.push_back(Literal(*normal_execution_).copy());   // (normal-execution)
         }
-        set_sensing_action->precondition_ = precondition.ground();
+        assert(precondition.is_grounded());
+        set_sensing_action->precondition_ = precondition.copy_and_simplify();
         delete precondition.back();
         precondition.clear();
 
@@ -875,7 +901,8 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
         else
             effect.push_back(AtomicEffect(*normal_execution_).negate());  // (not (normal-execution))
         effect.push_back(AtomicEffect(*need_post_[index]).copy());        // (need-post <param>)
-        set_sensing_action->effect_ = effect.ground();
+        assert(effect.is_grounded());
+        set_sensing_action->effect_ = effect.copy_and_simplify();
         delete effect[2];
         delete effect[1];
         delete effect[0];
@@ -891,7 +918,7 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
             cout << Utils::cyan() << *set_sensing_action << Utils::normal();
 
         // store sensing model for generating invariants later
-        sensing_models_.push_back(make_pair(new var_symbol_vec(action.param_), action.sensing_model_->ground()));
+        sensing_models_.push_back(make_pair(new var_symbol_vec(action.param_), action.sensing_model_->copy_and_simplify()));
     }
 
     if( !need_effect_action && !need_set_sensing_action ) {
@@ -902,14 +929,15 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
         // precondition
         if( action.precondition_ != 0 ) precondition.push_back(action.precondition_);
         precondition.push_back(Literal(*normal_execution_).copy());       // (normal-execution)
-        turn_on_sensor_action->precondition_ = precondition.ground();
+        assert(precondition.is_grounded());
+        turn_on_sensor_action->precondition_ = precondition.copy_and_simplify();
         delete precondition.back();
         precondition.clear();
 
         // effects
         effect.push_back(AtomicEffect(*need_post_[index]).copy());        // (need-post <param>)
         effect.push_back(AtomicEffect(*normal_execution_).negate());      // (not (normal-execution))
-        turn_on_sensor_action->effect_ = effect.ground();
+        turn_on_sensor_action->effect_ = effect.copy_and_simplify();
         delete effect[1];
         delete effect[0];
         effect.clear();
@@ -929,17 +957,14 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
     clone_parameters(action.param_, sensor_for_action->param_);
 
     // condition
-    condition.push_back(Literal(*need_post_[index]).copy());              // (need-post <param)
-    sensor_for_action->condition_ = condition.ground();
-    delete condition[0];
-    condition.clear();
+    sensor_for_action->condition_ = Literal(*need_post_[index]).copy();   // (need-post <param>)
 
     // sense
     unsigned_atom_set sensed_atoms;
     action.sensing_model_->extract_atoms(sensed_atoms, true);
     for( unsigned_atom_set::iterator it = sensed_atoms.begin(); it != sensed_atoms.end(); ++it )
         sense.push_back(new AtomicEffect(*it, it->negated_));
-    sensor_for_action->sense_ = sense.ground();
+    sensor_for_action->sense_ = sense.copy_and_simplify();
     for( size_t k = 0; k < sense.size(); ++k ) delete sense[k];
     sense.clear();
 
@@ -957,15 +982,12 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action,
     clone_parameters(action.param_, post_action->param_);
 
     // precondition
-    precondition.push_back(Literal(*need_post_[index]).copy());           // (need-post <param>)
-    post_action->precondition_ = precondition.ground();
-    delete precondition[0];
-    precondition.clear();
+    post_action->precondition_ = Literal(*need_post_[index]).copy();      // (need-post <param>)
 
     // effect
     effect.push_back(AtomicEffect(*normal_execution_).copy());            // (normal-execution)
     effect.push_back(AtomicEffect(*need_post_[index]).negate());          // (not (need-post <param))
-    post_action->effect_ = effect.ground();
+    post_action->effect_ = effect.copy_and_simplify();
     delete effect[1];
     delete effect[0];
     effect.clear();
@@ -1087,14 +1109,14 @@ void PDDL_Base::create_invariants_for_sensing_model() {
                     for( size_t j = 0; j < head.size(); ++j ) {
                         assert(dynamic_cast<const AtomicEffect*>(head[j]) != 0);
                         const AtomicEffect *h = static_cast<const AtomicEffect*>(head[j]);
-                        sensing_map[h->to_string()].push_back(conditional_effect.condition_->ground());
-                        sensed_literal[h->to_string()] = static_cast<AtomicEffect*>(h->ground());
+                        sensing_map[h->to_string()].push_back(conditional_effect.condition_->copy_and_simplify());
+                        sensed_literal[h->to_string()] = static_cast<AtomicEffect*>(h->copy());
                     }
                 } else {
                     assert(dynamic_cast<const AtomicEffect*>(conditional_effect.effect_) != 0);
                     const AtomicEffect &head = *static_cast<const AtomicEffect*>(conditional_effect.effect_);
-                    sensing_map[head.to_string()].push_back(conditional_effect.condition_->ground());
-                    sensed_literal[head.to_string()] = static_cast<AtomicEffect*>(head.ground());
+                    sensing_map[head.to_string()].push_back(conditional_effect.condition_->copy_and_simplify());
+                    sensed_literal[head.to_string()] = static_cast<AtomicEffect*>(head.copy());
                 }
             } else {
                 assert(dynamic_cast<const AtomicEffect*>(effect[i]) != 0);
@@ -1116,9 +1138,9 @@ void PDDL_Base::create_invariants_for_sensing_model() {
         for( map<string, condition_vec>::iterator it = sensing_map.begin(); it != sensing_map.end(); ++it ) {
             invariant1.push_back(Literal(*sensed_literal[it->first]).negate());
             for( size_t i = 0; i < it->second.size(); ++i ) {
-                invariant1.push_back(it->second[i]->copy());
+                invariant1.push_back(it->second[i]->copy_and_simplify());
                 invariant2.push_back(Literal(*sensed_literal[it->first]).copy());
-                Condition *c = it->second[i]->negate();
+                Condition *c = it->second[i]->negate_and_simplify();
                 if( dynamic_cast<Or*>(c) != 0 ) {
                     Or *or_condition = static_cast<Or*>(c);
                     for( size_t j = 0; j < or_condition->size(); ++j )
@@ -1192,7 +1214,7 @@ void PDDL_Base::emit_instance(Instance &ins) const {
     delete[] pname;
 
     // set atom (normal-execution) (only when processing CLG syntax)
-    if( clg_translation_ ) {
+    if( clg_translation_ && (normal_execution_ != 0) ) {
         Instance::Atom *p = normal_execution_->find_prop(ins, false, true);
         ins.index_for_atom_normal_execution_ = p->index_;
     }
@@ -1340,7 +1362,7 @@ void PDDL_Base::Atom::remap_parameters(const var_symbol_vec &old_param, const va
 
 bool PDDL_Base::Atom::operator==(const Atom &atom) const {
     if( pred_ != atom.pred_ ) return false;
-    if( param_.size() != atom.param_.size() ) return false;
+    assert(param_.size() == atom.param_.size());
     for( size_t k = 0; k < param_.size(); ++k )
         if( param_[k] != atom.param_[k] ) return false;
     return true;
@@ -1453,17 +1475,8 @@ string PDDL_Base::Atom::to_string(bool extra_neg, bool mangled) const {
     return str;
 }
 
-PDDL_Base::Condition* PDDL_Base::Constant::clone(bool clone_variables) const {
-    return new Constant(value_);
-}
-
-PDDL_Base::Condition* PDDL_Base::Constant::ground(bool clone_variables, bool negate) const {
-    const Condition *result = fetch_cache(negate);
-    if( result == 0 ) {
-        result = new Constant(negate ? !value_ : value_);
-        update_cache(negate, result);
-    }
-    return result->clone(clone_variables);
+PDDL_Base::Condition* PDDL_Base::Constant::ground(bool clone_variables, bool negate, bool replace_static_values) const {
+    return new Constant(negate ? !value_ : value_);
 }
 
 void PDDL_Base::Literal::remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param) {
@@ -1474,35 +1487,29 @@ void PDDL_Base::Literal::emit(Instance &ins, index_set &condition) const {
     Atom::emit(ins, condition);
 }
 
-PDDL_Base::Condition* PDDL_Base::Literal::clone(bool clone_variables) const {
-    Atom *atom = Atom::ground(clone_variables);
-    Literal *result = new Literal(*atom);
-    delete atom;
-    return result;
+PDDL_Base::Condition* PDDL_Base::Literal::ground(bool clone_variables, bool negate, bool replace_static_values) const {
+    return copy(clone_variables, negate, replace_static_values);
 }
 
-PDDL_Base::Condition* PDDL_Base::Literal::ground(bool clone_variables, bool negate) const {
-    const Condition *result = fetch_cache(negate);
-    if( result == 0 ) {
-        Atom *atom = Atom::ground(false);
-        if( pred_->strongly_static_ && (pddl_base_ != 0) && atom->is_fully_instantiated() ) {
-            bool value = pddl_base_->truth_value_in_initial_situation(*atom);
-            result = new Constant(negate ? !value : value);
-        } else {
-            result = new Literal(*atom, negate);
-        }
-        delete atom;
-        update_cache(negate, result);
-    }
-    return result->clone(clone_variables);
-}
-
-bool PDDL_Base::Literal::has_free_variables(const var_symbol_vec &param) const {
+bool PDDL_Base::Literal::has_free_variables(const var_symbol_vec &param, bool) const {
     return Atom::has_free_variables(param);
 }
 
 void PDDL_Base::Literal::extract_atoms(unsigned_atom_set &atoms) const {
     atoms.insert(*this);
+}
+
+PDDL_Base::Condition* PDDL_Base::Literal::copy(bool clone_variables, bool negate, bool replace_static_values) const {
+    Condition *result = 0;
+    Atom *atom = Atom::ground(false);
+    if( replace_static_values && pred_->strongly_static_ && (pddl_base_ != 0) && atom->is_fully_instantiated() ) {
+        bool value = pddl_base_->truth_value_in_initial_situation(*atom);
+        result = new Constant(negate ? !value : value);
+    } else {
+        result = new Literal(*atom, negate);
+    }
+    delete atom;
+    return result;
 }
 
 void PDDL_Base::EQ::remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param) {
@@ -1520,12 +1527,7 @@ void PDDL_Base::EQ::remap_parameters(const var_symbol_vec &old_param, const var_
     }
 }
 
-PDDL_Base::Condition* PDDL_Base::EQ::clone(bool clone_variables) const {
-    assert(0);
-    return 0;
-}
-
-PDDL_Base::Condition* PDDL_Base::EQ::ground(bool clone_variables, bool negate) const {
+PDDL_Base::Condition* PDDL_Base::EQ::ground(bool clone_variables, bool negate, bool replace_static_values) const {
     EQ *result = new EQ(first, second, negate ? !negated_ : negated_);
     if( first->sym_class_ == sym_variable ) {
         if( static_cast<const VariableSymbol*>(first)->value_ != 0 )
@@ -1551,7 +1553,7 @@ PDDL_Base::Condition* PDDL_Base::EQ::ground(bool clone_variables, bool negate) c
     }
 }
 
-bool PDDL_Base::EQ::has_free_variables(const var_symbol_vec &param) const {
+bool PDDL_Base::EQ::has_free_variables(const var_symbol_vec &param, bool) const {
     if( first->sym_class_ == sym_variable ) {
         bool found = false;
         for( size_t k = 0; k < param.size(); ++k ) {
@@ -1593,70 +1595,56 @@ void PDDL_Base::And::emit(Instance &ins, index_set &condition) const {
         (*this)[k]->emit(ins, condition);
 }
 
-PDDL_Base::Condition* PDDL_Base::And::clone(bool clone_variables) const {
+PDDL_Base::Condition* PDDL_Base::And::ground(bool clone_variables, bool negate, bool replace_static_values) const {
+    Condition *result = 0;
     condition_vec conditions;
-    conditions.reserve(size());
-    for( size_t k = 0; k < size(); ++k )
-        conditions.push_back((*this)[k]->clone(clone_variables));
-    return new And(conditions);
-}
-
-PDDL_Base::Condition* PDDL_Base::And::ground(bool clone_variables, bool negate) const {
-    const Condition *result = fetch_cache(negate);
-    if( result == 0 ) {
-        condition_vec conditions;
-        for( size_t k = 0; k < size(); ++k ) {
-        Condition *item = (*this)[k]->ground(false, negate);
-            if( dynamic_cast<Constant*>(item) != 0 ) {
-                Constant &constant = *static_cast<Constant*>(item);
-                if( (!negate && constant.value_) || (negate && !constant.value_) ) {
-                    // item is neutral constant
-                    delete item;
-                } else {
-                    // item alone determines truth value
-                    delete item;
-                    for( size_t i = 0; i < conditions.size(); ++i ) delete conditions[i];
-                    result = new Constant(negate ? true : false);
-                    break;
-                }
-            } else if( !negate && (dynamic_cast<And*>(item) != 0) ) {
-                And &item_list = *static_cast<And*>(item);
-                for( size_t i = 0; i < item_list.size(); ++i)
-                    conditions.push_back(item_list[i]);
-                item_list.clear();
-                delete item;
-            } else if( negate && (dynamic_cast<Or*>(item) != 0) ) {
-                Or &item_list = *static_cast<Or*>(item);
-                for( size_t i = 0; i < item_list.size(); ++i)
-                    conditions.push_back(item_list[i]);
-                item_list.clear();
-                delete item;
-            } else {
-                conditions.push_back(item);
-            }
-        }
-
-        // check if result can be reduced to constant or single condition
-        if( result == 0 ) {
-            if( conditions.empty() ) {
-                result = new Constant(negate ? false : true);
-            } else if( conditions.size() == 1 ) {
-                result = const_cast<Condition*>(conditions[0]);
-            } else {
-                result = negate ? static_cast<Condition*>(new Or(conditions)) : static_cast<Condition*>(new And(conditions));
-            }
-        }
-
-        // update cache
-        assert(result != 0);
-        update_cache(negate, result);
-    }
-    return result->clone(clone_variables);
-}
-
-bool PDDL_Base::And::has_free_variables(const var_symbol_vec &param) const {
     for( size_t k = 0; k < size(); ++k ) {
-        if( (*this)[k]->has_free_variables(param) )
+        Condition *item = (*this)[k]->ground(clone_variables, negate, replace_static_values);
+        if( dynamic_cast<Constant*>(item) != 0 ) {
+            Constant &constant = *static_cast<Constant*>(item);
+            if( (!negate && constant.value_) || (negate && !constant.value_) ) {
+                // item is neutral constant
+                delete item;
+            } else {
+                // item alone determines truth value
+                delete item;
+                for( size_t i = 0; i < conditions.size(); ++i ) delete conditions[i];
+                result = new Constant(negate ? true : false);
+                break;
+            }
+        } else if( !negate && (dynamic_cast<And*>(item) != 0) ) {
+            And &item_list = *static_cast<And*>(item);
+            for( size_t i = 0; i < item_list.size(); ++i)
+                conditions.push_back(item_list[i]);
+            item_list.clear();
+            delete item;
+        } else if( negate && (dynamic_cast<Or*>(item) != 0) ) {
+            Or &item_list = *static_cast<Or*>(item);
+            for( size_t i = 0; i < item_list.size(); ++i)
+                conditions.push_back(item_list[i]);
+            item_list.clear();
+            delete item;
+        } else {
+            conditions.push_back(item);
+        }
+    }
+
+    // check if result can be reduced to constant or single condition
+    if( result == 0 ) {
+        if( conditions.empty() ) {
+            result = new Constant(negate ? false : true);
+        } else if( conditions.size() == 1 ) {
+            result = const_cast<Condition*>(conditions[0]);
+        } else {
+            result = negate ? static_cast<Condition*>(new Or(conditions)) : static_cast<Condition*>(new And(conditions));
+        }
+    }
+    return result;
+}
+
+bool PDDL_Base::And::has_free_variables(const var_symbol_vec &param, bool dont_extend) const {
+    for( size_t k = 0; k < size(); ++k ) {
+        if( (*this)[k]->has_free_variables(param, dont_extend) )
             return true;
     }
     return false;
@@ -1684,70 +1672,56 @@ void PDDL_Base::Or::emit(Instance &ins, index_set &condition) const {
     exit(255);
 }
 
-PDDL_Base::Condition* PDDL_Base::Or::clone(bool clone_variables) const {
+PDDL_Base::Condition* PDDL_Base::Or::ground(bool clone_variables, bool negate, bool replace_static_values) const {
+    Condition *result = 0;
     condition_vec conditions;
-    conditions.reserve(size());
-    for( size_t k = 0; k < size(); ++k )
-        conditions.push_back((*this)[k]->clone(clone_variables));
-    return new Or(conditions);
-}
-
-PDDL_Base::Condition* PDDL_Base::Or::ground(bool clone_variables, bool negate) const {
-    const Condition *result = fetch_cache(negate);
-    if( result == 0 ) {
-        condition_vec conditions;
-        for( size_t k = 0; k < size(); ++k ) {
-            Condition *item = (*this)[k]->ground(false, negate);
-            if( dynamic_cast<Constant*>(item) != 0 ) {
-                Constant &constant = *static_cast<Constant*>(item);
-                if( (!negate && !constant.value_) || (negate && constant.value_) ) {
-                    // item is neutral constant
-                    delete item;
-                } else {
-                    // item alone determines truth value
-                    delete item;
-                    for( size_t i = 0; i < conditions.size(); ++i ) delete conditions[i];
-                    result = new Constant(!negate ? true : false);
-                    break;
-                }
-            } else if( !negate && (dynamic_cast<Or*>(item) != 0) ) {
-                Or &item_list = *static_cast<Or*>(item);
-                for( size_t i = 0; i < item_list.size(); ++i)
-                    conditions.push_back(item_list[i]);
-                item_list.clear();
-                delete item;
-            } else if( negate && (dynamic_cast<And*>(item) != 0) ) {
-                And &item_list = *static_cast<And*>(item);
-                for( size_t i = 0; i < item_list.size(); ++i)
-                    conditions.push_back(item_list[i]);
-                item_list.clear();
-                delete item;
-            } else {
-                conditions.push_back(item);
-            }
-        }
-
-        // check if result can be reduced to constant or single condition
-        if( result == 0 ) {
-            if( conditions.empty() ) {
-                return new Constant(negate ? true : false);
-            } else if( conditions.size() == 1 ) {
-                return const_cast<Condition*>(conditions[0]);
-            } else {
-                return negate ? static_cast<Condition*>(new And(conditions)) : static_cast<Condition*>(new Or(conditions));
-            }
-        }
-
-        // update cache
-        assert(result != 0);
-        update_cache(negate, result);
-    }
-    return result->clone(clone_variables);
-}
-
-bool PDDL_Base::Or::has_free_variables(const var_symbol_vec &param) const {
     for( size_t k = 0; k < size(); ++k ) {
-        if( (*this)[k]->has_free_variables(param) )
+        Condition *item = (*this)[k]->ground(false, negate, replace_static_values);
+        if( dynamic_cast<Constant*>(item) != 0 ) {
+            Constant &constant = *static_cast<Constant*>(item);
+            if( (!negate && !constant.value_) || (negate && constant.value_) ) {
+                // item is neutral constant
+                delete item;
+            } else {
+                // item alone determines truth value
+                delete item;
+                for( size_t i = 0; i < conditions.size(); ++i ) delete conditions[i];
+                result = new Constant(!negate ? true : false);
+                break;
+            }
+        } else if( !negate && (dynamic_cast<Or*>(item) != 0) ) {
+            Or &item_list = *static_cast<Or*>(item);
+            for( size_t i = 0; i < item_list.size(); ++i)
+                conditions.push_back(item_list[i]);
+            item_list.clear();
+            delete item;
+        } else if( negate && (dynamic_cast<And*>(item) != 0) ) {
+            And &item_list = *static_cast<And*>(item);
+            for( size_t i = 0; i < item_list.size(); ++i)
+                conditions.push_back(item_list[i]);
+            item_list.clear();
+            delete item;
+        } else {
+            conditions.push_back(item);
+        }
+    }
+
+    // check if result can be reduced to constant or single condition
+    if( result == 0 ) {
+        if( conditions.empty() ) {
+            return new Constant(negate ? true : false);
+        } else if( conditions.size() == 1 ) {
+            return const_cast<Condition*>(conditions[0]);
+        } else {
+            return negate ? static_cast<Condition*>(new And(conditions)) : static_cast<Condition*>(new Or(conditions));
+        }
+    }
+    return result;
+}
+
+bool PDDL_Base::Or::has_free_variables(const var_symbol_vec &param, bool dont_extend) const {
+    for( size_t k = 0; k < size(); ++k ) {
+        if( (*this)[k]->has_free_variables(param, dont_extend) )
             return true;
     }
     return false;
@@ -1774,12 +1748,7 @@ void PDDL_Base::ForallCondition::emit(Instance &ins, index_set &condition) const
     exit(255);
 }
 
-PDDL_Base::Condition* PDDL_Base::ForallCondition::clone(bool clone_variables) const {
-    cout << Utils::error() << "'ForallCondition' should have dissapeared before cloning: " << *this << endl;
-    exit(255);
-}
-
-PDDL_Base::Condition* PDDL_Base::ForallCondition::ground(bool clone_variables, bool negate) const {
+PDDL_Base::Condition* PDDL_Base::ForallCondition::ground(bool clone_variables, bool negate, bool replace_static_values) const {
     negate_stack_.push_back(negate);
     clone_variables_stack_.push_back(clone_variables);
     result_stack_.push_back(negate ? static_cast<Condition*>(new Or) : static_cast<Condition*>(new And));
@@ -1882,10 +1851,10 @@ void PDDL_Base::ForallCondition::process_instance() const {
     }
 }
 
-bool PDDL_Base::ForallCondition::has_free_variables(const var_symbol_vec &param) const {
+bool PDDL_Base::ForallCondition::has_free_variables(const var_symbol_vec &param, bool dont_extend) const {
     var_symbol_vec nparam(param);
-    nparam.insert(nparam.end(), param_.begin(), param_.end());
-    return condition_->has_free_variables(nparam);
+    if( !dont_extend ) nparam.insert(nparam.end(), param_.begin(), param_.end());
+    return condition_->has_free_variables(nparam, dont_extend);
 }
 
 void PDDL_Base::ForallCondition::extract_atoms(unsigned_atom_set &atoms) const {
@@ -1910,12 +1879,7 @@ void PDDL_Base::ExistCondition::emit(Instance &ins, index_set &condition) const 
     exit(255);
 }
 
-PDDL_Base::Condition* PDDL_Base::ExistCondition::clone(bool clone_variables) const {
-    cout << Utils::error() << "'ExistCondition' should have dissapeared before cloning: " << *this << endl;
-    exit(255);
-}
-
-PDDL_Base::Condition* PDDL_Base::ExistCondition::ground(bool clone_variables, bool negate) const {
+PDDL_Base::Condition* PDDL_Base::ExistCondition::ground(bool clone_variables, bool negate, bool replace_static_values) const {
     negate_stack_.push_back(negate);
     clone_variables_stack_.push_back(clone_variables);
     result_stack_.push_back(negate ? static_cast<Condition*>(new And) : static_cast<Condition*>(new Or));
@@ -2018,10 +1982,10 @@ void PDDL_Base::ExistCondition::process_instance() const {
     }
 }
 
-bool PDDL_Base::ExistCondition::has_free_variables(const var_symbol_vec &param) const {
+bool PDDL_Base::ExistCondition::has_free_variables(const var_symbol_vec &param, bool dont_extend) const {
     var_symbol_vec nparam(param);
-    nparam.insert(nparam.end(), param_.begin(), param_.end());
-    return condition_->has_free_variables(nparam);
+    if( !dont_extend ) nparam.insert(nparam.end(), param_.begin(), param_.end());
+    return condition_->has_free_variables(nparam, dont_extend);
 }
 
 void PDDL_Base::ExistCondition::extract_atoms(unsigned_atom_set &atoms) const {
@@ -2045,15 +2009,11 @@ void PDDL_Base::AtomicEffect::emit(Instance &ins, index_set &eff, Instance::when
     Atom::emit(ins, eff);
 }
 
-PDDL_Base::Effect* PDDL_Base::AtomicEffect::clone(bool clone_variables) const {
-    return internal_ground(clone_variables, false);
+PDDL_Base::Effect* PDDL_Base::AtomicEffect::ground(bool clone_variables, bool replace_static_values) const {
+    return copy(clone_variables, false);
 }
 
-PDDL_Base::Effect* PDDL_Base::AtomicEffect::ground(bool clone_variables) const {
-    return internal_ground(clone_variables, false);
-}
-
-bool PDDL_Base::AtomicEffect::has_free_variables(const var_symbol_vec &param) const {
+bool PDDL_Base::AtomicEffect::has_free_variables(const var_symbol_vec &param, bool) const {
     return Atom::has_free_variables(param);
 }
 
@@ -2087,14 +2047,15 @@ void PDDL_Base::AtomicEffect::extract_atoms(unsigned_atom_set &atoms, bool only_
 }
 
 PDDL_Base::Effect* PDDL_Base::AtomicEffect::reduce_sensing_model(const unsigned_atom_set &atoms_to_remove) const {
-    return atoms_to_remove.find(*this) != atoms_to_remove.end() ? 0 : ground();
+    assert(is_grounded());
+    return atoms_to_remove.find(*this) != atoms_to_remove.end() ? 0 : copy();
 }
 
 void PDDL_Base::AtomicEffect::extract_sensing_model_for_atom(const Atom &atom, effect_list &sensing_models) const {
-    if( atom == *this ) sensing_models.push_back(clone());
+    if( atom == *this ) sensing_models.push_back(copy());
 }
 
-PDDL_Base::AtomicEffect* PDDL_Base::AtomicEffect::internal_ground(bool clone_variables, bool negate) const {
+PDDL_Base::AtomicEffect* PDDL_Base::AtomicEffect::copy(bool clone_variables, bool negate) const {
     Atom *atom = Atom::ground(clone_variables);
     AtomicEffect *result = new AtomicEffect(*atom, negate);
     delete atom;
@@ -2111,18 +2072,10 @@ void PDDL_Base::AndEffect::emit(Instance &ins, index_set &eff, Instance::when_ve
         (*this)[k]->emit(ins, eff, when);
 }
 
-PDDL_Base::Effect* PDDL_Base::AndEffect::clone(bool clone_variables) const {
-    effect_vec effects;
-    effects.reserve(size());
-    for( size_t k = 0; k < size(); ++k )
-        effects.push_back((*this)[k]->clone(clone_variables));
-    return new AndEffect(effects);
-}
-
-PDDL_Base::Effect* PDDL_Base::AndEffect::ground(bool clone_variables) const {
+PDDL_Base::Effect* PDDL_Base::AndEffect::ground(bool clone_variables, bool replace_static_values) const {
     effect_vec effects;
     for( size_t k = 0; k < size(); ++k ) {
-        Effect *item = (*this)[k]->ground(clone_variables);
+        Effect *item = (*this)[k]->ground(clone_variables, replace_static_values);
         if( item != 0 ) {
             assert(dynamic_cast<NullEffect*>(item) == 0);
             if( dynamic_cast<AndEffect*>(item) != 0 ) {
@@ -2149,9 +2102,9 @@ PDDL_Base::Effect* PDDL_Base::AndEffect::ground(bool clone_variables) const {
     return result;
 }
 
-bool PDDL_Base::AndEffect::has_free_variables(const var_symbol_vec &param) const {
+bool PDDL_Base::AndEffect::has_free_variables(const var_symbol_vec &param, bool dont_extend) const {
     for( size_t k = 0; k < size(); ++k ) {
-        if( (*this)[k]->has_free_variables(param) )
+        if( (*this)[k]->has_free_variables(param, dont_extend) )
             return true;
     }
     return false;
@@ -2217,15 +2170,11 @@ void PDDL_Base::ConditionalEffect::emit(Instance &ins, index_set &eff, Instance:
     when.push_back(single_when);
 }
 
-PDDL_Base::Effect* PDDL_Base::ConditionalEffect::clone(bool clone_variables) const {
-    return new ConditionalEffect(condition_->clone(clone_variables), effect_->clone(clone_variables));
-}
-
-PDDL_Base::Effect* PDDL_Base::ConditionalEffect::ground(bool clone_variables) const {
+PDDL_Base::Effect* PDDL_Base::ConditionalEffect::ground(bool clone_variables, bool replace_static_values) const {
     Effect *result = 0;
-    Effect *grounded_effect = effect_->ground(clone_variables);
+    Effect *grounded_effect = effect_->ground(clone_variables, replace_static_values);
     if( grounded_effect != 0 ) {
-        Condition *grounded_condition = condition_->ground(clone_variables);
+        Condition *grounded_condition = condition_->ground(clone_variables, false, replace_static_values);
         if( dynamic_cast<Constant*>(grounded_condition) != 0 ) {
             bool value = static_cast<Constant*>(grounded_condition)->value_;
             delete grounded_condition;
@@ -2240,8 +2189,8 @@ PDDL_Base::Effect* PDDL_Base::ConditionalEffect::ground(bool clone_variables) co
     return result;
 }
 
-bool PDDL_Base::ConditionalEffect::has_free_variables(const var_symbol_vec &param) const {
-    return condition_->has_free_variables(param) || effect_->has_free_variables(param);
+bool PDDL_Base::ConditionalEffect::has_free_variables(const var_symbol_vec &param, bool dont_extend) const {
+    return condition_->has_free_variables(param, dont_extend) || effect_->has_free_variables(param, dont_extend);
 }
 
 bool PDDL_Base::ConditionalEffect::is_strongly_static(const PredicateSymbol &p) const {
@@ -2272,8 +2221,9 @@ void PDDL_Base::ConditionalEffect::extract_atoms(unsigned_atom_set &atoms, bool 
 }
 
 PDDL_Base::Effect* PDDL_Base::ConditionalEffect::reduce_sensing_model(const unsigned_atom_set &atoms_to_remove) const {
+    assert(condition_->is_grounded() && effect_->is_grounded());
     Effect *effect = effect_->reduce_sensing_model(atoms_to_remove);
-    return effect == 0 ? 0 : new ConditionalEffect(condition_->ground(), effect);
+    return effect == 0 ? 0 : new ConditionalEffect(condition_->copy_and_simplify(), effect); // COPY
 }
 
 void PDDL_Base::ConditionalEffect::extract_sensing_model_for_atom(const Atom &atom, effect_list &sensing_models) const {
@@ -2282,7 +2232,7 @@ void PDDL_Base::ConditionalEffect::extract_sensing_model_for_atom(const Atom &at
     if( !smodels.empty() ) {
         assert(smodels.size() == 1);
         const Effect *effect = *smodels.begin();
-        sensing_models.push_back(new ConditionalEffect(condition_->clone(), effect->clone()));
+        sensing_models.push_back(new ConditionalEffect(condition_->copy_and_simplify(), effect->copy_and_simplify()));
         delete effect;
     }
 }
@@ -2302,12 +2252,7 @@ void PDDL_Base::ForallEffect::emit(Instance &ins, index_set &eff, Instance::when
     exit(255);
 }
 
-PDDL_Base::Effect* PDDL_Base::ForallEffect::clone(bool clone_variables) const {
-    cout << Utils::error() << "clone() should not be called on ForallEffect: first ground the effect!" << endl;
-    exit(255);
-}
-
-PDDL_Base::Effect* PDDL_Base::ForallEffect::ground(bool clone_variables) const {
+PDDL_Base::Effect* PDDL_Base::ForallEffect::ground(bool clone_variables, bool replace_static_values) const {
     clone_variables_stack_.push_back(clone_variables);
     result_stack_.push_back(new AndEffect);
     enumerate(true);
@@ -2347,10 +2292,10 @@ void PDDL_Base::ForallEffect::process_instance() const {
     }
 }
 
-bool PDDL_Base::ForallEffect::has_free_variables(const var_symbol_vec &param) const {
+bool PDDL_Base::ForallEffect::has_free_variables(const var_symbol_vec &param, bool dont_extend) const {
     var_symbol_vec nparam(param);
-    nparam.insert(nparam.end(), param_.begin(), param_.end());
-    return effect_->has_free_variables(nparam);
+    if( !dont_extend ) nparam.insert(nparam.end(), param_.begin(), param_.end());
+    return effect_->has_free_variables(nparam, dont_extend);
 }
 
 bool PDDL_Base::ForallEffect::is_strongly_static(const PredicateSymbol &p) const {
@@ -2493,7 +2438,8 @@ string PDDL_Base::Oneof::to_string() const {
 }
 
 void PDDL_Base::Unknown::process_instance() const {
-    assert(0);
+    cout << Utils::error() << "feature not yet supported" << endl;
+    exit(255);
 }
 
 string PDDL_Base::Unknown::to_string() const {
@@ -2670,19 +2616,23 @@ void PDDL_Base::InitOneof::extract_atoms(unsigned_atom_set &atoms) const {
 }
 
 void PDDL_Base::InitUnknown::instantiate(init_element_list &ilist) const {
-    assert(0);
+    cout << Utils::error() << "feature not yet supported" << endl;
+    exit(255);
 }
 
 void PDDL_Base::InitUnknown::emit(Instance &ins) const {
-    assert(0);
+    cout << Utils::error() << "feature not yet supported" << endl;
+    exit(255);
 }
 
 bool PDDL_Base::InitUnknown::is_strongly_static(const PredicateSymbol &p) const {
-    assert(0);
+    cout << Utils::error() << "feature not yet supported" << endl;
+    exit(255);
 }
 
 void PDDL_Base::InitUnknown::extract_atoms(unsigned_atom_set &atoms) const {
-    assert(0);
+    cout << Utils::error() << "feature not yet supported" << endl;
+    exit(255);
 }
 
 void PDDL_Base::Action::instantiate(action_list &alist) const {
@@ -2881,16 +2831,19 @@ void PDDL_Base::Axiom::print(ostream &os) const {
        << ")" << endl;
 }
 
-void PDDL_Base::Observable::emit(Instance &ins) const {
-    cout << "instantiating observable ..." << flush;
-    for( size_t k = 0; k < observables_.size(); ++k ) {
-        Effect *grounded_observable = observables_[k]->ground();
-        grounded_observable->emit(ins, ins.given_observables_);
-        delete grounded_observable;
-    }
-    cout << " ok" << endl;
+void PDDL_Base::Observable::instantiate(observable_list &olist) const {
+    Observable *grounded = new Observable;
+    for( size_t k = 0; k < observables_.size(); ++k )
+        grounded->observables_.push_back(observables_[k]->ground());
+    olist.push_back(grounded);
 }
 
+void PDDL_Base::Observable::emit(Instance &ins) const {
+    for( size_t k = 0; k < observables_.size(); ++k ) {
+        assert(observables_[k]->is_grounded());
+        observables_[k]->emit(ins, ins.given_observables_);
+    }
+}
 
 void PDDL_Base::Observable::print(ostream &os) const {
     os << "(:observable";
@@ -2899,14 +2852,18 @@ void PDDL_Base::Observable::print(ostream &os) const {
     os << ")";
 }
 
+void PDDL_Base::Sticky::instantiate(sticky_list &slist) const {
+    Sticky *grounded = new Sticky;
+    for( size_t k = 0; k < stickies_.size(); ++k )
+        grounded->stickies_.push_back(stickies_[k]->ground());
+    slist.push_back(grounded);
+}
+
 void PDDL_Base::Sticky::emit(Instance &ins) const {
-    cout << "instantiating sticky ..." << flush;
     for( size_t k = 0; k < stickies_.size(); ++k ) {
-        Effect *grounded_sticky = stickies_[k]->ground();
-        grounded_sticky->emit(ins, ins.given_stickies_);
-        delete grounded_sticky;
+        assert(stickies_[k]->is_grounded());
+        stickies_[k]->emit(ins, ins.given_stickies_);
     }
-    cout << " ok" << endl;
 }
 
 void PDDL_Base::Sticky::print(ostream &os) const {
@@ -2945,7 +2902,7 @@ void PDDL_Base::Variable::process_instance() const {
             delete grounded_value;
         } else {
             cout << *values_[k] << endl;
-            Effect *e = values_[k]->ground(true);
+            Effect *e = values_[k]->ground(true); // clone_variables=true
             cout << "gdd-ptr=" << e << endl;
             cout << Utils::error() << "unrecognized format in variable '"
                  << print_name_ << "'" << endl;

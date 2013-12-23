@@ -229,7 +229,7 @@ untyped_param_list:
 typed_param_list:
       param_sym_list TK_HYPHEN TK_TYPE_SYMBOL typed_param_list {
           set_variable_type(*$1, $1->size(), static_cast<TypeSymbol*>($3->val));
-          $4->insert($4->end(), $1->rbegin(), $1->rend());
+          $4->insert($4->end(), $1->begin(), $1->end());
           delete $1;
           $$ = $4;
       }
