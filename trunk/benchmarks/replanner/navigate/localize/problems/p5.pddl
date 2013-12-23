@@ -1,5 +1,4 @@
-
-(define (problem problem-5-12)
+(define (problem problem-5)
     (:domain localize-5)
     (:init
         ; possible initial locations
@@ -83,7 +82,25 @@
         (invariant (not (ok)) (free-down) (not (at p5-5)))
         (invariant (not (ok)) (free-left) (not (at p5-5)))
     )
+    (:hidden (at p1-1) (free-up) (free-right))
+    (:hidden (at p2-1) (free-right) (free-left))
+    (:hidden (at p3-1) (free-right) (free-left))
+    (:hidden (at p4-1) (free-right) (free-left))
+    (:hidden (at p5-1) (free-up) (free-left))
+    (:hidden (at p1-3) (free-up) (free-right) (free-down))
+    (:hidden (at p2-3) (free-right) (free-left))
+    (:hidden (at p3-3) (free-right) (free-left))
+    (:hidden (at p4-3) (free-right) (free-left))
+    (:hidden (at p5-3) (free-up) (free-down) (free-left))
+    (:hidden (at p1-5) (free-right) (free-down))
+    (:hidden (at p2-5) (free-right) (free-left))
     (:hidden (at p3-5) (free-right) (free-left))
+    (:hidden (at p4-5) (free-right) (free-left))
+    (:hidden (at p5-5) (free-down) (free-left))
+    (:hidden (at p1-2) (free-up) (free-down))
+    (:hidden (at p5-2) (free-up) (free-down))
+    (:hidden (at p1-4) (free-up) (free-down))
+    (:hidden (at p5-4) (free-up) (free-down))
     (:goal (at p5-5))
 )
 
