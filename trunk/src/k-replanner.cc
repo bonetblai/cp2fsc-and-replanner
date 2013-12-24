@@ -213,9 +213,10 @@ int main(int argc, char *argv[]) {
     // solve problem
     cout << "solving problem for " << instance.num_hidden_states() << " hidden state(s)" << endl;
     for( int k = 0; k < instance.num_hidden_states(); ++k ) {
-        Instance::Plan plan;
-        State hidden_initial_state;
+        float instance_start_time = Utils::read_time_in_seconds();
         vector<vector<int> > fired_sensors, sensed_literals;
+        State hidden_initial_state;
+        Instance::Plan plan;
 
         instance.set_hidden_state(k, hidden_initial_state);
         cout << "hidden[" << k << "]=";
@@ -304,14 +305,16 @@ int main(int argc, char *argv[]) {
         }
 
         // print some stats
+        float current_time = Utils::read_time_in_seconds();
         cout << "stats: "
              << opt_planner << " (planner) "
-             << (int)(status != Solver::SOLVED ? -1 : plan.size()) << " (plan size) "
-             << planner->n_calls() << " (planner calls) "
-             << preprocessing_time << " (preprocessing time) "
-             << planner->get_time() << " (planner total time) "
-             << planner->get_search_time() << " (planner total search time) "
-             << Utils::read_time_in_seconds() - start_time << " (total time)"
+             << (int)(status != Solver::SOLVED ? -1 : plan.size()) << " (plan-size) "
+             << planner->n_calls() << " (planner-calls) "
+             << preprocessing_time << " (preprocessing-time) "
+             << planner->get_time() << " (planner-time) "
+             << planner->get_search_time() << " (planner-search-time) "
+             << current_time - instance_start_time << " (instance-time) "
+             << current_time - start_time << " (total-acc-time)"
              << endl << endl;
     }
 
