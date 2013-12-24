@@ -57,7 +57,10 @@ class KP_Instance : public Instance {
                     const State &initial_state,
                     State &final_state,
                     std::vector<State> &support_vec) const;
+
     virtual void write_problem(std::ostream &os, const State *state = 0, int indent = 4) const;
+
+    void print_stats(std::ostream &os) const;
 };
 
 #endif
