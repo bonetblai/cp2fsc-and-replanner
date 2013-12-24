@@ -196,6 +196,7 @@ int main(int argc, char *argv[]) {
         kp_instance.write_domain(cout);
         kp_instance.write_problem(cout);
     }
+    kp_instance.print_stats(cout);
     float preprocessing_time = Utils::read_time_in_seconds() - start_time;
 
     // construct classical planner

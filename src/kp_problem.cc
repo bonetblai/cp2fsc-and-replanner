@@ -464,3 +464,11 @@ void KP_Instance::write_problem(ostream &os, const State *state, int indent) con
     }
 }
 
+void KP_Instance::print_stats(ostream &os) const {
+    os << "kp-instance: #standard-actions=" << n_standard_actions_
+       << ", #sensor-actions=" << n_sensor_actions_
+       << ", #invariant-actions=" << n_invariant_actions_
+       << ", #subgoaling-actions=" << n_subgoaling_actions_
+       << endl;
+}
+
