@@ -19,7 +19,6 @@ Instance::Instance(const Instance& ins)
     observable_fluents_(ins.observable_fluents_),
     given_observables_(ins.given_observables_),
     given_stickies_(ins.given_stickies_),
-    index_for_atom_normal_execution_(ins.index_for_atom_normal_execution_),
     options_(ins.options_) {
 }
 
@@ -986,6 +985,18 @@ void Instance::Invariant::write(ostream &os, int indent, const Instance &instanc
     for( int i = 0; i < indent; ++i ) istr[i] = ' ';
     istr[indent] = '\0';
     os << istr << "(invariant";
+
+    if( !precondition_.empty() ) {
+        os << " (:precondition";
+        for( index_set::const_iterator it = precondition_.begin(); it != precondition_.end(); ++it ) {
+            if( *it > 0 )
+                os << " " << instance.atoms_[*it-1]->name_;
+            else
+                os << " (not " << instance.atoms_[-*it-1]->name_ << ")";
+        }
+        os << ")";
+    }
+
     for( size_t i = 0; i < size(); ++i ) {
         int lit = (*this)[i];
         if( lit > 0 )

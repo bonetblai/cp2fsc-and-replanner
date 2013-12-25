@@ -331,11 +331,13 @@ class PDDL_Base {
 
     struct Invariant : public condition_vec, Schema {
         int type_;
+        const Condition *precondition_;
         enum { AT_LEAST_ONE = 0, AT_MOST_ONE = 1, EXACTLY_ONE = 2 };
-        Invariant(int type) : type_(type) { }
-        Invariant(int type, const condition_vec &invariant) : condition_vec(invariant), type_(type) { }
-        virtual ~Invariant() { for( size_t k = 0; k < size(); ++k ) delete (*this)[k]; }
+        Invariant(int type) : type_(type), precondition_(0) { }
+        Invariant(int type, const condition_vec &invariant) : condition_vec(invariant), type_(type), precondition_(0) { }
+        virtual ~Invariant() { for( size_t k = 0; k < size(); ++k ) delete (*this)[k]; delete precondition_; }
         virtual void process_instance() const;
+        void clear();
         bool reduce();
         bool has_free_variables() const;
         std::string to_string() const;
