@@ -369,18 +369,20 @@ void PDDL_Base::clg_map_oneofs_and_clauses_to_invariants() {
     // make oneofs into exactly-one invariants
     for( size_t k = 0; k < oneofs.size(); ++k ) {
         Invariant invariant(Invariant::EXACTLY_ONE, *oneofs[k].second);
+        if( normal_execution_ != 0 ) invariant.precondition_ = Literal(*normal_execution_).copy();
         dom_init_[oneofs[k].first] = new InitInvariant(invariant);
-        invariant.clear();         // to avoid destruction of elements
-        oneofs[k].second->clear(); // to avoid destruction of elements
+        invariant.clear();           // to avoid destruction of elements
+        oneofs[k].second->clear();   // to avoid destruction of elements
         delete oneofs[k].second;
     }
 
     // make clauses into at-least-one invariants
     for( size_t k = 0; k < clauses.size(); ++k ) {
         Invariant invariant(Invariant::AT_LEAST_ONE, *clauses[k].second);
+        if( normal_execution_ != 0 ) invariant.precondition_ = Literal(*normal_execution_).negate();
         dom_init_[clauses[k].first] = new InitInvariant(invariant);
-        invariant.clear();         // to avoid destruction of elements
-        clauses[k].second->clear(); // to avoid destruction of elements
+        invariant.clear();           // to avoid destruction of elements
+        clauses[k].second->clear();  // to avoid destruction of elements
         delete clauses[k].second;
     }
 }
@@ -1190,8 +1192,8 @@ void PDDL_Base::do_translations(variable_vec &multivalued_variables) {
 
     // translate oneofs into invariants and observe effects in actions (CLG-compatibility mode)
     if( clg_translation_ ) {
-        clg_map_oneofs_and_clauses_to_invariants();
-        clg_translate_observe_effects_into_sensors();
+        clg_translate_observe_effects_into_sensors(); // don't change order: first sts normal_execution_
+        clg_map_oneofs_and_clauses_to_invariants();   // that is required by second
     }
 
     // translate multivalued variable formulations
@@ -1213,11 +1215,13 @@ void PDDL_Base::emit_instance(Instance &ins) const {
     delete[] dname;
     delete[] pname;
 
+#if 0
     // set atom (normal-execution) (only when processing CLG syntax)
     if( clg_translation_ && (normal_execution_ != 0) ) {
         Instance::Atom *p = normal_execution_->find_prop(ins, false, true);
         ins.index_for_atom_normal_execution_ = p->index_;
     }
+#endif
 
     // emit initial situation.
     for( size_t k = 0; k < dom_init_.size(); ++k )
@@ -2341,6 +2345,11 @@ void PDDL_Base::Invariant::process_instance() const {
     }
 }
 
+void PDDL_Base::Invariant::clear() {
+    condition_vec::clear();
+    precondition_ = 0;
+}
+
 bool PDDL_Base::Invariant::reduce() {
     condition_vec to_remove;
     bool remove_invariant = false;
@@ -2384,6 +2393,10 @@ string PDDL_Base::Invariant::to_string() const {
         for( size_t k = 0; k < param_.size(); ++k )
             str += (k > 0 ? " " : "") + param_[k]->to_string();
         str += ")";
+    }
+
+    if( precondition_ != 0 ) {
+        str += " (:precondition " + precondition_->to_string() + ")";
     }
 
     for( size_t k = 0; k < size(); ++k )
@@ -2494,12 +2507,34 @@ void PDDL_Base::InitInvariant::emit(Instance &ins) const {
     Instance::Invariant typed_invariant(type_);
     for( size_t k = 0; k < size(); ++k ) {
         assert(dynamic_cast<const Literal*>((*this)[k]) != 0);
-        const Literal *literal = static_cast<const Literal*>((*this)[k]);
-        Instance::Atom *p = literal->find_prop(ins, false, true);
-        if( !literal->negated_ )
+        const Literal &literal = *static_cast<const Literal*>((*this)[k]);
+        Instance::Atom *p = literal.find_prop(ins, false, true);
+        if( !literal.negated_ )
             typed_invariant.push_back(1 + p->index_);
         else
             typed_invariant.push_back(-(1 + p->index_));
+    }
+
+    // emit precondition
+    if( precondition_ != 0 ) {
+        And precondition;
+        if( dynamic_cast<const Literal*>(precondition_) != 0 ) {
+            precondition.push_back(precondition_);
+        } else {
+            assert(dynamic_cast<const And*>(precondition_) != 0);
+            const And &and_precondition = *static_cast<const And*>(precondition_);
+            precondition.insert(precondition.end(), and_precondition.begin(), and_precondition.end());
+        }
+        for( size_t k = 0; k < precondition.size(); ++k ) {
+            assert(dynamic_cast<const Literal*>(precondition[k]) != 0);
+            const Literal &literal = *static_cast<const Literal*>(precondition[k]);
+            Instance::Atom *p = literal.find_prop(ins, false, true);
+            if( !literal.negated_ )
+                typed_invariant.precondition_.insert(1 + p->index_);
+            else
+                typed_invariant.precondition_.insert(-(1 + p->index_));
+        }
+        precondition.clear();
     }
 
     // convert typed invariant to AT_LEAST_ONE type: first count how many
@@ -2515,6 +2550,7 @@ void PDDL_Base::InitInvariant::emit(Instance &ins) const {
                     for( size_t j = 1 + i; j < typed_invariant.size(); ++j ) {
                         Instance::Invariant implied_invariant;
                         implied_invariant.type_ = AT_LEAST_ONE;
+                        implied_invariant.precondition_ = typed_invariant.precondition_;
                         implied_invariant.push_back(-typed_invariant[i]);
                         implied_invariant.push_back(-typed_invariant[j]);
                         ins.init_.invariants_.push_back(implied_invariant);

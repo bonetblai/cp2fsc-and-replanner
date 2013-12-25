@@ -109,6 +109,7 @@ class Instance {
     // After instantiation, all invariants are of type AT_LEAST_ONE.
     struct Invariant : public index_vec {
         int type_;
+        index_set precondition_;
         enum { AT_LEAST_ONE = 0, AT_MOST_ONE = 1, EXACTLY_ONE = 2 };
         Invariant(int type = AT_LEAST_ONE) : type_(type) { }
         void write(std::ostream &os, int indent, const Instance &instance) const;
@@ -145,19 +146,16 @@ class Instance {
     index_set   given_observables_;
     index_set   given_stickies_;
 
-    // index of atom (normal-execution) (only created when translating CLG/multivalued variables)
-    int         index_for_atom_normal_execution_;
-
     // deductive rules to apply to hidden state
     action_vec  deductive_rules_;
 
     const Options::Mode &options_;
 
     Instance(Name *name, const Options::Mode &options)
-      : cross_referenced_(false), name_(name), index_for_atom_normal_execution_(-1), options_(options) {
+      : cross_referenced_(false), name_(name), options_(options) {
     }
     Instance(const Options::Mode &options)
-      : cross_referenced_(false), name_(0), index_for_atom_normal_execution_(-1), options_(options) {
+      : cross_referenced_(false), name_(0), options_(options) {
     }
     Instance(const Instance &ins);
     virtual ~Instance();
