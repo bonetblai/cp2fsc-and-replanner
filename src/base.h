@@ -605,6 +605,11 @@ class PDDL_Base {
     unsigned_atom_set                         observable_atoms_;
     unsigned_atom_set                         atoms_for_state_variables_;
     unsigned_atom_set                         static_observable_atoms_;
+    std::map<std::string, const Sensor*>      sensors_for_multivalued_variable_translation_;
+    std::map<unsigned_atom_set, const Action*> post_actions_for_multivalued_variable_translation_;
+    std::map<std::string, const Atom*>        need_set_sensing_atoms_;
+    std::map<unsigned_atom_set, const Atom*>  need_post_atoms_;
+    std::map<std::string, const Atom*>        sensing_atoms_;
 
 
     PDDL_Base(StringTable& t, const Options::Mode &options);
@@ -642,9 +647,15 @@ class PDDL_Base {
     void calculate_beam_for_grounded_variable(Variable &var);
     void compile_static_observable_fluents(const Atom &atom);
     void translate_actions_for_multivalued_variable_formulation();
-    void translation_for_multivalued_variable_formulation(Action &action, size_t index);
+    void translation_for_multivalued_variable_formulation(Action &action);
+    void create_sensors_for_atoms(const unsigned_atom_set &atoms);
+    void create_post_action(const unsigned_atom_set &atoms);
     void create_invariants_for_multivalued_variables();
     void create_invariants_for_sensing_model();
+
+    const Atom* fetch_need_set_sensing_atom(const Action &action);
+    const Atom* fetch_need_post_atom(const unsigned_atom_set &atoms);
+    const Atom* fetch_sensing_atom(const Atom &atom);
 };
 
 inline std::ostream& operator<<(std::ostream &os, const PDDL_Base::Symbol &sym) {
