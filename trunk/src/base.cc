@@ -369,6 +369,7 @@ void PDDL_Base::clg_map_oneofs_and_clauses_to_invariants() {
     // make oneofs into exactly-one invariants
     for( size_t k = 0; k < oneofs.size(); ++k ) {
         Invariant invariant(Invariant::EXACTLY_ONE, *oneofs[k].second);
+        // BLAI: check precondition
         if( normal_execution_ != 0 ) invariant.precondition_ = Literal(*normal_execution_).copy();
         dom_init_[oneofs[k].first] = new InitInvariant(invariant);
         invariant.clear();           // to avoid destruction of elements
@@ -379,7 +380,8 @@ void PDDL_Base::clg_map_oneofs_and_clauses_to_invariants() {
     // make clauses into at-least-one invariants
     for( size_t k = 0; k < clauses.size(); ++k ) {
         Invariant invariant(Invariant::AT_LEAST_ONE, *clauses[k].second);
-        if( normal_execution_ != 0 ) invariant.precondition_ = Literal(*normal_execution_).negate();
+        // BLAI: check precondition
+        if( normal_execution_ != 0 ) invariant.precondition_ = Literal(*normal_execution_).copy();
         dom_init_[clauses[k].first] = new InitInvariant(invariant);
         invariant.clear();           // to avoid destruction of elements
         clauses[k].second->clear();  // to avoid destruction of elements
@@ -674,6 +676,7 @@ void PDDL_Base::compile_static_observable_fluents(const Atom &atom) {
         }
 
         // invariant
+        // BLAI: check precondtion
         Invariant invariant(Invariant::AT_LEAST_ONE);
         Condition *negated_condition = condition->negate_and_simplify();
         if( dynamic_cast<Literal*>(negated_condition) != 0 ) {
@@ -1008,6 +1011,7 @@ void PDDL_Base::create_invariants_for_multivalued_variables() {
     if( !multivalued_variable_translation_ ) return;
     cout << Utils::blue() << "(mvv) creating invariants for multivalued variables..." << Utils::normal() << endl;
 
+    // BLAI: check precondition
     Invariant exactly_one(Invariant::EXACTLY_ONE);
     Invariant at_least_one(Invariant::AT_LEAST_ONE);
 
@@ -1017,6 +1021,7 @@ void PDDL_Base::create_invariants_for_multivalued_variables() {
             // for each state variable with domain size > 1, generate (exactly-one <values>)
             if( var.grounded_values_.size() > 1 ) {
                 exactly_one.reserve(var.grounded_values_.size());
+                exactly_one.precondition_ = Literal(*normal_execution_).copy();
                 for( size_t i = 0; i < var.grounded_values_.size(); ++i )
                     exactly_one.push_back(Literal(*static_cast<const AtomicEffect*>(var.grounded_values_[i])).copy());
                 clone_parameters(var.param_, exactly_one.param_);
@@ -1029,6 +1034,7 @@ void PDDL_Base::create_invariants_for_multivalued_variables() {
                          << "invariant for variable '" << var.print_name_ << "': " << *dom_init_.back()
                          << Utils::normal() << endl;
             } else {
+                // BLAI
                 // NOTE: should remove this later when preprocessing is fixed. This is only
                 // here to avoid preprocessing to mark the variable as 'static'
                 at_least_one.reserve(2);
@@ -1045,13 +1051,15 @@ void PDDL_Base::create_invariants_for_multivalued_variables() {
                          << Utils::normal() << endl;
             }
         } else {
+            // BLAI: (not (sensing-is-one)) should be precondition of invariant!
             // for each observable variable, and values <value-i> and <value-j>
             // generate (at-least-one (not (sensing-is-on)) (not <value-i>) (not <value-j>))
             if( var.grounded_values_.size() > 1 ) {
                 for( size_t i = 0; i < var.grounded_values_.size(); ++i ) {
                     for( size_t j = i + 1; j < var.grounded_values_.size(); ++j ) {
                         at_least_one.reserve(3);
-                        //at_least_one.push_back(Literal(*sensing_.first).negate());
+                        at_least_one.precondition_ = Literal(*normal_execution_).copy();
+                        //at_least_one.push_back(Literal(*sensing_.first).negate());`
                         at_least_one.push_back(Literal(*static_cast<const AtomicEffect*>(var.grounded_values_[i])).negate());
                         at_least_one.push_back(Literal(*static_cast<const AtomicEffect*>(var.grounded_values_[j])).negate());
                         clone_parameters(var.param_, at_least_one.param_);
@@ -1129,6 +1137,7 @@ void PDDL_Base::create_invariants_for_sensing_model() {
             }
         }
 
+        // BLAI: do we need precndition for these invariants?
         // for each observable literal L with rules C1 => L, ..., Cn => L:
         //
         // 1) create (invariant ~L C1 C2 .. Cn) representing L => C1 v C2 v ... v Cn
@@ -2368,7 +2377,7 @@ bool PDDL_Base::Invariant::reduce() {
         } else if( dynamic_cast<const Literal*>(condition) ) {
             reduced_invariant.push_back(condition);
         } else {
-            //cout << Utils::error() << "invariant must be clause at time of instantiation (skipping): got " << *condition << endl;
+            cout << Utils::error() << "invariant must be clause at time of instantiation (skipping): got " << *condition << endl;
             remove_invariant = true;
             to_remove.push_back(condition);
             //exit(255);
@@ -2504,6 +2513,8 @@ void PDDL_Base::InitInvariant::instantiate(init_element_list &ilist) const {
 }
 
 void PDDL_Base::InitInvariant::emit(Instance &ins) const {
+
+    // construct invariant
     Instance::Invariant typed_invariant(type_);
     for( size_t k = 0; k < size(); ++k ) {
         assert(dynamic_cast<const Literal*>((*this)[k]) != 0);
@@ -2515,7 +2526,7 @@ void PDDL_Base::InitInvariant::emit(Instance &ins) const {
             typed_invariant.push_back(-(1 + p->index_));
     }
 
-    // emit precondition
+    // construct precondition
     if( precondition_ != 0 ) {
         And precondition;
         if( dynamic_cast<const Literal*>(precondition_) != 0 ) {
@@ -2537,38 +2548,14 @@ void PDDL_Base::InitInvariant::emit(Instance &ins) const {
         precondition.clear();
     }
 
-    // convert typed invariant to AT_LEAST_ONE type: first count how many
-    // there will be in order to reserve space; then do the conversion.
-    size_t count = 0;
-    for( int pass = 0; pass < 2; ++pass ) {
-        if( typed_invariant.type_ != AT_LEAST_ONE ) {
-            if( pass == 0 ) {
-                size_t n = typed_invariant.size() * (typed_invariant.size() - 1);
-                count += n >> 1;
-            } else {
-                for( size_t i = 0; i < typed_invariant.size(); ++i ) {
-                    for( size_t j = 1 + i; j < typed_invariant.size(); ++j ) {
-                        Instance::Invariant implied_invariant;
-                        implied_invariant.type_ = AT_LEAST_ONE;
-                        implied_invariant.precondition_ = typed_invariant.precondition_;
-                        implied_invariant.push_back(-typed_invariant[i]);
-                        implied_invariant.push_back(-typed_invariant[j]);
-                        ins.init_.invariants_.push_back(implied_invariant);
-                    }
-                }
-            }
-        }
-        if( typed_invariant.type_ != AT_MOST_ONE ) {
-            if( pass == 0 ) {
-                ++count;
-            } else {
-                typed_invariant.type_ = AT_LEAST_ONE;
-                ins.init_.invariants_.push_back(typed_invariant);
-            }
-        }
-
-        // if pass == 0, reserve space
-        if( pass == 0 ) ins.init_.invariants_.reserve(ins.init_.invariants_.size() + count);
+    // emit invariant
+    if( typed_invariant.type_ != EXACTLY_ONE ) {
+        ins.init_.invariants_.push_back(typed_invariant);
+    } else {
+        Instance::Invariant at_least_one(AT_LEAST_ONE, typed_invariant);
+        Instance::Invariant at_most_one(AT_MOST_ONE, typed_invariant);
+        ins.init_.invariants_.push_back(at_least_one);
+        ins.init_.invariants_.push_back(at_most_one);
     }
 }
 

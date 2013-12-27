@@ -224,62 +224,82 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
     }
     n_sensor_actions_ = n_actions() - n_standard_actions_;
 
-#if 0
-    // create precondition for invariant actions (non-empty only
-    // when dealing with CLG syntax)
-    index_set precondition;
-    if( po_instance_.index_for_atom_normal_execution_ >= 0 ) {
-        precondition.insert(1 + 2*po_instance_.index_for_atom_normal_execution_ + 1);
-    }
-#endif
-
     // create invariant rules
     size_t invariant_no = 0;
     for( invariant_vec::const_iterator it = ins.init_.invariants_.begin(); it != ins.init_.invariants_.end(); ++it ) {
         const Invariant &invariant = *it;
-        assert(invariant.type_ == Invariant::AT_LEAST_ONE);
-        //cout << "processing invariant: "; invariant.write(cout, 0, ins);
+        assert((invariant.type_ == Invariant::AT_LEAST_ONE) || (invariant.type_ == Invariant::AT_MOST_ONE));
 
+        // if trivial invariant, skip it
+        if( (invariant.size() == 2) && (invariant[0] == -invariant[1]) ) continue;
+
+        //cout << "Processing invariant "; invariant.write(cout, 0, ins);
         for( size_t k = 0; k < invariant.size(); ++k ) {
             ostringstream s, comment_body, comment_head;
-            s << "invariant-" << invariant_no++;
+            s << "invariant-" << (invariant.type_ == Invariant::AT_LEAST_ONE ? "at-least-one" : "at-most-one") << "-" << invariant_no++;
             Action &nact = new_action(new CopyName(s.str()));
-            nact.precondition_ = invariant.precondition_;
+
+            // setup precondition
+            for( index_set::const_iterator it = invariant.precondition_.begin(); it != invariant.precondition_.end(); ++it ) {
+                int lit = *it;
+                int idx = lit > 0 ? lit-1 : -lit-1;
+                if( lit > 0 )
+                    nact.precondition_.insert(1 + 2*idx);
+                else
+                    nact.precondition_.insert(1 + 2*idx+1);
+            }
 
             // conditional effects
-            When c_eff;
             if( invariant.type_ == Invariant::AT_LEAST_ONE ) {
                 for( size_t i = 0; i < invariant.size(); ++i ) {
                     int lit = invariant[i];
                     int idx = lit > 0 ? lit-1 : -lit-1;
                     if( lit > 0 ) {
                         if( i != k ) {
-                            c_eff.condition_.insert(1 + 2*idx+1);
+                            nact.precondition_.insert(1 + 2*idx+1);
                             comment_body << atoms_[2*idx+1]->name_ << " ";
                         } else {
-                            c_eff.condition_.insert(-(1 + 2*idx+1)); // TODO: check if necessary
-                            c_eff.effect_.insert(1 + 2*idx);
+                            nact.precondition_.insert(-(1 + 2*idx+1));
+                            nact.effect_.insert(1 + 2*idx);
                             comment_head << atoms_[2*idx]->name_;
                         }
                     } else {
                         if( i != k ) {
-                            c_eff.condition_.insert(1 + 2*idx);
+                            nact.precondition_.insert(1 + 2*idx);
                             comment_body << atoms_[2*idx]->name_ << " ";
                         } else {
-                            c_eff.condition_.insert(-(1 + 2*idx)); // TODO: check if necessary
-                            c_eff.effect_.insert(1 + 2*idx+1);
+                            nact.precondition_.insert(-(1 + 2*idx));
+                            nact.effect_.insert(1 + 2*idx+1);
                             comment_head << atoms_[2*idx+1]->name_;
                         }
                     }
                 }
             } else {
-                cout << Utils::error() << "only AT_LEAST_ONE-type invariants should exist at this stage" << endl;
-                exit(255);
+                for( size_t i = 0; i < invariant.size(); ++i ) {
+                    int lit = invariant[i];
+                    int idx = lit > 0 ? lit-1 : -lit-1;
+                    if( lit > 0 ) {
+                        if( i != k ) {
+                            nact.effect_.insert(1 + 2*idx+1);
+                            comment_head << atoms_[2*idx+1]->name_ << " ";
+                        } else {
+                            nact.precondition_.insert(1 + 2*idx);
+                            comment_body << atoms_[2*idx]->name_;
+                        }
+                    } else {
+                        if( i != k ) {
+                            nact.effect_.insert(1 + 2*idx);
+                            comment_head << atoms_[2*idx]->name_ << " ";
+                        } else {
+                            nact.precondition_.insert(1 + 2*idx+1);
+                            comment_body << atoms_[2*idx+1]->name_;
+                        }
+                    }
+                }
             }
 
             // push conditional effect
-            nact.comment_ = comment_body.str() + "==> " + comment_head.str();
-            nact.when_.push_back(c_eff);
+            nact.comment_ = comment_body.str() + " ==> " + comment_head.str();
             if( options_.is_enabled("kp:print:action:invariant") ) {
                 nact.print(cout, *this);
             }
