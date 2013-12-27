@@ -269,51 +269,73 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
         }
     }
 
-    // iterate over at-least-one invariants
+    // iterate over invariants: at this stage there should be only 
+    // AT_LEAST_ONE and AT_MOST_ONE invariants
     for( int k = 0; k < (int)init_.invariants_.size(); ++k ) {
         Invariant &invariant = init_.invariants_[k];
+        //cout << "Processing invariant "; invariant.write(cout, 0, *this);
+        assert((invariant.type_ == Invariant::AT_LEAST_ONE) || (invariant.type_ == Invariant::AT_MOST_ONE));
+        index_set completion_for_initial_state;
         bool remove_invariant = false;
-        assert(invariant.type_ == Invariant::AT_LEAST_ONE);
-        if( invariant.type_ == Invariant::AT_LEAST_ONE ) {
-            for( int i = 0; i < (int)invariant.size(); ++i ) {
-                int lit = invariant[i];
-                if( ((lit > 0) && !reachable_atoms[lit-1]) ||
-                    ((lit > 0) && static_atoms[lit-1] && neg_literal_in_init[lit-1]) ||
-                    ((lit < 0) && static_atoms[-lit-1] && pos_literal_in_init[-lit-1]) ) {
-#if 0
-                    cout << "Eliminating " << flush;
-                    if( lit > 0 )
-                        cout << atoms_[lit-1]->name_ << flush;
-                    else
-                        cout << "(not " << atoms_[-lit-1]->name_ << ")" << flush;
-                    cout << " from ";
-                    invariant.write(cout, 0, *this);
-#endif
-                    invariant[i] = invariant.back();
-                    invariant.pop_back();
-                    --i;
-                }
 
-                if( ((lit < 0) && !reachable_atoms[-lit-1]) ||
-                    ((lit > 0) && static_atoms[lit-1] && pos_literal_in_init[lit-1]) ||
-                    ((lit < 0) && static_atoms[-lit-1] && neg_literal_in_init[-lit-1]) ) {
-                    remove_invariant = true;
-                    break;
-                }
+        // simplify invariant
+        for( int i = 0; i < (int)invariant.size(); ++i ) {
+            int lit = invariant[i];
+            if( ((lit > 0) && !reachable_atoms[lit-1]) ||
+                ((lit > 0) && static_atoms[lit-1] && neg_literal_in_init[lit-1]) ||
+                ((lit < 0) && static_atoms[-lit-1] && pos_literal_in_init[-lit-1]) ) {
+#if 1
+                cout << "Dropping ";
+                if( lit > 0 )
+                    cout << atoms_[lit-1]->name_->to_string();
+                else
+                    cout << "(not " << atoms_[-lit-1]->name_->to_string() << ")";
+                cout << " from invariant " << flush;
+                invariant.write(cout, 0, *this);
+#endif
+                invariant[i] = invariant.back();
+                invariant.pop_back();
+                --i;
+            }
+            if( ((lit < 0) && !reachable_atoms[-lit-1]) ||
+                ((lit > 0) && static_atoms[lit-1] && pos_literal_in_init[lit-1]) ||
+                ((lit < 0) && static_atoms[-lit-1] && neg_literal_in_init[-lit-1]) ) {
+                remove_invariant = true;
+                invariant[i] = invariant.back();
+                invariant.pop_back();
+#if 1
+                cout << "Removing invariant ";
+                invariant.write(cout, 0, *this);
+#endif
+                break;
             }
         }
 
-        // Check if need to remove invariant or to reduce it to
-        // initial conditions.
-        if( remove_invariant || (invariant.size() == 1) ) {
-            // If size is 1, insert literal in initial state
-            if( !remove_invariant ) {
-                init_.literals_.insert(invariant[0]);
+        // calculate completion of initial state
+        if( (invariant.type_ == Invariant::AT_LEAST_ONE) && !remove_invariant && (invariant.size() == 1) ) {
+            remove_invariant = true;
+            completion_for_initial_state.insert(invariant[0]);
+        } else if( (invariant.type_ == Invariant::AT_MOST_ONE) && remove_invariant ) {
+            for( int i = 0; i < (int)invariant.size(); ++i )
+                completion_for_initial_state.insert(-invariant[i]);
+        }
+ 
+        // complete initial state
+        for( index_set::const_iterator it = completion_for_initial_state.begin(); it != completion_for_initial_state.end(); ++it ) {
+            if( true || options_.is_enabled("problem:print:completion:initial-state") ) {
+                int lit = *it;
+                if( lit > 0 )
+                    cout << atoms_[lit-1]->name_->to_string() << endl;
+                else
+                    cout << "(not " << atoms_[-lit-1]->name_->to_string() << ")" << endl;
             }
+            init_.literals_.insert(*it);
+        }
 
-            // remove invariant
-            if( options_.is_enabled("problem:print:invariant:removal") ) {
-                cout << "removing ";
+        // Remove invariant and complete initial state
+        if( remove_invariant ) {
+            if( true || options_.is_enabled("problem:print:invariant:removal") ) {
+                cout << "removing invariant ";
                 init_.invariants_[k].write(cout, 0, *this);
             }
             init_.invariants_[k] = init_.invariants_.back();
@@ -709,7 +731,10 @@ void Instance::print_atoms(ostream &os) const {
 }
 
 void Instance::Action::print(ostream &os, const Instance &i) const {
-    os << name_ << ":" << endl;
+    os << name_ << ":";
+    if( comment_ != "" ) os << "    ; " << comment_;
+    os << endl;
+
     if( precondition_.size() > 0 ) {
         os << "  pre:";
         for( index_set::const_iterator it = precondition_.begin(); it != precondition_.end(); ++it ) {
@@ -763,7 +788,9 @@ void Instance::Action::write(ostream &os, int indent, const Instance &instance) 
     istr[indent] = '\0';
 
     // name and parameters
-    os << istr << "(:action " << name_->to_string() << endl;
+    os << istr << "(:action " << name_->to_string();
+    if( comment_ != "" ) os << "    ; " << comment_;
+    os << endl;
     if( always_write_parameters_declaration_ )
         os << istr << istr << ":parameters ()" << endl;
 
@@ -984,7 +1011,13 @@ void Instance::Invariant::write(ostream &os, int indent, const Instance &instanc
     char *istr = new char[indent+1];
     for( int i = 0; i < indent; ++i ) istr[i] = ' ';
     istr[indent] = '\0';
-    os << istr << "(invariant";
+    os << istr << "(";
+
+    assert((type_ == AT_LEAST_ONE) || (type_ == AT_MOST_ONE));
+    if( type_ == AT_LEAST_ONE )
+        os << "at-least-one";
+    else
+        os << "at-most-one";
 
     if( !precondition_.empty() ) {
         os << " (:precondition";
@@ -1151,7 +1184,7 @@ void Instance::create_deductive_rules() {
             if( !c_eff.effect_.empty() ) {
                 rule->when_.push_back(c_eff);
                 deductive_rules_.push_back(rule);
-                if( options_.is_enabled("problem:print:deductive-rule:creation") ) {
+                if( true || options_.is_enabled("problem:print:deductive-rule:creation") ) {
                     rule->print(cout, *this);
                 }
             } else {
