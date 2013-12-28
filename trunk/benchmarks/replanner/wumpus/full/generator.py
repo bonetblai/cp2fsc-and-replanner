@@ -20,12 +20,13 @@ import random
 
 name = "wumpus"
 
-if (len(sys.argv) <> 5) :
+if (len(sys.argv) <> 6) :
     print """
-    usage: %s <dim> <nwumpus> <npits> <seed>
+    usage: %s <dim> <nwumpus> <npits> <seed> <n>
 
-    generates problem file wumpus_<dim>_<nwumpus>_<npits>_<seed>.pddl for a
-    problem of dimension <dim> with <nwumpus> wumpus and <npits> pits.
+    generates <n> random instances of a wumpus of dimension <dim>
+    with <nwumpus> wumpus and <npits> pits. The output is placed
+    in file problems/wumpus_<dim>_<nwumpus>_<npits>_<seed>.pddl.
     """ % sys.argv[0]
     sys.exit(1)
 
@@ -33,6 +34,7 @@ dim = int(sys.argv[1])
 nwumpus = int(sys.argv[2])
 npits = int(sys.argv[3])
 seed = int(sys.argv[4])
+num = int(sys.argv[5])
 random.seed(seed)
 
 
@@ -111,12 +113,6 @@ for cell in cells:
 
 init = "  (:init" + knowns + "\n" + adjs + "\n\n" + unknowns + "\n" + infs + "  )\n"
 
-gold = [-1, -1]
-wumpus = []
-stench = []
-pits = []
-breeze = []
-
 def available(pos):
     if (pos == (1,1)) | (pos == (1,2)) | (pos == (2,1)) | (pos == (2,2)):
         return False
@@ -139,47 +135,56 @@ def safe(pos):
             return False
     return True
 
-pos = (-1, -1)
-while (pos[0] == -1) | (not available(pos)):
-    pos = (random.randrange(1, dim), random.randrange(1, dim))
-gold = pos
 
-for i in range(0, nwumpus):
+hidden = ""
+for k in range(0, num):
+    gold = [-1, -1]
+    wumpus = []
+    stench = []
+    pits = []
+    breeze = []
+
     pos = (-1, -1)
     while (pos[0] == -1) | (not available(pos)):
         pos = (random.randrange(1, dim), random.randrange(1, dim))
-    wumpus.append(pos)
-    stench.append([])
-    calculate_adj(pos, stench[i])
+    gold = pos
 
-for i in range(0, npits):
-    pos = (-1, -1)
-    while (pos[0] == -1) | (not available(pos)):
-        pos = (random.randrange(1, dim), random.randrange(1, dim))
-    pits.append(pos)
-    breeze.append([])
-    calculate_adj(pos, breeze[i])
+    for i in range(0, nwumpus):
+        pos = (-1, -1)
+        while (pos[0] == -1) | (not available(pos)):
+            pos = (random.randrange(1, dim), random.randrange(1, dim))
+        wumpus.append(pos)
+        stench.append([])
+        calculate_adj(pos, stench[i])
 
-hidden = "  (:hidden\n    (gold p_%d_%d)" % gold + " (glitter p_%d_%d)\n" % gold
+    for i in range(0, npits):
+        pos = (-1, -1)
+        while (pos[0] == -1) | (not available(pos)):
+            pos = (random.randrange(1, dim), random.randrange(1, dim))
+        pits.append(pos)
+        breeze.append([])
+        calculate_adj(pos, breeze[i])
 
-for i in range(0, nwumpus):
-    hidden += "    (wumpus p_%d_%d)" % wumpus[i]
-    for pos in stench[i]:
-        hidden += " (stench p_%d_%d)" % pos
-    hidden += "\n"
+    hidden += "  (:hidden\n    (gold p_%d_%d)" % gold + " (glitter p_%d_%d)\n" % gold
 
-for i in range(0, npits):
-    hidden += "    (pit p_%d_%d)" % pits[i]
-    for pos in breeze[i]:
-        hidden += " (breeze p_%d_%d)" % pos
-    hidden += "\n"
+    for i in range(0, nwumpus):
+        hidden += "    (wumpus p_%d_%d)" % wumpus[i]
+        for pos in stench[i]:
+            hidden += " (stench p_%d_%d)" % pos
+        hidden += "\n"
 
-hidden += "   "
-for cell in cells:
-    if safe(cell):
-        hidden += " (safe p_%d_%d)" % cell
+    for i in range(0, npits):
+        hidden += "    (pit p_%d_%d)" % pits[i]
+        for pos in breeze[i]:
+            hidden += " (breeze p_%d_%d)" % pos
+        hidden += "\n"
 
-hidden += "\n  )\n"
+    hidden += "   "
+    for cell in cells:
+        if safe(cell):
+            hidden += " (safe p_%d_%d)" % cell
+
+    hidden += "\n  )\n"
 
 goal = "  (:goal (have-gold))"
 
