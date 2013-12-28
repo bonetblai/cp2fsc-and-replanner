@@ -20,18 +20,18 @@ import random
 
 name = "wumpus"
 
-if (len(sys.argv) <> 3) :
+if (len(sys.argv) <> 4) :
     print """
-    usage: %s <dim> <seed>
+    usage: %s <dim> <seed> <n>
 
-    generates a random instance file wumpus_<dim>_<seed>.pddl for
-    the diagonal wumpus of dimension <dim>, out of 2^(<dim> - 2)
-    different instances.
+    generates <n> random instances of diagonal wumpus for dimension <dim>
+    into file problems/wumpus_<dim>_<seed>.pddl.
     """ % sys.argv[0]
     sys.exit(1)
 
 dim = int(sys.argv[1])
 seed = int(sys.argv[2])
+num = int(sys.argv[3])
 random.seed(seed)
 
 
@@ -127,27 +127,26 @@ for cell in cells:
 
 init = "  (:init" + knowns + "\n" + adjs + "\n\n" + unknowns + "\n" + infs + "  )\n"
 
-
-
-bits = []
 m = 2 ** (dim - 3)
-n = random.randrange(0, m)
-for i in range(0, dim - 3):
-    bits.append(n % 2)
-    n /= 2
+hidden = ""
+for k in range(0, num):
+    n = random.randrange(0, m)
+    bits = []
+    for i in range(0, dim - 3):
+        bits.append(n % 2)
+        n /= 2
 
-hidden = "  (:hidden\n"
-for i in range(0, dim - 3):
-    cp = target_cells[i]
-    cell = cp[bits[i]]
-    adj_list = calculate_adj(cell, [])
-    hidden += "    (wumpus p_%d_%d)" % cell
-    for pos in adj_list:
-        hidden += " (stench p_%d_%d)" % pos
-    hidden += "\n"
-    hidden += "    (safe p_%d_%d)\n" % cp[1 - bits[i]]
-
-hidden += "  )\n"
+    hidden += "  (:hidden\n"
+    for i in range(0, dim - 3):
+        cp = target_cells[i]
+        cell = cp[bits[i]]
+        adj_list = calculate_adj(cell, [])
+        hidden += "    (wumpus p_%d_%d)" % cell
+        for pos in adj_list:
+            hidden += " (stench p_%d_%d)" % pos
+        hidden += "\n"
+        hidden += "    (safe p_%d_%d)\n" % cp[1 - bits[i]]
+    hidden += "  )\n"
 
 goal = "  (:goal (have-gold))"
 
