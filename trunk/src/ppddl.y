@@ -29,8 +29,12 @@
 #include "base.h"
 #include "utils.h"
 
+#pragma GCC diagnostic ignored "-Wpragmas"
 #pragma GCC diagnostic ignored "-Wdeprecated-writable-strings"
 #pragma GCC diagnostic ignored "-Wchar-subscripts"
+#pragma GCC diagnostic ignored "-Wwrite-strings"
+#pragma GCC diagnostic ignored "-Wuninitialized"
+#pragma GCC diagnostic ignored "-Wsign-compare"
 %}
 
 %union {
