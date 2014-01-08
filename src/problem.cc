@@ -1019,9 +1019,9 @@ void Instance::Invariant::write(ostream &os, int indent, const Instance &instanc
     else
         os << "at-most-one";
 
-    if( !precondition_.empty() ) {
+    if( !Xprecondition_.empty() ) {
         os << " (:precondition";
-        for( index_set::const_iterator it = precondition_.begin(); it != precondition_.end(); ++it ) {
+        for( index_set::const_iterator it = Xprecondition_.begin(); it != Xprecondition_.end(); ++it ) {
             if( *it > 0 )
                 os << " " << instance.atoms_[*it-1]->name_;
             else

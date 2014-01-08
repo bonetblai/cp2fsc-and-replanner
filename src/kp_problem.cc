@@ -240,7 +240,7 @@ KP_Instance::KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &mul
             Action &nact = new_action(new CopyName(s.str()));
 
             // setup precondition
-            for( index_set::const_iterator it = invariant.precondition_.begin(); it != invariant.precondition_.end(); ++it ) {
+            for( index_set::const_iterator it = invariant.Xprecondition_.begin(); it != invariant.Xprecondition_.end(); ++it ) {
                 int lit = *it;
                 int idx = lit > 0 ? lit-1 : -lit-1;
                 if( lit > 0 )

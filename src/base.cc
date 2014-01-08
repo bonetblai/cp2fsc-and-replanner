@@ -370,7 +370,7 @@ void PDDL_Base::clg_map_oneofs_and_clauses_to_invariants() {
     for( size_t k = 0; k < oneofs.size(); ++k ) {
         Invariant invariant(Invariant::EXACTLY_ONE, *oneofs[k].second);
         // BLAI: check precondition
-        if( normal_execution_ != 0 ) invariant.precondition_ = Literal(*normal_execution_).copy();
+        //if( normal_execution_ != 0 ) invariant.Xprecondition_ = Literal(*normal_execution_).copy();
         dom_init_[oneofs[k].first] = new InitInvariant(invariant);
         invariant.clear();           // to avoid destruction of elements
         oneofs[k].second->clear();   // to avoid destruction of elements
@@ -381,7 +381,7 @@ void PDDL_Base::clg_map_oneofs_and_clauses_to_invariants() {
     for( size_t k = 0; k < clauses.size(); ++k ) {
         Invariant invariant(Invariant::AT_LEAST_ONE, *clauses[k].second);
         // BLAI: check precondition
-        if( normal_execution_ != 0 ) invariant.precondition_ = Literal(*normal_execution_).copy();
+        //if( normal_execution_ != 0 ) invariant.Xprecondition_ = Literal(*normal_execution_).copy();
         dom_init_[clauses[k].first] = new InitInvariant(invariant);
         invariant.clear();           // to avoid destruction of elements
         clauses[k].second->clear();  // to avoid destruction of elements
@@ -617,8 +617,8 @@ void PDDL_Base::calculate_beam_for_grounded_variable(Variable &var) {
 }
 
 void PDDL_Base::compile_static_observable_fluents(const Atom &atom) {
-    cout << Utils::blue() << "(mvv) compiling static observable '" << atom << "'"
-         << Utils::normal() << endl;
+    //cout << Utils::blue() << "(mvv) compiling static observable '" << atom << "'"
+    //     << Utils::normal() << endl;
 
     // iterate over all sensing models extracting those relevant to atom
     effect_list sensing_models;
@@ -1036,7 +1036,6 @@ void PDDL_Base::create_invariants_for_multivalued_variables() {
     if( !multivalued_variable_translation_ ) return;
     cout << Utils::blue() << "(mvv) creating invariants for multivalued variables..." << Utils::normal() << endl;
 
-    // BLAI: check precondition
     Invariant exactly_one(Invariant::EXACTLY_ONE);
     Invariant at_least_one(Invariant::AT_LEAST_ONE);
 
@@ -1046,7 +1045,8 @@ void PDDL_Base::create_invariants_for_multivalued_variables() {
             // for each state variable with domain size > 1, generate (exactly-one <values>)
             if( var.grounded_values_.size() > 1 ) {
                 exactly_one.reserve(var.grounded_values_.size());
-                exactly_one.precondition_ = Literal(*normal_execution_).copy();
+                // BLAI: check precondition
+                //exactly_one.Xprecondition_ = Literal(*normal_execution_).copy();
                 for( size_t i = 0; i < var.grounded_values_.size(); ++i )
                     exactly_one.push_back(Literal(*static_cast<const AtomicEffect*>(var.grounded_values_[i])).copy());
                 clone_parameters(var.param_, exactly_one.param_);
@@ -1083,7 +1083,8 @@ void PDDL_Base::create_invariants_for_multivalued_variables() {
                 for( size_t i = 0; i < var.grounded_values_.size(); ++i ) {
                     for( size_t j = i + 1; j < var.grounded_values_.size(); ++j ) {
                         at_least_one.reserve(3);
-                        at_least_one.precondition_ = Literal(*normal_execution_).copy();
+                        // BLAI: check precondition
+                        //at_least_one.Xprecondition_ = Literal(*normal_execution_).copy();
                         //at_least_one.push_back(Literal(*sensing_.first).negate());`
                         at_least_one.push_back(Literal(*static_cast<const AtomicEffect*>(var.grounded_values_[i])).negate());
                         at_least_one.push_back(Literal(*static_cast<const AtomicEffect*>(var.grounded_values_[j])).negate());
@@ -2427,7 +2428,7 @@ void PDDL_Base::Invariant::process_instance() const {
 
 void PDDL_Base::Invariant::clear() {
     condition_vec::clear();
-    precondition_ = 0;
+    Xprecondition_ = 0;
 }
 
 bool PDDL_Base::Invariant::reduce() {
@@ -2475,8 +2476,8 @@ string PDDL_Base::Invariant::to_string() const {
         str += ")";
     }
 
-    if( precondition_ != 0 ) {
-        str += " (:precondition " + precondition_->to_string() + ")";
+    if( Xprecondition_ != 0 ) {
+        str += " (:precondition " + Xprecondition_->to_string() + ")";
     }
 
     for( size_t k = 0; k < size(); ++k )
@@ -2598,13 +2599,13 @@ void PDDL_Base::InitInvariant::emit(Instance &ins) const {
     }
 
     // construct precondition
-    if( precondition_ != 0 ) {
+    if( Xprecondition_ != 0 ) {
         And precondition;
-        if( dynamic_cast<const Literal*>(precondition_) != 0 ) {
-            precondition.push_back(precondition_);
+        if( dynamic_cast<const Literal*>(Xprecondition_) != 0 ) {
+            precondition.push_back(Xprecondition_);
         } else {
-            assert(dynamic_cast<const And*>(precondition_) != 0);
-            const And &and_precondition = *static_cast<const And*>(precondition_);
+            assert(dynamic_cast<const And*>(Xprecondition_) != 0);
+            const And &and_precondition = *static_cast<const And*>(Xprecondition_);
             precondition.insert(precondition.end(), and_precondition.begin(), and_precondition.end());
         }
         for( size_t k = 0; k < precondition.size(); ++k ) {
@@ -2612,9 +2613,9 @@ void PDDL_Base::InitInvariant::emit(Instance &ins) const {
             const Literal &literal = *static_cast<const Literal*>(precondition[k]);
             Instance::Atom *p = literal.find_prop(ins, false, true);
             if( !literal.negated_ )
-                typed_invariant.precondition_.insert(1 + p->index_);
+                typed_invariant.Xprecondition_.insert(1 + p->index_);
             else
-                typed_invariant.precondition_.insert(-(1 + p->index_));
+                typed_invariant.Xprecondition_.insert(-(1 + p->index_));
         }
         precondition.clear();
     }
