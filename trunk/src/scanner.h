@@ -377,7 +377,7 @@ class YY_PDDL_Scanner_CLASS YY_PDDL_Scanner_INHERIT
   =0
 #endif
   ;
- virtual void  YY_PDDL_Scanner_FATAL_ERROR(char *msg)
+ virtual void  YY_PDDL_Scanner_FATAL_ERROR(const char *msg)
 #ifdef YY_PDDL_Scanner_FATAL_ERROR_PURE
   =0
 #endif

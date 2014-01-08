@@ -28,6 +28,9 @@
 #include <sstream>
 #include "base.h"
 #include "utils.h"
+
+#pragma GCC diagnostic ignored "-Wdeprecated-writable-strings"
+#pragma GCC diagnostic ignored "-Wchar-subscripts"
 %}
 
 %union {

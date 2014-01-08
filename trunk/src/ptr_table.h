@@ -3,6 +3,8 @@
 
 #include <vector>
 
+#pragma GCC diagnostic ignored "-Wunused-private-field"
+
 class ptr_table {
     void *_key;
     ptr_table *_left;
