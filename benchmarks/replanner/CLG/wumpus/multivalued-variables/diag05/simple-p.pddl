@@ -42,6 +42,7 @@
         (adj p4-4 p4-5) (adj p4-5 p4-4)
         (adj p5-4 p5-5) (adj p5-5 p5-4)
 
+        (need-start)
         (at p1-1)
         (gold-at p5-5)
 

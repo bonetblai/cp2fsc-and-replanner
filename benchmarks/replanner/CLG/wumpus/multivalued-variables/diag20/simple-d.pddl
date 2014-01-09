@@ -25,6 +25,7 @@
     )
     (:predicates
         (adj ?p ?q - pos)
+        (need-start)
         (at ?p - pos)
         (wumpus-at ?p - pos)
         (gold-at ?p - pos)
@@ -53,9 +54,10 @@
     (:variable wumpus-18 (wumpus-at p19-20) (wumpus-at p20-19))
     (:obs-variable (stench-var ?p - pos) (stench ?p))
 
-    (:action smell-wumpus
+    (:action start
         :parameters (?i - pos)
-        :precondition (at ?i)
+        :precondition (and (need-start) (at ?i))
+        :effect (not (need-start))
         :sensing-model
             (and (forall (?p - pos) (when (and (adj ?i ?p) (wumpus-at ?p)) (stench ?i)))
                  (when (forall (?p - pos) (or (not (adj ?i ?p)) (not (wumpus-at ?p)))) (not (stench ?i)))
@@ -64,13 +66,17 @@
 
     (:action move
         :parameters (?i ?j - pos)
-        :precondition (and (adj ?i ?j) (at ?i) (not (wumpus-at ?j)))
+        :precondition (and (adj ?i ?j) (at ?i) (not (wumpus-at ?j)) (not (need-start)))
         :effect (and (not (at ?i)) (at ?j))
+        :sensing-model
+            (and (forall (?p - pos) (when (and (adj ?j ?p) (wumpus-at ?p)) (stench ?j)))
+                 (when (forall (?p - pos) (or (not (adj ?j ?p)) (not (wumpus-at ?p)))) (not (stench ?j)))
+            )
     )
 
     (:action grab
         :parameters (?i - pos)
-        :precondition (and (at ?i) (gold-at ?i))
+        :precondition (and (at ?i) (gold-at ?i) (not (need-start)))
         :effect (and (got-the-treasure) (not (gold-at ?i)))
     )
 )

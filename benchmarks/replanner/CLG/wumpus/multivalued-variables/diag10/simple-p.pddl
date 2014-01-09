@@ -182,6 +182,7 @@
         (adj p10-8 p10-9) (adj p10-9 p10-8)
         (adj p10-9 p10-10) (adj p10-10 p10-9)
 
+        (need-start)
         (at p1-1)
         (gold-at p10-10)
 
@@ -287,5 +288,5 @@
         (not (wumpus-at p10-10))
     )
     (:goal (got-the-treasure))
-) 
+)
 

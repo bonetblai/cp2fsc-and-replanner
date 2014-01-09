@@ -762,6 +762,7 @@
         (adj p19-19 p19-20) (adj p19-20 p19-19)
         (adj p20-19 p20-20) (adj p20-20 p20-19)
 
+        (need-start)
         (at p1-1)
         (gold-at p20-20)
 
@@ -1167,5 +1168,5 @@
         (not (wumpus-at p20-20))
     )
     (:goal (got-the-treasure))
-) 
+)
 
