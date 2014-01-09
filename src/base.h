@@ -105,7 +105,6 @@ class PDDL_Base {
         void print(std::ostream &os, bool extra_neg = false) const { os << to_string(extra_neg); }
         static PDDL_Base *pddl_base_;
     };
-    //struct atom_vec : public std::vector<Atom*> { };
     struct unsigned_atom_vec : public std::vector<Atom> { };
     struct unsigned_atom_set : public std::set<Atom> { };
 
@@ -656,8 +655,13 @@ class PDDL_Base {
     void calculate_post_condition(const Condition *precondition, const Effect *effect, unsigned_atom_set &post_condition) const;
     void simplify_post_condition(unsigned_atom_set &post_condition) const;
     bool is_literal_implied(const Atom *lit, const std::vector<const Atom*> &literals) const;
+    bool s0_test(const unsigned_atom_set &condition) const;
+    bool action_test(const unsigned_atom_set &condition) const;
+    void remove_subsumed_conditions(std::set<unsigned_atom_set> &conditions) const;
+    Condition* create_condition(const unsigned_atom_set &condition) const;
     void compile_static_observable_fluents(const Atom &atom);
 
+    // methods to fetch/create support atoms for translations
     const Atom* fetch_need_set_sensing_atom(const Action &action);
     const Atom* fetch_need_post_atom(const unsigned_atom_set &atoms);
     const Atom* fetch_sensing_atom(const Atom &atom);
