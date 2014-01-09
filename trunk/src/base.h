@@ -105,7 +105,7 @@ class PDDL_Base {
         void print(std::ostream &os, bool extra_neg = false) const { os << to_string(extra_neg); }
         static PDDL_Base *pddl_base_;
     };
-    struct atom_vec : public std::vector<Atom*> { };
+    //struct atom_vec : public std::vector<Atom*> { };
     struct unsigned_atom_vec : public std::vector<Atom> { };
     struct unsigned_atom_set : public std::set<Atom> { };
 
@@ -645,13 +645,18 @@ class PDDL_Base {
     void calculate_observable_atoms();
     void calculate_beams_for_grounded_observable_variables();
     void calculate_beam_for_grounded_variable(Variable &var);
-    void compile_static_observable_fluents(const Atom &atom);
     void translate_actions_for_multivalued_variable_formulation();
     void translation_for_multivalued_variable_formulation(Action &action);
     void create_sensors_for_atoms(const unsigned_atom_set &atoms);
     void create_post_action(const unsigned_atom_set &atoms);
     void create_invariants_for_multivalued_variables();
     void create_invariants_for_sensing_model();
+
+    // methods to compile static observables (for multivalued variables)
+    void calculate_post_condition(const Condition *precondition, const Effect *effect, unsigned_atom_set &post_condition) const;
+    void simplify_post_condition(unsigned_atom_set &post_condition) const;
+    bool is_literal_implied(const Atom *lit, const std::vector<const Atom*> &literals) const;
+    void compile_static_observable_fluents(const Atom &atom);
 
     const Atom* fetch_need_set_sensing_atom(const Action &action);
     const Atom* fetch_need_post_atom(const unsigned_atom_set &atoms);
@@ -728,6 +733,7 @@ inline std::ostream& operator<<(std::ostream &os, const PDDL_Base::Variable &var
     return os;
 }
 
+std::ostream& operator<<(std::ostream &os, const PDDL_Base::unsigned_atom_set &atom_set);
 
 class PDDL_Name : public Name {
     bool negated_;

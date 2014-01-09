@@ -5,8 +5,8 @@ include makedefs
 .cc.o:
 	$(C++) $(CFLAGS) -c $<
 
-LIBSRCS = string_table.cc base.cc ptr_table.cc char_map.cc problem.cc kp_problem.cc cp_problem.cc ks0_problem.cc name.cc preprocess.cc solver.cc classical_planner.cc
-#LIBSRCS = string_table.cc base.cc ptr_table.cc char_map.cc problem.cc kp_problem.cc ks0_problem.cc name.cc preprocess.cc solver.cc classical_planner.cc
+#LIBSRCS = string_table.cc base.cc ptr_table.cc char_map.cc problem.cc kp_problem.cc cp_problem.cc ks0_problem.cc name.cc preprocess.cc solver.cc classical_planner.cc
+LIBSRCS = string_table.cc base.cc ptr_table.cc char_map.cc problem.cc kp_problem.cc ks0_problem.cc name.cc preprocess.cc solver.cc classical_planner.cc
 LIBGENSRCS = grammar.cc scanner.cc
 GENSRCS = ppddl.y ppddl.lex
 TARGET1 = k-replanner
