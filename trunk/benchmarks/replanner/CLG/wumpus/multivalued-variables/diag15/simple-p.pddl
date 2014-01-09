@@ -422,6 +422,7 @@
         (adj p14-14 p14-15) (adj p14-15 p14-14)
         (adj p15-14 p15-15) (adj p15-15 p15-14)
 
+        (need-start)
         (at p1-1)
         (gold-at p15-15)
 
@@ -652,5 +653,5 @@
         (not (wumpus-at p15-15))
     )
     (:goal (got-the-treasure))
-) 
+)
 

@@ -86,6 +86,7 @@
         (adj p6-6 p6-7) (adj p6-7 p6-6) 
         (adj p7-6 p7-7) (adj p7-7 p7-6)
 
+        (need-start)
         (at p1-1)
         (gold-at p7-7)
 
@@ -140,5 +141,5 @@
         (not (wumpus-at p7-7))
     )
     (:goal (got-the-treasure))
-) 
+)
 

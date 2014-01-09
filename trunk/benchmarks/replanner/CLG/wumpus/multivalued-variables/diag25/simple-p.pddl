@@ -1202,6 +1202,7 @@
         (adj p24-24 p24-25) (adj p24-25 p24-24)
         (adj p25-24 p25-25) (adj p25-25 p25-24)
 
+        (need-start)
         (at p1-1)
         (gold-at p25-25)
 
@@ -1832,5 +1833,5 @@
         (not (wumpus-at p25-25))
     )
     (:goal (got-the-treasure))
-) 
+)
 
