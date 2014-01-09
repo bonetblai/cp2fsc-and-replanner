@@ -339,8 +339,9 @@ void PDDL_Base::calculate_static_atoms() {
     }
 
     // erase affected atoms from candidate set
-    for( unsigned_atom_set::iterator it = affected_atoms.begin(); it != affected_atoms.end(); ++it )
+    for( unsigned_atom_set::iterator it = affected_atoms.begin(); it != affected_atoms.end(); ++it ) {
         dom_static_atoms_.erase(*it);
+    }
 
     if( options_.is_enabled("problem:print:atom:static") ) {
         cout << "static atoms:";
@@ -1281,7 +1282,7 @@ void PDDL_Base::compile_static_observable_fluents(const Atom &atom) {
     static_observable_atoms_.insert(atom);
 
     // calculate prime implicant for conditions on observable atom
-    //cout << Utils::red() << "calculating prime implicant for conditions on observable atom: " << atom << Utils::normal() << endl; 
+    cout << Utils::red() << "calculating prime implicant for conditions on observable atom: " << atom << Utils::normal() << endl; 
     set<unsigned_atom_set> candidate_post_conditions;
     unsigned_atom_set atoms_to_remove;
     atoms_to_remove.insert(atom);
@@ -1297,8 +1298,8 @@ void PDDL_Base::compile_static_observable_fluents(const Atom &atom) {
                 reduced_sensing_model[k] = reduced_model;
                 unsigned_atom_set post_condition;
                 //cout << "action=" << action.print_name_;
-                //if( action.precondition_ != 0 ) cout << "    pre=" << *action.precondition_ << endl;
-                //if( action.effect_ != 0 ) cout << "    eff=" << *action.effect_ << endl;
+                //if( action.precondition_ != 0 ) cout << ", pre=" << *action.precondition_;
+                //if( action.effect_ != 0 ) cout << ", eff=" << *action.effect_;
                 calculate_post_condition(action.precondition_, action.effect_, post_condition);
                 simplify_post_condition(post_condition);
                 //cout << ", post=" << post_condition << endl;
@@ -1370,6 +1371,8 @@ void PDDL_Base::compile_static_observable_fluents(const Atom &atom) {
     if( !post_conditions.empty() ) {
         // for each condition, create a pasive sensor
         for( set<unsigned_atom_set>::const_iterator it = post_conditions.begin(); it != post_conditions.end(); ++it ) {
+            if( it->size() > 2 ) continue;
+            //cout << "condition=" << *it << endl;
             Sensor *sensor = new Sensor(strdup((string("pasive-sensor-for-") + atom.to_string(atom.negated_, true)).c_str()));
             sensor->condition_ = create_condition(*it);
             sensor->sense_ = AtomicEffect(atom, atom.negated_).copy();
