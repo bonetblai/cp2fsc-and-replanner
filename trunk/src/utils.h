@@ -6,7 +6,7 @@
 
 namespace Utils {
 
-inline float read_time_in_seconds(bool add_stime = false) {
+inline float read_time_in_seconds(bool add_stime = true) {
     struct rusage r_usage;
     float time = 0;
 
