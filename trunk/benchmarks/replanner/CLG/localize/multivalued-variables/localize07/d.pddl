@@ -63,7 +63,6 @@
  
     (:action move-up
         :precondition (and (not (need-start)) (free-up))
-        :precondition (free-up)
         :effect
             (and
                  (when (at p1-1) (and (at p1-2) (not (at p1-1))))
