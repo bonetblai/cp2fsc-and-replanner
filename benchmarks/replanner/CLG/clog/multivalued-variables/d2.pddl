@@ -12,7 +12,7 @@
         (in_city_a ?airport - AIRPORT ?city - CITY)
         (in_city_t ?truck - TRUCK ?city - CITY)
     )
- 
+
     (:variable (obj-pos ?obj - OBJ)
         (forall (?l - LOCATION) (at_ol ?obj ?l))
         (forall (?a - AIRPORT) (at_oa ?obj ?a))
@@ -26,7 +26,7 @@
     (:variable (airplane-pos ?airplane - AIRPLANE)
         (forall (?a - AIRPORT) (at_aa ?airplane ?a))
     )
-                      
+
     (:action sense_package_loc_t
         :parameters (?obj - OBJ ?truck - TRUCK ?loc - LOCATION)
         :precondition (at_tl ?truck ?loc)
@@ -89,7 +89,7 @@
         :parameters (?truck - TRUCK ?airport - AIRPORT ?loc - LOCATION ?city - CITY)
         :precondition (and (at_ta ?truck ?airport) (in_city_a ?airport ?city) (in_city_l ?loc ?city) (in_city_t ?truck ?city))
         :effect (and (not (at_ta ?truck ?airport)) (at_tl ?truck ?loc))
-    ) 
+    )
 
     (:action FLY_AIRPLANE
         :parameters (?airplane - AIRPLANE ?airport1 - AIRPORT ?airport2 - AIRPORT)
@@ -97,4 +97,4 @@
         :effect (and (not (at_aa ?airplane ?airport1)) (at_aa ?airplane ?airport2))
     )
 )
- 
+
