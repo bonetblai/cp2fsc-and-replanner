@@ -851,8 +851,8 @@ static const short yyrline[] = { 0,
    768,   771,   776,   781,   791,   795,   796,   802,   804,   805,
    806,   807,   808,   809,   812,   814,   815,   818,   824,   831,
    833,   844,   855,   866,   876,   882,   889,   897,   904,   906,
-   907,   910,   917,   924,   931,   941,   949,   951,   954,   959,
-   967,   969
+   907,   910,   917,   924,   931,   941,   952,   954,   957,   962,
+   970,   972
 };
 
 static const char * const yytname[] = {   "$","error","$illegal.","TK_OPEN",
@@ -2542,26 +2542,29 @@ case 196:
           if( type_ == cp2fsc ) {
               log_error((char*)"':hidden' is not a valid element in cp2fsc.");
               yyerrok;
+          } else {
+              init_element_vec hidden;
+              dom_hidden_.push_back(hidden);
           }
       ;
     break;}
 case 197:
-#line 950 "ppddl.y"
+#line 953 "ppddl.y"
 { dom_goal_ = yyvsp[-1].condition; ;
     break;}
 case 198:
-#line 951 "ppddl.y"
+#line 954 "ppddl.y"
 { dom_goal_ = yyvsp[-2].condition; ;
     break;}
 case 199:
-#line 955 "ppddl.y"
+#line 958 "ppddl.y"
 {
           const_cast<And*>(static_cast<const And*>(yyvsp[-1].condition))->push_back(yyvsp[0].condition);
           yyval.condition = yyvsp[-1].condition;
       ;
     break;}
 case 200:
-#line 959 "ppddl.y"
+#line 962 "ppddl.y"
 {
           And *cond = new And;
           cond->push_back(yyvsp[0].condition);
@@ -2569,11 +2572,11 @@ case 200:
       ;
     break;}
 case 201:
-#line 968 "ppddl.y"
+#line 971 "ppddl.y"
 { yyval.condition = new Literal(*yyvsp[0].atom); delete yyvsp[0].atom; ;
     break;}
 case 202:
-#line 969 "ppddl.y"
+#line 972 "ppddl.y"
 { yyval.condition = new Literal(*yyvsp[0].atom); delete yyvsp[0].atom; ;
     break;}
 }
@@ -2780,7 +2783,7 @@ YYLABEL(yyerrhandle)
 /* END */
 
 /* #line 1010 "/usr/local/lib/bison.cc" */
-#line 2784 "grammar.cc"
-#line 972 "ppddl.y"
+#line 2787 "grammar.cc"
+#line 975 "ppddl.y"
 
 

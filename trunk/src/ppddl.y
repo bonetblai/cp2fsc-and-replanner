@@ -942,6 +942,9 @@ hidden_state:
           if( type_ == cp2fsc ) {
               log_error((char*)"':hidden' is not a valid element in cp2fsc.");
               yyerrok;
+          } else {
+              init_element_vec hidden;
+              dom_hidden_.push_back(hidden);
           }
       }
     ;
