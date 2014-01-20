@@ -938,6 +938,12 @@ hidden_state:
               delete $3;
           }
       }
+    | TK_OPEN KW_HIDDEN TK_CLOSE {
+          if( type_ == cp2fsc ) {
+              log_error((char*)"':hidden' is not a valid element in cp2fsc.");
+              yyerrok;
+          }
+      }
     ;
 
 goal_spec:
