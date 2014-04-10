@@ -5,8 +5,8 @@ include makedefs
 .cc.o:
 	$(C++) $(CFLAGS) -c $<
 
-LIBSRCS = string_table.cc base.cc ptr_table.cc char_map.cc problem.cc kp_problem.cc cp_problem.cc ks0_problem.cc name.cc preprocess.cc solver.cc classical_planner.cc
-#LIBSRCS = string_table.cc base.cc ptr_table.cc char_map.cc problem.cc kp_problem.cc ks0_problem.cc name.cc preprocess.cc solver.cc classical_planner.cc
+LIBSRCS = string_table.cc base.cc ptr_table.cc char_map.cc problem.cc kp_problem.cc clg_problem.cc mvv_problem.cc mvv2_problem.cc cp_problem.cc ks0_problem.cc name.cc preprocess.cc solver.cc classical_planner.cc
+#LIBSRCS = string_table.cc base.cc ptr_table.cc char_map.cc problem.cc kp_problem.cc clg_problem.cc mvv_problem.cc ks0_problem.cc name.cc preprocess.cc solver.cc classical_planner.cc
 LIBGENSRCS = grammar.cc scanner.cc
 GENSRCS = ppddl.y ppddl.lex
 TARGET1 = k-replanner
@@ -15,13 +15,17 @@ TARGET2 = cp2fsc
 all: $(TARGET1) $(TARGET2)
 
 grammar.h: ppddl.y base.h
-	$(BISON) -v -d -o grammar.cc ppddl.y
+	#$(BISON) -v -d -o grammar.cc ppddl.y
+	touch grammar.cc grammar.h
 grammar.cc: ppddl.y base.h
-	$(BISON) -v -d -o grammar.cc ppddl.y
+	#$(BISON) -v -d -o grammar.cc ppddl.y
+	touch grammar.cc grammar.h
 scanner.cc: ppddl.lex grammar.h
-	$(FLEX) -i -hscanner.h -oscanner.cc ppddl.lex
+	#$(FLEX) -i -hscanner.h -oscanner.cc ppddl.lex
+	touch scanner.cc scanner.h
 scanner.h: ppddl.lex grammar.h
-	$(FLEX) -i -hscanner.h -oscanner.cc ppddl.lex
+	#$(FLEX) -i -hscanner.h -oscanner.cc ppddl.lex
+	touch scanner.cc scanner.h
 
 include makedeps
 

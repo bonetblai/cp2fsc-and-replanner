@@ -6,6 +6,7 @@
 #include "options.h"
 #include "problem.h"
 #include <cassert>
+#include <limits>
 #include <list>
 #include <map>
 #include <set>
@@ -96,17 +97,32 @@ class PDDL_Base {
         bool has_free_variables(const var_symbol_vec &param) const;
         bool is_fully_instantiated() const;
 
-        // the comparison operators don't consider the field negated_
-        bool operator==(const Atom &atom) const;
-        bool operator<(const Atom &atom) const;
         const Atom& operator=(const Atom &atom);
+
+        // comparison operators
+        bool operator==(const Atom &atom) const;
+        bool operator!=(const Atom &atom) const { return !(*this == atom); }
+        bool operator<(const Atom &atom) const;
+        struct signed_less_comparator {
+            bool operator()(const Atom &atom1, const Atom &atom2) const {
+                return atom1 < atom2;
+            }
+        };
+        struct unsigned_less_comparator {
+            bool operator()(const Atom &atom1, const Atom &atom2) const;
+        };
 
         std::string to_string(bool extra_neg = false, bool mangled = false) const;
         void print(std::ostream &os, bool extra_neg = false) const { os << to_string(extra_neg); }
         static PDDL_Base *pddl_base_;
     };
-    struct unsigned_atom_vec : public std::vector<Atom> { };
-    struct unsigned_atom_set : public std::set<Atom> { };
+    struct atom_vec : public std::vector<Atom> { };
+    struct signed_atom_set : public std::set<Atom, Atom::signed_less_comparator> {
+        bool operator<(const signed_atom_set &atom_set) const;
+    };
+    struct unsigned_atom_set : public std::set<Atom, Atom::unsigned_less_comparator> {
+        bool operator<(const unsigned_atom_set &atom_set) const;
+    };
 
     struct Condition {
         Condition() { }
@@ -145,7 +161,7 @@ class PDDL_Base {
         virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const;
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
         virtual std::string to_string() const { return to_string(false, false); }
-        std::string to_string(bool extra_negation, bool mangled) const { return Atom::to_string(false, mangled); }
+        std::string to_string(bool extra_negation, bool mangled) const { return Atom::to_string(extra_negation, mangled); }
         Condition *copy(bool clone_variables = false, bool negate = false, bool replace_static_values = false) const;
         Condition *negate(bool clone_variables = false) const { return copy(clone_variables, true); }
     };
@@ -232,7 +248,7 @@ class PDDL_Base {
         virtual Effect* ground(bool clone_variables = false, bool replace_static_values = true) const = 0;
         virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const = 0;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const = 0;
-        virtual void calculate_beam_for_grounded_variable(Variable &var, const unsigned_atom_vec &context) const = 0;
+        virtual void calculate_beams_for_variable(Variable &var, const atom_vec &context) const = 0;
         virtual void extract_atoms(unsigned_atom_set &atoms, bool only_affected = false) const = 0;
         virtual Effect* reduce_sensing_model(const unsigned_atom_set &atoms_to_remove) const = 0;
         virtual void extract_sensing_model_for_atom(const Atom &atom, effect_list &sensing_models) const = 0;
@@ -250,7 +266,7 @@ class PDDL_Base {
         virtual Effect* ground(bool clone_variables = false, bool replace_static_values = true) const { return 0; }
         virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const { return false; }
         virtual bool is_strongly_static(const PredicateSymbol &pred) const { return true; }
-        virtual void calculate_beam_for_grounded_variable(Variable &var, const unsigned_atom_vec &context) const { }
+        virtual void calculate_beams_for_variable(Variable &var, const atom_vec &context) const { }
         virtual void extract_atoms(unsigned_atom_set &atoms, bool only_affected = false) const { }
         virtual Effect* reduce_sensing_model(const unsigned_atom_set &atoms_to_remove) const { return 0; }
         virtual void extract_sensing_model_for_atom(const Atom &atom, effect_list &sensing_models) const { }
@@ -265,7 +281,7 @@ class PDDL_Base {
         virtual Effect* ground(bool clone_variables = false, bool replace_static_values = true) const;
         virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
-        virtual void calculate_beam_for_grounded_variable(Variable &var, const unsigned_atom_vec &context) const;
+        virtual void calculate_beams_for_variable(Variable &var, const atom_vec &context) const;
         virtual void extract_atoms(unsigned_atom_set &atoms, bool only_affected = false) const;
         virtual Effect* reduce_sensing_model(const unsigned_atom_set &atoms_to_remove) const;
         virtual void extract_sensing_model_for_atom(const Atom &atom, effect_list &sensing_models) const;
@@ -284,7 +300,7 @@ class PDDL_Base {
         virtual Effect* ground(bool clone_variables = false, bool replace_static_values = true) const;
         virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
-        virtual void calculate_beam_for_grounded_variable(Variable &var, const unsigned_atom_vec &context) const;
+        virtual void calculate_beams_for_variable(Variable &var, const atom_vec &context) const;
         virtual void extract_atoms(unsigned_atom_set &atoms, bool only_affected = false) const;
         virtual Effect* reduce_sensing_model(const unsigned_atom_set &atoms_to_remove) const;
         virtual void extract_sensing_model_for_atom(const Atom &atom, effect_list &sensing_models) const;
@@ -302,7 +318,7 @@ class PDDL_Base {
         virtual Effect* ground(bool clone_variables = false, bool replace_static_values = true) const;
         virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
-        virtual void calculate_beam_for_grounded_variable(Variable &var, const unsigned_atom_vec &context) const;
+        virtual void calculate_beams_for_variable(Variable &var, const atom_vec &context) const;
         virtual void extract_atoms(unsigned_atom_set &atoms, bool only_affected = false) const;
         virtual Effect* reduce_sensing_model(const unsigned_atom_set &atoms_to_remove) const;
         virtual void extract_sensing_model_for_atom(const Atom &atom, effect_list &sensing_models) const;
@@ -319,7 +335,7 @@ class PDDL_Base {
         virtual Effect* ground(bool clone_variables = false, bool replace_static_values = true) const;
         virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const;
         virtual bool is_strongly_static(const PredicateSymbol &pred) const;
-        virtual void calculate_beam_for_grounded_variable(Variable &var, const unsigned_atom_vec &context) const;
+        virtual void calculate_beams_for_variable(Variable &var, const atom_vec &context) const;
         virtual void extract_atoms(unsigned_atom_set &atoms, bool only_affected = false) const;
         virtual Effect* reduce_sensing_model(const unsigned_atom_set &atoms_to_remove) const;
         virtual void extract_sensing_model_for_atom(const Atom &atom, effect_list &sensing_models) const;
@@ -329,15 +345,17 @@ class PDDL_Base {
     };
 
     struct Invariant : public condition_vec, Schema {
-        int type_;
+        typedef enum { AT_LEAST_ONE = 0, AT_MOST_ONE = 1, EXACTLY_ONE = 2 } type_t;
+        typedef enum { GOOD = 0, BAD = 1, RECOVERABLE = 3, EMPTY = 4 } status_t;
+
+        type_t type_;
         const Condition *Xprecondition_;
-        enum { AT_LEAST_ONE = 0, AT_MOST_ONE = 1, EXACTLY_ONE = 2 };
-        Invariant(int type) : type_(type), Xprecondition_(0) { }
-        Invariant(int type, const condition_vec &invariant) : condition_vec(invariant), type_(type), Xprecondition_(0) { }
+        Invariant(type_t type) : type_(type), Xprecondition_(0) { }
+        Invariant(type_t type, const condition_vec &invariant) : condition_vec(invariant), type_(type), Xprecondition_(0) { }
         virtual ~Invariant() { for( size_t k = 0; k < size(); ++k ) delete (*this)[k]; delete Xprecondition_; }
         virtual void process_instance() const;
         void clear();
-        bool reduce();
+        status_t Xeduce();
         bool has_free_variables() const;
         std::string to_string() const;
         void print(std::ostream &os) const { os << to_string(); }
@@ -523,14 +541,12 @@ class PDDL_Base {
     struct Variable : public Symbol, Schema {
         bool grounded_;
         effect_vec values_;
-        effect_vec grounded_values_;
-        std::vector<unsigned_atom_set> beam_;
+        unsigned_atom_set grounded_values_;
+        std::map<Atom, unsigned_atom_set, Atom::unsigned_less_comparator> beam_;
         Variable(const char *name) : Symbol(name, sym_varname), grounded_(false) { }
         virtual ~Variable() {
             for( size_t k = 0; k < values_.size(); ++k )
                 delete values_[k];
-            for( size_t k = 0; k < grounded_values_.size(); ++k )
-                delete grounded_values_[k];
         }
         void instantiate(variable_list &vlist) const;
         virtual void process_instance() const;
@@ -588,6 +604,9 @@ class PDDL_Base {
     // set of initial literals (extracted from InitElements in dom_init_
     unsigned_atom_set                         set_of_initial_literals_;
 
+    // name of original actions in problem
+    std::set<std::string>                     original_actions_;
+
     // For CLG and multivalued variables translations
     const Atom                                *normal_execution_;
 
@@ -595,21 +614,28 @@ class PDDL_Base {
     bool                                      clg_translation_;
 
     // For multivalued variables formulations
-    bool                                      multivalued_variable_translation_;
+    bool                                      mvv_translation_;
     variable_vec                              multivalued_variables_;
-    std::vector<const Atom*>                  need_sense_;
-    std::vector<const Atom*>                  need_post_;
     const Effect                              *default_sensing_model_;
     std::vector<std::pair<const var_symbol_vec*, const Effect*> > sensing_models_;
     unsigned_atom_set                         observable_atoms_;
     unsigned_atom_set                         atoms_for_state_variables_;
     unsigned_atom_set                         static_observable_atoms_;
+    unsigned_atom_set                         sensed_atoms_;
+    std::set<std::string>                     simple_sensors_for_multivalued_variables_;
     std::map<std::string, const Sensor*>      sensors_for_multivalued_variable_translation_;
     std::map<unsigned_atom_set, const Action*> post_actions_for_multivalued_variable_translation_;
     std::map<std::string, const Atom*>        need_set_sensing_atoms_;
     std::map<unsigned_atom_set, const Atom*>  need_post_atoms_;
     std::map<std::string, const Atom*>        sensing_atoms_;
+    //std::map<std::pair<bool, Atom>, std::list<const And*> > sensing_models_for_atoms_;
+    //std::map<std::set<std::pair<bool, Atom> >, Atom*> atoms_for_terms_for_type3_drules_;
+    std::map<Atom, std::list<const And*> >    sensing_models_for_atoms_;
+    std::map<signed_atom_set, Atom*>          atoms_for_terms_for_type3_drules_;
 
+    std::list<const Effect*>                  xx_sensing_models_;
+    std::map<Atom, Atom>                      xx_sensing_enablers_;
+    std::map<Atom, std::set<unsigned_atom_set> > xx_pasive_sensors_;
 
     PDDL_Base(StringTable& t, const Options::Mode &options);
     ~PDDL_Base();
@@ -627,39 +653,68 @@ class PDDL_Base {
     void calculate_static_atoms();
     bool is_static_atom(const Atom &atom) const;
 
-    void do_translations(variable_vec &multivalued_variables);
+    void do_translations(const variable_vec* &multivalued_variables,
+                         const std::list<const Effect*>* &sensing_models,
+                         const std::map<Atom, Atom>* &sensing_enablers,
+                         const std::map<Atom, std::set<unsigned_atom_set> >* &pasive_sensors);
     void emit_instance(Instance &ins) const;
     void print(std::ostream &os) const;
+
+    // translations
+    int get_translation_type() const { return clg_translation() ? 1 : (mvv_translation() ? 2 : 0); }
 
     // methods for formulations in CLG-like syntax
     void declare_clg_translation();
     bool clg_translation() const { return clg_translation_; }
     void clg_map_oneofs_and_clauses_to_invariants();
-    void clg_translate_observe_effects_into_sensors();
+    void clg_translate_actions();
+    void clg_translate(Action &action);
 
     // methods for formulations in terms of multivalued variables
     void declare_multivalued_variable_translation();
-    bool multivalued_variable_translation() const { return multivalued_variable_translation_; }
-    void calculate_atoms_for_state_variables();
-    void calculate_observable_atoms();
-    void calculate_beams_for_grounded_observable_variables();
-    void calculate_beam_for_grounded_variable(Variable &var);
-    void translate_actions_for_multivalued_variable_formulation();
-    void translation_for_multivalued_variable_formulation(Action &action);
-    void create_sensors_for_atoms(const unsigned_atom_set &atoms);
-    void create_post_action(const unsigned_atom_set &atoms);
-    void create_invariants_for_multivalued_variables();
-    void create_invariants_for_sensing_model();
+    bool mvv_translation() const { return mvv_translation_; }
+    void mvv_calculate_atoms_for_state_variables();
+    void mvv_calculate_observable_atoms();
+    void mvv_calculate_beams_for_grounded_observable_variables();
+    void mvv_calculate_beams_for_grounded(Variable &var);
+    void mvv_translate_actions();
+    void mvv_translate(Action &action);
+    void mvv_create_sensors_for_atoms_old(const unsigned_atom_set &atoms);
+    void mvv_create_post_action(const unsigned_atom_set &atoms);
+
+    // methods to create deductive rules (for multivalued variables)
+    void mvv_create_invariants_for_variables();
+    void mvv_create_invariants_for_sensing_models();
+    void mvv_create_deductive_rules_for_variables();
+    void mvv_index_sensing_models();
+    void mvv_create_deductive_rules_for_sensing();
+
+    // methods to create type-3 deductive rules (for multivalued variables)
+    void mvv_create_type3_drules(const Atom &obs, const And &term, const std::list<const And*> &dnf, int index);
+    const Atom& mvv_fetch_atom_for_negated_term(const And &term);
+
+    // methods to create sensors (for multivalued variables)
+    void mvv_create_simple_sensors_for_atoms(const unsigned_atom_set &atoms);
+    void mvv_create_sensors_for_atom(const Atom &atom, const Condition &condition, int sensor_index = -1);
+    void mvv_create_sensors_for_atom(const Atom &atom, const signed_atom_set &condition, int sensor_index = -1);
 
     // methods to compile static observables (for multivalued variables)
-    void calculate_post_condition(const Condition *precondition, const Effect *effect, unsigned_atom_set &post_condition) const;
-    void simplify_post_condition(unsigned_atom_set &post_condition) const;
-    bool is_literal_implied(const Atom *lit, const std::vector<const Atom*> &literals) const;
-    bool s0_test(const unsigned_atom_set &condition) const;
-    bool action_test(const unsigned_atom_set &condition) const;
-    void remove_subsumed_conditions(std::set<unsigned_atom_set> &conditions) const;
-    Condition* create_condition(const unsigned_atom_set &condition) const;
-    void compile_static_observable_fluents(const Atom &atom);
+    void mvv_calculate_post_condition(const Condition *precondition, const Effect *effect, signed_atom_set &post_condition) const;
+    void mvv_simplify_post_condition(signed_atom_set &post_condition) const;
+    bool mvv_is_literal_implied(const Atom &literal, const Condition &condition, bool complement_literal = false) const;
+    bool mvv_is_literal_implied(const Atom &literal, const signed_atom_set &condition, bool complement_literal = false) const;
+    bool mvv_is_literal_implied(const Atom &literal, const std::vector<const Atom*> &condition, bool complement_literal = false) const;
+    bool mvv_test_on_initial_state_for_static_observable(const signed_atom_set &condition) const;
+    bool mvv_test_on_actions_for_static_observable(const signed_atom_set &condition, const Atom &atom) const;
+    void mvv_remove_subsumed_conditions(std::set<signed_atom_set> &conditions) const;
+    Condition* mvv_create_condition(const unsigned_atom_set &condition) const;
+    void mvv_compile_static_observable(const Atom &atom);
+
+    // methods to complete effects (for multivalued variables)
+    void mvv_complete_effect_for_actions();
+    const AndEffect* mvv_complete_effect(Effect *effect) const;
+    const AndEffect* mvv_canonize_effect(Effect *effect) const;
+    void mvv_complete_effect_with_variable(AndEffect *effect, const Variable &var) const;
 
     // methods to fetch/create support atoms for translations
     const Atom* fetch_need_set_sensing_atom(const Action &action);

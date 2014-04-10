@@ -1,6 +1,7 @@
 #ifndef CLASSICAL_PLANNER_H
 #define CLASSICAL_PLANNER_H
 
+#include <unistd.h>
 #include <fstream>
 #include <map>
 #include <string>
@@ -86,10 +87,40 @@ class LAMA_Planner : public ClassicalPlanner {
     LAMA_Planner(const KP_Instance &instance, const char *tmpfile_path, const char *planner_path);
     virtual ~LAMA_Planner();
     virtual int get_raw_plan(const State &state, Instance::Plan &raw_plan) const;
+
+    struct variable_order;
     void patch_state_in_sas(std::fstream &iofs, const State &state) const;
     void determine_seek_pos(std::ifstream &ifs) const;
     void read_variable(std::ifstream &ifs, std::vector<std::pair<int, std::vector<int> > > &variables) const;
     void read_variables(std::ifstream &ifs) const;
+};
+
+class LAMA_Server_Planner : public ClassicalPlanner {
+    mutable bool first_call_;
+    //mutable std::streampos begin_state_pos_;
+    mutable std::vector<std::vector<int> > variables_;
+    std::map<std::string, size_t> atom_map_;
+
+    enum { PIPE_READ = 0, PIPE_WRITE = 1 };
+    mutable int stdin_pipe_[2];
+    mutable int stderr_pipe_[2];
+    mutable int child_pid_;
+
+  public:
+    LAMA_Server_Planner(const KP_Instance &instance, const char *tmpfile_path, const char *planner_path);
+    virtual ~LAMA_Server_Planner();
+    virtual int get_raw_plan(const State &state, Instance::Plan &raw_plan) const;
+    //void patch_state_in_sas(std::fstream &iofs, const State &state) const;
+    //void determine_seek_pos(std::ifstream &ifs) const;
+
+    struct variable_order;
+    void read_variable(std::ifstream &ifs, std::vector<std::pair<int, std::vector<int> > > &variables) const;
+    void read_variables(std::ifstream &ifs) const;
+    int create_server_process(const char *base) const;
+    int cat_file_to_server(const char *filename) const;
+    int cat_state_to_server(const State &state) const;
+    void exit_server() const;
+    int get_server_status() const;
 };
 
 #endif

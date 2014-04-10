@@ -31,7 +31,9 @@ const char *available_options[] = {
     "problem:print:sensor:removal",        "[PREP] print the name of the sensors that are removed",
     "problem:print:axiom:removal",         "[PREP] print the name of axioms that are removed",
     "problem:print:invariant:removal",     "[PREP] print the invariants are removed",
-    "problem:print:literal-completion",    "[PREP] print calculated literal completions",
+
+    "problem:print:action-compilation",    "[PREP] print action compilation",
+    "problem:action-compilation",          "[PREP] perform action compilation",
 
     // cp-translation options (cp2fsc)
     "cp:print:raw",                        "[CP] print the translation before preprocessing",
@@ -54,6 +56,10 @@ const char *available_options[] = {
     "kp:print:action:regular",             "[KP] print the name of regular actions",
     "kp:print:action:sensor",              "[KP] print the name of actions added for sensors",
     "kp:print:action:invariant",           "[KP] print the name of actions added for invariants",
+    "kp:print:action:drule",               "[KP] print deductive KP actions (mvv translation)",
+    "kp:print:action:drule:var",           "[KP] print deductive KP actions for variables (mvv translation)",
+    "kp:print:action:drule:sensing",       "[KP] print deductive KP actions for sensing (mvv translation)",
+    "kp:merge-drules",                     "[KP] merge decision rules with common precondition",
     "kp:subgoaling",                       "[KP] goal of KP problem is either goal or unknown static fluents",
 
     // planner options (k_replanner)
@@ -62,7 +68,7 @@ const char *available_options[] = {
     "planner:remove-intermediate-files",   "[PLANNER] remove the files created for calling the classical planner",
 
     // solver options (k_replanner)
-    //"solver:print:assumptions",            "[SOLVER] print assumptions made in classical plan",
+    "solver:print:assumptions",            "[SOLVER] print assumptions made in classical plan",
     "solver:print:steps",                  "[SOLVER] print the result of each action in the plan",
     //"solver:print:inconsistency",          "[SOLVER] print when detecting an inconsistency",
     //"solver:print:inconsistency:details",  "[SOLVER] print details of the inconsistency",
@@ -89,14 +95,16 @@ const char *available_options[] = {
     "mvv:print:effect",                    "[MVV] print effect actions",
     "mvv:print:set-sensing",               "[MVV] print set-sensing actions",
     "mvv:print:post",                      "[MVV] print post actions",
-    "mvv:print:sensor",                    "[MVV] print sensors",
+    "mvv:print:sensors",                   "[MVV] print sensors",
     "mvv:print:generated",                 "[MVV] print all actions and sensors",
-    "mvv:print:invariants:var",            "[MVV] print variable invariants",
-    "mvv:print:invariants:sensing",        "[MVV] print sensing invariants",
-    "mvv:print:invariants:compilation",    "[MVV] print invariants obtained from compilation of static observables",
-    "mvv:print:invariants",                "[MVV] print all invariants",
+    "mvv:print:drule",                     "[MVV] print all deductive rules",
+    "mvv:print:drule:var",                 "[MVV] print deductive rules for variables",
+    "mvv:print:drule:sensing",             "[MVV] print deductive rules for sensing",
+    "mvv:print:drule:static",              "[MVV] print deductive rules obtained from compilation of static sensing",
     "mvv:print:axioms",                    "[MVV] print axioms generated when compiling static observables",
     "mvv:compile-static-observables",      "[MVV] compile the value of static observable fluents at init",
+    "mvv:complete-effects",                "[MVV] complete effects for multivalued variables",
+    "mvv:drule:type3",                     "[MVV] generate deductive rules for sensing of type 3",
 
     0
 };

@@ -5,6 +5,9 @@
 #include "preprocess.h"
 #include "parser.h"
 #include "state.h"
+#include "clg_problem.h"
+#include "mvv_problem.h"
+#include "mvv2_problem.h"
 #include "solver.h"
 #include "options.h"
 #include "available_options.h"
@@ -75,7 +78,12 @@ int main(int argc, char *argv[]) {
         const char *desc = *opt;
         options.add(name, desc);
     }
+
+    // set default options
     options.enable("planner:remove-intermediate-files");
+    options.enable("problem:action-compilation");
+    options.enable("mvv:compile-static-observables");
+    options.enable("kp:merge-drules");
 
     // check correct number of parameters
     const char *exec_name = argv[0];
@@ -154,11 +162,17 @@ int main(int argc, char *argv[]) {
     }
 
     // perform necessary translations
-    PDDL_Base::variable_vec multivalued_variables;
-    reader->do_translations(multivalued_variables);
+    const PDDL_Base::variable_vec *multivalued_variables = 0;
+    const list<const PDDL_Base::Effect*> *sensing_models = 0;
+    const map<PDDL_Base::Atom, PDDL_Base::Atom> *sensing_enablers = 0;
+    const map<PDDL_Base::Atom, set<PDDL_Base::unsigned_atom_set> > *pasive_sensors = 0;
+    reader->do_translations(multivalued_variables, sensing_models, sensing_enablers, pasive_sensors);
     if( options.is_enabled("parser:print:translated") ) {
         reader->print(cout);
     }
+
+    // get translation type: 0=no translation, 1=clg, 2=mvv
+    int translation_type = reader->get_translation_type();
 
     // create fresh instance
     Instance instance(options);
@@ -174,7 +188,7 @@ int main(int argc, char *argv[]) {
 
     cout << "preprocessing p.o. problem..." << endl;
     Preprocessor prep(instance);
-    prep.preprocess(true, true);
+    prep.preprocess(true);
     if( options.is_enabled("problem:print:preprocessed") ) {
         //instance.print(cout);
         instance.write_domain(cout);
@@ -182,33 +196,45 @@ int main(int argc, char *argv[]) {
     }
 
     cout << "creating KP translation..." << endl;
-    KP_Instance kp_instance(instance, multivalued_variables);
+    KP_Instance *kp_instance = 0;
+    if( translation_type == 0 ) {
+        kp_instance = new Standard_KP_Instance(instance);
+    } else if( translation_type == 1 ) {
+        kp_instance = new CLG_Instance(instance);
+    } else {
+        assert(multivalued_variables != 0);
+        kp_instance = new MVV2_Instance(instance, *multivalued_variables);
+        //kp_instance = new MVV_Instance(instance, *multivalued_variables, *sensing_models, *sensing_enablers, *pasive_sensors);
+    }
+
     if( options.is_enabled("kp:print:raw") ) {
-        kp_instance.print(cout);
-        kp_instance.write_domain(cout);
-        kp_instance.write_problem(cout);
+        kp_instance->print(cout);
+        kp_instance->write_domain(cout);
+        kp_instance->write_problem(cout);
     }
 
     cout << "preprocessing KP translation..." << endl;
-    Preprocessor kp_prep(kp_instance);
-    kp_prep.preprocess(false);
+    Preprocessor kp_prep(*kp_instance);
+    //kp_prep.preprocess(false);
     if( options.is_enabled("kp:print:preprocessed") ) {
-        kp_instance.write_domain(cout);
-        kp_instance.write_problem(cout);
+        kp_instance->write_domain(cout);
+        kp_instance->write_problem(cout);
     }
-    kp_instance.print_stats(cout);
+    kp_instance->print_stats(cout);
     float preprocessing_time = Utils::read_time_in_seconds() - start_time;
 
     // construct classical planner
     const ClassicalPlanner *planner = 0;
     if( opt_planner == "ff" ) {
-        planner = new FF_Planner(kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+        planner = new FF_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
     } else if( opt_planner == "lama" ) {
-        planner = new LAMA_Planner(kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+        planner = new LAMA_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
     } else if( opt_planner == "m" ) {
-        planner = new M_Planner(kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+        planner = new M_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
     } else if( opt_planner == "mp" ) {
-        planner = new MP_Planner(kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+        planner = new MP_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+    } else if( opt_planner == "lama-server" ) {
+        planner = new LAMA_Server_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
     }
 
     // solve problem
@@ -225,7 +251,7 @@ int main(int argc, char *argv[]) {
         cout << endl;
 
         planner->reset_stats();
-        Solver solver(instance, kp_instance, *planner, opt_time_bound);
+        Solver solver(instance, *kp_instance, *planner, opt_time_bound);
         int status = solver.solve(hidden_initial_state, plan, fired_sensors, sensed_literals);
         assert(1+plan.size() == fired_sensors.size());
 
@@ -305,11 +331,19 @@ int main(int argc, char *argv[]) {
             }
         }
 
+        // in translations, not every action in the plan corresponds
+        // to an original action. Thus, let's compute a faithful plan
+        // length
+        size_t plan_length = 0;
+        for( size_t k = 0; k < plan.size(); ++k ) {
+            plan_length += instance.is_original_action(instance.actions_[plan[k]]->name_->to_string()) ? 1 : 0;
+        }
+
         // print some stats
         float current_time = Utils::read_time_in_seconds();
         cout << "stats: "
              << opt_planner << " (planner) "
-             << (int)(status != Solver::SOLVED ? -1 : plan.size()) << " (plan-size) "
+             << (int)(status != Solver::SOLVED ? -1 : plan_length) << " (plan-size) "
              << planner->n_calls() << " (planner-calls) "
              << preprocessing_time << " (preprocessing-time) "
              << planner->get_time() << " (planner-time) "
