@@ -27,74 +27,83 @@
         (forall (?a - AIRPORT) (at-aa ?airplane ?a))
     )
 
-    (:action sense-package-loc-t
-        :parameters (?obj - OBJ ?loc - LOCATION ?truck - TRUCK)
+    (:action sense-loc-t
+        :parameters (?loc - LOCATION ?truck - TRUCK)
         :precondition (at-tl ?truck ?loc)
-        :sensing-model (at-ol ?obj ?loc)
+        :sensing-model (forall (?obj - OBJ) (at-ol ?obj ?loc))
     )
-    (:action sense-package-ap-t
-        :parameters (?obj - OBJ ?airport - AIRPORT ?truck - TRUCK)
+    (:action sense-ap-t
+        :parameters (?airport - AIRPORT ?truck - TRUCK)
         :precondition (at-ta ?truck ?airport)
-        :sensing-model (at-oa ?obj ?airport)
+        :sensing-model (forall (?obj - OBJ) (at-oa ?obj ?airport))
     )
-    (:action sense-package-ap-a
-        :parameters (?obj - OBJ ?airport - AIRPORT ?airplane - AIRPLANE)
+    (:action sense-ap-a
+        :parameters (?airport - AIRPORT ?airplane - AIRPLANE)
         :precondition (at-aa ?airplane ?airport)
-        :sensing-model (at-oa ?obj ?airport)
+        :sensing-model (forall (?obj - OBJ) (at-oa ?obj ?airport))
     )
 
     (:action LOAD-TRUCK-LOC
         :parameters (?obj - OBJ ?truck - TRUCK ?loc - LOCATION ?city - CITY)
         :precondition (and (at-tl ?truck ?loc) (in-city-t ?truck ?city) (in-city-l ?loc ?city) (at-ol ?obj ?loc))
         :effect (and (not (at-ol ?obj ?loc)) (in-ot ?obj ?truck))
+        :sensing-model (forall (?o - OBJ) (at-ol ?o ?loc))
     )
 
     (:action LOAD-TRUCK-AP
         :parameters (?obj - OBJ ?truck - TRUCK ?airport - AIRPORT ?city - CITY)
         :precondition (and (at-ta ?truck ?airport) (in-city-t ?truck ?city) (in-city-a ?airport ?city) (at-oa ?obj ?airport))
         :effect (and (not (at-oa ?obj ?airport)) (in-ot ?obj ?truck))
+        :sensing-model (forall (?o - OBJ) (at-oa ?o ?airport))
     )
 
     (:action LOAD-AIRPLANE
         :parameters (?obj - OBJ ?airplane - AIRPLANE ?airport - AIRPORT) 
         :precondition (and (at-aa ?airplane ?airport) (at-oa ?obj ?airport))
         :effect (and (not (at-oa ?obj ?airport)) (in-oa ?obj ?airplane))
+        :sensing-model (forall (?o - OBJ) (at-oa ?o ?airport))
     )
 
     (:action UNLOAD-TRUCK-LOC
         :parameters (?obj - OBJ ?truck - TRUCK ?loc - LOCATION ?city - CITY)
         :precondition (and (at-tl ?truck ?loc) (in-city-t ?truck ?city) (in-city-l ?loc ?city))
         :effect (when (in-ot ?obj ?truck) (and (not (in-ot ?obj ?truck)) (at-ol ?obj ?loc)))
+        :sensing-model (forall (?o - OBJ) (at-ol ?o ?loc))
     )
 
     (:action UNLOAD-TRUCK-AP
         :parameters (?obj - OBJ ?truck - TRUCK ?airport - AIRPORT ?city - CITY)
         :precondition (and (at-ta ?truck ?airport) (in-city-t ?truck ?city) (in-city-a ?airport ?city))
         :effect (when (in-ot ?obj ?truck) (and (not (in-ot ?obj ?truck)) (at-oa ?obj ?airport)))
+        :sensing-model (forall (?o - OBJ) (at-oa ?o ?airport))
     )
 
     (:action UNLOAD-AIRPLANE
         :parameters (?obj - OBJ ?airplane - AIRPLANE ?airport - AIRPORT)
         :precondition (at-aa ?airplane ?airport)
         :effect (when (in-oa ?obj ?airplane) (and (not (in-oa ?obj ?airplane)) (at-oa ?obj ?airport)))
+        :sensing-model (forall (?o - OBJ) (at-oa ?o ?airport))
     )
 
     (:action DRIVE-TRUCK-LOC-AP
         :parameters (?truck - TRUCK ?loc - LOCATION ?airport - AIRPORT ?city - CITY)
         :precondition (and (at-tl ?truck ?loc) (in-city-l ?loc ?city) (in-city-a ?airport ?city) (in-city-t ?truck ?city))
         :effect (and (not (at-tl ?truck ?loc)) (at-ta ?truck ?airport))
+        :sensing-model (forall (?obj - OBJ) (at-oa ?obj ?airport))
     )
 
     (:action DRIVE-TRUCK-AP-LOC
         :parameters (?truck - TRUCK ?airport - AIRPORT ?loc - LOCATION ?city - CITY)
         :precondition (and (at-ta ?truck ?airport) (in-city-a ?airport ?city) (in-city-l ?loc ?city) (in-city-t ?truck ?city))
         :effect (and (not (at-ta ?truck ?airport)) (at-tl ?truck ?loc))
+        :sensing-model (forall (?obj - OBJ) (at-ol ?obj ?loc))
     )
 
     (:action FLY-AIRPLANE
         :parameters (?airplane - AIRPLANE ?airport1 - AIRPORT ?airport2 - AIRPORT)
         :precondition (and (at-aa ?airplane ?airport1))
         :effect (and (not (at-aa ?airplane ?airport1)) (at-aa ?airplane ?airport2))
+        :sensing-model (forall (?obj - OBJ) (at-oa ?obj ?airport2))
     )
 )
 

@@ -27,20 +27,20 @@
         (forall (?a - AIRPORT) (at-aa ?airplane ?a))
     )
 
-    (:action sense-package-loc-t
-        :parameters (?obj - OBJ ?loc - LOCATION ?truck - TRUCK)
+    (:action sense-loc-t
+        :parameters (?loc - LOCATION ?truck - TRUCK)
         :precondition (at-tl ?truck ?loc)
-        :sensing-model (at-ol ?obj ?loc)
+        :sensing-model (forall (?obj - OBJ) (at-ol ?obj ?loc))
     )
-    (:action sense-package-ap-t
-        :parameters (?obj - OBJ ?airport - AIRPORT ?truck - TRUCK)
+    (:action sense-ap-t
+        :parameters (?airport - AIRPORT ?truck - TRUCK)
         :precondition (at-ta ?truck ?airport)
-        :sensing-model (at-oa ?obj ?airport)
+        :sensing-model (forall (?obj - OBJ) (at-oa ?obj ?airport))
     )
-    (:action sense-package-ap-a
-        :parameters (?obj - OBJ ?airport - AIRPORT ?airplane - AIRPLANE)
+    (:action sense-ap-a
+        :parameters (?airport - AIRPORT ?airplane - AIRPLANE)
         :precondition (at-aa ?airplane ?airport)
-        :sensing-model (at-oa ?obj ?airport)
+        :sensing-model (forall (?obj - OBJ) (at-oa ?obj ?airport))
     )
 
     (:action LOAD-TRUCK-LOC
