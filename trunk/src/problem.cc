@@ -481,10 +481,8 @@ void Instance::calculate_non_primitive_and_observable_fluents() {
     observable_fluents_.clear();
     for( size_t k = 0; k < n_sensors(); ++k ) {
         const Sensor &sensor = *sensors_[k];
-        for( index_set::const_iterator it = sensor.sense_.begin(); it != sensor.sense_.end(); ++it ) {
-            assert(*it > 0);
-            observable_fluents_.insert(*it-1);
-        }
+        for( index_set::const_iterator it = sensor.sense_.begin(); it != sensor.sense_.end(); ++it )
+            observable_fluents_.insert(*it > 0 ? *it - 1 : -*it - 1);
     }
     for( index_set::const_iterator it = given_observables_.begin(); it != given_observables_.end(); ++it ) {
         assert(*it > 0);
@@ -498,16 +496,16 @@ void Instance::calculate_non_primitive_and_observable_fluents() {
     }
 }
 
-void Instance::set_initial_state(State &state) const {
+void Instance::set_initial_state(State &state, bool apply_axioms) const {
     for( index_set::const_iterator it = init_.literals_.begin(); it != init_.literals_.end(); ++it ) {
         if( *it > 0 )
             state.add(*it-1);
     }
-    state.apply_axioms(*this);
+    if( apply_axioms ) state.apply_axioms(*this);
 }
 
 void Instance::set_hidden_state(int k, State &state) const {
-    set_initial_state(state);
+    set_initial_state(state, false);
     for( index_set::const_iterator it = hidden_[k].literals_.begin(); it != hidden_[k].literals_.end(); ++it ) {
         if( *it > 0 )
             state.add(*it-1);
@@ -565,7 +563,7 @@ void Instance::write_atom_set(ostream &os, const bool_vec &set) const {
     os << '}';
 }
 
-void Instance::write_atom_sets(ostream &os, const index_set_vec &sets) const {
+void Instance::write_atom_sets(ostream &os, const vector<index_set> &sets) const {
     os << '{';
     for( size_t k = 0; k < sets.size(); k++ ) {
         if( k > 0 ) os << ',';

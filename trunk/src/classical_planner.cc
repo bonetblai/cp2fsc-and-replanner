@@ -2,9 +2,11 @@
 #include <iostream>
 #include <fstream>
 #include <stdlib.h>
-#include <unistd.h>
 #include "classical_planner.h"
 #include "utils.h"
+
+#include <fcntl.h>
+#include <unistd.h>
 
 using namespace std;
 
@@ -440,7 +442,7 @@ void LAMA_Planner::read_variable(ifstream &ifs, vector<pair<int, vector<int> > >
     assert(trailer == "end_variable");
 }
 
-struct variable_order {
+struct LAMA_Planner::variable_order {
     bool operator()(const pair<int, vector<int> > &a, const pair<int, vector<int> > &b) const {
         return a.first < b.first;
     }
@@ -463,5 +465,323 @@ void LAMA_Planner::read_variables(ifstream &ifs) const {
         //cout << "Variable #" << unordered_variables[i].first << endl;
         variables_.push_back(unordered_variables[i].second);
     }
+}
+
+
+
+
+LAMA_Server_Planner::LAMA_Server_Planner(const KP_Instance &instance, const char *tmpfile_path, const char *planner_path)
+  : ClassicalPlanner("LAMA_Server", tmpfile_path, planner_path, "lama-server", instance), first_call_(true) {
+    for( size_t k = 0; k < kp_instance_.n_atoms(); ++k ) {
+        const Instance::Atom &atom = *kp_instance_.atoms_[k];
+        string name = atom.name_->to_string();
+        transform(name.begin(), name.end(), name.begin(), ::tolower);
+        atom_map_.insert(make_pair(name.substr(1, name.length() - 2), k));
+    }
+}
+
+LAMA_Server_Planner::~LAMA_Server_Planner() {
+    if( !first_call_ ) remove_file("output");
+}
+
+int LAMA_Server_Planner::get_raw_plan(const State &state, Instance::Plan &raw_plan) const {
+
+    cout << "calling " << name() << " (n=" << 1+n_calls() << ", acc-time=" << get_time() << ")..." << endl;
+    float start_time = Utils::read_time_in_seconds();
+    ++n_calls_;
+  
+    ostringstream fname; 
+    if( first_call_ ) {
+        generate_pddl_domain();
+        generate_pddl_problem(state);
+
+        // translate domain + problem into SAS+ problem
+        string cmd;
+        if( planner_path_ != "" ) cmd += planner_path_ + "/src/search/";
+        cmd += string("lama simple-conversion ") + domain_fn_ + " " + problem_fn_ + " >/dev/null";
+cout << "call" << cmd << endl;
+        int rv = system(cmd.c_str());
+        remove_file(domain_fn_);
+        remove_file(problem_fn_);
+        if( rv != 0 ) {
+            total_time_ += Utils::read_time_in_seconds() - start_time;
+            return ERROR;
+        }
+
+        // preprocess SAS+ problem
+        cmd = "";
+        if( planner_path_ != "" ) cmd += planner_path_ + "/src/search/";
+        cmd += "lama preprocess output.sas >/dev/null";
+        rv = system(cmd.c_str());
+        remove_file("output.sas");
+        if( rv != 0 ) {
+            total_time_ += Utils::read_time_in_seconds() - start_time;
+            return ERROR;
+        }
+
+        // read variables from 'output'
+        ifstream ifs("output");
+        read_variables(ifs);
+        ifs.close();
+
+        // create server process (child)
+        int status = create_server_process("output");
+        cout << "LAMA_Server: status=" << status << endl;
+    }
+
+    // solve SAS+ problem. If first call, it is enough to 'cat'
+    // the 'output' file into the server process' stdin. Otherwise,
+    // it's enough to 'cat' the current stae into the server process'
+    // stdin. The output always from the server process' stderr 
+    // and it is stored in XXXX.
+    if( first_call_ )
+        cat_file_to_server("output");
+    else
+        cat_state_to_server(state);
+    first_call_ = false;
+
+    // get server status
+    if( get_server_status() != 0 ) {
+        total_time_ += Utils::read_time_in_seconds() - start_time;
+        remove_file(output_fn_);
+        return ERROR;
+    }
+
+    // read plan from file
+    raw_plan.clear();
+    //ifstream ifs(plan_fn_);
+    ifstream ifs("sas_plan");
+    char line[2048];
+    while( !ifs.eof() ) {
+        ifs.getline(line, 2048);
+        // remove any trailing blank inserted by LAMA_Server
+        for( char *p = &line[strlen(line)-1]; *p == ' '; *p-- = '\0' );
+        if( line[0] != '\0' ) {
+            line[strlen(line) - 1] = '\0';
+            map<string, size_t>::const_iterator it = action_map_.find(&line[1]);
+            assert(it != action_map_.end());
+            raw_plan.push_back(it->second);
+        }
+    }
+    ifs.close();
+    //remove_file(plan_fn_);
+    remove_file("sas_plan");
+
+
+#if 0
+    cat_state_to_server(state);
+    assert(get_server_status() == 0);
+    ifs.open("sas_plan");
+    while( !ifs.eof() ) {
+        ifs.getline(line, 2048);
+        // remove any trailing blank inserted by LAMA_Server
+        for( char *p = &line[strlen(line)-1]; *p == ' '; *p-- = '\0' );
+        if( line[0] != '\0' ) {
+            line[strlen(line) - 1] = '\0';
+cout << "STEP: " << line << endl;
+        }
+    }
+    ifs.close();
+    //remove_file(plan_fn_);
+    remove_file("sas_plan");
+
+    cat_state_to_server(state);
+    assert(get_server_status() == 0);
+    ifs.open("sas_plan");
+    while( !ifs.eof() ) {
+        ifs.getline(line, 2048);
+        // remove any trailing blank inserted by LAMA_Server
+        for( char *p = &line[strlen(line)-1]; *p == ' '; *p-- = '\0' );
+        if( line[0] != '\0' ) {
+            line[strlen(line) - 1] = '\0';
+cout << "sTEP: " << line << endl;
+        }
+    }
+    ifs.close();
+    //remove_file(plan_fn_);
+    remove_file("sas_plan");
+#endif
+
+    total_time_ += Utils::read_time_in_seconds() - start_time;
+    return SOLVED;
+}
+
+void LAMA_Server_Planner::read_variable(ifstream &ifs, vector<pair<int, vector<int> > > &variables) const {
+    string varname, type, atom, trailer;
+    int axiom_layer, range, varno;
+    ifs >> varname >> axiom_layer >> range;
+    assert(strncmp(varname.c_str(), "var", 3) == 0);
+    varno = atoi(varname.substr(3).c_str());
+    //cout << "Variable #" << varno << " is " << varname << ": " << range << " value(s)" << endl;
+
+    vector<int> variable;
+    for( int i = 0; i < range; ++i ) {
+        ifs >> type;
+        assert((type == "Atom") || (type == "NegatedAtom") || (type == "<none"));
+        if( (type == "Atom") || (type == "NegatedAtom") ) {
+            bool negated = type == "NegatedAtom";
+            ifs >> atom;
+            transform(atom.begin(), atom.end(), atom.begin(), ::tolower);
+            assert(atom.substr(atom.length() - 2, 2) == "()");
+            atom.erase(atom.length() - 2, 2);
+            map<string, size_t>::const_iterator it = atom_map_.find(atom);
+            assert(it != atom_map_.end());
+            variable.push_back(negated ? -(1 + it->second) : 1 + it->second);
+            //cout << "    " << type << " " << atom << " " << it->second << endl;
+        } else {
+            ifs >> type;
+            assert(type == "of");
+            ifs >> type;
+            assert(type == "those>");
+            //cout << "    <none of those> -1" << endl;
+        }
+    }
+    variables.push_back(make_pair(varno, variable));
+
+    ifs >> trailer;
+    assert(trailer == "end_variable");
+}
+
+struct LAMA_Server_Planner::variable_order {
+    bool operator()(const pair<int, vector<int> > &a, const pair<int, vector<int> > &b) const {
+        return a.first < b.first;
+    }
+};
+
+void LAMA_Server_Planner::read_variables(ifstream &ifs) const {
+    assert(ifs.is_open());
+    vector<pair<int, vector<int> > > unordered_variables;
+    char line[2048];
+    while( !ifs.eof() ) {
+        ifs.getline(line, 2048);
+        if( !strcmp(line, "begin_variable") )
+            read_variable(ifs, unordered_variables);
+    }
+
+    // sort variables according to their index
+    variables_.reserve(unordered_variables.size());
+    //sort(unordered_variables.begin(), unordered_variables.end(), variable_order());
+    for( size_t i = 0; i < unordered_variables.size(); ++i ) {
+        //cout << "Variable #" << unordered_variables[i].first << endl;
+        variables_.push_back(unordered_variables[i].second);
+    }
+}
+
+int LAMA_Server_Planner::create_server_process(const char *base) const {
+
+    // create pipes for redirection of stdin and stderr
+    if( pipe(stdin_pipe_) < 0 ) {
+        perror("error: allocating pipe for child input redirect stdin");
+        return -1;
+    }
+    if( pipe(stderr_pipe_) < 0 ) {
+        close(stdin_pipe_[PIPE_READ]);
+        close(stdin_pipe_[PIPE_WRITE]);
+        perror("error: allocating pipe for child output redirect of stderr");
+        return -1;
+    }
+
+    // fork child process
+    child_pid_ = fork();
+    if( child_pid_ == 0 ) {
+        // we are in child process
+
+        // redirect stdin and stderr
+        if( dup2(stdin_pipe_[PIPE_READ], STDIN_FILENO) == -1 ) {
+            perror("error: redirecting stdin");
+            return -1;
+        }
+        if( dup2(stderr_pipe_[PIPE_WRITE], STDERR_FILENO) == -1 ) {
+            perror("error: redirecting stderr");
+            return -1;
+        }
+
+        // closed unused pipe ends
+        close(stdin_pipe_[PIPE_READ]);
+        close(stdin_pipe_[PIPE_WRITE]);
+        close(stderr_pipe_[PIPE_READ]);
+        close(stderr_pipe_[PIPE_WRITE]); 
+
+        // run child process image
+        string cmd;
+        if( planner_path_ != "" ) cmd += planner_path_ + "/src/search/downward-server";
+        char * argv[4];
+        argv[0] = "downward-server";
+        argv[1] = "seq-sat-lama-2011-single-plan";
+        argv[2] = (char*)base;
+        argv[3] = 0;
+        int status = execve(cmd.c_str(), argv, 0);
+
+        // if we get here at all, an error occurred, but we are in the child
+        // process, so just exit
+        perror("error: exec of the child process");
+        exit(status);
+    } else if( child_pid_ > 0 ) {
+        // we are in father process
+        cout << "LAMA_Server: child-pid=" << child_pid_ << endl;
+
+        // close unused file descriptors, these are for child only
+        close(stdin_pipe_[PIPE_READ]);
+        close(stderr_pipe_[PIPE_WRITE]); 
+
+        // successful creation of child process
+        return 0;
+    } else {
+        // failed to create child
+        close(stdin_pipe_[PIPE_READ]);
+        close(stdin_pipe_[PIPE_WRITE]);
+        close(stderr_pipe_[PIPE_READ]);
+        close(stderr_pipe_[PIPE_WRITE]);
+        return -1;
+    }
+}
+
+int LAMA_Server_Planner::cat_file_to_server(const char *filename) const {
+    int fd = open(filename, O_RDONLY);
+    char buff[1024];
+    int readsz = 0;
+    while( (readsz = read(fd, buff, 1024)) > 0 )
+        write(stdin_pipe_[PIPE_WRITE], buff, readsz);
+    close(fd);
+    return 0;
+}
+
+int LAMA_Server_Planner::cat_state_to_server(const State &state) const {
+cout << "begin_state" << endl;
+    write(stdin_pipe_[PIPE_WRITE], "state\n", 6);
+    write(stdin_pipe_[PIPE_WRITE], "begin_state\n", 12);
+    stringstream ss;
+    for( size_t k = 0; k < variables_.size(); ++k ) {
+        bool wrote = false;
+        for( size_t j = 0; j < variables_[k].size(); ++j ) {
+            int lit = variables_[k][j];
+            int atom = lit > 0 ? lit - 1 : -lit - 1;
+            if( ((lit > 0) && state.satisfy(atom)) || ((lit < 0) && !state.satisfy(atom)) ) {
+                ss << j;
+                wrote = true;
+                break;
+            }
+        }
+        if( !wrote ) ss << variables_[k].size();
+        string value = ss.str();
+        write(stdin_pipe_[PIPE_WRITE], value.c_str(), strlen(value.c_str()));
+        write(stdin_pipe_[PIPE_WRITE], "\n", 1);
+cout << value << endl;
+        ss.str("");
+    }
+    write(stdin_pipe_[PIPE_WRITE], "end_state\n", 10);
+cout << "end_state" << endl;
+    return 0;
+}
+
+void LAMA_Server_Planner::exit_server() const {
+    write(stdin_pipe_[PIPE_WRITE], "exit\n", 5);
+}
+
+int LAMA_Server_Planner::get_server_status() const {
+    char buff[256];;
+    read(stderr_pipe_[PIPE_READ], buff, 1);
+    cout << "C=" << buff[0] << endl;
+    return buff[0] == 'S' ? 0 : 1;
 }
 

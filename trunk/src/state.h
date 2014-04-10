@@ -53,6 +53,7 @@ class State {
         }
     }
 
+    size_t size() const { return size_; }
     void clear() { atoms_[0] = 0; size_ = 0; }
     size_t hash() const { return 0; }
 

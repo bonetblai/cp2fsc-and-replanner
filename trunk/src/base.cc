@@ -3,6 +3,8 @@
 #include "base.h"
 #include "utils.h"
 
+//#define MVV1
+
 using namespace std;
 
 bool PDDL_Base::write_warnings_ = true;
@@ -42,7 +44,7 @@ PDDL_Base::PDDL_Base(StringTable &t, const Options::Mode &options)
     dom_top_type_(0), dom_goal_(0),
     normal_execution_(0),
     clg_translation_(false),
-    multivalued_variable_translation_(false),
+    mvv_translation_(false),
     default_sensing_model_(0) {
 
     // setup predicate for equality
@@ -221,9 +223,9 @@ void PDDL_Base::instantiate_elements() {
     if( options_.is_enabled("mvv:print:variables") ) {
         for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
             const Variable &var = *multivalued_variables_[k];
-            cout << Utils::cyan() << "variable '" << var.print_name_ << "':";
-            for( size_t i = 0; i < var.grounded_values_.size(); ++i )
-                cout << " " << *var.grounded_values_[i];
+            cout << Utils::red() << "variable '" << var.print_name_ << "':";
+            for( unsigned_atom_set::const_iterator it = var.grounded_values_.begin(); it != var.grounded_values_.end(); ++it )
+                cout << " " << *it;
             cout << Utils::normal() << endl;
         }
     }
@@ -339,17 +341,16 @@ void PDDL_Base::calculate_static_atoms() {
     }
 
     // erase affected atoms from candidate set
-    for( unsigned_atom_set::iterator it = affected_atoms.begin(); it != affected_atoms.end(); ++it ) {
+    for( unsigned_atom_set::iterator it = affected_atoms.begin(); it != affected_atoms.end(); ++it )
         dom_static_atoms_.erase(*it);
-    }
 
     if( options_.is_enabled("problem:print:atom:static") ) {
-        cout << "static atoms:";
+        cout << Utils::red() << "static atoms:";
         for( unsigned_atom_set::iterator it = dom_static_atoms_.begin(); it != dom_static_atoms_.end(); ++it ) {
             if( !it->pred_->strongly_static_ )
                 cout << " " << *it;
         }
-        cout << (dom_static_atoms_.empty() ? " <none>" : "") << endl;
+        cout << (dom_static_atoms_.empty() ? " <none>" : "") << Utils::normal() << endl;
     }
 }
 
@@ -401,12 +402,152 @@ void PDDL_Base::clg_map_oneofs_and_clauses_to_invariants() {
     }
 }
 
-void PDDL_Base::clg_translate_observe_effects_into_sensors() {
+void PDDL_Base::clg_translate_actions() {
     if( !clg_translation_ ) return;
 
-    PredicateSymbol *execution_status = new PredicateSymbol("normal-execution");
-    Atom normal_execution(execution_status);
+    // compute actions that need translation (those with :observe statement)
+    action_vec actions_to_translate;
+    for( int k = 0; k < (int)dom_actions_.size(); ++k ) {
+        if( dom_actions_[k]->observe_ != 0 ) {
+            actions_to_translate.push_back(dom_actions_[k]);
+            dom_actions_[k] = dom_actions_.back();
+            dom_actions_.pop_back();
+            --k;
+        } else {
+            // this action is not modified so it is an original action
+            original_actions_.insert(dom_actions_[k]->print_name_);
+        }
+    }
 
+    // create atoms needed in translation
+    if( !actions_to_translate.empty() ) {
+        PredicateSymbol *execution_status = new PredicateSymbol("normal-execution");
+        dom_predicates_.push_back(execution_status);
+        normal_execution_ = new Atom(execution_status);
+
+        // extend initial and goal situations with (normal-execution)
+        dom_init_.push_back(new InitLiteral(*normal_execution_));
+        if( dom_goal_ == 0 ) {
+            dom_goal_ = new And;
+        } else if( dynamic_cast<const And*>(dom_goal_) == 0 ) {
+            And *new_goal = new And;
+            assert(dom_goal_->is_grounded());
+            new_goal->push_back(dom_goal_->copy_and_simplify());
+            delete dom_goal_;
+            dom_goal_ = new_goal;
+        }
+        static_cast<And*>(const_cast<Condition*>(dom_goal_))->push_back(Literal(*normal_execution_).copy());
+
+        // extend preconditions of other actions with (normal-execution).
+        if( !dom_actions_.empty() ) {
+            cout << Utils::magenta() << "(clg) extending preconditions with '(normal-execution)' for "
+                 << dom_actions_.size() << " action(s)" << Utils::normal() << endl;
+            for( size_t k = 0; k < dom_actions_.size(); ++k ) {
+                Action &action = *dom_actions_[k];
+                And *precondition = new And;
+                if( action.precondition_ != 0 ) precondition->push_back(action.precondition_);
+                precondition->push_back(new Literal(*normal_execution_));
+                assert(precondition->is_grounded());
+                action.precondition_ = precondition->copy_and_simplify();
+                delete precondition;
+            }
+        }
+    }
+
+    // translate actions
+    for( size_t k = 0; k < actions_to_translate.size(); ++k ) {
+        Action *action = actions_to_translate[k];
+        assert(action->observe_->is_grounded());
+        dom_actions_.push_back(action);
+        clg_translate(*action);
+    }
+}
+
+void PDDL_Base::clg_translate(Action &action) {
+    assert(action.observe_ != 0);
+
+    original_actions_.insert(action.print_name_); // this action counts as the original action
+
+    // save observations and create (do-post-sense-for-<action> <args>) predicate
+    const Effect *observe = action.observe_;
+    PredicateSymbol *post_sense_pred = new PredicateSymbol(strdup((string("need-post-for-") + action.print_name_).c_str()));
+    post_sense_pred->param_ = action.param_;
+    dom_predicates_.push_back(post_sense_pred);
+    Atom need_post(post_sense_pred);
+    need_post.param_.insert(need_post.param_.begin(), post_sense_pred->param_.begin(), post_sense_pred->param_.end());
+
+    // Must do 3 things for this action:
+    //
+    // 1) modify the action to add precondition (normal-execution), and
+    //    effects (do-post-sense-for-<action> <args>) and (not (normal-execution))
+
+    And precondition;
+    if( action.precondition_ != 0 ) precondition.push_back(action.precondition_);
+    precondition.push_back(Literal(*normal_execution_).copy());
+    assert(precondition.is_grounded());
+    action.precondition_ = precondition.copy_and_simplify();
+    for( size_t k = 0; k < precondition.size(); ++k )
+        delete precondition[k];
+    precondition.clear();
+
+    AndEffect effect;
+    if( action.effect_ != 0 ) effect.push_back(action.effect_);
+    effect.push_back(AtomicEffect(*normal_execution_).negate());
+    effect.push_back(AtomicEffect(need_post).copy());
+    assert(effect.is_grounded());
+    action.effect_ = effect.copy_and_simplify();
+    for( size_t k = 0; k < effect.size(); ++k )
+        delete effect[k];
+    effect.clear();
+
+    action.observe_ = 0;
+    if( options_.is_enabled("clg:print:effect") || options_.is_enabled("clg:print:generated") )
+        cout << Utils::red() << action << Utils::normal();
+
+    //
+    // 2) create sensor sensor-<action> with same arguments, condition
+    //    (do-post-sense-for-<action> <args>), and sense <observation>
+
+    Sensor *sensor = new Sensor(strdup((string("sensor-for-") + action.print_name_).c_str()));
+    clone_parameters(action.param_, sensor->param_);
+    sensor->condition_ = new Literal(need_post);
+    sensor->sense_ = observe;
+
+    // remap parameters and insert
+    const_cast<Condition*>(sensor->condition_)->remap_parameters(action.param_, sensor->param_);
+    const_cast<Effect*>(sensor->sense_)->remap_parameters(action.param_, sensor->param_);
+    assert(!sensor->condition_->has_free_variables(sensor->param_));
+    assert(!sensor->sense_->has_free_variables(sensor->param_));
+    dom_sensors_.push_back(sensor);
+    if( options_.is_enabled("clg:print:sensor") || options_.is_enabled("clg:print:generated") )
+        cout << Utils::red() << *sensor << Utils::normal();
+
+    //
+    // 3) create action (post-sense-<action> <args>) with precondition
+    //    (do-post-sense-for-<action> <args>) and effects that remove
+    //    precondition and add (normal-execution)
+
+    Action *post_action = new Action(strdup((string(action.print_name_) + "__post__").c_str()));
+    clone_parameters(action.param_, post_action->param_);
+    post_action->precondition_ = Literal(need_post).copy();
+    effect.push_back(AtomicEffect(*normal_execution_).copy());
+    effect.push_back(AtomicEffect(need_post).negate());
+    post_action->effect_ = effect.copy_and_simplify();
+    delete effect[1];
+    delete effect[0];
+    effect.clear();
+
+    // remap parameters and insert
+    const_cast<Condition*>(post_action->precondition_)->remap_parameters(action.param_, post_action->param_);
+    const_cast<Effect*>(post_action->effect_)->remap_parameters(action.param_, post_action->param_);
+    assert(!post_action->precondition_->has_free_variables(post_action->param_));
+    assert(!post_action->effect_->has_free_variables(post_action->param_));
+    dom_actions_.push_back(post_action);
+    if( options_.is_enabled("clg:print:post") || options_.is_enabled("clg:print:generated") )
+        cout << Utils::red() << *post_action << Utils::normal();
+}
+
+#if 0
     And precondition;
     AndEffect effect;
 
@@ -447,7 +588,7 @@ void PDDL_Base::clg_translate_observe_effects_into_sensors() {
             action->observe_ = 0;
             patched_actions.insert(action);
             if( options_.is_enabled("clg:print:effect") || options_.is_enabled("clg:print:generated") )
-                cout << Utils::cyan() << *action << Utils::normal();
+                cout << Utils::red() << *action << Utils::normal();
 
             // 2) create sensor sensor-<action> with same arguments, condition
             //    (do-post-sense-for-<action> <args>), and sense <observation>
@@ -464,7 +605,7 @@ void PDDL_Base::clg_translate_observe_effects_into_sensors() {
             assert(!sensor->sense_->has_free_variables(sensor->param_));
             dom_sensors_.push_back(sensor);
             if( options_.is_enabled("clg:print:sensor") || options_.is_enabled("clg:print:generated") )
-                cout << Utils::cyan() << *sensor << Utils::normal();
+                cout << Utils::red() << *sensor << Utils::normal();
 
             // 3) create action (post-sense-<action> <args>) with precondition
             //    (do-post-sense-for-<action> <args>) and effects that remove
@@ -488,70 +629,37 @@ void PDDL_Base::clg_translate_observe_effects_into_sensors() {
             dom_actions_.push_back(post_action);
             patched_actions.insert(post_action);
             if( options_.is_enabled("clg:print:post") || options_.is_enabled("clg:print:generated") )
-                cout << Utils::cyan() << *post_action << Utils::normal();
+                cout << Utils::red() << *post_action << Utils::normal();
         }
     }
-
-    // if some translation was done, extend initial and goal situations
-    // with  (normal-execution), and add precondition (normal-execution)
-    // to all other actions
-    if( !patched_actions.empty() ) {
-        normal_execution_ = new Atom(normal_execution);
-        dom_init_.push_back(new InitLiteral(*normal_execution_));
-        if( dom_goal_ == 0 ) {
-            dom_goal_ = new And;
-        } else if( dynamic_cast<const And*>(dom_goal_) == 0 ) {
-            And *new_goal = new And;
-            assert(dom_goal_->is_grounded());
-            new_goal->push_back(dom_goal_->copy_and_simplify());
-            delete dom_goal_;
-            dom_goal_ = new_goal;
-        }
-        static_cast<And*>(const_cast<Condition*>(dom_goal_))->push_back(Literal(*normal_execution_).copy());
-
-        for( size_t k = 0; k < dom_actions_.size(); ++k ) {
-            Action *action = dom_actions_[k];
-            if( patched_actions.find(action) == patched_actions.end() ) {
-                And *precondition = dynamic_cast<And*>(const_cast<Condition*>(action->precondition_));
-                if( precondition == 0 ) {
-                    precondition = new And;
-                    if( action->precondition_ != 0 ) precondition->push_back(action->precondition_);
-                }
-                precondition->push_back(Literal(normal_execution).copy());
-                action->precondition_ = precondition;
-            }
-        }
-        dom_predicates_.push_back(execution_status);
-    } else {
-        delete execution_status;
-    }
-}
+#endif
 
 void PDDL_Base::declare_multivalued_variable_translation() {
-    if( !multivalued_variable_translation_ )
+    if( !mvv_translation_ )
         cout << Utils::blue() << "doing multivalued variable (mvv) translation" << Utils::normal() << endl;
-    multivalued_variable_translation_ = true;
+    mvv_translation_ = true;
 }
 
-void PDDL_Base::calculate_atoms_for_state_variables() {
+// Stores the atoms for all state variables in the unsigned_atom_set
+// atoms_for_state_variables_.
+void PDDL_Base::mvv_calculate_atoms_for_state_variables() {
     atoms_for_state_variables_.clear();
     for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
         const Variable &var = *multivalued_variables_[k];
         if( var.is_state_variable() ) {
-            for( size_t i = 0; i < var.grounded_values_.size(); ++i )
-                atoms_for_state_variables_.insert(*static_cast<const AtomicEffect*>(var.grounded_values_[i]));
+            atoms_for_state_variables_.insert(var.grounded_values_.begin(), var.grounded_values_.end());
         }
     }
 
     if( options_.is_enabled("mvv:print:atoms-for-state-variables") ) {
-        cout << Utils::cyan() << "atoms for state variables:";
+        cout << Utils::red() << "atoms for state variables:";
         for( unsigned_atom_set::iterator it = atoms_for_state_variables_.begin(); it != atoms_for_state_variables_.end(); ++it )
             cout << " " << *it;
         cout << Utils::normal() << endl;
     }
 }
 
-void PDDL_Base::calculate_observable_atoms() {
+void PDDL_Base::mvv_calculate_observable_atoms() {
     for( size_t k = 0; k < dom_actions_.size(); ++k ) {
         const Action &action = *dom_actions_[k];
         if( action.sensing_model_ != 0 ) {
@@ -568,77 +676,91 @@ void PDDL_Base::calculate_observable_atoms() {
     }
 
     if( options_.is_enabled("mvv:print:observable-atoms") ) {
-        cout << Utils::cyan() << "observable atoms:";
+        cout << Utils::red() << "observable atoms:";
         for( unsigned_atom_set::iterator it = observable_atoms_.begin(); it != observable_atoms_.end(); ++it )
             cout << " " << *it;
         cout << Utils::normal() << endl;
     }
 }
 
-void PDDL_Base::calculate_beams_for_grounded_observable_variables() {
+void PDDL_Base::mvv_calculate_beams_for_grounded_observable_variables() {
     for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
         Variable &var = *multivalued_variables_[k];
         if( var.is_observable_variable() ) {
-            var.beam_ = vector<unsigned_atom_set>(var.grounded_values_.size());
-            calculate_beam_for_grounded_variable(var);
+            mvv_calculate_beams_for_grounded(var);
 
             // print beam (if requested)
             if( options_.is_enabled("mvv:print:beams") ) {
-                for( size_t i = 0; i < var.grounded_values_.size(); ++i ) {
-                    cout << Utils::cyan() << "beam for "
-                         << var.print_name_ << "::" << var.grounded_values_[i]->to_string() << ":";
-                    for( unsigned_atom_set::iterator it = var.beam_[i].begin(); it != var.beam_[i].end(); ++it )
-                        cout << " " << *it << (is_static_atom(*it) ? "*" : "");
+                for( unsigned_atom_set::const_iterator it = var.grounded_values_.begin(); it != var.grounded_values_.end(); ++it ) {
+                    cout << Utils::red() << "beam for "
+                         << var.print_name_ << "::" << *it << ":";
+                    assert(var.beam_.find(*it) != var.beam_.end());
+                    const unsigned_atom_set &beam = var.beam_.find(*it)->second;
+                    for( unsigned_atom_set::const_iterator jt = beam.begin(); jt != beam.end(); ++jt )
+                        cout << " " << *jt << (is_static_atom(*jt) ? "*" : "");
                     cout << Utils::normal() << endl;
                 }
             }
 
             // remove static atoms from beams
-            for( size_t i = 0; i < var.grounded_values_.size(); ++i ) {
+            for( unsigned_atom_set::const_iterator it = var.grounded_values_.begin(); it != var.grounded_values_.end(); ++it ) {
                 unsigned_atom_set reduced_beam;
-                for( unsigned_atom_set::iterator it = var.beam_[i].begin(); it != var.beam_[i].end(); ++it ) {
-                    if( !is_static_atom(*it) ) reduced_beam.insert(*it);
+                if( var.beam_.find(*it) == var.beam_.end() ) continue;
+                assert(var.beam_.find(*it) != var.beam_.end());
+                const unsigned_atom_set &beam = var.beam_.find(*it)->second;
+                for( unsigned_atom_set::const_iterator jt = beam.begin(); jt != beam.end(); ++jt ) {
+                    if( !is_static_atom(*jt) ) reduced_beam.insert(*jt);
                 }
-                var.beam_[i] = reduced_beam;
-                if( var.beam_[i].empty() && options_.is_enabled("mvv:compile-static-observables") )
-                    compile_static_observable_fluents(*static_cast<const AtomicEffect*>(var.grounded_values_[i]));
+                var.beam_[*it] = reduced_beam;
+                if( reduced_beam.empty() && options_.is_enabled("mvv:compile-static-observables") )
+                    mvv_compile_static_observable(*it);
             }
         }
     }
 }
 
-void PDDL_Base::calculate_beam_for_grounded_variable(Variable &var) {
+void PDDL_Base::mvv_calculate_beams_for_grounded(Variable &var) {
     if( var.is_state_variable() ) {
-        for( size_t k = 0; k < var.grounded_values_.size(); ++k ) {
-            assert(dynamic_cast<const AtomicEffect*>(var.grounded_values_[k]) != 0);
-            var.beam_[k].insert(*static_cast<const AtomicEffect*>(var.grounded_values_[k]));
-        }
+        for( unsigned_atom_set::const_iterator it = var.grounded_values_.begin(); it != var.grounded_values_.end(); ++it )
+            var.beam_[*it].insert(*it);
     } else {
+        // fill up beams for values of variable
         for( size_t k = 0; k < dom_actions_.size(); ++k ) {
             const Action &action = *dom_actions_[k];
             if( action.sensing_model_ != 0 ) {
-                unsigned_atom_vec context;
-                action.sensing_model_->calculate_beam_for_grounded_variable(var, context);
+                atom_vec context;
+                action.sensing_model_->calculate_beams_for_variable(var, context);
             }
+        }
+
+        // remove values with empty beam
+        for( unsigned_atom_set::const_iterator it = var.grounded_values_.begin(); it != var.grounded_values_.end(); ) {
+            if( var.beam_.find(*it) == var.beam_.end() )
+                var.grounded_values_.erase(*it++);
+            else
+                ++it;
         }
     }
 }
 
-void PDDL_Base::translate_actions_for_multivalued_variable_formulation() {
-    if( !multivalued_variable_translation_ ) return;
+void PDDL_Base::mvv_translate_actions() {
+    if( !mvv_translation_ ) return;
 
-    // compute actions that need translation
+    // compute actions that need translation (those with non-null sensing model)
     action_vec actions_to_translate;
-    for( size_t k = 0; k < dom_actions_.size(); ++k ) {
+    for( int k = 0; k < (int)dom_actions_.size(); ++k ) {
         if( dom_actions_[k]->sensing_model_ != 0 ) {
             actions_to_translate.push_back(dom_actions_[k]);
             dom_actions_[k] = dom_actions_.back();
             dom_actions_.pop_back();
             --k;
+        } else {
+            // this action is not modified so it is an original action
+            original_actions_.insert(dom_actions_[k]->print_name_);
         }
     }
 
-    // create atoms need in translation
+    // create atoms needed in translation
     if( !actions_to_translate.empty() ) {
         PredicateSymbol *execution_status = new PredicateSymbol("normal-execution");
         dom_predicates_.push_back(execution_status);
@@ -657,38 +779,7 @@ void PDDL_Base::translate_actions_for_multivalued_variable_formulation() {
         }
         static_cast<And*>(const_cast<Condition*>(dom_goal_))->push_back(Literal(*normal_execution_).copy());
 
-        // create need_set_sensing and need_post atoms for each action
-#if 0
-        for( size_t k = 0; k < actions_to_translate.size(); ++k ) {
-            Action &action = *actions_to_translate[k];
-            if( action.effect_ != 0 ) {
-                string predicate_name = string("need-set-sensing-for-") + action.print_name_;
-                PredicateSymbol *sense = new PredicateSymbol(strdup(predicate_name.c_str()));
-                sense->param_ = action.param_;
-                dom_predicates_.push_back(sense);
-                Atom *need_sense_atom = new Atom(sense);
-                need_sense_atom->param_.insert(need_sense_atom->param_.begin(),
-                                               sense->param_.begin(),
-                                               sense->param_.end());
-                need_sense_.push_back(need_sense_atom);
-            } else {
-                need_sense_.push_back(static_cast<Atom*>(0));
-            }
-
-            string predicate_name = string("need-post-for-") + action.print_name_;
-            PredicateSymbol *post = new PredicateSymbol(strdup(predicate_name.c_str()));
-            post->param_ = action.param_;
-            dom_predicates_.push_back(post);
-            Atom *need_post_atom = new Atom(post);
-            need_post_atom->param_.insert(need_post_atom->param_.begin(),
-                                          post->param_.begin(),
-                                          post->param_.end());
-            need_post_.push_back(need_post_atom);
-        }
-#endif
-
-        // extend preconditions of other actions with (normal-execution). In a pure
-        // multivalued setting, there should be none of such actions
+        // extend preconditions of other actions with (normal-execution).
         if( !dom_actions_.empty() ) {
             cout << Utils::blue() << "(mvv) extending preconditions with '(normal-execution)' for "
                  << dom_actions_.size() << " action(s)" << Utils::normal() << endl;
@@ -708,12 +799,16 @@ void PDDL_Base::translate_actions_for_multivalued_variable_formulation() {
     for( size_t k = 0; k < actions_to_translate.size(); ++k ) {
         Action *action = actions_to_translate[k];
         assert(action->sensing_model_->is_grounded());
-        translation_for_multivalued_variable_formulation(*action);
+        mvv_translate(*action);
         //delete action; // NEED FIX: guess: delete params that are needed in sensing model (invariants)
     }
+
+    // complete actions' effects
+    if( options_.is_enabled("mvv:complete-effects") )
+        mvv_complete_effect_for_actions();
 }
 
-void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action) {
+void PDDL_Base::mvv_translate(Action &action) {
     assert(action.param_.empty()); // action must be instantiated
 
     And precondition;
@@ -736,6 +831,7 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action)
     if( need_effect_action ) {
         // Action that execute only the effects on state variables (i.e. no sensing model involved)
         Action *effect_action = new Action(strdup((string(action.print_name_) + "__effect__").c_str()));
+        original_actions_.insert(effect_action->print_name_);             // this action counts as the original action
 
         // precondition
         if( action.precondition_ != 0 ) precondition.push_back(action.precondition_);
@@ -756,18 +852,22 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action)
             for( unsigned_atom_set::const_iterator it = sensed_atoms.begin(); it != sensed_atoms.end(); ++it ) {
                 const Atom& sensing_atom = *fetch_sensing_atom(*it);
                 effect.push_back(AtomicEffect(sensing_atom).copy());      // (sensing-<atom>)
+                xx_sensing_models_.push_back(AtomicEffect(*it).copy());
+//cout << Utils::yellow() << "XX0: sm=" << *xx_sensing_models_.back() << Utils::normal() << endl;
             }
         }
         assert(effect.is_grounded());
         effect_action->effect_ = effect.copy_and_simplify();
-        delete effect[2];
-        delete effect[1];
+        while( effect.size() > 1 ) {
+            delete effect.back();
+            effect.pop_back();
+        }
         effect.clear();
 
         // insert action
         dom_actions_.push_back(effect_action);
         if( options_.is_enabled("mvv:print:effect") || options_.is_enabled("mvv:print:generated") )
-            cout << Utils::cyan() << *effect_action << Utils::normal();
+            cout << Utils::red() << *effect_action << Utils::normal();
     }
 
     if( need_set_sensing_action ) {
@@ -781,6 +881,7 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action)
         } else {
             if( action.precondition_ != 0 ) precondition.push_back(action.precondition_);
             precondition.push_back(Literal(*normal_execution_).copy());   // (normal-execution)
+            original_actions_.insert(set_sensing_action->print_name_);    // this action counts as the original action
         }
         assert(precondition.is_grounded());
         set_sensing_action->precondition_ = precondition.copy_and_simplify();
@@ -802,23 +903,26 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action)
         }
         assert(effect.is_grounded());
         set_sensing_action->effect_ = effect.copy_and_simplify();
-        delete effect[2];
-        delete effect[1];
-        delete effect[0];
-        effect.clear();
+        while( !effect.empty() ) {
+            delete effect.back();
+            effect.pop_back();
+        }
 
         // insert action
         dom_actions_.push_back(set_sensing_action);
         if( options_.is_enabled("mvv:print:set-sensing") || options_.is_enabled("mvv:print:generated") )
-            cout << Utils::cyan() << *set_sensing_action << Utils::normal();
+            cout << Utils::red() << *set_sensing_action << Utils::normal();
 
         // store sensing model for generating invariants later
         sensing_models_.push_back(make_pair(new var_symbol_vec(action.param_), action.sensing_model_->copy_and_simplify()));
+        xx_sensing_models_.push_back(action.sensing_model_->copy_and_simplify());
+//cout << Utils::yellow() << "XX1: sm=" << *xx_sensing_models_.back() << Utils::normal() << endl;
     }
 
     if( !need_effect_action && !need_set_sensing_action ) {
         // Action that only turns on the sensor
         Action *turn_on_sensor_action = new Action(strdup((string(action.print_name_) + "__turn_on_sensor__").c_str()));
+        original_actions_.insert(turn_on_sensor_action->print_name_);     // this action counts as the original action
 
         // precondition
         if( action.precondition_ != 0 ) precondition.push_back(action.precondition_);
@@ -836,24 +940,35 @@ void PDDL_Base::translation_for_multivalued_variable_formulation(Action &action)
             effect.push_back(AtomicEffect(sensing_atom).copy());          // (sensing-<atom>)
         }
         turn_on_sensor_action->effect_ = effect.copy_and_simplify();
-        delete effect[1];
-        delete effect[0];
-        effect.clear();
+        while( !effect.empty() ) {
+            delete effect.back();
+            effect.pop_back();
+        }
 
         // insert action
         dom_actions_.push_back(turn_on_sensor_action);
         if( options_.is_enabled("mvv:print:turn-on-sensor") || options_.is_enabled("mvv:print:generated") )
-            cout << Utils::cyan() << *turn_on_sensor_action << Utils::normal();
+            cout << Utils::red() << *turn_on_sensor_action << Utils::normal();
+
+        // store sensing model
+        for( unsigned_atom_set::const_iterator it = sensed_atoms.begin(); it != sensed_atoms.end(); ++it ) {
+            xx_sensing_models_.push_back(AtomicEffect(*it).copy());
+//cout << Utils::yellow()<< "XX2: sm=" << *xx_sensing_models_.back() << Utils::normal() << endl;
+}
     }
 
     // Sensors for this action
-    create_sensors_for_atoms(sensed_atoms);
+#ifdef MVV1
+    mvv_create_sensors_for_atoms_old(sensed_atoms);
+#else
+    mvv_create_simple_sensors_for_atoms(sensed_atoms);
+#endif
 
     // Post action that re-establish normal execution
-    create_post_action(sensed_atoms);
+    mvv_create_post_action(sensed_atoms);
 }
 
-void PDDL_Base::create_sensors_for_atoms(const unsigned_atom_set &atoms) {
+void PDDL_Base::mvv_create_sensors_for_atoms_old(const unsigned_atom_set &atoms) {
     for( unsigned_atom_set::const_iterator it = atoms.begin(); it != atoms.end(); ++it ) {
         const Atom &atom = *it;
         if( sensors_for_multivalued_variable_translation_.find(atom.to_string(atom.negated_, true)) == sensors_for_multivalued_variable_translation_.end() ) {
@@ -862,6 +977,9 @@ void PDDL_Base::create_sensors_for_atoms(const unsigned_atom_set &atoms) {
             // condition
             const Atom& sensing_atom = *fetch_sensing_atom(atom);
             sensor->condition_ = Literal(sensing_atom).copy();
+#ifdef MVV1
+            xx_sensing_enablers_.insert(make_pair(atom, sensing_atom));
+#endif
 
             // sensed atom
             sensor->sense_ = AtomicEffect(atom, atom.negated_).copy();
@@ -870,12 +988,90 @@ void PDDL_Base::create_sensors_for_atoms(const unsigned_atom_set &atoms) {
             sensors_for_multivalued_variable_translation_.insert(make_pair(atom.to_string(atom.negated_, true), sensor));
             dom_sensors_.push_back(sensor);
             if( options_.is_enabled("mvv:print:sensor") || options_.is_enabled("mvv:print:generated") )
-                cout << Utils::cyan() << *sensor << Utils::normal();
+                cout << Utils::red() << *sensor << Utils::normal();
         }
     }
 }
 
-void PDDL_Base::create_post_action(const unsigned_atom_set &atoms) {
+void PDDL_Base::mvv_create_simple_sensors_for_atoms(const unsigned_atom_set &atoms) {
+    for( unsigned_atom_set::const_iterator it = atoms.begin(); it != atoms.end(); ++it ) {
+        const Atom &atom = *it;
+        if( simple_sensors_for_multivalued_variables_.find(atom.to_string(atom.negated_, true)) == simple_sensors_for_multivalued_variables_.end() ) {
+            Literal condition(*fetch_sensing_atom(atom));
+            mvv_create_sensors_for_atom(atom, condition);
+            simple_sensors_for_multivalued_variables_.insert(atom.to_string(atom.negated_, true));
+        }
+    }
+}
+
+void PDDL_Base::mvv_create_sensors_for_atom(const Atom &atom, const Condition &condition, int sensor_index) {
+    for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
+        const Variable &var = *multivalued_variables_[k];
+        if( var.grounded_values_.find(atom) != var.grounded_values_.end() ) {
+            if( !var.is_observable_variable() ) {
+                cout << Utils::warning() << "variable " << var.print_name_
+                     << " isn't observable but its value " << atom << " is sensed"
+                     << Utils::normal() << endl;
+            }
+
+            // create sensor for each enabler
+            ostringstream s;
+            s << "sensor-for-" << var.print_name_ << "-" << atom.to_string(atom.negated_, true) << "-true";
+            if( sensor_index != -1 ) s << "-" << sensor_index;
+            Sensor *sensor = new Sensor(strdup(s.str().c_str()));
+
+            // condition of sensor is enabler plus conditions on other values of variable
+            And *sensor_condition = 0;
+            if( dynamic_cast<const And*>(&condition) != 0 )
+                sensor_condition = static_cast<And*>(condition.copy_and_simplify());
+            else {
+                sensor_condition = new And;
+                sensor_condition->push_back(condition.copy_and_simplify());
+            }
+
+            //for( unsigned_atom_set::const_iterator it = var.grounded_values_.begin(); it != var.grounded_values_.end(); ++it )
+            //    if( *it != atom ) sensor_condition->push_back(Literal(*it).negate());
+            sensor->condition_ = sensor_condition;
+
+            // sensed value is atom
+            sensor->sense_ = AtomicEffect(atom, atom.negated_).copy();
+
+            // insert sensor
+            dom_sensors_.push_back(sensor);
+            if( options_.is_enabled("mvv:print:sensor") || options_.is_enabled("mvv:print:generated") )
+                cout << Utils::red() << *sensor << Utils::normal();
+
+            // if this is a singleton variable, create a copy that sets values to false
+            if( var.grounded_values_.size() == 1 ) {
+                ostringstream s;
+                s << "sensor-for-" << var.print_name_ << "-" << atom.to_string(atom.negated_, true) << "-false";
+                if( sensor_index != -1 ) s << "-" << sensor_index;
+                Sensor *sensor = new Sensor(strdup(s.str().c_str()));
+
+                // condition of sensor is just enabler because there are no other values for the variable
+                sensor->condition_ = condition.copy_and_simplify();
+
+                // sensed value is negated atom
+                sensor->sense_ = AtomicEffect(atom, !atom.negated_).copy();
+
+                // insert sensor
+                dom_sensors_.push_back(sensor);
+                if( options_.is_enabled("mvv:print:sensor") || options_.is_enabled("mvv:print:generated") )
+                    cout << Utils::red() << *sensor << Utils::normal();
+            }
+        }
+    }
+}
+
+void PDDL_Base::mvv_create_sensors_for_atom(const Atom &atom, const signed_atom_set &condition, int sensor_index) {
+    And casted_condition;
+    casted_condition.reserve(condition.size());
+    for( signed_atom_set::const_iterator it = condition.begin(); it != condition.end(); ++it )
+        casted_condition.push_back(Literal(*it).copy());
+    mvv_create_sensors_for_atom(atom, casted_condition, sensor_index);
+}
+
+void PDDL_Base::mvv_create_post_action(const unsigned_atom_set &atoms) {
     map<unsigned_atom_set, const Action*>::const_iterator it = post_actions_for_multivalued_variable_translation_.find(atoms);
     if( it == post_actions_for_multivalued_variable_translation_.end() ) {
         ostringstream s;
@@ -903,32 +1099,38 @@ void PDDL_Base::create_post_action(const unsigned_atom_set &atoms) {
         post_actions_for_multivalued_variable_translation_.insert(make_pair(atoms, post_action));
         dom_actions_.push_back(post_action);
         if( options_.is_enabled("mvv:print:post") || options_.is_enabled("mvv:print:generated") )
-            cout << Utils::cyan() << *post_action << Utils::normal();
+            cout << Utils::red() << *post_action << Utils::normal();
     }
 }
 
-void PDDL_Base::create_invariants_for_multivalued_variables() {
-    if( !multivalued_variable_translation_ ) return;
+void PDDL_Base::mvv_create_invariants_for_variables() {
+    if( !mvv_translation_ ) return;
     cout << Utils::blue() << "(mvv) creating invariants for multivalued variables..." << Utils::normal() << endl;
 
     Invariant exactly_one(Invariant::EXACTLY_ONE);
     Invariant at_least_one(Invariant::AT_LEAST_ONE);
+    Invariant *invariant = 0;
 
     for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
         Variable &var = *multivalued_variables_[k];
         if( var.is_state_variable() ) {
             // for each state variable with domain size > 1, generate (exactly-one <values>)
             if( var.grounded_values_.size() > 1 ) {
-                exactly_one.reserve(var.grounded_values_.size());
+                if( options_.is_enabled("mvv:complete-effects") )
+                    invariant = &at_least_one;
+                else
+                    invariant = &exactly_one;;
+                invariant->reserve(var.grounded_values_.size());
                 // BLAI: check precondition
-                //exactly_one.Xprecondition_ = Literal(*normal_execution_).copy();
-                for( size_t i = 0; i < var.grounded_values_.size(); ++i )
-                    exactly_one.push_back(Literal(*static_cast<const AtomicEffect*>(var.grounded_values_[i])).copy());
-                clone_parameters(var.param_, exactly_one.param_);
-                remap_parameters(exactly_one, var.param_, exactly_one.param_);
-                assert(!exactly_one.has_free_variables());
-                dom_init_.push_back(new InitInvariant(exactly_one));
-                exactly_one.clear();
+                //invariant->Xprecondition_ = Literal(*normal_execution_).copy();
+                for( unsigned_atom_set::const_iterator it = var.grounded_values_.begin(); it != var.grounded_values_.end(); ++it )
+                    invariant->push_back(Literal(*it).copy());
+                clone_parameters(var.param_, invariant->param_);
+                remap_parameters(exactly_one, var.param_, invariant->param_);
+                assert(!invariant->has_free_variables());
+                dom_init_.push_back(new InitInvariant(*invariant));
+                invariant->clear();
+                invariant = 0;
                 if( options_.is_enabled("mvv:print:invariants") || options_.is_enabled("mvv:print:invariants:var") )
                     cout << Utils::cyan()
                          << "invariant for variable '" << var.print_name_ << "': " << *dom_init_.back()
@@ -938,8 +1140,8 @@ void PDDL_Base::create_invariants_for_multivalued_variables() {
                 // NOTE: should remove this later when preprocessing is fixed. This is only
                 // here to avoid preprocessing to mark the variable as 'static'
                 at_least_one.reserve(2);
-                at_least_one.push_back(Literal(*static_cast<const AtomicEffect*>(var.grounded_values_[0])).copy());
-                at_least_one.push_back(Literal(*static_cast<const AtomicEffect*>(var.grounded_values_[0])).negate());
+                at_least_one.push_back(Literal(*var.grounded_values_.begin()).copy());
+                at_least_one.push_back(Literal(*var.grounded_values_.begin()).negate());
                 clone_parameters(var.param_, at_least_one.param_);
                 remap_parameters(at_least_one, var.param_, at_least_one.param_);
                 assert(!at_least_one.has_free_variables());
@@ -951,6 +1153,7 @@ void PDDL_Base::create_invariants_for_multivalued_variables() {
                          << Utils::normal() << endl;
             }
         } else {
+#if 0
             // BLAI: (not (sensing-is-one)) should be precondition of invariant!
             // for each observable variable, and values <value-i> and <value-j>
             // generate (at-least-one (not (sensing-is-on)) (not <value-i>) (not <value-j>))
@@ -990,12 +1193,13 @@ void PDDL_Base::create_invariants_for_multivalued_variables() {
                          << "invariant for variable '" << var.print_name_ << "': " << *dom_init_.back()
                          << Utils::normal() << endl;
             }
+#endif
         }
     }
 }
 
-void PDDL_Base::create_invariants_for_sensing_model() {
-    if( !multivalued_variable_translation_ ) return;
+void PDDL_Base::mvv_create_invariants_for_sensing_models() {
+    if( !mvv_translation_ ) return;
     cout << Utils::blue() << "(mvv) creating invariants for sensing model..." << Utils::normal() << endl;
 
     set<string> generated_invariants;
@@ -1054,24 +1258,26 @@ void PDDL_Base::create_invariants_for_sensing_model() {
                 invariant2.push_back(Literal(*sensed_literal[it->first]).copy());
                 Condition *c = it->second[i]->negate_and_simplify();
                 if( dynamic_cast<Or*>(c) != 0 ) {
-                    Or *or_condition = static_cast<Or*>(c);
-                    for( size_t j = 0; j < or_condition->size(); ++j )
-                        invariant2.push_back((*or_condition)[j]);
-                    or_condition->clear();
-                    delete or_condition;
+                    Or *disjunction = static_cast<Or*>(c);
+                    for( size_t j = 0; j < disjunction->size(); ++j )
+                        invariant2.push_back((*disjunction)[j]);
+                    disjunction->clear();
+                    delete disjunction;
                 } else {
                     invariant2.push_back(c);
                 }
 
-                bool invariant2_is_good = invariant2.reduce();
-                if( invariant2_is_good && (generated_invariants.find(invariant2.to_string()) == generated_invariants.end()) ) {
+                Invariant::status_t invariant2_status = invariant2.Xeduce();
+                assert(invariant2_status != Invariant::EMPTY);
+                //cout << "Check: invariant2 for " << *(Atom*)sensed_literal[it->first] << ", status=" << invariant2_status << endl;
+                if( (invariant2_status == Invariant::GOOD) && (generated_invariants.find(invariant2.to_string()) == generated_invariants.end()) ) {
                     clone_parameters(parameters, invariant2.param_);
                     remap_parameters(invariant2, parameters, invariant2.param_);
                     assert(!invariant2.has_free_variables());
                     dom_init_.push_back(new InitInvariant(invariant2));
                     generated_invariants.insert(invariant2.to_string());
                     if( options_.is_enabled("mvv:print:invariants") || options_.is_enabled("mvv:print:invariants:sensing") )
-                        cout << Utils::cyan() << "invariant: " << *dom_init_.back() << Utils::normal() << endl;
+                        cout << Utils::red() << "invariant: " << *dom_init_.back() << Utils::normal() << endl;
                 } else {
                     for( size_t i = 0; i < invariant2.size(); ++i )
                         delete invariant2[i];
@@ -1079,15 +1285,57 @@ void PDDL_Base::create_invariants_for_sensing_model() {
                 invariant2.clear();
             }
 
-            bool invariant1_is_good = invariant1.reduce();
-            if( invariant1_is_good && (generated_invariants.find(invariant1.to_string()) == generated_invariants.end()) ) {
-                clone_parameters(parameters, invariant1.param_);
-                remap_parameters(invariant1, parameters, invariant1.param_);
-                assert(!invariant1.has_free_variables());
-                dom_init_.push_back(new InitInvariant(invariant1));
-                generated_invariants.insert(invariant1.to_string());
-                if( options_.is_enabled("mvv:print:invariants") || options_.is_enabled("mvv:print:invariants:sensing") )
-                    cout << Utils::cyan() << "invariant: " << *dom_init_.back() << Utils::normal() << endl;
+            Invariant::status_t invariant1_status = invariant1.Xeduce();
+            assert(invariant1_status != Invariant::EMPTY);
+            //cout << "Check: invariant1 for " << *(Atom*)sensed_literal[it->first] << ", status=" << invariant1_status << endl;
+            if( (invariant1_status != Invariant::BAD) && (generated_invariants.find(invariant1.to_string()) == generated_invariants.end()) ) {
+                if( invariant1_status == Invariant::GOOD ) {
+                    clone_parameters(parameters, invariant1.param_);
+                    remap_parameters(invariant1, parameters, invariant1.param_);
+                    assert(!invariant1.has_free_variables());
+                    dom_init_.push_back(new InitInvariant(invariant1));
+                    generated_invariants.insert(invariant1.to_string());
+                    if( options_.is_enabled("mvv:print:invariants") || options_.is_enabled("mvv:print:invariants:sensing") )
+                        cout << Utils::red() << "invariant: " << *dom_init_.back() << Utils::normal() << endl;
+                } else {
+                    // The invariant looks ~L v C where C = L1 & ... & Ln is a conjunction of literals. 
+                    // Split into multiple invariants ~L v Li representing L => Li.
+                    assert(invariant1_status == Invariant::RECOVERABLE);
+                    assert(invariant1.size() == 2);
+                    const Condition *c1 = invariant1[0];
+                    const Condition *c2 = invariant1[1];
+                    assert(((dynamic_cast<const Literal*>(c1) != 0) && (dynamic_cast<const And*>(c2) != 0)) ||
+                           ((dynamic_cast<const Literal*>(c2) != 0) && (dynamic_cast<const And*>(c1) != 0)));
+
+                    const Literal *literal = 0;
+                    const And *conjunction = 0;
+                    if( dynamic_cast<const Literal*>(c1) != 0 ) {
+                        literal = static_cast<const Literal*>(c1);
+                        conjunction = static_cast<const And*>(c2);
+                    } else {
+                        literal = static_cast<const Literal*>(c2);
+                        conjunction = static_cast<const And*>(c1);
+                    }
+                    //cout << "literal=" << *(Atom*)literal << ", conjunction=" << *conjunction << endl;
+
+                    Invariant invariant(Invariant::AT_LEAST_ONE);
+                    for( size_t k = 0; k < conjunction->size(); ++k ) {
+                        invariant.push_back(literal->copy());
+                        assert(dynamic_cast<const Literal*>((*conjunction)[k]) != 0);
+                        invariant.push_back(static_cast<const Literal*>((*conjunction)[k])->copy());
+                        if( generated_invariants.find(invariant.to_string()) == generated_invariants.end() ) {
+                            clone_parameters(parameters, invariant.param_);
+                            remap_parameters(invariant, parameters, invariant.param_);
+                            assert(!invariant.has_free_variables());
+                            dom_init_.push_back(new InitInvariant(invariant));
+                            generated_invariants.insert(invariant.to_string());
+                            invariant.clear();
+                            if( options_.is_enabled("mvv:print:invariants") || options_.is_enabled("mvv:print:invariants:sensing") )
+                                cout << Utils::red() << "invariant: " << *dom_init_.back() << Utils::normal() << endl;
+                        }
+                        for( size_t i = 0; i < invariant.size(); ++i ) delete invariant[i];
+                    }
+                }
             } else {
                 for( size_t i = 0; i < invariant1.size(); ++i )
                     delete invariant1[i];
@@ -1097,38 +1345,329 @@ void PDDL_Base::create_invariants_for_sensing_model() {
     }
 }
 
-void PDDL_Base::calculate_post_condition(const Condition *precondition, const Effect *effect, unsigned_atom_set &post_condition) const {
-    post_condition.clear();
+void PDDL_Base::mvv_create_deductive_rules_for_variables() {
+    if( !mvv_translation_ ) return;
+    cout << Utils::blue() << "(mvv) creating deductive rules for multivalued variables..." << Utils::normal() << endl;
+
+    for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
+        Variable &var = *multivalued_variables_[k];
+        if( var.grounded_values_.size() == 1 ) continue;
+
+        for( unsigned_atom_set::const_iterator it = var.grounded_values_.begin(); it != var.grounded_values_.end(); ++it ) {
+            assert(!it->negated_);
+            string drule_type1_name = string("drule-var-type1-") + var.print_name_ + "-" + it->to_string(false, true);
+            string drule_type2_name = string("drule-var-type2-") + var.print_name_ + "-" + it->to_string(false, true);
+
+            Action *drule_type1 = new Action(strdup(drule_type1_name.c_str()));
+            And *drule_type1_precondition = new And;
+            Action *drule_type2 = new Action(strdup(drule_type2_name.c_str()));
+            AndEffect *drule_type2_effect = new AndEffect;
+
+            for( unsigned_atom_set::const_iterator jt = var.grounded_values_.begin(); jt != var.grounded_values_.end(); ++jt ) {
+                assert(!jt->negated_);
+                if( jt != it ) {
+                    drule_type1_precondition->push_back(Literal(*jt).negate());
+                    drule_type2_effect->push_back(AtomicEffect(*jt).negate());
+                } else {
+                    drule_type1->effect_ = AtomicEffect(*jt).copy();
+                    drule_type2->precondition_ = Literal(*jt).copy();
+                }
+            }
+
+            drule_type1->precondition_ = drule_type1_precondition;
+            drule_type2->effect_ = drule_type2_effect;
+
+            // insert decision rules
+            dom_actions_.push_back(drule_type1);
+            dom_actions_.push_back(drule_type2);
+            if( options_.is_enabled("mvv:print:drule:var") || options_.is_enabled("mvv:print:drule") )
+                cout << Utils::red() << *drule_type1 << *drule_type2 << Utils::normal();
+        }
+    }
+}
+
+void PDDL_Base::mvv_index_sensing_models() {
+    // first linearize the models
+    list<const Effect*> linearization;
+    for( list<const Effect*>::const_iterator it = xx_sensing_models_.begin(); it != xx_sensing_models_.end(); ++it ) {
+        if( dynamic_cast<const AndEffect*>(*it) != 0 ) {
+            const AndEffect &conjunction = *static_cast<const AndEffect*>(*it);
+            for( size_t k = 0; k < conjunction.size(); ++k ) {
+                if( dynamic_cast<const ConditionalEffect*>(conjunction[k]) != 0 ) {
+                    linearization.push_back(conjunction[k]);
+                } else { // nothing to do: see below
+                    assert(dynamic_cast<const AtomicEffect*>(conjunction[k]) != 0);
+                }
+            }
+        } else if( dynamic_cast<const ConditionalEffect*>(*it) != 0 ) {
+            linearization.push_back(*it);
+        } else if( dynamic_cast<const AtomicEffect*>(*it) != 0 ) {
+            // we only need to generate a simple sensor. This is done below and there
+            // there is no need to insert this model into linearization
+        } else {
+            cout << Utils::error() << "unexpected sensing model when computing linearization" << Utils::normal() << endl;
+        }
+    }
+
+    // remove duplicates and index them by sensed atom
+    map<string, set<string> > generated_models;
+    for( list<const Effect*>::const_iterator it = linearization.begin(); it != linearization.end(); ++it ) {
+        assert(dynamic_cast<const AndEffect*>(*it) == 0);
+        if( dynamic_cast<const ConditionalEffect*>(*it) != 0 ) {
+            const ConditionalEffect &conditional = *static_cast<const ConditionalEffect*>(*it);
+            assert(dynamic_cast<const AtomicEffect*>(conditional.effect_) != 0);
+            const AtomicEffect &head = *static_cast<const AtomicEffect*>(conditional.effect_);
+            string head_str = head.to_string();
+
+            And *term = 0;
+            if( dynamic_cast<const Literal*>(conditional.condition_) != 0 ) {
+                term = new And;
+                term->push_back(conditional.condition_->copy_and_simplify());
+            } else if( dynamic_cast<const And*>(conditional.condition_) != 0 ) {
+                Condition *simplified = conditional.condition_->copy_and_simplify();
+                if( dynamic_cast<Literal*>(simplified) != 0 ) {
+                    term = new And;
+                    term->push_back(simplified);
+                } else {
+                    term = static_cast<And*>(simplified);
+                }
+            } else {
+                cout << Utils::error() << "unexpected condition in sensing model: " << *conditional.condition_ << Utils::normal() << endl;
+            }
+
+            if( generated_models[head_str].find(term->to_string()) == generated_models[head_str].end() ) {
+                generated_models[head_str].insert(term->to_string());
+                sensing_models_for_atoms_[head].push_back(term);
+            }
+        } else {
+            cout << Utils::error() << "unexpected sensing model: " << **it << Utils::normal() << endl;
+        }
+    }
+}
+
+void PDDL_Base::mvv_create_deductive_rules_for_sensing() {
+    // first index the sensing models by sensed literals
+    mvv_index_sensing_models();
+
+    // the models are now stored in sensing_models_for_atoms_, indexd by sensed
+    // literal S. Each model is interpreted as S \equiv C_1 v C_2 v ... v C_n
+    // where each *term* C_i is of the form L^i_1 & L^i_2 & ... & L^i_{n_i}
+
+    // there are three types of deductive rules associated to such a model.
+    // The first two types are required for completeness for width 1 problems,
+    // while the third type is optional, useful for problems with larger width,
+    // and turned on with the option "mvv:drule:type3"
+
+    // type 1 deductive rules are: L^i_1 & L^i_2 & ... & L^i_{n_i} => S
+    // for each 1 <= i <= n
+    //
+    // type 2 deductive rules are: -S & { L^i_j : j != k } => -L^i_k
+    // for each 1 <= i <= n, 1 <= k <= n_i
+    //
+    // type 3 deductive rules are: S & { -L_k : k != i } => L^i_1 & ... & L^i_{n_i}
+    // for each 1 <= i <= n, and L_k in C_k for k != i
+
+    // there are O(n) type-1 drules for each model, O(nm) type-2 rules where m
+    // m is the max size of a term, and O(m^n) type-3 drules.
+
+    // create deductive rules
+    for( map<Atom, list<const And*> >::const_iterator sm = sensing_models_for_atoms_.begin(); sm != sensing_models_for_atoms_.end(); ++sm ) {
+        const Atom &obs = sm->first;
+        const list<const And*> &dnf = sm->second;
+
+#if 0
+        cout << "SM: obs=" << obs << endl
+             << "    dnf=(or";
+        for( list<const And*>::const_iterator term = dnf.begin(); term != dnf.end(); ++term )
+            cout << " " << **term;
+        cout << endl;
+#endif
+
+        // handle special case of empty terms
+        bool there_is_empty_term = false;
+        for( list<const And*>::const_iterator term = dnf.begin(); term != dnf.end(); ++term ) {
+            // if empty term, sensed obs can be added to init as we know it will be always true
+            if( (*term)->empty() ) {
+                there_is_empty_term = true;
+                assert(0);
+                cout << "XXXXXX ADDING obs=" << obs << " to init" << endl;
+                //init_.literals_.insert(obs > 0 ? 1 + 2*obs : 1 + 2*obs + 1);
+                break;
+            }
+        }
+        if( there_is_empty_term ) continue;
+
+        size_t num_type1_drules = 0;
+        size_t num_type3_drules = 0;
+        for( list<const And*>::const_iterator term = dnf.begin(); term != dnf.end(); ++term, ++num_type1_drules ) {
+            // type-1 drules
+            ostringstream s;
+            s << "drule-sensing-type1-" << obs.to_string(false, true) << "-" << num_type1_drules;
+            Action *drule_type1 = new Action(strdup(s.str().c_str()));
+            drule_type1->precondition_ = (*term)->copy_and_simplify();
+            drule_type1->effect_ = AtomicEffect(obs).copy();
+
+            // insert action for deductive rule
+            dom_actions_.push_back(drule_type1);
+            if( options_.is_enabled("mvv:print:drule:sensing") || options_.is_enabled("mvv:print:drule") )
+                cout << Utils::red() << *drule_type1 << Utils::normal();
+
+            // type-2 drules
+            for( size_t k = 0; k < (*term)->size(); ++k ) {
+                ostringstream s;
+                s << "drule-sensing-type2-" << obs.to_string(false, true) << "-" << num_type1_drules << "-" << k;
+                Action *drule_type2 = new Action(strdup(s.str().c_str()));
+
+                // precondition
+                And *precondition = new And;
+                for( size_t i = 0; i < (*term)->size(); ++i ) {
+                    assert(dynamic_cast<const Literal*>((**term)[i]) != 0);
+                    if( i != k )
+                        precondition->push_back(static_cast<const Literal*>((**term)[i])->copy());
+                }
+                precondition->push_back(Literal(obs).negate());
+                drule_type2->precondition_ = precondition;
+
+                // effect
+                AndEffect *effect = new AndEffect;
+                assert(dynamic_cast<const Literal*>((**term)[k]) != 0);
+                effect->push_back(AtomicEffect(*static_cast<const Literal*>((**term)[k])).negate());
+                drule_type2->effect_= effect;
+
+                // insert action for deductive rule
+                dom_actions_.push_back(drule_type2);
+                if( options_.is_enabled("mvv:print:drule:sensing") || options_.is_enabled("mvv:print:drule") )
+                    cout << Utils::red() << *drule_type2 << Utils::normal();
+            }
+
+            // type-3 drules
+            if( options_.is_enabled("mvv:drule:type3") )
+                mvv_create_type3_drules(obs, **term, dnf, num_type3_drules++);
+        }
+    }
+}
+
+void PDDL_Base::mvv_create_type3_drules(const Atom &obs, const And &term, const list<const And*> &dnf, int index) {
+#if 0
+    cout << "creating type-3 drule:" << endl
+         << "  obs=" << obs << endl
+         << "  head=" << term << endl
+         << "  dnf=(and";
+    for( list<const And*>::const_iterator t = dnf.begin(); t != dnf.end(); ++t ) {
+        if( t == dnf.begin() )
+            cout << " " << **t;
+        else
+            cout << endl << "           " << **t;
+    }
+    cout << ")" << endl;
+#endif
+
+    ostringstream s;
+    s << "drule-sensing-type3-" << obs.to_string(false, true) << "-" << index;
+    Action *drule_type3 = new Action(strdup(s.str().c_str()));
+
+    // precondition
+    And *precondition = new And;
+    for( list<const And*>::const_iterator other_term = dnf.begin(); other_term != dnf.end(); ++other_term ) {
+        if( *other_term != &term )
+            precondition->push_back(Literal(mvv_fetch_atom_for_negated_term(**other_term)).copy());
+    }
+    precondition->push_back(Literal(obs).copy());
+    drule_type3->precondition_ = precondition;
+
+    // effect
+    AndEffect *effect = new AndEffect;
+    for( size_t k = 0; k < term.size(); ++k ) {
+        assert(dynamic_cast<const Literal*>(term[k]) != 0);
+        effect->push_back(AtomicEffect(*static_cast<const Literal*>(term[k])).copy());
+    }
+    drule_type3->effect_ = effect;
+
+    // insert action for deductive rule
+    dom_actions_.push_back(drule_type3);
+    if( options_.is_enabled("mvv:print:drule:sensing") || options_.is_enabled("mvv:print:drule") )
+        cout << Utils::red() << *drule_type3 << Utils::normal();
+}
+
+const PDDL_Base::Atom& PDDL_Base::mvv_fetch_atom_for_negated_term(const And &term) {
+    signed_atom_set condition;
+    for( size_t k = 0; k < term.size(); ++k ) {
+        assert(dynamic_cast<const Literal*>(term[k]) != 0);
+        const Literal &literal = *static_cast<const Literal*>(term[k]);
+        //condition.insert(make_pair(literal.negated_, literal));
+        condition.insert(literal);
+    }
+
+    map<signed_atom_set, Atom*>::const_iterator it = atoms_for_terms_for_type3_drules_.find(condition);
+    if( it != atoms_for_terms_for_type3_drules_.end() ) {
+        return *it->second;
+    } else {
+        // first create atom
+        ostringstream s;
+        s << "negated-term-" << atoms_for_terms_for_type3_drules_.size();
+        PredicateSymbol *predicate = new PredicateSymbol(strdup(s.str().c_str()));
+        dom_predicates_.push_back(predicate);
+        Atom *atom = new Atom(predicate);
+        atoms_for_terms_for_type3_drules_.insert(make_pair(condition, atom));
+        //cout << "Atom " << *atom << " created!" << endl;
+
+        // now create deductive rules for this atom: -L => -atom for each literal L in term
+        for( size_t k = 0; k < term.size(); ++k ) {
+            const Literal &literal = *static_cast<const Literal*>(term[k]);
+            ostringstream s;
+            s << "drule-atom-" << atom->to_string(false, true) << "-" << k;
+            Action *drule_atom = new Action(strdup(s.str().c_str()));
+            drule_atom->precondition_ = literal.negate();
+            drule_atom->effect_ = AtomicEffect(*atom).copy();
+
+            // insert action for deductive rule
+            dom_actions_.push_back(drule_atom);
+            if( options_.is_enabled("mvv:print:drule:sensing") || options_.is_enabled("mvv:print:drule") )
+                cout << Utils::red() << *drule_atom << Utils::normal();
+        }
+
+        // return atom
+        return *atom;
+    }
+}
+
+void PDDL_Base::mvv_calculate_post_condition(const Condition *precondition, const Effect *effect, signed_atom_set &post_condition) const {
+    unsigned_atom_set condition;
 
     // calculate literals in precondition
     if( dynamic_cast<const And*>(precondition) != 0 ) {
         const And &and_precondition = *static_cast<const And*>(precondition);
         for( size_t k = 0; k < and_precondition.size(); ++k ) {
             assert(dynamic_cast<const Literal*>(and_precondition[k]) != 0);
-            post_condition.insert(*static_cast<const Literal*>(and_precondition[k]));
+            condition.insert(*static_cast<const Literal*>(and_precondition[k]));
         }
     } else if( dynamic_cast<const Literal*>(precondition) != 0 ) {
-        post_condition.insert(*static_cast<const Literal*>(precondition));
+        condition.insert(*static_cast<const Literal*>(precondition));
     }
     
     // calculate post condition (this works because sets are unsigned)
     if( dynamic_cast<const AndEffect*>(effect) != 0 ) {
         const AndEffect &and_effect = *static_cast<const AndEffect*>(effect);
         for( size_t k = 0; k < and_effect.size(); ++k ) {
-            assert(dynamic_cast<const AtomicEffect*>(and_effect[k]) != 0);
-            post_condition.erase(*static_cast<const AtomicEffect*>(and_effect[k]));
-            post_condition.insert(*static_cast<const AtomicEffect*>(and_effect[k]));
+            if( dynamic_cast<const AtomicEffect*>(and_effect[k]) != 0 ) {
+                const AtomicEffect &effect = *static_cast<const AtomicEffect*>(and_effect[k]);
+                condition.erase(effect);
+                condition.insert(effect);
+            }
         }
     } else if( dynamic_cast<const AtomicEffect*>(effect) != 0 ) {
-        post_condition.erase(*static_cast<const AtomicEffect*>(effect));
-        post_condition.insert(*static_cast<const AtomicEffect*>(effect));
+        condition.erase(*static_cast<const AtomicEffect*>(effect));
+        condition.insert(*static_cast<const AtomicEffect*>(effect));
     }
+
+    post_condition.clear();
+    post_condition.insert(condition.begin(), condition.end());
 }
 
-void PDDL_Base::simplify_post_condition(unsigned_atom_set &post_condition) const {
+void PDDL_Base::mvv_simplify_post_condition(signed_atom_set &post_condition) const {
     vector<const Atom*> literals;
     literals.reserve(post_condition.size());
-    for( unsigned_atom_set::const_iterator it = post_condition.begin(); it != post_condition.end(); ++it )
+    for( signed_atom_set::const_iterator it = post_condition.begin(); it != post_condition.end(); ++it )
         literals.push_back(new Atom(*it));
 
     // simplify
@@ -1137,7 +1676,7 @@ void PDDL_Base::simplify_post_condition(unsigned_atom_set &post_condition) const
         const Atom *lit = literals[k];
         literals[k] = literals.back();
         literals.pop_back();
-        if( !is_literal_implied(lit, literals) ) {
+        if( !mvv_is_literal_implied(*lit, literals) ) {
             literals.push_back(literals[k]);
             literals[k] = lit;
             ++k;
@@ -1152,67 +1691,235 @@ void PDDL_Base::simplify_post_condition(unsigned_atom_set &post_condition) const
     }
 }
 
-bool PDDL_Base::is_literal_implied(const Atom *lit, const vector<const Atom*> &literals) const {
-    if( lit->negated_ ) {
+bool PDDL_Base::mvv_is_literal_implied(const Atom &literal, const Condition &condition, bool complement_literal) const {
+    vector<const Atom*> condition_vector;
+    assert((dynamic_cast<const Literal*>(&condition) != 0) || (dynamic_cast<const And*>(&condition) != 0));
+    if( dynamic_cast<const Literal*>(&condition) != 0 ) {
+        condition_vector.push_back(static_cast<const Literal*>(&condition));
+    } else {
+        const And &and_condition = *static_cast<const And*>(&condition);
+        condition_vector.reserve(and_condition.size());
+        for( size_t k = 0; k < and_condition.size(); ++k ) {
+            assert(dynamic_cast<const Literal*>(and_condition[k]) != 0);
+            condition_vector.push_back(static_cast<const Literal*>(and_condition[k]));
+        }
+    }
+    return mvv_is_literal_implied(literal, condition_vector, complement_literal);
+}
+
+bool PDDL_Base::mvv_is_literal_implied(const Atom &literal, const signed_atom_set &condition, bool complement_literal) const {
+    vector<const Atom*> condition_vector;
+    condition_vector.reserve(condition.size());
+    for( signed_atom_set::const_iterator it = condition.begin(); it != condition.end(); ++it )
+        condition_vector.push_back(&*it);
+    return mvv_is_literal_implied(literal, condition_vector, complement_literal);
+}
+
+bool PDDL_Base::mvv_is_literal_implied(const Atom &literal, const vector<const Atom*> &condition, bool complement_literal) const {
+    //cout << "checking whether " << literal << " with comp=" << complement_literal << " is implied by:";
+    //for( size_t i = 0; i < condition.size(); ++i ) cout << " " << *condition[i]; cout << " ==> ";
+
+    // first check whether literal belongs to condition
+    Atom negated_literal(literal, true);
+    for( size_t k = 0; k < condition.size(); ++k ) {
+        if( (!complement_literal && (literal == *condition[k])) || (complement_literal && (negated_literal == *condition[k])) ) {
+            //cout << "(case 0) TRUE" << endl;
+            return true;
+        }
+    }
+
+    // another possibility is that the condition contains a positive literal that is mutex with the (complemented) literal   
+    if( (literal.negated_ && !complement_literal) || (!literal.negated_ && complement_literal) ) {
         for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
             const Variable &var = *multivalued_variables_[k];
-            if( var.is_state_variable() ) {
-                for( size_t i = 0; i < var.grounded_values_.size(); ++i ) {
-                    if( *lit == *static_cast<const AtomicEffect*>(var.grounded_values_[i]) ) {
-                        for( size_t j = 0; j < literals.size(); ++j ) {
-                            if( !literals[j]->negated_ ) {
-                                for( size_t l = 0; l < var.grounded_values_.size(); ++l ) {
-                                    if( *literals[j] == *static_cast<const AtomicEffect*>(var.grounded_values_[l]) )
-                                        return true;
-                                }
-                            }
-                        }
+            unsigned_atom_set::const_iterator it = var.grounded_values_.find(literal);
+            if( it != var.grounded_values_.end() ) {
+                for( size_t i = 0; i < condition.size(); ++i ) {
+                    unsigned_atom_set::const_iterator jt = var.grounded_values_.find(*condition[i]);
+                    if( !condition[i]->negated_ && (it != jt) && (jt != var.grounded_values_.end()) ) {
+                        //cout << "(case 1) TRUE" << endl;
+                        return true;
                     }
                 }
             }
         }
     }
+
+    // if both tests fail, return false
+    //cout << "FALSE" << endl;
     return false;
 }
 
-bool PDDL_Base::s0_test(const unsigned_atom_set &condition) const {
-    cout << Utils::warning() << "default implementation for 's0_test()'" << endl;
+// To pass test, condition should be false at init
+bool PDDL_Base::mvv_test_on_initial_state_for_static_observable(const signed_atom_set &condition) const {
+    //cout << Utils::yellow() << "checking s0-test: condition='" << condition << "'";
+    for( signed_atom_set::const_iterator it = condition.begin(); it != condition.end(); ++it ) {
+        signed_atom_set::const_iterator jt = set_of_initial_literals_.find(*it);
+        if( it->negated_ == !jt->negated_ ) {
+            //cout << ", result=true" << Utils::normal() << endl;
+            return true;
+        }
+    }
+    //cout << ", result=false" << Utils::normal() << endl;
+    return false;
+}
+
+// To pass test, every action that makes condition true should sense atom
+// and every action that senses atom should make condition true. Makes
+// condition true means that the condition is false before the action and
+// true after the action. A sufficient test for this is that the condition and
+// action's precondition are mutually inconsistent, and that every literal in
+// in the condition is either in the precondition and not removed, or in the
+// action's effect.
+bool PDDL_Base::mvv_test_on_actions_for_static_observable(const signed_atom_set &condition, const Atom &atom) const {
+    for( size_t k = 0; k < dom_actions_.size(); ++k ) {
+        const Action &action = *dom_actions_[k];
+
+        unsigned_atom_set sensed_atoms;
+        if( action.sensing_model_ != 0 ) action.sensing_model_->extract_atoms(sensed_atoms, true);
+        bool action_senses_atom = sensed_atoms.find(atom) != sensed_atoms.end();
+
+        bool action_makes_condition_true = false;
+        //signed_atom_set precondition, effect;
+        if( action.precondition_ != 0 ) {
+            bool condition_is_inconsistent_with_precondition = false;
+            for( signed_atom_set::const_iterator it = condition.begin(); it != condition.end(); ++it ) {
+                if( mvv_is_literal_implied(*it, *action.precondition_, true) ) {
+                    //cout << Utils::yellow() << "comp of " << *it << " is implied by precondition=" << *action.precondition_ << Utils::normal() << endl;
+                    condition_is_inconsistent_with_precondition = true;
+                    break;
+                }
+            }
+
+#if 0
+            cout << Utils::red()
+                 << "action=" << action.print_name_
+                 << ", atom=" << atom
+                 << ", cond=(and";
+            for( signed_atom_set::const_iterator it = condition.begin(); it != condition.end(); ++it ) cout << " " << *it; cout << ")";
+            cout << ", pre=" << *action.precondition_
+                 << ", inconsistent=" << condition_is_inconsistent_with_precondition
+                 << endl
+                 << Utils::normal();
+#endif
+
+            // if condition is inconsistent with precondition, then need to check
+            // that every literal in the condition is either implied by precondition
+            // and not removed, or is added by the action's effect
+            if( condition_is_inconsistent_with_precondition ) {
+                action_makes_condition_true = true;
+                for( signed_atom_set::const_iterator it = condition.begin(); it != condition.end(); ++it ) {
+                    const Atom &literal = *it;
+                    Atom negated_literal(*it, true);
+                    bool implied_by_precondition = mvv_is_literal_implied(literal, *action.precondition_);
+                    bool removed_by_effect = false;
+                    bool added_by_effect = false;
+                    if( action.effect_ != 0 ) {
+                        if( dynamic_cast<const AndEffect*>(action.effect_) != 0 ) {
+                            const AndEffect &and_effect = *static_cast<const AndEffect*>(action.effect_);
+                            for( size_t i = 0; i < and_effect.size(); ++i ) {
+                                if( dynamic_cast<const AtomicEffect*>(and_effect[i]) != 0 ) {
+                                    const Atom &effect = *static_cast<const AtomicEffect*>(and_effect[i]);
+                                    if( effect == literal ) added_by_effect = true;
+                                    if( effect == negated_literal ) removed_by_effect = true;
+                                    if( added_by_effect || removed_by_effect ) break;
+                                }
+                            }
+                        } else if( dynamic_cast<const AtomicEffect*>(action.effect_) != 0 ) {
+                            const Atom &effect = *static_cast<const AtomicEffect*>(action.effect_);
+                            if( effect == literal ) added_by_effect = true;
+                            if( effect == negated_literal ) removed_by_effect = true;
+                        }
+                    }
+                    if( (!implied_by_precondition || removed_by_effect) && !added_by_effect ) {
+                        //cout << Utils::magenta() << "literal=" << *it << ", implied=" << implied_by_precondition << ", removed=" << removed_by_effect << ", added=" << added_by_effect << endl << Utils::normal();
+                        action_makes_condition_true = false;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if( action_makes_condition_true && !action_senses_atom ) {
+#if 0
+            cout << Utils::red() << "Failed test: action=" << action.print_name_
+                 << ", atom=" << atom << ", condition={";
+            for( signed_atom_set::const_iterator it = condition.begin(); it != condition.end(); ++it )
+                cout << *it << ",";
+            cout << "}" << endl
+                 << "             action makes the condition true but doesn't sense atom"
+                 << Utils::normal() << endl;
+#endif
+            return false;
+        }
+        if( !action_makes_condition_true && action_senses_atom ) {
+#if 0
+            cout << Utils::red() << "Failed test: action=" << action.print_name_
+                 << ", atom=" << atom << ", condition={";
+            for( signed_atom_set::const_iterator it = condition.begin(); it != condition.end(); ++it )
+                cout << *it << ",";
+            cout << "}" << endl
+                 << "             action senses atom but doesn't make the condition true"
+                 << Utils::normal() << endl;
+#endif
+            return false;
+        }
+    }
     return true;
 }
 
-bool PDDL_Base::action_test(const unsigned_atom_set &condition) const {
-    cout << Utils::warning() << "default implementation for 'action_test()'" << endl;
-    return true;
+void PDDL_Base::mvv_remove_subsumed_conditions(set<signed_atom_set> &conditions) const {
+    set<signed_atom_set> non_dominated_conditions;
+    for( set<signed_atom_set>::const_iterator it = conditions.begin(); it != conditions.end(); ++it ) {
+        bool subsumed_by = false;
+        for( set<signed_atom_set>::const_iterator jt = conditions.begin(); jt != conditions.end(); ++jt ) {
+            if( it != jt ) {
+                // test if *it is subsumed by *jt (i.e., if *it contains *jt)
+                bool subsumed = true;
+                for( signed_atom_set::const_iterator kt = jt->begin(); kt != jt->end(); ++kt ) {
+                    if( it->find(*kt) == it->end() ) {
+                        subsumed = false;
+                        break;
+                    }
+                }
+                if( subsumed ) {
+                    subsumed_by = true;
+                    break;
+                }
+            }
+        }
+        if( !subsumed_by ) non_dominated_conditions.insert(*it);
+    }
+    conditions = non_dominated_conditions;
 }
 
-void PDDL_Base::remove_subsumed_conditions(std::set<unsigned_atom_set> &conditions) const {
-    cout << Utils::warning() << "default implementation for 'remove_subsumed_conditions()'" << endl;
-}
-
-PDDL_Base::Condition* PDDL_Base::create_condition(const unsigned_atom_set &condition) const {
+PDDL_Base::Condition* PDDL_Base::mvv_create_condition(const unsigned_atom_set &condition) const {
     if( condition.empty() ) {
         return new Constant(true);
     } else {
-        And *and_condition = new And;
+        And *conjunction = new And;
         for( unsigned_atom_set::const_iterator it = condition.begin(); it != condition.end(); ++it )
-            and_condition->push_back(Literal(*it).copy());
-        return and_condition;
+            conjunction->push_back(Literal(*it).copy());
+        return conjunction;
     }
 }
 
-void PDDL_Base::compile_static_observable_fluents(const Atom &atom) {
+void PDDL_Base::mvv_compile_static_observable(const Atom &atom) {
     cout << Utils::blue() << "(mvv) compiling static observable '" << atom << "'"
          << Utils::normal() << endl;
 
     // iterate over all sensing models extracting those relevant to atom
+    Atom negated_atom(atom, true);
     effect_list sensing_models;
     for( size_t k = 0; k < dom_actions_.size(); ++k ) {
         const Action &action = *dom_actions_[k];
-        if( action.sensing_model_ != 0 )
+        if( action.sensing_model_ != 0 ) {
             action.sensing_model_->extract_sensing_model_for_atom(atom, sensing_models);
+            action.sensing_model_->extract_sensing_model_for_atom(negated_atom, sensing_models);
+        }
     }
 
-    // remove duplicate sensing models
+    // remove duplicate sensing models (this is incomplete and inefficient as comparison is string based)
     set<string> sensing_models_str;
     for( effect_list::iterator it = sensing_models.begin(); it != sensing_models.end(); ++it ) {
         string str = (*it)->to_string();
@@ -1226,7 +1933,7 @@ void PDDL_Base::compile_static_observable_fluents(const Atom &atom) {
 
     // print sensing models
     if( options_.is_enabled("mvv:print:compiled-sensing-models") ) {
-        cout << Utils::cyan() << "sensing models for '" << atom << "':" << endl;
+        cout << Utils::red() << "sensing models for '" << atom << "':" << endl;
         for( effect_list::iterator it = sensing_models.begin(); it != sensing_models.end(); ++it )
             cout << "    " << **it << endl;
         cout << Utils::normal();
@@ -1234,56 +1941,73 @@ void PDDL_Base::compile_static_observable_fluents(const Atom &atom) {
 
     // generate axioms and invariants for filtered sensing models
     for( effect_list::iterator it = sensing_models.begin(); it != sensing_models.end(); ++it ) {
-        assert(dynamic_cast<const ConditionalEffect*>(*it) != 0);
-        const ConditionalEffect *effect = static_cast<const ConditionalEffect*>(*it);
-        assert(dynamic_cast<const AtomicEffect*>(effect->effect_) != 0);
-        const AtomicEffect *head = static_cast<const AtomicEffect*>(effect->effect_);
-        const Condition *condition = effect->condition_;
-        assert((dynamic_cast<const Literal*>(condition) != 0) || (dynamic_cast<const And*>(condition) != 0));
-        const_cast<ConditionalEffect*>(effect)->effect_ = 0;
-        const_cast<ConditionalEffect*>(effect)->condition_ = 0;
-        delete effect;
+        assert((dynamic_cast<const ConditionalEffect*>(*it) != 0) || (dynamic_cast<const AtomicEffect*>(*it) != 0));
+        if( dynamic_cast<const ConditionalEffect*>(*it) != 0 ) {
+            xx_sensing_models_.push_back((*it)->copy_and_simplify()); // BLAI: NEW TRANSLATION
+//cout << Utils::yellow() << "XX3: sm=" << *xx_sensing_models_.back() << Utils::normal() << endl;
 
-        // axioms are used to complete initial hidden states with the static observable
-        // fluents. Hence, only generate axioms for positive heads as the static fluents
-        // for observables are assumed to be false by default.
-        if( !head->negated_ ) {
-            Axiom *axiom = new Axiom(strdup("[compiled]"));
-            axiom->body_ = condition;
-            axiom->head_ = head;
-            dom_axioms_.push_back(axiom);
-            if( options_.is_enabled("mvv:print:axioms") )
-                cout << Utils::cyan() << *axiom << Utils::normal();
-        }
+            const ConditionalEffect *effect = static_cast<const ConditionalEffect*>(*it);
+            assert(dynamic_cast<const AtomicEffect*>(effect->effect_) != 0);
+            const AtomicEffect *head = static_cast<const AtomicEffect*>(effect->effect_);
+            const Condition *condition = effect->condition_;
+            assert((dynamic_cast<const Literal*>(condition) != 0) || (dynamic_cast<const And*>(condition) != 0));
+            const_cast<ConditionalEffect*>(effect)->effect_ = 0;
+            const_cast<ConditionalEffect*>(effect)->condition_ = 0;
+            delete effect;
 
-        // invariant
-        // BLAI: check precondtion
-        Invariant invariant(Invariant::AT_LEAST_ONE);
-        Condition *negated_condition = condition->negate_and_simplify();
-        if( dynamic_cast<Literal*>(negated_condition) != 0 ) {
-            invariant.push_back(negated_condition);
+            // axioms are used to complete initial hidden states with the static observable
+            // fluents. Hence, only generate axioms for positive heads as the static fluents
+            // for observables are assumed to be false by default.
+            if( !head->negated_ ) {
+                Axiom *axiom = new Axiom(strdup("[compiled]"));
+                axiom->body_ = condition;
+                axiom->head_ = head;
+                dom_axioms_.push_back(axiom);
+                if( options_.is_enabled("mvv:print:axioms") )
+                    cout << Utils::red() << *axiom << Utils::normal();
+            }
+
+#if 0 // BLAI: NEW TRANSLATION
+            // invariant
+            // BLAI: check precondtion
+            Invariant invariant(Invariant::AT_LEAST_ONE);
+            Condition *negated_condition = condition->negate_and_simplify();
+            if( dynamic_cast<Literal*>(negated_condition) != 0 ) {
+                invariant.push_back(negated_condition);
+            } else {
+                Or &disjunction = *static_cast<Or*>(negated_condition);
+                for( size_t k = 0; k < disjunction.size(); ++k )
+                    invariant.push_back(disjunction[k]);
+                disjunction.clear();
+                delete negated_condition;
+            }
+            invariant.push_back(Literal(*head).copy());
+            dom_init_.push_back(new InitInvariant(invariant));
+            invariant.clear();
+            if( options_.is_enabled("mvv:print:invariants") || options_.is_enabled("mvv:print:invariants:static-observables") )
+                cout << Utils::cyan()
+                     << "invariant for compiled sensing model: " << *dom_init_.back()
+                     << Utils::normal() << endl;
+#endif
         } else {
-            Or &or_condition = *static_cast<Or*>(negated_condition);
-            for( size_t k = 0; k < or_condition.size(); ++k )
-                invariant.push_back(or_condition[k]);
-            or_condition.clear();
-            delete negated_condition;
+            cout << Utils::warning() << "not sure what to do here. Probably incorrect default action" << Utils::normal() << endl;
+//cout << "sm=" << **it << endl;
+//assert(0);
+#if 0 // BLAI: NEW TRANSLATION
+            // this is an unconditional static observable. Complete initial state with this atom.
+            const AtomicEffect *atom = static_cast<const AtomicEffect*>(*it);
+            dom_init_.push_back(new InitLiteral(*atom));
+            delete atom;
+#endif
         }
-        invariant.push_back(Literal(*head).copy());
-        dom_init_.push_back(new InitInvariant(invariant));
-        invariant.clear();
-        if( options_.is_enabled("mvv:print:invariants") || options_.is_enabled("mvv:print:invariants:compilation") )
-            cout << Utils::cyan()
-                 << "invariant for compiled sensing model: " << *dom_init_.back()
-                 << Utils::normal() << endl;
     }
 
     // insert atom into set of static observable atoms
     static_observable_atoms_.insert(atom);
 
     // calculate prime implicant for conditions on observable atom
-    cout << Utils::red() << "calculating prime implicant for conditions on observable atom: " << atom << Utils::normal() << endl; 
-    set<unsigned_atom_set> candidate_post_conditions;
+    //cout << Utils::red() << "calculating prime implicant for conditions on observable atom: " << atom << Utils::normal() << endl; 
+    set<signed_atom_set> candidate_post_conditions;
     unsigned_atom_set atoms_to_remove;
     atoms_to_remove.insert(atom);
 
@@ -1296,13 +2020,9 @@ void PDDL_Base::compile_static_observable_fluents(const Atom &atom) {
             if( (reduced_model == 0) || (reduced_model->to_string() != action.sensing_model_->to_string()) ) {
                 affected_action[k] = true;
                 reduced_sensing_model[k] = reduced_model;
-                unsigned_atom_set post_condition;
-                //cout << "action=" << action.print_name_;
-                //if( action.precondition_ != 0 ) cout << ", pre=" << *action.precondition_;
-                //if( action.effect_ != 0 ) cout << ", eff=" << *action.effect_;
-                calculate_post_condition(action.precondition_, action.effect_, post_condition);
-                simplify_post_condition(post_condition);
-                //cout << ", post=" << post_condition << endl;
+                signed_atom_set post_condition;
+                mvv_calculate_post_condition(action.precondition_, action.effect_, post_condition);
+                mvv_simplify_post_condition(post_condition);
                 candidate_post_conditions.insert(post_condition);
             } else {
                 delete reduced_model;
@@ -1310,13 +2030,16 @@ void PDDL_Base::compile_static_observable_fluents(const Atom &atom) {
         }
     }
 
-    // apply test and filter candiate conditions
-    set<unsigned_atom_set> post_conditions;
-    for( set<unsigned_atom_set>::const_iterator it = candidate_post_conditions.begin(); it != candidate_post_conditions.end(); ++it ) {
-        if( s0_test(*it) && action_test(*it) )
+    // apply test and filter candidate conditions
+    set<signed_atom_set> post_conditions;
+    for( set<signed_atom_set>::const_iterator it = candidate_post_conditions.begin(); it != candidate_post_conditions.end(); ++it ) {
+        //cout << "c-POST={"; for(signed_atom_set::const_iterator jt=it->begin();jt != it->end();++jt) cout << *jt << ","; cout << "}" << endl;
+        if( mvv_test_on_initial_state_for_static_observable(*it) &&
+            mvv_test_on_actions_for_static_observable(*it, atom) )
             post_conditions.insert(*it);
     }
-    remove_subsumed_conditions(post_conditions);
+    mvv_remove_subsumed_conditions(post_conditions);
+    //cout << Utils::red() << "#post-conditions=" << post_conditions.size() << Utils::normal() << endl;
 
     // modify sensing models of actions: if pasive sensor for atom cannot be created,
     // reduce sensing model and insert atom, otherwise remove atom and reduce model.
@@ -1343,44 +2066,102 @@ void PDDL_Base::compile_static_observable_fluents(const Atom &atom) {
         }
     }
 
-#if 0
-    for( size_t k = 0; k < dom_actions_.size(); ++k ) {
-        Action &action = *dom_actions_[k];
-        if( action.sensing_model_ != 0 ) {
-            Effect *reduced_model = action.sensing_model_->reduce_sensing_model(atoms_to_remove);
-            if( (reduced_model == 0) || (reduced_model->to_string() != action.sensing_model_->to_string()) ) {
-                if( reduced_model == 0 ) {
-                    reduced_model = AtomicEffect(atom).copy();
-                } else {
-                    if( dynamic_cast<AndEffect*>(reduced_model) == 0 ) {
-                        AndEffect *and_effect = new AndEffect;
-                        and_effect->push_back(reduced_model);
-                        reduced_model = and_effect;
-                    }
-                    static_cast<AndEffect*>(reduced_model)->push_back(AtomicEffect(atom).copy());
-                }
-                delete action.sensing_model_;
-                action.sensing_model_ = reduced_model;
-            } else {
-                delete reduced_model;
-            }
-        }
-    }
-#endif
-
+    // create sensor
     if( !post_conditions.empty() ) {
-        // for each condition, create a pasive sensor
-        for( set<unsigned_atom_set>::const_iterator it = post_conditions.begin(); it != post_conditions.end(); ++it ) {
-            if( it->size() > 2 ) continue;
-            //cout << "condition=" << *it << endl;
+        // for each condition, create a pasive sensorA
+        size_t index = 0;
+        for( set<signed_atom_set>::const_iterator it = post_conditions.begin(); it != post_conditions.end(); ++it ) {
+            //cout << "POST={"; for(signed_atom_set::const_iterator jt=it->begin();jt != it->end();++jt) cout << *jt << ","; cout << "}" << endl;
+            //if( it->size() > 2 ) continue; // NOTE: THIS HACK SHOULD DISSAPEAR WHEN FIXING test_on_...
+#ifdef MVV1
             Sensor *sensor = new Sensor(strdup((string("pasive-sensor-for-") + atom.to_string(atom.negated_, true)).c_str()));
             sensor->condition_ = create_condition(*it);
             sensor->sense_ = AtomicEffect(atom, atom.negated_).copy();
             dom_sensors_.push_back(sensor);
-            if( true || options_.is_enabled("mvv:print:sensor") || options_.is_enabled("mvv:print:generated") )
+            if( options_.is_enabled("mvv:print:sensor") || options_.is_enabled("mvv:print:generated") )
                 cout << Utils::cyan() << *sensor << Utils::normal();
+#else
+            mvv_create_sensors_for_atom(atom, *it, index++);
+#endif
+        }
+#ifdef MVV1
+        xx_pasive_sensors_[atom] = post_conditions;
+#endif
+    }
+}
+
+void PDDL_Base::mvv_complete_effect_for_actions() {
+    for( size_t k = 0; k < dom_actions_.size(); ++k ) {
+        Action &action = *dom_actions_[k];
+        action.effect_ = mvv_complete_effect(const_cast<Effect*>(action.effect_));
+    }
+}
+
+const PDDL_Base::AndEffect* PDDL_Base::mvv_complete_effect(Effect *effect) const {
+    if( effect == 0 ) return 0;
+
+    AndEffect *canonical = const_cast<AndEffect*>(mvv_canonize_effect(effect));
+
+    // for each positive effect literal, if it corresponds to a variable,
+    // then set the literals for other values as false
+    for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
+        const Variable &var = *multivalued_variables_[k];
+        if( var.is_state_variable() ) mvv_complete_effect_with_variable(canonical, var);
+    }
+
+    return canonical;
+}
+
+const PDDL_Base::AndEffect* PDDL_Base::mvv_canonize_effect(Effect *effect) const {
+    //cout << "effect=" << *effect << endl;
+
+    // put effect into canonical form (and ... )
+    AndEffect *canonical = 0;
+    if( (dynamic_cast<AtomicEffect*>(effect) != 0) || (dynamic_cast<ConditionalEffect*>(effect) != 0) ) {
+        canonical = new AndEffect;
+        canonical->push_back(effect);
+    } else {
+        assert(dynamic_cast<AndEffect*>(effect) != 0);
+        canonical = static_cast<AndEffect*>(effect);
+    }
+
+    // canonize conditional effects as (when (...) (and ...))
+    for( size_t k = 0; k < canonical->size(); ++k ) {
+        const Effect *eff = (*canonical)[k];
+        if( dynamic_cast<const ConditionalEffect*>(eff) != 0 ) {
+            const ConditionalEffect *ceff = static_cast<const ConditionalEffect*>(eff);
+            if( dynamic_cast<const AndEffect*>(ceff->effect_) == 0 ) {
+                AndEffect *and_effect = new AndEffect;
+                and_effect->push_back(ceff->effect_);
+                const_cast<ConditionalEffect*>(ceff)->effect_ = and_effect;
+            }
         }
     }
+    //cout << "canonical=" << *canonical << endl;
+    return canonical;
+}
+
+void PDDL_Base::mvv_complete_effect_with_variable(AndEffect *effect, const Variable &var) const {
+    //cout << "entry=" << *effect << endl;
+    vector<Effect*> additions;
+    for( size_t k = 0; k < effect->size(); ++k ) {
+        if( dynamic_cast<const AtomicEffect*>((*effect)[k]) != 0 ) {
+            const AtomicEffect &literal = *static_cast<const AtomicEffect*>((*effect)[k]);
+            if( !literal.negated_ && (var.grounded_values_.find(literal) != var.grounded_values_.end()) ) {
+                for( unsigned_atom_set::const_iterator it = var.grounded_values_.begin(); it != var.grounded_values_.end(); ++it ) {
+                    assert(!it->negated_);
+                    if( literal != *it ) additions.push_back(AtomicEffect(*it).negate());
+                }
+            }
+        } else {
+            assert(dynamic_cast<const ConditionalEffect*>((*effect)[k]) != 0);
+            const ConditionalEffect *ceff = static_cast<const ConditionalEffect*>((*effect)[k]);
+            assert(dynamic_cast<const AndEffect*>(ceff->effect_) != 0);
+            mvv_complete_effect_with_variable(const_cast<AndEffect*>(static_cast<const AndEffect*>(ceff->effect_)), var);
+        }
+    }
+    effect->insert(effect->end(), additions.begin(), additions.end());
+    //cout << "exit=" << *effect << endl;
 }
 
 const PDDL_Base::Atom* PDDL_Base::fetch_need_set_sensing_atom(const Action &action) {
@@ -1429,24 +2210,51 @@ const PDDL_Base::Atom* PDDL_Base::fetch_sensing_atom(const Atom &atom) {
     }
 }
 
-void PDDL_Base::do_translations(variable_vec &multivalued_variables) {
+void PDDL_Base::do_translations(const variable_vec* &multivalued_variables,
+                                const list<const Effect*>* &sensing_models,
+                                const map<Atom, Atom>* &sensing_enablers,
+                                const map<Atom, set<unsigned_atom_set> >* &pasive_sensors) {
     instantiate_elements();
+
+    // we can't have two translations running in parallel
+    if( clg_translation_ && mvv_translation_ ) {
+        cout << Utils::error()
+             << "two different translations (clg and mvv) cannot run simultaneously"
+             << Utils::normal() << endl;
+        exit(-1);
+    }
 
     // translate oneofs into invariants and observe effects in actions (CLG-compatibility mode)
     if( clg_translation_ ) {
-        clg_translate_observe_effects_into_sensors(); // don't change order: first sts normal_execution_
-        clg_map_oneofs_and_clauses_to_invariants();   // that is required by second
+        clg_translate_actions();                      // don't change order: first creates
+        clg_map_oneofs_and_clauses_to_invariants();   // (normal-execution) that is neede by second
     }
 
     // translate multivalued variable formulations
-    if( multivalued_variable_translation_ ) {
-        calculate_atoms_for_state_variables();
-        //calculate_observable_atoms();
-        calculate_beams_for_grounded_observable_variables();
-        translate_actions_for_multivalued_variable_formulation();
-        create_invariants_for_multivalued_variables();
-        create_invariants_for_sensing_model();
-        multivalued_variables = multivalued_variables_;
+    if( mvv_translation_ ) {
+        mvv_calculate_atoms_for_state_variables();
+        //mvv_calculate_observable_atoms();
+        mvv_calculate_beams_for_grounded_observable_variables();
+        mvv_translate_actions();
+#ifdef MVV1
+        mvv_create_invariants_for_variables();
+        mvv_create_invariants_for_sensing_models();
+#else
+        mvv_create_deductive_rules_for_variables();
+        mvv_create_deductive_rules_for_sensing();
+#endif
+        multivalued_variables = &multivalued_variables_;
+        sensing_models = &xx_sensing_models_;
+        sensing_enablers = &xx_sensing_enablers_;
+        pasive_sensors = &xx_pasive_sensors_;
+    }
+
+    // if no translation, mark every action as original action
+    if( !clg_translation_ && !mvv_translation_ ) {
+        for( size_t k = 0; k < dom_actions_.size(); ++k ) {
+            const Action &action = *dom_actions_[k];
+            original_actions_.insert(string(action.print_name_));
+        }
     }
 }
 
@@ -1502,6 +2310,10 @@ void PDDL_Base::emit_instance(Instance &ins) const {
     // emit sticky
     for( size_t k = 0; k < dom_stickies_.size(); ++k )
         dom_stickies_[k]->emit(ins);
+
+    // declare original actions
+    for( set<string>::const_iterator it = original_actions_.begin(); it != original_actions_.end(); ++it )
+        ins.declare_original_action(*it);
 }
 
 void PDDL_Base::print(ostream &os) const {
@@ -1608,6 +2420,7 @@ void PDDL_Base::Atom::remap_parameters(const var_symbol_vec &old_param, const va
 
 bool PDDL_Base::Atom::operator==(const Atom &atom) const {
     if( pred_ != atom.pred_ ) return false;
+    if( negated_ != atom.negated_ ) return false;
     assert(param_.size() == atom.param_.size());
     for( size_t k = 0; k < param_.size(); ++k )
         if( param_[k] != atom.param_[k] ) return false;
@@ -1617,10 +2430,23 @@ bool PDDL_Base::Atom::operator==(const Atom &atom) const {
 bool PDDL_Base::Atom::operator<(const Atom &atom) const {
     if( pred_ < atom.pred_ ) return true;
     if( pred_ > atom.pred_ ) return false;
+    if( !negated_ && atom.negated_ ) return true;
+    if( negated_ && !atom.negated_ ) return false;
     assert(param_.size() == atom.param_.size());
     for( size_t k = 0; k < param_.size(); ++k ) {
         if( param_[k] < atom.param_[k] ) return true;
         if( param_[k] > atom.param_[k] ) return false;
+    }
+    return false;
+}
+
+bool PDDL_Base::Atom::unsigned_less_comparator::operator()(const Atom &atom1, const Atom &atom2) const {
+    if( atom1.pred_ < atom2.pred_ ) return true;
+    if( atom1.pred_ > atom2.pred_ ) return false;
+    assert(atom1.param_.size() == atom2.param_.size());
+    for( size_t k = 0; k < atom1.param_.size(); ++k ) {
+        if( atom1.param_[k] < atom2.param_[k] ) return true;
+        if( atom1.param_[k] > atom2.param_[k] ) return false;
     }
     return false;
 }
@@ -1719,6 +2545,26 @@ string PDDL_Base::Atom::to_string(bool extra_neg, bool mangled) const {
     str += end;
     if( extra_neg ) str += end;
     return str;
+}
+
+bool PDDL_Base::signed_atom_set::operator<(const signed_atom_set &atom_set) const {
+    if(size() < atom_set.size()) return true;
+    if(size() > atom_set.size()) return false;
+    for( const_iterator it = begin(), jt = atom_set.begin(); it != end(); ++it, ++jt ) {
+        if( key_comp()(*it, *jt) ) return true;
+        if( key_comp()(*jt, *it) ) return false;
+    }
+    return false;
+}
+
+bool PDDL_Base::unsigned_atom_set::operator<(const unsigned_atom_set &atom_set) const {
+    if(size() < atom_set.size()) return true;
+    if(size() > atom_set.size()) return false;
+    for( const_iterator it = begin(), jt = atom_set.begin(); it != end(); ++it, ++jt ) {
+        if( key_comp()(*it, *jt) ) return true;
+        if( key_comp()(*jt, *it) ) return false;
+    }
+    return false;
 }
 
 PDDL_Base::Condition* PDDL_Base::Constant::ground(bool clone_variables, bool negate, bool replace_static_values) const {
@@ -2269,23 +3115,10 @@ bool PDDL_Base::AtomicEffect::is_strongly_static(const PredicateSymbol &p) const
     return pred_ != &p;
 }
 
-void PDDL_Base::AtomicEffect::calculate_beam_for_grounded_variable(Variable &var, const unsigned_atom_vec &context) const {
-    // determine if variable is affected
-    int variable_is_affected = -1;
-    string string_rep = Atom::to_string(negated_, false);
-    for( size_t k = 0; k < var.grounded_values_.size(); ++k ) {
-        const AtomicEffect *value = dynamic_cast<const AtomicEffect*>(var.grounded_values_[k]);
-        assert((value != 0) && !value->negated_);
-        if( string_rep == value->to_string() ) {
-            variable_is_affected = k;
-            break;
-        }
-    }
-
-    // if affected, insert all atoms in context into beam
-    if( variable_is_affected >= 0 ) {
-        var.beam_[variable_is_affected].insert(context.begin(), context.end());
-    }
+void PDDL_Base::AtomicEffect::calculate_beams_for_variable(Variable &var, const atom_vec &context) const {
+    // if variable is affected, insert all atoms in context into beam
+    if( var.grounded_values_.find(*this) != var.grounded_values_.end() )
+        var.beam_[*this].insert(context.begin(), context.end());
 }
 
 void PDDL_Base::AtomicEffect::extract_atoms(unsigned_atom_set &atoms, bool only_affected) const {
@@ -2363,9 +3196,9 @@ bool PDDL_Base::AndEffect::is_strongly_static(const PredicateSymbol &p) const {
     return strongly_static;
 }
 
-void PDDL_Base::AndEffect::calculate_beam_for_grounded_variable(Variable &var, const unsigned_atom_vec &context) const {
+void PDDL_Base::AndEffect::calculate_beams_for_variable(Variable &var, const atom_vec &context) const {
     for( size_t k = 0; k < size(); ++k )
-        (*this)[k]->calculate_beam_for_grounded_variable(var, context);
+        (*this)[k]->calculate_beams_for_variable(var, context);
 }
 
 void PDDL_Base::AndEffect::extract_atoms(unsigned_atom_set &atoms, bool only_affected) const {
@@ -2443,22 +3276,22 @@ bool PDDL_Base::ConditionalEffect::is_strongly_static(const PredicateSymbol &p) 
     return effect_->is_strongly_static(p);
 }
 
-void PDDL_Base::ConditionalEffect::calculate_beam_for_grounded_variable(Variable &var, const unsigned_atom_vec &context) const {
+void PDDL_Base::ConditionalEffect::calculate_beams_for_variable(Variable &var, const atom_vec &context) const {
     assert((condition_ != 0) && (effect_ != 0));
-    unsigned_atom_vec ncontext(context);
+    atom_vec ncontext(context);
     if( dynamic_cast<const Literal*>(condition_) != 0 ) {
         const Literal *literal = static_cast<const Literal*>(condition_);
         ncontext.push_back(*literal);
     } else {
         assert(dynamic_cast<const And*>(condition_) != 0);
-        const And &and_condition = *static_cast<const And*>(condition_);
-        for( size_t k = 0; k < and_condition.size(); ++k ) {
-            assert(dynamic_cast<const Literal*>(and_condition[k]) != 0);
-            const Literal *literal = static_cast<const Literal*>(and_condition[k]);
+        const And &conjunction = *static_cast<const And*>(condition_);
+        for( size_t k = 0; k < conjunction.size(); ++k ) {
+            assert(dynamic_cast<const Literal*>(conjunction[k]) != 0);
+            const Literal *literal = static_cast<const Literal*>(conjunction[k]);
             ncontext.push_back(*literal);
         }
     }
-    effect_->calculate_beam_for_grounded_variable(var, ncontext);
+    effect_->calculate_beams_for_variable(var, ncontext);
 }
 
 void PDDL_Base::ConditionalEffect::extract_atoms(unsigned_atom_set &atoms, bool only_affected) const {
@@ -2548,7 +3381,7 @@ bool PDDL_Base::ForallEffect::is_strongly_static(const PredicateSymbol &p) const
     return effect_->is_strongly_static(p);
 }
 
-void PDDL_Base::ForallEffect::calculate_beam_for_grounded_variable(Variable &var, const unsigned_atom_vec &context) const {
+void PDDL_Base::ForallEffect::calculate_beams_for_variable(Variable &var, const atom_vec &context) const {
     cout << Utils::error() << "calculate_beam() should not be called on ForallEffect: first ground the effect!" << endl;
     exit(255);
 }
@@ -2581,7 +3414,7 @@ void PDDL_Base::Invariant::process_instance() const {
     for( size_t k = 0; k < size(); ++k )
         invariant.push_back((*this)[k]->ground());
 
-    if( invariant.reduce() ) {
+    if( invariant.Xeduce() == GOOD ) {
         invariant_list_ptr_->push_back(new Invariant(invariant));
         invariant.clear();
     }
@@ -2592,8 +3425,9 @@ void PDDL_Base::Invariant::clear() {
     Xprecondition_ = 0;
 }
 
-bool PDDL_Base::Invariant::reduce() {
+PDDL_Base::Invariant::status_t PDDL_Base::Invariant::Xeduce() {
     condition_vec to_remove;
+    status_t status = GOOD;
     bool remove_invariant = false;
     Invariant reduced_invariant(type_);
     for( size_t k = 0; k < size(); ++k ) {
@@ -2609,6 +3443,16 @@ bool PDDL_Base::Invariant::reduce() {
             }
         } else if( dynamic_cast<const Literal*>(condition) ) {
             reduced_invariant.push_back(condition);
+        } else if( dynamic_cast<const And*>(condition) ) {
+            status = RECOVERABLE; // temporal status, final status is determined below
+            const And &conjunction = *static_cast<const And*>(condition);
+            for( size_t i = 0; i < conjunction.size(); ++i ) {
+                if( dynamic_cast<const Literal*>(conjunction[i]) == 0 ) {
+                    status = BAD; // this invariant is no longer recoverable
+                    break;
+                }
+            }
+            if( status == RECOVERABLE ) reduced_invariant.push_back(condition);
         } else {
             cout << Utils::warning() << "invariant must be clause at time of instantiation (skipping): got " << *condition << endl;
             remove_invariant = true;
@@ -2616,12 +3460,22 @@ bool PDDL_Base::Invariant::reduce() {
             //exit(255);
         }
     }
+
     clear();
-    if( !remove_invariant ) {
-        *this = reduced_invariant;
-        reduced_invariant.clear();
+    if( (status != BAD) && reduced_invariant.empty() ) {
+        status = EMPTY;
+    } else if( (status != BAD) && !remove_invariant ) {
+        assert((status == GOOD) || (status == RECOVERABLE));
+        if( (status == GOOD) || (reduced_invariant.size() == 2) ) {
+            *this = reduced_invariant;
+            reduced_invariant.clear();
+        } else {
+            status = BAD;
+        }
+    } else {
+        status = BAD;
     }
-    return !remove_invariant;
+    return status;
 }
 
 string PDDL_Base::Invariant::to_string() const {
@@ -3148,14 +4002,13 @@ void PDDL_Base::Variable::process_instance() const {
     for( size_t k = 0; k < values_.size(); ++k ) {
         Effect *grounded_value = values_[k]->ground(true); // clone_variables=true
         if( dynamic_cast<AtomicEffect*>(grounded_value) != 0 ) {
-            var->grounded_values_.push_back(grounded_value);
+            var->grounded_values_.insert(*static_cast<AtomicEffect*>(grounded_value));
         } else if( dynamic_cast<AndEffect*>(grounded_value) != 0 ) {
             AndEffect &item_list = *static_cast<AndEffect*>(grounded_value);
-            var->grounded_values_.reserve(var->grounded_values_.size() + item_list.size());
-            for( size_t i = 0; i < item_list.size(); ++i )
-                var->grounded_values_.push_back(item_list[i]);
-            item_list.clear();
-            delete grounded_value;
+            for( size_t i = 0; i < item_list.size(); ++i ) {
+                assert(dynamic_cast<const AtomicEffect*>(item_list[i]) != 0);
+                var->grounded_values_.insert(*static_cast<const AtomicEffect*>(item_list[i]));
+            }
         } else {
             cout << *values_[k] << endl;
             Effect *e = values_[k]->ground(true); // clone_variables=true
@@ -3164,6 +4017,7 @@ void PDDL_Base::Variable::process_instance() const {
                  << print_name_ << "'" << endl;
             exit(255);
         }
+        delete grounded_value;
     }
 }
 

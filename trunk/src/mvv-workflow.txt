@@ -1,0 +1,84 @@
+Workflow for MVV translation:
+
+Driver is do_translations(). It performs the following tasks:
+
+1. calculate_atoms_for_state_variables()
+   - stores all atoms in state variables in the (unsigned_atom_set) atoms_for_state_variables_
+   - this set is only used in translation_for_multivalued_variable_formulation(Action&)
+
+2. calculate_beams_for_grounded_observable_variables()
+   - for each observable variable Y do
+     - calculate_beams_for_grounded_variable(Y)
+       - each observable variable has a beam for each value
+     - remove static atoms for beams
+     - if reduced beam is empty & mvv:compile-static-observables is enabled then
+       call compile_static_observable(fluent) wheren fluent is y value for var Y
+   - done 
+
+   2.1. calculate_beams_for_grounded_variable(var Y)
+        - if Y is state variable, the beam for each value contains only the value
+        - if Y is non-state variable, for each sensing model of each action,
+          call calculate_beam_for_grounded_variable(Y, context) where context
+          is an initially empty unsigned_atom_vec
+
+   2.2 compile_static_observable(atom)
+       - each observable atom whose beam comprises only static fluents is
+         a *candidate* for compilation
+       - for each candidate atom do
+
+3. translate_actions_for_multivalued_variable_formulation()
+   - calculate actions that need translation as those with non-null sensing model
+   - crete (normal-execution) atom and extend initial situation, preconditions and goal
+   - translate actions one by one using translation_for_multivalued_variable_formulation(Action&)
+   - if enabled, complete actions' effects: for each variable X and values x, x',
+     if action adds X=x, then delete X=x'
+
+   3.1. translation_for_multivalued_variable_formulation(action)
+        - for each action that senses something, create multiple actions
+          implementing it as follows. First, determined which actions
+          are needed among: effect-action, set-sensing-action, turn-on-sensor,
+          sensor-actions and post-action. Sensor-actions and post-action are
+          always needed; the others depend on whether the sensed fluents are
+          static or not. If set-sensing-action is required, the sensing model
+          is stored in sensing_models_.
+        - the generated actions are applied in sequence. The possible cases are:
+
+            a) effect-action, set-sensing, <sensors>, post-action
+            b) effect-action, <sensors>, post-action
+            c) set-sensing, <sensors>, post-action
+            d) turn-on-sensors, <sensors>, post-action
+
+        - NOTE: set-sensing-action should be null in KP level
+
+        3.1.1. create_sensors_for_atoms(sensed_atoms)
+               - for each sensed atom, create a sensor whose condition is
+                 given by fetch_sensing_atom(atom) and that senses the atom
+
+        3.1.2. create_post_action(sensed_atoms)
+               - create a post-action that disables the sensors for 
+                 the sensed atoms and re-establish normal execution
+
+4. create_invariants_for_multivalued_variables()
+   - for each variable X (either state or observable), and value x,
+     generate rules
+
+       a) And { X != x' : x' != x } => X = x 
+       a) X = x => And { X != x' : x' != x }
+
+5. create_invariants_for_sensing_models()
+   - for each sensed literal L of the form Y=y with rules
+
+       C_1 => L, ..., C_n => L
+
+   - For each i=1..n, generate rules
+
+       -L & And { L_j' : 1 <= j' <= m, j' != j } => -L_j
+
+     for each j=1..m where C_i = L_1 & L_2 & ... & L_m
+
+   - for each i=1..n, generate rules
+
+       C => L
+
+   - NOTE: these invariants should exist only at K level
+

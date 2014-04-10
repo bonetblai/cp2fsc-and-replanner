@@ -227,7 +227,7 @@ void Preprocessor::compute_reachability(bool_vec &reachable_atoms, bool_vec &rea
 
             // add sensed atoms to reachable set
             for( index_set::const_iterator p = r->sense_.begin(); p != r->sense_.end(); ++p ) {
-                assert(*p > 0);
+                if( *p < 0 ) continue;
                 if( !reachable_atoms[*p - 1] ) {
                     reachable_atoms[*p - 1] = true;
                     fix_point_reached = false;
@@ -363,7 +363,7 @@ void Preprocessor::compute_static_atoms(const bool_vec &reachable_actions, bool_
     }
 }
 
-void Preprocessor::compute_action_completion(Instance::Action &action) {
+void Preprocessor::compute_action_compilation(Instance::Action &action) {
     // generate candidate literals for completion
     index_vec candidate_literals;
     candidate_literals.reserve(2*instance_.n_atoms());
@@ -373,8 +373,8 @@ void Preprocessor::compute_action_completion(Instance::Action &action) {
     }
 
     // iterate over candidate literals to check for completion.
-    // A completion for literal L and action a is a set S of
-    // literals such that:
+    // A completion for literal L and action a (i.e., a completion
+    // for (a,L)), is a set S of literals such that:
     //
     //    1) for each conditional effect a : C -> L,
     //
@@ -406,7 +406,7 @@ void Preprocessor::compute_action_completion(Instance::Action &action) {
         }
         if( !valid_completion ) continue;
 
-        // check second sondition
+        // check second condition
         valid_completion = false;
         for( size_t i = 0; i < action.when_.size(); ++i ) {
             const Instance::When &when = action.when_[i];
@@ -418,7 +418,7 @@ void Preprocessor::compute_action_completion(Instance::Action &action) {
 
         // If valid completion, add new conditional effect
         if( valid_completion ) {
-            if( options_.is_enabled("problem:print:literal-completion") ) {
+            if( options_.is_enabled("problem:print:action-compilation") ) {
                 cout << "completion for action=" << action.name_ << " and literal=";
                 if( lit > 0 )
                     cout << instance_.atoms_[lit-1]->name_;
@@ -440,11 +440,6 @@ void Preprocessor::compute_action_completion(Instance::Action &action) {
         }
     }
 }
-
-
-
-
-
 
 void Preprocessor::compute_relevance(const index_set &check, bool_vec &rel) const {
 #if 0
@@ -496,7 +491,7 @@ void Preprocessor::remove_irrelevant_atoms() {
 
 
 
-void Preprocessor::preprocess(bool remove_atoms, bool do_action_completion) {
+void Preprocessor::preprocess(bool remove_atoms) {
     if( options_.is_enabled("problem:print:preprocess:stage") )
         cout << "Preprocessing..." << endl;
 
@@ -667,12 +662,12 @@ void Preprocessor::preprocess(bool remove_atoms, bool do_action_completion) {
     instance_.create_deductive_rules();
 #endif
 
-    // stage 7: Perform action completion. This is only valid for k-replanner.
-    if( do_action_completion ) {
+    // stage 7: Perform action compilation. This is only valid for k-replanner.
+    if( options_.is_enabled("problem:action-compilation") ) {
         if( options_.is_enabled("problem:print:preprocess:stage") )
-            cout << "  Stage 7: computing action completion for " << instance_.n_actions() << " action(s) ..." << endl;
+            cout << "  Stage 7: performing action compilation for " << instance_.n_actions() << " action(s) ..." << endl;
         for( size_t k = 0; k < instance_.n_actions(); ++k ) {
-            compute_action_completion(*instance_.actions_[k]);
+            compute_action_compilation(*instance_.actions_[k]);
         }
     }
 

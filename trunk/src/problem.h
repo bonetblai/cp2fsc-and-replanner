@@ -38,6 +38,10 @@ class Instance {
         index_set condition_;
         index_set effect_;
         When() { }
+        bool operator<(const When &when) const {
+            return (condition_ < when.condition_) ||
+                   ((condition_ == when.condition_) && (effect_ < when.effect_));
+        }
     };
     struct when_vec : public std::vector<When> { };
 
@@ -153,6 +157,9 @@ class Instance {
 
     const Options::Mode &options_;
 
+    // actions that correspond to original problem
+    std::set<std::string> original_actions_;
+
     Instance(Name *name, const Options::Mode &options)
       : cross_referenced_(false), name_(name), options_(options) {
     }
@@ -176,7 +183,7 @@ class Instance {
     void remove_actions(const bool_vec &set, index_vec &map);
     virtual void remove_atoms(const bool_vec &set, index_vec &map);
     void calculate_non_primitive_and_observable_fluents();
-    void set_initial_state(State &state) const;
+    void set_initial_state(State &state, bool apply_axioms = true) const;
     void set_hidden_state(int k, State &state) const;
     int num_hidden_states() const { return hidden_.size(); }
 
@@ -209,11 +216,19 @@ class Instance {
     void generate_reachable_state_space(const State &state, StateSet &hash) const;
     void generate_initial_states(StateSet &initial_states) const;
 
+    // set/get original actions
+    bool is_original_action(const std::string &action_name) const {
+        return original_actions_.find(action_name) != original_actions_.end();
+    }
+    void declare_original_action(const std::string &action_name) {
+        original_actions_.insert(action_name);
+    }
+
     // write utilities
     void write_atom_set(std::ostream &os, const index_set &set) const;
     void write_atom_set(std::ostream &os, const bool* set) const;
     void write_atom_set(std::ostream &os, const bool_vec &set) const;
-    void write_atom_sets(std::ostream &os, const index_set_vec &sets) const;
+    void write_atom_sets(std::ostream &os, const std::vector<index_set> &sets) const;
     void write_action_set(std::ostream &os, const index_vec &set) const;
     void write_action_set(std::ostream &os, const bool* set) const;
     void write_action_set(std::ostream &os, const bool_vec &set) const;

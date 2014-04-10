@@ -38,11 +38,11 @@ class Preprocessor {
     // remove atoms marked irrelevant from instance (re-cross-ref)
     void remove_irrelevant_atoms();
 
-    // compute action completion
-    void compute_action_completion(Instance::Action &action);
+    // compute action compilation
+    void compute_action_compilation(Instance::Action &action);
 
     // perform standard preprocessing: remove static atoms and unreachable actions, re-cross-ref
-    void preprocess(bool remove_atoms = false, bool do_action_completion = false);
+    void preprocess(bool remove_atoms = false);
 };
 
 #endif
