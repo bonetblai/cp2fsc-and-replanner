@@ -24,7 +24,7 @@ inline bool in_range(int p, int q, int h) {
     return dist <= h;
 }
 
-void emit_instance(ostream &os, const vector<int> &placement, const vector<bool> &goodness) {
+void emit_instance(ostream &os, const vector<int> &placement, const vector<vector<bool> > &goodness) {
 
     os << endl
        << "(define (problem problem-" << dim << "-" << nrocks << "-" << seed[0] << ")" << endl
@@ -115,23 +115,26 @@ void emit_instance(ostream &os, const vector<int> &placement, const vector<bool>
             }
         }
     }
-    os << "    )" << endl << endl;
+    os << "    )" << endl;
 
     // hidden state
-    os << "    (:hidden" << endl;
-    for( int r = 0; r < nrocks; ++r ) {
-        if( goodness[r] ) {
-            os << "        (good r" << r << ")" << endl;
-            for( int p = 0; p < dim * dim; ++p ) {
-                for( int h = 0; h < 3; ++h ) {
-                    if( in_range(placement[r], p, h) ) {
-                        os << "        (good-rocks-in-range p" << (p/dim) << "-" << (p%dim) << " h" << h << ")" << endl;
+    for( int i = 0; i < goodness.size(); ++i ) {
+        const vector<bool> &good = goodness[i];
+        os << "    (:hidden";
+        for( int r = 0; r < nrocks; ++r ) {
+            if( good[r] ) {
+                os << " (good r" << r << ")";
+                for( int p = 0; p < dim * dim; ++p ) {
+                    for( int h = 0; h < 3; ++h ) {
+                        if( in_range(placement[r], p, h) ) {
+                            os << " (good-rocks-in-range p" << (p/dim) << "-" << (p%dim) << " h" << h << ")";
+                        }
                     }
                 }
             }
         }
+        os << ")" << endl;
     }
-    os << "    )" << endl << endl;
 
     // goal state
     os << "    (:goal (and";
@@ -142,8 +145,8 @@ void emit_instance(ostream &os, const vector<int> &placement, const vector<bool>
 }
 
 int main(int argc, const char **argv) {
-    if( argc != 4 ) {
-        cerr << "Usage: generator <seed> <dim> <nrocks>" << endl;
+    if( argc != 5 ) {
+        cerr << "Usage: generator <seed> <dim> <nrocks> <nhidden>" << endl;
         return -1;
     }
     
@@ -152,6 +155,7 @@ int main(int argc, const char **argv) {
 
     dim = atoi(*++argv);
     nrocks = atoi(*++argv);
+    int nhidden = atoi(*++argv);
 
     vector<int> rocks(dim * dim, 0);
     for( int i = 0; i < dim * dim; ++i )
@@ -166,10 +170,14 @@ int main(int argc, const char **argv) {
         rocks.pop_back();
     }
 
-    vector<bool> goodness;
-    goodness.reserve(nrocks);
-    for( int i = 0; i < nrocks; ++i ) {
-        goodness[i] = lrand48() % 2 == 0;
+    vector<vector<bool> > goodness;
+    goodness.reserve(nhidden);
+    for( int i = 0; i < nhidden; ++i ) {
+        vector<bool> good;
+        good.reserve(nrocks);
+        for( int j = 0; j < nrocks; ++j )
+            good.push_back(lrand48() % 2 == 0);
+        goodness.push_back(good);
     }
 
     emit_instance(cout, placement, goodness);
