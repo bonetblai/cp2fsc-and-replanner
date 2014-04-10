@@ -165,26 +165,26 @@ for k in range(0, num):
         breeze.append([])
         calculate_adj(pos, breeze[i])
 
-    hidden += "  (:hidden\n    (gold p_%d_%d)" % gold + " (glitter p_%d_%d)\n" % gold
+    hidden += "  (:hidden (gold p_%d_%d)" % gold + " (glitter p_%d_%d)" % gold
 
     for i in range(0, nwumpus):
-        hidden += "    (wumpus p_%d_%d)" % wumpus[i]
+        hidden += " (wumpus p_%d_%d)" % wumpus[i]
         for pos in stench[i]:
             hidden += " (stench p_%d_%d)" % pos
-        hidden += "\n"
+        #hidden += "\n"
 
     for i in range(0, npits):
-        hidden += "    (pit p_%d_%d)" % pits[i]
+        hidden += " (pit p_%d_%d)" % pits[i]
         for pos in breeze[i]:
             hidden += " (breeze p_%d_%d)" % pos
-        hidden += "\n"
+        #hidden += "\n"
 
     hidden += "   "
     for cell in cells:
         if safe(cell):
             hidden += " (safe p_%d_%d)" % cell
 
-    hidden += "\n  )\n"
+    hidden += ")\n"
 
 goal = "  (:goal (have-gold))"
 
