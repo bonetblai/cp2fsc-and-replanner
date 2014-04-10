@@ -136,17 +136,17 @@ for k in range(0, num):
         bits.append(n % 2)
         n /= 2
 
-    hidden += "  (:hidden\n"
+    hidden += "  (:hidden"
     for i in range(0, dim - 3):
         cp = target_cells[i]
         cell = cp[bits[i]]
         adj_list = calculate_adj(cell, [])
-        hidden += "    (wumpus p_%d_%d)" % cell
+        hidden += " (wumpus p_%d_%d)" % cell
         for pos in adj_list:
             hidden += " (stench p_%d_%d)" % pos
-        hidden += "\n"
-        hidden += "    (safe p_%d_%d)\n" % cp[1 - bits[i]]
-    hidden += "  )\n"
+        #hidden += "\n"
+        hidden += " (safe p_%d_%d)" % cp[1 - bits[i]]
+    hidden += ")\n"
 
 goal = "  (:goal (have-gold))"
 
