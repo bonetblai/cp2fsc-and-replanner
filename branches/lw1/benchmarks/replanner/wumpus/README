@@ -1,0 +1,26 @@
+Different versions of the wumpus domain.
+
+Versions:
+
+- short: a simplified version of the game with only
+    wumpuses, and where the goal is to reach a goal
+    position from a known initial position. The challenge
+    is to navigate safely through the gridworld.
+
+- diagonal: a simplified version in which the wumpus
+    are placed around the main diagonal that goes from
+    cell (1,1) to cell (n,n). In such a grid, there
+    are n-2 wumpues, each one above or below the
+    main diagonal. This version is designed in order 
+    to compare with other algorithms.
+
+- full: version of the game without shooting arrows.
+    There can be pits/wumpus at each cell. The agent
+    must navigate in a safe manner inside the cave
+    to grab the gold.
+
+- kill: there is a single wumpus in the grid that must
+    be killed by the agent when next to it. The agent
+    must navigate and locate the wumpus, and then kill
+    it.
+

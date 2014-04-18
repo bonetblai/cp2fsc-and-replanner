@@ -1,0 +1,35 @@
+# Define compiler/linker:
+CC     = gcc
+C++    = g++
+LINK   = g++
+#CC     = clang
+#C++    = clang++
+#LINK   = clang++
+
+# Define bison++ and flex++.
+# NOTE: These are NOT the standard GNU programs, but a C++ adaption.
+# Last I checked, they were available from
+# ftp://ftp.th-darmstadt.de/pub/programming/languages/C++/tools/flex++bison++/
+
+BISON  = bison++
+FLEX    = /usr/local/bin/flex++
+#BISON   = /home/bonet/software/bison++-1.21-8/bison++
+#FLEX    = /home/bonet/software/flex++-2.3.8-7/flex++
+
+# If you can not find/compile bison++/flex++, try using the "fake" programs
+# as shown below. These are simple scripts that just copy pregenerated files.
+# Replace <PLATFORM> by one of 'cygwin', 'linux' or 'solaris'.
+#BISON  = locals/fake-bison++ linux
+#FLEX   = locals/fake-flex++ linux
+
+# Define compiler/linker flags:
+DEBUG = -g
+OPTIMIZE = -O3 #-DNDEBUG
+
+CFLAGS = $(DEBUG) $(OPTIMIZE) -I. -Wall
+LFLAGS = $(DEBUG) $(OPTIMIZE) -L. -Wall
+
+# Libraries to be linked.
+# The malloc lib may be needed
+LLIBS  = # -lmalloc 
+

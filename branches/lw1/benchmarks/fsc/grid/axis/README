@@ -1,0 +1,27 @@
+Solutions times for Jussi's Mp planner running in a machine with 2
+cores Intel(R) Xeon(R) 5120 @ 1.86GHz with 2070632 kB of RAM.
+(Cutoff time of 600 seconds.)
+
+----------------------------------------------------------------------
+Mp's time                w/ tag-all-literals      w/o tag-all-literals
+----------------------------------------------------------------------
+corner2x2_A                0.02                     0.02
+corner3x2_A                0.00                     0.02
+corner3x3_A                0.08                     0.06
+corner4x2_A                0.02                     0.01
+corner4x3_A                0.13                     0.11
+corner4x4_A                0.38                     0.37
+prize2x2_A                 0.01                     0.02
+prize3x2_A                 0.04                     0.03
+prize3x3_A                 0.09                     0.12
+prize4x2_A                 0.05                     0.05
+prize4x3_A                 1.06                     0.71
+prize4x4_A                 2.18                     3.06
+prize5x2_A                 0.06                     0.07
+prize5x3_A                24.51                    24.38
+prize5x4_A                74.18                    63.85
+prize5x5_A                  ---                      ---
+----------------------------------------------------------------------
+
+Remarks. The time for translation is negligible. 
+

@@ -1,0 +1,7 @@
+An agent moving in a square grid must search for balls
+in unknown positions, pick them up, and deliver them 
+to designated spots given the color of the balls. When
+at cell, the agent senses the presence/absence of balls
+at the cell and their colors. The agent always knows its
+position.
+

@@ -1,0 +1,47 @@
+Public distribution for:
+
+1. cp2fsc for generating finite-state controllers for partially observable
+   control problems, and 
+
+2. k_replanner for partially observable problems.
+
+The parser is based on a parser by Patrik Haslum.
+Some benchmarks for k_replanner use maps form the Hierarchical Open Graph
+(HOG) framework developed by Nathan Sturtevant from University of Alberta.
+
+Developed by Blai Bonet (c) 2011.
+
+
+
+===============================================================================
+cp2fsc
+===============================================================================
+
+The executable cp2fsc constructs a finite-state controller for solving a given
+partically observable problem. The problem is specified through a domain and
+problem file in an extension of the PDDL language.
+
+cp2fsc receives different paramenters, the most important being:
+
+  --fsc-states <n>     that specifies the number of internal states
+                       for the finite-state controller.
+
+For a complete list of paramenters, run cp2fsc without parameters.
+
+[still under construction]
+
+[take a look at the examples in benchmarks/fsc. See the README and
+ experiments.sh files therein]
+
+
+===============================================================================
+k_replanner
+===============================================================================
+
+The executable k_replanner implements a replanning algorithm based on a
+classical planner. The classical planner used can be specified with a
+parameter.
+
+[still under construction]
+
+

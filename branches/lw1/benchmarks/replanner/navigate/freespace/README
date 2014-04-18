@@ -1,0 +1,6 @@
+An agent must navigate a rectangular grid from a *known*
+initial position to a goal position. Some of the cells
+represents walls (obstacles) and thus cannot be traversed,
+yet such cells are unknown to the agent. The agent senses
+the surrounding walls at each time.
+
