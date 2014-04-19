@@ -6,8 +6,6 @@
 #include "parser.h"
 #include "state.h"
 #include "clg_problem.h"
-#include "mvv_problem.h"
-#include "mvv2_problem.h"
 #include "solver.h"
 #include "options.h"
 #include "available_options.h"
@@ -82,7 +80,6 @@ int main(int argc, char *argv[]) {
     // set default options
     options.enable("planner:remove-intermediate-files");
     options.enable("problem:action-compilation");
-    options.enable("mvv:compile-static-observables");
     options.enable("kp:merge-drules");
 
     // check correct number of parameters
@@ -162,17 +159,14 @@ int main(int argc, char *argv[]) {
     }
 
     // perform necessary translations
-    const PDDL_Base::variable_vec *multivalued_variables = 0;
-    const list<const PDDL_Base::Effect*> *sensing_models = 0;
-    const map<PDDL_Base::Atom, PDDL_Base::Atom> *sensing_enablers = 0;
-    const map<PDDL_Base::Atom, set<PDDL_Base::unsigned_atom_set> > *pasive_sensors = 0;
-    reader->do_translations(multivalued_variables, sensing_models, sensing_enablers, pasive_sensors);
+    reader->do_translation();
     if( options.is_enabled("parser:print:translated") ) {
         reader->print(cout);
     }
 
-    // get translation type: 0=no translation, 1=clg, 2=mvv
+    // get translation type: 0=no translation, 1=clg, 2=lw1
     int translation_type = reader->get_translation_type();
+    assert(translation_type != 2);
 
     // create fresh instance
     Instance instance(options);
@@ -201,11 +195,8 @@ int main(int argc, char *argv[]) {
         kp_instance = new Standard_KP_Instance(instance);
     } else if( translation_type == 1 ) {
         kp_instance = new CLG_Instance(instance);
-    } else {
-        assert(multivalued_variables != 0);
-        kp_instance = new MVV2_Instance(instance, *multivalued_variables);
-        //kp_instance = new MVV_Instance(instance, *multivalued_variables, *sensing_models, *sensing_enablers, *pasive_sensors);
     }
+    assert(kp_instance != 0);
 
     if( options.is_enabled("kp:print:raw") ) {
         kp_instance->print(cout);

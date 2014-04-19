@@ -1,6 +1,6 @@
 #include <cassert>
 #include <cstdlib>
-#include "mvv2_problem.h"
+#include "lw1_problem.h"
 #include "state.h"
 #include "utils.h"
 
@@ -15,7 +15,7 @@ static int get_atom_index(const Instance &ins, string atom_name) {
     return -1;
 }
 
-static void mvv_extend_effect_with_ramifications_on_observables(int index,
+static void lw1_extend_effect_with_ramifications_on_observables(int index,
                                                                 const map<int, index_set> &beams_for_observable_atoms,
                                                                 set<int> &effect) {
     for( map<int, index_set>::const_iterator it = beams_for_observable_atoms.begin(); it != beams_for_observable_atoms.end(); ++it) {
@@ -28,22 +28,7 @@ static void mvv_extend_effect_with_ramifications_on_observables(int index,
     }
 }
 
-#if 0
-static void calculate_completion_with_variable(int literal, vector<int> &completion, const set<int> &var, const Instance &ins) {
-    if( var.find(literal) != var.end() ) {
-        //cout << "completion for literal=" << ins.atoms_[literal]->name_ << endl;
-        for( index_set::const_iterator it = var.begin(); it != var.end(); ++it )
-            if( literal != *it ) completion.push_back(*it);
-    }
-}
-
-static void calculate_completion(int literal, vector<int> &completion, const vector<set<int> > &multivalued_variables, const Instance &ins) {
-    for( size_t k = 0; k < multivalued_variables.size(); ++k )
-        calculate_completion_with_variable(literal, completion, multivalued_variables[k], ins);
-}
-#endif
-
-MVV2_Instance::MVV2_Instance(const Instance &ins, const PDDL_Base::variable_vec &multivalued_variables)
+LW1_Instance::LW1_Instance(const Instance &ins, const PDDL_Base::variable_vec &multivalued_variables)
   : KP_Instance(ins.options_),
     n_standard_actions_(0),
     n_sensor_actions_(0),
@@ -60,14 +45,15 @@ MVV2_Instance::MVV2_Instance(const Instance &ins, const PDDL_Base::variable_vec 
     else
         set_name(new CopyName(ins.name_->to_string()));
 
-    // there should not be any invariants
-    if( !ins.init_.invariants_.empty() )
-        cout << Utils::warning() << "problem has invariants; ignoring them..." << Utils::normal() << endl;
+    // there should be no invariants
+    if( !ins.init_.invariants_.empty() ) {
+        cout << Utils::warning()
+             << "LW1 problem has invariants; ignoring them..."
+             << Utils::normal() << endl;
+    }
 
     // extract multivalued variables
     multivalued_variables_.reserve(multivalued_variables.size());
-    //list<pair<string, set<int> > > multivalued_state_variables;
-    //list<pair<string, set<int> > > multivalued_observable_variables;;
     for( size_t k = 0; k < multivalued_variables.size(); ++k ) {
         const PDDL_Base::Variable &var = *multivalued_variables[k];
         set<int> values;
@@ -97,12 +83,6 @@ if( atom_index == -1 ) continue;
             }
         }
         multivalued_variables_.push_back(make_pair(var.print_name_, values));
-#if 0
-        if( var.is_state_variable() && !var.is_observable_variable() )
-            multivalued_state_variables.push_back(make_pair(var.print_name_, values));
-        else
-            multivalued_observable_variables.push_back(make_pair(var.print_name_, values));
-#endif
     }
 
     // create K0 atoms
@@ -117,10 +97,8 @@ if( atom_index == -1 ) continue;
     for( index_set::const_iterator it = ins.init_.literals_.begin(); it != ins.init_.literals_.end(); ++it ) {
         int idx = *it > 0 ? *it-1 : -*it-1;
         if( *it > 0 ) {
-            //cout << "Adding +" << ins.atoms_[idx]->name_ << endl;
             init_.literals_.insert(1 + 2*idx);
         } else {
-            //cout << "Adding -" << ins.atoms_[idx]->name_ << endl;
             init_.literals_.insert(1 + 2*idx+1);
         }
     }
@@ -144,7 +122,7 @@ if( atom_index == -1 ) continue;
 
             // if not in some invariant, add K_not_<atom> to init
             if( !in_invariant ) {
-                //cout << "XXXXXX COMPLETION OF INIT is off!" << endl;
+                cout << Utils::red() << "XXXXXX COMPLETION OF INIT is off!" << Utils::normal() << endl;
                 //init_.literals_.insert(1 + 2*k+1);
                 if( options_.is_enabled("kp:print:atom:init") ) {
                     cout << "Atom " << atoms_[2*k+1]->name_ << " added to init" << endl;
@@ -208,18 +186,18 @@ if( atom_index == -1 ) continue;
     // do subgoaling
     perform_subgoaling();
 
-    // cross reference instance to compute how rules of each type
+    // cross reference instance to compute how many rules of each type
     cross_reference();
     print_stats(cout);
 }
 
-MVV2_Instance::~MVV2_Instance() {
+LW1_Instance::~LW1_Instance() {
 }
 
-void MVV2_Instance::create_regular_action(const Action &action,
-                                          int action_index,
-                                          const index_set &observable_atoms,
-                                          const map<int, index_set> &beams_for_observable_atoms) {
+void LW1_Instance::create_regular_action(const Action &action,
+                                         int action_index,
+                                         const index_set &observable_atoms,
+                                         const map<int, index_set> &beams_for_observable_atoms) {
     string action_name = action.name_->to_string();
     assert(action_name.compare(0, 6, "drule-") != 0);
 
@@ -246,7 +224,7 @@ void MVV2_Instance::create_regular_action(const Action &action,
             nact.effect_.insert(1 + 2*idx+1);
             nact.effect_.insert(-(1 + 2*idx));
         }
-        mvv_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, nact.effect_);
+        lw1_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, nact.effect_);
     }
 
     // support and cancellation rules for conditional effects
@@ -274,8 +252,8 @@ void MVV2_Instance::create_regular_action(const Action &action,
                 if( observable_atoms.find(idx) == observable_atoms.end() )
                     can_eff.effect_.insert(-(1 + 2*idx));
             }
-            mvv_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, sup_eff.effect_);
-            mvv_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, can_eff.effect_);
+            lw1_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, sup_eff.effect_);
+            lw1_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, can_eff.effect_);
         }
         nact.when_.push_back(sup_eff);
         if( !can_eff.effect_.empty() ) nact.when_.push_back(can_eff);
@@ -285,7 +263,7 @@ void MVV2_Instance::create_regular_action(const Action &action,
         nact.print(cout, *this);
 }
 
-void MVV2_Instance::create_drule_for_var(const Action &action) {
+void LW1_Instance::create_drule_for_var(const Action &action) {
     string action_name = action.name_->to_string();
     assert(action_name.compare(0, 10, "drule-var-") == 0);
 
@@ -321,7 +299,7 @@ void MVV2_Instance::create_drule_for_var(const Action &action) {
         nact.print(cout, *this);
 }
 
-void MVV2_Instance::create_drule_for_sensing(const Action &action) {
+void LW1_Instance::create_drule_for_sensing(const Action &action) {
     string action_name = action.name_->to_string();
     assert(action_name.compare(0, 14, "drule-sensing-") == 0);
 
@@ -339,7 +317,7 @@ void MVV2_Instance::create_drule_for_sensing(const Action &action) {
     drule_store_.insert(make_pair(nact->precondition_, nact));
 }
 
-void MVV2_Instance::merge_drules() {
+void LW1_Instance::merge_drules() {
     multimap<index_set, const Action*>::key_compare comparator = drule_store_.key_comp();
     for( multimap<index_set, const Action*>::const_iterator it = drule_store_.begin(); it != drule_store_.end(); ) {
         const Action &drule = *it->second;
@@ -375,7 +353,7 @@ void MVV2_Instance::merge_drules() {
     drule_store_.clear();
 }
 
-void MVV2_Instance::create_drule_for_atom(const Action &action) {
+void LW1_Instance::create_drule_for_atom(const Action &action) {
     string action_name = action.name_->to_string();
     assert(action_name.compare(0, 11, "drule-atom-") == 0);
 
@@ -393,7 +371,7 @@ void MVV2_Instance::create_drule_for_atom(const Action &action) {
     drule_store_.insert(make_pair(nact->precondition_, nact));
 }
 
-void MVV2_Instance::create_sensor(const Sensor &sensor) {
+void LW1_Instance::create_sensor(const Sensor &sensor) {
     assert(!sensor.sense_.empty());
     assert(sensor.sense_.size() == 1);
 
@@ -434,7 +412,7 @@ void MVV2_Instance::create_sensor(const Sensor &sensor) {
         nact.print(cout, *this);
 }
 
-void MVV2_Instance::perform_subgoaling() {
+void LW1_Instance::perform_subgoaling() {
     if( options_.is_enabled("kp:subgoaling") ) {
         cout << Utils::error() << "subgoaling feature not yet supported." << endl;
         exit(255);
@@ -468,7 +446,7 @@ void MVV2_Instance::perform_subgoaling() {
     }
 }
 
-void MVV2_Instance::cross_reference() {
+void LW1_Instance::cross_reference() {
     n_standard_actions_ = 0;
     n_sensor_actions_ = 0;
     n_drule_actions_ = 0;
@@ -545,13 +523,13 @@ void MVV2_Instance::cross_reference() {
     Instance::cross_referenced_ = true;
 }
 
-void MVV2_Instance::set_goal_condition(index_set &condition) const {
+void LW1_Instance::set_goal_condition(index_set &condition) const {
     condition.clear();
     condition.insert(1 + new_goal_->index_);
 }
 
-void MVV2_Instance::print_stats(ostream &os) const {
-    os << "kp-instance: source=mvv-translation"
+void LW1_Instance::print_stats(ostream &os) const {
+    os << "kp-instance: source=lw1-translation"
        << ", #standard-actions=" << n_standard_actions_
        << ", #sensor-actions=" << n_sensor_actions_
        << ", #dules-for-vars=" << n_drules_for_vars_

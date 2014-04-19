@@ -534,7 +534,6 @@ class PDDL_Base {
         void print(std::ostream &os) const;
     };
 
-    struct Variable;
     struct variable_vec : public std::vector<Variable*> { };
     struct variable_list : public std::list<Variable*> { };
 
@@ -614,7 +613,7 @@ class PDDL_Base {
     bool                                      clg_translation_;
 
     // For multivalued variables formulations
-    bool                                      mvv_translation_;
+    bool                                      lw1_translation_;
     variable_vec                              multivalued_variables_;
     const Effect                              *default_sensing_model_;
     std::vector<std::pair<const var_symbol_vec*, const Effect*> > sensing_models_;
@@ -634,8 +633,6 @@ class PDDL_Base {
     std::map<signed_atom_set, Atom*>          atoms_for_terms_for_type3_drules_;
 
     std::list<const Effect*>                  xx_sensing_models_;
-    std::map<Atom, Atom>                      xx_sensing_enablers_;
-    std::map<Atom, std::set<unsigned_atom_set> > xx_pasive_sensors_;
 
     PDDL_Base(StringTable& t, const Options::Mode &options);
     ~PDDL_Base();
@@ -653,15 +650,13 @@ class PDDL_Base {
     void calculate_static_atoms();
     bool is_static_atom(const Atom &atom) const;
 
-    void do_translations(const variable_vec* &multivalued_variables,
-                         const std::list<const Effect*>* &sensing_models,
-                         const std::map<Atom, Atom>* &sensing_enablers,
-                         const std::map<Atom, std::set<unsigned_atom_set> >* &pasive_sensors);
+    void do_translation();
+    void do_lw1_translation(bool strict_lw1, const variable_vec* &multivalued_variables);
     void emit_instance(Instance &ins) const;
     void print(std::ostream &os) const;
 
     // translations
-    int get_translation_type() const { return clg_translation() ? 1 : (mvv_translation() ? 2 : 0); }
+    int get_translation_type() const { return clg_translation() ? 1 : (lw1_translation() ? 2 : 0); }
 
     // methods for formulations in CLG-like syntax
     void declare_clg_translation();
@@ -672,49 +667,44 @@ class PDDL_Base {
 
     // methods for formulations in terms of multivalued variables
     void declare_multivalued_variable_translation();
-    bool mvv_translation() const { return mvv_translation_; }
-    void mvv_calculate_atoms_for_state_variables();
-    void mvv_calculate_observable_atoms();
-    void mvv_calculate_beams_for_grounded_observable_variables();
-    void mvv_calculate_beams_for_grounded(Variable &var);
-    void mvv_translate_actions();
-    void mvv_translate(Action &action);
-    void mvv_create_sensors_for_atoms_old(const unsigned_atom_set &atoms);
-    void mvv_create_post_action(const unsigned_atom_set &atoms);
+    bool lw1_translation() const { return lw1_translation_; }
+    void lw1_calculate_atoms_for_state_variables();
+    void lw1_calculate_beams_for_grounded_observable_variables();
+    void lw1_calculate_beams_for_grounded(Variable &var);
+    void lw1_translate_actions();
+    void lw1_translate(Action &action);
+    void lw1_create_post_action(const unsigned_atom_set &atoms);
 
     // methods to create deductive rules (for multivalued variables)
-    void mvv_create_invariants_for_variables();
-    void mvv_create_invariants_for_sensing_models();
-    void mvv_create_deductive_rules_for_variables();
-    void mvv_index_sensing_models();
-    void mvv_create_deductive_rules_for_sensing();
+    void lw1_create_deductive_rules_for_variables();
+    void lw1_index_sensing_models();
+    void lw1_create_deductive_rules_for_sensing();
 
     // methods to create type-3 deductive rules (for multivalued variables)
-    void mvv_create_type3_drules(const Atom &obs, const And &term, const std::list<const And*> &dnf, int index);
-    const Atom& mvv_fetch_atom_for_negated_term(const And &term);
+    void lw1_create_type3_drules(const Atom &obs, const And &term, const std::list<const And*> &dnf, int index);
+    const Atom& lw1_fetch_atom_for_negated_term(const And &term);
 
     // methods to create sensors (for multivalued variables)
-    void mvv_create_simple_sensors_for_atoms(const unsigned_atom_set &atoms);
-    void mvv_create_sensors_for_atom(const Atom &atom, const Condition &condition, int sensor_index = -1);
-    void mvv_create_sensors_for_atom(const Atom &atom, const signed_atom_set &condition, int sensor_index = -1);
+    void lw1_create_simple_sensors_for_atoms(const unsigned_atom_set &atoms);
+    void lw1_create_sensors_for_atom(const Atom &atom, const Condition &condition, int sensor_index = -1);
+    void lw1_create_sensors_for_atom(const Atom &atom, const signed_atom_set &condition, int sensor_index = -1);
 
     // methods to compile static observables (for multivalued variables)
-    void mvv_calculate_post_condition(const Condition *precondition, const Effect *effect, signed_atom_set &post_condition) const;
-    void mvv_simplify_post_condition(signed_atom_set &post_condition) const;
-    bool mvv_is_literal_implied(const Atom &literal, const Condition &condition, bool complement_literal = false) const;
-    bool mvv_is_literal_implied(const Atom &literal, const signed_atom_set &condition, bool complement_literal = false) const;
-    bool mvv_is_literal_implied(const Atom &literal, const std::vector<const Atom*> &condition, bool complement_literal = false) const;
-    bool mvv_test_on_initial_state_for_static_observable(const signed_atom_set &condition) const;
-    bool mvv_test_on_actions_for_static_observable(const signed_atom_set &condition, const Atom &atom) const;
-    void mvv_remove_subsumed_conditions(std::set<signed_atom_set> &conditions) const;
-    Condition* mvv_create_condition(const unsigned_atom_set &condition) const;
-    void mvv_compile_static_observable(const Atom &atom);
+    void lw1_calculate_post_condition(const Condition *precondition, const Effect *effect, signed_atom_set &post_condition) const;
+    void lw1_simplify_post_condition(signed_atom_set &post_condition) const;
+    bool lw1_is_literal_implied(const Atom &literal, const Condition &condition, bool complement_literal = false) const;
+    bool lw1_is_literal_implied(const Atom &literal, const signed_atom_set &condition, bool complement_literal = false) const;
+    bool lw1_is_literal_implied(const Atom &literal, const std::vector<const Atom*> &condition, bool complement_literal = false) const;
+    bool lw1_test_on_initial_state_for_static_observable(const signed_atom_set &condition) const;
+    bool lw1_test_on_actions_for_static_observable(const signed_atom_set &condition, const Atom &atom) const;
+    void lw1_remove_subsumed_conditions(std::set<signed_atom_set> &conditions) const;
+    void lw1_compile_static_observable(const Atom &atom);
 
     // methods to complete effects (for multivalued variables)
-    void mvv_complete_effect_for_actions();
-    const AndEffect* mvv_complete_effect(Effect *effect) const;
-    const AndEffect* mvv_canonize_effect(Effect *effect) const;
-    void mvv_complete_effect_with_variable(AndEffect *effect, const Variable &var) const;
+    void lw1_complete_effect_for_actions();
+    const AndEffect* lw1_complete_effect(Effect *effect) const;
+    const AndEffect* lw1_canonize_effect(Effect *effect) const;
+    void lw1_complete_effect_with_variable(AndEffect *effect, const Variable &var) const;
 
     // methods to fetch/create support atoms for translations
     const Atom* fetch_need_set_sensing_atom(const Action &action);
