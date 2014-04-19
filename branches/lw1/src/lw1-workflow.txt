@@ -1,4 +1,4 @@
-Workflow for MVV translation:
+Workflow for LW1 translation:
 
 Driver is do_translations(). It performs the following tasks:
 
@@ -11,7 +11,7 @@ Driver is do_translations(). It performs the following tasks:
      - calculate_beams_for_grounded_variable(Y)
        - each observable variable has a beam for each value
      - remove static atoms for beams
-     - if reduced beam is empty & mvv:compile-static-observables is enabled then
+     - if reduced beam is empty & lw1:compile-static-observables is enabled then
        call compile_static_observable(fluent) wheren fluent is y value for var Y
    - done 
 
