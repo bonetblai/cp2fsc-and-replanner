@@ -219,10 +219,10 @@ class PDDL_Base {
         mutable std::vector<Condition*> result_stack_;
     };
 
-    struct ExistCondition : public Condition, Schema {
+    struct ExistsCondition : public Condition, Schema {
         const Condition *condition_;
-        ExistCondition() : condition_(0) { }
-        virtual ~ExistCondition() { delete condition_; }
+        ExistsCondition() : condition_(0) { }
+        virtual ~ExistsCondition() { delete condition_; }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         virtual void emit(Instance &ins, index_set &condition) const;
         virtual void process_instance() const;
