@@ -1,0 +1,5 @@
+An agent moving in a square grid must search for balls
+in unknown positions and pick them up. When at cell,
+the agent senses the presence/absence of balls at the
+cell. The agent always knows its position.
+

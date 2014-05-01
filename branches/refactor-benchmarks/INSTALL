@@ -1,0 +1,14 @@
+Requirements
+------------
+
+To parse the lex and grammar files (i.e. to generate grammar.* and scanner.*),
+you need flex++ (v. 2.3.8-7) and bison++ (v. 1.21-8). If you don't have them,
+contact me.
+
+Instructions
+------------
+
+Change directory to src. Run 'make'.
+
+Blai Bonet (c) 2011.
+

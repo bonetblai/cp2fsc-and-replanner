@@ -1,0 +1,18 @@
+Solutions times for Jussi's Mp planner running in a machine with 2
+cores Intel(R) Xeon(R) 5120 @ 1.86GHz with 2070632 kB of RAM.
+(Cutoff time of 600 seconds.)
+
+----------------------------------------------------------------------
+Mp's time                w/ tag-all-literals      w/o tag-all-literals
+----------------------------------------------------------------------
+p-nballs1-2-capacity2      0.66                     1.07
+p-nballs1-3-capacity3      4.22                    10.27
+p-nballs1-4-capacity3    240.17                    41.97
+p-nballs1-5-capacity3    161.73                      ---
+----------------------------------------------------------------------
+
+Remarks. The time for translation is negligible. The solution for
+p-nballs1-3-capacity3 gives a controller that works for any number of
+balls and any capacity. The controller is different from the one in
+the paper.
+
