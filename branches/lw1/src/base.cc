@@ -2454,16 +2454,16 @@ string PDDL_Base::ForallCondition::to_string() const {
     return str;
 }
 
-void PDDL_Base::ExistCondition::remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param) {
+void PDDL_Base::ExistsCondition::remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param) {
     const_cast<Condition*>(condition_)->remap_parameters(old_param, new_param);
 }
 
-void PDDL_Base::ExistCondition::emit(Instance &ins, index_set &condition) const {
-    cout << Utils::error() << "'ExistCondition' should have dissapeared before instantiating: " << *this << endl;
+void PDDL_Base::ExistsCondition::emit(Instance &ins, index_set &condition) const {
+    cout << Utils::error() << "'ExistsCondition' should have dissapeared before instantiating: " << *this << endl;
     exit(255);
 }
 
-PDDL_Base::Condition* PDDL_Base::ExistCondition::ground(bool clone_variables, bool negate, bool replace_static_values) const {
+PDDL_Base::Condition* PDDL_Base::ExistsCondition::ground(bool clone_variables, bool negate, bool replace_static_values) const {
     negate_stack_.push_back(negate);
     clone_variables_stack_.push_back(clone_variables);
     result_stack_.push_back(negate ? static_cast<Condition*>(new And) : static_cast<Condition*>(new Or));
@@ -2516,7 +2516,7 @@ PDDL_Base::Condition* PDDL_Base::ExistCondition::ground(bool clone_variables, bo
     }
 }
 
-void PDDL_Base::ExistCondition::process_instance() const {
+void PDDL_Base::ExistsCondition::process_instance() const {
     bool negate = negate_stack_.back();
     bool clone_variables = clone_variables_stack_.back();
     if( dynamic_cast<Constant*>(result_stack_.back()) != 0 ) {
@@ -2566,19 +2566,19 @@ void PDDL_Base::ExistCondition::process_instance() const {
     }
 }
 
-bool PDDL_Base::ExistCondition::has_free_variables(const var_symbol_vec &param, bool dont_extend) const {
+bool PDDL_Base::ExistsCondition::has_free_variables(const var_symbol_vec &param, bool dont_extend) const {
     var_symbol_vec nparam(param);
     if( !dont_extend ) nparam.insert(nparam.end(), param_.begin(), param_.end());
     return condition_->has_free_variables(nparam, dont_extend);
 }
 
-void PDDL_Base::ExistCondition::extract_atoms(unsigned_atom_set &atoms) const {
-    cout << Utils::error() << "extract_atoms() should not be called on ExistCondition: first ground the condition!" << endl;
+void PDDL_Base::ExistsCondition::extract_atoms(unsigned_atom_set &atoms) const {
+    cout << Utils::error() << "extract_atoms() should not be called on ExistsCondition: first ground the condition!" << endl;
     exit(255);
 }
 
-string PDDL_Base::ExistCondition::to_string() const {
-    string str("(exist (");
+string PDDL_Base::ExistsCondition::to_string() const {
+    string str("(exists (");
     for( size_t k = 0; k < param_.size(); ++k )
         str += (k > 0 ? " " : "") + param_[k]->to_string();
     str += ") " + condition_->to_string() + ")";

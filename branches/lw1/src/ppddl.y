@@ -19,6 +19,7 @@
   private: \
     std::vector<ForallEffect*> forall_effects_; \
     std::vector<ForallCondition*> forall_conditions_; \
+    std::vector<ExistsCondition*> exists_conditions_; \
     effect_vec *effect_vec_ptr_;
 
 %header{
@@ -86,7 +87,8 @@
 %type <sym>             primitive_type
 %type <atom>            positive_literal negative_literal literal
 %type <condition_vec>   single_condition_list condition_list
-%type <condition>       condition single_condition and_condition or_condition forall_condition
+%type <condition>       condition single_condition and_condition or_condition
+%type <condition>       forall_condition exists_condition
 %type <condition>       goal_list single_goal
 %type <invariant>       invariant at_least_one_invariant at_most_one_invariant exactly_one_invariant
 %type <clause>          clause
@@ -418,6 +420,7 @@ condition:
     | and_condition
     | or_condition
     | forall_condition
+    | exists_condition
     ;
 
 single_condition:
@@ -509,6 +512,22 @@ forall_condition:
           clear_param(forall_conditions_.back()->param_);
           $$ = forall_conditions_.back();
           forall_conditions_.pop_back();
+      }
+    ;
+
+exists_condition:
+      TK_OPEN KW_EXISTS TK_OPEN {
+          exists_conditions_.push_back(new ExistsCondition);
+      }
+      param_list TK_CLOSE {
+          exists_conditions_.back()->param_ = *$5;
+          delete $5;
+      }
+      condition TK_CLOSE {
+          exists_conditions_.back()->condition_ = $8;
+          clear_param(exists_conditions_.back()->param_);
+          $$ = exists_conditions_.back();
+          exists_conditions_.pop_back();
       }
     ;
 
@@ -950,8 +969,9 @@ hidden_state:
     ;
 
 goal_spec:
-      TK_OPEN KW_GOAL single_goal TK_CLOSE { dom_goal_ = $3; }
-    | TK_OPEN KW_GOAL TK_OPEN KW_AND goal_list TK_CLOSE TK_CLOSE { dom_goal_ = $5; }
+      TK_OPEN KW_GOAL condition TK_CLOSE { dom_goal_ = $3; }
+/*  | TK_OPEN KW_GOAL single_goal TK_CLOSE { dom_goal_ = $3; } */
+/*  | TK_OPEN KW_GOAL TK_OPEN KW_AND goal_list TK_CLOSE TK_CLOSE { dom_goal_ = $5; } */
     ;
 
 goal_list:
