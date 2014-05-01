@@ -706,8 +706,8 @@ int LAMA_Server_Planner::create_server_process(const char *base) const {
         string cmd;
         if( planner_path_ != "" ) cmd += planner_path_ + "/src/search/downward-server";
         char * argv[4];
-        argv[0] = "downward-server";
-        argv[1] = "seq-sat-lama-2011-single-plan";
+        argv[0] = (char*)"downward-server";
+        argv[1] = (char*)"seq-sat-lama-2011-single-plan";
         argv[2] = (char*)base;
         argv[3] = 0;
         int status = execve(cmd.c_str(), argv, 0);
