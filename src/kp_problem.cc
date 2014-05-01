@@ -42,7 +42,18 @@ void KP_Instance::calculate_relevant_assumptions(const Plan &plan,
     for( size_t k = 0; k < plan.size(); ++k ) {
         trajectory.push_back(current_state);
         const Action &action = *actions_[plan[k]];
-        assert(current_state.applicable(action));
+        if( !current_state.applicable(action) ) {
+            cout << Utils::error()
+                 << "action " << action.name_ << " in raw plan isn't executable!"
+                 << endl;
+            cout << "raw plan is:" << endl;
+            for( size_t i = 0; i < plan.size(); ++i )
+                cout << "    " << actions_[plan[i]]->name_ << endl;
+            cout << "current state is ";
+            initial_state.print(cout, *this);
+            cout << endl;
+            assert(current_state.applicable(action));
+        }
         current_state.apply(action);
     }
     trajectory.push_back(current_state);
