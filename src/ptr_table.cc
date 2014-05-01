@@ -1,4 +1,3 @@
-using namespace std;
 #include "ptr_table.h"
 
 ptr_table::~ptr_table() {
