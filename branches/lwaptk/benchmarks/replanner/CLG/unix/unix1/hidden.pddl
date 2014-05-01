@@ -1,0 +1,6 @@
+(define (problem unix-3)
+    (:hidden (file-in-dir my-file sub11))
+    (:hidden (file-in-dir my-file sub21))
+    (:hidden (file-in-dir my-file sub12))
+    (:hidden (file-in-dir my-file sub22))
+)

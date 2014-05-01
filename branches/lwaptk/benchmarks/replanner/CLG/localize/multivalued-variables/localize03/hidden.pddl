@@ -1,0 +1,11 @@
+(define (problem sd-3)
+    (:hidden (at p1-1))
+    (:hidden (at p2-1))
+    (:hidden (at p3-1))
+    (:hidden (at p1-2))
+    (:hidden (at p3-2))
+    (:hidden (at p1-3))
+    (:hidden (at p2-3))
+    (:hidden (at p3-3))
+)
+

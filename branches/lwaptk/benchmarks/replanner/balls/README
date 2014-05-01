@@ -1,0 +1,11 @@
+An agent traverses a grid looking for different types of balls.
+
+Versions:
+
+- colored: the balls have colors. The position and color of the
+    balls is unknown to the agent. The balls must be delivered
+    to different spots depending on the color of the ball.
+
+- uncolored: the balls have no colors. The task is to locate and
+    pick up the balls.
+

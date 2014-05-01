@@ -1,0 +1,15 @@
+An agent must navigate thorugh a rectangular grid
+with hidden obstacles. The agent may know its initial
+location or not, and the position of the obstacles.
+
+Versions:
+
+- freespace: the agent knows it initial positions but
+    doesn't known the position of obstacles (walls).
+
+- localize: the agent knows the position of obstacles
+    but doesn't know its initial position.
+
+- localize-hard: the agent doesn't know its initial
+    position nor the position of the obstacles.
+
