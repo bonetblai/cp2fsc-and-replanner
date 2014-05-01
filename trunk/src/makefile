@@ -15,17 +15,17 @@ TARGET2 = cp2fsc
 all: $(TARGET1) $(TARGET2)
 
 grammar.h: ppddl.y base.h
-	#$(BISON) -v -d -o grammar.cc ppddl.y
-	touch grammar.cc grammar.h
+	$(BISON) -v -d -o grammar.cc ppddl.y
+	#touch grammar.cc grammar.h
 grammar.cc: ppddl.y base.h
-	#$(BISON) -v -d -o grammar.cc ppddl.y
-	touch grammar.cc grammar.h
+	$(BISON) -v -d -o grammar.cc ppddl.y
+	#touch grammar.cc grammar.h
 scanner.cc: ppddl.lex grammar.h
-	#$(FLEX) -i -hscanner.h -oscanner.cc ppddl.lex
-	touch scanner.cc scanner.h
+	$(FLEX) -i -hscanner.h -oscanner.cc ppddl.lex
+	#touch scanner.cc scanner.h
 scanner.h: ppddl.lex grammar.h
-	#$(FLEX) -i -hscanner.h -oscanner.cc ppddl.lex
-	touch scanner.cc scanner.h
+	$(FLEX) -i -hscanner.h -oscanner.cc ppddl.lex
+	#touch scanner.cc scanner.h
 
 include makedeps
 
