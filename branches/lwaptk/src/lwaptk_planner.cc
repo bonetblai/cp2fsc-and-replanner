@@ -4,9 +4,12 @@
 #include <algorithm>
 
 	Lwaptk_Planner::Lwaptk_Planner( const char* name, const KP_Instance &instance, const char *tmpfile_path)
-      	: ClassicalPlanner(name, tmpfile_path, "", "", instance), m_task( instance.name_->to_string(), "call" ) { 
+      	: ClassicalPlanner(name, tmpfile_path, "", "", instance), m_task( instance.name_->to_string(), "call" ) {
+		if (  kp_instance_.options_.is_enabled( "planner:print:statistics" )  )
+			m_task.set_verbose(true);
 		make_kp_fluents_and_actions();
-		std::cout << "[lwaptk]: K(P) instance loaded, " << m_task.fluents().size() << " fluents and " << m_task.actions().size() << " actions" << std::endl;
+		if ( kp_instance_.options_.is_enabled( "planner:print:statistics" ) ) 
+			std::cout << "[lwaptk]: K(P) instance loaded, " << m_task.fluents().size() << " fluents and " << m_task.actions().size() << " actions" << std::endl;
 	}
 
 	Lwaptk_Planner::~Lwaptk_Planner() {
@@ -138,8 +141,9 @@
 			unsigned neg_fl_idx = aptk::STRIPS_Problem::add_fluent( m_task, negated_signature );
 			m_negated.at( fl_idx ) = m_task.fluents()[neg_fl_idx];
 			count++;
-		} 
-		std::cout << count << " negated fluents created" << std::endl;
+		}
+		if ( kp_instance_.options_.is_enabled( "planner:print:statistics" ) ) 
+			std::cout << count << " negated fluents created" << std::endl;
 
 	}
 

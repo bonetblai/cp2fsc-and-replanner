@@ -66,6 +66,7 @@ const char *available_options[] = {
     "planner:print:plan",                  "[PLANNER] print classical plan (reduced)",
     "planner:print:plan:raw",              "[PLANNER] print classical plan (raw)",
     "planner:remove-intermediate-files",   "[PLANNER] remove the files created for calling the classical planner",
+    "planner:print:statistics",		   "[PLANNER] print instance & search statistics",
 
     // solver options (k_replanner)
     "solver:print:assumptions",            "[SOLVER] print assumptions made in classical plan",
@@ -126,7 +127,7 @@ const char *k_replanner_cmdline_options[] = {
     "[--no-print-plan]",
     "[--prefix <prefix>]",
     "[--keep-intermediate-files]",
-    "[--planner {ff|lama|m|mp}]",
+    "[--planner {ff|lama|m|mp|bfs_f|siw}]",
     "[--planner-path <path>]",
     "[--tmpfile-path <path>]",
     0
