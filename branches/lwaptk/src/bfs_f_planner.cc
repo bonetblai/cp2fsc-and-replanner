@@ -79,6 +79,7 @@ BFS_f_Planner::get_raw_plan(const State &state, Instance::Plan &raw_plan) const 
 	float start_time = Utils::read_time_in_seconds();
 	++n_calls_;
 
+	raw_plan.clear();
 	update_initial_state( state );
 	make_kp_goal();
 
