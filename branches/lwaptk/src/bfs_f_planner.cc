@@ -119,10 +119,6 @@ BFS_f_Planner::classical_planner(const State &state, Instance::Plan &raw_plan) c
 	int				result = ERROR;
 
 	float ref = Utils::read_time_in_seconds();
-	float t0 = Utils::read_time_in_seconds();
-
-	unsigned expanded_0 = bfs_engine.expanded();
-	unsigned generated_0 = bfs_engine.generated();
 
 	if ( bfs_engine.find_solution( cost, plan ) ) {
 		for ( unsigned k = 0; k < plan.size(); k++ ) {
@@ -131,18 +127,6 @@ BFS_f_Planner::classical_planner(const State &state, Instance::Plan &raw_plan) c
 			assert(it != action_map_.end());
 			raw_plan.push_back(it->second);
 		}
-		float tf = Utils::read_time_in_seconds();
-		
-		unsigned expanded_f = bfs_engine.expanded();
-		unsigned generated_f = bfs_engine.generated();
-		if ( kp_instance_.options_.is_enabled( "planner:print:statistics" ) ) {
-			std::cout << "Time: " << tf - t0 << std::endl;
-			std::cout << "Generated: " << generated_f - generated_0 << std::endl;
-			std::cout << "Expanded: " << expanded_f - expanded_0 << std::endl;
-		}
-		t0 = tf;
-		expanded_0 = expanded_f;
-		generated_0 = generated_f;
 		result = SOLVED;
 	}
 	else
@@ -153,7 +137,6 @@ BFS_f_Planner::classical_planner(const State &state, Instance::Plan &raw_plan) c
 		std::cout << "Total time: " << call_time << std::endl;
 		std::cout << "Nodes generated during search: " << bfs_engine.generated() << std::endl;
 		std::cout << "Nodes expanded during search: " << bfs_engine.expanded() << std::endl;
-		std::cout << "BFS(f) search completed in " << call_time << " secs" << std::endl;
 	}
 
 	return result;

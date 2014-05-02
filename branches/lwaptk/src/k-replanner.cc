@@ -13,6 +13,7 @@
 #include "available_options.h"
 #include "utils.h"
 #include "bfs_f_planner.h"
+#include "siw_planner.h"
 
 using namespace std;
 
@@ -238,6 +239,10 @@ int main(int argc, char *argv[]) {
         planner = new LAMA_Server_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
     } else if ( opt_planner == "bfs_f" ) {
 	planner = new BFS_f_Planner( *kp_instance, opt_tmpfile_path.c_str() );
+    } else if ( opt_planner == "siw" ) {
+	SIW_Planner* concrete_planner = new SIW_Planner( *kp_instance, opt_tmpfile_path.c_str() );
+	concrete_planner->set_classical_width_initial_bound( 1 );
+	planner = concrete_planner;
     }
 
 
