@@ -64,7 +64,7 @@ typedef		AT_GBFS_3H< Fwd_Search_Problem, H_Novel_Fwd, H_Lmcount_Fwd, H_Add_Rp_Fw
 
 
 BFS_f_Planner::BFS_f_Planner( const KP_Instance& instance, const char* tmpfile_path )
-	: Lwaptk_Planner( "bfs(f)", instance, tmpfile_path ), m_max_novelty( 2 ), m_one_ha_per_fluent( 2 ), m_plan_filename( "bfs_f.plan" ) {
+	: Lwaptk_Planner( "bfs(f)", instance, tmpfile_path ), m_max_novelty( 2 ), m_one_ha_per_fluent( 2 ) {
 
 }
 
@@ -72,16 +72,8 @@ BFS_f_Planner::~BFS_f_Planner() {
 }
 
 int
-BFS_f_Planner::get_raw_plan(const State &state, Instance::Plan &raw_plan) const {
+BFS_f_Planner::classical_planner(const State &state, Instance::Plan &raw_plan) const {
 	
-	std::cout << "calling " << name() << " (n=" << 1+n_calls() << ", acc-time=" << get_time() << ")..." << std::endl;
-	
-	float start_time = Utils::read_time_in_seconds();
-	++n_calls_;
-
-	raw_plan.clear();
-	update_initial_state( state );
-	make_kp_goal();
 
 	Fwd_Search_Problem	search_prob( &m_task );
 
@@ -164,6 +156,5 @@ BFS_f_Planner::get_raw_plan(const State &state, Instance::Plan &raw_plan) const 
 		std::cout << "BFS(f) search completed in " << call_time << " secs" << std::endl;
 	}
 
-	total_time_ += Utils::read_time_in_seconds() - start_time;
 	return result;
 }

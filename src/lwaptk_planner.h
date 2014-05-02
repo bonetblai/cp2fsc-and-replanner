@@ -18,6 +18,9 @@ public:
 
 protected:
 	
+	virtual
+	int	classical_planner( const State& s, Instance::Plan& raw_plan ) const = 0;
+
 	void	make_kp_fluents_and_actions();
 	void	make_kp_fluents();
 	void	make_kp_action( const Instance::Action& act );
