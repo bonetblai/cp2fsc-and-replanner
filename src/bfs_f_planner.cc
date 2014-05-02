@@ -93,22 +93,27 @@ BFS_f_Planner::get_raw_plan(const State &state, Instance::Plan &raw_plan) const 
 		m_task.compute_edeletes();	
 
 	Gen_Lms_Fwd    gen_lms( search_prob );
+	
+	if ( !kp_instance_.options_.is_enabled( "planner:print:statistics" ) )
+		gen_lms.set_verbose( false );
+
 	Landmarks_Graph graph( m_task );
-
 	gen_lms.compute_lm_graph_set_additive( graph );
-	
-	std::cout << "Landmarks found: " << graph.num_landmarks() << std::endl;
-	//graph.print( std::cout );
-	
-	std::cout << "Starting search with BFS (time budget is 60 secs)..." << std::endl;
 
+	if ( kp_instance_.options_.is_enabled( "planner:print:statistics" ) ) {
+		std::cout << "Landmarks found: " << graph.num_landmarks() << std::endl;
+		graph.print( std::cout );
+	}
+	
 	Anytime_GBFS_H_Add_Rp_Fwd bfs_engine( search_prob );
 
 	// MRJ: Setting "one h.a. per fluent" flag
 	bfs_engine.h3().set_one_HA_per_fluent( m_one_ha_per_fluent );
-	
-	bfs_engine.set_verbose(false);
-	bfs_engine.h1().set_verbose( false );
+
+	if ( !kp_instance_.options_.is_enabled( "planner:print:statistics" ) ) {
+		bfs_engine.set_verbose(false);
+		bfs_engine.h1().set_verbose( false );
+	}
 	
 	Land_Graph_Man lgm( search_prob, &graph);
 
@@ -127,26 +132,22 @@ BFS_f_Planner::get_raw_plan(const State &state, Instance::Plan &raw_plan) const 
 	unsigned expanded_0 = bfs_engine.expanded();
 	unsigned generated_0 = bfs_engine.generated();
 
-	std::ofstream	plan_stream( m_plan_filename.c_str() );
-
 	if ( bfs_engine.find_solution( cost, plan ) ) {
-		std::cout << "Plan found with cost: " << cost << std::endl;
 		for ( unsigned k = 0; k < plan.size(); k++ ) {
-			std::cout << k+1 << ". ";
 			const aptk::Action& a = *(m_task.actions()[ plan[k] ]);
-			std::cout << a.signature();
 			std::map<std::string, size_t>::const_iterator it = action_map_.find(a.signature());
 			assert(it != action_map_.end());
 			raw_plan.push_back(it->second);
-			std::cout << std::endl;
-			plan_stream << a.signature() << std::endl;
 		}
 		float tf = Utils::read_time_in_seconds();
+		
 		unsigned expanded_f = bfs_engine.expanded();
 		unsigned generated_f = bfs_engine.generated();
-		std::cout << "Time: " << tf - t0 << std::endl;
-		std::cout << "Generated: " << generated_f - generated_0 << std::endl;
-		std::cout << "Expanded: " << expanded_f - expanded_0 << std::endl;
+		if ( kp_instance_.options_.is_enabled( "planner:print:statistics" ) ) {
+			std::cout << "Time: " << tf - t0 << std::endl;
+			std::cout << "Generated: " << generated_f - generated_0 << std::endl;
+			std::cout << "Expanded: " << expanded_f - expanded_0 << std::endl;
+		}
 		t0 = tf;
 		expanded_0 = expanded_f;
 		generated_0 = generated_f;
@@ -156,13 +157,12 @@ BFS_f_Planner::get_raw_plan(const State &state, Instance::Plan &raw_plan) const 
 		result = NO_SOLUTION;
 
  	float call_time = Utils::read_time_in_seconds() - ref;
-	std::cout << "Total time: " << call_time << std::endl;
-	std::cout << "Nodes generated during search: " << bfs_engine.generated() << std::endl;
-	std::cout << "Nodes expanded during search: " << bfs_engine.expanded() << std::endl;
-	plan_stream.close();
-
-	
-	std::cout << "BFS(f) search completed in " << call_time << " secs" << std::endl;
+	if ( kp_instance_.options_.is_enabled( "planner:print:statistics" ) ) {
+		std::cout << "Total time: " << call_time << std::endl;
+		std::cout << "Nodes generated during search: " << bfs_engine.generated() << std::endl;
+		std::cout << "Nodes expanded during search: " << bfs_engine.expanded() << std::endl;
+		std::cout << "BFS(f) search completed in " << call_time << " secs" << std::endl;
+	}
 
 	total_time_ += Utils::read_time_in_seconds() - start_time;
 	return result;
