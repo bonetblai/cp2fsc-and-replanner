@@ -133,6 +133,7 @@ BFS_f_Planner::classical_planner(const State &state, Instance::Plan &raw_plan) c
 		result = NO_SOLUTION;
 
  	float call_time = Utils::read_time_in_seconds() - ref;
+	total_search_time_ += call_time;
 	if ( kp_instance_.options_.is_enabled( "planner:print:statistics" ) ) {
 		std::cout << "Total time: " << call_time << std::endl;
 		std::cout << "Nodes generated during search: " << bfs_engine.generated() << std::endl;
