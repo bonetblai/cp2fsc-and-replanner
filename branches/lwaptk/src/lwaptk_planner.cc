@@ -1,4 +1,5 @@
 #include "lwaptk_planner.h"
+#include "utils.h"
 #include <action.hxx>
 #include <cassert>
 #include <algorithm>
@@ -17,7 +18,22 @@
 
 	int
 	Lwaptk_Planner::get_raw_plan(const State &state, Instance::Plan &raw_plan) const {
-		return ClassicalPlanner::ERROR;
+
+		std::cout << "calling " << name() << " (n=" << 1+n_calls() << ", acc-time=" << get_time() << ")..." << std::endl;
+	
+		float start_time = Utils::read_time_in_seconds();
+		++n_calls_;
+	
+		raw_plan.clear();
+		update_initial_state( state );
+		make_kp_goal();
+
+
+		int result = classical_planner( state, raw_plan );
+
+		total_time_ += Utils::read_time_in_seconds() - start_time;
+
+		return result;
 	}
 
 	void
