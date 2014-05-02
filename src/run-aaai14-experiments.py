@@ -50,20 +50,20 @@ def main() :
 			
 			pddl_inputs = glob.glob( os.path.join(instance_base_dir, '*.pddl') )
 
-			domain = None
-			problem = None
-			hidden = None
+			pddl_domain = None
+			pddl_problem = None
+			pddl_hidden = None
 
 			for filename in pddl_inputs :
 				if os.path.split(filename)[-1][0] == 'd' :
-					domain = filename
+					pddl_domain = filename
 				if os.path.split(filename)[-1][0] == 'p' :
-					problem = filename
+					pddl_problem = filename
 				if os.path.split(filename)[-1][0] == 'h' :
-					hidden = filename
+					pddl_hidden = filename
 				
 
-			command = './lw1-lwaptk %s %s %s %s'%( planner.get_flags(), domain, problem, hidden )
+			command = './lw1-lwaptk %s %s %s %s'%( planner.get_flags(), pddl_domain, pddl_problem, pddl_hidden )
 			log_filename = '%s-%s-%s.log'%(planner.planner, domain, instance)
 			log = benchmark.Log( log_filename )
 
