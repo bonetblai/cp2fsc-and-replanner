@@ -101,6 +101,8 @@ SIW_Planner::classical_planner( const State &state, Instance::Plan &raw_plan) co
 
  	iw_t =  Utils::read_time_in_seconds() - ref;
 
+	total_search_time_ += iw_t;
+
 	if ( kp_instance_.options_.is_enabled( "planner:print:statistics" ) ) {
 
 		std::cout << "Total time: " << iw_t << std::endl;
