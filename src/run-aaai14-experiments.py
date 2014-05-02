@@ -8,6 +8,8 @@ from experimenter.lw1_configs import BFS_f, SIW
 
 def main() :
 
+	localize = [	['localize', 'p15'], ['localize','p17'] ]
+
 	aaai14_benchmark = 	[
 				['clog', 'p7'],
 			 	['clog', 'ph'],
@@ -37,7 +39,7 @@ def main() :
 	planners = [ SIW(), BFS_f() ]
 
 	benchmarks_base_dir = '../benchmarks/lw1'
-	max_time = 60 #7200 # 4 hours
+	max_time = 7200 # 4 hours
 	max_mem = 4096 # 4 Gigabytes
 
 	for planner in planners :
@@ -48,8 +50,20 @@ def main() :
 			
 			pddl_inputs = glob.glob( os.path.join(instance_base_dir, '*.pddl') )
 
-			command = './lw1-lwaptk %s %s'%( planner.get_flags(), " ".join(pddl_inputs) )
-			
+			domain = None
+			problem = None
+			hidden = None
+
+			for filename in pddl_inputs :
+				if os.path.split(filename)[-1][0] == 'd' :
+					domain = filename
+				if os.path.split(filename)[-1][0] == 'p' :
+					problem = filename
+				if os.path.split(filename)[-1][0] == 'h' :
+					hidden = filename
+				
+
+			command = './lw1-lwaptk %s %s %s %s'%( planner.get_flags(), domain, problem, hidden )
 			log_filename = '%s-%s-%s.log'%(planner.planner, domain, instance)
 			log = benchmark.Log( log_filename )
 
