@@ -534,6 +534,7 @@ class PDDL_Base {
         void print(std::ostream &os) const;
     };
 
+    struct Variable;
     struct variable_vec : public std::vector<Variable*> { };
     struct variable_list : public std::list<Variable*> { };
 

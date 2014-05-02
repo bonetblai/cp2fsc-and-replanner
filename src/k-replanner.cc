@@ -12,6 +12,7 @@
 #include "options.h"
 #include "available_options.h"
 #include "utils.h"
+#include "bfs_f_planner.h"
 
 using namespace std;
 
@@ -235,7 +236,10 @@ int main(int argc, char *argv[]) {
         planner = new MP_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
     } else if( opt_planner == "lama-server" ) {
         planner = new LAMA_Server_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+    } else if ( opt_planner == "bfs_f" ) {
+	planner = new BFS_f_Planner( *kp_instance, opt_tmpfile_path.c_str() );
     }
+
 
     // solve problem
     cout << "solving problem for " << instance.num_hidden_states() << " hidden state(s)" << endl;
