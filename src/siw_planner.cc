@@ -45,11 +45,11 @@ SIW_Planner::classical_planner( const State &state, Instance::Plan &raw_plan) co
 
 	Fwd_Search_Problem	search_prob( &m_task );
 
-	if ( !m_task.has_conditional_effects() ) {
-		H2_Fwd    h2( search_prob );
-		h2.compute_edeletes( m_task );
-	}
-	else 
+	//if ( !m_task.has_conditional_effects() ) {
+	//	H2_Fwd    h2( search_prob );
+	//	h2.compute_edeletes( m_task );
+	//}
+	//else 
 		m_task.compute_edeletes();	
 
 	Gen_Lms_Fwd    gen_lms( search_prob );

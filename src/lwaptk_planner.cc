@@ -93,7 +93,6 @@
 			handle_effect_literal( p, adds, dels );
 
 		aptk::Conditional_Effect_Vec ceffs;
-
 		for ( size_t i = 0; i < act.when_.size(); i++ ) {
 			const Instance::When& w = act.when_[i];
 
@@ -123,7 +122,6 @@
 			ceffs.push_back( cond_eff );
 			m_task.notify_cond_eff_in_action();
 		}
-
 		STRIPS_Problem::add_action( m_task, name, prec, adds, dels, ceffs );
 	}
 
@@ -177,6 +175,9 @@
 		make_kp_goal();
 		
 		m_task.make_action_tables();
+		
+		if ( kp_instance_.options_.is_enabled( "planner:print:statistics" ) ) 
+			std::cout << "Has conditional effects? " << ( m_task.has_conditional_effects() ? "yes" : "no" ) << std::endl;
 	}
 
 	void
