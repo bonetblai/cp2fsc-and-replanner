@@ -75,14 +75,30 @@ int
 BFS_f_Planner::classical_planner(const State &state, Instance::Plan &raw_plan) const {
 	
 
+	float t0, tf;
+
+	if ( kp_instance_.options_.is_enabled( "planner:print:statistics" ) )
+		t0 = Utils::read_time_in_seconds();
+
 	Fwd_Search_Problem	search_prob( &m_task );
 
-	if ( !m_task.has_conditional_effects() ) {
-		H2_Fwd    h2( search_prob );
-		h2.compute_edeletes( m_task );
+	if ( kp_instance_.options_.is_enabled( "planner:print:statistics" ) ) {
+		tf = Utils::read_time_in_seconds() - t0;
+		std::cout << "Search problem construction.... (" << tf << " secs)" << std::endl;
 	}
-	else
-		m_task.compute_edeletes();	
+
+	if ( kp_instance_.options_.is_enabled( "planner:print:statistics" ) )
+		t0 = Utils::read_time_in_seconds();
+	//H2_Fwd    h2( search_prob );
+	//h2.compute_edeletes_aij( m_task );
+	m_task.compute_edeletes();
+	if ( kp_instance_.options_.is_enabled( "planner:print:statistics" ) ) {
+		tf = Utils::read_time_in_seconds() - t0;
+		std::cout << "E-deletes computation.... (" << tf << " secs)" << std::endl;
+	}
+
+	if ( kp_instance_.options_.is_enabled( "planner:print:statistics" ) )
+		t0 = Utils::read_time_in_seconds();
 
 	Gen_Lms_Fwd    gen_lms( search_prob );
 	
@@ -95,8 +111,14 @@ BFS_f_Planner::classical_planner(const State &state, Instance::Plan &raw_plan) c
 	if ( kp_instance_.options_.is_enabled( "planner:print:statistics" ) ) {
 		std::cout << "Landmarks found: " << graph.num_landmarks() << std::endl;
 		graph.print( std::cout );
-	}
 	
+		tf = Utils::read_time_in_seconds() - t0;
+		std::cout << "Landmark graph construction.... (" << tf << " secs)" << std::endl;
+	}
+
+	if ( kp_instance_.options_.is_enabled( "planner:print:statistics" ) )
+		t0 = Utils::read_time_in_seconds();
+
 	Anytime_GBFS_H_Add_Rp_Fwd bfs_engine( search_prob );
 
 	// MRJ: Setting "one h.a. per fluent" flag
@@ -106,8 +128,21 @@ BFS_f_Planner::classical_planner(const State &state, Instance::Plan &raw_plan) c
 		bfs_engine.set_verbose(false);
 		bfs_engine.h1().set_verbose( false );
 	}
-	
+
+	if ( kp_instance_.options_.is_enabled( "planner:print:statistics" ) ) {
+
+		tf = Utils::read_time_in_seconds() - t0;
+		std::cout << "Search engine construction.... (" << tf << " secs)" << std::endl;
+
+		t0 = Utils::read_time_in_seconds();
+	}
+
 	Land_Graph_Man lgm( search_prob, &graph);
+
+	if ( kp_instance_.options_.is_enabled( "planner:print:statistics" ) ) {
+		tf = Utils::read_time_in_seconds() - t0;
+		std::cout << "Landmarks manager initialization.... (" << tf << " secs)" << std::endl;
+	}
 
 	bfs_engine.use_land_graph_manager( &lgm );
 	bfs_engine.set_arity( m_max_novelty, graph.num_landmarks_and_edges() );
