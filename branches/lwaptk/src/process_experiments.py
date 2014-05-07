@@ -80,7 +80,13 @@ class Problem_Statistics :
 			self.prep_time += h.prep_time
 			self.exec_time += h.exec_time
 
-		if self.n_solved < 1 : return
+		if self.n_solved < 1 : 
+			self.plan_len = 'n/a'
+			self.n_calls = 'n/a'
+			self.total_time = 'n/a'
+			self.prep_time = 'n/a'
+			self.exec_time = 'n/a'
+			return
 
 		self.plan_len /= self.n_solved
 		self.n_calls /= self.n_solved
@@ -96,8 +102,8 @@ class Problem_Statistics :
 		
 	def write( self, stream ) :
 		values = [ 	self.planner, self.domain, self.instance, 
-				str(len(self.hidden_state_stats)), str(self.n_solved), str(self.plan_len), 
-				str(self.n_calls), str(self.total_time), str(self.prep_time), str(self.exec_time)]
+				str(len(self.hidden_state_stats)), str(self.n_solved), str(self.n_calls), 
+				str(self.plan_len), str(self.total_time), str(self.prep_time), str(self.exec_time)]
 		print >> stream, ",".join(values)
 
 

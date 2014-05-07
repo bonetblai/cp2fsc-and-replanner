@@ -6,7 +6,10 @@ class FF :
 		self.planner_path = '.'
 
 	def get_flags( self ) :
-		return "--planner %s --planner_path %s"%(self.planner, self.planner_path)
+		return "--planner %s --planner-path %s"%(self.planner, self.planner_path)
+
+	def get_random_flags( self, N, seed ) :
+		return "--random --num-samples %s --seed %s --planner %s --planner-path %s"%(N, seed, self.planner, self.planner_path)
 
 class BFS_f :
 	
@@ -16,6 +19,8 @@ class BFS_f :
 	def get_flags( self ) :
 		return "--planner %s "%self.planner
 
+	def get_random_flags( self, N, seed ) :
+		return "--random --num-samples %s --seed %s --planner %s"%(N, seed, self.planner)
 
 class SIW :
 	
@@ -24,4 +29,18 @@ class SIW :
 
 	def get_flags( self ) :
 		return "--planner %s "%self.planner
+	
+	def get_random_flags( self, N, seed ) :
+		return "--random --num-samples %s --seed %s --planner %s"%(N, seed, self.planner)
+
+class DFS_RPIW :
+	
+	def __init__(self ) :
+		self.planner = 'dfs_rpiw'
+
+	def get_flags( self ) :
+		return "--planner %s "%self.planner
+	
+	def get_random_flags( self, N, seed ) :
+		return "--random --num-samples %s --seed %s --planner %s"%(N, seed, self.planner)
 
