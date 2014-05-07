@@ -14,6 +14,7 @@
 #include "utils.h"
 #include "bfs_f_planner.h"
 #include "siw_planner.h"
+#include "dfs_rpiw_planner.h"
 
 using namespace std;
 
@@ -63,6 +64,22 @@ void print_usage(ostream &os, const char *exec_name, const char **cmdline_option
        << endl << endl;
 }
 
+void
+sample_population( std::vector<int>& selected, int H, int N, int seed ) {
+	selected.clear();
+	std::set<int> selected_aux;
+	srandom( seed );
+	int i = 0;
+	while ( i < N && i < H ) {
+		int x = random() % H;
+		if ( selected_aux.find(x) != selected_aux.end() )
+			continue;
+		selected_aux.insert(x);
+		selected.push_back(x);
+		i++;
+	}
+}
+
 int main(int argc, char *argv[]) {
     StringTable symbols(50, lowercase_map);
     bool        opt_debug_parser = false;
@@ -73,6 +90,9 @@ int main(int argc, char *argv[]) {
     float       start_time = Utils::read_time_in_seconds();
     string      opt_planner_path = "";
     string      opt_tmpfile_path = "";
+    bool	opt_exhaustive = true;
+    int		opt_samples = 100;
+    int		opt_seed = time(nullptr);
 
     // initialize options
     for( const char **opt = &available_options[0]; *opt != 0; ++opt ) {
@@ -127,9 +147,29 @@ int main(int argc, char *argv[]) {
             opt_planner_path = argv[++k];
         } else if( !skip_options && !strcmp(argv[k], "--tmpfile-path") ) {
             opt_tmpfile_path = argv[++k];
+	} else if ( !skip_options && !strcmp(argv[k], "--random" ) ) {
+	    opt_exhaustive = false;
+	} else if ( !skip_options && !strcmp(argv[k], "--num-samples" ) ) {
+	    if( k == argc-1 ) {
+                cout << Utils::error() << "not enough arguments for '" << argv[k] << "'." << endl;
+                exit(-1);
+            }
+            opt_samples = atoi(argv[++k]);
+	} else if ( !skip_options && !strcmp(argv[k], "--seed" ) ) {
+	    if( k == argc-1 ) {
+                cout << Utils::error() << "not enough arguments for '" << argv[k] << "'." << endl;
+                exit(-1);
+            }
+            opt_seed = atoi(argv[++k]);
+		
         } else if( !skip_options && !strncmp(argv[k], "--options=", 10) ) {
             const char *options = &argv[k][10];
             parse_options(options);
+	   if( k == argc-1 ) {
+                cout << Utils::error() << "not enough arguments for '" << argv[k] << "'." << endl;
+                exit(-1);
+            }
+            opt_seed = atoi(argv[++k]);
 
         // if '--', stop parsing options. Remaining fields are file names.
         } else if( !skip_options && !strcmp(argv[k], "--") ) {
@@ -243,12 +283,23 @@ int main(int argc, char *argv[]) {
 	SIW_Planner* concrete_planner = new SIW_Planner( *kp_instance, opt_tmpfile_path.c_str() );
 	concrete_planner->set_classical_width_initial_bound( 1 );
 	planner = concrete_planner;
+    } else if ( opt_planner == "dfs_rpiw" ) {
+	planner = new DFS_RPIW_Planner( *kp_instance, opt_tmpfile_path.c_str() );
     }
+
+    std::vector<int> selected;
+    if ( opt_exhaustive ) {
+	for ( int k = 0; k < instance.num_hidden_states(); k++ ) 
+	   selected.push_back(k);
+    }
+    else
+	sample_population( selected, instance.num_hidden_states(), opt_samples, opt_seed );
 
 
     // solve problem
-    cout << "solving problem for " << instance.num_hidden_states() << " hidden state(s)" << endl;
-    for( int k = 0; k < instance.num_hidden_states(); ++k ) {
+    cout << "solving problem for " << selected.size() << " hidden state(s)" << endl;
+    for( int i = 0; i < selected.size(); ++i ) {
+	int k = selected[i];
         float instance_start_time = Utils::read_time_in_seconds();
         vector<vector<int> > fired_sensors, sensed_literals;
         State hidden_initial_state;
