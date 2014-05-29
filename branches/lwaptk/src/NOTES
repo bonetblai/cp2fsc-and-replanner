@@ -1,0 +1,9 @@
+Command to get full walkthrough of computation inside Solver::solve()
+
+./lw1-lwaptk --planner bfs_f ../benchmarks/multivalued-contingent/localize/mvv/p03/d1.pddl ../benchmarks/multivalued-contingent/localize/mvv/p03/p.pddl ../benchmarks/multivalued-contingent/localize/mvv/p03/hidden.pddl --options=solver:print:assumptions,solver:print:steps,planner:print:plan:raw
+
+minimal command:
+
+./lw1-lwaptk --planner bfs_f ../benchmarks/multivalued-contingent/localize/mvv/p03/d1.pddl ../benchmarks/multivalued-contingent/localize/mvv/p03/p.pddl ../benchmarks/multivalued-contingent/localize/mvv/p03/hidden.pddl
+
+./lw1-lwaptk --planner siw ../benchmarks/lw1/localize/mvv/p03/d1.pddl ../benchmarks/lw1/localize/mvv/p03/p.pddl ../benchmarks/lw1/localize/mvv/p03/hidden.pdd
