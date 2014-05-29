@@ -36,7 +36,7 @@ def main() :
 				['wumpus', 'p25d']
 			]
 
-	planners = [ FF(), DFS_RPIW(), BFS_f() ]
+	planners = [ FF() ] #, DFS_RPIW(), BFS_f() ]
 
 	benchmarks_base_dir = '../benchmarks/lw1'
 	max_time = 1800 # half an hour
