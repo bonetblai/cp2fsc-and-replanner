@@ -1,0 +1,11 @@
+(define (problem p03)
+  (:domain blocks)
+  (:objects b1 b2 b3 - block)
+  (:init (clear b1) (ontable b3)
+         (on b1 b2) (on b2 b3)
+         (empty)
+         (oneof (green b1) (green b2) (green b3))
+  )
+  (:goal (got-it))
+)
+

@@ -1,0 +1,7 @@
+The well-known Canadian traveller problem in which
+an agent must navigate a graph from a source to a
+destination vertex. The structure of the graph is
+known but some edges may not be traversable. The agent
+detects whether any edge is traversable or not once
+it is at an incident vertex of the edge.
+

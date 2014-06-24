@@ -1,0 +1,43 @@
+* Revision before action compilation and preprocessing is 233
+* test and fix all benchmark problems with respect naming of elements.
+* revise compute_static_atoms in preprocessing for cp2fsc.
+
+* Revision before general translation is 255
+
+* Restore 'delete reader' in k-replanner.cc and cp2fsc.cc
+* Complete initial hidden state w/ fix point of inference rules
+* Provide functionality to select hidden states with indices to solve
+
+* Proposal for principled handling of active sensing:
+
+General translation is a 3-stage process:
+
+Problem w/ multi                                       K-replanner instance
+values vars and   ==>  Propositional translation  ==>  with pasive sensing
+active sensing
+
+Syntax for multi-valued description is still pending.
+
+Syntax for propositional translation given by:
+
+1) Variables and observable variables specified with
+   (variable ...) and (obs-variable) in domain file
+
+2) All actions of the form:
+
+      Precondition
+      Effects that include effects of the form C_i => Z(Y=y)
+      Observables Z(Y=y)
+ 
+   where different formulas W_a(Y=y) = C_1 v ... v C_n in DNF
+   make up the sensing model for all the observable literals Y=y,
+   and Z(Y=y) are atoms that "propositionalise" the obsevables.
+   These observables must match an obs-variable in domain.
+
+3) Nothing else.
+
+
+
+
+
+

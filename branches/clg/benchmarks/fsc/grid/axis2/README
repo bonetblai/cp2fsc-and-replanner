@@ -1,0 +1,13 @@
+Solutions times for Jussi's Mp planner running in a machine with 2
+cores Intel(R) Xeon(R) 5120 @ 1.86GHz with 2070632 kB of RAM.
+(Cutoff time of 600 seconds.)
+
+----------------------------------------------------------------------
+Mp's time                w/ tag-all-literals      w/o tag-all-literals
+----------------------------------------------------------------------
+corner2x2_A2               0.01                     0.02
+corner4x4_A2               0.81                     0.82
+----------------------------------------------------------------------
+
+Remarks. The time for translation is negligible. 
+
