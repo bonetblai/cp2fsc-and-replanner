@@ -3,7 +3,7 @@ import os
 import glob
 
 from experimenter import benchmark
-from experimenter.lw1_configs import BFS_f, DFS_RPIW, FF
+from experimenter.lw1_configs import BFS_f, DFS_RPIW, FF, FF2
 
 
 def main() :
@@ -36,7 +36,7 @@ def main() :
 				['wumpus', 'p25d']
 			]
 
-	planners = [ FF() ] #, DFS_RPIW(), BFS_f() ]
+	planners = [ FF(), FF2() ] #, DFS_RPIW(), BFS_f() ]
 
 	benchmarks_base_dir = '../benchmarks/lw1'
 	max_time = 1800 # half an hour
