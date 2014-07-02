@@ -15,6 +15,7 @@
 #include "bfs_f_planner.h"
 #include "siw_planner.h"
 #include "dfs_rpiw_planner.h"
+#include "ff_lwaptk_planner.h"
 
 using namespace std;
 
@@ -285,6 +286,11 @@ int main(int argc, char *argv[]) {
 	planner = concrete_planner;
     } else if ( opt_planner == "dfs_rpiw" ) {
 	planner = new DFS_RPIW_Planner( *kp_instance, opt_tmpfile_path.c_str() );
+    } else if ( opt_planner == "ff2" ) {
+	planner = new FF2_Planner( *kp_instance, opt_tmpfile_path.c_str() ); 
+    } else {
+	std::cerr << "Unsupported planner " << opt_planner << " requested, bailing out!" << std::endl;
+	std::exit(1);
     }
 
     std::vector<int> selected;

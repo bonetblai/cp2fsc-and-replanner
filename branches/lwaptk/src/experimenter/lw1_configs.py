@@ -11,6 +11,19 @@ class FF :
 	def get_random_flags( self, N, seed ) :
 		return "--random --num-samples %s --seed %s --planner %s --planner-path %s"%(N, seed, self.planner, self.planner_path)
 
+class FF2 :
+	
+	def __init__(self ) :
+		self.planner = 'ff2'
+		self.planner_path = '.'
+
+	def get_flags( self ) :
+		return "--planner %s"%self.planner
+
+	def get_random_flags( self, N, seed ) :
+		return "--random --num-samples %s --seed %s --planner %s"%(N, seed, self.planner)
+
+
 class BFS_f :
 	
 	def __init__(self ) :
