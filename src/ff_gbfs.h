@@ -33,7 +33,7 @@ public:
 
 	typedef State State_Type;
 
-	FF_GBFS_Node( State* s, float cost, Action_Idx action, FF_GBFS_Node<State>* parent, bool is_ha = false ) 
+	FF_GBFS_Node( State* s, unsigned cost, Action_Idx action, FF_GBFS_Node<State>* parent, bool is_ha = false ) 
 	: m_state( s ), m_parent( parent ), m_action(action), m_g( 0 ), m_is_ha(is_ha) {
 		m_g = ( parent ? parent->m_g + cost : 0.0f);
 	}
@@ -42,12 +42,12 @@ public:
 		if ( m_state != NULL ) delete m_state;
 	}
 
-	float&			hn()		{ return m_h; }
-	float			hn() const 	{ return m_h; }
-	float&			gn()		{ return m_g; }			
-	float			gn() const 	{ return m_g; }
-	float&			fn()		{ return m_f; }
-	float			fn() const	{ return m_f; }
+	unsigned&			hn()		{ return m_h; }
+	unsigned			hn() const 	{ return m_h; }
+	unsigned&			gn()		{ return m_g; }			
+	unsigned			gn() const 	{ return m_g; }
+	unsigned&			fn()		{ return m_f; }
+	unsigned			fn() const	{ return m_f; }
 	FF_GBFS_Node<State>*	parent()   	{ return m_parent; }
 	Action_Idx		action() const 	{ return m_action; }
 	State*			state()		{ return m_state; }
@@ -70,10 +70,10 @@ public:
 
 	State*				m_state;
 	FF_GBFS_Node<State>*		m_parent;
-	float				m_h;
+	unsigned				m_h;
 	Action_Idx			m_action;
-	float				m_g;
-	float				m_f;
+	unsigned				m_g;
+	unsigned				m_f;
 	bool				m_is_ha;
 	std::vector<Action_Idx>		m_ha;
 };
@@ -90,7 +90,7 @@ public:
 	FF_GBFS( 	const Search_Model& search_problem ) 
 	: m_problem( search_problem ), m_heuristic_func(NULL), 
 	m_exp_count(0), m_gen_count(0), m_pruned_B_count(0), m_dead_end_count(0), m_open_repl_count(0),
-	  m_B( infty ), m_time_budget(infty) {
+	  m_B( infty ) {
 		m_heuristic_func = new Abstract_Heuristic( search_problem );
 	}
 
@@ -112,30 +112,32 @@ public:
 	void	start() {
 		m_B = infty;
 		m_root = new Search_Node( m_problem.init(), 0.0f, no_op, NULL );	
-		#ifdef DEBUG
+		#ifdef DEBUG_FF_GBFS
 		std::cout << "Initial search node: ";
 		m_root->print(std::cout);
 		std::cout << std::endl;
 		m_root->state()->print( std::cout );
 		std::cout << std::endl;
-		#endif 
+		#endif
+		m_h_time = 0.0f; 
 		eval(m_root);
 		m_open.insert( m_root );
-		m_open_hash.put( m_root );
 		inc_gen();
 	}
 
-	bool	find_solution( float& cost, std::vector<Action_Idx>& plan ) {
-		m_t0 = time_used();
+	bool	find_solution( unsigned& cost, std::vector<Action_Idx>& plan ) {
 		Search_Node* end = do_search();
+		#ifdef DEBUG
+		std::cout << "Heuristic time: " << m_h_time << " secs" << std::endl;
+		#endif
 		if ( end == NULL ) return false;
 		extract_plan( m_root, end, plan, cost );	
 		
 		return true;
 	}
 
-	float			bound() const			{ return m_B; }
-	void			set_bound( float v ) 		{ m_B = v; }
+	unsigned		bound() const			{ return m_B; }
+	void			set_bound( unsigned v ) 		{ m_B = v; }
 	
 	void			inc_gen()			{ m_gen_count++; }
 	unsigned		generated() const		{ return m_gen_count; }
@@ -148,11 +150,6 @@ public:
 	void			inc_replaced_open()		{ m_open_repl_count++; }
 	unsigned		open_repl() const		{ return m_open_repl_count; }
 
-	void			set_budget( float v ) 		{ m_time_budget = v; }
-	float			time_budget() const		{ return m_time_budget; }
-
-	float			t0() const			{ return m_t0; }
-
 	void 			close( Search_Node* n ) 	{  m_closed.put(n); }
 	Closed_List_Type&	closed() 			{ return m_closed; }
 	Closed_List_Type&	open_hash() 			{ return m_open_hash; }
@@ -160,30 +157,16 @@ public:
 	const	Search_Model&	problem() const			{ return m_problem; }
 
 	void			eval( Search_Node* candidate ) {
+		float t0 = time_used(); 
 		m_heuristic_func->eval( *(candidate->state()), candidate->hn(), candidate->ha() );
+		float tf = time_used();
+		m_h_time += (tf - t0);
 	}
 
 	bool 		is_closed( Search_Node* n ) 	{
 		Search_Node* n2 = this->closed().retrieve(n);
 
 		if ( n2 != NULL ) {
-			/*
-			if ( n2->gn() <= n->gn() ) {
-				// The node we generated is a worse path than
-				// the one we already found
-				return true;
-			}
-			// Otherwise, we put it into Open and remove
-			// n2 from closed
-			this->closed().erase( this->closed().retrieve_iterator( n2 ) );
-		
-			// MRJ: This solves the memory leak and updates children nodes
-			// incrementally	
-			n2->m_parent = n->m_parent;
-			n2->gn() = n->gn();
-			n2->fn() = n2->hn();
-			open_node(n2);
-			*/
 			return true;
 		}
 		return false;
@@ -193,7 +176,6 @@ public:
 		Search_Node *next = NULL;
 		if(! m_open.empty() ) {
 			next = m_open.pop();
-			m_open_hash.erase( m_open_hash.retrieve_iterator( next) );
 		}
 		return next;
 	}
@@ -205,7 +187,6 @@ public:
 		}
 		else {
 			m_open.insert(n);
-			m_open_hash.put(n);
 		}
 		inc_gen();
 	}
@@ -216,7 +197,7 @@ public:
 	virtual void 			process(  Search_Node *head ) {
 
 		
-#ifdef DEBUG
+#ifdef DEBUG_FF_GBFS
 		std::cout << "Expanding:" << std::endl;
 		head->print(std::cout);
 		std::cout << std::endl;
@@ -230,11 +211,11 @@ public:
 			int a = app_set[i];
 			
 			State *succ = m_problem.next( *(head->state()), a ); 
-			bool is_ha = std::find( head->ha().begin(), head->ha().end(), a ) != head->ha().end();
-			Search_Node* n = new Search_Node( succ, m_problem.cost( *(head->state()), a ), a, head, is_ha );			
+			Search_Node* n = new Search_Node( succ, m_problem.cost( *(head->state()), a ), a, head, false );			
 			
 
-			#ifdef DEBUG
+			#ifdef DEBUG_FF_GBFS
+
 			std::cout << "Successor:" << std::endl;
 			n->print(std::cout);
 			std::cout << std::endl;
@@ -243,7 +224,8 @@ public:
 			#endif
 
 			if ( is_closed( n ) ) {
-				#ifdef DEBUG
+				#ifdef DEBUG_FF_GBFS
+
 				std::cout << "Already in CLOSED" << std::endl;
 				#endif
 				delete n;
@@ -251,26 +233,23 @@ public:
 			}
 			eval(n);
 			n->fn() = n->hn();
-			if( previously_hashed(n) ) {
-				#ifdef DEBUG
-				std::cout << "Already in OPEN" << std::endl;
-				#endif
-				delete n;
+			if ( n->fn() == infinity() ) {
+				close(n);
+				continue;
 			}
-	
-			else 
-			{
-				#ifdef DEBUG
-				std::cout << "Inserted into OPEN" << std::endl;
-				#endif
-				open_node(n);	
-			}
+			#ifdef DEBUG_FF_GBFS
+
+			std::cout << "Inserted into OPEN" << std::endl;
+			#endif
+			open_node(n);	
 		} 
 		inc_eval();
 	}
 
+	unsigned infinity() const { return std::numeric_limits<unsigned>::max(); }
+
 	virtual Search_Node*	 	do_search() {
-		float	min_h = infty;
+		unsigned	min_h = infinity();
 
 		Search_Node *head = get_node();
 		int counter =0;
@@ -287,52 +266,25 @@ public:
 				set_bound( head->gn() );	
 				return head;
 			}
-			if ( (time_used() - m_t0 ) > m_time_budget )
-				return NULL;
-
-			eval( head );
 
 			if ( head->hn() < min_h ) {
 				min_h = head->hn();
+				#ifdef DEBUG
 				std::cout << "GBFS: h(n) = " << min_h << ", expanded: " << expanded() << ", generated: " << generated() << std::endl;
+				#endif
 			}
 
-			process(head);
 			close(head);
+			process(head);
 			counter++;
 			head = get_node();
 		}
 		return NULL;
 	}
 
-	virtual bool 			previously_hashed( Search_Node *n ) {
-		Search_Node *previous_copy = NULL;
-
-		if( (previous_copy = m_open_hash.retrieve(n)) ) {
-			if(n->gn() < previous_copy->gn())
-			{
-				// MRJ: Updates are only possible if we're using a dynamic heap
-				// like boost::fibonacci_heap, otherwise, if we generate a better
-				// node we need to suck it up and put it into OPEN
-				/*
-				previous_copy->m_parent = n->m_parent;
-				previous_copy->m_action = n->m_action;				
-				previous_copy->m_g = n->m_g;
-				if(!m_greedy)
-					previous_copy->m_f = previous_copy->m_h + previous_copy->m_g;
-				inc_replaced_open();
-				*/
-				return false;
-			}
-			return true;
-		}
-
-		return false;
-	}
-
 protected:
 
-	void	extract_plan( Search_Node* s, Search_Node* t, std::vector<Action_Idx>& plan, float& cost ) {
+	void	extract_plan( Search_Node* s, Search_Node* t, std::vector<Action_Idx>& plan, unsigned& cost ) {
 		Search_Node *tmp = t;
 		cost = 0.0f;
 		while( tmp != s) {
@@ -365,13 +317,12 @@ protected:
 	unsigned				m_pruned_B_count;
 	unsigned				m_dead_end_count;
 	unsigned				m_open_repl_count;
-	float					m_B;
-	float					m_time_budget;
-	float					m_t0;
+	unsigned				m_B;
 	Search_Node*				m_root;
 	std::vector<Action_Idx> 		m_app_set;
 	bool                                    m_greedy;
 	bool                                    m_delay_eval;
+	float					m_h_time;
 };
 
 }

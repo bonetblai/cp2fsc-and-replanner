@@ -175,6 +175,7 @@
 		make_kp_goal();
 		
 		m_task.make_action_tables();
+		m_task.make_effect_tables();
 		
 		if ( kp_instance_.options_.is_enabled( "planner:print:statistics" ) ) 
 			std::cout << "Has conditional effects? " << ( m_task.has_conditional_effects() ? "yes" : "no" ) << std::endl;
