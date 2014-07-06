@@ -134,6 +134,12 @@ int FF_Planner::get_raw_plan(const State &state, Instance::Plan &raw_plan) const
     int rv = system(cmd.str().c_str());
     remove_file(problem_fn_);
 
+    std::stringstream output_copy_fn_;
+    output_copy_fn_ << "ff.call." << n_calls_;
+    std::stringstream cmd2;
+    cmd2 << "cp " << output_fn_ << " " << output_copy_fn_.str();
+    system( cmd2.str().c_str() );
+
     if( rv != 0 ) {
         total_time_ += Utils::read_time_in_seconds() - start_time;
         remove_file(output_fn_);

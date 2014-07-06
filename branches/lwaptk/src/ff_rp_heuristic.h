@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <aptk/search_prob.hxx>
 #include <aptk/heuristic.hxx>
+#include <aptk/resources_control.hxx>
 #include <strips_state.hxx>
 #include <types.hxx>
 #include <action.hxx>
@@ -35,46 +36,48 @@ namespace aptk {
 
 namespace agnostic {
 
-class Goal_Node {
-public:
-	
-	Goal_Node( unsigned p, float h )
-		: m_fluent(p), m_h(h) {
-	}
-
-	Goal_Node( Goal_Node&& other ) 
-		: m_fluent( other.m_fluent ), m_h( other.m_h ) {
-		
-	}
-
-	Goal_Node( const Goal_Node& other ) 
-		: m_fluent( other.m_fluent ), m_h( other.m_h ) {
-	}
-
-	Goal_Node&	operator=( Goal_Node&& other ) {
-		m_fluent = other.m_fluent;
-		m_h = other.m_h;
-		return *this;
-	}
-
-	bool	operator>( const Goal_Node& n ) const {
-		return m_h > n.m_h;
-	}
-
-	bool	operator<( const Goal_Node& n ) const {
-		return m_h < n.m_h;
-	}
-
-	unsigned 	m_fluent;
-	float		m_h;
-
-};
 
 enum class FF_RP_Cost_Function { Ignore_Costs, Use_Costs};
-template < typename Primary_Heuristic, FF_RP_Cost_Function cost_opt = FF_RP_Cost_Function::Use_Costs >
+template < typename Primary_Heuristic, typename Cost_Type = float, FF_RP_Cost_Function cost_opt = FF_RP_Cost_Function::Use_Costs >
 class FF_Relaxed_Plan_Extractor
 {
-	typedef std::priority_queue<Goal_Node>	Goal_Queue;
+	class Goal_Node {
+	public:
+		
+		Goal_Node( unsigned p, Cost_Type h )
+			: m_fluent(p), m_h(h) {
+		}
+	
+		Goal_Node( Goal_Node&& other ) 
+			: m_fluent( other.m_fluent ), m_h( other.m_h ) {
+			
+		}
+	
+		Goal_Node( const Goal_Node& other ) 
+			: m_fluent( other.m_fluent ), m_h( other.m_h ) {
+		}
+	
+		Goal_Node&	operator=( Goal_Node&& other ) {
+			m_fluent = other.m_fluent;
+			m_h = other.m_h;
+			return *this;
+		}
+	
+		bool	operator>( const Goal_Node& n ) const {
+			return m_h > n.m_h;
+		}
+	
+		bool	operator<( const Goal_Node& n ) const {
+			return m_h < n.m_h;
+		}
+	
+		unsigned 	m_fluent;
+		Cost_Type	m_h;
+	
+	};
+
+	typedef std::priority_queue<Goal_Node>				Goal_Queue;
+	typedef typename Primary_Heuristic::Best_Supporter		Best_Supporter;
 public:
 
 	FF_Relaxed_Plan_Extractor( const STRIPS_Problem& prob, Primary_Heuristic& h )
@@ -82,16 +85,19 @@ public:
 		m_init_fluents.resize( m_strips_model.num_fluents() );
 		m_po_set.resize( m_strips_model.num_actions() );
 		m_rp_precs.resize( m_strips_model.num_fluents() );
-
+		m_rp_goals.resize( m_strips_model.num_fluents() );
 	}
 
 	virtual ~FF_Relaxed_Plan_Extractor() {}
 
 
-  	virtual void compute( const State& s, float& h_val, std::vector<Action_Idx>& pref_ops, std::vector<Action_Idx>* copy_rel_plan = NULL, Fluent_Vec* goals = NULL ) {
+  	virtual void compute( const State& s, Cost_Type& h_val, std::vector<Action_Idx>& pref_ops, std::vector<Action_Idx>* copy_rel_plan = NULL, Fluent_Vec* goals = NULL ) {
 		m_deletes_goal = false;
+		//float t0 = time_used();
 		m_base_heuristic.eval( s, h_val );
-		if ( h_val == infty )
+		//float tf = time_used();
+		//std::cout << tf - t0 << std::endl;
+		if ( h_val == Primary_Heuristic::infinity() )
 			return;
 
 		// 0. Initialize data structures
@@ -100,10 +106,12 @@ public:
 		for ( unsigned k = 0; k < s.fluent_vec().size(); k++ )
 			init_fluents().set( s.fluent_vec()[k] );
 	
-		std::vector<std::pair< const Action*, int> > relaxed_plan;
+		std::vector< Best_Supporter > 	relaxed_plan;
+		std::vector< Cost_Type >		rp_level;
 		const Fluent_Vec& G = goals ? *goals : m_strips_model.goal();
 
 		m_rp_precs.reset();
+		m_rp_goals.reset();
 
 		for ( auto g : G ) {
 			if ( init_fluents().isset( g ) ) {
@@ -116,6 +124,7 @@ public:
 			}
 
 			m_goal_queue.push( Goal_Node( g, m_base_heuristic.value(g) ) );
+			m_rp_goals.set(g);
 		}
 
 		if(!m_ignore_rp_h_value)
@@ -124,45 +133,52 @@ public:
 		while ( !m_goal_queue.empty() ) {
 			Goal_Node n = m_goal_queue.top();
 			m_goal_queue.pop();
-			const Action* sup = m_base_heuristic.best_supporter( n.m_fluent );
-			if ( sup == NULL ) // No best supporter for fluent
+			auto rp_entry = m_base_heuristic.get_best_supporters( n.m_fluent );
+			if ( rp_entry.act_idx == no_such_index ) // No best supporter for fluent
 			{
 				std::cerr << "No best supporter found for goal fluent ";
 				std::cerr << m_strips_model.fluents()[n.m_fluent]->signature() << std::endl;
 				return;
 			}
-			std::pair< const Action*, int > rp_entry;
-			rp_entry.first = sup;
-			if ( sup->asserts( n.m_fluent ) ) {
-				rp_entry.second = -1;
-			}		
-			else {
-				for ( unsigned k = 0; k < sup->ceff_vec().size(); k++ ) {
-					if ( sup->ceff_vec()[k]->asserts( n.m_fluent ) ) {
-						rp_entry.second = k;
-						break;
-					}
-				}
-			}	
-
+			const Action* sup = m_strips_model.actions()[ rp_entry.act_idx ];
 			#ifdef DEBUG_RP_HEURISTIC
 			std::cout << "Goal: " << m_strips_model.fluents()[n.m_fluent]->signature() << std::endl;
 			std::cout << "\t h = " << m_base_heuristic.value( n.m_fluent ) << std::endl;
 			std::cout << "\t Best supporter = " << sup->signature() << std::endl;
-			std::cout << "\t Effect = " << rp_entry.second << std::endl;
+			std::cout << "\t Effect = " << rp_entry.eff_idx << std::endl;
 			#endif
 
-			if ( std::find( relaxed_plan.begin(), relaxed_plan.end(), rp_entry ) != relaxed_plan.end() ) continue;
+			//if ( std::find( relaxed_plan.begin(), relaxed_plan.end(), rp_entry ) != relaxed_plan.end() ) continue;
+			bool duplicate = false;
+			if ( rp_entry.eff_idx == no_such_index ) {
+				for ( unsigned k = 0 ; k < relaxed_plan.size(); k++ ) {
+					if ( relaxed_plan[k].act_idx == rp_entry.act_idx ) {
+						duplicate = true;
+						break;
+					}
+				}
+			} else {
+				for ( unsigned k = 0 ; k < relaxed_plan.size(); k++ ) {
+					if ( relaxed_plan[k].act_idx == rp_entry.act_idx ) {
+						if ( rp_level[k] == n.m_h ) {
+							duplicate = true;
+							break;
+						}
+					}
+				}
+			}
+			if ( duplicate )
+				continue;
 			// Check goal deletion
 			for ( auto g : G ) {
-				if ( rp_entry.second == -1 ) {
+				if ( rp_entry.eff_idx == no_such_index ) {
 					if ( sup->del_set().isset( g ) ) {
 						m_deletes_goal = true;
 						break;
 					}
 				}
 				else {
-					if ( sup->ceff_vec()[rp_entry.second]->del_set().isset( g ) 
+					if ( sup->ceff_vec()[rp_entry.eff_idx]->del_set().isset( g ) 
 						|| sup->del_set().isset(g) ) {
 						m_deletes_goal = true;
 						break;
@@ -171,16 +187,19 @@ public:
 			}
 
 			relaxed_plan.push_back( rp_entry );
+			rp_level.push_back( n.m_h );
+			
 
 			if(!m_ignore_rp_h_value)
-				h_val += ( cost_opt == FF_RP_Cost_Function::Ignore_Costs ? 1.0f : relaxed_plan.back().first->cost() );
+				h_val += ( cost_opt == FF_RP_Cost_Function::Ignore_Costs ? 1.0f : sup->cost() );
 
 			// Add preconditions to relaxed plan
 			bool all_initially_true = true;
-			for ( auto g : rp_entry.first->prec_vec() ) {
+			for ( auto g : sup->prec_vec() ) {
 				if ( !init_fluents().isset( g ) ) {
 					all_initially_true = false;
 					m_goal_queue.push( Goal_Node( g, m_base_heuristic.value(g) ) );
+					m_rp_goals.set(g);
 				}
 				else {
 					#ifdef DEBUG_RP_HEURISTIC
@@ -191,11 +210,12 @@ public:
 					continue;
 				} 
 			}
-			if ( rp_entry.second >= 0 ) {
-				for ( auto g : rp_entry.first->ceff_vec()[rp_entry.second]->prec_vec() ) {
+			if ( rp_entry.eff_idx != no_such_index ) {
+				for ( auto g : sup->ceff_vec()[rp_entry.eff_idx]->prec_vec() ) {
 					if ( !init_fluents().isset( g ) ) {
 						all_initially_true = false;
 						m_goal_queue.push( Goal_Node( g, m_base_heuristic.value(g) ) );
+						m_rp_goals.set(g);
 					}
 					else {
 						#ifdef DEBUG_RP_HEURISTIC
@@ -214,18 +234,21 @@ public:
 
 		if(copy_rel_plan) 
 			for(unsigned i = 0; i < relaxed_plan.size(); i++)
-				copy_rel_plan->push_back( relaxed_plan[i].first->index() );
+				copy_rel_plan->push_back( relaxed_plan[i].act_idx );
 
 		#ifdef DEBUG	
 		std::cout << std::endl << "Rel Plan: " << std::endl;
 		for ( unsigned k = 0; k < relaxed_plan.size(); k++ ) {
-			std::cout << "\t "<< k <<": " << relaxed_plan[k].first->signature() << std::endl;
+			std::cout << "\t "<< k <<": " << m_strips_model.actions()[relaxed_plan[k].act_idx]->signature() << std::endl;
 		}
 		#endif
 	
 		std::vector< aptk::Action_Idx > app_set;
 		m_strips_model.applicable_actions_v2( s, app_set );
 		m_po_set.reset();	
+		
+		std::vector<unsigned> unordered_pref_ops;
+		std::vector<unsigned> po_dels;
 	
 		for (unsigned i = 0; i < app_set.size(); ++i) {
 			const Action& act = *(m_strips_model.actions()[app_set[i]]);
@@ -234,10 +257,11 @@ public:
 				if ( !m_rp_precs.isset( a_p ) ) continue;
 				if ( m_po_set.isset( act.index() ) && one_HA_per_fluent() ) continue;
 				if ( !m_po_set.isset( act.index() ) ) {
-					pref_ops.push_back( act.index() );
+					unordered_pref_ops.push_back( act.index() );
+					po_dels.push_back(0);
 					m_po_set.set( act.index() );
 				}
-				//m_rp_precs.unset(a_p);
+				m_rp_precs.unset(a_p);
 			}
 
 			for ( unsigned k = 0; k < act.ceff_vec().size(); k++ ) {
@@ -246,14 +270,46 @@ public:
 					if ( !m_rp_precs.isset( a_p ) ) continue;
 					if ( m_po_set.isset( act.index() ) && one_HA_per_fluent() ) continue;
 					if ( !m_po_set.isset( act.index() ) ) {
-						pref_ops.push_back( act.index() );
+						unordered_pref_ops.push_back( act.index() );
+						po_dels.push_back(0);
 						m_po_set.set( act.index() );
 					}
-					//m_rp_precs.unset( a_p );
+					m_rp_precs.unset( a_p );
 				}
 			} 
 		}
-	
+
+		unsigned processed_index = 0;
+		pref_ops.resize( unordered_pref_ops.size() );
+
+		for ( int i = unordered_pref_ops.size() - 1; i >= 0; i-- ) {
+
+			unsigned d = 0;
+			
+			const Action* a = m_strips_model.actions()[pref_ops[i]];
+			
+			for ( auto p : a->del_vec() )
+				if ( m_rp_goals.isset(p) ) d++;
+
+			for ( unsigned k = 0; k < a->ceff_vec().size(); k++ ) {
+				if ( !s.entails( a->ceff_vec()[k]->prec_vec() ) ) continue;
+				for ( auto p : a->ceff_vec()[k]->del_vec() )
+					if ( m_rp_goals.isset(p) ) d++;
+			}
+			
+			int j;
+			for (j = 0; j < processed_index; j++ )
+				if ( po_dels[j] > d ) break;
+			for ( int k = processed_index; k > j; k-- ) {
+				pref_ops[k] = pref_ops[k-1];
+				po_dels[k] = po_dels[k-1];	
+			}
+			
+			pref_ops[j] = unordered_pref_ops[i];
+			po_dels[j] = d;
+			processed_index++;
+		}
+
 	}
 
 	void ignore_rp_h_value(bool b) {m_ignore_rp_h_value = b;}
@@ -280,9 +336,10 @@ protected:
 	bool				m_one_ha_per_fluent;
 	Goal_Queue			m_goal_queue;
 	bool				m_deletes_goal;
+	Bit_Set				m_rp_goals;
 };
 
-template < typename Search_Model, typename Primary_Heuristic, FF_RP_Cost_Function cost_opt = FF_RP_Cost_Function::Use_Costs >
+template < typename Search_Model, typename Primary_Heuristic, typename Cost_Type = float, FF_RP_Cost_Function cost_opt = FF_RP_Cost_Function::Use_Costs >
 class FF_Relaxed_Plan_Heuristic : public Heuristic<State>
 {
 public:
@@ -294,28 +351,28 @@ public:
 
 	virtual ~FF_Relaxed_Plan_Heuristic() {}
 	
-	virtual void eval( const Fluent_Vec& s, float& h_val ) {
+	virtual void eval( const Fluent_Vec& s, Cost_Type& h_val ) {
 		m_plan_extractor.base_h().eval( s, h_val );
 	}
 
-	virtual void eval( const State& s, float& h_val ) {
+	virtual void eval( const State& s, Cost_Type& h_val ) {
 		std::vector<Action_Idx> po;
 		eval( s, h_val, po );
 	}
 	
-	virtual void eval( const State& s, float& h_val, std::vector<Action_Idx>& pref_ops ) {
+	virtual void eval( const State& s, Cost_Type& h_val, std::vector<Action_Idx>& pref_ops ) {
 		m_plan_extractor.compute( s, h_val, pref_ops );
 	}
   
-	virtual void eval( const State& s, float& h_val, std::vector<Action_Idx>& pref_ops, std::vector<Action_Idx>& rel_plan ) {
+	virtual void eval( const State& s, Cost_Type& h_val, std::vector<Action_Idx>& pref_ops, std::vector<Action_Idx>& rel_plan ) {
 		m_plan_extractor.compute( s, h_val, pref_ops, &rel_plan );
 	}
 		
-	  virtual void eval( const State& s, float& h_val, std::vector<Action_Idx>& pref_ops, Fluent_Vec* goals ) {
+	  virtual void eval( const State& s, Cost_Type& h_val, std::vector<Action_Idx>& pref_ops, Fluent_Vec* goals ) {
 		  m_plan_extractor.compute( s, h_val, pref_ops, NULL, goals );
 	}
   
-	virtual void eval( const State& s, float& h_val, std::vector<Action_Idx>& pref_ops, std::vector<Action_Idx>& rel_plan, Fluent_Vec* goals ) {
+	virtual void eval( const State& s, Cost_Type& h_val, std::vector<Action_Idx>& pref_ops, std::vector<Action_Idx>& rel_plan, Fluent_Vec* goals ) {
 		m_plan_extractor.compute( s, h_val, pref_ops, &rel_plan, goals );
 	}
 	
@@ -327,8 +384,8 @@ public:
 
 protected:
 
-	Primary_Heuristic						m_base_heuristic;
-	FF_Relaxed_Plan_Extractor< Primary_Heuristic, cost_opt >	m_plan_extractor;
+	Primary_Heuristic							m_base_heuristic;
+	FF_Relaxed_Plan_Extractor< Primary_Heuristic, Cost_Type, cost_opt >	m_plan_extractor;
 };
 
 }
