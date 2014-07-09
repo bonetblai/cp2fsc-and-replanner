@@ -309,7 +309,6 @@ public:
 			po_dels[j] = d;
 			processed_index++;
 		}
-
 	}
 
 	void ignore_rp_h_value(bool b) {m_ignore_rp_h_value = b;}
