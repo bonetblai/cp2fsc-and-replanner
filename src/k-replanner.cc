@@ -170,8 +170,6 @@ int main(int argc, char *argv[]) {
                 cout << Utils::error() << "not enough arguments for '" << argv[k] << "'." << endl;
                 exit(-1);
             }
-            opt_seed = atoi(argv[++k]);
-
         // if '--', stop parsing options. Remaining fields are file names.
         } else if( !skip_options && !strcmp(argv[k], "--") ) {
             skip_options = true;
