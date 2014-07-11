@@ -1,0 +1,43 @@
+k-replanner.o: k-replanner.cc problem.h name.h index.h options.h \
+ preprocess.h parser.h scanner.h string_table.h char_map.h grammar.h \
+ base.h ptr_table.h utils.h state.h clg_problem.h kp_problem.h \
+ mvv_problem.h mvv2_problem.h solver.h classical_planner.h \
+ available_options.h
+cp2fsc.o: cp2fsc.cc cp_problem.h problem.h name.h index.h options.h \
+ state.h ks0_problem.h preprocess.h parser.h scanner.h string_table.h \
+ char_map.h grammar.h base.h ptr_table.h utils.h solver.h \
+ classical_planner.h kp_problem.h available_options.h
+string_table.o: string_table.cc string_table.h char_map.h
+base.o: base.cc base.h ptr_table.h string_table.h char_map.h options.h \
+ problem.h name.h index.h utils.h
+ptr_table.o: ptr_table.cc ptr_table.h
+char_map.o: char_map.cc char_map.h
+problem.o: problem.cc problem.h name.h index.h options.h state.h
+kp_problem.o: kp_problem.cc kp_problem.h problem.h name.h index.h \
+ options.h base.h ptr_table.h string_table.h char_map.h state.h utils.h
+clg_problem.o: clg_problem.cc clg_problem.h kp_problem.h problem.h name.h \
+ index.h options.h base.h ptr_table.h string_table.h char_map.h state.h \
+ utils.h
+mvv_problem.o: mvv_problem.cc mvv_problem.h kp_problem.h problem.h name.h \
+ index.h options.h base.h ptr_table.h string_table.h char_map.h state.h \
+ utils.h
+mvv2_problem.o: mvv2_problem.cc mvv2_problem.h kp_problem.h problem.h \
+ name.h index.h options.h base.h ptr_table.h string_table.h char_map.h \
+ state.h utils.h
+cp_problem.o: cp_problem.cc cp_problem.h problem.h name.h index.h \
+ options.h state.h
+ks0_problem.o: ks0_problem.cc ks0_problem.h cp_problem.h problem.h name.h \
+ index.h options.h state.h
+name.o: name.cc name.h
+preprocess.o: preprocess.cc preprocess.h problem.h name.h index.h \
+ options.h
+solver.o: solver.cc solver.h classical_planner.h kp_problem.h problem.h \
+ name.h index.h options.h base.h ptr_table.h string_table.h char_map.h \
+ state.h utils.h
+classical_planner.o: classical_planner.cc classical_planner.h \
+ kp_problem.h problem.h name.h index.h options.h base.h ptr_table.h \
+ string_table.h char_map.h state.h utils.h
+grammar.o: grammar.cc base.h ptr_table.h string_table.h char_map.h \
+ options.h problem.h name.h index.h utils.h
+scanner.o: scanner.cc scanner.h string_table.h char_map.h grammar.h \
+ base.h ptr_table.h options.h problem.h name.h index.h utils.h

@@ -1,0 +1,15 @@
+[DONE]  Axioms must be used to complete the hidden initial states
+
+[DONE]  Invariants must also be generated from axioms
+
+        Remove unnecessary trivial invariants p => p. For this,
+        may need to introduce (unknown ?p) constructs and revise
+        preprocessing step
+
+[DONE]  Optimize grounding of formulas as it is taking too much
+        time, the problem is the repeatedly grounding of same
+        formula, which implies a to_string() call when computing
+        the value of static atoms at initial state.
+
+        Check detection/handling of static fluents in preprocessing.
+

@@ -1,0 +1,634 @@
+domain.pddl p-grid4x4-blocks5.pddl
+Madagascar v0.998 16/11/2010 16:13:59
+Options: file:d.pddl file:p.pddl
+Special no-VSIDS version.
+Domain: noname
+Problem: noname
+Parser: 214 ground actions and 218 state variables
+Invariants: 0 1 2 3 4  0.01 secs
+Simplified: 214 ground actions and 213 state variables
+Syntax: conjunctive
+Disabling graph:  0.00 secs
+Plan type: E-step
+Horizon 0
+0 UNSAT (0 decisions 0 conflicts)
+Horizon 5
+5 UNSAT (0 decisions 0 conflicts)
+Horizon 10
+Horizon 15
+Horizon 20
+Horizon 25
+Horizon 30
+Horizon 35
+Collecting garbage.  Freed 0.00 MB.
+Horizon 40
+Horizon 45
+Horizon 50
+SAT (744 decisions 312 conflicts)
+PLAN FOUND: 25 steps
+STEP 0: map_mark-green-block_obs4_q0_q0() map_mark-green-block_obs4_q1_q1() map_mark-green-block_obs5_q0_q0() map_mark-green-block_obs5_q1_q0() map_move-down_obs1_q1_q0() map_move-down_obs2_q1_q0() map_move-right_obs2_q0_q1() map_move-up_obs1_q0_q0() map_move-up_obs3_q0_q0()
+STEP 1: app_mark-green-block_obs4_q0_q0()
+STEP 2: app_move-up_obs3_q0_q0()
+STEP 3: ramification()
+STEP 4: app_mark-green-block_obs5_q0_q0()
+STEP 5: app_move-up_obs1_q0_q0()
+STEP 6: ramification()
+STEP 7: app_move-right_obs2_q0_q1()
+STEP 8: ramification()
+STEP 9: app_move-down_obs2_q1_q0()
+STEP 10: ramification()
+STEP 11: app_move-right_obs2_q0_q1()
+STEP 12: ramification()
+STEP 13: app_move-down_obs1_q1_q0()
+STEP 14: ramification()
+STEP 15: app_mark-green-block_obs4_q0_q0() app_mark-green-block_obs5_q1_q0()
+STEP 16: app_move-up_obs3_q0_q0()
+STEP 17: ramification()
+STEP 18: app_move-up_obs1_q0_q0()
+STEP 19: ramification()
+STEP 20: app_mark-green-block_obs5_q0_q0()
+STEP 21: merge()
+31 actions in the plan.
+total time 0.79 preprocess 0.02 
+total size 312.38 MB
+t val conflicts decisions
+0 0 0 0
+5 0 0 0
+10 -1 600 918
+15 -1 480 884
+20 -1 420 821
+25 1 312 744
+
+
+domain.pddl p-grid5x5-blocks10.pddl
+Madagascar v0.998 16/11/2010 16:13:59
+Options: file:d.pddl file:p.pddl
+Special no-VSIDS version.
+Domain: noname
+Problem: noname
+Parser: 214 ground actions and 323 state variables
+Invariants: 0 1 2 3 4 5 6  0.05 secs
+Simplified: 214 ground actions and 313 state variables
+Syntax: conjunctive
+Disabling graph:  0.01 secs
+Plan type: E-step
+Horizon 0
+0 UNSAT (0 decisions 0 conflicts)
+Horizon 5
+5 UNSAT (0 decisions 0 conflicts)
+Horizon 10
+Horizon 15
+Horizon 20
+Horizon 25
+Horizon 30
+Horizon 35
+Collecting garbage.  Freed 0.00 MB.
+Horizon 40
+Horizon 45
+Horizon 50
+Horizon 55
+Horizon 60
+Collecting garbage.  Freed 0.12 MB.
+Horizon 65
+10 UNSAT (1113 decisions 722 conflicts)
+Horizon 70
+SAT (699 decisions 96 conflicts)
+PLAN FOUND: 65 steps
+STEP 0: map_mark-green-block_obs4_q0_q0() map_mark-green-block_obs4_q1_q1() map_mark-green-block_obs5_q0_q0() map_move-down_obs0_q0_q1() map_move-down_obs0_q1_q1() map_move-right_obs1_q1_q0() map_move-right_obs2_q1_q0() map_move-right_obs3_q1_q0() map_move-up_obs1_q0_q0() map_move-up_obs2_q0_q0()
+STEP 1: app_move-up_obs2_q0_q0()
+STEP 2: ramification()
+STEP 3: app_mark-green-block_obs5_q0_q0()
+STEP 4: app_move-up_obs1_q0_q0()
+STEP 5: ramification()
+STEP 6: app_move-up_obs1_q0_q0()
+STEP 7: ramification()
+STEP 8: app_mark-green-block_obs5_q0_q0()
+STEP 9: app_move-down_obs0_q0_q1()
+STEP 10: ramification()
+STEP 11: app_move-right_obs1_q1_q0()
+STEP 12: ramification()
+STEP 13: app_move-down_obs0_q0_q1()
+STEP 14: ramification()
+STEP 15: app_move-down_obs0_q1_q1()
+STEP 16: ramification()
+STEP 17: app_move-right_obs2_q1_q0()
+STEP 18: ramification()
+STEP 19: app_mark-green-block_obs4_q0_q0()
+STEP 20: app_move-up_obs2_q0_q0()
+STEP 21: ramification()
+STEP 22: app_mark-green-block_obs4_q1_q1() app_move-up_obs1_q0_q0()
+STEP 23: ramification()
+STEP 24: app_move-up_obs1_q0_q0()
+STEP 25: ramification()
+STEP 26: app_mark-green-block_obs5_q0_q0()
+STEP 27: app_move-up_obs1_q0_q0()
+STEP 28: ramification()
+STEP 29: app_move-down_obs0_q0_q1()
+STEP 30: ramification()
+STEP 31: app_move-right_obs1_q1_q0()
+STEP 32: ramification()
+STEP 33: app_move-down_obs0_q0_q1()
+STEP 34: ramification()
+STEP 35: app_move-down_obs0_q1_q1()
+STEP 36: ramification()
+STEP 37: app_move-down_obs0_q1_q1()
+STEP 38: ramification()
+STEP 39: app_move-right_obs3_q1_q0()
+STEP 40: ramification()
+STEP 41: app_mark-green-block_obs4_q0_q0()
+STEP 42: app_move-up_obs2_q0_q0()
+STEP 43: ramification()
+STEP 44: app_mark-green-block_obs5_q0_q0()
+STEP 45: merge()
+56 actions in the plan.
+total time 4.37 preprocess 0.09 
+total size 448.80 MB
+t val conflicts decisions
+0 0 0 0
+5 0 0 0
+10 0 722 1113
+15 -1 720 1433
+20 -1 660 1413
+25 -1 600 1310
+30 -1 540 1136
+35 -1 480 886
+40 -1 420 823
+45 -1 360 797
+50 -1 300 610
+55 -1 240 438
+60 -1 180 286
+65 1 96 699
+
+
+domain.pddl p-grid5x5-blocks7a.pddl
+Madagascar v0.998 16/11/2010 16:13:59
+Options: file:d.pddl file:p.pddl
+Special no-VSIDS version.
+Domain: noname
+Problem: noname
+Parser: 214 ground actions and 266 state variables
+Invariants: 0 1 2 3 4 5  0.02 secs
+Simplified: 214 ground actions and 259 state variables
+Syntax: conjunctive
+Disabling graph:  0.00 secs
+Plan type: E-step
+Horizon 0
+0 UNSAT (0 decisions 0 conflicts)
+Horizon 5
+5 UNSAT (0 decisions 0 conflicts)
+Horizon 10
+Horizon 15
+Horizon 20
+Horizon 25
+Horizon 30
+Horizon 35
+Collecting garbage.  Freed 0.00 MB.
+Horizon 40
+Horizon 45
+Horizon 50
+Horizon 55
+Horizon 60
+Collecting garbage.  Freed 0.03 MB.
+Horizon 65
+Horizon 70
+Horizon 75
+Horizon 80
+Horizon 85
+Horizon 90
+Collecting garbage.  Freed 0.71 MB.
+Horizon 95
+Collecting garbage.  Freed 3.71 MB.
+Collecting garbage.  Freed 17.19 MB.
+10 UNSAT (6755 decisions 5094 conflicts)
+Horizon 100
+Collecting garbage.  Freed 47.47 MB.
+Collecting garbage.  Freed 73.21 MB.
+Collecting garbage.  Freed 135.12 MB.
+Collecting garbage.  Freed 148.34 MB.
+Collecting garbage.  Freed 157.72 MB.
+Collecting garbage.  Freed 159.49 MB.
+Collecting garbage.  Freed 152.57 MB.
+Collecting garbage.  Freed 161.43 MB.
+SAT (59978 decisions 31120 conflicts)
+PLAN FOUND: 50 steps
+STEP 0: map_mark-green-block_obs4_q0_q0() map_mark-green-block_obs4_q1_q0() map_mark-green-block_obs5_q0_q0() map_move-down_obs0_q0_q1() map_move-left_obs1_q0_q0() map_move-left_obs1_q1_q1() map_move-right_obs0_q1_q0() map_move-right_obs2_q0_q0() map_move-up_obs2_q1_q0() map_move-up_obs3_q0_q0() map_move-up_obs3_q1_q1()
+STEP 1: app_move-up_obs3_q0_q0()
+STEP 2: ramification()
+STEP 3: app_mark-green-block_obs4_q0_q0() app_mark-green-block_obs5_q0_q0()
+STEP 4: app_move-right_obs2_q0_q0()
+STEP 5: ramification()
+STEP 6: app_move-right_obs2_q0_q0()
+STEP 7: ramification()
+STEP 8: app_move-down_obs0_q0_q1()
+STEP 9: ramification()
+STEP 10: app_move-left_obs1_q1_q1()
+STEP 11: ramification()
+STEP 12: app_move-up_obs3_q1_q1()
+STEP 13: ramification()
+STEP 14: app_move-up_obs2_q1_q0()
+STEP 15: ramification()
+STEP 16: app_mark-green-block_obs4_q1_q0() app_mark-green-block_obs5_q0_q0()
+STEP 17: app_move-right_obs2_q0_q0()
+STEP 18: ramification()
+STEP 19: app_move-down_obs0_q0_q1()
+STEP 20: ramification()
+STEP 21: app_move-right_obs0_q1_q0()
+STEP 22: ramification()
+STEP 23: app_move-right_obs2_q0_q0()
+STEP 24: ramification()
+STEP 25: app_move-down_obs0_q0_q1()
+STEP 26: ramification()
+STEP 27: app_mark-green-block_obs5_q0_q0() app_move-left_obs1_q1_q1()
+STEP 28: ramification()
+STEP 29: app_mark-green-block_obs4_q1_q0()
+STEP 30: merge()
+44 actions in the plan.
+total time 382.27 preprocess 0.03 
+total size 666.62 MB
+t val conflicts decisions
+0 0 0 0
+5 0 0 0
+10 0 5094 6755
+15 -1 65100 102835
+20 -1 58560 103225
+25 -1 52740 97488
+30 -1 47460 89041
+35 -1 42720 82717
+40 -1 38460 73071
+45 -1 34620 64270
+50 1 31120 59978
+
+
+domain.pddl p-grid5x5-blocks7b.pddl
+Madagascar v0.998 16/11/2010 16:13:59
+Options: file:d.pddl file:p.pddl
+Special no-VSIDS version.
+Domain: noname
+Problem: noname
+Parser: 214 ground actions and 266 state variables
+Invariants: 0 1 2 3 4 5  0.02 secs
+Simplified: 214 ground actions and 259 state variables
+Syntax: conjunctive
+Disabling graph:  0.01 secs
+Plan type: E-step
+Horizon 0
+0 UNSAT (0 decisions 0 conflicts)
+Horizon 5
+5 UNSAT (0 decisions 0 conflicts)
+Horizon 10
+Horizon 15
+Horizon 20
+Horizon 25
+Horizon 30
+Horizon 35
+Collecting garbage.  Freed 0.00 MB.
+Horizon 40
+Horizon 45
+Horizon 50
+Horizon 55
+Horizon 60
+Collecting garbage.  Freed 0.05 MB.
+Horizon 65
+Horizon 70
+Horizon 75
+Horizon 80
+Horizon 85
+Horizon 90
+Collecting garbage.  Freed 0.64 MB.
+SAT (1160 decisions 188 conflicts)
+PLAN FOUND: 75 steps
+STEP 0: map_mark-green-block_obs4_q0_q0() map_mark-green-block_obs5_q0_q0() map_move-down_obs0_q1_q1() map_move-right_obs0_q0_q1() map_move-right_obs3_q1_q0() map_move-up_obs1_q0_q0() map_move-up_obs2_q0_q0()
+STEP 1: app_move-up_obs2_q0_q0()
+STEP 2: ramification()
+STEP 3: app_mark-green-block_obs4_q0_q0() app_mark-green-block_obs5_q0_q0()
+STEP 4: app_move-up_obs1_q0_q0()
+STEP 5: ramification()
+STEP 6: app_move-right_obs0_q0_q1()
+STEP 7: ramification()
+STEP 8: app_move-down_obs0_q1_q1()
+STEP 9: ramification()
+STEP 10: app_move-down_obs0_q1_q1()
+STEP 11: ramification()
+STEP 12: app_move-right_obs3_q1_q0()
+STEP 13: ramification()
+STEP 14: app_move-up_obs2_q0_q0()
+STEP 15: ramification()
+STEP 16: app_mark-green-block_obs4_q0_q0() app_move-up_obs1_q0_q0()
+STEP 17: ramification()
+STEP 18: app_mark-green-block_obs5_q0_q0()
+STEP 19: app_move-up_obs1_q0_q0()
+STEP 20: ramification()
+STEP 21: app_move-right_obs0_q0_q1()
+STEP 22: ramification()
+STEP 23: app_move-down_obs0_q1_q1()
+STEP 24: ramification()
+STEP 25: app_move-down_obs0_q1_q1()
+STEP 26: ramification()
+STEP 27: app_move-down_obs0_q1_q1()
+STEP 28: ramification()
+STEP 29: app_move-right_obs3_q1_q0()
+STEP 30: ramification()
+STEP 31: app_move-up_obs2_q0_q0()
+STEP 32: ramification()
+STEP 33: app_mark-green-block_obs4_q0_q0() app_mark-green-block_obs5_q0_q0()
+STEP 34: merge()
+44 actions in the plan.
+total time 4.88 preprocess 0.05 
+total size 449.96 MB
+t val conflicts decisions
+0 0 0 0
+5 0 0 0
+10 -1 1080 1596
+15 -1 960 1504
+20 -1 900 1816
+25 -1 780 1452
+30 -1 720 1187
+35 -1 660 1235
+40 -1 600 1014
+45 -1 540 952
+50 -1 480 769
+55 -1 420 735
+60 -1 360 634
+65 -1 360 628
+70 -1 300 496
+75 1 188 1160
+
+
+domain.pddl p-grid5x5-blocks8.pddl
+Madagascar v0.998 16/11/2010 16:13:59
+Options: file:d.pddl file:p.pddl
+Special no-VSIDS version.
+Domain: noname
+Problem: noname
+Parser: 214 ground actions and 285 state variables
+Invariants: 0 1 2 3 4 5  0.03 secs
+Simplified: 214 ground actions and 277 state variables
+Syntax: conjunctive
+Disabling graph:  0.01 secs
+Plan type: E-step
+Horizon 0
+0 UNSAT (0 decisions 0 conflicts)
+Horizon 5
+5 UNSAT (0 decisions 0 conflicts)
+Horizon 10
+Horizon 15
+Horizon 20
+Horizon 25
+Horizon 30
+Horizon 35
+Collecting garbage.  Freed 0.00 MB.
+Horizon 40
+Horizon 45
+Horizon 50
+Horizon 55
+Horizon 60
+Collecting garbage.  Freed 0.07 MB.
+Horizon 65
+Horizon 70
+Horizon 75
+Horizon 80
+Horizon 85
+Horizon 90
+Collecting garbage.  Freed 0.60 MB.
+Horizon 95
+Collecting garbage.  Freed 5.48 MB.
+10 UNSAT (4259 decisions 3185 conflicts)
+Horizon 100
+Collecting garbage.  Freed 24.11 MB.
+Collecting garbage.  Freed 26.72 MB.
+Collecting garbage.  Freed 57.74 MB.
+Collecting garbage.  Freed 98.74 MB.
+Collecting garbage.  Freed 178.09 MB.
+Collecting garbage.  Freed 194.75 MB.
+Collecting garbage.  Freed 201.60 MB.
+Collecting garbage.  Freed 134.25 MB.
+Collecting garbage.  Freed 127.43 MB.
+Collecting garbage.  Freed 125.85 MB.
+Collecting garbage.  Freed 127.31 MB.
+Collecting garbage.  Freed 130.18 MB.
+Collecting garbage.  Freed 124.69 MB.
+
+
+domain.pddl p-grid5x5-blocks9.pddl
+Madagascar v0.998 16/11/2010 16:13:59
+Options: file:d.pddl file:p.pddl
+Special no-VSIDS version.
+Domain: noname
+Problem: noname
+Parser: 214 ground actions and 304 state variables
+Invariants: 0 1 2 3 4 5  0.03 secs
+Simplified: 214 ground actions and 295 state variables
+Syntax: conjunctive
+Disabling graph:  0.00 secs
+Plan type: E-step
+Horizon 0
+0 UNSAT (0 decisions 0 conflicts)
+Horizon 5
+5 UNSAT (0 decisions 0 conflicts)
+Horizon 10
+Horizon 15
+Horizon 20
+Horizon 25
+Horizon 30
+Horizon 35
+Collecting garbage.  Freed 0.00 MB.
+Horizon 40
+Horizon 45
+Horizon 50
+Horizon 55
+Horizon 60
+Collecting garbage.  Freed 0.06 MB.
+Horizon 65
+Horizon 70
+Horizon 75
+Horizon 80
+SAT (980 decisions 231 conflicts)
+PLAN FOUND: 65 steps
+STEP 0: map_mark-green-block_obs4_q0_q0() map_mark-green-block_obs5_q0_q0() map_move-down_obs0_q0_q1() map_move-down_obs0_q1_q1() map_move-down_obs1_q1_q1() map_move-right_obs2_q1_q0() map_move-right_obs3_q0_q0() map_move-right_obs3_q1_q0() map_move-up_obs1_q0_q0() map_move-up_obs2_q0_q0()
+STEP 1: app_mark-green-block_obs4_q0_q0()
+STEP 2: app_move-up_obs2_q0_q0()
+STEP 3: ramification()
+STEP 4: app_move-up_obs1_q0_q0()
+STEP 5: ramification()
+STEP 6: app_mark-green-block_obs5_q0_q0()
+STEP 7: app_move-up_obs1_q0_q0()
+STEP 8: ramification()
+STEP 9: app_move-down_obs0_q0_q1()
+STEP 10: ramification()
+STEP 11: app_move-down_obs1_q1_q1()
+STEP 12: ramification()
+STEP 13: app_move-down_obs1_q1_q1()
+STEP 14: ramification()
+STEP 15: app_move-right_obs2_q1_q0()
+STEP 16: ramification()
+STEP 17: app_mark-green-block_obs4_q0_q0()
+STEP 18: app_move-up_obs2_q0_q0()
+STEP 19: ramification()
+STEP 20: app_mark-green-block_obs5_q0_q0()
+STEP 21: app_move-up_obs1_q0_q0()
+STEP 22: ramification()
+STEP 23: app_move-up_obs1_q0_q0()
+STEP 24: ramification()
+STEP 25: app_mark-green-block_obs5_q0_q0()
+STEP 26: app_move-up_obs1_q0_q0()
+STEP 27: ramification()
+STEP 28: app_move-down_obs0_q0_q1()
+STEP 29: ramification()
+STEP 30: app_move-down_obs1_q1_q1()
+STEP 31: ramification()
+STEP 32: app_move-down_obs1_q1_q1()
+STEP 33: ramification()
+STEP 34: app_move-down_obs1_q1_q1()
+STEP 35: ramification()
+STEP 36: app_move-right_obs2_q1_q0()
+STEP 37: ramification()
+STEP 38: app_move-right_obs3_q0_q0()
+STEP 39: ramification()
+STEP 40: app_move-right_obs3_q0_q0()
+STEP 41: ramification()
+STEP 42: app_move-up_obs2_q0_q0()
+STEP 43: ramification()
+STEP 44: app_mark-green-block_obs4_q0_q0() app_mark-green-block_obs5_q0_q0()
+STEP 45: merge()
+56 actions in the plan.
+total time 5.07 preprocess 0.07 
+total size 461.41 MB
+t val conflicts decisions
+0 0 0 0
+5 0 0 0
+10 -1 960 1426
+15 -1 840 1559
+20 -1 780 1696
+25 -1 720 1549
+30 -1 600 1215
+35 -1 540 997
+40 -1 540 1107
+45 -1 480 912
+50 -1 420 902
+55 -1 360 697
+60 -1 300 610
+65 1 231 980
+
+
+domain.pddl p-grid7x5-blocks10.pddl
+Madagascar v0.998 16/11/2010 16:13:59
+Options: file:d.pddl file:p.pddl
+Special no-VSIDS version.
+Domain: noname
+Problem: noname
+Parser: 214 ground actions and 343 state variables
+Invariants: 0 1 2 3 4 5  0.07 secs
+Simplified: 214 ground actions and 333 state variables
+Syntax: conjunctive
+Disabling graph:  0.00 secs
+Plan type: E-step
+Horizon 0
+0 UNSAT (0 decisions 0 conflicts)
+Horizon 5
+5 UNSAT (0 decisions 0 conflicts)
+Horizon 10
+10 UNSAT (0 decisions 0 conflicts)
+Horizon 15
+Horizon 20
+Horizon 25
+Horizon 30
+Horizon 35
+Horizon 40
+Collecting garbage.  Freed 0.00 MB.
+Horizon 45
+Horizon 50
+Horizon 55
+Horizon 60
+Horizon 65
+Collecting garbage.  Freed 0.04 MB.
+Horizon 70
+Horizon 75
+Horizon 80
+Horizon 85
+Horizon 90
+Horizon 95
+Collecting garbage.  Freed 0.75 MB.
+Horizon 100
+Collecting garbage.  Freed 4.34 MB.
+Collecting garbage.  Freed 16.40 MB.
+Collecting garbage.  Freed 50.55 MB.
+Collecting garbage.  Freed 121.44 MB.
+Collecting garbage.  Freed 126.64 MB.
+Collecting garbage.  Freed 140.75 MB.
+SAT (16919 decisions 8096 conflicts)
+PLAN FOUND: 75 steps
+STEP 0: map_mark-green-block_obs4_q0_q0() map_mark-green-block_obs5_q0_q0() map_move-down_obs0_q1_q1() map_move-down_obs1_q0_q1() map_move-right_obs1_q1_q0() map_move-right_obs2_q0_q0() map_move-right_obs2_q1_q1() map_move-right_obs3_q1_q0() map_move-up_obs0_q0_q0() map_move-up_obs3_q0_q0()
+STEP 1: app_move-up_obs3_q0_q0()
+STEP 2: ramification()
+STEP 3: app_mark-green-block_obs4_q0_q0() app_move-up_obs0_q0_q0()
+STEP 4: ramification()
+STEP 5: app_mark-green-block_obs5_q0_q0()
+STEP 6: app_move-up_obs0_q0_q0()
+STEP 7: ramification()
+STEP 8: app_move-down_obs1_q0_q1()
+STEP 9: ramification()
+STEP 10: app_move-down_obs0_q1_q1()
+STEP 11: ramification()
+STEP 12: app_move-down_obs0_q1_q1()
+STEP 13: ramification()
+STEP 14: app_move-right_obs3_q1_q0()
+STEP 15: ramification()
+STEP 16: app_move-right_obs2_q0_q0()
+STEP 17: ramification()
+STEP 18: app_move-right_obs2_q0_q0()
+STEP 19: ramification()
+STEP 20: app_move-up_obs3_q0_q0()
+STEP 21: ramification()
+STEP 22: app_move-up_obs0_q0_q0()
+STEP 23: ramification()
+STEP 24: app_move-down_obs1_q0_q1()
+STEP 25: ramification()
+STEP 26: app_move-down_obs0_q1_q1()
+STEP 27: ramification()
+STEP 28: app_move-right_obs3_q1_q0()
+STEP 29: ramification()
+STEP 30: app_mark-green-block_obs4_q0_q0()
+STEP 31: app_move-up_obs3_q0_q0()
+STEP 32: ramification()
+STEP 33: app_move-up_obs0_q0_q0()
+STEP 34: ramification()
+STEP 35: app_mark-green-block_obs5_q0_q0()
+STEP 36: app_move-up_obs0_q0_q0()
+STEP 37: ramification()
+STEP 38: app_mark-green-block_obs5_q0_q0()
+STEP 39: app_move-up_obs0_q0_q0()
+STEP 40: ramification()
+STEP 41: app_move-down_obs1_q0_q1()
+STEP 42: ramification()
+STEP 43: app_move-down_obs0_q1_q1()
+STEP 44: ramification()
+STEP 45: app_move-down_obs0_q1_q1()
+STEP 46: ramification()
+STEP 47: app_move-down_obs0_q1_q1()
+STEP 48: ramification()
+STEP 49: app_move-right_obs3_q1_q0()
+STEP 50: ramification()
+STEP 51: app_move-right_obs2_q0_q0()
+STEP 52: ramification()
+STEP 53: app_mark-green-block_obs4_q0_q0()
+STEP 54: merge()
+65 actions in the plan.
+total time 294.89 preprocess 0.12 
+total size 880.02 MB
+t val conflicts decisions
+0 0 0 0
+5 0 0 0
+10 0 0 0
+15 -1 28620 43194
+20 -1 25740 43544
+25 -1 23160 41798
+30 -1 20880 37767
+35 -1 18780 34446
+40 -1 16920 32479
+45 -1 15180 28475
+50 -1 13680 25771
+55 -1 12300 23688
+60 -1 11100 20907
+65 -1 9960 18613
+70 -1 9000 17380
+75 1 8096 16919

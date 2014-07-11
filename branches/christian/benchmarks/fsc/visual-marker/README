@@ -1,0 +1,20 @@
+Solutions times for Jussi's Mp planner running in a machine with 2
+cores Intel(R) Xeon(R) 5120 @ 1.86GHz with 2070632 kB of RAM.
+(Cutoff time of 600 seconds.)
+
+----------------------------------------------------------------------
+Mp's time                w/ tag-all-literals      w/o tag-all-literals
+----------------------------------------------------------------------
+p-grid4x4-blocks5          0.77                     0.57
+p-grid5x5-blocks7a       378.27                    21.19
+p-grid5x5-blocks7b         4.88                     4.04
+p-grid5x5-blocks8           ---                      ---
+p-grid5x5-blocks9          5.11                    11.91
+p-grid5x5-blocks10         4.34                    10.62
+p-grid7x5-blocks10       295.61                   530.59
+----------------------------------------------------------------------
+
+Remarks. The time for translation is negligible. The solution for
+p-grid5x5-blocks9 gives a controller that can solve problems with any
+number of blocks.
+
