@@ -13,8 +13,8 @@ LINK   = g++
 
 #BISON  = bison++
 #FLEX    = /usr/local/bin/flex++
-BISON   = /home/bonet/software/bison++-1.21-8/bison++
-FLEX    = /home/bonet/software/flex++-2.3.8-7/flex++
+BISON   = /home/cjmuise/Apps/flexbison/bison++-1.21-8/bison++
+FLEX    = /home/cjmuise/Apps/flexbison/flex++-2.3.8-7/flex++
 
 # If you can not find/compile bison++/flex++, try using the "fake" programs
 # as shown below. These are simple scripts that just copy pregenerated files.

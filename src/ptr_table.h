@@ -2,6 +2,7 @@
 #define PTR_TABLE_H
 
 #include <vector>
+#include <stdlib.h>
 
 //#pragma GCC diagnostic ignored "-Wpragmas"
 #pragma GCC diagnostic ignored "-Wunknown-pragmas"
