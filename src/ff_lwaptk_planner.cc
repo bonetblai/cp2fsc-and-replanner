@@ -11,7 +11,7 @@
 #include <layered_h_max.hxx>
 #include "ff_ehc.h"
 #include "ff_gbfs.h"
-#include "ff_rp_heuristic.h"
+#include <ff_rp_heuristic.hxx>
 
 using aptk::agnostic::Fwd_Search_Problem;
 using aptk::agnostic::H1_Heuristic;
