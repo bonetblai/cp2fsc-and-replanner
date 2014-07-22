@@ -46,6 +46,17 @@ class SIW :
 	def get_random_flags( self, N, seed ) :
 		return "--random --num-samples %s --seed %s --planner %s"%(N, seed, self.planner)
 
+class Epistemic_SIW :
+	
+	def __init__(self ) :
+		self.planner = 'epistemic_siw'
+
+	def get_flags( self ) :
+		return "--planner %s "%self.planner
+	
+	def get_random_flags( self, N, seed ) :
+		return "--random --num-samples %s --seed %s --planner %s"%(N, seed, self.planner)
+
 class DFS_RPIW :
 	
 	def __init__(self ) :

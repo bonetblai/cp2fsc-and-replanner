@@ -14,7 +14,11 @@ public:
 
     	virtual ~Lwaptk_Planner();
 
-    	virtual int get_raw_plan(const State &state, Instance::Plan &raw_plan) const;
+    	virtual int                 get_raw_plan(const State &state, Instance::Plan &raw_plan) const;
+
+	unsigned                    num_epistemic_fluents() const		{ return m_num_epistemic_fluents; }
+	const aptk::Fluent_Ptr_Vec  epistemic_fluents() const      		{ return m_epistemic_fluents; }
+	bool                        is_fluent_epistemic( unsigned f ) const { return m_epistemic_fl_set.isset( f ); }
 
 protected:
 	
@@ -37,6 +41,9 @@ private:
 
 	std::set<int>			m_negated_conditions;
 	aptk::Fluent_Ptr_Vec		m_negated;
+	aptk::Fluent_Ptr_Vec            m_epistemic_fluents;
+	aptk::Fluent_Set                m_epistemic_fl_set;
+	unsigned                        m_num_epistemic_fluents;
 };
 
 #endif // lwaptk_planner.h

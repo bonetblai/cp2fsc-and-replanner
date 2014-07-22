@@ -7,7 +7,7 @@
 #include <landmark_graph.hxx>
 #include <landmark_graph_generator.hxx>
 #include <h_1.hxx>
-#include "h_1_cl.hxx"
+//#include "h_1_cl.hxx"
 #include <layered_h_max.hxx>
 #include "ff_ehc.h"
 #include "ff_gbfs.h"
@@ -15,7 +15,7 @@
 
 using aptk::agnostic::Fwd_Search_Problem;
 using aptk::agnostic::H1_Heuristic;
-using aptk::agnostic::H1_CL_Heuristic;
+//using aptk::agnostic::H1_CL_Heuristic;
 using aptk::agnostic::H_Add_Evaluation_Function;
 using aptk::agnostic::H_Max_Evaluation_Function;
 using aptk::agnostic::Layered_H_Max;

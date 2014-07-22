@@ -14,6 +14,8 @@
 #include "utils.h"
 #include "bfs_f_planner.h"
 #include "siw_planner.h"
+#include "siw_plus_planner.h"
+#include "epistemic_siw_planner.h"
 #include "dfs_rpiw_planner.h"
 #include "ff_lwaptk_planner.h"
 
@@ -280,6 +282,14 @@ int main(int argc, char *argv[]) {
 	planner = new BFS_f_Planner( *kp_instance, opt_tmpfile_path.c_str() );
     } else if ( opt_planner == "siw" ) {
 	SIW_Planner* concrete_planner = new SIW_Planner( *kp_instance, opt_tmpfile_path.c_str() );
+	concrete_planner->set_classical_width_initial_bound( 1 );
+	planner = concrete_planner;
+    } else if ( opt_planner == "siw_plus" ) {
+	SIW_plus_Planner* concrete_planner = new SIW_plus_Planner( *kp_instance, opt_tmpfile_path.c_str() );
+	concrete_planner->set_classical_width_initial_bound( 1 );
+	planner = concrete_planner;
+    } else if ( opt_planner == "epistemic_siw" ) {
+	Epistemic_SIW_Planner* concrete_planner = new Epistemic_SIW_Planner( *kp_instance, opt_tmpfile_path.c_str() );
 	concrete_planner->set_classical_width_initial_bound( 1 );
 	planner = concrete_planner;
     } else if ( opt_planner == "dfs_rpiw" ) {

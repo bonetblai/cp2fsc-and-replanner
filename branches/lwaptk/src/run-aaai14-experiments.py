@@ -3,7 +3,7 @@ import os
 import glob
 
 from experimenter import benchmark
-from experimenter.lw1_configs import BFS_f, DFS_RPIW, FF, FF2
+from experimenter.lw1_configs import BFS_f, DFS_RPIW, FF, FF2, Epistemic_SIW
 
 
 def main() :
@@ -36,12 +36,12 @@ def main() :
 				['wumpus', 'p25d']
 			]
 
-	planners = [ FF(), FF2() ] #, DFS_RPIW(), BFS_f() ]
+	planners = [ Epistemic_SIW(), FF2() ] #, DFS_RPIW(), BFS_f() ]
 
 	benchmarks_base_dir = '../benchmarks/lw1'
 	max_time = 1800 # half an hour
 	max_mem = 4096 # 4 Gigabytes
-	num_H = 10
+	num_H = 1
 	seed = 8371
 
 	for domain, instance in aaai14_benchmark :
