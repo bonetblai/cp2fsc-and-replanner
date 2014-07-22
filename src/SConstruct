@@ -4,9 +4,9 @@ debug = ARGUMENTS.get( 'debug', 0 )
 common_env = Environment( ENV = os.environ )
 
 # Path to base dir of lwaptk, TODO: bind it to an environment var
-lwaptk_path = '/home/bowman/Sandboxes/lwaptk-ICAPS-2014'
+lwaptk_path = os.environ['LWAPTK_PATH']
 
-common_env.Append( CCFLAGS = [ '-Wall', '-std=c++11' ] )
+common_env.Append( CCFLAGS = [ '-fpermissive','-Wall', '-std=c++11' ] )
 
 if int(debug) == 1 :
         common_env.Append( CCFLAGS = ['-g',  '-DDEBUG' ] )

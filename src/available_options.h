@@ -127,7 +127,7 @@ const char *k_replanner_cmdline_options[] = {
     "[--no-print-plan]",
     "[--prefix <prefix>]",
     "[--keep-intermediate-files]",
-    "[--planner {ff|lama|m|mp|bfs_f|siw|dfs_rpiw}]",
+    "[--planner {ff|ff2|lama|m|mp|bfs_f|siw|siw_plus|epistemic_siw|dfs_rpiw}]",
     "[--planner-path <path>]",
     "[--tmpfile-path <path>]",
     "[--random]",

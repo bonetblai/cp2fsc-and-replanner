@@ -5,7 +5,7 @@
 #include <algorithm>
 
 	Lwaptk_Planner::Lwaptk_Planner( const char* name, const KP_Instance &instance, const char *tmpfile_path)
-      	: ClassicalPlanner(name, tmpfile_path, "", "", instance), m_task( instance.name_->to_string(), "call" ) {
+	    : ClassicalPlanner(name, tmpfile_path, "", "", instance), m_task( instance.name_->to_string(), "call" ){
 		if (  kp_instance_.options_.is_enabled( "planner:print:statistics" )  )
 			m_task.set_verbose(true);
 		make_kp_fluents_and_actions();
@@ -38,8 +38,14 @@
 
 	void
 	Lwaptk_Planner::make_kp_fluents() {
-		for ( size_t k = 0; k < kp_instance_.n_atoms(); k++ )
-			STRIPS_Problem::add_fluent( m_task, kp_instance_.atoms_[k]->name_->to_string() );
+	    m_epistemic_fluents.resize(  kp_instance_.n_atoms() );
+	    m_num_epistemic_fluents = kp_instance_.n_atoms();
+	    for ( size_t k = 0; k < kp_instance_.n_atoms(); k++ ){
+			const unsigned kp_idx = STRIPS_Problem::add_fluent( m_task, kp_instance_.atoms_[k]->name_->to_string() );
+			m_epistemic_fluents[k] = m_task.fluents()[kp_idx];
+			
+	    }
+
 	}
 	void
 	Lwaptk_Planner::handle_effect_literal( int p, aptk::Fluent_Vec& pos, aptk::Fluent_Vec& neg ) {
@@ -177,8 +183,15 @@
 		m_task.make_action_tables();
 		m_task.make_effect_tables();
 		
+		m_epistemic_fl_set.resize( m_task.num_fluents() );
+		for( auto ep_fl_ptr : m_epistemic_fluents )
+		    m_epistemic_fl_set.set( ep_fl_ptr->index() );
+		
+		
 		if ( kp_instance_.options_.is_enabled( "planner:print:statistics" ) ) 
 			std::cout << "Has conditional effects? " << ( m_task.has_conditional_effects() ? "yes" : "no" ) << std::endl;
+
+		//kp_instance_.print(std::cout);
 	}
 
 	void
