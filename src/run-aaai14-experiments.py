@@ -37,13 +37,13 @@ def main() :
 			]
 
 	# planners = [ FF(), FF2() ] #, DFS_RPIW(), BFS_f() ]
-	planners = [ Epistemic_SIW(), FF2() ] #, DFS_RPIW(), BFS_f() ]
+	planners = [ BFS_f() ]#,Epistemic_SIW(), FF2() ] #, DFS_RPIW(), BFS_f() ]
 
 	benchmarks_base_dir = '../benchmarks/lw1'
 	max_time = 1800 # half an hour
 	#max_mem = 4096 # 4 Gigabytes
 	max_mem = 6144
-	num_H = 1
+	num_H = 5
 	seed = 8371
 
 	for domain, instance in aaai14_benchmark :
