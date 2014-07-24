@@ -109,13 +109,13 @@ FF2_Planner::classical_planner( const  State& state, Instance::Plan &raw_plan) c
 		}
 		result = SOLVED;
 	
-		if ( kp_instance_.options_.is_enabled( "planner:print:statistics" ) ) {
+		//if ( kp_instance_.options_.is_enabled( "planner:print:statistics" ) ) {
 	
 			std::cout << "Total time: " << ff_t << std::endl;
 			std::cout << "Solved by: EHC" << std::endl;
 			std::cout << "Nodes generated during search: " << ehc_engine.generated() << std::endl;
 			std::cout << "Nodes expanded during search: " << ehc_engine.expanded() << std::endl;
-		}
+			//}
 
 		return result;
 	} 
@@ -145,13 +145,13 @@ FF2_Planner::classical_planner( const  State& state, Instance::Plan &raw_plan) c
 		
 	}
 
-	if ( kp_instance_.options_.is_enabled( "planner:print:statistics" ) ) {
+	//if ( kp_instance_.options_.is_enabled( "planner:print:statistics" ) ) {
 
 		std::cout << "Total time: " << ff_t << std::endl;
 		std::cout << "Solved by: BFS" << std::endl;
 		std::cout << "Nodes generated during search: " << bfs_engine.generated() << std::endl;
 		std::cout << "Nodes expanded during search: " << bfs_engine.expanded() << std::endl;
-	}
+		//}
 
 	return result;
 	
