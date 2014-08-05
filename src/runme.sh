@@ -1,0 +1,1 @@
+./k-replanner --print-domain-only --options=kp:print:preprocessed --keep-intermediate-files --max-time 10 ../benchmarks/replanner/CLG/wumpus/wumpus05/d.pddl ../benchmarks/replanner/CLG/wumpus/wumpus05/p.pddl
