@@ -65,6 +65,7 @@ int main(int argc, char *argv[]) {
     StringTable symbols(50, lowercase_map);
     bool        opt_debug_parser = false;
     bool        opt_print_plan = true;
+    bool        output_only = false;
     string      opt_planner = "ff";
     int         opt_time_bound = 3600;
     string      opt_prefix = "";
@@ -103,6 +104,8 @@ int main(int argc, char *argv[]) {
             exit(0);
         } else if( !skip_options && !strcmp(argv[k], "--debug-parser") ) {
             opt_debug_parser = true;
+        } else if( !skip_options && !strcmp(argv[k], "--print-domain-only") ) {
+            output_only = true;
         } else if( !skip_options && !strcmp(argv[k], "--max-time") ) {
             if( k == argc-1 ) {
                 cout << Utils::error() << "not enough arguments for '" << argv[k] << "'." << endl;
@@ -217,11 +220,20 @@ int main(int argc, char *argv[]) {
     Preprocessor kp_prep(*kp_instance);
     //kp_prep.preprocess(false);
     if( options.is_enabled("kp:print:preprocessed") ) {
+        cout << "START_DOMAIN" << endl;
         kp_instance->write_domain(cout);
+        cout << "END_DOMAIN" << endl;
+        cout << "START_PROBLEM" << endl;
         kp_instance->write_problem(cout);
+        cout << "END_PROBLEM" << endl;
     }
     kp_instance->print_stats(cout);
     float preprocessing_time = Utils::read_time_in_seconds() - start_time;
+    
+    if (output_only) {
+        // HAZ: No need to solve the problem -- just want the domain / problem output.
+        return 0;
+    }
 
     // construct classical planner
     const ClassicalPlanner *planner = 0;
