@@ -284,30 +284,35 @@ void CLG_Instance::create_sensor(const Sensor &sensor) {
             common_condition.insert(1 + 2*idx + 1);
     }
 
-    // generate different rule for every sensed fluent
+    // OLD: generate different rule for every sensed fluent
+    // HAZ: Generate a different non-det outcome for every sensed fluent
     int obs = 0;
     for( index_set::const_iterator it = sensor.sense_.begin(); it != sensor.sense_.end(); ++it ) {
         assert(*it > 0);
         int idx = *it - 1;
-        for( size_t n = 0; n < 2; ++n ) {
-            ostringstream s;
-            s << sensor.name_->to_string() << "-obs" << obs << "-ver" << n;
-            Action &nact = new_action(new CopyName(s.str()));
+        //for( size_t n = 0; n < 2; ++n ) {
+        ostringstream s;
+        s << sensor.name_->to_string() << "-obs" << obs;
+        Action &nact = new_action(new CopyName(s.str()), true);
 
-            // precondition
-            nact.precondition_.insert(common_condition.begin(), common_condition.end());
-            nact.precondition_.insert(-(1 + 2*idx));
-            nact.precondition_.insert(-(1 + 2*idx + 1));
+        // precondition
+        nact.precondition_.insert(common_condition.begin(), common_condition.end());
+        nact.precondition_.insert(-(1 + 2*idx));
+        nact.precondition_.insert(-(1 + 2*idx + 1));
 
-            // effect
-            if( n == 0 )
-                nact.effect_.insert(1 + 2*idx);
-            else
-                nact.effect_.insert(1 + 2*idx + 1);
+        // effect
+        /*if( n == 0 )
+            nact.effect_.insert(1 + 2*idx);
+        else
+            nact.effect_.insert(1 + 2*idx + 1);*/
+        
+        nact.effect_.insert(1 + 2*idx);
+        nact.effect_.insert(1 + 2*idx + 1);
 
-            if( options_.is_enabled("kp:print:action:sensor") )
-                nact.print(cout, *this);
-        }
+        if( options_.is_enabled("kp:print:action:sensor") )
+            nact.print(cout, *this);
+        //}
+        
         ++obs;
     }
 }

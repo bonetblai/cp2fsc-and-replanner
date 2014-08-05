@@ -42,8 +42,8 @@ Instance::Atom& Instance::new_atom(Name *name) {
     return *a;
 }
 
-Instance::Action& Instance::new_action(Name *name) {
-    Action *a = new Action(name, actions_.size());
+Instance::Action& Instance::new_action(Name *name, bool nondet) {
+    Action *a = new Action(name, actions_.size(), nondet);
     actions_.push_back(a);
     if( options_.is_enabled("problem:print:action:creation") )
         cout << "action " << a->index_ << "." << a->name_ << " created" << endl;
@@ -746,6 +746,8 @@ void Instance::Action::print(ostream &os, const Instance &i) const {
     }
     if( effect_.size() > 0 ) {
         os << "  eff:";
+        if (nondet_)
+            os << " oneof:";
         for( index_set::const_iterator it = effect_.begin(); it != effect_.end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
             if( *it > 0 )
@@ -816,7 +818,12 @@ void Instance::Action::write(ostream &os, int indent, const Instance &instance) 
     int n_effects = effect_.size() + when_.size();
     if( n_effects > 0 ) {
         os << istr << istr << ":effect";
-        if( n_effects > 1 ) os << " (and";
+        if( n_effects > 1 ) {
+            if (nondet_)
+                os << " (oneof";
+            else
+                os << " (and";
+        }
 
         // add and del effects
         for( index_set::const_iterator p = effect_.begin(); p != effect_.end(); ++p ) {
@@ -826,6 +833,8 @@ void Instance::Action::write(ostream &os, int indent, const Instance &instance) 
             else
                 os << " (not " << instance.atoms_[idx]->name_ << ")";
         }
+        
+        assert(!nondet_ || (0 == when_.size()));
 
         // conditional effects
         for( size_t i = 0; i < when_.size(); ++i ) {
