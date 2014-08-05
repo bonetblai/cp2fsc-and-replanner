@@ -176,6 +176,17 @@ int main(int argc, char *argv[]) {
 
     // get translation type: 0=no translation, 1=clg, 2=mvv
     int translation_type = reader->get_translation_type();
+    switch (translation_type) {
+        case 0:
+            cout << "no translation" << endl;
+            break;
+        case 1:
+            cout << "translation type: clg" << endl;
+            break;
+        case 2:
+            cout << "translation type: mvv" << endl;
+            break;
+    }
 
     // create fresh instance
     Instance instance(options);

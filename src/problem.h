@@ -53,7 +53,8 @@ class Instance {
         when_vec    when_;
         size_t      cost_;
         std::string comment_;
-        Action(Name* name = 0, size_t index = 0) : name_(name), index_(index), cost_(1) { }
+        bool        nondet_;
+        Action(Name* name = 0, size_t index = 0, bool nondet = false) : name_(name), index_(index), cost_(1), nondet_(nondet) { }
         ~Action() { delete name_; }
         const Action& operator=(const Action &a) {
             name_ = a.name_;
@@ -69,7 +70,7 @@ class Instance {
         void write(std::ostream &os, int indent, const Instance &instance) const;
     };
     class action_vec : public std::vector<Action*> { };
-
+    
     struct Sensor {
         Name *    name_;
         size_t    index_;
@@ -170,7 +171,7 @@ class Instance {
     virtual ~Instance();
 
     Atom&      new_atom(Name *name);
-    Action&    new_action(Name *name);
+    Action&    new_action(Name *name, bool nondet = false);
     Sensor&    new_sensor(Name *name);
     Axiom&     new_axiom(Name *name);
 
