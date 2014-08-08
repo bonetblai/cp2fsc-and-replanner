@@ -718,35 +718,52 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
             else
                 common_condition.insert(1 + 2*idx+1);
         }
-
+        
         // generate different rule for every sensed fluent
         int obs = 0;
+        
+        // HAZ: For now, we can only handle single sense outcomes
+        assert (r.sense_.size() == 1);
+        
         for( index_set::const_iterator it = r.sense_.begin(); it != r.sense_.end(); ++it ) {
             assert(*it > 0);
             int idx = *it-1;
-            for( size_t n = 0; n < 2; ++n ) {
-                ostringstream s;
-                s << "sensor-" << r.name_->to_string() << "-obs" << obs << "-ver" << n;
-                Action &nact = new_action(new CopyName(s.str()));
+            
+            // HAZ: Instead of new actions for each literal, we use non-det outcomes
+            //for( size_t n = 0; n < 2; ++n ) {
+            ostringstream s;
+            s << "sensor-" << r.name_->to_string() << "-obs" << obs;
+            Action &nact = new_action(new CopyName(s.str()), true);
 
-                // conditional effect
-                When c_eff;
-                c_eff.condition_.insert(common_condition.begin(), common_condition.end());
-                c_eff.condition_.insert(-(1 + 2*idx));
-                c_eff.condition_.insert(-(1 + 2*idx+1));
-                if( n == 0 ) {
-                    c_eff.effect_.insert(1 + 2*idx);
-                } else {
-                    c_eff.effect_.insert(1 + 2*idx+1);
-                }
+            // precondition
+            nact.precondition_.insert(common_condition.begin(), common_condition.end());
+            nact.precondition_.insert(-(1 + 2*idx));
+            nact.precondition_.insert(-(1 + 2*idx + 1));
+            
+            // effect
+            nact.effect_.insert(1 + 2*idx);
+            nact.effect_.insert(1 + 2*idx + 1);
+            
+            // conditional effect
+            //When c_eff;
+            //c_eff.condition_.insert(common_condition.begin(), common_condition.end());
+            //c_eff.condition_.insert(-(1 + 2*idx));
+            //c_eff.condition_.insert(-(1 + 2*idx+1));
+            
+            /*if( n == 0 ) {
+                c_eff.effect_.insert(1 + 2*idx);
+            } else {
+                c_eff.effect_.insert(1 + 2*idx+1);
+            }*/
 
-                // add conditional effect to rule
-                //obs_rules_by_name_[nact.name_->to_string()] = n_actions();
-                nact.when_.push_back(c_eff);
-                if( options_.is_enabled("kp:print:action:sensor") ) {
-                    nact.print(cout, *this);
-                }
-            }
+            // add conditional effect to rule
+            ////obs_rules_by_name_[nact.name_->to_string()] = n_actions();
+            //nact.when_.push_back(c_eff);
+            if( options_.is_enabled("kp:print:action:sensor") )
+                nact.print(cout, *this);
+            
+            //}
+            
             ++obs;
         }
     }
