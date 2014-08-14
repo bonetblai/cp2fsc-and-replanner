@@ -920,9 +920,9 @@ void Instance::Sensor::write(ostream &os, int indent, const Instance &instance) 
         for( index_set::const_iterator p = condition_.begin(); p != condition_.end(); ++p ) {
             int idx = (*p < 0 ? -*p : *p) - 1;
             if( *p < 0  )
-                os << " (not " << instance.atoms_[idx]->name_ << ")";
+                os << " (not (" << instance.atoms_[idx]->name_ << "))";
             else
-                os << " " << instance.atoms_[idx]->name_;
+                os << " (" << instance.atoms_[idx]->name_ << ")";
         }
         if( (condition_.size() > 1) || always_write_conjunction_ ) os << ")";
         os << endl;
