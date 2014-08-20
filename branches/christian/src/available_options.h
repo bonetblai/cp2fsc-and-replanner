@@ -102,6 +102,7 @@ const char *available_options[] = {
     "mvv:print:drule:sensing",             "[MVV] print deductive rules for sensing",
     "mvv:print:drule:static",              "[MVV] print deductive rules obtained from compilation of static sensing",
     "mvv:print:axioms",                    "[MVV] print axioms generated when compiling static observables",
+    "mvv:print:compiled-sensing-models",   "[MVV] print the compiled sensing models",
     "mvv:compile-static-observables",      "[MVV] compile the value of static observable fluents at init",
     "mvv:complete-effects",                "[MVV] complete effects for multivalued variables",
     "mvv:drule:type3",                     "[MVV] generate deductive rules for sensing of type 3",
