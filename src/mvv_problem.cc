@@ -28,7 +28,7 @@ static void mvv_extend_effect_with_ramifications_on_observables(int index,
     }
 }
 
-static void calculate_completion_with_variable(int literal, vector<int> &completion, const set<int> &var, const Instance &ins) {
+/*static void calculate_completion_with_variable(int literal, vector<int> &completion, const set<int> &var, const Instance &ins) {
     if( var.find(literal) != var.end() ) {
         //cout << "completion for literal=" << ins.atoms_[literal]->name_ << endl;
         for( index_set::const_iterator it = var.begin(); it != var.end(); ++it )
@@ -39,7 +39,7 @@ static void calculate_completion_with_variable(int literal, vector<int> &complet
 static void calculate_completion(int literal, vector<int> &completion, const vector<set<int> > &multivalued_variables, const Instance &ins) {
     for( size_t k = 0; k < multivalued_variables.size(); ++k )
         calculate_completion_with_variable(literal, completion, multivalued_variables[k], ins);
-}
+}*/
 
 MVV_Instance::MVV_Instance(const Instance &ins,
                            const PDDL_Base::variable_vec &multivalued_variables,
@@ -202,7 +202,7 @@ if( literal_index == -1 ) cout << "2: literal=" << (PDDL_Base::Atom&)literal << 
     cout << "num=" << init_.literals_.size() << endl;
 
     // add known literals in initial situation
-size_t BLAI = 0;
+//size_t BLAI = 0;
     for( size_t k = 0; k < ins.n_atoms(); ++k ) {
         const Atom &atom = *ins.atoms_[k];
         if( (init_.literals_.find(1 + 2*k) == init_.literals_.end()) &&
