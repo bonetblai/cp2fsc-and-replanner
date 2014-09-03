@@ -987,7 +987,7 @@ void PDDL_Base::mvv_create_sensors_for_atoms_old(const unsigned_atom_set &atoms)
             // insert sensor
             sensors_for_multivalued_variable_translation_.insert(make_pair(atom.to_string(atom.negated_, true), sensor));
             dom_sensors_.push_back(sensor);
-            if( options_.is_enabled("mvv:print:sensor") || options_.is_enabled("mvv:print:generated") )
+            if( options_.is_enabled("mvv:print:sensors") || options_.is_enabled("mvv:print:generated") )
                 cout << Utils::red() << *sensor << Utils::normal();
         }
     }
@@ -1013,6 +1013,8 @@ void PDDL_Base::mvv_create_sensors_for_atom(const Atom &atom, const Condition &c
                      << " isn't observable but its value " << atom << " is sensed"
                      << Utils::normal() << endl;
             }
+            
+            bool debug = false;
 
             // create sensor for each enabler
             ostringstream s;
@@ -1038,7 +1040,7 @@ void PDDL_Base::mvv_create_sensors_for_atom(const Atom &atom, const Condition &c
 
             // insert sensor
             dom_sensors_.push_back(sensor);
-            if( options_.is_enabled("mvv:print:sensor") || options_.is_enabled("mvv:print:generated") )
+            if( options_.is_enabled("mvv:print:sensors") || options_.is_enabled("mvv:print:generated") || debug )
                 cout << Utils::red() << *sensor << Utils::normal();
 
             // if this is a singleton variable, create a copy that sets values to false
@@ -1056,7 +1058,7 @@ void PDDL_Base::mvv_create_sensors_for_atom(const Atom &atom, const Condition &c
 
                 // insert sensor
                 dom_sensors_.push_back(sensor);
-                if( options_.is_enabled("mvv:print:sensor") || options_.is_enabled("mvv:print:generated") )
+                if( options_.is_enabled("mvv:print:sensors") || options_.is_enabled("mvv:print:generated") || debug )
                     cout << Utils::red() << *sensor << Utils::normal();
             }
         }
@@ -2078,7 +2080,7 @@ void PDDL_Base::mvv_compile_static_observable(const Atom &atom) {
             sensor->condition_ = create_condition(*it);
             sensor->sense_ = AtomicEffect(atom, atom.negated_).copy();
             dom_sensors_.push_back(sensor);
-            if( options_.is_enabled("mvv:print:sensor") || options_.is_enabled("mvv:print:generated") )
+            if( options_.is_enabled("mvv:print:sensors") || options_.is_enabled("mvv:print:generated") )
                 cout << Utils::cyan() << *sensor << Utils::normal();
 #else
             mvv_create_sensors_for_atom(atom, *it, index++);
