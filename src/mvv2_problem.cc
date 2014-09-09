@@ -190,8 +190,9 @@ if( atom_index == -1 ) continue;
     merge_drules();
 
     // create actions for sensors
-    for( size_t k = 0; k < ins.n_sensors(); ++k )
-        create_sensor(*ins.sensors_[k]);
+    assert (0 == ins.n_sensors() % 2);
+    for( size_t k = 0; k < ins.n_sensors(); k+=2 )
+        create_sensor(*ins.sensors_[k], *ins.sensors_[k+1]);
 
     // create new goal-achieving actions
     Action &goal_action = new_action(new CopyName("reach_new_goal_through_original_goal__"));
@@ -393,12 +394,16 @@ void MVV2_Instance::create_drule_for_atom(const Action &action) {
     drule_store_.insert(make_pair(nact->precondition_, nact));
 }
 
-void MVV2_Instance::create_sensor(const Sensor &sensor) {
-    assert(!sensor.sense_.empty());
-    assert(sensor.sense_.size() == 1);
+void MVV2_Instance::create_sensor(const Sensor &sensor_true, const Sensor &sensor_false) {
+    assert(!sensor_true.sense_.empty());
+    assert(!sensor_false.sense_.empty());
+    assert(sensor_true.sense_.size() == 1);
+    assert(sensor_false.sense_.size() == 1);
 
-    int sensed = *sensor.sense_.begin();
-    int sensed_index = sensed > 0 ? sensed - 1 : -sensed - 1;
+    int sensed = *sensor_true.sense_.begin();
+    assert(sensed > 0);
+    //int sensed_index = sensed > 0 ? sensed - 1 : -sensed - 1;
+    int sensed_index = sensed - 1;
 
     int varid = -1;
     for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
@@ -410,17 +415,32 @@ void MVV2_Instance::create_sensor(const Sensor &sensor) {
     }
     if( varid == -1 ) {
         cout << Utils::warning()
-             << "sensed value for '" << *sensor.name_ << "' doesn't correspond to any value"
+             << "sensed value for '" << *sensor_true.name_ << "' doesn't correspond to any value"
              << Utils::normal() << endl;
     }
 
-    Action &nact = new_action(new CopyName(strdup(sensor.name_->to_string().c_str())));
-    nact.effect_.insert(sensed > 0 ? 1 + 2*sensed_index : 1 + 2*sensed_index + 1);
-    for( index_set::const_iterator it = sensor.condition_.begin(); it != sensor.condition_.end(); ++it ) {
+    // HAZ: Clip off the '-true'
+    int name_length = sensor_true.name_->to_string().find("-true");
+    CopyName *newName = new CopyName(strdup(sensor_true.name_->to_string().substr(0, name_length).c_str()));
+    Action &nact = new_action(newName, true);
+    //Action &nact = new_action(new CopyName(strdup(sensor.name_->to_string().c_str())));
+    
+    nact.effect_.insert(1 + 2*sensed_index);
+    nact.effect_.insert(1 + 2*sensed_index + 1);
+    //nact.effect_.insert(sensed > 0 ? 1 + 2*sensed_index : 1 + 2*sensed_index + 1);
+    
+    for( index_set::const_iterator it = sensor_true.condition_.begin(); it != sensor_true.condition_.end(); ++it ) {
         int index = *it > 0 ? *it - 1 : -*it - 1;
         nact.precondition_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
     }
-    nact.precondition_.insert(sensed > 0 ? -(1 + 2*sensed_index + 1) : -(1 + 2*sensed_index));
+    for( index_set::const_iterator it = sensor_false.condition_.begin(); it != sensor_false.condition_.end(); ++it ) {
+        int index = *it > 0 ? *it - 1 : -*it - 1;
+        nact.precondition_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
+    }
+    
+    nact.precondition_.insert(-(1 + 2*sensed_index + 1));
+    nact.precondition_.insert(-(1 + 2*sensed_index));
+    //nact.precondition_.insert(sensed > 0 ? -(1 + 2*sensed_index + 1) : -(1 + 2*sensed_index));
 
     // complete condition with conditions on other values of the variable (if applicable)
     if( (sensed > 0) && (varid != -1) ) {

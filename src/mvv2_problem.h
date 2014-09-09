@@ -43,7 +43,7 @@ class MVV2_Instance : public KP_Instance {
     void create_drule_for_sensing(const Action &action);
     void create_drule_for_atom(const Action &action);
     void merge_drules();
-    void create_sensor(const Sensor &sensor);
+    void create_sensor(const Sensor &sensor_true, const Sensor &sensor_false);
     void perform_subgoaling();
 
     virtual void cross_reference();
