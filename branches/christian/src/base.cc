@@ -1044,7 +1044,10 @@ void PDDL_Base::mvv_create_sensors_for_atom(const Atom &atom, const Condition &c
                 cout << Utils::red() << *sensor << Utils::normal();
 
             // if this is a singleton variable, create a copy that sets values to false
-            if( var.grounded_values_.size() == 1 ) {
+            //
+            //  HAZ: Always creating the other sense, since I'm combining to a oneof clause later
+            //
+            if( true || var.grounded_values_.size() == 1 ) {
                 ostringstream s;
                 s << "sensor-for-" << var.print_name_ << "-" << atom.to_string(atom.negated_, true) << "-false";
                 if( sensor_index != -1 ) s << "-" << sensor_index;
