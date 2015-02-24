@@ -108,25 +108,10 @@ if( atom_index == -1 ) continue;
         const Atom &atom = *ins.atoms_[k];
         if( (init_.literals_.find(1 + 2*k) == init_.literals_.end()) &&
             (init_.literals_.find(1 + 2*k+1) == init_.literals_.end()) ) {
-            // check that atom does not appear in invariants
-            bool in_invariant = false;
-            for( size_t i = 0; !in_invariant && (i < ins.init_.invariants_.size()); ++i ) {
-                for( size_t j = 0; j < ins.init_.invariants_[i].size(); ++j ) {
-                    int lit = ins.init_.invariants_[i][j];
-                    if( (lit > 0) && ((int)atom.index_ == lit-1) ) {
-                        in_invariant = true;
-                        break;
-                    }
-                }
-            }
-
-            // if not in some invariant, add K_not_<atom> to init
-            if( !in_invariant ) {
-                cout << Utils::red() << "XXXXXX COMPLETION OF INIT is off!" << Utils::normal() << endl;
-                //init_.literals_.insert(1 + 2*k+1);
-                if( options_.is_enabled("kp:print:atom:init") ) {
-                    cout << "Atom " << atoms_[2*k+1]->name_ << " added to init" << endl;
-                }
+            cout << Utils::red() << "XXXXXX COMPLETION OF INIT is off!" << Utils::normal() << endl;
+            //init_.literals_.insert(1 + 2*k+1);
+            if( options_.is_enabled("kp:print:atom:init") ) {
+                cout << "Atom " << atoms_[2*k+1]->name_ << " added to init" << endl;
             }
         }
     }
