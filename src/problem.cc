@@ -885,8 +885,8 @@ void Instance::Sensor::print(ostream &os, const Instance &i) const {
     assert(!sense_.empty());
     os << "  sense:";
     for( index_set::const_iterator it = sense_.begin(); it != sense_.end(); ++it ) {
-        assert(*it >= 0);
-        os << " " << *it-1 << '.' << i.atoms_[*it-1]->name_;
+        int index = *it < 0 ? -*it - 1 : *it - 1;
+        os << " " << (*it < 0 ? "-" : "") << index << '.' << i.atoms_[index]->name_;
     }
     os << endl;
 }
@@ -926,8 +926,8 @@ void Instance::Sensor::write(ostream &os, int indent, const Instance &instance) 
     assert(!sense_.empty());
     os << istr << istr << ":sense";
     for( index_set::const_iterator it = sense_.begin(); it != sense_.end(); ++it ) {
-        assert(*it > 0);
-        os << " " << instance.atoms_[*it-1]->name_;
+        int index = *it < 0 ? -*it - 1 : *it - 1;
+        os << " " << (*it < 0 ? "-" : "") << index << '.' << instance.atoms_[index]->name_;
     }
     os << ")" << endl;
     delete[] istr;
