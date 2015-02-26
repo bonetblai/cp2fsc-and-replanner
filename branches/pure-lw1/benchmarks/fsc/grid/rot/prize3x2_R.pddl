@@ -1,0 +1,15 @@
+(define (problem prize3x2)
+  (:domain grid-R)
+  (:objects x1 x2 x3 - xpos y1 y2 - ypos)
+  (:init
+    (suc-x x1 x2) (suc-x x2 x3)
+    (suc-y y1 y2)
+    (top-row y2) (bottom-row y1) (leftmost-col x1) (rightmost-col x3)
+    (agent-x x1) (agent-y y1) (north)
+    (oneof (prize x1 y1) (prize x2 y1) (prize x3 y1)
+           (prize x1 y2) (prize x2 y2) (prize x3 y2)
+    )
+  )
+  (:goal (got-it))
+)
+

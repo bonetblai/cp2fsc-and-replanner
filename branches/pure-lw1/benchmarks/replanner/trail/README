@@ -1,0 +1,3 @@
+An agent must follow a trail of bits in a rectangular grid.
+The agent does not know the trail but it senses the bits
+surrounding it.
