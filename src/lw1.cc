@@ -6,6 +6,7 @@
 #include "parser.h"
 #include "state.h"
 #include "clg_problem.h"
+#include "lw1_problem.h"
 #include "solver.h"
 #include "options.h"
 #include "available_options.h"
@@ -69,6 +70,7 @@ int main(int argc, char *argv[]) {
     float       start_time = Utils::read_time_in_seconds();
     string      opt_planner_path = "";
     string      opt_tmpfile_path = "";
+    bool        opt_strict_lw1 = false;
 
     // initialize options
     for( const char **opt = &available_options[0]; *opt != 0; ++opt ) {
@@ -80,6 +82,7 @@ int main(int argc, char *argv[]) {
     // set default options
     options.enable("planner:remove-intermediate-files");
     options.enable("problem:action-compilation");
+    options.enable("lw1:compile-static-observables");
     options.enable("kp:merge-drules");
 
     // check correct number of parameters
@@ -120,6 +123,8 @@ int main(int argc, char *argv[]) {
             opt_planner = argv[++k];
         } else if( !skip_options && !strcmp(argv[k], "--planner-path") ) {
             opt_planner_path = argv[++k];
+        } else if( !skip_options && !strcmp(argv[k], "--strict-lw1") ) {
+            opt_strict_lw1 = true;
         } else if( !skip_options && !strcmp(argv[k], "--tmpfile-path") ) {
             opt_tmpfile_path = argv[++k];
         } else if( !skip_options && !strncmp(argv[k], "--options=", 10) ) {
@@ -159,14 +164,15 @@ int main(int argc, char *argv[]) {
     }
 
     // perform necessary translations
-    reader->do_translation();
+    const PDDL_Base::variable_vec *multivalued_variables = 0;
+    reader->do_lw1_translation(opt_strict_lw1, multivalued_variables);
     if( options.is_enabled("parser:print:translated") ) {
         reader->print(cout);
     }
 
     // get translation type: 0=no translation, 1=clg, 2=lw1
     int translation_type = reader->get_translation_type();
-    assert(translation_type != 2);
+    assert(translation_type == 2);
 
     // create fresh instance
     Instance instance(options);
@@ -191,10 +197,9 @@ int main(int argc, char *argv[]) {
 
     cout << "creating KP translation..." << endl;
     KP_Instance *kp_instance = 0;
-    if( translation_type == 0 ) {
-        kp_instance = new Standard_KP_Instance(instance);
-    } else if( translation_type == 1 ) {
-        kp_instance = new CLG_Instance(instance);
+    if( translation_type == 2 ) {
+        assert(multivalued_variables != 0);
+        kp_instance = new LW1_Instance(instance, *multivalued_variables);
     }
     assert(kp_instance != 0);
 
