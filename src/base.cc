@@ -771,6 +771,7 @@ void PDDL_Base::lw1_translate(Action &action) {
         precondition.clear();
 
         // effects
+        // XXX: En la version pure-lw1, la siguiente linea deberia desabilitarse
         effect.push_back(reduced_sensing_model);
         effect.push_back(AtomicEffect(need_post).copy());                 // (need-post <param>)
         for( unsigned_atom_set::const_iterator it = sensed_atoms.begin(); it != sensed_atoms.end(); ++it ) {
