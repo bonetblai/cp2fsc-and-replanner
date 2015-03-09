@@ -512,7 +512,7 @@ void PDDL_Base::clg_translate(Action &action) {
     assert(!sensor->condition_->has_free_variables(sensor->param_));
     assert(!sensor->sense_->has_free_variables(sensor->param_));
     dom_sensors_.push_back(sensor);
-    if( options_.is_enabled("clg:print:sensor") || options_.is_enabled("clg:print:generated") )
+    if( options_.is_enabled("clg:print:sensors") || options_.is_enabled("clg:print:generated") )
         cout << Utils::red() << *sensor << Utils::normal();
 
     //
@@ -735,7 +735,7 @@ void PDDL_Base::lw1_translate(Action &action) {
                 const Atom& sensing_atom = *fetch_sensing_atom(*it);
                 effect.push_back(AtomicEffect(sensing_atom).copy());      // (sensing-<atom>)
                 xx_sensing_models_.push_back(AtomicEffect(*it).copy());
-//cout << Utils::yellow() << "XX0: sm=" << *xx_sensing_models_.back() << Utils::normal() << endl;
+//cout << Utils::yellow() << "XX0: action=" << action.print_name_ << ", sm=" << *xx_sensing_models_.back() << Utils::normal() << endl;
             }
         }
         assert(effect.is_grounded());
@@ -798,7 +798,7 @@ void PDDL_Base::lw1_translate(Action &action) {
         // store sensing model for generating invariants later
         sensing_models_.push_back(make_pair(new var_symbol_vec(action.param_), action.sensing_model_->copy_and_simplify()));
         xx_sensing_models_.push_back(action.sensing_model_->copy_and_simplify());
-//cout << Utils::yellow() << "XX1: sm=" << *xx_sensing_models_.back() << Utils::normal() << endl;
+//cout << Utils::yellow() << "XX1: action=" << action.print_name_ << ", sm=" << *xx_sensing_models_.back() << Utils::normal() << endl;
     }
 
     if( !need_effect_action && !need_set_sensing_action ) {
@@ -835,7 +835,7 @@ void PDDL_Base::lw1_translate(Action &action) {
         // store sensing model
         for( unsigned_atom_set::const_iterator it = sensed_atoms.begin(); it != sensed_atoms.end(); ++it ) {
             xx_sensing_models_.push_back(AtomicEffect(*it).copy());
-//cout << Utils::yellow()<< "XX2: sm=" << *xx_sensing_models_.back() << Utils::normal() << endl;
+//cout << Utils::yellow()<< "XX2: action=" << action.print_name_ << ", sm=" << *xx_sensing_models_.back() << Utils::normal() << endl;
 }
     }
 
@@ -891,7 +891,7 @@ void PDDL_Base::lw1_create_sensors_for_atom(const Atom &atom, const Condition &c
 
             // insert sensor
             dom_sensors_.push_back(sensor);
-            if( options_.is_enabled("lw1:print:sensor") || options_.is_enabled("lw1:print:generated") )
+            if( options_.is_enabled("lw1:print:sensors") || options_.is_enabled("lw1:print:generated") )
                 cout << Utils::red() << *sensor << Utils::normal();
 
             // if this is a singleton variable, create a copy that sets values to false
@@ -909,7 +909,7 @@ void PDDL_Base::lw1_create_sensors_for_atom(const Atom &atom, const Condition &c
 
                 // insert sensor
                 dom_sensors_.push_back(sensor);
-                if( options_.is_enabled("lw1:print:sensor") || options_.is_enabled("lw1:print:generated") )
+                if( options_.is_enabled("lw1:print:sensors") || options_.is_enabled("lw1:print:generated") )
                     cout << Utils::red() << *sensor << Utils::normal();
             }
         }
@@ -957,7 +957,6 @@ void PDDL_Base::lw1_create_post_action(const unsigned_atom_set &atoms) {
 }
 
 void PDDL_Base::lw1_create_deductive_rules_for_variables() {
-    if( !lw1_translation_ ) return;
     cout << Utils::blue() << "(lw1) creating deductive rules for multivalued variables..." << Utils::normal() << endl;
 
     for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
@@ -1057,6 +1056,8 @@ void PDDL_Base::lw1_index_sensing_models() {
 }
 
 void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
+    cout << Utils::blue() << "(lw1) creating deductive rules for sensing..." << Utils::normal() << endl;
+
     // first index the sensing models by sensed literals
     lw1_index_sensing_models();
 
