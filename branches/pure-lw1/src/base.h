@@ -12,6 +12,8 @@
 #include <set>
 #include <vector>
 
+#pragma GCC diagnostic ignored "-Wpragmas"
+
 class PDDL_Base {
   public:
     static bool write_warnings_;
@@ -90,6 +92,7 @@ class PDDL_Base {
         Atom(const Atom &atom, bool complemented = false)
           : pred_(atom.pred_), param_(atom.param_), negated_(complemented ? !atom.negated_ : atom.negated_) { }
         ~Atom() { /*delete pred_; for( size_t k = 0; k < param_.size(); ++k ) delete param_[k];*/ }
+        bool is_strongly_static(const PredicateSymbol &p) const;
         void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         Instance::Atom* find_prop(Instance &ins, bool negated, bool create) const;
         void emit(Instance &ins, index_set &atoms) const;
@@ -132,6 +135,8 @@ class PDDL_Base {
         virtual Condition* ground(bool clone_variables = false, bool negate = false, bool replace_static_values = true) const = 0;
         virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const = 0;
         virtual void extract_atoms(unsigned_atom_set &atoms) const = 0;
+        virtual bool is_dnf(bool positive = false) const = 0;
+        virtual bool is_term(bool positive = false) const = 0;
         virtual std::string to_string() const = 0;
         void print(std::ostream &os) const { os << to_string(); }
         Condition* copy_and_simplify(bool negate = false) const { return ground(false, negate, false); }
@@ -149,6 +154,8 @@ class PDDL_Base {
         virtual Condition* ground(bool clone_variables = false, bool negate = false, bool replace_static_values = true) const;
         virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const { return false; }
         virtual void extract_atoms(unsigned_atom_set &atoms) const { }
+        virtual bool is_dnf(bool positive = false) const { return false; }
+        virtual bool is_term(bool positive = false) const { return false; }
         virtual std::string to_string() const { return std::string(value_ ? "true" : "false"); }
     };
 
@@ -160,6 +167,8 @@ class PDDL_Base {
         virtual Condition* ground(bool clone_variables = false, bool negate = false, bool replace_static_values = true) const;
         virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const;
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
+        virtual bool is_dnf(bool positive = false) const { return is_term(positive); }
+        virtual bool is_term(bool positive = false) const { return !positive || !negated_; }
         virtual std::string to_string() const { return to_string(false, false); }
         std::string to_string(bool extra_negation, bool mangled) const { return Atom::to_string(extra_negation, mangled); }
         Condition *copy(bool clone_variables = false, bool negate = false, bool replace_static_values = false) const;
@@ -176,6 +185,8 @@ class PDDL_Base {
         virtual Condition* ground(bool clone_variables = false, bool negate = false, bool replace_static_values = true) const;
         virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const;
         virtual void extract_atoms(unsigned_atom_set &atoms) const { }
+        virtual bool is_dnf(bool positive = false) const { return false; }
+        virtual bool is_term(bool positive = false) const { return false; }
         virtual std::string to_string() const;
     };
 
@@ -188,6 +199,8 @@ class PDDL_Base {
         virtual Condition* ground(bool clone_variables = false, bool negate = false, bool replace_static_values = true) const;
         virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const;
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
+        virtual bool is_dnf(bool positive = false) const { return is_term(positive); }
+        virtual bool is_term(bool positive = false) const;
         virtual std::string to_string() const;
     };
 
@@ -200,6 +213,8 @@ class PDDL_Base {
         virtual Condition* ground(bool clone_variables = false, bool negate = false, bool replace_static_values = true) const;
         virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const;
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
+        virtual bool is_dnf(bool positive = false) const;
+        virtual bool is_term(bool positive = false) const { return false; }
         virtual std::string to_string() const;
     };
 
@@ -213,6 +228,8 @@ class PDDL_Base {
         virtual Condition* ground(bool clone_variables = false, bool negate = false, bool replace_static_values = true) const;
         virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const;
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
+        virtual bool is_dnf(bool positive = false) const { return false; }
+        virtual bool is_term(bool positive = false) const { return false; }
         virtual std::string to_string() const;
         mutable std::vector<bool> negate_stack_;
         mutable std::vector<bool> clone_variables_stack_;
@@ -229,6 +246,8 @@ class PDDL_Base {
         virtual Condition* ground(bool clone_variables = false, bool negate = false, bool replace_static_values = true) const;
         virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const;
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
+        virtual bool is_dnf(bool positive = false) const { return false; }
+        virtual bool is_term(bool positive = false) const { return false; }
         virtual std::string to_string() const;
         mutable std::vector<bool> negate_stack_;
         mutable std::vector<bool> clone_variables_stack_;
@@ -247,11 +266,8 @@ class PDDL_Base {
         virtual void emit(Instance &ins, index_set &eff, Instance::when_vec &when = dummy_when_vec_) const = 0;
         virtual Effect* ground(bool clone_variables = false, bool replace_static_values = true) const = 0;
         virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const = 0;
-        virtual bool is_strongly_static(const PredicateSymbol &pred) const = 0;
-        virtual void calculate_beams_for_variable(Variable &var, const atom_vec &context) const = 0;
+        virtual bool is_strongly_static(const PredicateSymbol &p) const = 0;
         virtual void extract_atoms(unsigned_atom_set &atoms, bool only_affected = false) const = 0;
-        virtual Effect* reduce_sensing_model(const unsigned_atom_set &atoms_to_remove) const = 0;
-        virtual void extract_sensing_model_for_atom(const Atom &atom, effect_list &sensing_models) const = 0;
         virtual std::string to_string() const = 0;
         void print(std::ostream &os) const { os << to_string(); }
         Effect* copy_and_simplify() const { return ground(false, false); }
@@ -265,11 +281,8 @@ class PDDL_Base {
         virtual void emit(Instance &ins, index_set &eff, Instance::when_vec &when = dummy_when_vec_) const { }
         virtual Effect* ground(bool clone_variables = false, bool replace_static_values = true) const { return 0; }
         virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const { return false; }
-        virtual bool is_strongly_static(const PredicateSymbol &pred) const { return true; }
-        virtual void calculate_beams_for_variable(Variable &var, const atom_vec &context) const { }
+        virtual bool is_strongly_static(const PredicateSymbol &p) const { return true; }
         virtual void extract_atoms(unsigned_atom_set &atoms, bool only_affected = false) const { }
-        virtual Effect* reduce_sensing_model(const unsigned_atom_set &atoms_to_remove) const { return 0; }
-        virtual void extract_sensing_model_for_atom(const Atom &atom, effect_list &sensing_models) const { }
         virtual std::string to_string() const { return std::string("<null>"); }
     };
 
@@ -280,11 +293,8 @@ class PDDL_Base {
         virtual void emit(Instance &ins, index_set &eff, Instance::when_vec &when = dummy_when_vec_) const;
         virtual Effect* ground(bool clone_variables = false, bool replace_static_values = true) const;
         virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const;
-        virtual bool is_strongly_static(const PredicateSymbol &pred) const;
-        virtual void calculate_beams_for_variable(Variable &var, const atom_vec &context) const;
+        virtual bool is_strongly_static(const PredicateSymbol &p) const;
         virtual void extract_atoms(unsigned_atom_set &atoms, bool only_affected = false) const;
-        virtual Effect* reduce_sensing_model(const unsigned_atom_set &atoms_to_remove) const;
-        virtual void extract_sensing_model_for_atom(const Atom &atom, effect_list &sensing_models) const;
         virtual std::string to_string() const { return to_string(false); }
         std::string to_string(bool mangled) const { return Atom::to_string(false, mangled); }
         AtomicEffect* negate() const { return copy(false, true); }
@@ -299,11 +309,8 @@ class PDDL_Base {
         virtual void emit(Instance &ins, index_set &eff, Instance::when_vec &when = dummy_when_vec_) const;
         virtual Effect* ground(bool clone_variables = false, bool replace_static_values = true) const;
         virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const;
-        virtual bool is_strongly_static(const PredicateSymbol &pred) const;
-        virtual void calculate_beams_for_variable(Variable &var, const atom_vec &context) const;
+        virtual bool is_strongly_static(const PredicateSymbol &p) const;
         virtual void extract_atoms(unsigned_atom_set &atoms, bool only_affected = false) const;
-        virtual Effect* reduce_sensing_model(const unsigned_atom_set &atoms_to_remove) const;
-        virtual void extract_sensing_model_for_atom(const Atom &atom, effect_list &sensing_models) const;
         virtual std::string to_string() const;
     };
 
@@ -317,11 +324,8 @@ class PDDL_Base {
         virtual void emit(Instance &ins, index_set &eff, Instance::when_vec &when = dummy_when_vec_) const;
         virtual Effect* ground(bool clone_variables = false, bool replace_static_values = true) const;
         virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const;
-        virtual bool is_strongly_static(const PredicateSymbol &pred) const;
-        virtual void calculate_beams_for_variable(Variable &var, const atom_vec &context) const;
+        virtual bool is_strongly_static(const PredicateSymbol &p) const;
         virtual void extract_atoms(unsigned_atom_set &atoms, bool only_affected = false) const;
-        virtual Effect* reduce_sensing_model(const unsigned_atom_set &atoms_to_remove) const;
-        virtual void extract_sensing_model_for_atom(const Atom &atom, effect_list &sensing_models) const;
         virtual std::string to_string() const;
     };
 
@@ -334,14 +338,125 @@ class PDDL_Base {
         virtual void process_instance() const;
         virtual Effect* ground(bool clone_variables = false, bool replace_static_values = true) const;
         virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const;
-        virtual bool is_strongly_static(const PredicateSymbol &pred) const;
-        virtual void calculate_beams_for_variable(Variable &var, const atom_vec &context) const;
+        virtual bool is_strongly_static(const PredicateSymbol &p) const;
         virtual void extract_atoms(unsigned_atom_set &atoms, bool only_affected = false) const;
-        virtual Effect* reduce_sensing_model(const unsigned_atom_set &atoms_to_remove) const;
-        virtual void extract_sensing_model_for_atom(const Atom &atom, effect_list &sensing_models) const;
         virtual std::string to_string() const;
         mutable std::vector<AndEffect*> result_stack_;
         mutable std::vector<bool> clone_variables_stack_;
+    };
+
+    struct StateVariable;
+    struct SensingModelForObservableVariable;
+
+    struct SensingModel {
+        virtual ~SensingModel() { }
+        virtual bool is_strongly_static(const PredicateSymbol &p) const = 0;
+        virtual SensingModel* ground(bool clone_variables = false, bool replace_static_values = true) const = 0;
+        virtual bool finish_grounding_and_verify(PDDL_Base *base) = 0;
+        virtual bool is_grounded() const = 0;
+        virtual SensingModel* reduce(const unsigned_atom_set &atoms_to_remove) const = 0;
+        virtual void extract_atoms(unsigned_atom_set &atoms, bool only_sensed_atoms = false, bool only_affected_atoms = false) const = 0;
+        virtual void extend_beam_for_variable(Variable &var) const = 0;
+        virtual void extract_sensing_model_for_atom(const Atom &atom, std::vector<const SensingModelForObservableVariable*> &models) const = 0;
+        virtual Effect* as_effect() const = 0;
+        virtual std::string to_string() const = 0;
+        void print(std::ostream &os) const { os << to_string(); }
+    };
+
+    struct SensingModelForStateVariable : public SensingModel {
+        std::string variable_name_;
+        const StateVariable *state_variable_;
+        symbol_vec param_;
+        bool finished_grounding_;
+        SensingModelForStateVariable(const StateVariable *state_variable = 0)
+          : state_variable_(state_variable), finished_grounding_(false) { }
+        virtual ~SensingModelForStateVariable() { }
+        virtual bool is_strongly_static(const PredicateSymbol &p) const { return true; }
+        virtual SensingModel* ground(bool clone_variables = false, bool replace_static_values = true) const;
+        virtual bool finish_grounding_and_verify(PDDL_Base *base);
+        virtual bool is_grounded() const { return true; }
+        virtual SensingModel* reduce(const unsigned_atom_set &atoms_to_remove) const;
+        virtual void extract_atoms(unsigned_atom_set &atoms, bool only_sensed_atoms = false, bool only_affected_atoms = false) const;
+        virtual void extend_beam_for_variable(Variable &var) const { }
+        virtual void extract_sensing_model_for_atom(const Atom &atom, std::vector<const SensingModelForObservableVariable*> &models) const { }
+        virtual Effect* as_effect() const { return new AndEffect; }
+        virtual std::string to_string() const;
+    };
+
+    struct SensingModelForObservableVariable : public SensingModel {
+        const Literal *literal_;
+        const Condition *dnf_;
+        SensingModelForObservableVariable(const Literal *literal = 0, const Condition *dnf = 0)
+          : literal_(literal), dnf_(dnf) { }
+        virtual ~SensingModelForObservableVariable() { delete literal_; delete dnf_; }
+        virtual bool is_strongly_static(const PredicateSymbol &p) const;
+        virtual SensingModel* ground(bool clone_variables = false, bool replace_static_values = true) const;
+        virtual bool finish_grounding_and_verify(PDDL_Base *base);
+        virtual bool is_grounded() const;
+        SensingModelForObservableVariable* copy_and_simplify() const {
+            return static_cast<SensingModelForObservableVariable*>(ground(false, false));
+        }
+        virtual SensingModel* reduce(const unsigned_atom_set &atoms_to_remove) const;
+        virtual void extract_atoms(unsigned_atom_set &atoms, bool only_sensed_atoms = false, bool only_affected_atoms = false) const;
+        void extend_beam_for_variable(Variable &var) const;
+        virtual void extract_sensing_model_for_atom(const Atom &atom, std::vector<const SensingModelForObservableVariable*> &models) const;
+        virtual Effect* as_effect() const;
+        virtual std::string to_string() const;
+    };
+
+    struct Sensing;
+    struct sensing_proxy_vec;
+
+    struct SensingProxy {
+        virtual ~SensingProxy() { }
+        virtual bool is_strongly_static(const PredicateSymbol &p) const = 0;
+        virtual Sensing* ground(bool clone_variables = false, bool replace_static_values = true) const = 0;
+        virtual std::string to_string() const = 0;
+        void print(std::ostream &os) const { os << to_string(); }
+    };
+
+    struct sensing_proxy_vec : public std::vector<const SensingProxy*> {
+        Sensing* ground(bool clone_variables = false, bool replace_static_values = true) const;
+        std::string to_string() const;
+        void print(std::ostream &os) const { os << to_string(); }
+    };
+
+    struct BasicSensingModel : public SensingProxy {
+        const SensingModel *sensing_model_;
+        BasicSensingModel(const SensingModel *sensing_model = 0) : sensing_model_(sensing_model) { }
+        virtual ~BasicSensingModel() { delete sensing_model_; }
+        virtual bool is_strongly_static(const PredicateSymbol &p) const { return sensing_model_->is_strongly_static(p); }
+        virtual Sensing* ground(bool clone_variables = false, bool replace_static_values = true) const;
+        virtual std::string to_string() const { return sensing_model_->to_string(); }
+    };
+
+    struct ForallSensing : public SensingProxy, Schema {
+        sensing_proxy_vec sensing_;
+        ForallSensing() { }
+        virtual ~ForallSensing() { }
+        virtual bool is_strongly_static(const PredicateSymbol &p) const;
+        virtual Sensing* ground(bool clone_variables = false, bool replace_static_values = true) const;
+        virtual std::string to_string() const;
+        virtual void process_instance() const;
+        mutable std::vector<bool> clone_variables_stack_;
+        mutable std::vector<bool> replace_static_values_stack_;
+        mutable std::vector<Sensing*> result_stack_;
+    };
+
+    struct Sensing : public std::vector<const SensingModel*> {
+        bool is_strongly_static(const PredicateSymbol &p) const;
+        Sensing* ground(bool clone_variables = false, bool replace_static_values = true) const;
+        bool finish_grounding_and_verify(PDDL_Base *base);
+        bool is_grounded() const;
+        Sensing* copy_and_simplify() const { return ground(false, false); }
+        Sensing* reduce(const unsigned_atom_set &atoms_to_remove) const;
+        void extract_atoms(unsigned_atom_set &atoms, bool only_sensed_atoms = false, bool only_affected_atoms = false) const;
+        void extend_beam_for_variable(Variable &var) const;
+        void extract_sensing_model_for_atom(const Atom &atom, std::vector<const SensingModelForObservableVariable*> &models) const;
+        void emit(Instance &ins, index_set &eff, Instance::when_vec &when = dummy_when_vec_) const;
+        Effect* as_effect() const;
+        std::string to_string() const;
+        void print(std::ostream &os) const { os << to_string(); }
     };
 
     struct Invariant : public condition_vec, Schema {
@@ -398,7 +513,7 @@ class PDDL_Base {
         virtual ~InitElement() { }
         virtual void instantiate(init_element_list &ilist) const = 0;
         virtual void emit(Instance &ins) const = 0;
-        virtual bool is_strongly_static(const PredicateSymbol &pred) const = 0;
+        virtual bool is_strongly_static(const PredicateSymbol &p) const = 0;
         virtual void extract_atoms(unsigned_atom_set &atoms) const = 0;
         virtual void print(std::ostream &os) const = 0;
     };
@@ -409,7 +524,7 @@ class PDDL_Base {
         void emit(Instance &ins, Instance::Init &state) const;
         virtual void instantiate(init_element_list &ilist) const;
         virtual void emit(Instance &ins) const;
-        virtual bool is_strongly_static(const PredicateSymbol &pred) const;
+        virtual bool is_strongly_static(const PredicateSymbol &p) const;
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
         virtual void print(std::ostream &os) const { Atom::print(os); }
     };
@@ -419,7 +534,7 @@ class PDDL_Base {
         virtual ~InitInvariant() { }
         virtual void instantiate(init_element_list &ilist) const;
         virtual void emit(Instance &ins) const;
-        virtual bool is_strongly_static(const PredicateSymbol &pred) const;
+        virtual bool is_strongly_static(const PredicateSymbol &p) const;
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
         virtual void print(std::ostream &os) const { Invariant::print(os); }
     };
@@ -429,7 +544,7 @@ class PDDL_Base {
         virtual ~InitClause() { }
         virtual void instantiate(init_element_list &ilist) const;
         virtual void emit(Instance &ins) const;
-        virtual bool is_strongly_static(const PredicateSymbol &pred) const;
+        virtual bool is_strongly_static(const PredicateSymbol &p) const;
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
         virtual void print(std::ostream &os) const { Clause::print(os); }
         using Clause::emit;
@@ -440,7 +555,7 @@ class PDDL_Base {
         virtual ~InitOneof() { }
         virtual void instantiate(init_element_list &ilist) const;
         virtual void emit(Instance &ins) const;
-        virtual bool is_strongly_static(const PredicateSymbol &pred) const;
+        virtual bool is_strongly_static(const PredicateSymbol &p) const;
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
         virtual void print(std::ostream &os) const { Oneof::print(os); }
         using Oneof::emit;
@@ -451,7 +566,7 @@ class PDDL_Base {
         virtual ~InitUnknown() { }
         virtual void instantiate(init_element_list &ilist) const;
         virtual void emit(Instance &ins) const;
-        virtual bool is_strongly_static(const PredicateSymbol &pred) const;
+        virtual bool is_strongly_static(const PredicateSymbol &p) const;
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
         virtual void print(std::ostream &os) const { Unknown::print(os); }
         using Unknown::emit;
@@ -465,10 +580,12 @@ class PDDL_Base {
         const Condition *precondition_;
         const Effect *effect_;
         const Effect *observe_;
-        const Effect *sensing_model_;
+        const Sensing *sensing_;
+        const sensing_proxy_vec *sensing_proxy_;
         Action(const char *name)
-          : Symbol(name, sym_action), precondition_(0), effect_(0), observe_(0), sensing_model_(0) { }
-        virtual ~Action() { delete precondition_; delete effect_; delete observe_; delete sensing_model_; }
+          : Symbol(name, sym_action), precondition_(0), effect_(0), observe_(0),
+            sensing_(0), sensing_proxy_(0) { }
+        virtual ~Action() { delete precondition_; delete effect_; delete observe_; delete sensing_; }
         void instantiate(action_list &alist) const;
         void emit(Instance &ins) const;
         virtual void process_instance() const;
@@ -552,7 +669,10 @@ class PDDL_Base {
         virtual Variable* make_instance(const char *name) const = 0;
         virtual bool is_state_variable() const = 0;
         virtual bool is_observable_variable() const = 0;
-        virtual void print(std::ostream &os) const = 0;
+#pragma GCC diagnostic ignored "-Woverloaded-virtual"
+        virtual std::string to_string(bool only_name = false, bool cat = false) const = 0;
+#pragma GCC diagnostic warning "-Woverloaded-virtual"
+        virtual void print(std::ostream &os) const { os << to_string(); }
         mutable variable_vec *grounded_variables_ptr_;
         mutable variable_list *variable_list_ptr_;
     };
@@ -564,7 +684,7 @@ class PDDL_Base {
         virtual Variable* make_instance(const char *name) const { return new StateVariable(name, is_observable_); }
         virtual bool is_state_variable() const { return true; }
         virtual bool is_observable_variable() const { return is_observable_; }
-        virtual void print(std::ostream &os) const;
+        virtual std::string to_string(bool only_name = false, bool cat = false) const;
     };
 
     struct ObsVariable : public Variable {
@@ -573,7 +693,7 @@ class PDDL_Base {
         virtual Variable* make_instance(const char *name) const { return new ObsVariable(name); }
         virtual bool is_state_variable() const { return false; }
         virtual bool is_observable_variable() const { return true; }
-        virtual void print(std::ostream &os) const;
+        virtual std::string to_string(bool only_name = false, bool cat = false) const;
     };
 
 
@@ -615,8 +735,6 @@ class PDDL_Base {
     // For multivalued variables formulations
     bool                                      lw1_translation_;
     variable_vec                              multivalued_variables_;
-    const Effect                              *default_sensing_model_;
-    std::vector<std::pair<const var_symbol_vec*, const Effect*> > sensing_models_;
     unsigned_atom_set                         observable_atoms_;
     unsigned_atom_set                         atoms_for_state_variables_;
     unsigned_atom_set                         static_observable_atoms_;
@@ -627,12 +745,13 @@ class PDDL_Base {
     std::map<std::string, const Atom*>        need_set_sensing_atoms_;
     std::map<unsigned_atom_set, const Atom*>  need_post_atoms_;
     std::map<std::string, const Atom*>        sensing_atoms_;
-    //std::map<std::pair<bool, Atom>, std::list<const And*> > sensing_models_for_atoms_;
-    //std::map<std::set<std::pair<bool, Atom> >, Atom*> atoms_for_terms_for_type3_drules_;
-    std::map<Atom, std::list<const And*> >    sensing_models_for_atoms_;
-    std::map<signed_atom_set, Atom*>          atoms_for_terms_for_type3_drules_;
+    std::map<signed_atom_set, Atom*>          atoms_for_terms_for_type3_sensing_drules_;
 
-    std::list<const Effect*>                  xx_sensing_models_;
+    const Sensing                             *default_sensing_;
+    const sensing_proxy_vec                   *default_sensing_proxy_;
+
+    std::map<Atom, std::map<const Action*, std::list<const And*> > > sensing_models_index_;
+    std::list<std::pair<const Action*, const Sensing*> > xx_sensing_models_;
 
     PDDL_Base(StringTable& t, const Options::Mode &options);
     ~PDDL_Base();
@@ -666,14 +785,17 @@ class PDDL_Base {
     void clg_translate(Action &action);
 
     // methods for formulations in terms of multivalued variables
-    void declare_multivalued_variable_translation();
+    void declare_lw1_translation();
     bool lw1_translation() const { return lw1_translation_; }
     void lw1_calculate_atoms_for_state_variables();
     void lw1_calculate_beams_for_grounded_observable_variables();
-    void lw1_calculate_beams_for_grounded(Variable &var);
+    void lw1_calculate_beam_for_grounded_variable(Variable &var);
     void lw1_translate_actions();
     void lw1_translate(Action &action);
     void lw1_create_post_action(const unsigned_atom_set &atoms);
+
+    // methods to handle sensing
+    void lw1_finish_grounding_of_sensing(const Sensing* &sensing);
 
     // methods to create deductive rules (for multivalued variables)
     void lw1_create_deductive_rules_for_variables();
@@ -681,7 +803,7 @@ class PDDL_Base {
     void lw1_create_deductive_rules_for_sensing();
 
     // methods to create type-3 deductive rules (for multivalued variables)
-    void lw1_create_type3_drules(const Atom &obs, const And &term, const std::list<const And*> &dnf, int index);
+    void lw1_create_type3_sensing_drules(const Atom &obs, const And &term, const std::list<const And*> &dnf, int index);
     const Atom& lw1_fetch_atom_for_negated_term(const And &term);
 
     // methods to create sensors (for multivalued variables)
@@ -699,6 +821,7 @@ class PDDL_Base {
     bool lw1_test_on_actions_for_static_observable(const signed_atom_set &condition, const Atom &atom) const;
     void lw1_remove_subsumed_conditions(std::set<signed_atom_set> &conditions) const;
     void lw1_compile_static_observable(const Atom &atom);
+    void lw1_add_axiom_for_static_observable(const Literal &literal, const Condition &condition);
 
     // methods to complete effects (for multivalued variables)
     void lw1_complete_effect_for_actions();
@@ -744,6 +867,26 @@ inline std::ostream& operator<<(std::ostream &os, const PDDL_Base::Condition &co
 
 inline std::ostream& operator<<(std::ostream &os, const PDDL_Base::Effect &effect) {
     effect.print(os);
+    return os;
+}
+
+inline std::ostream& operator<<(std::ostream &os, const PDDL_Base::SensingModel &sensing_model) {
+    sensing_model.print(os);
+    return os;
+}
+
+inline std::ostream& operator<<(std::ostream &os, const PDDL_Base::SensingProxy &sensing) {
+    sensing.print(os);
+    return os;
+}
+
+inline std::ostream& operator<<(std::ostream &os, const PDDL_Base::sensing_proxy_vec &sensing) {
+    sensing.print(os);
+    return os;
+}
+
+inline std::ostream& operator<<(std::ostream &os, const PDDL_Base::Sensing &sensing) {
+    sensing.print(os);
     return os;
 }
 

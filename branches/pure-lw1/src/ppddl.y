@@ -20,6 +20,7 @@
     std::vector<ForallEffect*> forall_effects_; \
     std::vector<ForallCondition*> forall_conditions_; \
     std::vector<ExistsCondition*> exists_conditions_; \
+    std::vector<ForallSensing*> forall_sensing_; \
     effect_vec *effect_vec_ptr_;
 
 %header{
@@ -31,78 +32,87 @@
 #include "utils.h"
 
 #pragma GCC diagnostic ignored "-Wpragmas"
-#pragma GCC diagnostic ignored "-Wdeprecated-writable-strings"
 #pragma GCC diagnostic ignored "-Wchar-subscripts"
-#pragma GCC diagnostic ignored "-Wwrite-strings"
-#pragma GCC diagnostic ignored "-Wuninitialized"
-#pragma GCC diagnostic ignored "-Wsign-compare"
+#pragma GCC diagnostic ignored "-Wc++11-compat-deprecated-writable-strings"
+//#pragma GCC diagnostic ignored "-Wdeprecated-writable-strings"
+//#pragma GCC diagnostic ignored "-Wwrite-strings"
+//#pragma GCC diagnostic ignored "-Wuninitialized"
+//#pragma GCC diagnostic ignored "-Wsign-compare"
 %}
 
 %union {
-    StringTable::Cell                 *sym;
-    PDDL_Base::VariableSymbol         *vsym;
-    PDDL_Base::Atom                   *atom;
-    PDDL_Base::symbol_vec             *param;
-    PDDL_Base::var_symbol_vec         *vparam;
-    PDDL_Base::condition_vec          *condition_vec;
-    PDDL_Base::effect_vec             *effect_vec;
-    const PDDL_Base::Condition        *condition;
-    const PDDL_Base::Effect           *effect;
-    const PDDL_Base::Invariant        *invariant;
-    const PDDL_Base::Clause           *clause;
-    const PDDL_Base::Oneof            *oneof;
-    const PDDL_Base::Unknown          *unknown;
-    const PDDL_Base::init_element_vec *ilist;
-    const PDDL_Base::InitElement      *ielem;
-    int                               ival;
+    StringTable::Cell                  *sym;
+    PDDL_Base::VariableSymbol          *vsym;
+    PDDL_Base::Atom                    *atom;
+    PDDL_Base::symbol_vec              *param;
+    PDDL_Base::var_symbol_vec          *vparam;
+    PDDL_Base::condition_vec           *condition_vec;
+    PDDL_Base::effect_vec              *effect_vec;
+    const PDDL_Base::Condition         *condition;
+    const PDDL_Base::Effect            *effect;
+    const PDDL_Base::Invariant         *invariant;
+    const PDDL_Base::Clause            *clause;
+    const PDDL_Base::Oneof             *oneof;
+    const PDDL_Base::Unknown           *unknown;
+    const PDDL_Base::init_element_vec  *ilist;
+    const PDDL_Base::InitElement       *ielem;
+    const PDDL_Base::SensingModel      *sensing_model;
+    const PDDL_Base::SensingProxy      *sensing_proxy;
+    const PDDL_Base::sensing_proxy_vec *sensing_proxy_list;
+    int                                ival;
 }
 
-%token                  TK_OPEN TK_CLOSE TK_OPEN_SQ TK_CLOSE_SQ TK_EQ TK_HYPHEN
+%token                        TK_OPEN TK_CLOSE TK_OPEN_SQ TK_CLOSE_SQ TK_EQ TK_HYPHEN
 
-%token <sym>            TK_NEW_SYMBOL TK_OBJ_SYMBOL TK_TYPE_SYMBOL TK_PRED_SYMBOL
-                        TK_VAR_SYMBOL TK_ACTION_SYMBOL TK_AXIOM_SYMBOL TK_SENSOR_SYMBOL
-                        TK_MISC_SYMBOL TK_KEYWORD TK_NEW_VAR_SYMBOL
-                        TK_VARNAME_SYMBOL
+%token <sym>                  TK_NEW_SYMBOL TK_OBJ_SYMBOL TK_TYPE_SYMBOL TK_PRED_SYMBOL
+                              TK_VAR_SYMBOL TK_ACTION_SYMBOL TK_AXIOM_SYMBOL TK_SENSOR_SYMBOL
+                              TK_MISC_SYMBOL TK_KEYWORD TK_NEW_VAR_SYMBOL
+                              TK_VARNAME_SYMBOL
 
-%token <ival>           TK_INT
+%token <ival>                 TK_INT
 
-%token                  KW_REQS KW_TRANSLATION
-                        KW_CONSTANTS KW_PREDS KW_TYPES KW_DEFINE KW_DOMAIN
-                        KW_ACTION KW_ARGS KW_PRE KW_EFFECT KW_AND
-                        KW_OR KW_EXISTS KW_FORALL KW_NOT KW_WHEN KW_ONEOF KW_UNKNOWN
-                        KW_PROBLEM KW_FORDOMAIN KW_OBJECTS KW_INIT KW_GOAL
-                        KW_SENSOR KW_SENSE KW_OBSERVE KW_AXIOM KW_COND KW_OBSERVABLE
-                        KW_BODY KW_HEAD KW_STICKY KW_FLUENTS KW_HIDDEN
-                        KW_INVARIANT KW_AT_LEAST_ONE KW_AT_MOST_ONE KW_EXACTLY_ONE
+%token                        KW_REQS KW_TRANSLATION
+                              KW_CONSTANTS KW_PREDS KW_TYPES KW_DEFINE KW_DOMAIN
+                              KW_ACTION KW_ARGS KW_PRE KW_EFFECT KW_AND
+                              KW_OR KW_EXISTS KW_FORALL KW_NOT KW_WHEN KW_ONEOF KW_UNKNOWN
+                              KW_PROBLEM KW_FORDOMAIN KW_OBJECTS KW_INIT KW_GOAL
+                              KW_SENSOR KW_SENSE KW_OBSERVE KW_AXIOM KW_COND KW_OBSERVABLE
+                              KW_BODY KW_HEAD KW_STICKY KW_FLUENTS KW_HIDDEN
+                              KW_INVARIANT KW_AT_LEAST_ONE KW_AT_MOST_ONE KW_EXACTLY_ONE
 
-%token                  KW_TRANSLATION
-                        KW_VARIABLE KW_OBS_VARIABLE KW_VALUES
-                        KW_SENSING_MODEL KW_DEFAULT_SENSING_MODEL
+%token                        KW_TRANSLATION
+                              KW_VARIABLE KW_OBS_VARIABLE KW_VALUES
+                              KW_SENSING KW_DEFAULT_SENSING KW_MODEL_FOR
 
-%type <vsym>            new_var_symbol
-%type <sym>             action_symbol any_symbol sensor_symbol axiom_symbol variable_symbol
-%type <param>           argument_list
-%type <vparam>          param_list typed_param_list untyped_param_list param_sym_list
+%type <vsym>                  new_var_symbol
+%type <sym>                   action_symbol any_symbol sensor_symbol axiom_symbol
+%type <param>                 argument_list
+%type <vparam>                param_list typed_param_list untyped_param_list param_sym_list
 
-%type <sym>             primitive_type
-%type <atom>            positive_literal negative_literal literal
-%type <condition_vec>   single_condition_list condition_list
-%type <condition>       condition single_condition and_condition or_condition
-%type <condition>       forall_condition exists_condition
-%type <condition>       goal_list single_goal
-%type <invariant>       invariant at_least_one_invariant at_most_one_invariant exactly_one_invariant
-%type <clause>          clause
-%type <oneof>           oneof
-%type <unknown>         unknown
-%type <effect_vec>      positive_atomic_effect_list atomic_effect_list action_effect_list
-%type <effect>          atomic_effect positive_atomic_effect
-%type <effect>          action_effect single_action_effect conditional_effect forall_effect
-%type <effect>          atomic_effect_kw_list
-%type <effect>          sensing_model fluent_decl
-%type <ilist>           init_elements
-%type <ielem>           single_init_element
+%type <sym>                   primitive_type
+%type <atom>                  positive_literal negative_literal literal
+%type <condition_vec>         single_condition_list condition_list
+%type <condition>             condition single_condition and_condition or_condition
+%type <condition>             forall_condition exists_condition
+%type <condition>             goal_list single_goal
+%type <invariant>             invariant at_least_one_invariant at_most_one_invariant exactly_one_invariant
+%type <clause>                clause
+%type <condition>             term
+%type <oneof>                 oneof
+%type <unknown>               unknown
+%type <effect_vec>            positive_atomic_effect_list atomic_effect_list action_effect_list
+%type <effect>                atomic_effect positive_atomic_effect
+%type <effect>                action_effect single_action_effect conditional_effect forall_effect
+%type <effect>                atomic_effect_kw_list
+%type <effect>                fluent_decl
+%type <ilist>                 init_elements
+%type <ielem>                 single_init_element
 
-%type <ival>            multivalued_variable_type
+%type <sensing_proxy_list>    sensing sensing_decl_list
+%type <sensing_proxy>         sensing_decl forall_sensing
+%type <sensing_model>         sensing_model
+
+%type <ival>                  multivalued_variable_type
 
 %start pddl_decls
 
@@ -128,7 +138,7 @@ domain_elements:
     | domain_elements domain_constants
     | domain_elements domain_predicates
     | domain_elements domain_schemas
-    | domain_elements domain_default_sensing_model
+    | domain_elements domain_default_sensing
     | /* empty */
     ;
  
@@ -148,11 +158,6 @@ any_symbol:
     | TK_AXIOM_SYMBOL { $$ = $1; }
     | TK_SENSOR_SYMBOL { $$ = $1; }
     | TK_MISC_SYMBOL { $$ = $1; }
-    ;
-
-variable_symbol:
-      TK_NEW_SYMBOL { $$ = $1; }
-    | TK_VARNAME_SYMBOL { $$ = $1; }
     ;
 
 action_symbol:
@@ -181,7 +186,7 @@ domain_requires:
     ;
 
 require_list:
-      require_list KW_TRANSLATION { declare_multivalued_variable_translation(); }
+      require_list KW_TRANSLATION { declare_lw1_translation(); }
     | require_list TK_KEYWORD
     | /* empty */
     ;
@@ -371,7 +376,7 @@ domain_schemas:
           }
       }
     | multivalued_variable_decl {
-          //declare_multivalued_variable_translation();
+          declare_lw1_translation();
           if( type_ == cp2fsc ) {
               log_error((char*)"':sensor' is not a valid element in cp2fsc.");
               yyerrok;
@@ -408,9 +413,9 @@ action_elements:
           dom_actions_.back()->observe_ = new AndEffect(*$3);
           delete $3;
       }
-    | action_elements KW_SENSING_MODEL sensing_model {
-          declare_multivalued_variable_translation();
-          dom_actions_.back()->sensing_model_ = $3;
+    | action_elements KW_SENSING sensing {
+          declare_lw1_translation();
+          dom_actions_.back()->sensing_proxy_ = $3;
       }
     | /* empty */
     ;
@@ -638,9 +643,77 @@ positive_atomic_effect:
       positive_literal { $$ = new AtomicEffect(*$1); delete $1; }
     ;
 
-sensing_model:
-      action_effect
+sensing:
+      sensing_decl_list
     | /* empty */ { $$ = 0; }
+    ;
+
+sensing_decl_list:
+      sensing_decl_list sensing_decl {
+          sensing_proxy_vec *list_sensing_proxy = const_cast<sensing_proxy_vec*>($1);
+          list_sensing_proxy->push_back($2);
+          $$ = list_sensing_proxy;
+      }
+    | sensing_decl {
+          sensing_proxy_vec *list_sensing_proxy = new sensing_proxy_vec;
+          list_sensing_proxy->push_back($1);
+          $$ = list_sensing_proxy;
+      }
+    ;
+
+sensing_decl:
+      sensing_model { $$ = new BasicSensingModel($1); }
+    | forall_sensing
+    ;
+   
+forall_sensing:
+      TK_OPEN KW_FORALL TK_OPEN {
+          forall_sensing_.push_back(new ForallSensing);
+      }
+      param_list TK_CLOSE {
+          forall_sensing_.back()->param_ = *$5;
+          delete $5;
+      }
+      sensing_decl_list TK_CLOSE {
+          forall_sensing_.back()->sensing_ = *$8;
+          clear_param(forall_sensing_.back()->param_);
+          $$ = forall_sensing_.back();
+          forall_sensing_.pop_back();
+      }
+    ;
+
+sensing_model:
+      TK_OPEN KW_MODEL_FOR TK_VARNAME_SYMBOL literal condition TK_CLOSE {
+          /* NEW_SENSING: need to verify that literal is value of value */
+          $$ = new SensingModelForObservableVariable(new Literal(*$4), $5);
+      }
+    | TK_OPEN KW_MODEL_FOR TK_OPEN TK_VARNAME_SYMBOL argument_list TK_CLOSE literal condition TK_CLOSE {
+          /* NEW_SENSING: need to verify that literal is value of value */
+          $$ = new SensingModelForObservableVariable(new Literal(*$7), $8);
+      }
+    | TK_OPEN KW_VARIABLE TK_VARNAME_SYMBOL TK_CLOSE {
+          assert(static_cast<Symbol*>($3->val)->sym_class_ == sym_varname);
+          const Variable *variable = static_cast<Variable*>($3->val);
+          assert(dynamic_cast<const StateVariable*>(variable) != 0);
+          $$ = new SensingModelForStateVariable(static_cast<const StateVariable*>(variable));
+      }
+    | TK_OPEN KW_VARIABLE TK_OPEN TK_VARNAME_SYMBOL argument_list TK_CLOSE TK_CLOSE {
+          assert(static_cast<Symbol*>($4->val)->sym_class_ == sym_varname);
+          const Variable *variable = static_cast<Variable*>($4->val);
+          assert(dynamic_cast<const StateVariable*>(variable) != 0);
+          SensingModelForStateVariable *sensing_model = new SensingModelForStateVariable(static_cast<const StateVariable*>(variable));
+          sensing_model->param_ = *$5;
+          delete $5;
+          $$ = sensing_model;
+      }
+    | TK_OPEN KW_VARIABLE error TK_CLOSE {
+          log_error((char*)"syntax error in sensing declaration for ':variable'");
+          yyerrok;
+      }
+    | TK_OPEN KW_MODEL_FOR error TK_CLOSE {
+          log_error((char*)"syntax error in sensing declaration for ':model-for'");
+          yyerrok;
+      }
     ;
 
 axiom_decl:
@@ -739,7 +812,7 @@ sticky_decl:
     ;
 
 multivalued_variable_decl:
-      TK_OPEN multivalued_variable_type variable_symbol {
+      TK_OPEN multivalued_variable_type TK_NEW_SYMBOL {
           Variable *var = 0;
           if( $2 == 0 )
               var = new StateVariable($3->text);
@@ -748,11 +821,10 @@ multivalued_variable_decl:
           multivalued_variables_.push_back(var);
           effect_vec_ptr_ = &var->values_;
       }
-      /*optional_variable_parameters fluent_list_decl rest_variable_decl TK_CLOSE*/
       fluent_list_decl TK_CLOSE {
           $3->val = multivalued_variables_.back();
       }
-    | TK_OPEN multivalued_variable_type TK_OPEN variable_symbol param_list TK_CLOSE {
+    | TK_OPEN multivalued_variable_type TK_OPEN TK_NEW_SYMBOL param_list TK_CLOSE {
           Variable *var = 0;
           if( $2 == 0 )
               var = new StateVariable($4->text);
@@ -763,7 +835,6 @@ multivalued_variable_decl:
           multivalued_variables_.push_back(var);
           effect_vec_ptr_ = &var->values_;
       }
-      /*fluent_list_decl rest_variable_decl TK_CLOSE*/
       fluent_list_decl TK_CLOSE {
           clear_param(multivalued_variables_.back()->param_);
           $4->val = multivalued_variables_.back();
@@ -779,28 +850,12 @@ multivalued_variable_type:
     | KW_OBS_VARIABLE { $$ = 1; }
     ;
 
-optional_variable_parameters:
-      KW_ARGS TK_OPEN param_list TK_CLOSE {
-          multivalued_variables_.back()->param_ = *$3;
-          delete $3;
-      }
-    | /* empty */
-    ;
-
-rest_variable_decl:
-      KW_OBSERVABLE {
-          assert(dynamic_cast<StateVariable*>(multivalued_variables_.back()) != 0);
-          dynamic_cast<StateVariable*>(multivalued_variables_.back())->is_observable_ = true;
-      }
-    | /* empty */
-    ;
-
 // default sensing declaration
 
-domain_default_sensing_model:
-      TK_OPEN KW_DEFAULT_SENSING_MODEL sensing_model TK_CLOSE {
-          declare_multivalued_variable_translation();
-          default_sensing_model_ = $3;
+domain_default_sensing:
+      TK_OPEN KW_DEFAULT_SENSING sensing TK_CLOSE {
+          declare_lw1_translation();
+          default_sensing_proxy_ = $3;
       }
     ;
 
@@ -929,6 +984,13 @@ invariant:
 clause:
       TK_OPEN KW_OR single_condition_list TK_CLOSE {
           $$ = new Clause(*$3);
+          delete $3;
+      }
+    ;
+
+term:
+      TK_OPEN KW_AND single_condition_list TK_CLOSE {
+          $$ = new And(*$3);
           delete $3;
       }
     ;

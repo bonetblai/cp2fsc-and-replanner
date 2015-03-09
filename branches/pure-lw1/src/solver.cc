@@ -225,7 +225,7 @@ void Solver::compute_and_add_observations(const State &hidden,
     for( size_t k = 0; k < instance_.n_sensors(); ++k ) {
         const Instance::Sensor &r = *instance_.sensors_[k];
         if( hidden.satisfy(r.condition_) ) {
-            // XXX: En la version pure-lwq, el valor de los literales observables
+            // PURE_LW1: En la version pure-lwq, el valor de los literales observables
             // se debe calcular aqui. Dicho valor se calculaba antes en la accion
             // set-sensing (ver comentario en base.cc).
             //
@@ -250,7 +250,7 @@ void Solver::compute_and_add_observations(const State &hidden,
     }
 
     // compute the deductive closure with respect to the invariants
-    // XXX: Se corre UR con lo observado y las formulas identificadas arriba.
+    // PURE_LW1: Se corre UR con lo observado y las formulas identificadas arriba.
     // Los literales (de estado) que sean inferidos por UR son agregados al
     // estado (que representa el belief state del agente)
     bool fix_point_reached = false;

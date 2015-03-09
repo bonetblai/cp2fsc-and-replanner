@@ -99,8 +99,9 @@ COMMENT ;.*$
 ":variable"                { return PDDL_Parser::KW_VARIABLE; }
 ":obs-variable"            { return PDDL_Parser::KW_OBS_VARIABLE; }
 ":values"                  { return PDDL_Parser::KW_VALUES; }
-":sensing-model"           { return PDDL_Parser::KW_SENSING_MODEL; }
-":default-sensing-model"   { return PDDL_Parser::KW_DEFAULT_SENSING_MODEL; }
+":sensing"                 { return PDDL_Parser::KW_SENSING; }
+":default-sensing"         { return PDDL_Parser::KW_DEFAULT_SENSING; }
+":model-for"               { return PDDL_Parser::KW_MODEL_FOR; }
 
 
 \?{STRING} { val.sym = _tab.inserta(yytext);
