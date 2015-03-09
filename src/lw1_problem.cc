@@ -105,7 +105,7 @@ if( atom_index == -1 ) continue;
 
     // add known literals in initial situation
     for( size_t k = 0; k < ins.n_atoms(); ++k ) {
-        const Atom &atom = *ins.atoms_[k];
+        //const Atom &atom = *ins.atoms_[k];
         if( (init_.literals_.find(1 + 2*k) == init_.literals_.end()) &&
             (init_.literals_.find(1 + 2*k+1) == init_.literals_.end()) ) {
             cout << Utils::red() << "XXXXXX COMPLETION OF INIT is off!" << Utils::normal() << endl;
