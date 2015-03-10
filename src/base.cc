@@ -853,13 +853,17 @@ void PDDL_Base::lw1_create_simple_sensors_for_atoms(const unsigned_atom_set &ato
 }
 
 void PDDL_Base::lw1_create_sensors_for_atom(const Atom &atom, const Condition &condition, int sensor_index) {
+    bool variable_found = false;
     for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
         const Variable &var = *multivalued_variables_[k];
         if( var.grounded_values_.find(atom) != var.grounded_values_.end() ) {
-            if( !var.is_observable_variable() ) {
-                cout << Utils::warning() << "variable " << var.print_name_
-                     << " isn't observable but its value " << atom << " is sensed" << endl;
-            }
+            if( !var.is_observable_variable() ) continue;
+            variable_found = true;
+
+            //if( !var.is_observable_variable() ) {
+            //    cout << Utils::warning() << "variable " << var.print_name_
+            //         << " isn't observable but its value " << atom << " is sensed" << endl;
+            //}
 
             // create sensor for each enabler
             ostringstream s;
@@ -888,7 +892,7 @@ void PDDL_Base::lw1_create_sensors_for_atom(const Atom &atom, const Condition &c
             if( options_.is_enabled("lw1:print:sensors") || options_.is_enabled("lw1:print:generated") )
                 cout << Utils::yellow() << *sensor << Utils::normal();
 
-            // if this is a singleton variable, create a copy that sets values to false
+            // if this is a singleton variable, create a copy that sets value to false
             if( var.grounded_values_.size() == 1 ) {
                 ostringstream s;
                 s << "sensor-for-" << var.to_string(true, true) << "-" << atom.to_string(atom.negated_, true) << "-false";
@@ -907,6 +911,11 @@ void PDDL_Base::lw1_create_sensors_for_atom(const Atom &atom, const Condition &c
                     cout << Utils::yellow() << *sensor << Utils::normal();
             }
         }
+    }
+
+    if( !variable_found ) {
+        cout << Utils::error() << "no observable variable found for (sensed) atom '"
+             << atom << "'; sensor not generated" << endl;
     }
 }
 
@@ -1011,9 +1020,9 @@ void PDDL_Base::lw1_index_sensing_models() {
                 const Literal &literal = *model.literal_;
                 const Condition *dnf = model.dnf_;
                 if( dynamic_cast<const Constant*>(dnf) != 0 ) {
+                    // nothing to do
                     const Constant *constant = static_cast<const Constant*>(dnf);
                     assert(constant->value_);
-                    // nothing to do
                 } else {
                     assert(dnf->is_dnf());
                     if( dynamic_cast<const Or*>(dnf) != 0 ) {
@@ -1027,7 +1036,7 @@ void PDDL_Base::lw1_index_sensing_models() {
                                 term->push_back(disjunct->copy_and_simplify());
                                 sensing_models_index_[literal][&action].push_back(term);
                             } else {
-                                //NEW_SENSING: cout << Utils::error() << "expecting dnf; got '" << *dnf_ << "'" << endl;
+                                cout << Utils::error() << "expecting dnf; got (type=1) '" << *dnf << "'" << endl;
                                 continue;
                             }
                         }
@@ -1038,7 +1047,7 @@ void PDDL_Base::lw1_index_sensing_models() {
                         term->push_back(dnf->copy_and_simplify());
                         sensing_models_index_[literal][&action].push_back(term);
                     } else {
-                        //NEW_SENSING: cout << Utils::error() << "expecting dnf; got '" << *dnf_ << "'" << endl;
+                        cout << Utils::error() << "expecting dnf; got (type=2) '" << *dnf << "'" << endl;
                         continue;
                     }
                 }
@@ -1495,7 +1504,7 @@ void PDDL_Base::lw1_compile_static_observable(const Atom &atom) {
             } else if( dynamic_cast<const Literal*>(dnf) != 0 ) {
                 lw1_add_axiom_for_static_observable(literal, *dnf);
             } else {
-                //NEW_SENSING: cout << Utils::error() << "expecting dnf; got '" << *dnf_ << "'" << endl;
+                cout << Utils::error() << "expecting dnf; got (type=3) '" << *dnf << "'" << endl;
             }
         }
         delete sensing_models[k];
@@ -2966,9 +2975,7 @@ bool PDDL_Base::SensingModelForObservableVariable::verify(const PDDL_Base *base)
     }
 
     // check format of DNF
-    if( dynamic_cast<const Constant*>(dnf_) != 0 ) {
-        return_value = static_cast<const Constant*>(dnf_)->value_; //NEW_SENSING
-    } else if( !dnf_->is_dnf() ) {
+    if( !dnf_->is_dnf() ) {
         cout << Utils::error() << "reduced formula '" << *dnf_
              << "' for model of '" << *(const Atom*)literal_ << "' isn't dnf!" << endl;
         return_value = false;
@@ -2988,6 +2995,11 @@ bool PDDL_Base::SensingModelForObservableVariable::is_grounded() const {
 
 PDDL_Base::SensingModel* PDDL_Base::SensingModelForObservableVariable::reduce(const unsigned_atom_set &atoms_to_remove) const {
     assert(literal_->is_grounded());
+    assert(dnf_->is_grounded());
+    if( dynamic_cast<const Constant*>(dnf_) != 0 ) {
+        const Constant *constant = static_cast<const Constant*>(dnf_);
+        assert(constant->value_);
+    }
     return atoms_to_remove.find(*literal_) != atoms_to_remove.end() ? 0 : copy_and_simplify();
 }
 
@@ -3023,8 +3035,10 @@ PDDL_Base::Effect* PDDL_Base::SensingModelForObservableVariable::as_effect() con
         conditions.push_back(dnf_->copy_and_simplify());
     } else if( dynamic_cast<const Literal*>(dnf_) != 0 ) {
         conditions.push_back(dnf_->copy_and_simplify());
+    } else if( dynamic_cast<const Constant*>(dnf_) != 0 ) {
+        assert(static_cast<const Constant*>(dnf_)->value_);
     } else {
-        //NEW_SENSING: cout << Utils::error() << "expecting dnf; got '" << *dnf_ << "'" << endl;
+        cout << Utils::error() << "expecting dnf; got (type=4) '" << *dnf_ << "'" << endl;
     }
     AndEffect *effect = new AndEffect;
     for( size_t k = 0; k < conditions.size(); ++k ) {
@@ -3173,7 +3187,6 @@ bool PDDL_Base::Sensing::finish_grounding(PDDL_Base *base) {
             verify = false;
         }
     }
-    *static_cast<vector<const SensingModel*>*>(this) = result;
 
     // verify that every value of sensed observable variable has a model
 
@@ -3181,9 +3194,9 @@ bool PDDL_Base::Sensing::finish_grounding(PDDL_Base *base) {
     set<const ObsVariable*> variables;
     map<string, set<string> > sensed_values_for_var;
     map<pair<string, string>, string> model_for_sensed_value_for_var;
-    for( size_t k = 0; k < size(); ++k ) {
-        if( dynamic_cast<const SensingModelForObservableVariable*>((*this)[k]) != 0 ) {
-            const SensingModelForObservableVariable *model = static_cast<const SensingModelForObservableVariable*>((*this)[k]);
+    for( size_t k = 0; k < result.size(); ++k ) {
+        if( dynamic_cast<const SensingModelForObservableVariable*>(result[k]) != 0 ) {
+            const SensingModelForObservableVariable *model = static_cast<const SensingModelForObservableVariable*>(result[k]);
             assert(model->variable_ != 0);
             const ObsVariable &var = *model->variable_;
             variables.insert(&var);
@@ -3223,7 +3236,25 @@ bool PDDL_Base::Sensing::finish_grounding(PDDL_Base *base) {
             }
         }
     }
-    
+
+    // 3. Remove models with 'false' dnf
+    for( int k = 0; k < (int)result.size(); ++k ) {
+        if( dynamic_cast<const SensingModelForObservableVariable*>(result[k]) != 0 ) {
+            const SensingModelForObservableVariable *model = static_cast<const SensingModelForObservableVariable*>(result[k]);
+            if( dynamic_cast<const Constant*>(model->dnf_) != 0 ) {
+                const Constant *constant = static_cast<const Constant*>(model->dnf_);
+                if( !constant->value_ ) {
+                    delete result[k];
+                    result[k] = result.back();
+                    result.pop_back();
+                    --k;
+                }
+            }
+        }
+    }
+
+    // set result and return    
+    *static_cast<vector<const SensingModel*>*>(this) = result;
     return verify;
 }
 
