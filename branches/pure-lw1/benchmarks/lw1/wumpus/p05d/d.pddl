@@ -25,12 +25,12 @@
     (:obs-variable (stench-var ?p - pos) (stench ?p))
 
     (:action start
-        :parameters (?i - pos)
-        :precondition (and (need-start) (at ?i))
+        :parameters (?j - pos)
+        :precondition (and (need-start) (at ?j))
         :effect (not (need-start))
         :sensing
-            (:model-for (stench-var ?i) (stench ?i) (exists (?p - pos) (and (adj ?i ?p) (wumpus-at ?p))))
-            (:model-for (stench-var ?i) (not (stench ?i)) (forall (?p - pos) (or (not (adj ?i ?p)) (not (wumpus-at ?p)))))
+            (:model-for (stench-var ?j) (stench ?j) (exists (?p - pos) (and (adj ?j ?p) (wumpus-at ?p))))
+            (:model-for (stench-var ?j) (not (stench ?j)) (forall (?p - pos) (or (not (adj ?j ?p)) (not (wumpus-at ?p)))))
     )
 
     (:action move

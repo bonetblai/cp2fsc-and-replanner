@@ -29,11 +29,25 @@
         :effect (not (need-start))
         :sensing
             (:model-for (stench-var ?j) (stench ?j) (exists (?p - pos) (and (adj ?j ?p) (wumpus-at ?p))))
-            (:model-for (stench-var ?j) (not (stench ?j)) (forall (?p - pos) (or (not (adj ?j ?p)) (not (wumpus-at ?p)))))
+            ;(:model-for (stench-var ?j) (not (stench ?j)) (forall (?p - pos) (or (not (adj ?j ?p)) (not (wumpus-at ?p)))))
+            (:model-for (stench-var ?j)
+                        (not (stench ?j))
+                        (exists (?p - pos) (and (not (adj ?j ?p)) (wumpus-at ?p)))
+            )
+
             (:model-for (breeze-var ?j) (breeze ?j) (exists (?p - pos) (and (adj ?j ?p) (pit-at ?p))))
-            (:model-for (breeze-var ?j) (not (breeze ?j)) (forall (?p - pos) (or (not (adj ?j ?p)) (not (pit-at ?p)))))
+            ;(:model-for (breeze-var ?j) (not (breeze ?j)) (forall (?p - pos) (or (not (adj ?j ?p)) (not (pit-at ?p)))))
+            (:model-for (breeze-var ?j)
+                        (not (breeze ?j))
+                        (exists (?p - pos) (and (not (adj ?j ?p)) (pit-at ?p)))
+            )
+
             (:model-for (glitter-var ?j) (glitter ?j) (gold-at ?j))
-            (:model-for (glitter-var ?j) (not (glitter ?j)) (not (gold-at ?j)))
+            ;(:model-for (glitter-var ?j) (not (glitter ?j)) (not (gold-at ?j)))
+            (:model-for (glitter-var ?j)
+                        (not (glitter ?j))
+                        (or (got-the-treasure) (exists (?p - pos) (and (not (= ?p ?j)) (gold-at ?p))))
+            )
     )
 
     (:action move
@@ -45,17 +59,31 @@
                 )
         :sensing
             (:model-for (stench-var ?j) (stench ?j) (exists (?p - pos) (and (adj ?j ?p) (wumpus-at ?p))))
-            (:model-for (stench-var ?j) (not (stench ?j)) (forall (?p - pos) (or (not (adj ?j ?p)) (not (wumpus-at ?p)))))
+            ;(:model-for (stench-var ?j) (not (stench ?j)) (forall (?p - pos) (or (not (adj ?j ?p)) (not (wumpus-at ?p)))))
+            (:model-for (stench-var ?j)
+                        (not (stench ?j))
+                        (exists (?p - pos) (and (not (adj ?j ?p)) (wumpus-at ?p)))
+            )
+
             (:model-for (breeze-var ?j) (breeze ?j) (exists (?p - pos) (and (adj ?j ?p) (pit-at ?p))))
-            (:model-for (breeze-var ?j) (not (breeze ?j)) (forall (?p - pos) (or (not (adj ?j ?p)) (not (pit-at ?p)))))
+            ;(:model-for (breeze-var ?j) (not (breeze ?j)) (forall (?p - pos) (or (not (adj ?j ?p)) (not (pit-at ?p)))))
+            (:model-for (breeze-var ?j)
+                        (not (breeze ?j))
+                        (exists (?p - pos) (and (not (adj ?j ?p)) (pit-at ?p)))
+            )
+
             (:model-for (glitter-var ?j) (glitter ?j) (gold-at ?j))
-            (:model-for (glitter-var ?j) (not (glitter ?j)) (not (gold-at ?j)))
+            ;(:model-for (glitter-var ?j) (not (glitter ?j)) (not (gold-at ?j)))
+            (:model-for (glitter-var ?j)
+                        (not (glitter ?j))
+                        (or (got-the-treasure) (exists (?p - pos) (and (not (= ?p ?j)) (gold-at ?p))))
+            )
     )
 
     (:action grab
         :parameters (?i - pos)
         :precondition (and (at ?i) (alive) (gold-at ?i))
-        :effect (and (got-the-treasure)); (not (gold-at ?i)))
+        :effect (and (got-the-treasure) (not (gold-at ?i)))
     )
 )
 
