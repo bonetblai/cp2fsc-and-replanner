@@ -154,7 +154,7 @@ class PDDL_Base {
         virtual Condition* ground(bool clone_variables = false, bool negate = false, bool replace_static_values = true) const;
         virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const { return false; }
         virtual void extract_atoms(unsigned_atom_set &atoms) const { }
-        virtual bool is_dnf(bool positive = false) const { return false; }
+        virtual bool is_dnf(bool positive = false) const { return true; }
         virtual bool is_term(bool positive = false) const { return false; }
         virtual std::string to_string() const { return std::string(value_ ? "true" : "false"); }
     };

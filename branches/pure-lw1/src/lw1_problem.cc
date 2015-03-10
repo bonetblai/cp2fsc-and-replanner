@@ -11,7 +11,7 @@ static int get_atom_index(const Instance &ins, string atom_name) {
         if( atom_name == ins.atoms_[k]->name_->to_string() )
             return k;
     }
-    cout << "GET FAILED: name=" << atom_name << endl;
+    cout << Utils::error() << "GET FAILED: name=" << atom_name << endl;
     return -1;
 }
 
