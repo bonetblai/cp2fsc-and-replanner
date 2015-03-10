@@ -345,6 +345,7 @@ class PDDL_Base {
         mutable std::vector<bool> clone_variables_stack_;
     };
 
+    struct ObsVariable;
     struct StateVariable;
     struct SensingModelForObservableVariable;
 
@@ -352,7 +353,8 @@ class PDDL_Base {
         virtual ~SensingModel() { }
         virtual bool is_strongly_static(const PredicateSymbol &p) const = 0;
         virtual SensingModel* ground(bool clone_variables = false, bool replace_static_values = true) const = 0;
-        virtual bool finish_grounding_and_verify(PDDL_Base *base) = 0;
+        virtual void finish_grounding(PDDL_Base *base) = 0;
+        virtual bool verify(const PDDL_Base *base) const = 0;
         virtual bool is_grounded() const = 0;
         virtual SensingModel* reduce(const unsigned_atom_set &atoms_to_remove) const = 0;
         virtual void extract_atoms(unsigned_atom_set &atoms, bool only_sensed_atoms = false, bool only_affected_atoms = false) const = 0;
@@ -365,15 +367,16 @@ class PDDL_Base {
 
     struct SensingModelForStateVariable : public SensingModel {
         std::string variable_name_;
-        const StateVariable *state_variable_;
+        const StateVariable *variable_;
         symbol_vec param_;
         bool finished_grounding_;
-        SensingModelForStateVariable(const StateVariable *state_variable = 0)
-          : state_variable_(state_variable), finished_grounding_(false) { }
+        SensingModelForStateVariable(const StateVariable *variable = 0)
+          : variable_(variable), finished_grounding_(false) { }
         virtual ~SensingModelForStateVariable() { }
         virtual bool is_strongly_static(const PredicateSymbol &p) const { return true; }
         virtual SensingModel* ground(bool clone_variables = false, bool replace_static_values = true) const;
-        virtual bool finish_grounding_and_verify(PDDL_Base *base);
+        virtual void finish_grounding(PDDL_Base *base);
+        virtual bool verify(const PDDL_Base *base) const;
         virtual bool is_grounded() const { return true; }
         virtual SensingModel* reduce(const unsigned_atom_set &atoms_to_remove) const;
         virtual void extract_atoms(unsigned_atom_set &atoms, bool only_sensed_atoms = false, bool only_affected_atoms = false) const;
@@ -384,14 +387,19 @@ class PDDL_Base {
     };
 
     struct SensingModelForObservableVariable : public SensingModel {
+        std::string variable_name_;
+        const ObsVariable *variable_;
+        symbol_vec param_;
+        bool finished_grounding_;
         const Literal *literal_;
         const Condition *dnf_;
-        SensingModelForObservableVariable(const Literal *literal = 0, const Condition *dnf = 0)
-          : literal_(literal), dnf_(dnf) { }
+        SensingModelForObservableVariable(const ObsVariable *variable = 0, const Literal *literal = 0, const Condition *dnf = 0)
+          : variable_(variable), finished_grounding_(false), literal_(literal), dnf_(dnf) { }
         virtual ~SensingModelForObservableVariable() { delete literal_; delete dnf_; }
         virtual bool is_strongly_static(const PredicateSymbol &p) const;
         virtual SensingModel* ground(bool clone_variables = false, bool replace_static_values = true) const;
-        virtual bool finish_grounding_and_verify(PDDL_Base *base);
+        virtual void finish_grounding(PDDL_Base *base);
+        virtual bool verify(const PDDL_Base *base) const;
         virtual bool is_grounded() const;
         SensingModelForObservableVariable* copy_and_simplify() const {
             return static_cast<SensingModelForObservableVariable*>(ground(false, false));
@@ -443,10 +451,20 @@ class PDDL_Base {
         mutable std::vector<Sensing*> result_stack_;
     };
 
+    struct SuchThatSensing : public SensingProxy {
+        const Condition *condition_;
+        sensing_proxy_vec sensing_;
+        SuchThatSensing(const Condition *condition) : condition_(condition) { }
+        virtual ~SuchThatSensing() { }
+        virtual bool is_strongly_static(const PredicateSymbol &p) const;
+        virtual Sensing* ground(bool clone_variables = false, bool replace_static_values = true) const;
+        virtual std::string to_string() const;
+    };
+
     struct Sensing : public std::vector<const SensingModel*> {
         bool is_strongly_static(const PredicateSymbol &p) const;
         Sensing* ground(bool clone_variables = false, bool replace_static_values = true) const;
-        bool finish_grounding_and_verify(PDDL_Base *base);
+        bool finish_grounding(PDDL_Base *base);
         bool is_grounded() const;
         Sensing* copy_and_simplify() const { return ground(false, false); }
         Sensing* reduce(const unsigned_atom_set &atoms_to_remove) const;

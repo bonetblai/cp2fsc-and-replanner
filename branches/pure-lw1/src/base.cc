@@ -952,7 +952,7 @@ void PDDL_Base::lw1_create_post_action(const unsigned_atom_set &atoms) {
 
 void PDDL_Base::lw1_finish_grounding_of_sensing(const Sensing* &sensing) {
     //cout << "GROUNDED (before finishing): " << *sensing << endl;
-    const_cast<Sensing*>(sensing)->finish_grounding_and_verify(this);
+    const_cast<Sensing*>(sensing)->finish_grounding(this);
     //cout << "GROUNDED (after finishing): " << *sensing << endl;
     if( sensing->empty() ) {
         delete sensing;
@@ -2832,35 +2832,41 @@ string PDDL_Base::ForallEffect::to_string() const {
 }
 
 PDDL_Base::SensingModel* PDDL_Base::SensingModelForStateVariable::ground(bool, bool) const {
+    // ground variable
     SensingModelForStateVariable *model = new SensingModelForStateVariable;
     if( !finished_grounding_ ) {
-        model->variable_name_ = string("(") + state_variable_->to_string(true, false);
+        model->variable_name_ = string("(") + variable_->to_string(true, false);
         for( size_t k = 0; k < param_.size(); ++k )
             model->variable_name_ += " " + param_[k]->to_string();
         model->variable_name_ += ")";
     } else {
-        model->state_variable_ = state_variable_;
+        model->variable_ = variable_;
         model->finished_grounding_ = true;
     }
     return model;
 }
 
-bool PDDL_Base::SensingModelForStateVariable::finish_grounding_and_verify(PDDL_Base *base) {
+void PDDL_Base::SensingModelForStateVariable::finish_grounding(PDDL_Base *base) {
+    // look for observable variable in base
     if( !finished_grounding_ ) {
         for( size_t k = 0; k < base->multivalued_variables_.size(); ++k ) {
             Variable &var = *base->multivalued_variables_[k];
             if( var.is_state_variable() && (variable_name_ == var.print_name_) ) {
-                StateVariable &state_var = *static_cast<StateVariable*>(&var);
-                state_var.is_observable_ = true;
-                state_variable_ = &state_var;
+                StateVariable &variable = *static_cast<StateVariable*>(&var);
+                variable.is_observable_ = true;
+                variable_ = &variable;
                 finished_grounding_ = true;
                 break;
             }
         }
         if( !finished_grounding_ )
-            cout << Utils::error() << "sensed variable '" << variable_name_ << "' not found" << endl;
+            cout << Utils::error() << "sensed state variable '" << variable_name_ << "' not found" << endl;
     }
-    return finished_grounding_;
+    finished_grounding_ = true;
+}
+
+bool PDDL_Base::SensingModelForStateVariable::verify(const PDDL_Base *base) const {
+    return variable_ != 0;
 }
 
 PDDL_Base::SensingModel* PDDL_Base::SensingModelForStateVariable::reduce(const unsigned_atom_set &atoms_to_remove) const {
@@ -2871,19 +2877,19 @@ void PDDL_Base::SensingModelForStateVariable::extract_atoms(unsigned_atom_set &a
     // \emptyset = affected \subset sensed = all = { all atoms in variable's domain }
     if( !only_affected_atoms ) {
         // include all atoms in variable domains
-        if( state_variable_ == 0 ) {
+        if( variable_ == 0 ) {
             cout << Utils::error() << "internal state variable is null. Look for previous error(s)." << endl;
             return;
         }
-        atoms.insert(state_variable_->grounded_values_.begin(), state_variable_->grounded_values_.end());
+        atoms.insert(variable_->grounded_values_.begin(), variable_->grounded_values_.end());
     }
 }
 
 string PDDL_Base::SensingModelForStateVariable::to_string() const {
-    if( state_variable_ == 0 )
+    if( variable_ == 0 )
         return string("[incomplete-grounding substitute variable '") + variable_name_ + "']";
     else
-        return string("(state-variable ") + state_variable_->print_name_ + ")";
+        return string("(state-variable ") + variable_->print_name_ + ")";
 }
 
 bool PDDL_Base::SensingModelForObservableVariable::is_strongly_static(const PredicateSymbol &p) const {
@@ -2891,7 +2897,19 @@ bool PDDL_Base::SensingModelForObservableVariable::is_strongly_static(const Pred
 }
 
 PDDL_Base::SensingModel* PDDL_Base::SensingModelForObservableVariable::ground(bool clone_variables, bool replace_static_values) const {
+    // ground variable
     SensingModelForObservableVariable *model = new SensingModelForObservableVariable;
+    if( !finished_grounding_ ) {
+        model->variable_name_ = string("(") + variable_->to_string(true, false);
+        for( size_t k = 0; k < param_.size(); ++k )
+            model->variable_name_ += " " + param_[k]->to_string();
+        model->variable_name_ += ")";
+    } else {
+        model->variable_ = variable_;
+        model->finished_grounding_ = true;
+    }
+
+    // ground literal and dnf
     Condition *grounded_literal = literal_->ground(clone_variables, false, replace_static_values);
     assert(dynamic_cast<Literal*>(grounded_literal) != 0);
     model->literal_ = static_cast<Literal*>(grounded_literal);
@@ -2900,20 +2918,68 @@ PDDL_Base::SensingModel* PDDL_Base::SensingModelForObservableVariable::ground(bo
     return model;
 }
 
-bool PDDL_Base::SensingModelForObservableVariable::finish_grounding_and_verify(PDDL_Base *base) {
+void PDDL_Base::SensingModelForObservableVariable::finish_grounding(PDDL_Base *base) {
+    // look for observable variable in base
+    if( !finished_grounding_ ) {
+        for( size_t k = 0; k < base->multivalued_variables_.size(); ++k ) {
+            Variable &var = *base->multivalued_variables_[k];
+            if( !var.is_state_variable() && (variable_name_ == var.print_name_) ) {
+                ObsVariable &variable = *static_cast<ObsVariable*>(&var);
+                variable_ = &variable;
+                finished_grounding_ = true;
+                break;
+            }
+        }
+        if( !finished_grounding_ )
+            cout << Utils::error() << "sensed observable variable '" << variable_name_ << "' not found" << endl;
+    }
+    finished_grounding_ = true;
+}
+
+bool PDDL_Base::SensingModelForObservableVariable::verify(const PDDL_Base *base) const {
+    bool return_value = variable_ != 0;
+
+    // check that literal is value of observable variable
+    if( variable_ != 0 ) {
+        string literal_name = literal_->to_string();
+        if( variable_->grounded_values_.size() == 1 ) {
+            const Atom &value = *variable_->grounded_values_.begin();
+            if( (value.to_string() != literal_name) && (string("(not ") + value.to_string() + ")" != literal_name) ) {
+                cout << Utils::error() << "value '" << literal_name
+                     << "' doesn't belong to domain of '" << *variable_ << "'" << endl;
+                return_value = false;
+            }
+        } else {
+            bool value_found = false;
+            for( unsigned_atom_set::const_iterator it = variable_->grounded_values_.begin(); it != variable_->grounded_values_.end(); ++it ) {
+                if( it->to_string() == literal_name ) {
+                    value_found = true;
+                    break;
+                }
+            }
+            if( !value_found ) {
+                cout << Utils::error() << "value '" << literal_name
+                     << "' doesn't belong to domain of '" << *variable_ << "'" << endl;
+                return_value = false;
+            }
+        }
+    }
+
+    // check format of DNF
     if( dynamic_cast<const Constant*>(dnf_) != 0 ) {
-        return static_cast<const Constant*>(dnf_)->value_; //NEW_SENSING
+        return_value = static_cast<const Constant*>(dnf_)->value_; //NEW_SENSING
     } else if( !dnf_->is_dnf() ) {
         cout << Utils::error() << "reduced formula '" << *dnf_
              << "' for model of '" << *(const Atom*)literal_ << "' isn't DNF!" << endl;
-        return false;
+        return_value = false;
     } else if( !dnf_->is_dnf(true) ) {
         cout << Utils::warning() << "reduced formula '" << *dnf_
              << "' for model of '" << *(const Atom*)literal_ << "' isn't a positive DNF!" << endl;
-        return true;
+        return_value = true;
     } else {
-        return true;
+        return_value = true;
     }
+    return return_value;
 }
 
 bool PDDL_Base::SensingModelForObservableVariable::is_grounded() const {
@@ -2971,7 +3037,8 @@ PDDL_Base::Effect* PDDL_Base::SensingModelForObservableVariable::as_effect() con
 
 string PDDL_Base::SensingModelForObservableVariable::to_string() const {
     string str("(model-for ");
-    str += literal_->to_string() + " " + dnf_->to_string() + ")";
+    str += variable_name_ == "" ? string("(null)") : variable_name_;
+    str += " " + literal_->to_string() + " " + dnf_->to_string() + ")";
     return str;
 }
 
@@ -3042,6 +3109,43 @@ std::string PDDL_Base::ForallSensing::to_string() const {
     return str + ")";
 }
 
+bool PDDL_Base::SuchThatSensing::is_strongly_static(const PredicateSymbol &p) const {
+    for( size_t k = 0; k < sensing_.size(); ++k ) {
+        if( !sensing_[k]->is_strongly_static(p) )
+            return false;
+    }
+    return true;
+}
+
+PDDL_Base::Sensing* PDDL_Base::SuchThatSensing::ground(bool clone_variables, bool replace_static_values) const {
+    Sensing *sensing = new Sensing;
+    Condition *condition = condition_->ground(clone_variables, false, replace_static_values);
+    if( dynamic_cast<const Constant*>(condition) != 0 ) {
+        const Constant *constant = static_cast<const Constant*>(condition);
+        if( constant->value_ ) {
+            Sensing *internal = sensing_.ground(clone_variables, replace_static_values);
+            if( internal != 0 ) {
+                for( size_t k = 0; k < internal->size(); ++k )
+                    sensing->push_back((*internal)[k]);
+                internal->clear();
+                delete internal;
+            }
+        }
+    } else {
+        cout << Utils::error() << "condition '" << *condition_
+             << "' must ground to constant value in (such-that ...) statement" << endl;
+    }
+    return sensing;
+}
+
+std::string PDDL_Base::SuchThatSensing::to_string() const {
+    string str("(such-that ");
+    str += condition_->to_string();
+    for( size_t k = 0; k < sensing_.size(); ++k )
+        str += " " + sensing_[k]->to_string();
+    return str + ")";
+}
+
 bool PDDL_Base::Sensing::is_strongly_static(const PredicateSymbol &p) const {
     for( size_t k = 0; k < size(); ++k ) {
         if( !(*this)[k]->is_strongly_static(p) )
@@ -3057,11 +3161,12 @@ PDDL_Base::Sensing* PDDL_Base::Sensing::ground(bool clone_variables, bool replac
     return grounded_sensing;
 }
 
-bool PDDL_Base::Sensing::finish_grounding_and_verify(PDDL_Base *base) {
+bool PDDL_Base::Sensing::finish_grounding(PDDL_Base *base) {
     bool verify = true;
     vector<const SensingModel*> result;
     for( size_t k = 0; k < size(); ++k ) {
-        if( const_cast<SensingModel*>((*this)[k])->finish_grounding_and_verify(base) ) {
+        const_cast<SensingModel*>((*this)[k])->finish_grounding(base);
+        if( (*this)[k]->verify(base) ) {
             result.push_back((*this)[k]);
         } else {
             delete (*this)[k];
@@ -3069,6 +3174,56 @@ bool PDDL_Base::Sensing::finish_grounding_and_verify(PDDL_Base *base) {
         }
     }
     *static_cast<vector<const SensingModel*>*>(this) = result;
+
+    // verify that every value of sensed observable variable has a model
+
+    // 1. Collect sensed observable variables
+    set<const ObsVariable*> variables;
+    map<string, set<string> > sensed_values_for_var;
+    map<pair<string, string>, string> model_for_sensed_value_for_var;
+    for( size_t k = 0; k < size(); ++k ) {
+        if( dynamic_cast<const SensingModelForObservableVariable*>((*this)[k]) != 0 ) {
+            const SensingModelForObservableVariable *model = static_cast<const SensingModelForObservableVariable*>((*this)[k]);
+            assert(model->variable_ != 0);
+            const ObsVariable &var = *model->variable_;
+            variables.insert(&var);
+            sensed_values_for_var[var.to_string()].insert(model->literal_->to_string());
+            model_for_sensed_value_for_var[make_pair(var.to_string(), model->literal_->to_string())] = model->dnf_->to_string();
+        }
+    }
+
+    // 2. Check that every value has a model
+    for( set<const ObsVariable*>::const_iterator it = variables.begin(); it != variables.end(); ++it ) {
+        const ObsVariable &var = **it;
+        string varname = var.to_string();
+        if( var.grounded_values_.size() == 1 ) {
+            string value = var.grounded_values_.begin()->to_string();
+            string not_value = string("(not ") + value + ")";
+            if( sensed_values_for_var[varname].find(value) == sensed_values_for_var[varname].end() ) {
+                map<pair<string, string>, string>::const_iterator it = model_for_sensed_value_for_var.find(make_pair(varname, not_value));
+                if( (it == model_for_sensed_value_for_var.end()) || (it->second != "true") ) {
+                    cout << Utils::error() << "no sensing model for value '" << value
+                         << "' of variable '" << var << "'" << endl;
+                }
+            }
+            if( sensed_values_for_var[varname].find(not_value) == sensed_values_for_var[varname].end() ) {
+                map<pair<string, string>, string>::const_iterator it = model_for_sensed_value_for_var.find(make_pair(varname, value));
+                if( (it == model_for_sensed_value_for_var.end()) || (it->second != "true") ) {
+                    cout << Utils::error() << "no sensing model for value '" << not_value
+                         << "' of variable '" << var << "'" << endl;
+                }
+            }
+        } else {
+            for( unsigned_atom_set::const_iterator jt = var.grounded_values_.begin(); jt != var.grounded_values_.end(); ++jt ) {
+                string value = jt->to_string();
+                if( sensed_values_for_var[varname].find(value) == sensed_values_for_var[varname].end() ) {
+                    cout << Utils::error() << "no sensing model for value '" << value
+                         << "' of variable '" << var << "'" << endl;
+                }
+            }
+        }
+    }
+    
     return verify;
 }
 

@@ -20,21 +20,12 @@
         :precondition (and (at ?i) (need-start))
         :effect (not (need-start))
         :sensing
-            (forall (?j - pos)
-                (:model-for
-                    obs-at ; BAD
-                    (obs ?j)
-                    (exists (?r - row ?c - col) (and (adj ?i ?j) (at-col ?c ?j) (at-row ?r ?i) (at-row ?r ?j) (opened ?j)))
+            (forall (?j - pos ?c - col)
+                (such-that
+                    (at-col ?c ?j)
+                    (:model-for (obs-at ?c) (obs ?j) (exists (?r - row) (and (adj ?i ?j) (at-row ?r ?i) (at-row ?r ?j) (opened ?j))))
                 )
             )
-            (forall (?j - pos)
-                (:model-for
-                    obs-at ; BAD
-                    (not (obs ?j))
-                    (exists (?r - row ?c - col) (and (adj ?i ?j) (at-col ?c ?j) (at-row ?r ?i) (at-row ?r ?j) (not (opened ?j))))
-                )
-            )
-            ;(forall (?j - pos ?r - row ?c - col) (:model-for (not (obs?j)) (and (adj ?i ?j) (at-col ?c ?j) (at-row ?r ?i) (at-row ?r ?j) (not (opened ?j)))))
     )
 
     (:action move
@@ -42,21 +33,12 @@
         :precondition (and (adj ?i ?j) (at ?i) (opened ?j) (not (need-start)))
         :effect (and (not (at ?i)) (at ?j)) 
         :sensing
-            (forall (?k - pos)
-                (:model-for
-                    obs-at ; BAD
-                    (obs ?k)
-                    (exists (?r - row ?c - col) (and (adj ?j ?k) (at-col ?c ?k) (at-row ?r ?j) (at-row ?r ?k) (opened ?k)))
+            (forall (?k - pos ?c - col)
+                (such-that
+                    (at-col ?c ?k)
+                    (:model-for (obs-at ?c) (obs ?k) (exists (?r - row) (and (adj ?j ?k) (at-row ?r ?j) (at-row ?r ?k) (opened ?k))))
                 )
             )
-            (forall (?k - pos)
-                (:model-for
-                    obs-at ; BAD
-                    (not (obs ?k))
-                    (exists (?r - row ?c - col) (and (adj ?j ?k) (at-col ?c ?k) (at-row ?r ?j) (at-row ?r ?k) (not (opened ?k))))
-                )
-            )
-            ;(forall (?k - pos ?r - row ?c - col) (:model-for (not (obs ?k)) (and (adj ?j ?k) (at-col ?c ?k) (at-row ?r ?j) (at-row ?r ?k) (not (opened ?k)))))
     )
 )
 

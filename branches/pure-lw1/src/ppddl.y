@@ -74,7 +74,7 @@
 %token                        KW_REQS KW_TRANSLATION
                               KW_CONSTANTS KW_PREDS KW_TYPES KW_DEFINE KW_DOMAIN
                               KW_ACTION KW_ARGS KW_PRE KW_EFFECT KW_AND
-                              KW_OR KW_EXISTS KW_FORALL KW_NOT KW_WHEN KW_ONEOF KW_UNKNOWN
+                              KW_OR KW_EXISTS KW_FORALL KW_SUCH_THAT KW_NOT KW_WHEN KW_ONEOF KW_UNKNOWN
                               KW_PROBLEM KW_FORDOMAIN KW_OBJECTS KW_INIT KW_GOAL
                               KW_SENSOR KW_SENSE KW_OBSERVE KW_AXIOM KW_COND KW_OBSERVABLE
                               KW_BODY KW_HEAD KW_STICKY KW_FLUENTS KW_HIDDEN
@@ -109,7 +109,7 @@
 %type <ielem>                 single_init_element
 
 %type <sensing_proxy_list>    sensing sensing_decl_list
-%type <sensing_proxy>         sensing_decl forall_sensing
+%type <sensing_proxy>         sensing_decl forall_sensing such_that_sensing
 %type <sensing_model>         sensing_model
 
 %type <ival>                  multivalued_variable_type
@@ -664,6 +664,7 @@ sensing_decl_list:
 sensing_decl:
       sensing_model { $$ = new BasicSensingModel($1); }
     | forall_sensing
+    | such_that_sensing
     ;
    
 forall_sensing:
@@ -676,20 +677,49 @@ forall_sensing:
       }
       sensing_decl_list TK_CLOSE {
           forall_sensing_.back()->sensing_ = *$8;
+          delete $8;
           clear_param(forall_sensing_.back()->param_);
           $$ = forall_sensing_.back();
           forall_sensing_.pop_back();
       }
     ;
 
+such_that_sensing:
+      TK_OPEN KW_SUCH_THAT condition sensing_decl_list TK_CLOSE {
+          SuchThatSensing *such_that_sensing = new SuchThatSensing($3);
+          such_that_sensing->sensing_ = *$4;
+          delete $4;
+          $$ = such_that_sensing;
+      }
+    ;
+
 sensing_model:
       TK_OPEN KW_MODEL_FOR TK_VARNAME_SYMBOL literal condition TK_CLOSE {
-          /* NEW_SENSING: need to verify that literal is value of value */
-          $$ = new SensingModelForObservableVariable(new Literal(*$4), $5);
+          assert(static_cast<Symbol*>($3->val)->sym_class_ == sym_varname);
+          const Variable *variable = static_cast<Variable*>($3->val);
+          if( dynamic_cast<const ObsVariable*>(variable) == 0 ) {
+              std::cout << Utils::error() << "sensing model can only be specified for observable variable" << std::endl;
+              $$ = 0;
+          } else {
+              const ObsVariable *obs_variable = static_cast<const ObsVariable*>(variable);
+              assert(dynamic_cast<const ObsVariable*>(variable) != 0);
+              $$ = new SensingModelForObservableVariable(obs_variable, new Literal(*$4), $5);
+          }
       }
     | TK_OPEN KW_MODEL_FOR TK_OPEN TK_VARNAME_SYMBOL argument_list TK_CLOSE literal condition TK_CLOSE {
-          /* NEW_SENSING: need to verify that literal is value of value */
-          $$ = new SensingModelForObservableVariable(new Literal(*$7), $8);
+          assert(static_cast<Symbol*>($4->val)->sym_class_ == sym_varname);
+          const Variable *variable = static_cast<Variable*>($4->val);
+          if( dynamic_cast<const ObsVariable*>(variable) == 0 ) {
+              std::cout << Utils::error() << "sensing model can only be specified for observable variable" << std::endl;
+              $$ = 0;
+          } else {
+              const ObsVariable *obs_variable = static_cast<const ObsVariable*>(variable);
+              assert(dynamic_cast<const ObsVariable*>(variable) != 0);
+              SensingModelForObservableVariable *model = new SensingModelForObservableVariable(obs_variable, new Literal(*$7), $8);
+              model->param_ = *$5;
+              delete $5;
+              $$ = model;
+          }
       }
     | TK_OPEN KW_VARIABLE TK_VARNAME_SYMBOL TK_CLOSE {
           assert(static_cast<Symbol*>($3->val)->sym_class_ == sym_varname);
@@ -701,10 +731,10 @@ sensing_model:
           assert(static_cast<Symbol*>($4->val)->sym_class_ == sym_varname);
           const Variable *variable = static_cast<Variable*>($4->val);
           assert(dynamic_cast<const StateVariable*>(variable) != 0);
-          SensingModelForStateVariable *sensing_model = new SensingModelForStateVariable(static_cast<const StateVariable*>(variable));
-          sensing_model->param_ = *$5;
+          SensingModelForStateVariable *model = new SensingModelForStateVariable(static_cast<const StateVariable*>(variable));
+          model->param_ = *$5;
           delete $5;
-          $$ = sensing_model;
+          $$ = model;
       }
     | TK_OPEN KW_VARIABLE error TK_CLOSE {
           log_error((char*)"syntax error in sensing declaration for ':variable'");
