@@ -1027,7 +1027,7 @@ void PDDL_Base::lw1_index_sensing_models() {
                                 term->push_back(disjunct->copy_and_simplify());
                                 sensing_models_index_[literal][&action].push_back(term);
                             } else {
-                                //NEW_SENSING: cout << Utils::error() << "formula '" << *dnf << "' is not in DNF!" << endl;
+                                //NEW_SENSING: cout << Utils::error() << "expecting dnf; got '" << *dnf_ << "'" << endl;
                                 continue;
                             }
                         }
@@ -1038,7 +1038,7 @@ void PDDL_Base::lw1_index_sensing_models() {
                         term->push_back(dnf->copy_and_simplify());
                         sensing_models_index_[literal][&action].push_back(term);
                     } else {
-                        //NEW_SENSING: cout << Utils::error() << "formula '" << *dnf << "' is not in DNF!" << endl;
+                        //NEW_SENSING: cout << Utils::error() << "expecting dnf; got '" << *dnf_ << "'" << endl;
                         continue;
                     }
                 }
@@ -1495,7 +1495,7 @@ void PDDL_Base::lw1_compile_static_observable(const Atom &atom) {
             } else if( dynamic_cast<const Literal*>(dnf) != 0 ) {
                 lw1_add_axiom_for_static_observable(literal, *dnf);
             } else {
-                //cout << Utils::error() << "formula '" << *dnf << "' is not in DNF!" << endl;
+                //NEW_SENSING: cout << Utils::error() << "expecting dnf; got '" << *dnf_ << "'" << endl;
             }
         }
         delete sensing_models[k];
@@ -2970,11 +2970,11 @@ bool PDDL_Base::SensingModelForObservableVariable::verify(const PDDL_Base *base)
         return_value = static_cast<const Constant*>(dnf_)->value_; //NEW_SENSING
     } else if( !dnf_->is_dnf() ) {
         cout << Utils::error() << "reduced formula '" << *dnf_
-             << "' for model of '" << *(const Atom*)literal_ << "' isn't DNF!" << endl;
+             << "' for model of '" << *(const Atom*)literal_ << "' isn't dnf!" << endl;
         return_value = false;
     } else if( !dnf_->is_dnf(true) ) {
-        cout << Utils::warning() << "reduced formula '" << *dnf_
-             << "' for model of '" << *(const Atom*)literal_ << "' isn't a positive DNF!" << endl;
+        cout << Utils::warning() << "reduced dnf '" << *dnf_
+             << "' for model of '" << *(const Atom*)literal_ << "' isn't positive!" << endl;
         return_value = true;
     } else {
         return_value = true;
@@ -3024,7 +3024,7 @@ PDDL_Base::Effect* PDDL_Base::SensingModelForObservableVariable::as_effect() con
     } else if( dynamic_cast<const Literal*>(dnf_) != 0 ) {
         conditions.push_back(dnf_->copy_and_simplify());
     } else {
-        //NEW_SENSING: cout << Utils::error() << "formula '" << *dnf_ << "' is not in DNF!" << endl;
+        //NEW_SENSING: cout << Utils::error() << "expecting dnf; got '" << *dnf_ << "'" << endl;
     }
     AndEffect *effect = new AndEffect;
     for( size_t k = 0; k < conditions.size(); ++k ) {
