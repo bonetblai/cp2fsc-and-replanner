@@ -28,6 +28,24 @@ static void lw1_extend_effect_with_ramifications_on_observables(int index,
     }
 }
 
+void LW1_Instance::Variable::print(ostream &os) const {
+    os << "Variable: name=" << name_
+       << ", is-state-var=" << is_state_variable_
+       << ", is-observable=" << is_observable_
+       << ", values={";
+    for( set<int>::const_iterator it = values_.begin(); it != values_.end(); ++it )
+        os << *it << ",";
+    os << "}"
+       << ", beams={";
+    for( map<int, index_set>::const_iterator it = beams_.begin(); it != beams_.end(); ++it ) {
+        os << it->first << "->{";
+        for( index_set::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt )
+            os << *jt << ",";
+        os << "},";
+    }
+    os << "}";
+}
+
 LW1_Instance::LW1_Instance(const Instance &ins, const PDDL_Base::variable_vec &multivalued_variables)
   : KP_Instance(ins.options_),
     n_standard_actions_(0),
@@ -57,32 +75,34 @@ LW1_Instance::LW1_Instance(const Instance &ins, const PDDL_Base::variable_vec &m
     for( size_t k = 0; k < multivalued_variables.size(); ++k ) {
         const PDDL_Base::Variable &var = *multivalued_variables[k];
         set<int> values;
+        map<int, index_set> beams;
         for( PDDL_Base::unsigned_atom_set::const_iterator it = var.grounded_values_.begin(); it != var.grounded_values_.end(); ++it ) {
             assert(!it->negated_);
             string atom_name = it->to_string(false, true);
             int atom_index = get_atom_index(ins, atom_name);
-if( atom_index == -1 ) continue;
-            assert(atom_index != -1);
+            if( atom_index == -1 ) {
+                cout << Utils::warning() << "no index for value '" << atom_name
+                     << "' of variable '" << var.print_name_ << "'. Continuing..." << endl;
+                continue;
+            } 
+
             values.insert(atom_index);
             if( var.is_observable_variable() ) {
-//cout << "obs-variable: atom=" << *it << ", name=" << atom_name << ", index=" << atom_index << endl;
                 observable_atoms_.insert(atom_index);
                 index_set beam;
-//if( var.beam_.find(*it) == var.beam_.end() ) continue;
-                assert(var.beam_.find(*it) != var.beam_.end());
+                if( var.beam_.find(*it) == var.beam_.end() ) continue;
                 const PDDL_Base::unsigned_atom_set &var_beam = var.beam_.find(*it)->second;
-//cout << "Beam for " << atom_name << ":";
                 for( PDDL_Base::unsigned_atom_set::const_iterator jt = var_beam.begin(); jt != var_beam.end(); ++jt ) {
                     int index = get_atom_index(ins, jt->to_string(jt->negated_, true));
                     assert(index != -1);
                     beam.insert(index);
-//cout << " " << *ins.atoms_[index]->name_;
                 }
-//cout << endl;
                 beams_for_observable_atoms_[atom_index] = beam;
+                beams[atom_index] = beam;
             }
         }
-        multivalued_variables_.push_back(make_pair(var.print_name_, values));
+        multivalued_variables_.push_back(new Variable(var.print_name_, var.is_observable_variable(), var.is_state_variable(), values, beams));
+        //multivalued_variables_.back()->print(cout); cout << endl;
     }
 
     // create K0 atoms
@@ -170,6 +190,36 @@ if( atom_index == -1 ) continue;
 
     // do subgoaling
     perform_subgoaling();
+
+    // create fixed set of clauses (variable domain axioms) for UP inference
+    if( options_.is_enabled("lw1:inference:up") ) {
+        for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
+            const Variable &var = *multivalued_variables_[k];
+            if( var.is_state_variable_ ) {
+                const set<int> &values = var.values_;
+                for( set<int>::const_iterator it = values.begin(); it != values.end(); ++it ) {
+                    vector<int> clause;
+                    clause.reserve(values.size());
+                    clause.push_back(1 + 2**it);
+                    for( set<int>::const_iterator jt = values.begin(); jt != values.end(); ++jt ) {
+                        if( jt != it ) clause.push_back(-(1 + 2**it+1));
+                    }
+                    clauses_for_axioms_.push_back(clause);
+                }
+                for( set<int>::const_iterator it = values.begin(); it != values.end(); ++it ) {
+                    for( set<int>::const_iterator jt = it; jt != values.end(); ++jt ) {
+                        if( jt != it ) {
+                            vector<int> clause;
+                            clause.reserve(2);
+                            clause.push_back(-(1 + 2**it));
+                            clause.push_back(1 + 2**jt+1);
+                            clauses_for_axioms_.push_back(clause);
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     // cross reference instance to compute how many rules of each type
     cross_reference();
@@ -365,8 +415,8 @@ void LW1_Instance::create_sensor(const Sensor &sensor) {
 
     int varid = -1;
     for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
-        const pair<string, set<int> > &var = multivalued_variables_[k];
-        if( var.second.find(sensed_index) != var.second.end() ) {
+        const Variable &var = *multivalued_variables_[k];
+        if( var.values_.find(sensed_index) != var.values_.end() ) {
             varid = k;
             break;
         }
@@ -387,8 +437,8 @@ void LW1_Instance::create_sensor(const Sensor &sensor) {
 
     // complete condition with conditions on other values of the variable (if applicable)
     if( (sensed > 0) && (varid != -1) ) {
-        const pair<string, set<int> > &var = multivalued_variables_[varid];
-        for( set<int>::const_iterator it = var.second.begin(); it != var.second.end(); ++it ) {
+        const Variable &var = *multivalued_variables_[varid];
+        for( set<int>::const_iterator it = var.values_.begin(); it != var.values_.end(); ++it ) {
             if( *it != sensed_index ) nact.precondition_.insert(-(1 + 2**it));
         }
     }
@@ -521,6 +571,7 @@ void LW1_Instance::print_stats(ostream &os) const {
        << ", #dules-for-sensing=" << n_drules_for_sensing_
        << ", #dules-for-atoms=" << n_drules_for_atoms_
        << ", #subgoaling-actions=" << n_subgoaling_actions_
+       << ", #clauses-for-axioms=" << clauses_for_axioms_.size()
        << endl;
 }
 

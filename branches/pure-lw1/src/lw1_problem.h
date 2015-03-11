@@ -3,6 +3,7 @@
 
 #include "kp_problem.h"
 #include "options.h"
+#include <iostream>
 #include <list>
 #include <map>
 #include <set>
@@ -27,10 +28,23 @@ class LW1_Instance : public KP_Instance {
     // for subgoaling
     std::vector<Atom*> atoms_for_unknown_observables_at_init_;
 
-    std::vector<std::pair<std::string, std::set<int> > > multivalued_variables_;
+    struct Variable {
+        std::string name_;
+        bool is_observable_;
+        bool is_state_variable_;
+        std::set<int> values_;
+        std::map<int, index_set> beams_;  // non-empty only for observable variables
+        Variable(const std::string &name, bool is_observable, bool is_state_variable, const std::set<int> &values, const std::map<int, index_set> &beams)
+            : name_(name), is_observable_(is_observable), is_state_variable_(is_state_variable), values_(values), beams_(beams) {
+        }
+        void print(std::ostream &os) const;
+    };
+
+    std::vector<Variable*> multivalued_variables_;
     std::multimap<index_set, const Action*> drule_store_;
     index_set observable_atoms_;
     std::map<int, index_set> beams_for_observable_atoms_;
+    std::vector<std::vector<int> > clauses_for_axioms_;
 
     LW1_Instance(const Instance &instance, const PDDL_Base::variable_vec &multivalued_variables);
     ~LW1_Instance();

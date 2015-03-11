@@ -1,6 +1,7 @@
 #include <iostream>
 #include "solver.h"
 #include "classical_planner.h"
+#include "lw1_problem.h"
 #include "utils.h"
 
 using namespace std;
@@ -249,21 +250,35 @@ void Solver::compute_and_add_observations(const State &hidden,
         }
     }
 
+    // TESTING
+    if( options_.is_enabled("lw1:inference:up") ) {
+        assert(dynamic_cast<const LW1_Instance*>(&kp_instance_) != 0);
+    }
+
 #if 0
     // compute deductive closure with respect to invariants (for K-replanner and clg)
     // and with respect to axioms and sensing clauses (for lw1)
     if( options_.is_enabled("lw1:inference:up") ) {
         // construct logical theory
+        assert(dynamic_cast<const LW1_Instance*>(&kp_instance_) != 0);
+        const LW1_Instance &lw1 = *static_cast<const LW1_Instance*>(&kp_instance_);
         Inference::Propositional::CNF cnf;
 
         // 1. Positive literals from state
         for( State::const_iterator it = state.begin(); it != state.end(); ++it ) {
-            Inference::Propositional::Clause clause;
-            clause.push_back(1 + *it); // NOTA: en implementacion de clause, 'push_back' es un 'insert'
-            cnf.push_back(clause);
+            Inference::Propositional::Clause cl;
+            cl.push_back(1 + *it); // NOTA: en implementacion de clause, 'push_back' es un 'insert'
+            cnf.push_back(cl);
         }
 
         // 2. Axioms: D'
+        for( vector<vector<int> >::const_iterator it = lw1.clauses_for_axioms_.begin(); it != lw1.clauses_for_axioms_.end(); ++it ) {
+            Inference::Propositional::Clause cl;
+            const vector<int> &clause = *it;
+            for( vector<int>::const_iterator jt = clause.begin(); jt != clause.end(); ++jt )
+                cl.push_back(*jt);
+            cnf.push_back(cl);
+        }
 
         // 3. Clauses from sensing models: K_o
 
