@@ -2,6 +2,7 @@
 #include <list>
 #include "cp_problem.h"
 #include "state.h"
+#include "utils.h"
 
 using namespace std;
 
@@ -56,7 +57,7 @@ CP_Instance::CP_Instance(const Instance &ins, size_t fsc_states,
     for( map<index_set, int>::const_iterator it = reachable_obs_.begin(); it != reachable_obs_.end(); ++it ) {
         for( map<index_set, int>::const_iterator jt = it; jt != reachable_obs_.end(); ++jt ) {
             if( (it != jt) && (it->first.contains(jt->first) || jt->first.contains(it->first)) ) {
-                cout << "warning: obs ";
+                cout << Utils::warning() << "obs ";
                 ins.write_atom_set(cout, it->first);
                 cout << " and ";
                 ins.write_atom_set(cout, jt->first);
@@ -341,7 +342,7 @@ void CP_Instance::remove_atoms(const bool_vec &set, index_vec &map) {
     for( std::map<index_set, int>::const_iterator it = reachable_obs_.begin(); it != reachable_obs_.end(); ++it ) {
         for( std::map<index_set, int>::const_iterator jt = it; jt != reachable_obs_.end(); ++jt ) {
             if( (it != jt) && (it->first.contains(jt->first) || jt->first.contains(it->first)) ) {
-                cout << "warning: obs ";
+                cout << Utils::warning() << "obs ";
                 write_atom_set(cout, it->first);
                 cout << " and ";
                 write_atom_set(cout, jt->first);
