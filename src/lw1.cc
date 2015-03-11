@@ -82,8 +82,9 @@ int main(int argc, char *argv[]) {
     // set default options
     options.enable("planner:remove-intermediate-files");
     options.enable("problem:action-compilation");
-    //options.enable("lw1:compile-static-observables");
     options.enable("kp:merge-drules");
+    //options.enable("lw1:compile-static-observables");
+    options.enable("lw1:inference:up");
 
     // check correct number of parameters
     const char *exec_name = argv[0];
