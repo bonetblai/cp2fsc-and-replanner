@@ -17,11 +17,11 @@
 
     (:variable agent-pos (forall (?p - pos) (at ?p)))
     (:variable gold-pos (got-the-treasure) (forall (?p - pos) (gold-at ?p)))
-    (:variable (wumpus-at-cell ?p - pos) (wumpus-at ?p))
-    ;;(:variable (pit-at-cell ?p - pos) (pit-at ?p))
-    (:obs-variable (stench-var ?p - pos) (stench ?p))
-    ;;(:obs-variable (breeze-var ?p - pos) (breeze ?p))
-    (:obs-variable (glitter-var ?p - pos) (glitter ?p))
+    (:variable (wumpus-at-cell ?p - pos) (wumpus-at ?p))                       ; binary variable
+    ;;(:variable (pit-at-cell ?p - pos) (pit-at ?p))                             ; binary variable
+    (:obs-variable (stench-var ?p - pos) (stench ?p))                          ; binary variable
+    ;;(:obs-variable (breeze-var ?p - pos) (breeze ?p))                          ; binary variable
+    (:obs-variable (glitter-var ?p - pos) (glitter ?p))                        ; binary variable
 
     (:action start
         :parameters (?j - pos)
@@ -33,7 +33,10 @@
             ;;(:model-for (breeze-var ?j) (breeze ?j) (exists (?p - pos) (and (adj ?j ?p) (pit-at ?p))))
             ;;(:model-for (breeze-var ?j) (not (breeze ?j)) (forall (?p - pos) (or (not (adj ?j ?p)) (not (pit-at ?p)))))
             (:model-for (glitter-var ?j) (glitter ?j) (gold-at ?j))
-            (:model-for (glitter-var ?j) (not (glitter ?j)) (not (gold-at ?j)))
+            (:model-for (glitter-var ?j)
+                        (not (glitter ?j))
+                        (or (got-the-treasure) (exists (?p - pos) (and (not (= ?p ?j)) (gold-at ?p))))
+            )
     )
 
     (:action move
@@ -49,13 +52,16 @@
             ;;(:model-for (breeze-var ?j) (breeze ?j) (exists (?p - pos) (and (adj ?j ?p) (pit-at ?p))))
             ;;(:model-for (breeze-var ?j) (not (breeze ?j)) (forall (?p - pos) (or (not (adj ?j ?p)) (not (pit-at ?p)))))
             (:model-for (glitter-var ?j) (glitter ?j) (gold-at ?j))
-            (:model-for (glitter-var ?j) (not (glitter ?j)) (not (gold-at ?j)))
+            (:model-for (glitter-var ?j)
+                        (not (glitter ?j))
+                        (or (got-the-treasure) (exists (?p - pos) (and (not (= ?p ?j)) (gold-at ?p))))
+            )
     )
 
     (:action grab
         :parameters (?i - pos)
         :precondition (and (at ?i) (alive) (gold-at ?i))
-        :effect (and (got-the-treasure)); (not (gold-at ?i)))
+        :effect (and (got-the-treasure) (not (gold-at ?i)))
     )
 )
 

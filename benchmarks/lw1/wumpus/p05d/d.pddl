@@ -22,7 +22,7 @@
     (:variable wumpus-1 (wumpus-at p2-3) (wumpus-at p3-2))
     (:variable wumpus-2 (wumpus-at p3-4) (wumpus-at p4-3))
     (:variable wumpus-3 (wumpus-at p4-5) (wumpus-at p5-4))
-    (:obs-variable (stench-var ?p - pos) (stench ?p))
+    (:obs-variable (stench-var ?p - pos) (stench ?p))          ; binary variable
 
     (:action start
         :parameters (?j - pos)
