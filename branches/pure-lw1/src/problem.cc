@@ -2,6 +2,7 @@
 #include <deque>
 #include "problem.h"
 #include "state.h"
+#include "utils.h"
 
 using namespace std;
 
@@ -487,7 +488,7 @@ void Instance::calculate_non_primitive_and_observable_fluents() {
     for( index_set::const_iterator it = given_observables_.begin(); it != given_observables_.end(); ++it ) {
         assert(*it > 0);
         if( non_primitive_fluents_.find(*it-1) == non_primitive_fluents_.end() ) {
-            cout << "warning: observable fluent '"
+            cout << Utils::warning() << "observable fluent '"
                  << atoms_[*it-1]->name_
                  << "' isn't non-primitive. Removing..." << endl;
             continue;

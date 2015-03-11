@@ -23,7 +23,7 @@ class Parser : public PDDL_Parser {
         int rv = yyparse();
         scanner.close_file();
         if( error_flag_ || (rv > 0) ) {
-            //std::cerr << "error: rv = " << rv << std::endl;
+            //std::cout << Utils::error() << "rv = " << rv << std::endl;
             exit(255);
         }
     }

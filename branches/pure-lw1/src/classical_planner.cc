@@ -671,13 +671,13 @@ int LAMA_Server_Planner::create_server_process(const char *base) const {
 
     // create pipes for redirection of stdin and stderr
     if( pipe(stdin_pipe_) < 0 ) {
-        perror("error: allocating pipe for child input redirect stdin");
+        perror((Utils::error() + "allocating pipe for child input redirect stdin").c_str());
         return -1;
     }
     if( pipe(stderr_pipe_) < 0 ) {
         close(stdin_pipe_[PIPE_READ]);
         close(stdin_pipe_[PIPE_WRITE]);
-        perror("error: allocating pipe for child output redirect of stderr");
+        perror((Utils::error() + "allocating pipe for child output redirect of stderr").c_str());
         return -1;
     }
 
@@ -688,11 +688,11 @@ int LAMA_Server_Planner::create_server_process(const char *base) const {
 
         // redirect stdin and stderr
         if( dup2(stdin_pipe_[PIPE_READ], STDIN_FILENO) == -1 ) {
-            perror("error: redirecting stdin");
+            perror((Utils::error() + "redirecting stdin").c_str());
             return -1;
         }
         if( dup2(stderr_pipe_[PIPE_WRITE], STDERR_FILENO) == -1 ) {
-            perror("error: redirecting stderr");
+            perror((Utils::error() + "redirecting stderr").c_str());
             return -1;
         }
 
@@ -714,7 +714,7 @@ int LAMA_Server_Planner::create_server_process(const char *base) const {
 
         // if we get here at all, an error occurred, but we are in the child
         // process, so just exit
-        perror("error: exec of the child process");
+        perror((Utils::error() + "exec of the child process").c_str());
         exit(status);
     } else if( child_pid_ > 0 ) {
         // we are in father process

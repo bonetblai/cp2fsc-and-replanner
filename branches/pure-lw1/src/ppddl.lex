@@ -42,11 +42,11 @@ COMMENT ;.*$
 [ \t]+                     ;
 ";".*\n                    { _line_no++;
                              if( _trace_line )
-                                 cerr << endl << "LINE: " << _line_no << endl;
+                                 cout << endl << "LINE: " << _line_no << endl;
                            }
 {NL}                       { _line_no++;
                              if( _trace_line )
-                                 cerr << endl << "LINE: " << _line_no << endl;
+                                 cout << endl << "LINE: " << _line_no << endl;
                            }
 
 "("                        { return PDDL_Parser::TK_OPEN; }
@@ -155,7 +155,7 @@ int yywrap() {
 void PDDL_Scanner::open_file(char* name, bool trace) {
     yyin = fopen(name, "r");
     if( !yyin ) {
-        cerr << "error: can't open " << name << endl;
+        cout << Utils::error() << "can't open " << name << endl;
         exit(255);
     }
     _filename = name;
