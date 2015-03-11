@@ -87,7 +87,7 @@ const char *available_options[] = {
     "clg:print:invariants:sensing",        "[CLG] print sensing invariants",
     "clg:print:invariants",                "[CLG] print all invariants",
 
-    // multivalued variable translation
+    // lw1 planner
     "lw1:print:observable-atoms",          "[LW1] print observable atoms",
     "lw1:print:atoms-for-state-variables", "[LW1] print atoms for state variables",
     "lw1:print:variables",                 "[LW1] print valued for instantiated variables",
@@ -103,9 +103,14 @@ const char *available_options[] = {
     "lw1:print:drule:static",              "[LW1] print deductive rules obtained from compilation of static sensing",
     "lw1:print:compiled-static-sensing",   "[LW1] print compiled static sensing models",
     "lw1:print:axioms",                    "[LW1] print axioms generated when compiling static observables",
+
+    "lw1:strict",                          "[LW1] strict compliance with lw1 specification",
     "lw1:compile-static-observables",      "[LW1] compile the value of static observable fluents at init",
     "lw1:complete-effects",                "[LW1] complete effects for multivalued variables",
     "lw1:drule:sensing:type3",             "[LW1] generate deductive rules for sensing of type 3",
+
+    "lw1:inference:up",                    "[LW1] uses unit resolution as inference mechanism",
+    "lw1:inference:up:1-lookahead",        "[LW1] uses unit resolution with 1-lookahead as inference mechanism",
 
     0
 };
