@@ -249,6 +249,53 @@ void Solver::compute_and_add_observations(const State &hidden,
         }
     }
 
+#if 0
+    // compute deductive closure with respect to invariants (for K-replanner and clg)
+    // and with respect to axioms and sensing clauses (for lw1)
+    if( options_.is_enabled("lw1:inference:up") ) {
+        // construct logical theory
+        Inference::Propositional::CNF cnf;
+
+        // 1. Positive literals from state
+        for( State::const_iterator it = state.begin(); it != state.end(); ++it ) {
+            Inference::Propositional::Clause clause;
+            clause.push_back(1 + *it); // NOTA: en implementacion de clause, 'push_back' es un 'insert'
+            cnf.push_back(clause);
+        }
+
+        // 2. Axioms: D'
+
+        // 3. Clauses from sensing models: K_o
+
+        // 4. Kept (extra) static clauses
+
+        // inference
+        Inference::Propositional::CNF result;
+        if( options_.is_enabled("lw1:inference:up:1-lookahead") ) {
+            cout << Utils::error() << "inference method 'lw1:inference:up:1-lookahead' not yet implemented" << endl;
+            exit(255);
+        } else {
+            Inference::Propositional::UnitPropagation up;
+            up.reduce(cnf, result);
+        }
+
+        // insert positive literals from result into state
+        for( size_t k = 0; k < result.size(); ++k ) {
+            const Inference::Propositional::Clause &clause = result[k];
+            if( clause.size() == 1 ) {
+                int literal = *clause.begin();
+                assert(literal != 0);
+                if( literal > 0 ) {
+                    state.add(literal - 1);
+                }
+            }
+        }
+    } else {
+        cout << Utils::error() << "unspecified inference method" << endl;
+        exit(255);
+    }
+#endif
+
     // compute the deductive closure with respect to the invariants
     // PURE_LW1: Se corre UR con lo observado y las formulas identificadas arriba.
     // Los literales (de estado) que sean inferidos por UR son agregados al
