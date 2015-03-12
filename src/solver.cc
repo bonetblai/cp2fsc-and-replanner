@@ -306,7 +306,7 @@ void Solver::compute_and_add_observations(const State &hidden,
             }
         }
     } else {
-        cout << Utils::error() << "unspecified inference method" << endl;
+        cout << Utils::error() << "unspecified inference method for lw1" << endl;
         exit(255);
     }
 #endif

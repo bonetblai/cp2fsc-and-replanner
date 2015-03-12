@@ -46,7 +46,9 @@ void LW1_Instance::Variable::print(ostream &os) const {
     os << "}";
 }
 
-LW1_Instance::LW1_Instance(const Instance &ins, const PDDL_Base::variable_vec &multivalued_variables)
+LW1_Instance::LW1_Instance(const Instance &ins,
+                           const PDDL_Base::variable_vec &multivalued_variables,
+                           const std::list<std::pair<const PDDL_Base::Action*, const PDDL_Base::Sensing*> > &sensing_models)
   : KP_Instance(ins.options_),
     n_standard_actions_(0),
     n_sensor_actions_(0),
@@ -81,8 +83,9 @@ LW1_Instance::LW1_Instance(const Instance &ins, const PDDL_Base::variable_vec &m
             string atom_name = it->to_string(false, true);
             int atom_index = get_atom_index(ins, atom_name);
             if( atom_index == -1 ) {
-                cout << Utils::warning() << "no index for value '" << atom_name
-                     << "' of variable '" << var.print_name_ << "'. Continuing..." << endl;
+                cout << Utils::warning() << "no index for value '"
+                     << var.print_name_ << ":" << atom_name
+                     << "'. Continuing..." << endl;
                 continue;
             } 
 
@@ -101,8 +104,104 @@ LW1_Instance::LW1_Instance(const Instance &ins, const PDDL_Base::variable_vec &m
                 beams[atom_index] = beam;
             }
         }
+        varmap_.insert(make_pair(var.print_name_, multivalued_variables_.size()));
         multivalued_variables_.push_back(new Variable(var.print_name_, var.is_observable_variable(), var.is_state_variable(), values, beams));
         //multivalued_variables_.back()->print(cout); cout << endl;
+    }
+
+    // extract sensing models
+    for( list<pair<const PDDL_Base::Action*, const PDDL_Base::Sensing*> >::const_iterator it = sensing_models.begin(); it != sensing_models.end(); ++it ) {
+        const PDDL_Base::Action &action = *it->first;
+        const PDDL_Base::Sensing &sensing = *it->second;
+        for( size_t k = 0; k < sensing.size(); ++k ) {
+            if( dynamic_cast<const PDDL_Base::SensingModelForObservableVariable*>(sensing[k]) != 0 ) {
+                const PDDL_Base::SensingModelForObservableVariable &model = *static_cast<const PDDL_Base::SensingModelForObservableVariable*>(sensing[k]);
+                assert(model.variable_ != 0);
+                string var_name = model.variable_->print_name_;
+                assert(varmap_.find(var_name) != varmap_.end());
+                int var_index = varmap_[var_name];
+                string atom_name = model.literal_->to_string(model.literal_->negated_, true);
+                int atom_index = get_atom_index(ins, atom_name);
+                if( atom_index == -1 ) {
+                    cout << Utils::warning() << "no index for value '"
+                         << var_name << ":" << atom_name
+                         << "'. Continuing..." << endl;
+                    continue;
+                }
+
+                assert(model.dnf_ != 0);
+                if( dynamic_cast<const PDDL_Base::Or*>(model.dnf_) != 0 ) {
+                    const PDDL_Base::Or &disjunction = *static_cast<const PDDL_Base::Or*>(model.dnf_);
+                    //cout << "DNF[1]=" << disjunction << endl;
+                    for( size_t j = 0; j < disjunction.size(); ++j ) {
+                        assert(disjunction[j] != 0);
+                        if( dynamic_cast<const PDDL_Base::And*>(disjunction[j]) != 0 ) {
+                            const PDDL_Base::And &term = *static_cast<const PDDL_Base::And*>(disjunction[j]);
+                            //cout << "Term[1]=" << term << endl;
+                            for( size_t i = 0; i < term.size(); ++i ) {
+                                if( dynamic_cast<const PDDL_Base::Literal*>(term[i]) != 0 ) {
+                                    const PDDL_Base::Literal &literal = *static_cast<const PDDL_Base::Literal*>(term[i]);
+                                    //cout << "Literal[1]=" << *(const PDDL_Base::Atom*)&literal << endl;
+                                    string name = literal.to_string(literal.negated_, true);
+                                    int index = get_atom_index(ins, name);
+                                    assert(index != -1);
+                                    // fill-in clause
+                                } else {
+                                    cout << Utils::error() << "formula '" << *disjunction[j]
+                                         << "' for model of '" << var_name << ":" << atom_name
+                                         << "' isn't a literal!" << endl;
+                                    continue;
+                                }
+                            }
+                        } else if( dynamic_cast<const PDDL_Base::Literal*>(disjunction[j]) != 0 ) {
+                            const PDDL_Base::Literal &literal = *static_cast<const PDDL_Base::Literal*>(disjunction[j]);
+                            //cout << "Literal[2]=" << *(const PDDL_Base::Atom*)&literal << endl;
+                            string name = literal.to_string(literal.negated_, true);
+                            int index = get_atom_index(ins, name);
+                            assert(index != -1);
+                            // fill-in unit clause
+                        } else {
+                            cout << Utils::error() << "formula '" << *disjunction[j]
+                                 << "' for model of '" << var_name << ":" << atom_name
+                                 << "' isn't a term!" << endl;
+                            continue;
+                        }
+                    }
+                } else if( dynamic_cast<const PDDL_Base::And*>(model.dnf_) != 0 ) {
+                    const PDDL_Base::And &term = *static_cast<const PDDL_Base::And*>(model.dnf_);
+                    //cout << "Term[2]=" << term << endl;
+                    for( size_t j = 0; j < term.size(); ++j ) {
+                        if( dynamic_cast<const PDDL_Base::Literal*>(term[j]) != 0 ) {
+                            const PDDL_Base::Literal &literal = *static_cast<const PDDL_Base::Literal*>(term[j]);
+                            //cout << "Literal[3]=" << *(const PDDL_Base::Atom*)&literal << endl;
+                            string name = literal.to_string(literal.negated_, true);
+                            int index = get_atom_index(ins, name);
+                            assert(index != -1);
+                            // fill-in clause
+                        } else {
+                            cout << Utils::error() << "formula '" << *term[j]
+                                 << "' for model of '" << var_name << ":" << atom_name
+                                 << "' isn't a literal!" << endl;
+                            continue;
+                        }
+                    }
+                } else if( dynamic_cast<const PDDL_Base::Literal*>(model.dnf_) != 0 ) {
+                    const PDDL_Base::Literal &literal = *static_cast<const PDDL_Base::Literal*>(model.dnf_);
+                    //cout << "Literal[4]=" << *(const PDDL_Base::Atom*)&literal << endl;
+                    string name = literal.to_string(literal.negated_, true);
+                    int index = get_atom_index(ins, name);
+                    assert(index != -1);
+                    // fill-in unit clause
+                } else if( dynamic_cast<const PDDL_Base::Constant*>(model.dnf_) != 0 ) {
+                    // nothing to do. Obviate formula
+                } else {
+                    cout << Utils::error() << "formula '" << *model.dnf_
+                         << "' for model of '" << var_name << ":" << atom_name
+                         << "' isn't dnf!" << endl;
+                    continue;
+                }
+            }
+        }
     }
 
     // create K0 atoms
@@ -221,9 +320,10 @@ LW1_Instance::LW1_Instance(const Instance &ins, const PDDL_Base::variable_vec &m
         }
     }
 
+    // store sensing models for each action
+
     // cross reference instance to compute how many rules of each type
     cross_reference();
-    print_stats(cout);
 }
 
 LW1_Instance::~LW1_Instance() {

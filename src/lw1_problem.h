@@ -40,13 +40,21 @@ class LW1_Instance : public KP_Instance {
         void print(std::ostream &os) const;
     };
 
+    // lw1 variables and sensing models.
+    // Sensing models are indexed by (action-name, (var-index, value-index)) and return DNF
+    std::map<std::string, int> varmap_;
     std::vector<Variable*> multivalued_variables_;
+    std::map<std::string, std::map<std::pair<int, int>, std::vector<std::vector<int> > > > sensing_models_;
+
+    // TODO: can we get rid of beams_for_observable_atoms_?
     std::multimap<index_set, const Action*> drule_store_;
     index_set observable_atoms_;
     std::map<int, index_set> beams_for_observable_atoms_;
     std::vector<std::vector<int> > clauses_for_axioms_;
 
-    LW1_Instance(const Instance &instance, const PDDL_Base::variable_vec &multivalued_variables);
+    LW1_Instance(const Instance &instance,
+                 const PDDL_Base::variable_vec &multivalued_variables,
+                 const std::list<std::pair<const PDDL_Base::Action*, const PDDL_Base::Sensing*> > &sensing_models);
     ~LW1_Instance();
 
     void create_regular_action(const Action &action,
