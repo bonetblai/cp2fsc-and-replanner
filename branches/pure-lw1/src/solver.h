@@ -30,7 +30,8 @@ class Solver {
               Instance::Plan &final_plan,
               std::vector<std::vector<int> > &fired_sensors,
               std::vector<std::vector<int> > &sensed_literals) const;
-    void compute_and_add_observations(const State &hidden,
+    void compute_and_add_observations(const Instance::Action *action,
+                                      const State &hidden,
                                       State &state,
                                       std::vector<int> &sensors,
                                       std::vector<int> &sensed) const;

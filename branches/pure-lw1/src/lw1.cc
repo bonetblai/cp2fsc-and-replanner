@@ -199,7 +199,6 @@ int main(int argc, char *argv[]) {
         instance.write_domain(cout);
         instance.write_problem(cout);
     }
-    cout << Utils::red() << "XXXXXXXXXX: done!" << Utils::normal() << endl;
 
     cout << "creating KP translation..." << endl;
     KP_Instance *kp_instance = new LW1_Instance(instance, *multivalued_variables, *sensing_models);
