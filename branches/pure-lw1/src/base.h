@@ -769,7 +769,7 @@ class PDDL_Base {
     const sensing_proxy_vec                   *default_sensing_proxy_;
 
     std::map<Atom, std::map<const Action*, std::list<const And*> > > sensing_models_index_;
-    std::list<std::pair<const Action*, const Sensing*> > xx_sensing_models_;
+    std::list<std::pair<const Action*, const Sensing*> > sensing_models_;
 
     PDDL_Base(StringTable& t, const Options::Mode &options);
     ~PDDL_Base();
@@ -788,7 +788,9 @@ class PDDL_Base {
     bool is_static_atom(const Atom &atom) const;
 
     void do_translation();
-    void do_lw1_translation(bool strict_lw1, const variable_vec* &multivalued_variables);
+    void do_lw1_translation(bool strict_lw1,
+                            const variable_vec* &multivalued_variables,
+                            const std::list<std::pair<const Action*, const Sensing*> >* &sensing_models);
     void emit_instance(Instance &ins) const;
     void print(std::ostream &os) const;
 
