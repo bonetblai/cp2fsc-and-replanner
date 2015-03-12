@@ -72,6 +72,14 @@ LW1_Instance::LW1_Instance(const Instance &ins,
              << Utils::normal() << endl;
     }
 
+    // create K0 atoms
+    atoms_.reserve(2*ins.n_atoms());
+    for( size_t k = 0; k < ins.n_atoms(); ++k ) {
+        string name = ins.atoms_[k]->name_->to_string();
+        new_atom(new CopyName("(K_" + name + ")"));      // even-numbered atoms
+        new_atom(new CopyName("(K_not_" + name + ")"));  // odd-numbered atoms
+    }
+
     // extract multivalued variables
     multivalued_variables_.reserve(multivalued_variables.size());
     for( size_t k = 0; k < multivalued_variables.size(); ++k ) {
@@ -129,37 +137,76 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                     continue;
                 }
 
+                // setup keys for accessing data structures
+                string action_key = action.print_name_;
+                pair<int, int> var_key(var_index, 2*atom_index + (model.literal_->negated_ ? 1 : 0));
+
                 assert(model.dnf_ != 0);
                 if( dynamic_cast<const PDDL_Base::Or*>(model.dnf_) != 0 ) {
                     const PDDL_Base::Or &disjunction = *static_cast<const PDDL_Base::Or*>(model.dnf_);
-                    //cout << "DNF[1]=" << disjunction << endl;
+                    //cout << "dnf is disjunction=" << disjunction << ":" << endl;
                     for( size_t j = 0; j < disjunction.size(); ++j ) {
                         assert(disjunction[j] != 0);
                         if( dynamic_cast<const PDDL_Base::And*>(disjunction[j]) != 0 ) {
                             const PDDL_Base::And &term = *static_cast<const PDDL_Base::And*>(disjunction[j]);
-                            //cout << "Term[1]=" << term << endl;
+                            //cout << "  term is conjunction=" << term << ":" << endl;
+
+                            // verify term
+                            bool verified = true;
                             for( size_t i = 0; i < term.size(); ++i ) {
-                                if( dynamic_cast<const PDDL_Base::Literal*>(term[i]) != 0 ) {
-                                    const PDDL_Base::Literal &literal = *static_cast<const PDDL_Base::Literal*>(term[i]);
-                                    //cout << "Literal[1]=" << *(const PDDL_Base::Atom*)&literal << endl;
+                                if( dynamic_cast<const PDDL_Base::Literal*>(term[i]) == 0 ) {
+                                    cout << Utils::error() << "formula '" << *term[i]
+                                         << "' for model of '" << var_name << ":" << atom_name
+                                         << "' isn't a literal!" << endl;
+                                    verified = false;
+                                    break;
+                                }
+                            }
+                            if( !verified ) continue;
+
+                            // generate K clauses
+                            for( size_t i = 0; i < term.size(); ++i ) {
+                                const PDDL_Base::Literal &head = *static_cast<const PDDL_Base::Literal*>(term[i]);
+                                //cout << "  rule for head " << *(const PDDL_Base::Atom*)&head << ": " << flush;
+                                string head_name = head.to_string(head.negated_, true);
+                                int head_index = get_atom_index(ins, head_name);
+                                assert(head_index != -1);
+                                int k_head_index = 2*head_index + (head.negated_ ? 0 : 1);
+                                //cout << atoms_[k_head_index]->name_ << flush << " <==" << flush;
+
+                                // fill clause
+                                vector<int> clause(1, 1 + k_head_index);
+                                for( size_t l = 0; l < term.size(); ++l ) {
+                                    if( l == i ) continue;
+                                    const PDDL_Base::Literal &literal = *static_cast<const PDDL_Base::Literal*>(term[l]);
                                     string name = literal.to_string(literal.negated_, true);
                                     int index = get_atom_index(ins, name);
                                     assert(index != -1);
-                                    // fill-in clause
-                                } else {
-                                    cout << Utils::error() << "formula '" << *disjunction[j]
-                                         << "' for model of '" << var_name << ":" << atom_name
-                                         << "' isn't a literal!" << endl;
-                                    continue;
+                                    int k_index = 2*index + (literal.negated_ ? 0 : 1);
+                                    //cout << " " << atoms_[k_index]->name_ << flush;
+                                    clause.push_back(-(1 + k_index));
                                 }
+                                //cout << endl;
+
+                                // insert clause
+                                assert(clause.size() == term.size());
+                                sensing_models_[action_key][var_key].push_back(clause);
+                                //assert(0);
                             }
                         } else if( dynamic_cast<const PDDL_Base::Literal*>(disjunction[j]) != 0 ) {
                             const PDDL_Base::Literal &literal = *static_cast<const PDDL_Base::Literal*>(disjunction[j]);
-                            //cout << "Literal[2]=" << *(const PDDL_Base::Atom*)&literal << endl;
+                            //cout << "  term is single literal=" << *(const PDDL_Base::Atom*)&literal << ": " << flush;
                             string name = literal.to_string(literal.negated_, true);
                             int index = get_atom_index(ins, name);
                             assert(index != -1);
-                            // fill-in unit clause
+                            int k_index = 2*index + (literal.negated_ ? 0 : 1);
+                            //cout << atoms_[k_index]->name_ << " <== true" << endl;
+
+                            // fill and insert unit clause
+                            vector<int> unit_clause(1, 1 + k_index);
+                            assert(unit_clause.size() == 1);
+                            sensing_models_[action_key][var_key].push_back(unit_clause);
+                            //assert(0);
                         } else {
                             cout << Utils::error() << "formula '" << *disjunction[j]
                                  << "' for model of '" << var_name << ":" << atom_name
@@ -169,31 +216,68 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                     }
                 } else if( dynamic_cast<const PDDL_Base::And*>(model.dnf_) != 0 ) {
                     const PDDL_Base::And &term = *static_cast<const PDDL_Base::And*>(model.dnf_);
-                    //cout << "Term[2]=" << term << endl;
+                    //cout << "dnf is single term=" << term << ":" << endl;
+
+                    // verify term
+                    bool verified = true;
                     for( size_t j = 0; j < term.size(); ++j ) {
-                        if( dynamic_cast<const PDDL_Base::Literal*>(term[j]) != 0 ) {
-                            const PDDL_Base::Literal &literal = *static_cast<const PDDL_Base::Literal*>(term[j]);
-                            //cout << "Literal[3]=" << *(const PDDL_Base::Atom*)&literal << endl;
-                            string name = literal.to_string(literal.negated_, true);
-                            int index = get_atom_index(ins, name);
-                            assert(index != -1);
-                            // fill-in clause
-                        } else {
+                        if( dynamic_cast<const PDDL_Base::Literal*>(term[j]) == 0 ) {
                             cout << Utils::error() << "formula '" << *term[j]
                                  << "' for model of '" << var_name << ":" << atom_name
                                  << "' isn't a literal!" << endl;
-                            continue;
+                            verified = false;
+                            break;
                         }
+                    }
+                    if( !verified ) continue;
+
+                    // generate K-clauses
+                    for( size_t j = 0; j < term.size(); ++j ) {
+                        const PDDL_Base::Literal &head = *static_cast<const PDDL_Base::Literal*>(term[j]);
+                        //cout << "  rule for head " << *(const PDDL_Base::Atom*)&head << ": " << flush;
+                        string head_name = head.to_string(head.negated_, true);
+                        int head_index = get_atom_index(ins, head_name);
+                        assert(head_index != -1);
+                        int k_head_index = 2*head_index + (head.negated_ ? 0 : 1);
+                        //cout << atoms_[k_head_index]->name_ << flush << " <==" << flush;
+
+                        // fill clause
+                        vector<int> clause(1, 1 + k_head_index);
+                        for( size_t i = 0; i < term.size(); ++i ) {
+                            if( i == j ) continue;
+                            const PDDL_Base::Literal &literal = *static_cast<const PDDL_Base::Literal*>(term[i]);
+                            string name = literal.to_string(literal.negated_, true);
+                            int index = get_atom_index(ins, name);
+                            assert(index != -1);
+                            int k_index = 2*index + (literal.negated_ ? 0 : 1);
+                            //cout << " " << atoms_[k_index]->name_ << flush;
+                            clause.push_back(-(1 + k_index));
+                        }
+                        //cout << endl;
+
+                        // insert clause
+                        assert(clause.size() == term.size());
+                        sensing_models_[action_key][var_key].push_back(clause);
+                        //assert(0);
                     }
                 } else if( dynamic_cast<const PDDL_Base::Literal*>(model.dnf_) != 0 ) {
                     const PDDL_Base::Literal &literal = *static_cast<const PDDL_Base::Literal*>(model.dnf_);
-                    //cout << "Literal[4]=" << *(const PDDL_Base::Atom*)&literal << endl;
+                    //cout << "dnf is single literal=" << *(const PDDL_Base::Atom*)&literal << ": " << flush;
                     string name = literal.to_string(literal.negated_, true);
                     int index = get_atom_index(ins, name);
                     assert(index != -1);
-                    // fill-in unit clause
+                    int k_index = 2*index + (literal.negated_ ? 0 : 1);
+                    //cout << atoms_[k_index]->name_ << " <== true" << endl;
+
+                    // fill and insert unit clause
+                    vector<int> unit_clause(1, 1 + k_index);
+                    assert(unit_clause.size() == 1);
+                    sensing_models_[action_key][var_key].push_back(unit_clause);
+                    //assert(0);
                 } else if( dynamic_cast<const PDDL_Base::Constant*>(model.dnf_) != 0 ) {
+                    //cout << "dnf is constant: " << *model.dnf_ << endl;
                     // nothing to do. Obviate formula
+                    //assert(0);
                 } else {
                     cout << Utils::error() << "formula '" << *model.dnf_
                          << "' for model of '" << var_name << ":" << atom_name
@@ -202,14 +286,6 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                 }
             }
         }
-    }
-
-    // create K0 atoms
-    atoms_.reserve(2*ins.n_atoms());
-    for( size_t k = 0; k < ins.n_atoms(); ++k ) {
-        string name = ins.atoms_[k]->name_->to_string();
-        new_atom(new CopyName("(K_" + name + ")"));      // even-numbered atoms
-        new_atom(new CopyName("(K_not_" + name + ")"));  // odd-numbered atoms
     }
 
     // set initial atoms
