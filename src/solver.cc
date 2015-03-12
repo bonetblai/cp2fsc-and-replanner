@@ -32,7 +32,7 @@ int Solver::solve(const State &initial_hidden_state,
 
     // set the initial state
     kp_instance_.set_initial_state(state);
-    compute_and_add_observations(hidden, state, sensors, sensed);
+    compute_and_add_observations(0, hidden, state, sensors, sensed);
     fired_sensors.push_back(sensors);
     sensed_literals.push_back(sensed);
     sensors.clear();
@@ -138,7 +138,7 @@ int Solver::solve(const State &initial_hidden_state,
 
                 hidden.apply(act);
                 //instance_.apply_deductive_rules(hidden);
-                compute_and_add_observations(hidden, state, sensors, sensed);
+                compute_and_add_observations(&kp_act, hidden, state, sensors, sensed);
                 fired_sensors.push_back(sensors);
                 sensed_literals.push_back(sensed);
                 sensors.clear();
@@ -217,16 +217,20 @@ void Solver::calculate_relevant_assumptions(const Instance::Plan &plan,
     assert(plan.size() == assumptions.size());
 }
 
-void Solver::compute_and_add_observations(const State &hidden,
+void Solver::compute_and_add_observations(const Instance::Action *last_action,
+                                          const State &hidden,
                                           State &state,
                                           vector<int> &sensors,
                                           vector<int> &sensed) const {
+    assert(sensors.empty());
+    assert(sensed.empty());
+
     // fire observation rules
     index_set observations;
     for( size_t k = 0; k < instance_.n_sensors(); ++k ) {
         const Instance::Sensor &r = *instance_.sensors_[k];
         if( hidden.satisfy(r.condition_) ) {
-            // PURE_LW1: En la version pure-lwq, el valor de los literales observables
+            // PURE-LW1: En la version pure-lwq, el valor de los literales observables
             // se debe calcular aqui. Dicho valor se calculaba antes en la accion
             // set-sensing (ver comentario en base.cc).
             //
@@ -250,53 +254,73 @@ void Solver::compute_and_add_observations(const State &hidden,
         }
     }
 
-    // TESTING
-    if( options_.is_enabled("lw1:inference:up") ) {
-        assert(dynamic_cast<const LW1_Instance*>(&kp_instance_) != 0);
-    }
+    // if nothing sensed, we are done
+    if( sensed.empty() ) return;
 
-#if 0
+#if 1
     // compute deductive closure with respect to invariants (for K-replanner and clg)
     // and with respect to axioms and sensing clauses (for lw1)
     if( options_.is_enabled("lw1:inference:up") ) {
         // construct logical theory
         assert(dynamic_cast<const LW1_Instance*>(&kp_instance_) != 0);
         const LW1_Instance &lw1 = *static_cast<const LW1_Instance*>(&kp_instance_);
+        assert(last_action != 0);
+        cout << "Last Action: " << last_action->name_ << endl;
+#if 0
         Inference::Propositional::CNF cnf;
+#endif
 
         // 1. Positive literals from state
         for( State::const_iterator it = state.begin(); it != state.end(); ++it ) {
+#if 0
             Inference::Propositional::Clause cl;
             cl.push_back(1 + *it); // NOTA: en implementacion de clause, 'push_back' es un 'insert'
             cnf.push_back(cl);
+#endif
         }
 
         // 2. Axioms: D'
         for( vector<vector<int> >::const_iterator it = lw1.clauses_for_axioms_.begin(); it != lw1.clauses_for_axioms_.end(); ++it ) {
+#if 0
             Inference::Propositional::Clause cl;
             const vector<int> &clause = *it;
             for( vector<int>::const_iterator jt = clause.begin(); jt != clause.end(); ++jt )
                 cl.push_back(*jt);
             cnf.push_back(cl);
+#endif
         }
 
         // 3. Clauses from sensing models: K_o
         // NOTE: need to determine literals Y=y incompatible with observation o and
         // access sensing_models_[action][(Y,y)] to get clauses to insert into theory
+        cout << "SENSED:";
+        for( size_t k = 0; k < sensed.size(); ++k ) {
+            int literal = sensed[k];
+            bool negated = literal < 0;
+            int atom_index = negated ? -literal - 1 : literal - 1;
+            assert(atom_index < lw1.po_instance_.atoms_.size());
+            cout << " " << (negated ? "(not " : "") << lw1.po_instance_.atoms_[atom_index]->name_ << (negated ? ")" : "") << flush;
+        }
+        cout << endl;
 
         // 4. Kept (extra) static clauses
 
         // inference
+#if 0
         Inference::Propositional::CNF result;
+#endif
         if( options_.is_enabled("lw1:inference:up:1-lookahead") ) {
             cout << Utils::error() << "inference method 'lw1:inference:up:1-lookahead' not yet implemented" << endl;
             exit(255);
         } else {
+#if 0
             Inference::Propositional::UnitPropagation up;
             up.reduce(cnf, result);
+#endif
         }
 
         // insert positive literals from result into state
+#if 0
         for( size_t k = 0; k < result.size(); ++k ) {
             const Inference::Propositional::Clause &clause = result[k];
             if( clause.size() == 1 ) {
@@ -307,6 +331,7 @@ void Solver::compute_and_add_observations(const State &hidden,
                 }
             }
         }
+#endif
     } else {
         cout << Utils::error() << "unspecified inference method for lw1" << endl;
         exit(255);
@@ -314,7 +339,7 @@ void Solver::compute_and_add_observations(const State &hidden,
 #endif
 
     // compute the deductive closure with respect to the invariants
-    // PURE_LW1: Se corre UR con lo observado y las formulas identificadas arriba.
+    // PURE-LW1: Se corre UR con lo observado y las formulas identificadas arriba.
     // Los literales (de estado) que sean inferidos por UR son agregados al
     // estado (que representa el belief state del agente)
     bool fix_point_reached = false;

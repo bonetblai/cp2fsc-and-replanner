@@ -121,6 +121,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
     for( list<pair<const PDDL_Base::Action*, const PDDL_Base::Sensing*> >::const_iterator it = sensing_models.begin(); it != sensing_models.end(); ++it ) {
         const PDDL_Base::Action &action = *it->first;
         const PDDL_Base::Sensing &sensing = *it->second;
+        cout << "ACTION: " << action << endl;
         for( size_t k = 0; k < sensing.size(); ++k ) {
             if( dynamic_cast<const PDDL_Base::SensingModelForObservableVariable*>(sensing[k]) != 0 ) {
                 const PDDL_Base::SensingModelForObservableVariable &model = *static_cast<const PDDL_Base::SensingModelForObservableVariable*>(sensing[k]);
@@ -139,7 +140,8 @@ LW1_Instance::LW1_Instance(const Instance &ins,
 
                 // setup keys for accessing data structures
                 string action_key = action.print_name_;
-                pair<int, int> var_key(var_index, 2*atom_index + (model.literal_->negated_ ? 1 : 0));
+                int value_key = (model.literal_->negated_ ? -1 : 1) * atom_index;
+                int var_key = var_index;
 
                 assert(model.dnf_ != 0);
                 if( dynamic_cast<const PDDL_Base::Or*>(model.dnf_) != 0 ) {
@@ -190,7 +192,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
 
                                 // insert clause
                                 assert(clause.size() == term.size());
-                                sensing_models_[action_key][var_key].push_back(clause);
+                                sensing_models_[action_key][value_key][var_key].push_back(clause);
                                 //assert(0);
                             }
                         } else if( dynamic_cast<const PDDL_Base::Literal*>(disjunction[j]) != 0 ) {
@@ -205,7 +207,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                             // fill and insert unit clause
                             vector<int> unit_clause(1, 1 + k_index);
                             assert(unit_clause.size() == 1);
-                            sensing_models_[action_key][var_key].push_back(unit_clause);
+                            sensing_models_[action_key][value_key][var_key].push_back(unit_clause);
                             //assert(0);
                         } else {
                             cout << Utils::error() << "formula '" << *disjunction[j]
@@ -257,7 +259,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
 
                         // insert clause
                         assert(clause.size() == term.size());
-                        sensing_models_[action_key][var_key].push_back(clause);
+                        sensing_models_[action_key][value_key][var_key].push_back(clause);
                         //assert(0);
                     }
                 } else if( dynamic_cast<const PDDL_Base::Literal*>(model.dnf_) != 0 ) {
@@ -272,7 +274,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                     // fill and insert unit clause
                     vector<int> unit_clause(1, 1 + k_index);
                     assert(unit_clause.size() == 1);
-                    sensing_models_[action_key][var_key].push_back(unit_clause);
+                    sensing_models_[action_key][value_key][var_key].push_back(unit_clause);
                     //assert(0);
                 } else if( dynamic_cast<const PDDL_Base::Constant*>(model.dnf_) != 0 ) {
                     //cout << "dnf is constant: " << *model.dnf_ << endl;

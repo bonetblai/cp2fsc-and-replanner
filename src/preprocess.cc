@@ -505,21 +505,29 @@ void Preprocessor::remove_irrelevant_atoms() {
 }
 
 void Preprocessor::preprocess(bool remove_atoms) {
+    int nstage = 0;
+
     if( options_.is_enabled("problem:print:preprocess:stage") )
         cout << Utils::yellow() << "Preprocessing..." << Utils::normal() << endl;
 
-    // stage 1: Remove inconsistent and useless actions
+    // stage: Remove inconsistent and useless actions
     bool_vec actions_to_remove(instance_.n_actions(), false);
-    if( options_.is_enabled("problem:print:preprocess:stage") )
-        cout << Utils::yellow() << "  Stage 1: removing inconsistent & useless actions..." << Utils::normal() << endl;
+    if( options_.is_enabled("problem:print:preprocess:stage") ) {
+        cout << Utils::yellow() << "  Stage " << ++nstage << ": "
+             << "removing inconsistent & useless actions..."
+             << Utils::normal() << endl;
+    }
     mark_inconsistent_actions(actions_to_remove);
     mark_useless_actions(actions_to_remove);
     instance_.remove_actions(actions_to_remove, action_map_);
 
 
-    // stage 2: Compute reachable atoms, actions, sensors and axioms
-    if( options_.is_enabled("problem:print:preprocess:stage") )
-        cout << Utils::yellow() << "  Stage 2: computing reachability..." << Utils::normal() << endl;
+    // stage: Compute reachable atoms, actions, sensors and axioms
+    if( options_.is_enabled("problem:print:preprocess:stage") ) {
+        cout << Utils::yellow() << "  Stage " << ++nstage << ": "
+             << "computing reachability..."
+             << Utils::normal() << endl;
+    }
     bool_vec reachable_atoms(instance_.n_atoms(), false);
     bool_vec reachable_actions(instance_.n_actions(), false);
     bool_vec reachable_sensors(instance_.n_sensors(), false);
@@ -527,10 +535,13 @@ void Preprocessor::preprocess(bool remove_atoms) {
     compute_reachability(reachable_atoms, reachable_actions, reachable_sensors, reachable_axioms);
 
 
-    // stage 3: remove unreachable conditional effects, axioms and sensors, and
+    // stage: remove unreachable conditional effects, axioms and sensors, and
     // compute static atoms until fix point.
-    if( options_.is_enabled("problem:print:preprocess:stage") )
-        cout << Utils::yellow() << "  Stage 3: removing unreachable conditional effects, axioms and sensors..." << Utils::normal() << endl;
+    if( options_.is_enabled("problem:print:preprocess:stage") ) {
+        cout << Utils::yellow() << "  Stage " << ++nstage << ": "
+             << "removing unreachable conditional effects, axioms and sensors..."
+             << Utils::normal() << endl;
+    }
     bool_vec static_atoms(instance_.n_atoms(), false);
     bool fix_point_reached = false;
     while( !fix_point_reached ) {
@@ -594,28 +605,36 @@ void Preprocessor::preprocess(bool remove_atoms) {
     }
 
 
-    // stage 4: Remove unreachable and useless actions
-    if( options_.is_enabled("problem:print:preprocess:stage") )
-        cout << Utils::yellow() << "  Stage 4: removing unreachable actions..." << Utils::normal() << endl;
+    // stage: Remove unreachable and useless actions
+    if( options_.is_enabled("problem:print:preprocess:stage") ) {
+        cout << Utils::yellow() << "  Stage " << ++nstage << ": "
+             << "removing unreachable actions..."
+             << Utils::normal() << endl;
+    }
     reachable_actions.bitwise_complement();
     mark_useless_actions(reachable_actions);
     mark_unreachable_actions(reachable_atoms, static_atoms, reachable_actions);
     instance_.remove_actions(reachable_actions, action_map_);
 
 
-    // stage 5: Simplify conditions and invariants
-    if( options_.is_enabled("problem:print:preprocess:stage") )
-        cout << Utils::yellow() << "  Stage 5: simplify conditions and invariants..." << Utils::normal() << endl;
+    // stage: Simplify conditions and invariants
+    if( options_.is_enabled("problem:print:preprocess:stage") ) {
+        cout << Utils::yellow() << "  Stage " << ++nstage << ": "
+             << "simplify conditions and invariants..."
+             << Utils::normal() << endl;
+    }
     instance_.simplify_conditions_and_invariants(reachable_atoms, static_atoms);
 
 
-    // stage 6: Remove unreachable and 'known' static atoms
-    if( options_.is_enabled("problem:print:preprocess:stage") )
-        cout << Utils::yellow() << "  Stage 6: removing unreachable and static atoms..." << Utils::normal() << endl;
-    bool_vec atoms_to_remove(instance_.n_atoms(), false);
-    for( index_set::const_iterator it = instance_.init_.literals_.begin(); it != instance_.init_.literals_.end(); ++it ) {
-        atoms_to_remove[*it > 0 ? *it-1 : -*it-1] = true;
+    // stage: Remove unreachable and 'known' static atoms
+    if( options_.is_enabled("problem:print:preprocess:stage") ) {
+        cout << Utils::yellow() << "  Stage " << ++nstage << ": "
+             << "removing unreachable and static atoms..."
+             << Utils::normal() << endl;
     }
+    bool_vec atoms_to_remove(instance_.n_atoms(), false);
+    for( index_set::const_iterator it = instance_.init_.literals_.begin(); it != instance_.init_.literals_.end(); ++it )
+        atoms_to_remove[*it > 0 ? *it-1 : -*it-1] = true;
     atoms_to_remove.bitwise_and(static_atoms);
     reachable_atoms.bitwise_complement();
     atoms_to_remove.bitwise_or(reachable_atoms);
@@ -669,22 +688,31 @@ void Preprocessor::preprocess(bool remove_atoms) {
     instance_.calculate_non_primitive_and_observable_fluents();
 
 #if 0 // This old stuff. It should not be necessary
-    // stage 7: Create deductive rules
-    if( options_.is_enabled("problem:print:preprocess:stage") )
-        cout << "  Stage 7: computing deductive rules..." << endl;
+    // stage: Create deductive rules
+    if( options_.is_enabled("problem:print:preprocess:stage") ) {
+        cout << Utils::yellow() << "  Stage " << ++nstage << ": "
+             << "computing deductive rules..." << endl;
+    }
     instance_.create_deductive_rules();
 #endif
 
-    // stage 7: Perform action compilation. This is only valid for k-replanner.
+    // stage: Perform action compilation. This is only valid for k-replanner.
     if( options_.is_enabled("problem:action-compilation") ) {
-        if( options_.is_enabled("problem:print:preprocess:stage") )
-            cout << Utils::yellow() << "  Stage 7: performing action compilation for " << instance_.n_actions() << " action(s) ..." << Utils::normal() << endl;
-        for( size_t k = 0; k < instance_.n_actions(); ++k ) {
-            compute_action_compilation(*instance_.actions_[k]);
+        if( options_.is_enabled("problem:print:preprocess:stage") ) {
+            cout << Utils::yellow() << "  Stage " << ++nstage << ": "
+                 << "performing action compilation for " << instance_.n_actions() << " action(s) ..."
+                 << Utils::normal() << endl;
         }
+        for( size_t k = 0; k < instance_.n_actions(); ++k )
+            compute_action_compilation(*instance_.actions_[k]);
     }
 
-    // do cross referencing
+    // stage: cross reference
+    if( options_.is_enabled("problem:print:preprocess:stage") ) {
+        cout << Utils::yellow() << "  Stage " << ++nstage << ": "
+             << "computing cross references..."
+             << Utils::normal() << endl;
+    }
     instance_.cross_reference();
 }
 
