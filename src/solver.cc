@@ -281,6 +281,8 @@ void Solver::compute_and_add_observations(const State &hidden,
         }
 
         // 3. Clauses from sensing models: K_o
+        // NOTE: need to determine literals Y=y incompatible with observation o and
+        // access sensing_models_[action][(Y,y)] to get clauses to insert into theory
 
         // 4. Kept (extra) static clauses
 
