@@ -199,7 +199,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                                 // insert clause
                                 assert(clause.size() == term.size());
                                 sensing_models_[action_key][var_key][value_key].push_back(clause);
-                                cout << "INSERT: model for action-key=" << action_key << ", var-key=" << var_key << ", value-key=" << value_key << endl;
+                                //cout << "INSERT: model for action-key=" << action_key << ", var-key=" << var_key << ", value-key=" << value_key << endl;
                                 //assert(0);
                             }
                         } else if( dynamic_cast<const PDDL_Base::Literal*>(disjunction[j]) != 0 ) {
@@ -215,7 +215,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                             vector<int> unit_clause(1, 1 + k_index);
                             assert(unit_clause.size() == 1);
                             sensing_models_[action_key][var_key][value_key].push_back(unit_clause);
-                            cout << "INSERT: model for action-key=" << action_key << ", var-key=" << var_key << ", value-key=" << value_key << endl;
+                            //cout << "INSERT: model for action-key=" << action_key << ", var-key=" << var_key << ", value-key=" << value_key << endl;
                             //assert(0);
                         } else {
                             cout << Utils::error() << "formula '" << *disjunction[j]
@@ -268,7 +268,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                         // insert clause
                         assert(clause.size() == term.size());
                         sensing_models_[action_key][var_key][value_key].push_back(clause);
-                        cout << "INSERT: model for action-key=" << action_key << ", var-key=" << var_key << ", value-key=" << value_key << endl;
+                        //cout << "INSERT: model for action-key=" << action_key << ", var-key=" << var_key << ", value-key=" << value_key << endl;
                         //assert(0);
                     }
                 } else if( dynamic_cast<const PDDL_Base::Literal*>(model.dnf_) != 0 ) {
@@ -284,7 +284,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                     vector<int> unit_clause(1, 1 + k_index);
                     assert(unit_clause.size() == 1);
                     sensing_models_[action_key][var_key][value_key].push_back(unit_clause);
-                    cout << "INSERT: model for action-key=" << action_key << ", var-key=" << var_key << ", value-key=" << value_key << endl;
+                    //cout << "INSERT: model for action-key=" << action_key << ", var-key=" << var_key << ", value-key=" << value_key << endl;
                     //assert(0);
                 } else if( dynamic_cast<const PDDL_Base::Constant*>(model.dnf_) != 0 ) {
                     //cout << "dnf is constant: " << *model.dnf_ << endl;
