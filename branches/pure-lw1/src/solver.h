@@ -28,13 +28,13 @@ class Solver {
     ~Solver() { }
     int solve(const State &initial_hidden__state,
               Instance::Plan &final_plan,
-              std::vector<std::vector<int> > &fired_sensors,
-              std::vector<std::vector<int> > &sensed_literals) const;
+              std::vector<std::set<int> > &fired_sensors,
+              std::vector<std::set<int> > &sensed_literals) const;
     void compute_and_add_observations(const Instance::Action *action,
                                       const State &hidden,
                                       State &state,
-                                      std::vector<int> &sensors,
-                                      std::vector<int> &sensed) const;
+                                      std::set<int> &sensors,
+                                      std::set<int> &sensed) const;
     void calculate_relevant_assumptions(const Instance::Plan &plan,
                                         const Instance::Plan &raw_plan,
                                         const State &initial_state,

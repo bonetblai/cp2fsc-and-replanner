@@ -8,12 +8,12 @@ using namespace std;
 
 int Solver::solve(const State &initial_hidden_state,
                   Instance::Plan &final_plan,
-                  vector<vector<int> > &fired_sensors,
-                  vector<vector<int> > &sensed_literals) const {
+                  vector<set<int> > &fired_sensors,
+                  vector<set<int> > &sensed_literals) const {
     vector<index_set> assumptions;
     State hidden(initial_hidden_state), state;
     Instance::Plan raw_plan, plan;
-    vector<int> sensors, sensed;
+    set<int> sensors, sensed;
     index_set goal_condition;
 
     // the initial hidden state is already closed with the axioms
@@ -220,8 +220,8 @@ void Solver::calculate_relevant_assumptions(const Instance::Plan &plan,
 void Solver::compute_and_add_observations(const Instance::Action *last_action,
                                           const State &hidden,
                                           State &state,
-                                          vector<int> &sensors,
-                                          vector<int> &sensed) const {
+                                          set<int> &sensors,
+                                          set<int> &sensed) const {
     assert(sensors.empty());
     assert(sensed.empty());
 
@@ -238,17 +238,17 @@ void Solver::compute_and_add_observations(const Instance::Action *last_action,
             // de literales). Mas bien, se debe identificar las formulas a ser 
             // agregadas para el Unit-Resolution (UR). Dichas formulas se agregaran
             // abajo.
-            sensors.push_back(k);
+            sensors.insert(k);
             for( index_set::const_iterator it = r.sense_.begin(); it != r.sense_.end(); ++it ) {
                 int obs = *it > 0 ? *it - 1 : -*it - 1;
                 if( hidden.satisfy(obs) ) {
                     state.remove(2*obs + 1);
                     state.add(2*obs);
-                    sensed.push_back(1 + obs);
+                    sensed.insert(1 + obs);
                 } else {
                     state.remove(2*obs);
                     state.add(2*obs+1);
-                    sensed.push_back(-(1 + obs));
+                    sensed.insert(-(1 + obs));
                 }
             }
         }
@@ -257,15 +257,38 @@ void Solver::compute_and_add_observations(const Instance::Action *last_action,
     // if nothing sensed, we are done
     if( sensed.empty() ) return;
 
-#if 1
+#if 0
     // compute deductive closure with respect to invariants (for K-replanner and clg)
     // and with respect to axioms and sensing clauses (for lw1)
     if( options_.is_enabled("lw1:inference:up") ) {
-        // construct logical theory
         assert(dynamic_cast<const LW1_Instance*>(&kp_instance_) != 0);
         const LW1_Instance &lw1 = *static_cast<const LW1_Instance*>(&kp_instance_);
+
+        // extract action name
         assert(last_action != 0);
-        cout << "Last Action: " << last_action->name_ << endl;
+        size_t pos = last_action->name_->to_string().find("__set_sensing__");
+        assert(pos != string::npos);
+        string action_name(last_action->name_->to_string(), 0, pos);
+
+        // find sensing models for action
+        assert(lw1.sensing_models_.find(action_name) != lw1.sensing_models_.end());
+        const map<int, map<int, vector<vector<int> > > > &sensing_models_for_action = lw1.sensing_models_.find(action_name)->second;
+
+        cout << "Sensing models for action '" << action_name << "'" << endl;
+        for( map<int, map<int, vector<vector<int> > > >::const_iterator it = sensing_models_for_action.begin(); it != sensing_models_for_action.end(); ++it ) {
+            const LW1_Instance::Variable &variable = *lw1.multivalued_variables_[it->first];
+            cout << "  "; variable.print(cout); cout << endl;
+            for( map<int, vector<vector<int> > >::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt ) {
+                int value_key = jt->first;
+                const vector<vector<int> > &clauses = jt->second;
+                cout << "    Value=" << value_key << ", Clauses={";
+                cout << "}" << endl;
+            }
+        }
+
+
+
+        // construct logical theory
 #if 0
         Inference::Propositional::CNF cnf;
 #endif
@@ -294,8 +317,8 @@ void Solver::compute_and_add_observations(const Instance::Action *last_action,
         // NOTE: need to determine literals Y=y incompatible with observation o and
         // access sensing_models_[action][(Y,y)] to get clauses to insert into theory
         cout << "SENSED:";
-        for( size_t k = 0; k < sensed.size(); ++k ) {
-            int literal = sensed[k];
+        for( set<int>::const_iterator it = sensed.begin(); it != sensed.end(); ++it ) {
+            int literal = *it;
             bool negated = literal < 0;
             int atom_index = negated ? -literal - 1 : literal - 1;
             assert(atom_index < lw1.po_instance_.atoms_.size());
