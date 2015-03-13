@@ -232,7 +232,7 @@ int main(int argc, char *argv[]) {
     cout << "solving problem for " << instance.num_hidden_states() << " hidden state(s)" << endl;
     for( int k = 0; k < instance.num_hidden_states(); ++k ) {
         float instance_start_time = Utils::read_time_in_seconds();
-        vector<vector<int> > fired_sensors, sensed_literals;
+        vector<set<int> > fired_sensors, sensed_literals;
         State hidden_initial_state;
         Instance::Plan plan;
 
@@ -252,11 +252,11 @@ int main(int argc, char *argv[]) {
                 bool need_indent = false;
 
                 if( options.is_enabled("solver:print:fired-sensors") ) {
-                    const vector<int> &sensors = fired_sensors[0];
+                    const set<int> &sensors = fired_sensors[0];
                     if( sensors.size() > 0 ) {
                         cout << "init*:" << flush;
-                        for( int i = 0, isz = sensors.size(); i < isz; ++i ) {
-                            cout << " " << instance.sensors_[sensors[i]]->name_;
+                        for( set<int>::const_iterator it = sensors.begin(); it != sensors.end(); ++it ) {
+                            cout << " " << instance.sensors_[*it]->name_;
                         }
                         cout << endl;
                         need_indent = true;
@@ -264,15 +264,16 @@ int main(int argc, char *argv[]) {
                 }
 
                 if( options.is_enabled("solver:print:sensed-literals") ) {
-                    const vector<int> &sensed = sensed_literals[0];
+                    const set<int> &sensed = sensed_literals[0];
                     if( sensed.size() > 0 ) {
                         if( need_indent ) cout << "      ";
                         cout << "init@:" << flush;
-                        for( int i = 0, isz = sensed.size(); i < isz; ++i ) {
-                            int atom = sensed[i] < 0 ? -sensed[i] - 1 : sensed[i] - 1;
-                            cout << (sensed[i] < 0 ? " (not " : " ")
+                        for( set<int>::const_iterator it = sensed.begin(); it != sensed.end(); ++it ) {
+                            int literal = *it;
+                            int atom = literal < 0 ? -literal - 1 : literal - 1;
+                            cout << (literal < 0 ? " (not " : " ")
                                  << instance.atoms_[atom]->name_
-                                 << (sensed[i] < 0 ? ")" : "");
+                                 << (literal < 0 ? ")" : "");
                         }
                         cout << endl;
                         need_indent = true;
@@ -283,24 +284,25 @@ int main(int argc, char *argv[]) {
                     if( need_indent ) cout << "      ";
                     cout << setw(4) << k << " : " << instance.actions_[plan[k]]->name_ << endl;
                     if( options.is_enabled("solver:print:fired-sensors") ) {
-                        const vector<int> &sensors = fired_sensors[1+k];
+                        const set<int> &sensors = fired_sensors[1+k];
                         if( sensors.size() > 0 ) {
                             cout << "      " << setw(4) << k << "*:";
-                            for( int i = 0, isz = sensors.size(); i < isz; ++i ) {
-                                cout << " " << instance.sensors_[sensors[i]]->name_;
+                            for( set<int>::const_iterator it = sensors.begin(); it != sensors.end(); ++it ) {
+                                cout << " " << instance.sensors_[*it]->name_;
                             }
                             cout << endl;
                         }
                     }
                     if( options.is_enabled("solver:print:sensed-literals") ) {
-                        const vector<int> &sensed = sensed_literals[1+k];
+                        const set<int> &sensed = sensed_literals[1+k];
                         if( sensed.size() > 0 ) {
                             cout << "      " << setw(4) << k << "@:";
-                            for( int i = 0, isz = sensed.size(); i < isz; ++i ) {
-                                int atom = sensed[i] < 0 ? -sensed[i] - 1 : sensed[i] - 1;
-                                cout << (sensed[i] < 0 ? " (not " : " ")
+                            for( set<int>::const_iterator it = sensed.begin(); it != sensed.end(); ++it ) {
+                                int literal = *it;
+                                int atom = literal < 0 ? -literal - 1 : literal - 1;
+                                cout << (literal < 0 ? " (not " : " ")
                                      << instance.atoms_[atom]->name_
-                                     << (sensed[i] < 0 ? ")" : "");
+                                     << (literal < 0 ? ")" : "");
                             }
                             cout << endl;
                         }
