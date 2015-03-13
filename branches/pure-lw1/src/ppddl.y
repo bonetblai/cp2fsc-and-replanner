@@ -849,7 +849,7 @@ multivalued_variable_decl:
           else
               var = new ObsVariable($3->text);
           multivalued_variables_.push_back(var);
-          effect_vec_ptr_ = &var->values_;
+          effect_vec_ptr_ = &var->domain_;
       }
       fluent_list_decl TK_CLOSE {
           $3->val = multivalued_variables_.back();
@@ -863,7 +863,7 @@ multivalued_variable_decl:
           var->param_ = *$5;
           delete $5;
           multivalued_variables_.push_back(var);
-          effect_vec_ptr_ = &var->values_;
+          effect_vec_ptr_ = &var->domain_;
       }
       fluent_list_decl TK_CLOSE {
           clear_param(multivalued_variables_.back()->param_);

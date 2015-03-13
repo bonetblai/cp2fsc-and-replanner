@@ -32,10 +32,10 @@ class LW1_Instance : public KP_Instance {
         std::string name_;
         bool is_observable_;
         bool is_state_variable_;
-        std::set<int> values_;
+        std::set<int> domain_;
         std::map<int, index_set> beams_;  // non-empty only for observable variables
-        Variable(const std::string &name, bool is_observable, bool is_state_variable, const std::set<int> &values, const std::map<int, index_set> &beams)
-            : name_(name), is_observable_(is_observable), is_state_variable_(is_state_variable), values_(values), beams_(beams) {
+        Variable(const std::string &name, bool is_observable, bool is_state_variable, const std::set<int> &domain, const std::map<int, index_set> &beams)
+            : name_(name), is_observable_(is_observable), is_state_variable_(is_state_variable), domain_(domain), beams_(beams) {
         }
         void print(std::ostream &os) const;
     };
@@ -44,6 +44,7 @@ class LW1_Instance : public KP_Instance {
     // Sensing models are indexed by (action-name, value-index, var-index) and return DNF
     std::map<std::string, int> varmap_;
     std::vector<Variable*> multivalued_variables_;
+    std::map<int, std::vector<int> > variables_for_atom_;
     std::map<std::string, std::map<int, std::map<int, std::vector<std::vector<int> > > > > sensing_models_;
 
     // TODO: can we get rid of beams_for_observable_atoms_?
@@ -100,6 +101,11 @@ class LW1_Instance : public KP_Instance {
 
     virtual void print_stats(std::ostream &os) const;
 };
+
+inline std::ostream& operator<<(std::ostream &os, const LW1_Instance::Variable &var) {
+    var.print(os);
+    return os;
+}
 
 #endif
 

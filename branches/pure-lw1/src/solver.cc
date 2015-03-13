@@ -255,38 +255,87 @@ void Solver::compute_and_add_observations(const Instance::Action *last_action,
     }
 
     // if nothing sensed, we are done
-    if( sensed.empty() ) return;
+    if( last_action == 0 ) goto fin;
+    if( sensed.empty() ) return; // XXXXXXXXXXX: CHECK THIS
 
-#if 0
+#if 1
     // compute deductive closure with respect to invariants (for K-replanner and clg)
     // and with respect to axioms and sensing clauses (for lw1)
     if( options_.is_enabled("lw1:inference:up") ) {
         assert(dynamic_cast<const LW1_Instance*>(&kp_instance_) != 0);
         const LW1_Instance &lw1 = *static_cast<const LW1_Instance*>(&kp_instance_);
 
-        // extract action name
+        // compute action key
         assert(last_action != 0);
+        string action_key;
         size_t pos = last_action->name_->to_string().find("__set_sensing__");
-        assert(pos != string::npos);
-        string action_name(last_action->name_->to_string(), 0, pos);
+        if( pos != string::npos ) {
+            action_key = string(last_action->name_->to_string(), 0, pos);
+            pos = string::npos;
+        } else {
+            pos = last_action->name_->to_string().find("__effect__");
+        }
+        if( pos != string::npos ) {
+            action_key = string(last_action->name_->to_string(), 0, pos);
+            pos = string::npos;
+        } else {
+            pos = last_action->name_->to_string().find("__turn_on_sensor__");
+        }
+        if( pos != string::npos ) {
+            action_key = string(last_action->name_->to_string(), 0, pos);
+            pos = string::npos;
+        }
+        assert(action_key != "");
 
-        // find sensing models for action
-        assert(lw1.sensing_models_.find(action_name) != lw1.sensing_models_.end());
-        const map<int, map<int, vector<vector<int> > > > &sensing_models_for_action = lw1.sensing_models_.find(action_name)->second;
+        // find sensing models for action that are incompatible with observations
+        map<int, vector<const vector<vector<int> >*> > relevant_sensing_models;
+        const map<int, map<int, vector<vector<int> > > > *sensing_models_for_action = 0;
+        if( lw1.sensing_models_.find(action_key) != lw1.sensing_models_.end() )
+            sensing_models_for_action = &lw1.sensing_models_.find(action_key)->second;
 
-        cout << "Sensing models for action '" << action_name << "'" << endl;
-        for( map<int, map<int, vector<vector<int> > > >::const_iterator it = sensing_models_for_action.begin(); it != sensing_models_for_action.end(); ++it ) {
-            const LW1_Instance::Variable &variable = *lw1.multivalued_variables_[it->first];
-            cout << "  "; variable.print(cout); cout << endl;
-            for( map<int, vector<vector<int> > >::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt ) {
-                int value_key = jt->first;
-                const vector<vector<int> > &clauses = jt->second;
-                cout << "    Value=" << value_key << ", Clauses={";
-                cout << "}" << endl;
+        for( set<int>::const_iterator it = sensed.begin(); it != sensed.end(); ++it ) {
+            int sensed_literal = *it;
+            int atom_index = sensed_literal < 0 ? -sensed_literal - 1 : sensed_literal - 1;
+            bool negated = sensed_literal < 0;
+            cout << "sensed: literal="
+                 << (negated ? "(not " : "")
+                 << lw1.po_instance_.atoms_[atom_index]->name_
+                 << (negated ? ")" : "")
+                 << ", index=" << atom_index
+                 << endl;
+
+            map<int, vector<int> >::const_iterator jt = lw1.variables_for_atom_.find(atom_index);
+            assert(jt != lw1.variables_for_atom_.end());
+            assert(!jt->second.empty());
+
+            // collect sensing models for values incompatible with obs.
+            // For binary vars (i.e. w/ domain of size 1), need to
+            // consider complemented value explicitly
+            for( size_t k = 0; k < jt->second.size(); ++k ) {
+                int var_key = jt->second[k];
+                const LW1_Instance::Variable &variable = *lw1.multivalued_variables_[var_key];
+                if( variable.is_state_variable_ ) continue;
+
+                assert(sensing_models_for_action != 0);
+                assert(sensing_models_for_action->find(var_key) != sensing_models_for_action->end());
+                const map<int, vector<vector<int> > > &sensing_models_for_var = sensing_models_for_action->find(var_key)->second;
+
+                if( variable.domain_.size() == 1 ) {
+                    int value_key_for_complemented_literal = negated ? atom_index + 1 : -(atom_index + 1);
+                    map<int, vector<vector<int> > >::const_iterator kt = sensing_models_for_var.find(value_key_for_complemented_literal);
+                    if( kt != sensing_models_for_var.end() )
+                        relevant_sensing_models[sensed_literal].push_back(&kt->second);
+                } else {
+                    int value_key = !negated ? atom_index + 1 : -(atom_index + 1);
+                    for( map<int, vector<vector<int> > >::const_iterator kt = sensing_models_for_var.begin(); kt != sensing_models_for_var.end(); ++kt ) {
+                        if( kt->first != value_key )
+                            relevant_sensing_models[sensed_literal].push_back(&kt->second);
+                    }
+                }
             }
         }
-
-
+        //cout << "#sensed literals=" << sensed.size() << endl;
+        //cout << "#relevant sensing models=" << relevant_sensing_models.size() << endl;
 
         // construct logical theory
 #if 0
@@ -307,24 +356,28 @@ void Solver::compute_and_add_observations(const Instance::Action *last_action,
 #if 0
             Inference::Propositional::Clause cl;
             const vector<int> &clause = *it;
-            for( vector<int>::const_iterator jt = clause.begin(); jt != clause.end(); ++jt )
-                cl.push_back(*jt);
+            for( size_t k = 0; k < clause.size(); ++k )
+                cl.push_back(clause[k]);
             cnf.push_back(cl);
 #endif
         }
 
         // 3. Clauses from sensing models: K_o
-        // NOTE: need to determine literals Y=y incompatible with observation o and
-        // access sensing_models_[action][(Y,y)] to get clauses to insert into theory
-        cout << "SENSED:";
-        for( set<int>::const_iterator it = sensed.begin(); it != sensed.end(); ++it ) {
-            int literal = *it;
-            bool negated = literal < 0;
-            int atom_index = negated ? -literal - 1 : literal - 1;
-            assert(atom_index < lw1.po_instance_.atoms_.size());
-            cout << " " << (negated ? "(not " : "") << lw1.po_instance_.atoms_[atom_index]->name_ << (negated ? ")" : "") << flush;
+        for( map<int, vector<const vector<vector<int> >*> >::const_iterator it = relevant_sensing_models.begin(); it != relevant_sensing_models.end(); ++it ) {
+            const vector<const vector<vector<int> >*> &sensing_models = it->second;
+            for( size_t k = 0; k < sensing_models.size(); ++k ) {
+                const vector<vector<int> > &cnf_for_sensing_model = *sensing_models[k];
+                for( size_t j = 0; j < cnf_for_sensing_model.size(); ++j ) {
+                    const vector<int> &clause = cnf_for_sensing_model[j];
+#if 0
+                    Inference::Propositional::Clause cl;
+                    for( size_t i = 0; i < clause.size(); ++i )
+                        cl.push_back(clause[i]);
+                    cnf.push_back(cl);
+#endif
+                }
+            }
         }
-        cout << endl;
 
         // 4. Kept (extra) static clauses
 
@@ -361,6 +414,8 @@ void Solver::compute_and_add_observations(const Instance::Action *last_action,
     }
 #endif
 
+  fin:
+
     // compute the deductive closure with respect to the invariants
     // PURE-LW1: Se corre UR con lo observado y las formulas identificadas arriba.
     // Los literales (de estado) que sean inferidos por UR son agregados al
@@ -371,6 +426,7 @@ void Solver::compute_and_add_observations(const Instance::Action *last_action,
         for( size_t k = kp_instance_.first_deductive_action(); k < kp_instance_.last_deductive_action(); ++k ) {
             const Instance::Action &act = *kp_instance_.actions_[k];
             if( state.applicable(act) ) {
+                //cout << "Applying: " << act.name_ << endl;
                 state.apply(act);
             }
         }

@@ -32,8 +32,8 @@ void LW1_Instance::Variable::print(ostream &os) const {
     os << "Variable: name=" << name_
        << ", is-state-var=" << is_state_variable_
        << ", is-observable=" << is_observable_
-       << ", values={";
-    for( set<int>::const_iterator it = values_.begin(); it != values_.end(); ++it )
+       << ", domain={";
+    for( set<int>::const_iterator it = domain_.begin(); it != domain_.end(); ++it )
         os << *it << ",";
     os << "}"
        << ", beams={";
@@ -84,9 +84,13 @@ LW1_Instance::LW1_Instance(const Instance &ins,
     multivalued_variables_.reserve(multivalued_variables.size());
     for( size_t k = 0; k < multivalued_variables.size(); ++k ) {
         const PDDL_Base::Variable &var = *multivalued_variables[k];
-        set<int> values;
+
+        set<int> domain;
         map<int, index_set> beams;
-        for( PDDL_Base::unsigned_atom_set::const_iterator it = var.grounded_values_.begin(); it != var.grounded_values_.end(); ++it ) {
+        int var_index = multivalued_variables_.size();
+        varmap_.insert(make_pair(var.print_name_, var_index));
+
+        for( PDDL_Base::unsigned_atom_set::const_iterator it = var.grounded_domain_.begin(); it != var.grounded_domain_.end(); ++it ) {
             assert(!it->negated_);
             string atom_name = it->to_string(false, true);
             int atom_index = get_atom_index(ins, atom_name);
@@ -97,7 +101,11 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                 continue;
             } 
 
-            values.insert(atom_index);
+            // insert value into variable's domain
+            domain.insert(atom_index);
+            variables_for_atom_[atom_index].push_back(var_index);
+
+            // fill beam for value
             if( var.is_observable_variable() ) {
                 observable_atoms_.insert(atom_index);
                 index_set beam;
@@ -112,8 +120,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                 beams[atom_index] = beam;
             }
         }
-        varmap_.insert(make_pair(var.print_name_, multivalued_variables_.size()));
-        multivalued_variables_.push_back(new Variable(var.print_name_, var.is_observable_variable(), var.is_state_variable(), values, beams));
+        multivalued_variables_.push_back(new Variable(var.print_name_, var.is_observable_variable(), var.is_state_variable(), domain, beams));
         //multivalued_variables_.back()->print(cout); cout << endl;
     }
 
@@ -140,7 +147,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                 // setup keys for accessing data structures
                 string action_key = action.print_name_;
                 int var_key = var_index;
-                int value_key = (model.literal_->negated_ ? -1 : 1) * atom_index;
+                int value_key = (model.literal_->negated_ ? -1 : 1) * (atom_index + 1);
 
                 assert(model.dnf_ != 0);
                 if( dynamic_cast<const PDDL_Base::Or*>(model.dnf_) != 0 ) {
@@ -192,6 +199,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                                 // insert clause
                                 assert(clause.size() == term.size());
                                 sensing_models_[action_key][var_key][value_key].push_back(clause);
+                                cout << "INSERT: model for action-key=" << action_key << ", var-key=" << var_key << ", value-key=" << value_key << endl;
                                 //assert(0);
                             }
                         } else if( dynamic_cast<const PDDL_Base::Literal*>(disjunction[j]) != 0 ) {
@@ -207,6 +215,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                             vector<int> unit_clause(1, 1 + k_index);
                             assert(unit_clause.size() == 1);
                             sensing_models_[action_key][var_key][value_key].push_back(unit_clause);
+                            cout << "INSERT: model for action-key=" << action_key << ", var-key=" << var_key << ", value-key=" << value_key << endl;
                             //assert(0);
                         } else {
                             cout << Utils::error() << "formula '" << *disjunction[j]
@@ -259,6 +268,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                         // insert clause
                         assert(clause.size() == term.size());
                         sensing_models_[action_key][var_key][value_key].push_back(clause);
+                        cout << "INSERT: model for action-key=" << action_key << ", var-key=" << var_key << ", value-key=" << value_key << endl;
                         //assert(0);
                     }
                 } else if( dynamic_cast<const PDDL_Base::Literal*>(model.dnf_) != 0 ) {
@@ -274,6 +284,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                     vector<int> unit_clause(1, 1 + k_index);
                     assert(unit_clause.size() == 1);
                     sensing_models_[action_key][var_key][value_key].push_back(unit_clause);
+                    cout << "INSERT: model for action-key=" << action_key << ", var-key=" << var_key << ", value-key=" << value_key << endl;
                     //assert(0);
                 } else if( dynamic_cast<const PDDL_Base::Constant*>(model.dnf_) != 0 ) {
                     //cout << "dnf is constant: " << *model.dnf_ << endl;
@@ -372,19 +383,19 @@ LW1_Instance::LW1_Instance(const Instance &ins,
         for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
             const Variable &var = *multivalued_variables_[k];
             if( var.is_state_variable_ ) {
-                const set<int> &values = var.values_;
-                for( set<int>::const_iterator it = values.begin(); it != values.end(); ++it ) {
+                const set<int> &domain = var.domain_;
+                for( set<int>::const_iterator it = domain.begin(); it != domain.end(); ++it ) {
                     vector<int> clause;
-                    clause.reserve(values.size());
+                    clause.reserve(domain.size());
                     clause.push_back(1 + 2**it);
-                    for( set<int>::const_iterator jt = values.begin(); jt != values.end(); ++jt ) {
-                        if( jt != it ) clause.push_back(-(1 + 2**it+1));
+                    for( set<int>::const_iterator jt = domain.begin(); jt != domain.end(); ++jt ) {
+                        if( it != jt ) clause.push_back(-(1 + 2**jt+1));
                     }
                     clauses_for_axioms_.push_back(clause);
                 }
-                for( set<int>::const_iterator it = values.begin(); it != values.end(); ++it ) {
-                    for( set<int>::const_iterator jt = it; jt != values.end(); ++jt ) {
-                        if( jt != it ) {
+                for( set<int>::const_iterator it = domain.begin(); it != domain.end(); ++it ) {
+                    for( set<int>::const_iterator jt = it; jt != domain.end(); ++jt ) {
+                        if( it != jt ) {
                             vector<int> clause;
                             clause.reserve(2);
                             clause.push_back(-(1 + 2**it));
@@ -396,8 +407,6 @@ LW1_Instance::LW1_Instance(const Instance &ins,
             }
         }
     }
-
-    // store sensing models for each action
 
     // cross reference instance to compute how many rules of each type
     cross_reference();
@@ -593,7 +602,7 @@ void LW1_Instance::create_sensor(const Sensor &sensor) {
     int varid = -1;
     for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
         const Variable &var = *multivalued_variables_[k];
-        if( var.values_.find(sensed_index) != var.values_.end() ) {
+        if( var.domain_.find(sensed_index) != var.domain_.end() ) {
             varid = k;
             break;
         }
@@ -615,7 +624,7 @@ void LW1_Instance::create_sensor(const Sensor &sensor) {
     // complete condition with conditions on other values of the variable (if applicable)
     if( (sensed > 0) && (varid != -1) ) {
         const Variable &var = *multivalued_variables_[varid];
-        for( set<int>::const_iterator it = var.values_.begin(); it != var.values_.end(); ++it ) {
+        for( set<int>::const_iterator it = var.domain_.begin(); it != var.domain_.end(); ++it ) {
             if( *it != sensed_index ) nact.precondition_.insert(-(1 + 2**it));
         }
     }

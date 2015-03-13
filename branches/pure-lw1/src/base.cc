@@ -137,8 +137,8 @@ void PDDL_Base::calculate_strongly_static_predicates() const {
         bool strongly_static = true;
 
         for( size_t k = 0; strongly_static && (k < multivalued_variables_.size()); ++k ) {
-            for( size_t i = 0; strongly_static && (i < multivalued_variables_[k]->values_.size()); ++i )
-                strongly_static = multivalued_variables_[k]->values_[i]->is_strongly_static(pred);
+            for( size_t i = 0; strongly_static && (i < multivalued_variables_[k]->domain_.size()); ++i )
+                strongly_static = multivalued_variables_[k]->domain_[i]->is_strongly_static(pred);
         }
 
         for( size_t k = 0; strongly_static && (k < dom_init_.size()); ++k ) {
@@ -219,7 +219,7 @@ void PDDL_Base::instantiate_elements() {
         for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
             const Variable &var = *multivalued_variables_[k];
             cout << Utils::magenta() << "variable '" << var.print_name_ << "':" << Utils::normal();
-            for( unsigned_atom_set::const_iterator it = var.grounded_values_.begin(); it != var.grounded_values_.end(); ++it )
+            for( unsigned_atom_set::const_iterator it = var.grounded_domain_.begin(); it != var.grounded_domain_.end(); ++it )
                 cout << " " << *it;
             cout << endl;
         }
@@ -551,7 +551,7 @@ void PDDL_Base::lw1_calculate_atoms_for_state_variables() {
     for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
         const Variable &var = *multivalued_variables_[k];
         if( var.is_state_variable() ) {
-            atoms_for_state_variables_.insert(var.grounded_values_.begin(), var.grounded_values_.end());
+            atoms_for_state_variables_.insert(var.grounded_domain_.begin(), var.grounded_domain_.end());
         }
     }
 
@@ -571,7 +571,7 @@ void PDDL_Base::lw1_calculate_beams_for_grounded_observable_variables() {
 
             // print beam (if requested)
             if( options_.is_enabled("lw1:print:beams") ) {
-                for( unsigned_atom_set::const_iterator it = var.grounded_values_.begin(); it != var.grounded_values_.end(); ++it ) {
+                for( unsigned_atom_set::const_iterator it = var.grounded_domain_.begin(); it != var.grounded_domain_.end(); ++it ) {
                     cout << Utils::magenta()
                          << "beam for value '" << *it << "' of var '" << var.print_name_ << "' ('*' means static):"
                          << Utils::normal();
@@ -584,7 +584,7 @@ void PDDL_Base::lw1_calculate_beams_for_grounded_observable_variables() {
             }
 
             // remove static atoms from beams
-            for( unsigned_atom_set::const_iterator it = var.grounded_values_.begin(); it != var.grounded_values_.end(); ++it ) {
+            for( unsigned_atom_set::const_iterator it = var.grounded_domain_.begin(); it != var.grounded_domain_.end(); ++it ) {
                 unsigned_atom_set reduced_beam;
                 if( var.beam_.find(*it) == var.beam_.end() ) continue;
                 assert(var.beam_.find(*it) != var.beam_.end());
@@ -602,7 +602,7 @@ void PDDL_Base::lw1_calculate_beams_for_grounded_observable_variables() {
 
 void PDDL_Base::lw1_calculate_beam_for_grounded_variable(Variable &var) {
     if( var.is_state_variable() ) {
-        for( unsigned_atom_set::const_iterator it = var.grounded_values_.begin(); it != var.grounded_values_.end(); ++it )
+        for( unsigned_atom_set::const_iterator it = var.grounded_domain_.begin(); it != var.grounded_domain_.end(); ++it )
             var.beam_[*it].insert(*it);
     } else {
         // fill up beams for values of variable
@@ -613,9 +613,9 @@ void PDDL_Base::lw1_calculate_beam_for_grounded_variable(Variable &var) {
         }
 
         // remove values with empty beam
-        for( unsigned_atom_set::const_iterator it = var.grounded_values_.begin(); it != var.grounded_values_.end(); ) {
+        for( unsigned_atom_set::const_iterator it = var.grounded_domain_.begin(); it != var.grounded_domain_.end(); ) {
             if( var.beam_.find(*it) == var.beam_.end() )
-                var.grounded_values_.erase(*it++);
+                var.grounded_domain_.erase(*it++);
             else
                 ++it;
         }
@@ -856,7 +856,7 @@ void PDDL_Base::lw1_create_sensors_for_atom(const Atom &atom, const Condition &c
     bool variable_found = false;
     for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
         const Variable &var = *multivalued_variables_[k];
-        if( var.grounded_values_.find(atom) != var.grounded_values_.end() ) {
+        if( var.grounded_domain_.find(atom) != var.grounded_domain_.end() ) {
             if( !var.is_observable_variable() ) continue;
             variable_found = true;
 
@@ -880,7 +880,7 @@ void PDDL_Base::lw1_create_sensors_for_atom(const Atom &atom, const Condition &c
                 sensor_condition->push_back(condition.copy_and_simplify());
             }
 
-            //for( unsigned_atom_set::const_iterator it = var.grounded_values_.begin(); it != var.grounded_values_.end(); ++it )
+            //for( unsigned_atom_set::const_iterator it = var.grounded_domain_.begin(); it != var.grounded_domain_.end(); ++it )
             //    if( *it != atom ) sensor_condition->push_back(Literal(*it).negate());
             sensor->condition_ = sensor_condition;
 
@@ -893,7 +893,7 @@ void PDDL_Base::lw1_create_sensors_for_atom(const Atom &atom, const Condition &c
                 cout << Utils::yellow() << *sensor << Utils::normal();
 
             // if this is a singleton variable, create a copy that sets value to false
-            if( var.grounded_values_.size() == 1 ) {
+            if( var.grounded_domain_.size() == 1 ) {
                 ostringstream s;
                 s << "sensor-for-" << var.to_string(true, true) << "-" << atom.to_string(atom.negated_, true) << "-false";
                 if( sensor_index != -1 ) s << "-" << sensor_index;
@@ -974,9 +974,9 @@ void PDDL_Base::lw1_create_deductive_rules_for_variables() {
 
     for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
         Variable &var = *multivalued_variables_[k];
-        if( var.grounded_values_.size() == 1 ) continue;
+        if( var.grounded_domain_.size() == 1 ) continue;
 
-        for( unsigned_atom_set::const_iterator it = var.grounded_values_.begin(); it != var.grounded_values_.end(); ++it ) {
+        for( unsigned_atom_set::const_iterator it = var.grounded_domain_.begin(); it != var.grounded_domain_.end(); ++it ) {
             assert(!it->negated_);
             string drule_type1_name = string("drule-var-type1-") + var.to_string(true, true) + "-" + it->to_string(false, true);
             string drule_type2_name = string("drule-var-type2-") + var.to_string(true, true) + "-" + it->to_string(false, true);
@@ -986,7 +986,7 @@ void PDDL_Base::lw1_create_deductive_rules_for_variables() {
             Action *drule_type2 = new Action(strdup(drule_type2_name.c_str()));
             AndEffect *drule_type2_effect = new AndEffect;
 
-            for( unsigned_atom_set::const_iterator jt = var.grounded_values_.begin(); jt != var.grounded_values_.end(); ++jt ) {
+            for( unsigned_atom_set::const_iterator jt = var.grounded_domain_.begin(); jt != var.grounded_domain_.end(); ++jt ) {
                 assert(!jt->negated_);
                 if( jt != it ) {
                     drule_type1_precondition->push_back(Literal(*jt).negate());
@@ -1318,11 +1318,11 @@ bool PDDL_Base::lw1_is_literal_implied(const Atom &literal, const vector<const A
     if( (literal.negated_ && !complement_literal) || (!literal.negated_ && complement_literal) ) {
         for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
             const Variable &var = *multivalued_variables_[k];
-            unsigned_atom_set::const_iterator it = var.grounded_values_.find(literal);
-            if( it != var.grounded_values_.end() ) {
+            unsigned_atom_set::const_iterator it = var.grounded_domain_.find(literal);
+            if( it != var.grounded_domain_.end() ) {
                 for( size_t i = 0; i < condition.size(); ++i ) {
-                    unsigned_atom_set::const_iterator jt = var.grounded_values_.find(*condition[i]);
-                    if( !condition[i]->negated_ && (it != jt) && (jt != var.grounded_values_.end()) ) {
+                    unsigned_atom_set::const_iterator jt = var.grounded_domain_.find(*condition[i]);
+                    if( !condition[i]->negated_ && (it != jt) && (jt != var.grounded_domain_.end()) ) {
                         //cout << "(case 1) TRUE" << endl;
                         return true;
                     }
@@ -1663,8 +1663,8 @@ void PDDL_Base::lw1_complete_effect_with_variable(AndEffect *effect, const Varia
     for( size_t k = 0; k < effect->size(); ++k ) {
         if( dynamic_cast<const AtomicEffect*>((*effect)[k]) != 0 ) {
             const AtomicEffect &literal = *static_cast<const AtomicEffect*>((*effect)[k]);
-            if( !literal.negated_ && (var.grounded_values_.find(literal) != var.grounded_values_.end()) ) {
-                for( unsigned_atom_set::const_iterator it = var.grounded_values_.begin(); it != var.grounded_values_.end(); ++it ) {
+            if( !literal.negated_ && (var.grounded_domain_.find(literal) != var.grounded_domain_.end()) ) {
+                for( unsigned_atom_set::const_iterator it = var.grounded_domain_.begin(); it != var.grounded_domain_.end(); ++it ) {
                     assert(!it->negated_);
                     if( literal != *it ) additions.push_back(AtomicEffect(*it).negate());
                 }
@@ -2893,7 +2893,7 @@ void PDDL_Base::SensingModelForStateVariable::extract_atoms(unsigned_atom_set &a
             cout << Utils::error() << "internal state variable is null. Look for previous error(s)." << endl;
             return;
         }
-        atoms.insert(variable_->grounded_values_.begin(), variable_->grounded_values_.end());
+        atoms.insert(variable_->grounded_domain_.begin(), variable_->grounded_domain_.end());
     }
 }
 
@@ -2954,8 +2954,8 @@ bool PDDL_Base::SensingModelForObservableVariable::verify(const PDDL_Base *base)
     // check that literal is value of observable variable
     if( variable_ != 0 ) {
         string literal_name = literal_->to_string();
-        if( variable_->grounded_values_.size() == 1 ) {
-            const Atom &value = *variable_->grounded_values_.begin();
+        if( variable_->grounded_domain_.size() == 1 ) {
+            const Atom &value = *variable_->grounded_domain_.begin();
             if( (value.to_string() != literal_name) && (string("(not ") + value.to_string() + ")" != literal_name) ) {
                 cout << Utils::error() << "value '" << literal_name
                      << "' doesn't belong to domain of '" << *variable_ << "'" << endl;
@@ -2963,7 +2963,7 @@ bool PDDL_Base::SensingModelForObservableVariable::verify(const PDDL_Base *base)
             }
         } else {
             bool value_found = false;
-            for( unsigned_atom_set::const_iterator it = variable_->grounded_values_.begin(); it != variable_->grounded_values_.end(); ++it ) {
+            for( unsigned_atom_set::const_iterator it = variable_->grounded_domain_.begin(); it != variable_->grounded_domain_.end(); ++it ) {
                 if( it->to_string() == literal_name ) {
                     value_found = true;
                     break;
@@ -3014,7 +3014,7 @@ void PDDL_Base::SensingModelForObservableVariable::extract_atoms(unsigned_atom_s
 }
 
 void PDDL_Base::SensingModelForObservableVariable::extend_beam_for_variable(Variable &var) const {
-    if( var.grounded_values_.find(*literal_) != var.grounded_values_.end() ) {
+    if( var.grounded_domain_.find(*literal_) != var.grounded_domain_.end() ) {
         unsigned_atom_set context;
         dnf_->extract_atoms(context);
         var.beam_[*literal_].insert(context.begin(), context.end());
@@ -3212,8 +3212,8 @@ bool PDDL_Base::Sensing::finish_grounding(PDDL_Base *base) {
     for( set<const ObsVariable*>::const_iterator it = variables.begin(); it != variables.end(); ++it ) {
         const ObsVariable &var = **it;
         string varname = var.to_string();
-        if( var.grounded_values_.size() == 1 ) {
-            string value = var.grounded_values_.begin()->to_string();
+        if( var.grounded_domain_.size() == 1 ) {
+            string value = var.grounded_domain_.begin()->to_string();
             string not_value = string("(not ") + value + ")";
             if( sensed_values_for_var[varname].find(value) == sensed_values_for_var[varname].end() ) {
                 map<pair<string, string>, string>::const_iterator it = model_for_sensed_value_for_var.find(make_pair(varname, not_value));
@@ -3230,7 +3230,7 @@ bool PDDL_Base::Sensing::finish_grounding(PDDL_Base *base) {
                 }
             }
         } else {
-            for( unsigned_atom_set::const_iterator jt = var.grounded_values_.begin(); jt != var.grounded_values_.end(); ++jt ) {
+            for( unsigned_atom_set::const_iterator jt = var.grounded_domain_.begin(); jt != var.grounded_domain_.end(); ++jt ) {
                 string value = jt->to_string();
                 if( sensed_values_for_var[varname].find(value) == sensed_values_for_var[varname].end() ) {
                     cout << Utils::error() << "no sensing model for value '" << value
@@ -3926,19 +3926,19 @@ void PDDL_Base::Variable::process_instance() const {
     var->grounded_ = true;
     variable_list_ptr_->push_back(var);
 
-    for( size_t k = 0; k < values_.size(); ++k ) {
-        Effect *grounded_value = values_[k]->ground(true); // clone_variables=true
+    for( size_t k = 0; k < domain_.size(); ++k ) {
+        Effect *grounded_value = domain_[k]->ground(true); // clone_variables=true
         if( dynamic_cast<AtomicEffect*>(grounded_value) != 0 ) {
-            var->grounded_values_.insert(*static_cast<AtomicEffect*>(grounded_value));
+            var->grounded_domain_.insert(*static_cast<AtomicEffect*>(grounded_value));
         } else if( dynamic_cast<AndEffect*>(grounded_value) != 0 ) {
             AndEffect &item_list = *static_cast<AndEffect*>(grounded_value);
             for( size_t i = 0; i < item_list.size(); ++i ) {
                 assert(dynamic_cast<const AtomicEffect*>(item_list[i]) != 0);
-                var->grounded_values_.insert(*static_cast<const AtomicEffect*>(item_list[i]));
+                var->grounded_domain_.insert(*static_cast<const AtomicEffect*>(item_list[i]));
             }
         } else {
-            cout << *values_[k] << endl;
-            Effect *e = values_[k]->ground(true); // clone_variables=true
+            cout << *domain_[k] << endl;
+            Effect *e = domain_[k]->ground(true); // clone_variables=true
             cout << "gdd-ptr=" << e << endl;
             cout << Utils::error() << "unrecognized format in variable '" << print_name_ << "'" << endl;
             exit(255);
@@ -3954,8 +3954,8 @@ string PDDL_Base::StateVariable::to_string(bool only_name, bool cat) const {
             str = print_name_;
         } else {
             str = string("(") + print_name_;
-            for( size_t k = 0; k < values_.size(); ++k )
-                str += " " + values_[k]->to_string();
+            for( size_t k = 0; k < domain_.size(); ++k )
+                str += " " + domain_[k]->to_string();
             str += ")";
         }
         if( cat ) {
@@ -3973,8 +3973,8 @@ string PDDL_Base::StateVariable::to_string(bool only_name, bool cat) const {
     } else {
         string str("(:variable ");
         str += print_name_;
-        for( size_t k = 0; k < values_.size(); ++k )
-            str += " " + values_[k]->to_string();
+        for( size_t k = 0; k < domain_.size(); ++k )
+            str += " " + domain_[k]->to_string();
         if( is_observable_ ) str += " :observable";
         return str + ")";
     }
@@ -3987,8 +3987,8 @@ string PDDL_Base::ObsVariable::to_string(bool only_name, bool cat) const {
             str = print_name_;
         } else {
             str = string("(") + print_name_;
-            for( size_t k = 0; k < values_.size(); ++k )
-                str += " " + values_[k]->to_string();
+            for( size_t k = 0; k < domain_.size(); ++k )
+                str += " " + domain_[k]->to_string();
             str += ")";
         }
         if( cat ) {
@@ -4006,8 +4006,8 @@ string PDDL_Base::ObsVariable::to_string(bool only_name, bool cat) const {
     } else {
         string str("(:obs-variable ");
         str += print_name_;
-        for( size_t k = 0; k < values_.size(); ++k )
-            str += " " + values_[k]->to_string();
+        for( size_t k = 0; k < domain_.size(); ++k )
+            str += " " + domain_[k]->to_string();
         return str + ")";
     }
 }
