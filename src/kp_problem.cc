@@ -117,6 +117,8 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
     n_subgoaling_actions_(0),
     po_instance_(ins) {
 
+    assert(0);
+
     // set name
     if( dynamic_cast<const InstanceName*>(ins.name_) != 0 ) {
         set_name(new InstanceName(*dynamic_cast<const InstanceName*>(ins.name_)));
@@ -139,7 +141,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
     for( size_t k = 0; k < multivalued_variables.size(); ++k ) {
         const PDDL_Base::Variable &var = *multivalued_variables[k];
         if( var.is_observable_variable() ) {
-            for( PDDL_Base::unsigned_atom_set::const_iterator it = var.grounded_values_.begin(); it != var.grounded_values_.end(); ++it ) {
+            for( PDDL_Base::unsigned_atom_set::const_iterator it = var.grounded_domain_.begin(); it != var.grounded_domain_.end(); ++it ) {
                 string atom_name = it->to_string(false, true);
                 int atom_index = get_atom_index(ins, atom_name);
                 //cout << "obs-variable: atom=" << *it << ", name=" << atom_name << ", index=" << atom_index << endl;
@@ -156,7 +158,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
             }
         } else{
             set<int> values;
-            for( PDDL_Base::unsigned_atom_set::const_iterator it = var.grounded_values_.begin(); it != var.grounded_values_.end(); ++it ) {
+            for( PDDL_Base::unsigned_atom_set::const_iterator it = var.grounded_domain_.begin(); it != var.grounded_domain_.end(); ++it ) {
                 string atom_name = it->to_string(false, true);
                 int atom_index = get_atom_index(ins, atom_name);
                 //cout << "state-variable: atom=" << *it << ", name=" << atom_name << ", index=" << atom_index << endl;

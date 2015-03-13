@@ -2485,7 +2485,7 @@ case 170:
           else
               var = new ObsVariable(yyvsp[0].sym->text);
           multivalued_variables_.push_back(var);
-          effect_vec_ptr_ = &var->values_;
+          effect_vec_ptr_ = &var->domain_;
       ;
     break;}
 case 171:
@@ -2505,7 +2505,7 @@ case 172:
           var->param_ = *yyvsp[-1].vparam;
           delete yyvsp[-1].vparam;
           multivalued_variables_.push_back(var);
-          effect_vec_ptr_ = &var->values_;
+          effect_vec_ptr_ = &var->domain_;
       ;
     break;}
 case 173:

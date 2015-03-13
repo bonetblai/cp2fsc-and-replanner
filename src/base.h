@@ -674,13 +674,13 @@ class PDDL_Base {
 
     struct Variable : public Symbol, Schema {
         bool grounded_;
-        effect_vec values_;
-        unsigned_atom_set grounded_values_;
+        effect_vec domain_;
+        unsigned_atom_set grounded_domain_;
         std::map<Atom, unsigned_atom_set, Atom::unsigned_less_comparator> beam_;
         Variable(const char *name) : Symbol(name, sym_varname), grounded_(false) { }
         virtual ~Variable() {
-            for( size_t k = 0; k < values_.size(); ++k )
-                delete values_[k];
+            for( size_t k = 0; k < domain_.size(); ++k )
+                delete domain_[k];
         }
         void instantiate(variable_list &vlist) const;
         virtual void process_instance() const;
