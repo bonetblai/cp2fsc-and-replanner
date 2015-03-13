@@ -247,7 +247,7 @@ int main(int argc, char *argv[]) {
         cout << endl;
 
         planner->reset_stats();
-        Solver solver(instance, *kp_instance, *planner, opt_time_bound);
+        Solver solver(translation_type, instance, *kp_instance, *planner, opt_time_bound);
         int status = solver.solve(hidden_initial_state, plan, fired_sensors, sensed_literals);
         assert(1+plan.size() == fired_sensors.size());
 
