@@ -76,6 +76,8 @@ COMMENT ;.*$
 ":observe"                 { return PDDL_Parser::KW_OBSERVE; }
 ":body"                    { return PDDL_Parser::KW_BODY; }
 ":head"                    { return PDDL_Parser::KW_HEAD; }
+"true"                     { return PDDL_Parser::KW_TRUE; }
+"false"                    { return PDDL_Parser::KW_FALSE; }
 "and"                      { return PDDL_Parser::KW_AND; }
 "exists"                   { return PDDL_Parser::KW_EXISTS; }
 "forall"                   { return PDDL_Parser::KW_FORALL; }

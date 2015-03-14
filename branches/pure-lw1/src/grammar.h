@@ -265,40 +265,42 @@ extern YY_PDDL_Parser_STYPE YY_PDDL_Parser_LVAL;
 #define	KW_PRE	286
 #define	KW_EFFECT	287
 #define	KW_AND	288
-#define	KW_OR	289
-#define	KW_EXISTS	290
-#define	KW_FORALL	291
-#define	KW_SUCH_THAT	292
-#define	KW_NOT	293
-#define	KW_WHEN	294
-#define	KW_ONEOF	295
-#define	KW_UNKNOWN	296
-#define	KW_PROBLEM	297
-#define	KW_FORDOMAIN	298
-#define	KW_OBJECTS	299
-#define	KW_INIT	300
-#define	KW_GOAL	301
-#define	KW_SENSOR	302
-#define	KW_SENSE	303
-#define	KW_OBSERVE	304
-#define	KW_AXIOM	305
-#define	KW_COND	306
-#define	KW_OBSERVABLE	307
-#define	KW_BODY	308
-#define	KW_HEAD	309
-#define	KW_STICKY	310
-#define	KW_FLUENTS	311
-#define	KW_HIDDEN	312
-#define	KW_INVARIANT	313
-#define	KW_AT_LEAST_ONE	314
-#define	KW_AT_MOST_ONE	315
-#define	KW_EXACTLY_ONE	316
-#define	KW_VARIABLE	317
-#define	KW_OBS_VARIABLE	318
-#define	KW_VALUES	319
-#define	KW_SENSING	320
-#define	KW_DEFAULT_SENSING	321
-#define	KW_MODEL_FOR	322
+#define	KW_TRUE	289
+#define	KW_FALSE	290
+#define	KW_OR	291
+#define	KW_EXISTS	292
+#define	KW_FORALL	293
+#define	KW_SUCH_THAT	294
+#define	KW_NOT	295
+#define	KW_WHEN	296
+#define	KW_ONEOF	297
+#define	KW_UNKNOWN	298
+#define	KW_PROBLEM	299
+#define	KW_FORDOMAIN	300
+#define	KW_OBJECTS	301
+#define	KW_INIT	302
+#define	KW_GOAL	303
+#define	KW_SENSOR	304
+#define	KW_SENSE	305
+#define	KW_OBSERVE	306
+#define	KW_AXIOM	307
+#define	KW_COND	308
+#define	KW_OBSERVABLE	309
+#define	KW_BODY	310
+#define	KW_HEAD	311
+#define	KW_STICKY	312
+#define	KW_FLUENTS	313
+#define	KW_HIDDEN	314
+#define	KW_INVARIANT	315
+#define	KW_AT_LEAST_ONE	316
+#define	KW_AT_MOST_ONE	317
+#define	KW_EXACTLY_ONE	318
+#define	KW_VARIABLE	319
+#define	KW_OBS_VARIABLE	320
+#define	KW_VALUES	321
+#define	KW_SENSING	322
+#define	KW_DEFAULT_SENSING	323
+#define	KW_MODEL_FOR	324
 
 
 #line 143 "/usr/local/lib/bison.h"
@@ -343,7 +345,7 @@ public:
 /* static const int token ... */
 
 /* #line 182 "/usr/local/lib/bison.h" */
-#line 347 "grammar.h"
+#line 349 "grammar.h"
 static const int TK_OPEN;
 static const int TK_CLOSE;
 static const int TK_OPEN_SQ;
@@ -375,6 +377,8 @@ static const int KW_ARGS;
 static const int KW_PRE;
 static const int KW_EFFECT;
 static const int KW_AND;
+static const int KW_TRUE;
+static const int KW_FALSE;
 static const int KW_OR;
 static const int KW_EXISTS;
 static const int KW_FORALL;
@@ -417,7 +421,7 @@ static const int KW_MODEL_FOR;
 enum YY_PDDL_Parser_ENUM_TOKEN { YY_PDDL_Parser_NULL_TOKEN=0
 
 /* #line 185 "/usr/local/lib/bison.h" */
-#line 421 "grammar.h"
+#line 425 "grammar.h"
 	,TK_OPEN=258
 	,TK_CLOSE=259
 	,TK_OPEN_SQ=260
@@ -449,40 +453,42 @@ enum YY_PDDL_Parser_ENUM_TOKEN { YY_PDDL_Parser_NULL_TOKEN=0
 	,KW_PRE=286
 	,KW_EFFECT=287
 	,KW_AND=288
-	,KW_OR=289
-	,KW_EXISTS=290
-	,KW_FORALL=291
-	,KW_SUCH_THAT=292
-	,KW_NOT=293
-	,KW_WHEN=294
-	,KW_ONEOF=295
-	,KW_UNKNOWN=296
-	,KW_PROBLEM=297
-	,KW_FORDOMAIN=298
-	,KW_OBJECTS=299
-	,KW_INIT=300
-	,KW_GOAL=301
-	,KW_SENSOR=302
-	,KW_SENSE=303
-	,KW_OBSERVE=304
-	,KW_AXIOM=305
-	,KW_COND=306
-	,KW_OBSERVABLE=307
-	,KW_BODY=308
-	,KW_HEAD=309
-	,KW_STICKY=310
-	,KW_FLUENTS=311
-	,KW_HIDDEN=312
-	,KW_INVARIANT=313
-	,KW_AT_LEAST_ONE=314
-	,KW_AT_MOST_ONE=315
-	,KW_EXACTLY_ONE=316
-	,KW_VARIABLE=317
-	,KW_OBS_VARIABLE=318
-	,KW_VALUES=319
-	,KW_SENSING=320
-	,KW_DEFAULT_SENSING=321
-	,KW_MODEL_FOR=322
+	,KW_TRUE=289
+	,KW_FALSE=290
+	,KW_OR=291
+	,KW_EXISTS=292
+	,KW_FORALL=293
+	,KW_SUCH_THAT=294
+	,KW_NOT=295
+	,KW_WHEN=296
+	,KW_ONEOF=297
+	,KW_UNKNOWN=298
+	,KW_PROBLEM=299
+	,KW_FORDOMAIN=300
+	,KW_OBJECTS=301
+	,KW_INIT=302
+	,KW_GOAL=303
+	,KW_SENSOR=304
+	,KW_SENSE=305
+	,KW_OBSERVE=306
+	,KW_AXIOM=307
+	,KW_COND=308
+	,KW_OBSERVABLE=309
+	,KW_BODY=310
+	,KW_HEAD=311
+	,KW_STICKY=312
+	,KW_FLUENTS=313
+	,KW_HIDDEN=314
+	,KW_INVARIANT=315
+	,KW_AT_LEAST_ONE=316
+	,KW_AT_MOST_ONE=317
+	,KW_EXACTLY_ONE=318
+	,KW_VARIABLE=319
+	,KW_OBS_VARIABLE=320
+	,KW_VALUES=321
+	,KW_SENSING=322
+	,KW_DEFAULT_SENSING=323
+	,KW_MODEL_FOR=324
 
 
 #line 185 "/usr/local/lib/bison.h"
@@ -539,5 +545,5 @@ public:
 /* END */
 
 /* #line 236 "/usr/local/lib/bison.h" */
-#line 543 "grammar.h"
+#line 549 "grammar.h"
 #endif
