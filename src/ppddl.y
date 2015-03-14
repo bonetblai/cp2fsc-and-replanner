@@ -73,7 +73,7 @@
 
 %token                        KW_REQS KW_TRANSLATION
                               KW_CONSTANTS KW_PREDS KW_TYPES KW_DEFINE KW_DOMAIN
-                              KW_ACTION KW_ARGS KW_PRE KW_EFFECT KW_AND
+                              KW_ACTION KW_ARGS KW_PRE KW_EFFECT KW_AND KW_TRUE KW_FALSE
                               KW_OR KW_EXISTS KW_FORALL KW_SUCH_THAT KW_NOT KW_WHEN KW_ONEOF KW_UNKNOWN
                               KW_PROBLEM KW_FORDOMAIN KW_OBJECTS KW_INIT KW_GOAL
                               KW_SENSOR KW_SENSE KW_OBSERVE KW_AXIOM KW_COND KW_OBSERVABLE
@@ -92,7 +92,7 @@
 %type <sym>                   primitive_type
 %type <atom>                  positive_literal negative_literal literal
 %type <condition_vec>         single_condition_list condition_list
-%type <condition>             condition single_condition and_condition or_condition
+%type <condition>             condition constant_condition single_condition and_condition or_condition
 %type <condition>             forall_condition exists_condition
 %type <condition>             goal_list single_goal
 %type <invariant>             invariant at_least_one_invariant at_most_one_invariant exactly_one_invariant
@@ -421,11 +421,17 @@ action_elements:
     ;
 
 condition:
-      single_condition
+      constant_condition
+    | single_condition
     | and_condition
     | or_condition
     | forall_condition
     | exists_condition
+    ;
+
+constant_condition:
+      KW_TRUE { $$ = new Constant(true); }
+    | KW_FALSE { $$ = new Constant(false); }
     ;
 
 single_condition:
