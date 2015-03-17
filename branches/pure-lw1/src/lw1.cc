@@ -238,7 +238,7 @@ int main(int argc, char *argv[]) {
     for( int k = 0; k < instance.num_hidden_states(); ++k ) {
         float instance_start_time = Utils::read_time_in_seconds();
         vector<set<int> > fired_sensors, sensed_literals;
-        State hidden_initial_state;
+        STATE_CLASS hidden_initial_state; // STATE_CLASS is defined in lw1_solver.h (this is provisional)
         Instance::Plan plan;
 
         instance.set_hidden_state(k, hidden_initial_state);
