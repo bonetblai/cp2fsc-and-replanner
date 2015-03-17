@@ -1,53 +1,84 @@
 #ifndef LW1_SOLVER_H
 #define LW1_SOLVER_H
 
+// We are currently using the class Solver as base class. In the near
+// future we'll change to the templatized NewSolver class to allow
+// solver with different state classes. Once the migration is complete,
+// solver.{cc,h} will dissapear and new_solver.h will become solver.h
+
+#define BASE_SELECTOR 0 // 0 for Solver, 1 for NewSolver<State>
+
+#if BASE_SELECTOR == 0
+#    define BASE_CLASS Solver
+#    include "solver.h"
+#endif
+
+#if BASE_SELECTOR == 1
+#    define BASE_CLASS NewSolver<State>
+#    include "new_solver.h"
+#endif
+
 #include <vector>
-#include "solver.h"
 #include "classical_planner.h"
 #include "problem.h"
 #include "lw1_problem.h"
 #include "state.h"
 
-class LW1_Solver : public Solver {
+class LW1_Solver : public BASE_CLASS {
   public:
     LW1_Solver(const Instance &instance,
                const KP_Instance &kp_instance,
                const ClassicalPlanner &planner,
                int time_bound)
-      : Solver(LW1, instance, kp_instance, planner, time_bound) {
+      : BASE_CLASS(LW1, instance, kp_instance, planner, time_bound) {
     }
     ~LW1_Solver() { }
+
     virtual int solve(const State &initial_hidden_state,
                       Instance::Plan &final_plan,
                       std::vector<std::set<int> > &fired_sensors,
-                      std::vector<std::set<int> > &sensed_literals) const;
+                      std::vector<std::set<int> > &sensed_literals) const {
+        return BASE_CLASS::solve(initial_hidden_state,
+                                 final_plan,
+                                 fired_sensors,
+                                 sensed_literals);
+    }
+
   protected:
     typedef std::vector<int> clause_t;
     typedef std::vector<clause_t> cnf_t;;
     typedef std::vector<const cnf_t*> sensing_models_t;
     typedef std::map<int, sensing_models_t> relevant_sensing_models_t;
 
-    void compute_and_add_observations(const State &hidden,
-                                      State &state,
-                                      std::set<int> &sensors,
-                                      std::set<int> &sensed) const;
+    virtual void compute_and_add_observations(const State &hidden,
+                                              State &state,
+                                              std::set<int> &sensors,
+                                              std::set<int> &sensed) const;
 
-    void apply_inference(const Instance::Action *action,
-                         const std::set<int> &sensed,
-                         State &state) const;
+    virtual void apply_inference(const Instance::Action *action,
+                                 const std::set<int> &sensed,
+                                 State &state) const;
 
-    void fill_relevant_sensing_models(const LW1_Instance &lw1,
-                                      const Instance::Action *last_action,
-                                      const std::set<int> &sensed,
-                                      relevant_sensing_models_t &sensing_models) const;
+    virtual void fill_relevant_sensing_models(const LW1_Instance &lw1,
+                                              const Instance::Action *last_action,
+                                              const std::set<int> &sensed,
+                                              relevant_sensing_models_t &sensing_models) const;
 
-    void calculate_relevant_assumptions(const Instance::Plan &plan,
-                                        const Instance::Plan &raw_plan,
-                                        const State &initial_state,
-                                        const index_set &goal,
-                                        std::vector<index_set> &assumptions) const;
+    virtual void calculate_relevant_assumptions(const Instance::Plan &plan,
+                                                const Instance::Plan &raw_plan,
+                                                const State &initial_state,
+                                                const index_set &goal,
+                                                std::vector<index_set> &assumptions) const {
+        BASE_CLASS::calculate_relevant_assumptions(plan,
+                                                   raw_plan,
+                                                   initial_state,
+                                                   goal,
+                                                   assumptions);
+    }
 
-    bool inconsistent(const State &state, const std::vector<State> &assumptions, size_t k) const;
+    virtual bool inconsistent(const State &state, const std::vector<State> &assumptions, size_t k) const {
+        return BASE_CLASS::inconsistent(state, assumptions, k);
+    }
 };
 
 #endif

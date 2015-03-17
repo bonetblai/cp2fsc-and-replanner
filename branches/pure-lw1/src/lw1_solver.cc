@@ -5,28 +5,6 @@
 
 using namespace std;
 
-int LW1_Solver::solve(const State &initial_hidden_state,
-                      Instance::Plan &final_plan,
-                      vector<set<int> > &fired_sensors,
-                      vector<set<int> > &sensed_literals) const {
-    return Solver::solve(initial_hidden_state,
-                         final_plan,
-                         fired_sensors,
-                         sensed_literals);
-}
-
-void LW1_Solver::calculate_relevant_assumptions(const Instance::Plan &plan,
-                                                const Instance::Plan &raw_plan,
-                                                const State &initial_state,
-                                                const index_set &goal,
-                                                vector<index_set> &assumptions) const {
-    Solver::calculate_relevant_assumptions(plan,
-                                           raw_plan,
-                                           initial_state,
-                                           goal,
-                                           assumptions);
-}
-
 void LW1_Solver::compute_and_add_observations(const State &hidden,
                                               State &state,
                                               set<int> &sensors,
@@ -252,9 +230,5 @@ void LW1_Solver::fill_relevant_sensing_models(const LW1_Instance &lw1,
             }
         }
     }
-}
- 
-bool LW1_Solver::inconsistent(const State &state, const vector<State> &assumptions, size_t k) const {
-    return Solver::inconsistent(state, assumptions, k);
 }
 
