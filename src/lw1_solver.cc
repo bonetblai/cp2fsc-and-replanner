@@ -5,8 +5,8 @@
 
 using namespace std;
 
-void LW1_Solver::compute_and_add_observations(const State &hidden,
-                                              State &state,
+void LW1_Solver::compute_and_add_observations(const STATE_CLASS &hidden,
+                                              STATE_CLASS &state,
                                               set<int> &sensors,
                                               set<int> &sensed) const {
     assert(sensors.empty());
@@ -44,7 +44,7 @@ void LW1_Solver::compute_and_add_observations(const State &hidden,
 
 void LW1_Solver::apply_inference(const Instance::Action *last_action,
                                  const set<int> &sensed,
-                                 State &state) const {
+                                 STATE_CLASS &state) const {
 
     cout << Utils::magenta() << ">>> state before inference=";
     state.print(cout, kp_instance_);
@@ -66,7 +66,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
 #endif
 
         // 1. Positive literals from state
-        for( State::const_iterator it = state.begin(); it != state.end(); ++it ) {
+        for( STATE_CLASS::const_iterator it = state.begin(); it != state.end(); ++it ) {
 #if UP
             Inference::Propositional::Clause cl;
             cl.push_back(1 + *it); // NOTA: en implementacion de clause, 'push_back' es un 'insert'
@@ -102,9 +102,9 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
             }
         }
 
-        // 4. Kept (extra) static clauses // CHECK THIS
+        // 4. Kept (extra) static clauses // CHECK THIS: add clasues in cnf_ which is part of LW1_State
 
-        // inference
+        // 5. Perform inference
 #if UP
         Inference::Propositional::CNF result;
 #endif
@@ -118,7 +118,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
 #endif
         }
 
-        // insert positive literals from result into state
+        // 6. Insert positive literals from result into state
 #if UP
         for( size_t k = 0; k < result.size(); ++k ) {
             const Inference::Propositional::Clause &clause = result[k];
@@ -132,10 +132,12 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         }
 #endif
 
+        // 7. Insert (static) clauses in result into state // CHECK THIS: add clauses into cnf_ which is part of LW1_State
+
         // PROVISIONAL: TO BE REMOVED WHEN UP INFERENCE IS WORKING
         bool fix_point_reached = false;
         while( !fix_point_reached ) {
-            State old_state(state);
+            STATE_CLASS old_state(state);
             for( size_t k = kp_instance_.first_deductive_action(); k < kp_instance_.last_deductive_action(); ++k ) {
                 const Instance::Action &act = *kp_instance_.actions_[k];
                 if( state.applicable(act) )

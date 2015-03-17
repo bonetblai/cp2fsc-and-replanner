@@ -9,13 +9,16 @@
 #define BASE_SELECTOR 0 // 0 for Solver, 1 for NewSolver<State>
 
 #if BASE_SELECTOR == 0
+#    define STATE_CLASS State
 #    define BASE_CLASS Solver
 #    include "solver.h"
 #endif
 
 #if BASE_SELECTOR == 1
-#    define BASE_CLASS NewSolver<State>
+#    define STATE_CLASS LW1_State
+#    define BASE_CLASS NewSolver<STATE_CLASS>
 #    include "new_solver.h"
+#    include "lw1_state.h"
 #endif
 
 #include <vector>
@@ -34,7 +37,7 @@ class LW1_Solver : public BASE_CLASS {
     }
     ~LW1_Solver() { }
 
-    virtual int solve(const State &initial_hidden_state,
+    virtual int solve(const STATE_CLASS &initial_hidden_state,
                       Instance::Plan &final_plan,
                       std::vector<std::set<int> > &fired_sensors,
                       std::vector<std::set<int> > &sensed_literals) const {
@@ -46,18 +49,18 @@ class LW1_Solver : public BASE_CLASS {
 
   protected:
     typedef std::vector<int> clause_t;
-    typedef std::vector<clause_t> cnf_t;;
+    typedef std::vector<clause_t> cnf_t;
     typedef std::vector<const cnf_t*> sensing_models_t;
     typedef std::map<int, sensing_models_t> relevant_sensing_models_t;
 
-    virtual void compute_and_add_observations(const State &hidden,
-                                              State &state,
+    virtual void compute_and_add_observations(const STATE_CLASS &hidden,
+                                              STATE_CLASS &state,
                                               std::set<int> &sensors,
                                               std::set<int> &sensed) const;
 
     virtual void apply_inference(const Instance::Action *action,
                                  const std::set<int> &sensed,
-                                 State &state) const;
+                                 STATE_CLASS &state) const;
 
     virtual void fill_relevant_sensing_models(const LW1_Instance &lw1,
                                               const Instance::Action *last_action,
@@ -66,7 +69,7 @@ class LW1_Solver : public BASE_CLASS {
 
     virtual void calculate_relevant_assumptions(const Instance::Plan &plan,
                                                 const Instance::Plan &raw_plan,
-                                                const State &initial_state,
+                                                const STATE_CLASS &initial_state,
                                                 const index_set &goal,
                                                 std::vector<index_set> &assumptions) const {
         BASE_CLASS::calculate_relevant_assumptions(plan,
@@ -76,7 +79,7 @@ class LW1_Solver : public BASE_CLASS {
                                                    assumptions);
     }
 
-    virtual bool inconsistent(const State &state, const std::vector<State> &assumptions, size_t k) const {
+    virtual bool inconsistent(const STATE_CLASS &state, const std::vector<STATE_CLASS> &assumptions, size_t k) const {
         return BASE_CLASS::inconsistent(state, assumptions, k);
     }
 };

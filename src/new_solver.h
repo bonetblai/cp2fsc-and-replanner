@@ -6,7 +6,6 @@
 #include "classical_planner.h"
 #include "problem.h"
 #include "kp_problem.h"
-#include "state.h"
 #include "utils.h"
 
 template<typename T>
