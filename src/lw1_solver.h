@@ -17,7 +17,7 @@ class LW1_Solver : public Solver {
       : Solver(LW1, instance, kp_instance, planner, time_bound) {
     }
     ~LW1_Solver() { }
-    virtual int solve(const State &initial_hidden__state,
+    virtual int solve(const State &initial_hidden_state,
                       Instance::Plan &final_plan,
                       std::vector<std::set<int> > &fired_sensors,
                       std::vector<std::set<int> > &sensed_literals) const;
