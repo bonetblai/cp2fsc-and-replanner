@@ -916,7 +916,7 @@ static const char * const yytname[] = {   "$","error","$illegal.","TK_OPEN",
 "multivalued_variable_decl","@15","@16","multivalued_variable_type","domain_default_sensing",
 "pddl_problem","@17","problem_elements","initial_state","init_elements","single_init_element",
 "at_least_one_invariant","at_most_one_invariant","exactly_one_invariant","invariant",
-"clause","oneof","unknown","hidden_state","goal_spec",""
+"clause","oneof","unknown","hidden_state","goal_spec","goal_list"
 };
 #endif
 
