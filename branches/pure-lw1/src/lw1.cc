@@ -7,7 +7,7 @@
 #include "state.h"
 #include "clg_problem.h"
 #include "lw1_problem.h"
-#include "solver.h"
+#include "lw1_solver.h"
 #include "options.h"
 #include "available_options.h"
 #include "utils.h"
@@ -247,7 +247,7 @@ int main(int argc, char *argv[]) {
         cout << endl;
 
         planner->reset_stats();
-        Solver solver(translation_type, instance, *kp_instance, *planner, opt_time_bound);
+        LW1_Solver solver(instance, *kp_instance, *planner, opt_time_bound);
         int status = solver.solve(hidden_initial_state, plan, fired_sensors, sensed_literals);
         assert(1+plan.size() == fired_sensors.size());
 
