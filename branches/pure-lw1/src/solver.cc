@@ -389,8 +389,7 @@ void Solver::apply_inference(const Instance::Action *last_action,
                 }
             }
 
-            // 4. Kept (extra) static clauses
-            // CHECK: MISSING
+            // 4. Kept (extra) static clauses // CHECK THIS
 
             // inference
 #if UP
