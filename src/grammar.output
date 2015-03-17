@@ -1,6 +1,5 @@
 Useless nonterminals:
 
-   term
    goal_list
    single_goal
 
@@ -16,11 +15,10 @@ Terminals which are not used:
 
 Useless rules:
 
-#209   term :	 TK_OPEN KW_AND single_condition_list TK_CLOSE;
-#215   goal_list :	 goal_list single_goal;
-#216   goal_list :	 single_goal;
-#217   single_goal :	 positive_literal;
-#218   single_goal :	 negative_literal;
+#214   goal_list :	 goal_list single_goal;
+#215   goal_list :	 single_goal;
+#216   single_goal :	 positive_literal;
+#217   single_goal :	 negative_literal;
 
 
 
@@ -233,11 +231,11 @@ rule 205  invariant -> at_least_one_invariant
 rule 206  invariant -> at_most_one_invariant
 rule 207  invariant -> exactly_one_invariant
 rule 208  clause -> TK_OPEN KW_OR single_condition_list TK_CLOSE
-rule 210  oneof -> TK_OPEN KW_ONEOF single_condition_list TK_CLOSE
-rule 211  unknown -> TK_OPEN KW_UNKNOWN positive_literal TK_CLOSE
-rule 212  hidden_state -> TK_OPEN KW_HIDDEN init_elements TK_CLOSE
-rule 213  hidden_state -> TK_OPEN KW_HIDDEN TK_CLOSE
-rule 214  goal_spec -> TK_OPEN KW_GOAL condition TK_CLOSE
+rule 209  oneof -> TK_OPEN KW_ONEOF single_condition_list TK_CLOSE
+rule 210  unknown -> TK_OPEN KW_UNKNOWN positive_literal TK_CLOSE
+rule 211  hidden_state -> TK_OPEN KW_HIDDEN init_elements TK_CLOSE
+rule 212  hidden_state -> TK_OPEN KW_HIDDEN TK_CLOSE
+rule 213  goal_spec -> TK_OPEN KW_GOAL condition TK_CLOSE
 
 Terminals, with rules where they appear
 
@@ -246,12 +244,11 @@ error (256) 5 30 35 39 77 147 148 151 158 165 172 177 183
 TK_OPEN (258) 4 5 13 29 30 34 35 38 39 50 51 59 60 61 62 76 77 78 95
     96 97 101 102 105 108 114 120 123 124 141 142 143 144 145 146 147
     148 150 151 152 157 158 159 164 165 171 172 174 176 177 180 182
-    183 184 191 192 193 201 202 203 204 208 209 210 211 212 213 214
+    183 184 191 192 193 201 202 203 204 208 209 210 211 212 213
 TK_CLOSE (259) 4 5 13 29 30 34 35 38 39 50 51 59 60 61 62 76 77 78
     95 96 97 101 102 105 108 114 120 123 124 141 142 143 144 145 146
     147 148 150 151 152 157 158 159 164 165 171 172 174 176 177 180
     182 183 184 191 192 193 201 202 203 204 208 209 210 211 212 213
-    214
 TK_OPEN_SQ (260)
 TK_CLOSE_SQ (261)
 TK_EQ (262) 96
@@ -280,7 +277,7 @@ KW_ACTION (284) 76 77
 KW_ARGS (285) 78 152 159
 KW_PRE (286) 79
 KW_EFFECT (287) 80
-KW_AND (288) 101 114 124 193 209
+KW_AND (288) 101 114 124 193
 KW_TRUE (289) 90
 KW_FALSE (290) 91
 KW_OR (291) 102 208
@@ -289,13 +286,13 @@ KW_FORALL (293) 105 123 141
 KW_SUCH_THAT (294) 142
 KW_NOT (295) 97
 KW_WHEN (296) 120
-KW_ONEOF (297) 210
-KW_UNKNOWN (298) 211
+KW_ONEOF (297) 209
+KW_UNKNOWN (298) 210
 KW_PROBLEM (299) 182 183
 KW_FORDOMAIN (300) 184
 KW_OBJECTS (301) 60 62
 KW_INIT (302) 191 192 193
-KW_GOAL (303) 214
+KW_GOAL (303) 213
 KW_SENSOR (304) 157 158
 KW_SENSE (305) 161
 KW_OBSERVE (306) 81
@@ -306,7 +303,7 @@ KW_BODY (310) 153
 KW_HEAD (311) 154
 KW_STICKY (312) 171 172
 KW_FLUENTS (313)
-KW_HIDDEN (314) 212 213
+KW_HIDDEN (314) 211 212
 KW_INVARIANT (315) 201
 KW_AT_LEAST_ONE (316) 202
 KW_AT_MOST_ONE (317) 203
@@ -384,7 +381,7 @@ action_elements (100)
     on left: 78 79 80 81 82 83, on right: 76 78 79 80 81 82
 condition (101)
     on left: 84 85 86 87 88 89, on right: 79 105 108 111 112 120 142
-    143 144 153 160 214
+    143 144 153 160 213
 constant_condition (102)
     on left: 90 91, on right: 84
 single_condition (103)
@@ -392,9 +389,9 @@ single_condition (103)
 literal (104)
     on left: 93 94, on right: 92 130 143 144 196
 positive_literal (105)
-    on left: 95 96, on right: 93 97 131 211 217
+    on left: 95 96, on right: 93 97 131 210 216
 negative_literal (106)
-    on left: 97, on right: 94 218
+    on left: 97, on right: 94 217
 argument_list (107)
     on left: 98 99 100, on right: 95 96 98 99 144 146
 and_condition (108)
@@ -414,7 +411,7 @@ exists_condition (113)
 @6 (115)
     on left: 107, on right: 108
 single_condition_list (116)
-    on left: 109 110, on right: 109 201 202 203 204 208 209 210
+    on left: 109 110, on right: 109 201 202 203 204 208 209
 condition_list (117)
     on left: 111 112, on right: 101 102 111
 action_effect (118)
@@ -501,7 +498,7 @@ problem_elements (157)
 initial_state (158)
     on left: 191 192 193, on right: 187
 init_elements (159)
-    on left: 194 195, on right: 192 193 194 212
+    on left: 194 195, on right: 192 193 194 211
 single_init_element (160)
     on left: 196 197 198 199 200, on right: 194 195
 at_least_one_invariant (161)
@@ -515,13 +512,13 @@ invariant (164)
 clause (165)
     on left: 208, on right: 198
 oneof (166)
-    on left: 210, on right: 199
+    on left: 209, on right: 199
 unknown (167)
-    on left: 211, on right: 200
+    on left: 210, on right: 200
 hidden_state (168)
-    on left: 212 213, on right: 188
+    on left: 211 212, on right: 188
 goal_spec (169)
-    on left: 214, on right: 189
+    on left: 213, on right: 189
 
 
 state 0
@@ -2046,9 +2043,9 @@ state 145
     initial_state  ->  TK_OPEN . KW_INIT TK_CLOSE   (rule 191)
     initial_state  ->  TK_OPEN . KW_INIT init_elements TK_CLOSE   (rule 192)
     initial_state  ->  TK_OPEN . KW_INIT TK_OPEN KW_AND init_elements TK_CLOSE TK_CLOSE   (rule 193)
-    hidden_state  ->  TK_OPEN . KW_HIDDEN init_elements TK_CLOSE   (rule 212)
-    hidden_state  ->  TK_OPEN . KW_HIDDEN TK_CLOSE   (rule 213)
-    goal_spec  ->  TK_OPEN . KW_GOAL condition TK_CLOSE   (rule 214)
+    hidden_state  ->  TK_OPEN . KW_HIDDEN init_elements TK_CLOSE   (rule 211)
+    hidden_state  ->  TK_OPEN . KW_HIDDEN TK_CLOSE   (rule 212)
+    goal_spec  ->  TK_OPEN . KW_GOAL condition TK_CLOSE   (rule 213)
 
     KW_REQS	shift, and go to state 43
     KW_CONSTANTS	shift, and go to state 44
@@ -2572,7 +2569,7 @@ state 195
 
 state 196
 
-    goal_spec  ->  TK_OPEN KW_GOAL . condition TK_CLOSE   (rule 214)
+    goal_spec  ->  TK_OPEN KW_GOAL . condition TK_CLOSE   (rule 213)
 
     TK_OPEN	shift, and go to state 173
     KW_TRUE	shift, and go to state 174
@@ -2593,8 +2590,8 @@ state 196
 
 state 197
 
-    hidden_state  ->  TK_OPEN KW_HIDDEN . init_elements TK_CLOSE   (rule 212)
-    hidden_state  ->  TK_OPEN KW_HIDDEN . TK_CLOSE   (rule 213)
+    hidden_state  ->  TK_OPEN KW_HIDDEN . init_elements TK_CLOSE   (rule 211)
+    hidden_state  ->  TK_OPEN KW_HIDDEN . TK_CLOSE   (rule 212)
 
     TK_OPEN	shift, and go to state 252
     TK_CLOSE	shift, and go to state 253
@@ -3115,8 +3112,8 @@ state 239
     at_most_one_invariant  ->  TK_OPEN . KW_AT_MOST_ONE single_condition_list TK_CLOSE   (rule 203)
     exactly_one_invariant  ->  TK_OPEN . KW_EXACTLY_ONE single_condition_list TK_CLOSE   (rule 204)
     clause  ->  TK_OPEN . KW_OR single_condition_list TK_CLOSE   (rule 208)
-    oneof  ->  TK_OPEN . KW_ONEOF single_condition_list TK_CLOSE   (rule 210)
-    unknown  ->  TK_OPEN . KW_UNKNOWN positive_literal TK_CLOSE   (rule 211)
+    oneof  ->  TK_OPEN . KW_ONEOF single_condition_list TK_CLOSE   (rule 209)
+    unknown  ->  TK_OPEN . KW_UNKNOWN positive_literal TK_CLOSE   (rule 210)
 
     TK_EQ	shift, and go to state 166
     TK_PRED_SYMBOL	shift, and go to state 167
@@ -3236,7 +3233,7 @@ state 250
 
 state 251
 
-    goal_spec  ->  TK_OPEN KW_GOAL condition . TK_CLOSE   (rule 214)
+    goal_spec  ->  TK_OPEN KW_GOAL condition . TK_CLOSE   (rule 213)
 
     TK_CLOSE	shift, and go to state 307
 
@@ -3252,8 +3249,8 @@ state 252
     at_most_one_invariant  ->  TK_OPEN . KW_AT_MOST_ONE single_condition_list TK_CLOSE   (rule 203)
     exactly_one_invariant  ->  TK_OPEN . KW_EXACTLY_ONE single_condition_list TK_CLOSE   (rule 204)
     clause  ->  TK_OPEN . KW_OR single_condition_list TK_CLOSE   (rule 208)
-    oneof  ->  TK_OPEN . KW_ONEOF single_condition_list TK_CLOSE   (rule 210)
-    unknown  ->  TK_OPEN . KW_UNKNOWN positive_literal TK_CLOSE   (rule 211)
+    oneof  ->  TK_OPEN . KW_ONEOF single_condition_list TK_CLOSE   (rule 209)
+    unknown  ->  TK_OPEN . KW_UNKNOWN positive_literal TK_CLOSE   (rule 210)
 
     TK_EQ	shift, and go to state 166
     TK_PRED_SYMBOL	shift, and go to state 167
@@ -3270,16 +3267,16 @@ state 252
 
 state 253
 
-    hidden_state  ->  TK_OPEN KW_HIDDEN TK_CLOSE .   (rule 213)
+    hidden_state  ->  TK_OPEN KW_HIDDEN TK_CLOSE .   (rule 212)
 
-    $default	reduce using rule 213 (hidden_state)
+    $default	reduce using rule 212 (hidden_state)
 
 
 
 state 254
 
     init_elements  ->  init_elements . single_init_element   (rule 194)
-    hidden_state  ->  TK_OPEN KW_HIDDEN init_elements . TK_CLOSE   (rule 212)
+    hidden_state  ->  TK_OPEN KW_HIDDEN init_elements . TK_CLOSE   (rule 211)
 
     TK_OPEN	shift, and go to state 252
     TK_CLOSE	shift, and go to state 308
@@ -3795,7 +3792,7 @@ state 298
 
 state 299
 
-    oneof  ->  TK_OPEN KW_ONEOF . single_condition_list TK_CLOSE   (rule 210)
+    oneof  ->  TK_OPEN KW_ONEOF . single_condition_list TK_CLOSE   (rule 209)
 
     TK_OPEN	shift, and go to state 234
 
@@ -3809,7 +3806,7 @@ state 299
 
 state 300
 
-    unknown  ->  TK_OPEN KW_UNKNOWN . positive_literal TK_CLOSE   (rule 211)
+    unknown  ->  TK_OPEN KW_UNKNOWN . positive_literal TK_CLOSE   (rule 210)
 
     TK_OPEN	shift, and go to state 267
 
@@ -3891,17 +3888,17 @@ state 306
 
 state 307
 
-    goal_spec  ->  TK_OPEN KW_GOAL condition TK_CLOSE .   (rule 214)
+    goal_spec  ->  TK_OPEN KW_GOAL condition TK_CLOSE .   (rule 213)
 
-    $default	reduce using rule 214 (goal_spec)
+    $default	reduce using rule 213 (goal_spec)
 
 
 
 state 308
 
-    hidden_state  ->  TK_OPEN KW_HIDDEN init_elements TK_CLOSE .   (rule 212)
+    hidden_state  ->  TK_OPEN KW_HIDDEN init_elements TK_CLOSE .   (rule 211)
 
-    $default	reduce using rule 212 (hidden_state)
+    $default	reduce using rule 211 (hidden_state)
 
 
 
@@ -4181,7 +4178,7 @@ state 332
 state 333
 
     single_condition_list  ->  single_condition_list . single_condition   (rule 109)
-    oneof  ->  TK_OPEN KW_ONEOF single_condition_list . TK_CLOSE   (rule 210)
+    oneof  ->  TK_OPEN KW_ONEOF single_condition_list . TK_CLOSE   (rule 209)
 
     TK_OPEN	shift, and go to state 234
     TK_CLOSE	shift, and go to state 358
@@ -4195,7 +4192,7 @@ state 333
 
 state 334
 
-    unknown  ->  TK_OPEN KW_UNKNOWN positive_literal . TK_CLOSE   (rule 211)
+    unknown  ->  TK_OPEN KW_UNKNOWN positive_literal . TK_CLOSE   (rule 210)
 
     TK_CLOSE	shift, and go to state 359
 
@@ -4467,17 +4464,17 @@ state 357
 
 state 358
 
-    oneof  ->  TK_OPEN KW_ONEOF single_condition_list TK_CLOSE .   (rule 210)
+    oneof  ->  TK_OPEN KW_ONEOF single_condition_list TK_CLOSE .   (rule 209)
 
-    $default	reduce using rule 210 (oneof)
+    $default	reduce using rule 209 (oneof)
 
 
 
 state 359
 
-    unknown  ->  TK_OPEN KW_UNKNOWN positive_literal TK_CLOSE .   (rule 211)
+    unknown  ->  TK_OPEN KW_UNKNOWN positive_literal TK_CLOSE .   (rule 210)
 
-    $default	reduce using rule 211 (unknown)
+    $default	reduce using rule 210 (unknown)
 
 
 

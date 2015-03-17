@@ -1166,6 +1166,13 @@ void PDDL_Base::lw1_create_type2_sensing_drule(const Atom &obs, const And &term,
 }
 
 void PDDL_Base::lw1_create_type3_sensing_drule(const Atom &obs, const And &term, const list<const And*> &dnf, int index) {
+    //cout << "Type3: obs=" << obs << ", term=" << term << ", dnf=[";
+    //for( list<const And*>::const_iterator it = dnf.begin(); it != dnf.end(); ++it )
+    //    cout << **it << ",";
+    //cout << "]" << endl;
+
+    cout << Utils::warning() << "type3 sensing drules are only sound for static observables" << endl;
+
     ostringstream s;
     s << "drule-sensing-type3-" << obs.to_string(false, true) << "-" << index;
     Action *drule_type3 = new Action(strdup(s.str().c_str()));
@@ -1198,7 +1205,6 @@ const PDDL_Base::Atom& PDDL_Base::lw1_fetch_atom_for_negated_term(const And &ter
     for( size_t k = 0; k < term.size(); ++k ) {
         assert(dynamic_cast<const Literal*>(term[k]) != 0);
         const Literal &literal = *static_cast<const Literal*>(term[k]);
-        //condition.insert(make_pair(literal.negated_, literal));
         condition.insert(literal);
     }
 
