@@ -36,19 +36,19 @@ class Solver {
                       std::vector<std::set<int> > &fired_sensors,
                       std::vector<std::set<int> > &sensed_literals) const;
   protected:
-    void compute_and_add_observations(const State &hidden,
-                                      State &state,
-                                      std::set<int> &sensors,
-                                      std::set<int> &sensed) const;
-    void apply_inference(const Instance::Action *action,
-                         const std::set<int> &sensed,
-                         State &state) const;
-    void calculate_relevant_assumptions(const Instance::Plan &plan,
-                                        const Instance::Plan &raw_plan,
-                                        const State &initial_state,
-                                        const index_set &goal,
-                                        std::vector<index_set> &assumptions) const;
-    bool inconsistent(const State &state, const std::vector<State> &assumptions, size_t k) const;
+    virtual void compute_and_add_observations(const State &hidden,
+                                              State &state,
+                                              std::set<int> &sensors,
+                                              std::set<int> &sensed) const;
+    virtual void apply_inference(const Instance::Action *action,
+                                 const std::set<int> &sensed,
+                                 State &state) const;
+    virtual void calculate_relevant_assumptions(const Instance::Plan &plan,
+                                                const Instance::Plan &raw_plan,
+                                                const State &initial_state,
+                                                const index_set &goal,
+                                                std::vector<index_set> &assumptions) const;
+    virtual bool inconsistent(const State &state, const std::vector<State> &assumptions, size_t k) const;
 };
 
 #endif
