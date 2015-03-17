@@ -817,13 +817,19 @@ class PDDL_Base {
     // methods to handle sensing
     void lw1_finish_grounding_of_sensing(const Sensing* &sensing);
 
-    // methods to create deductive rules (for multivalued variables)
+    // methods to create deductive rules for multivalued variables
     void lw1_create_deductive_rules_for_variables();
+    void lw1_create_type1_var_drule(const Variable &variable, const Atom &value);
+    void lw1_create_type2_var_drule(const Variable &variable, const Atom &value);
+
+    // methods to create deductive rules for sensing
     void lw1_index_sensing_models();
     void lw1_create_deductive_rules_for_sensing();
+    void lw1_create_type1_sensing_drule(const Atom &obs, const And &term, int index);
+    void lw1_create_type2_sensing_drule(const Atom &obs, const And &term, int index);
 
     // methods to create type-3 deductive rules (for multivalued variables)
-    void lw1_create_type3_sensing_drules(const Atom &obs, const And &term, const std::list<const And*> &dnf, int index);
+    void lw1_create_type3_sensing_drule(const Atom &obs, const And &term, const std::list<const And*> &dnf, int index);
     const Atom& lw1_fetch_atom_for_negated_term(const And &term);
 
     // methods to create sensors (for multivalued variables)

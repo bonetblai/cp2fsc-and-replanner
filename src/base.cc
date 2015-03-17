@@ -53,7 +53,7 @@ PDDL_Base::PDDL_Base(StringTable &t, const Options::Mode &options)
     dom_eq_pred_->param_[1]->sym_type_ = dom_top_type_;
 }
 
-PDDL_Base::~PDDL_Base() { // TODO: implement dtor
+PDDL_Base::~PDDL_Base() {
     delete dom_eq_pred_;
     delete dom_top_type_;
     delete dom_goal_;
@@ -971,42 +971,57 @@ void PDDL_Base::lw1_finish_grounding_of_sensing(const Sensing* &sensing) {
 
 void PDDL_Base::lw1_create_deductive_rules_for_variables() {
     cout << Utils::blue() << "(lw1) creating deductive rules for multivalued variables..." << Utils::normal() << endl;
-
     for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
-        Variable &var = *multivalued_variables_[k];
+        const Variable &var = *multivalued_variables_[k];
         if( var.grounded_domain_.size() == 1 ) continue;
-
         for( unsigned_atom_set::const_iterator it = var.grounded_domain_.begin(); it != var.grounded_domain_.end(); ++it ) {
-            assert(!it->negated_);
-            string drule_type1_name = string("drule-var-type1-") + var.to_string(true, true) + "-" + it->to_string(false, true);
-            string drule_type2_name = string("drule-var-type2-") + var.to_string(true, true) + "-" + it->to_string(false, true);
-
-            Action *drule_type1 = new Action(strdup(drule_type1_name.c_str()));
-            And *drule_type1_precondition = new And;
-            Action *drule_type2 = new Action(strdup(drule_type2_name.c_str()));
-            AndEffect *drule_type2_effect = new AndEffect;
-
-            for( unsigned_atom_set::const_iterator jt = var.grounded_domain_.begin(); jt != var.grounded_domain_.end(); ++jt ) {
-                assert(!jt->negated_);
-                if( jt != it ) {
-                    drule_type1_precondition->push_back(Literal(*jt).negate());
-                    drule_type2_effect->push_back(AtomicEffect(*jt).negate());
-                } else {
-                    drule_type1->effect_ = AtomicEffect(*jt).copy();
-                    drule_type2->precondition_ = Literal(*jt).copy();
-                }
-            }
-
-            drule_type1->precondition_ = drule_type1_precondition;
-            drule_type2->effect_ = drule_type2_effect;
-
-            // insert decision rules
-            dom_actions_.push_back(drule_type1);
-            dom_actions_.push_back(drule_type2);
-            if( options_.is_enabled("lw1:print:drule:var") || options_.is_enabled("lw1:print:drule") )
-                cout << Utils::yellow() << *drule_type1 << *drule_type2 << Utils::normal();
+            lw1_create_type1_var_drule(var, *it);
+            lw1_create_type2_var_drule(var, *it);
         }
     }
+}
+
+void PDDL_Base::lw1_create_type1_var_drule(const Variable &variable, const Atom &value) {
+    assert(!value.negated_);
+    string name = string("drule-var-type1-") + variable.to_string(true, true) + "-" + value.to_string(false, true);
+    Action *drule_type1 = new Action(strdup(name.c_str()));
+
+    And *precondition = new And;
+    for( unsigned_atom_set::const_iterator it = variable.grounded_domain_.begin(); it != variable.grounded_domain_.end(); ++it ) {
+        assert(!it->negated_);
+        if( &*it != &value )
+            precondition->push_back(Literal(*it).negate());
+        else
+            drule_type1->effect_ = AtomicEffect(*it).copy();
+    }
+    drule_type1->precondition_ = precondition;
+
+    // insert decision rules
+    dom_actions_.push_back(drule_type1);
+    if( options_.is_enabled("lw1:print:drule:var") || options_.is_enabled("lw1:print:drule") )
+        cout << Utils::yellow() << *drule_type1 << Utils::normal();
+}
+
+void PDDL_Base::lw1_create_type2_var_drule(const Variable &variable, const Atom &value) {
+    assert(!value.negated_);
+    string name = string("drule-var-type2-") + variable.to_string(true, true) + "-" + value.to_string(false, true);
+    Action *drule_type2 = new Action(strdup(name.c_str()));
+
+    AndEffect *effect = new AndEffect;
+    for( unsigned_atom_set::const_iterator it = variable.grounded_domain_.begin(); it != variable.grounded_domain_.end(); ++it ) {
+        assert(!it->negated_);
+        if( &*it != &value ) {
+            effect->push_back(AtomicEffect(*it).negate());
+        } else {
+            drule_type2->precondition_ = Literal(*it).copy();
+        }
+    }
+    drule_type2->effect_ = effect;
+
+    // insert decision rules
+    dom_actions_.push_back(drule_type2);
+    if( options_.is_enabled("lw1:print:drule:var") || options_.is_enabled("lw1:print:drule") )
+        cout << Utils::yellow() << *drule_type2 << Utils::normal();
 }
 
 void PDDL_Base::lw1_index_sensing_models() {
@@ -1094,60 +1109,63 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
             const list<const And*> &dnf = jt->second;
 
             size_t num_type1_drules = 0;
+            size_t num_type2_drules = 0;
             size_t num_type3_drules = 0;
             for( list<const And*>::const_iterator term = dnf.begin(); term != dnf.end(); ++term) {
                 assert(dynamic_cast<const And*>(*term) != 0);
-
-                // type-1 sensing drules
-                ostringstream s;
-                s << "drule-sensing-type1-" << obs.to_string(false, true) << "-" << num_type1_drules;
-                Action *drule_type1 = new Action(strdup(s.str().c_str()));
-                drule_type1->precondition_ = (*term)->copy_and_simplify();
-                drule_type1->effect_ = AtomicEffect(obs).copy();
-
-                // insert action for deductive rule
-                dom_actions_.push_back(drule_type1);
-                ++num_type1_drules ;
-                if( options_.is_enabled("lw1:print:drule:sensing") || options_.is_enabled("lw1:print:drule") )
-                    cout << Utils::yellow() << *drule_type1 << Utils::normal();
-
-                // type-2 sensing drules
-                for( size_t k = 0; k < (*term)->size(); ++k ) {
-                    ostringstream s;
-                    s << "drule-sensing-type2-" << obs.to_string(false, true) << "-" << num_type1_drules << "-" << k;
-                    Action *drule_type2 = new Action(strdup(s.str().c_str()));
-
-                    // precondition
-                    And *precondition = new And;
-                    for( size_t i = 0; i < (*term)->size(); ++i ) {
-                        assert(dynamic_cast<const Literal*>((**term)[i]) != 0);
-                        if( i != k )
-                            precondition->push_back(static_cast<const Literal*>((**term)[i])->copy());
-                    }
-                    precondition->push_back(Literal(obs).negate());
-                    drule_type2->precondition_ = precondition;
-
-                    // effect
-                    AndEffect *effect = new AndEffect;
-                    assert(dynamic_cast<const Literal*>((**term)[k]) != 0);
-                    effect->push_back(AtomicEffect(*static_cast<const Literal*>((**term)[k])).negate());
-                    drule_type2->effect_= effect;
-
-                    // insert action for deductive rule
-                    dom_actions_.push_back(drule_type2);
-                    if( options_.is_enabled("lw1:print:drule:sensing") || options_.is_enabled("lw1:print:drule") )
-                        cout << Utils::yellow() << *drule_type2 << Utils::normal();
-                }
-
-                // type-3 sensing drules
+                lw1_create_type1_sensing_drule(obs, **term, num_type1_drules++);
+                lw1_create_type2_sensing_drule(obs, **term, num_type2_drules++);
                 if( options_.is_enabled("lw1:drule:sensing:type3") )
-                    lw1_create_type3_sensing_drules(obs, **term, dnf, num_type3_drules++);
+                    lw1_create_type3_sensing_drule(obs, **term, dnf, num_type3_drules++);
             }
         }
     }
 }
 
-void PDDL_Base::lw1_create_type3_sensing_drules(const Atom &obs, const And &term, const list<const And*> &dnf, int index) {
+void PDDL_Base::lw1_create_type1_sensing_drule(const Atom &obs, const And &term, int index) {
+    // type-1 sensing drules
+    ostringstream s;
+    s << "drule-sensing-type1-" << obs.to_string(false, true) << "-" << index;
+    Action *drule_type1 = new Action(strdup(s.str().c_str()));
+    drule_type1->precondition_ = term.copy_and_simplify();
+    drule_type1->effect_ = AtomicEffect(obs).copy();
+
+    // insert action for deductive rule
+    dom_actions_.push_back(drule_type1);
+    if( options_.is_enabled("lw1:print:drule:sensing") || options_.is_enabled("lw1:print:drule") )
+        cout << Utils::yellow() << *drule_type1 << Utils::normal();
+}
+
+void PDDL_Base::lw1_create_type2_sensing_drule(const Atom &obs, const And &term, int index) {
+    for( size_t k = 0; k < term.size(); ++k ) {
+        ostringstream s;
+        s << "drule-sensing-type2-" << obs.to_string(false, true) << "-" << index << "-" << k;
+        Action *drule_type2 = new Action(strdup(s.str().c_str()));
+
+        // precondition
+        And *precondition = new And;
+        for( size_t i = 0; i < term.size(); ++i ) {
+            assert(dynamic_cast<const Literal*>(term[i]) != 0);
+            if( i != k )
+                precondition->push_back(static_cast<const Literal*>(term[i])->copy());
+        }
+        precondition->push_back(Literal(obs).negate());
+        drule_type2->precondition_ = precondition;
+
+        // effect
+        AndEffect *effect = new AndEffect;
+        assert(dynamic_cast<const Literal*>(term[k]) != 0);
+        effect->push_back(AtomicEffect(*static_cast<const Literal*>(term[k])).negate());
+        drule_type2->effect_= effect;
+
+        // insert action for deductive rule
+        dom_actions_.push_back(drule_type2);
+        if( options_.is_enabled("lw1:print:drule:sensing") || options_.is_enabled("lw1:print:drule") )
+            cout << Utils::yellow() << *drule_type2 << Utils::normal();
+    }
+}
+
+void PDDL_Base::lw1_create_type3_sensing_drule(const Atom &obs, const And &term, const list<const And*> &dnf, int index) {
     ostringstream s;
     s << "drule-sensing-type3-" << obs.to_string(false, true) << "-" << index;
     Action *drule_type3 = new Action(strdup(s.str().c_str()));
