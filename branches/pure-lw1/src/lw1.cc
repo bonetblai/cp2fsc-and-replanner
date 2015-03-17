@@ -251,7 +251,7 @@ int main(int argc, char *argv[]) {
         int status = solver.solve(hidden_initial_state, plan, fired_sensors, sensed_literals);
         assert(1+plan.size() == fired_sensors.size());
 
-        if( status == Solver::SOLVED ) {
+        if( status == LW1_Solver::SOLVED ) {
             if( opt_print_plan ) {
                 cout << "PLAN: ";
                 bool need_indent = false;
@@ -318,11 +318,11 @@ int main(int argc, char *argv[]) {
         } else {
             plan.clear();
             cout << "unable to solve problem: ";
-            if( status == Solver::NO_SOLUTION ) {
+            if( status == LW1_Solver::NO_SOLUTION ) {
                 cout << "problem has no solution!" << endl;
-            } else if( status == Solver::TIME ) {
+            } else if( status == LW1_Solver::TIME ) {
                 cout << "reached time limit of " << opt_time_bound << " seconds" << endl;
-            } else if( status == Solver::ERROR ) {
+            } else if( status == LW1_Solver::ERROR ) {
                 cout << "planner error" << endl;
             } else  {
                 cout << "unrecognized error" << endl;
@@ -341,7 +341,7 @@ int main(int argc, char *argv[]) {
         float current_time = Utils::read_time_in_seconds();
         cout << "stats: "
              << opt_planner << " (planner) "
-             << (int)(status != Solver::SOLVED ? -1 : plan_length) << " (plan-size) "
+             << (int)(status != LW1_Solver::SOLVED ? -1 : plan_length) << " (plan-size) "
              << planner->n_calls() << " (planner-calls) "
              << preprocessing_time << " (preprocessing-time) "
              << planner->get_time() << " (planner-time) "
