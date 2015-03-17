@@ -97,7 +97,6 @@
 %type <condition>             goal_list single_goal
 %type <invariant>             invariant at_least_one_invariant at_most_one_invariant exactly_one_invariant
 %type <clause>                clause
-%type <condition>             term
 %type <oneof>                 oneof
 %type <unknown>               unknown
 %type <effect_vec>            positive_atomic_effect_list atomic_effect_list action_effect_list
@@ -1020,13 +1019,6 @@ invariant:
 clause:
       TK_OPEN KW_OR single_condition_list TK_CLOSE {
           $$ = new Clause(*$3);
-          delete $3;
-      }
-    ;
-
-term:
-      TK_OPEN KW_AND single_condition_list TK_CLOSE {
-          $$ = new And(*$3);
           delete $3;
       }
     ;
