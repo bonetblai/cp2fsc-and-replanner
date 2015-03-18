@@ -84,7 +84,8 @@ int main(int argc, char *argv[]) {
     options.enable("problem:action-compilation");
     options.enable("kp:merge-drules");
     //options.enable("lw1:compile-static-observables");
-    options.enable("lw1:inference:up");
+    options.enable("lw1:inference:forward-chaining");
+    //options.enable("lw1:inference:up");
 
     // check correct number of parameters
     const char *exec_name = argv[0];

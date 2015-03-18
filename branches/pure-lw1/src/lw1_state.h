@@ -35,7 +35,7 @@ struct LW1_State : public State {
     void print(std::ostream &os, const Instance &ins) const {
         os << "[s=";
         State::print(os, ins);
-        os << "[,cnf=";
+        os << ",cnf=";
         print_cnf(os, ins);
         os << "]";
     }
@@ -55,7 +55,7 @@ struct LW1_State : public State {
     void write(std::ostream &os) const {
         os << "[s=";
         State::write(os);
-        os << "[,cnf=";
+        os << ",cnf=";
         write_cnf(os);
         os << "]";
     }
