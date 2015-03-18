@@ -11,6 +11,7 @@
         (antenna-height ?h - height)
         (good-rocks-in-sensing-range ?h - height ?p - location)
         (need-start)
+        (finished ?r - rock)
     )
 
     (:variable (rock-status ?r - rock) (good ?r))
@@ -28,7 +29,12 @@
     (:action sample
         :parameters (?r - rock ?p - location)
         :precondition (and (agent-at ?p) (rock-at ?r ?p) (good ?r) (not (need-start)))
-        :effect (not (good ?r))
+        :effect (finished ?r)
+    )
+    (:action skip
+        :parameters (?r - rock)
+        :precondition (and (not (good ?r)) (not (need-start)))
+        :effect (finished ?r)
     )
 
     (:action raise-antenna
