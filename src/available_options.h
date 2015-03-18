@@ -109,6 +109,7 @@ const char *available_options[] = {
     "lw1:complete-effects",                "[LW1] complete effects for multivalued variables",
     "lw1:drule:sensing:type3",             "[LW1] generate deductive rules for sensing of type 3",
 
+    "lw1:inference:forward-chaining",      "[LW1] uses forward chaining of drules to make inference (old and sometimes incorrect method)",
     "lw1:inference:up",                    "[LW1] uses unit resolution as inference mechanism",
     "lw1:inference:up:1-lookahead",        "[LW1] uses unit resolution with 1-lookahead as inference mechanism",
 

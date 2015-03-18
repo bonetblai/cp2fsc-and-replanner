@@ -54,7 +54,18 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
     assert(dynamic_cast<const LW1_Instance*>(&kp_instance_) != 0);
     const LW1_Instance &lw1 = *static_cast<const LW1_Instance*>(&kp_instance_);
 
-    if( options_.is_enabled("lw1:inference:up") ) {
+    if( options_.is_enabled("lw1:inference:forward-chaining") ) {
+        bool fix_point_reached = false;
+        while( !fix_point_reached ) {
+            STATE_CLASS old_state(state);
+            for( size_t k = kp_instance_.first_deductive_action(); k < kp_instance_.last_deductive_action(); ++k ) {
+                const Instance::Action &act = *kp_instance_.actions_[k];
+                if( state.applicable(act) )
+                    state.apply(act);
+            }
+            fix_point_reached = old_state == state;
+        }
+    } else if( options_.is_enabled("lw1:inference:up") ) {
         // find sensing models for given action that are incompatible with observations
         relevant_sensing_models_t relevant_sensing_models;
         if( last_action != 0 )
@@ -133,18 +144,6 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
 #endif
 
         // 7. Insert (static) clauses in result into state // CHECK THIS: add clauses into cnf_ which is part of LW1_State
-
-        // PROVISIONAL: TO BE REMOVED WHEN UP INFERENCE IS WORKING
-        bool fix_point_reached = false;
-        while( !fix_point_reached ) {
-            STATE_CLASS old_state(state);
-            for( size_t k = kp_instance_.first_deductive_action(); k < kp_instance_.last_deductive_action(); ++k ) {
-                const Instance::Action &act = *kp_instance_.actions_[k];
-                if( state.applicable(act) )
-                    state.apply(act);
-            }
-            fix_point_reached = old_state == state;
-        }
     } else {
         cout << Utils::error() << "unspecified inference method for lw1" << endl;
         exit(255);

@@ -1,12 +1,12 @@
 #ifndef LW1_SOLVER_H
 #define LW1_SOLVER_H
 
-// We are currently using the class Solver as base class. In the near
+// We are currently using the Solver class as base class. In the near
 // future we'll change to the templatized NewSolver class to allow
-// solver with different state classes. Once the migration is complete,
+// solvers with different state classes. Once the migration is complete,
 // solver.{cc,h} will dissapear and new_solver.h will become solver.h
 
-#define BASE_SELECTOR 0 // 0 for Solver, 1 for NewSolver<State>
+#define BASE_SELECTOR 1 // 0 for Solver, 1 for NewSolver<LW1_State>
 
 #if BASE_SELECTOR == 0
 #    define STATE_CLASS State
