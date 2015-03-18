@@ -40,15 +40,28 @@ class Solver {
                                               State &state,
                                               std::set<int> &sensors,
                                               std::set<int> &sensed) const;
+
     virtual void apply_inference(const Instance::Action *action,
                                  const std::set<int> &sensed,
                                  State &state) const;
+
     virtual void calculate_relevant_assumptions(const Instance::Plan &plan,
                                                 const Instance::Plan &raw_plan,
                                                 const State &initial_state,
                                                 const index_set &goal,
                                                 std::vector<index_set> &assumptions) const;
+
     virtual bool inconsistent(const State &state, const std::vector<State> &assumptions, size_t k) const;
+
+  protected:
+    void progress(const Instance::Plan &plan,
+                  const State &initial_state,
+                  const State &final_state) const;
+
+    void regress(const Instance::Action &action,
+                 const State &prev,
+                 const State &next,
+                 index_set &assumptions) const;
 };
 
 #endif
