@@ -2,6 +2,7 @@
 #include "lw1_solver.h"
 #include "classical_planner.h"
 #include "utils.h"
+#include "Inference.h"
 
 using namespace std;
 
@@ -22,7 +23,7 @@ void LW1_Solver::compute_and_add_observations(const STATE_CLASS &hidden,
             // set-sensing (ver comentario en base.cc).
             //
             // Dichos valores no deben agregarse a ninguno de los estados (en forma
-            // de literales). Mas bien, se debe identificar las formulas a ser 
+            // de literales). Mas bien, se debe identificar las formulas a ser
             // agregadas para el Unit-Resolution (UR). Dichas formulas se agregaran
             // abajo.
             sensors.insert(k);
@@ -72,13 +73,13 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
             fill_relevant_sensing_models(lw1, last_action, sensed, relevant_sensing_models);
 
         // construct logical theory for performing inference with unit propagation
-#if UP
+#if defined(UP)
         Inference::Propositional::CNF cnf;
 #endif
 
         // 1. Positive literals from state
         for( STATE_CLASS::const_iterator it = state.begin(); it != state.end(); ++it ) {
-#if UP
+#if defined(UP)
             Inference::Propositional::Clause cl;
             cl.push_back(1 + *it); // NOTA: en implementacion de clause, 'push_back' es un 'insert'
             cnf.push_back(cl);
@@ -87,7 +88,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
 
         // 2. Axioms: D'
         for( vector<vector<int> >::const_iterator it = lw1.clauses_for_axioms_.begin(); it != lw1.clauses_for_axioms_.end(); ++it ) {
-#if UP
+#if defined(UP)
             Inference::Propositional::Clause cl;
             const vector<int> &clause = *it;
             for( size_t k = 0; k < clause.size(); ++k )
@@ -103,7 +104,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                 const cnf_t &cnf_for_sensing_model = *sensing_models[k];
                 for( size_t j = 0; j < cnf_for_sensing_model.size(); ++j ) {
                     const clause_t &clause = cnf_for_sensing_model[j];
-#if UP
+#if defined(UP)
                     Inference::Propositional::Clause cl;
                     for( size_t i = 0; i < clause.size(); ++i )
                         cl.push_back(clause[i]);
@@ -116,21 +117,21 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         // 4. Kept (extra) static clauses // CHECK THIS: add clasues in cnf_ which is part of LW1_State
 
         // 5. Perform inference
-#if UP
+#if defined(UP)
         Inference::Propositional::CNF result;
 #endif
         if( options_.is_enabled("lw1:inference:up:1-lookahead") ) {
             cout << Utils::error() << "inference method 'lw1:inference:up:1-lookahead' not yet implemented" << endl;
             exit(255);
         } else {
-#if UP
+#if defined(UP)
             Inference::Propositional::UnitPropagation up;
             up.reduce(cnf, result);
 #endif
         }
 
         // 6. Insert positive literals from result into state
-#if UP
+#if defined(UP)
         for( size_t k = 0; k < result.size(); ++k ) {
             const Inference::Propositional::Clause &clause = result[k];
             if( clause.size() == 1 ) {
@@ -159,7 +160,7 @@ void LW1_Solver::fill_relevant_sensing_models(const LW1_Instance &lw1,
                                               const set<int> &sensed,
                                               LW1_Solver::relevant_sensing_models_t &sensing_models) const {
     assert(last_action != 0);
-       
+
     // compute action-key for accessingn sensing models in lw1 instance
     string action_key;
     size_t pos = last_action->name_->to_string().find("__set_sensing__");
