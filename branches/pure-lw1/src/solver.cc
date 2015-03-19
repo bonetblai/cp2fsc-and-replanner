@@ -199,25 +199,11 @@ int Solver::solve(const State &initial_hidden_state,
     return SOLVED;
 }
 
-// Calculate the assumptions made along a given (raw) plan from initial state
-// to goal state and project them onto a cooked plan. Basically, for a plan
-// pi=(a0, a1, ..., an), let's define:
-//
-//     R(pi, -1) = s0
-//      R(pi, k) = progress(s0, pi[0:k])
-//      A(pi, k) = regress(pi[k], R(pi, k-1), R(pi, k))
-//
-// where s0 is initial state, progress(s, pi) is the state that results of 
-// applying the (applicable) plan pi on state s, and regress(a, s, s') is the
-// minimum set of assumptions needed for the action a, which is applicable
-// at state s, to produce state s'.
-
 void Solver::calculate_relevant_assumptions(const Instance::Plan &plan,
                                             const Instance::Plan &raw_plan,
                                             const State &initial_state,
                                             const index_set &goal,
                                             vector<index_set> &assumptions) const {
-#if 1
     // calculate assumptions for raw plan
     vector<index_set> assumptions_on_raw_plan;
     kp_instance_.calculate_relevant_assumptions(raw_plan, initial_state, goal, assumptions_on_raw_plan);
@@ -232,7 +218,6 @@ void Solver::calculate_relevant_assumptions(const Instance::Plan &plan,
         if( k < raw_plan.size() ) assumptions.push_back(assumptions_on_raw_plan[k]);
     }
     assert(plan.size() == assumptions.size());
-#endif
 }
 
 void Solver::compute_and_add_observations(const State &hidden,

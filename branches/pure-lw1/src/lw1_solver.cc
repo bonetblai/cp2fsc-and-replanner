@@ -56,6 +56,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
     const LW1_Instance &lw1 = *static_cast<const LW1_Instance*>(&kp_instance_);
 
     if( options_.is_enabled("lw1:inference:forward-chaining") ) {
+        cout << Utils::cyan() << "Using inference: 'forward-chaining'" << Utils::normal() << endl;
         bool fix_point_reached = false;
         while( !fix_point_reached ) {
             STATE_CLASS old_state(state);
@@ -67,6 +68,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
             fix_point_reached = old_state == state;
         }
     } else if( options_.is_enabled("lw1:inference:up") ) {
+        cout << Utils::cyan() << "Using inference: 'unit propagation'" << Utils::normal() << endl;
         // find sensing models for given action that are incompatible with observations
         relevant_sensing_models_t relevant_sensing_models;
         if( last_action != 0 )

@@ -859,6 +859,10 @@ class PDDL_Base {
     const Atom* fetch_need_set_sensing_atom(const Action &action);
     const Atom* fetch_need_post_atom(const unsigned_atom_set &atoms);
     const Atom* fetch_sensing_atom(const Atom &atom);
+
+    // methods to perform action compilation // CHECK THIS
+    void lw1_do_action_compilation();
+    void lw1_do_action_compilation(Action &action);
 };
 
 inline std::ostream& operator<<(std::ostream &os, const PDDL_Base::Symbol &sym) {

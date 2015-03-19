@@ -84,8 +84,6 @@ int main(int argc, char *argv[]) {
     options.enable("problem:action-compilation");
     options.enable("kp:merge-drules");
     //options.enable("lw1:compile-static-observables");
-    options.enable("lw1:inference:forward-chaining");
-    //options.enable("lw1:inference:up");
 
     // check correct number of parameters
     const char *exec_name = argv[0];
@@ -154,6 +152,10 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    // set default inference
+    if( !options.is_enabled("lw1:inference:forward-chaining") && !options.is_enabled("lw1:inference:up") )
+        options.enable("lw1:inference:forward-chaining");
+
     // check that there is at least one input file
     if( nfiles == 0 ) {
         cout << Utils::error() << "need an input file." << endl;
@@ -200,6 +202,9 @@ int main(int argc, char *argv[]) {
         instance.write_domain(cout);
         instance.write_problem(cout);
     }
+
+    //cout << "perform action compilation..." << endl;
+    //instance.do_action_compilation(*multivalued_variables);
 
     cout << "creating KP translation..." << endl;
     KP_Instance *kp_instance = new LW1_Instance(instance, *multivalued_variables, *sensing_models);
