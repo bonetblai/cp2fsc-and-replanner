@@ -9,13 +9,14 @@
         (at ?i - pos)
         (holding ?o - obj)
         (obj-at ?o - obj ?i - pos)
+        (obs-obj-at ?o - obj ?i - pos)
         (need-start)
     )
 
     (:variable agent-pos (forall (?p - pos) (at ?p)))
-    (:variable (obj-at-pos ?p - pos) (forall (?o - obj) (obj-at ?o ?p)))
     (:variable (obj-pos ?o - obj) (holding ?o) (forall (?p - pos) (obj-at ?o ?p)))
     (:variable (obj-col ?o - obj) (forall (?c - col) (color ?o ?c)))
+    (:obs-variable (var-obj-at ?o - obj ?p - pos) (obs-obj-at ?o ?p))
 
     (:action observe-color
         :parameters (?o - obj)
@@ -27,14 +28,22 @@
         :parameters (?p - pos)
         :precondition (and (at ?p) (need-start))
         :effect (not (need-start))
-        :sensing (:variable (obj-at-pos ?p))
+        :sensing
+            (forall (?o - obj)
+                (:model-for (var-obj-at ?o ?p) (obs-obj-at ?o ?p) (obj-at ?o ?p))
+                (:model-for (var-obj-at ?o ?p) (not (obs-obj-at ?o ?p)) (not (obj-at ?o ?p)))
+            )
     )
 
     (:action move
         :parameters (?i ?j - pos)
         :precondition (and (adj ?i ?j) (at ?i) (not (need-start)))
         :effect (and (not (at ?i)) (at ?j))
-        :sensing (:variable (obj-at-pos ?j))
+        :sensing
+            (forall (?o - obj)
+                (:model-for (var-obj-at ?o ?j) (obs-obj-at ?o ?j) (obj-at ?o ?j))
+                (:model-for (var-obj-at ?o ?j) (not (obs-obj-at ?o ?j)) (not (obj-at ?o ?j)))
+            )
     )
 
     (:action pickup
