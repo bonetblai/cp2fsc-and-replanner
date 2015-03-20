@@ -88,6 +88,20 @@
         (at-row r5 p4-5)
         (at-row r5 p5-5)
 
+        (right-col c2 p1-1)
+        (right-col c2 p1-2)
+        (right-col c2 p1-3)
+        (right-col c2 p1-4)
+        (right-col c2 p1-5)
+        (right-col c4 p3-1)
+        (right-col c4 p3-2)
+        (right-col c4 p3-3)
+        (right-col c4 p3-4)
+        (right-col c4 p3-5)
+
+        (even c2)
+        (even c4)
+
         (need-start)
         (at p1-3)
 
