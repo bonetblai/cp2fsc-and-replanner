@@ -352,6 +352,7 @@ int main(int argc, char *argv[]) {
              << preprocessing_time << " (preprocessing-time) "
              << planner->get_time() << " (planner-time) "
              << planner->get_search_time() << " (planner-search-time) "
+             << kp_instance->get_inference_time() << " (inference-time) "
              << current_time - instance_start_time << " (instance-time) "
              << current_time - start_time << " (total-acc-time)"
              << endl << endl;

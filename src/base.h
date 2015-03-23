@@ -74,10 +74,12 @@ class PDDL_Base {
     };
     struct predicate_symbol_vec : public std::vector<PredicateSymbol*> { };
 
+    struct Condition;
     struct Schema {
         var_symbol_vec param_;
-        Schema() { }
-        virtual ~Schema() { /*for( size_t k = 0; k < param_.size(); ++k ) delete param_[k];*/ }
+        const Condition *such_that_;
+        Schema() : such_that_(0) { }
+        virtual ~Schema() { delete such_that_; /*for( size_t k = 0; k < param_.size(); ++k ) delete param_[k];*/ }
         void enumerate(bool only_count = false) const;
         void rec_enumerate(size_t p, bool only_count) const;
         virtual void process_instance() const = 0;
@@ -449,16 +451,6 @@ class PDDL_Base {
         mutable std::vector<bool> clone_variables_stack_;
         mutable std::vector<bool> replace_static_values_stack_;
         mutable std::vector<Sensing*> result_stack_;
-    };
-
-    struct SuchThatSensing : public SensingProxy {
-        const Condition *condition_;
-        sensing_proxy_vec sensing_;
-        SuchThatSensing(const Condition *condition) : condition_(condition) { }
-        virtual ~SuchThatSensing() { }
-        virtual bool is_strongly_static(const PredicateSymbol &p) const;
-        virtual Sensing* ground(bool clone_variables = false, bool replace_static_values = true) const;
-        virtual std::string to_string() const;
     };
 
     struct Sensing : public std::vector<const SensingModel*> {

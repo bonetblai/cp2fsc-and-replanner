@@ -6,7 +6,7 @@
 // solvers with different state classes. Once the migration is complete,
 // solver.{cc,h} will dissapear and new_solver.h will become solver.h
 
-#define BASE_SELECTOR 0 // 0 for Solver, 1 for NewSolver<LW1_State>
+#define BASE_SELECTOR 1 // 0 for Solver, 1 for NewSolver<LW1_State>
 
 #if BASE_SELECTOR == 0
 #    define STATE_CLASS State
@@ -82,6 +82,9 @@ class LW1_Solver : public BASE_CLASS {
     virtual bool inconsistent(const STATE_CLASS &state, const std::vector<STATE_CLASS> &assumptions, size_t k) const {
         return BASE_CLASS::inconsistent(state, assumptions, k);
     }
+
+    bool is_forbidden(int literal) const;
+    bool is_forbidden(const clause_t &clause) const;
 };
 
 #endif

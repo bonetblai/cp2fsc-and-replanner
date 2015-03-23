@@ -47,6 +47,9 @@ class LW1_Instance : public KP_Instance {
     std::map<int, std::vector<int> > variables_for_atom_;
     std::map<std::string, std::map<int, std::map<int, std::vector<std::vector<int> > > > > sensing_models_;
 
+    // inference: clauses with the following literals should not be preserved
+    std::set<int> clause_forbidden_literals_;
+
     // TODO: can we get rid of beams_for_observable_atoms_?
     std::multimap<index_set, const Action*> drule_store_;
     index_set observable_atoms_;
@@ -57,6 +60,9 @@ class LW1_Instance : public KP_Instance {
                  const PDDL_Base::variable_vec &multivalued_variables,
                  const std::list<std::pair<const PDDL_Base::Action*, const PDDL_Base::Sensing*> > &sensing_models);
     ~LW1_Instance();
+
+    bool is_forbidden(int literal) const;
+    bool is_forbidden(const std::vector<int> &clause) const;
 
     void create_regular_action(const Action &action,
                                int action_index,

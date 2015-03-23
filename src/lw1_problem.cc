@@ -1,7 +1,7 @@
 #include <cassert>
 #include <cstdlib>
 #include "lw1_problem.h"
-#include "state.h"
+#include "lw1_state.h"
 #include "utils.h"
 
 using namespace std;
@@ -190,7 +190,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                                     string name = literal.to_string(literal.negated_, true);
                                     int index = get_atom_index(ins, name);
                                     assert(index != -1);
-                                    int k_index = 2*index + (literal.negated_ ? 0 : 1);
+                                    int k_index = 2*index + (literal.negated_ ? 1 : 0);
                                     //cout << " " << atoms_[k_index]->name_ << flush;
                                     clause.push_back(-(1 + k_index));
                                 }
@@ -199,6 +199,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                                 // insert clause
                                 assert(clause.size() == term.size());
                                 sensing_models_[action_key][var_key][value_key].push_back(clause);
+                                //cout << "INSERT: clause="; LW1_State::print_clause(cout, clause, this); cout << endl;
                                 //cout << "INSERT: model for action-key=" << action_key << ", var-key=" << var_key << ", value-key=" << value_key << endl;
                                 //assert(0);
                             }
@@ -259,7 +260,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                             string name = literal.to_string(literal.negated_, true);
                             int index = get_atom_index(ins, name);
                             assert(index != -1);
-                            int k_index = 2*index + (literal.negated_ ? 0 : 1);
+                            int k_index = 2*index + (literal.negated_ ? 1 : 0);
                             //cout << " " << atoms_[k_index]->name_ << flush;
                             clause.push_back(-(1 + k_index));
                         }
@@ -268,6 +269,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                         // insert clause
                         assert(clause.size() == term.size());
                         sensing_models_[action_key][var_key][value_key].push_back(clause);
+                        //cout << "INSERT: clause="; LW1_State::print_clause(cout, clause, this); cout << endl;
                         //cout << "INSERT: model for action-key=" << action_key << ", var-key=" << var_key << ", value-key=" << value_key << endl;
                         //assert(0);
                     }
@@ -351,7 +353,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
     }
     merge_drules();
 
-    // fix decision rules for atoms (only present with type-3 drules for sensing)
+    // fix decision rules for atoms (only present with type3 drules for sensing)
     for( size_t k = 0; k < ins.n_actions(); ++k ) {
         const Action &act = *ins.actions_[k];
         if( act.name_->to_string().compare(0, 11, "drule-atom-") == 0 )
@@ -378,31 +380,122 @@ LW1_Instance::LW1_Instance(const Instance &ins,
     // do subgoaling
     perform_subgoaling();
 
-    // create fixed set of clauses (variable domain axioms) for UP inference
     if( options_.is_enabled("lw1:inference:up") ) {
+        // create fixed set of clauses (variable domain axioms) for UP inference
         for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
             const Variable &var = *multivalued_variables_[k];
             if( var.is_state_variable_ ) {
                 const set<int> &domain = var.domain_;
-                for( set<int>::const_iterator it = domain.begin(); it != domain.end(); ++it ) {
-                    vector<int> clause;
-                    clause.reserve(domain.size());
-                    clause.push_back(1 + 2**it);
-                    for( set<int>::const_iterator jt = domain.begin(); jt != domain.end(); ++jt ) {
-                        if( it != jt ) clause.push_back(-(1 + 2**jt+1));
+                if( domain.size() == 1 ) {
+                    // nothing to add because all clauses are tautological
+                } else {
+                    // for each value x, Kx <= [K-x_i for all i with x_i != x]
+                    for( set<int>::const_iterator it = domain.begin(); it != domain.end(); ++it ) {
+                        vector<int> clause;
+                        clause.reserve(domain.size());
+                        clause.push_back(1 + 2**it);
+                        for( set<int>::const_iterator jt = domain.begin(); jt != domain.end(); ++jt ) {
+                            if( it != jt ) clause.push_back(-(1 + 2**jt+1));
+                        }
+                        clauses_for_axioms_.push_back(clause);
                     }
-                    clauses_for_axioms_.push_back(clause);
-                }
-                for( set<int>::const_iterator it = domain.begin(); it != domain.end(); ++it ) {
-                    for( set<int>::const_iterator jt = it; jt != domain.end(); ++jt ) {
-                        if( it != jt ) {
-                            vector<int> clause;
-                            clause.reserve(2);
-                            clause.push_back(-(1 + 2**it));
-                            clause.push_back(1 + 2**jt+1);
-                            clauses_for_axioms_.push_back(clause);
+
+                    // for each pair of values x and x', Kx => K-x'
+                    for( set<int>::const_iterator it = domain.begin(); it != domain.end(); ++it ) {
+                        for( set<int>::const_iterator jt = it; jt != domain.end(); ++jt ) {
+                            if( it != jt ) {
+                                vector<int> clause;
+                                clause.reserve(2);
+                                clause.push_back(-(1 + 2**it));
+                                clause.push_back(1 + 2**jt+1);
+                                clauses_for_axioms_.push_back(clause);
+                            }
                         }
                     }
+                }
+            }
+        }
+
+        // create clauses for type3 sensing drules
+        if( options_.is_enabled("lw1:drule:sensing:type3") ) {
+            for( size_t k = 0; k < ins.n_actions(); ++k ) {
+                const Action &act = *ins.actions_[k];
+                if( (act.name_->to_string().compare(0, 11, "drule-atom-") == 0) ||
+                    (act.name_->to_string().compare(0, 20, "drule-sensing-type3-") == 0) ) {
+
+                    for( index_set::const_iterator it = act.effect_.begin(); it != act.effect_.end(); ++it ) {
+                        vector<int> clause;
+                        clause.reserve(1 + act.precondition_.size());
+
+                        int index = *it > 0 ? *it - 1 : -*it - 1;
+                        clause.push_back(1 + (*it > 0 ? 2*index : 2*index+1));
+                        for( index_set::const_iterator it = act.precondition_.begin(); it != act.precondition_.end(); ++it ) {
+                            int index = *it > 0 ? *it - 1 : -*it - 1;
+                            clause.push_back(-(1 + (*it > 0 ? 2*index : 2*index+1)));
+                        }
+                        //cout << "CLAUSE: "; LW1_State::print_clause(cout, clause, this); cout << endl;
+                        clauses_for_axioms_.push_back(clause);
+                    }
+                }
+            }
+        }
+
+        // add K-tautological clauses Kp => -K-P and define set of
+        // literals that forbid clauses to enter the augmented state
+        if( options_.is_enabled("lw1:inference:up:enhanced") ) {
+            // create K-tautological clauses
+            for( size_t k = 0; k < ins.n_atoms(); ++k ) {
+                vector<int> clause;
+                clause.reserve(2);
+                clause.push_back(-(1 + 2*k));
+                clause.push_back(-(1 + 2*k + 1));
+                clauses_for_axioms_.push_back(clause);
+                //cout << "CLAUSE: " << flush; LW1_State::print_clause(cout, clause, this); cout << endl;
+            }
+
+            // observable literals
+            for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
+                const Variable &var = *multivalued_variables_[k];
+                if( !var.is_observable_ ) continue;
+                for( set<int>::const_iterator it = var.domain_.begin(); it != var.domain_.end(); ++it ) {
+                    int value = *it;
+                    bool is_also_value_for_static_var = false;
+                    for( size_t j = 0; j < multivalued_variables_.size(); ++j ) {
+                        const Variable &other_var = *multivalued_variables_[j];
+                        if( var.is_observable_ ) continue;
+                        if( other_var.domain_.find(value) != other_var.domain_.end() ) {
+                            is_also_value_for_static_var = true;
+                            break;
+                        }
+                    }
+
+                    if( !is_also_value_for_static_var ) {
+                        clause_forbidden_literals_.insert(1 + 2*value);
+                        clause_forbidden_literals_.insert(1 + 2*value + 1);
+                        //cout << "Add clause-forbidden literals: ";
+                        //LW1_State::print_literal(cout, 1 + 2*value, this);
+                        //cout << " ";
+                        //LW1_State::print_literal(cout, 1 + 2*value + 1, this);
+                        //cout << endl;
+                    }
+                }
+            }
+
+            // literals from type3 sensing drules
+            for( size_t k = 0; k < ins.n_actions(); ++k ) {
+                const Action &act = *ins.actions_[k];
+                if( act.name_->to_string().compare(0, 11, "drule-atom-") == 0 ) {
+                    assert(act.effect_.size() == 1);
+                    int literal = *act.effect_.begin();
+                    assert(literal > 0);
+                    --literal;
+                    clause_forbidden_literals_.insert(1 + 2*literal);
+                    clause_forbidden_literals_.insert(1 + 2*literal + 1);
+                    //cout << "Add clause-forbidden literals: ";
+                    //LW1_State::print_literal(cout, 1 + 2*literal, this);
+                    //cout << " ";
+                    //LW1_State::print_literal(cout, 1 + 2*literal + 1, this);
+                    //cout << endl;
                 }
             }
         }
@@ -413,6 +506,20 @@ LW1_Instance::LW1_Instance(const Instance &ins,
 }
 
 LW1_Instance::~LW1_Instance() {
+}
+
+bool LW1_Instance::is_forbidden(int literal) const {
+    return clause_forbidden_literals_.find(literal) != clause_forbidden_literals_.end();
+}
+
+bool LW1_Instance::is_forbidden(const vector<int> &clause) const {
+    for( size_t k = 0; k < clause.size(); ++k ) {
+        if( clause_forbidden_literals_.find(clause[k]) != clause_forbidden_literals_.end() )
+            return true;
+        if( clause_forbidden_literals_.find(-clause[k]) != clause_forbidden_literals_.end() )
+            return true;
+    }
+    return false;
 }
 
 void LW1_Instance::create_regular_action(const Action &action,

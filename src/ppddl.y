@@ -17,10 +17,7 @@
     bool error_flag_; \
     int type_; \
   private: \
-    std::vector<ForallEffect*> forall_effects_; \
-    std::vector<ForallCondition*> forall_conditions_; \
-    std::vector<ExistsCondition*> exists_conditions_; \
-    std::vector<ForallSensing*> forall_sensing_; \
+    std::vector<Schema*> schema_; \
     effect_vec *effect_vec_ptr_;
 
 %header{
@@ -108,10 +105,10 @@
 %type <ielem>                 single_init_element
 
 %type <sensing_proxy_list>    sensing sensing_decl_list
-%type <sensing_proxy>         sensing_decl forall_sensing such_that_sensing
+%type <sensing_proxy>         sensing_decl forall_sensing
 %type <sensing_model>         sensing_model
 
-%type <ival>                  multivalued_variable_type
+%type <ival>                  variable_type
 
 %start pddl_decls
 
@@ -374,7 +371,7 @@ domain_schemas:
               yyerrok;
           }
       }
-    | multivalued_variable_decl {
+    | simple_variable_decl {
           declare_lw1_translation();
           if( type_ == cp2fsc ) {
               log_error((char*)"':sensor' is not a valid element in cp2fsc.");
@@ -511,33 +508,37 @@ or_condition:
 
 forall_condition:
       TK_OPEN KW_FORALL TK_OPEN {
-          forall_conditions_.push_back(new ForallCondition);
+          schema_.push_back(new ForallCondition);
       }
       param_list TK_CLOSE {
-          forall_conditions_.back()->param_ = *$5;
+          schema_.back()->param_ = *$5;
           delete $5;
       }
       condition TK_CLOSE {
-          forall_conditions_.back()->condition_ = $8;
-          clear_param(forall_conditions_.back()->param_);
-          $$ = forall_conditions_.back();
-          forall_conditions_.pop_back();
+          assert(dynamic_cast<ForallCondition*>(schema_.back()) != 0);
+          ForallCondition *forall_condition = static_cast<ForallCondition*>(schema_.back());
+          schema_.pop_back();
+          forall_condition->condition_ = $8;
+          clear_param(forall_condition->param_);
+          $$ = forall_condition;
       }
     ;
 
 exists_condition:
       TK_OPEN KW_EXISTS TK_OPEN {
-          exists_conditions_.push_back(new ExistsCondition);
+          schema_.push_back(new ExistsCondition);
       }
       param_list TK_CLOSE {
-          exists_conditions_.back()->param_ = *$5;
+          schema_.back()->param_ = *$5;
           delete $5;
       }
       condition TK_CLOSE {
-          exists_conditions_.back()->condition_ = $8;
-          clear_param(exists_conditions_.back()->param_);
-          $$ = exists_conditions_.back();
-          exists_conditions_.pop_back();
+          assert(dynamic_cast<ExistsCondition*>(schema_.back()) != 0);
+          ExistsCondition *exists_condition = static_cast<ExistsCondition*>(schema_.back());
+          schema_.pop_back();
+          exists_condition->condition_ = $8;
+          clear_param(exists_condition->param_);
+          $$ = exists_condition;
       }
     ;
 
@@ -596,18 +597,28 @@ conditional_effect:
 
 forall_effect:
       TK_OPEN KW_FORALL TK_OPEN {
-          forall_effects_.push_back(new ForallEffect);
+          schema_.push_back(new ForallEffect);
       }
       param_list TK_CLOSE {
-          forall_effects_.back()->param_ = *$5;
+          schema_.back()->param_ = *$5;
           delete $5;
       }
-      action_effect TK_CLOSE {
-          forall_effects_.back()->effect_ = $8;
-          clear_param(forall_effects_.back()->param_);
-          $$ = forall_effects_.back();
-          forall_effects_.pop_back();
+      optional_such_that action_effect TK_CLOSE {
+          assert(dynamic_cast<ForallEffect*>(schema_.back()) != 0);
+          ForallEffect *forall_effect = static_cast<ForallEffect*>(schema_.back());
+          schema_.pop_back();
+          forall_effect->effect_ = $9;
+          clear_param(forall_effect->param_);
+          $$ = forall_effect;
       }
+    ;
+
+optional_such_that:
+      KW_SUCH_THAT condition {
+          assert(!schema_.empty());
+          schema_.back()->such_that_ = $2;
+      }
+    | /* empty */
     ;
 
 atomic_effect_kw_list:
@@ -669,32 +680,24 @@ sensing_decl_list:
 sensing_decl:
       sensing_model { $$ = new BasicSensingModel($1); }
     | forall_sensing
-    | such_that_sensing
     ;
    
 forall_sensing:
       TK_OPEN KW_FORALL TK_OPEN {
-          forall_sensing_.push_back(new ForallSensing);
+          schema_.push_back(new ForallSensing);
       }
       param_list TK_CLOSE {
-          forall_sensing_.back()->param_ = *$5;
+          schema_.back()->param_ = *$5;
           delete $5;
       }
-      sensing_decl_list TK_CLOSE {
-          forall_sensing_.back()->sensing_ = *$8;
-          delete $8;
-          clear_param(forall_sensing_.back()->param_);
-          $$ = forall_sensing_.back();
-          forall_sensing_.pop_back();
-      }
-    ;
-
-such_that_sensing:
-      TK_OPEN KW_SUCH_THAT condition sensing_decl_list TK_CLOSE {
-          SuchThatSensing *such_that_sensing = new SuchThatSensing($3);
-          such_that_sensing->sensing_ = *$4;
-          delete $4;
-          $$ = such_that_sensing;
+      optional_such_that sensing_decl_list TK_CLOSE {
+          assert(dynamic_cast<ForallSensing*>(schema_.back()) != 0);
+          ForallSensing *forall_sensing = static_cast<ForallSensing*>(schema_.back());
+          schema_.pop_back();
+          forall_sensing->sensing_ = *$9;
+          delete $9;
+          clear_param(forall_sensing->param_);
+          $$ = forall_sensing;
       }
     ;
 
@@ -846,8 +849,8 @@ sticky_decl:
       }
     ;
 
-multivalued_variable_decl:
-      TK_OPEN multivalued_variable_type TK_NEW_SYMBOL {
+simple_variable_decl:
+      TK_OPEN variable_type TK_NEW_SYMBOL {
           Variable *var = 0;
           if( $2 == 0 )
               var = new StateVariable($3->text);
@@ -859,20 +862,26 @@ multivalued_variable_decl:
       fluent_list_decl TK_CLOSE {
           $3->val = multivalued_variables_.back();
       }
-    | TK_OPEN multivalued_variable_type TK_OPEN TK_NEW_SYMBOL param_list TK_CLOSE {
+    | TK_OPEN variable_type TK_OPEN TK_NEW_SYMBOL {
           Variable *var = 0;
           if( $2 == 0 )
               var = new StateVariable($4->text);
           else
               var = new ObsVariable($4->text);
-          var->param_ = *$5;
-          delete $5;
-          multivalued_variables_.push_back(var);
+          schema_.push_back(var);
           effect_vec_ptr_ = &var->domain_;
       }
-      fluent_list_decl TK_CLOSE {
-          clear_param(multivalued_variables_.back()->param_);
-          $4->val = multivalued_variables_.back();
+      param_list TK_CLOSE {
+          schema_.back()->param_ = *$6;
+          delete $6;
+      }
+      optional_such_that fluent_list_decl TK_CLOSE {
+          assert(dynamic_cast<Variable*>(schema_.back()) != 0);
+          Variable *variable = static_cast<Variable*>(schema_.back());
+          schema_.pop_back();
+          clear_param(variable->param_);
+          $4->val = variable;
+          multivalued_variables_.push_back(variable);
       }
     | TK_OPEN KW_VARIABLE error TK_CLOSE {
           log_error((char*)"syntax error in state variable declaration");
@@ -880,7 +889,7 @@ multivalued_variable_decl:
       }
     ;
 
-multivalued_variable_type:
+variable_type:
       KW_VARIABLE { $$ = 0; }
     | KW_OBS_VARIABLE { $$ = 1; }
     ;

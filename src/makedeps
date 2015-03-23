@@ -9,7 +9,7 @@ cp2fsc.o: cp2fsc.cc cp_problem.h problem.h name.h index.h options.h \
 lw1.o: lw1.cc problem.h name.h index.h options.h preprocess.h parser.h \
   scanner.h string_table.h char_map.h grammar.h base.h ptr_table.h \
   utils.h state.h clg_problem.h kp_problem.h lw1_problem.h lw1_solver.h \
-  solver.h classical_planner.h available_options.h
+  new_solver.h classical_planner.h lw1_state.h available_options.h
 string_table.o: string_table.cc string_table.h char_map.h
 base.o: base.cc base.h ptr_table.h string_table.h char_map.h options.h \
   problem.h name.h index.h utils.h
@@ -34,12 +34,14 @@ preprocess.o: preprocess.cc preprocess.h problem.h name.h index.h \
 solver.o: solver.cc solver.h classical_planner.h kp_problem.h problem.h \
   name.h index.h options.h base.h ptr_table.h string_table.h char_map.h \
   state.h utils.h
-lw1_solver.o: lw1_solver.cc lw1_solver.h solver.h classical_planner.h \
+lw1_solver.o: lw1_solver.cc lw1_solver.h new_solver.h classical_planner.h \
   kp_problem.h problem.h name.h index.h options.h base.h ptr_table.h \
-  string_table.h char_map.h state.h lw1_problem.h utils.h
+  string_table.h char_map.h state.h utils.h lw1_state.h lw1_problem.h \
+  Inference.h
 classical_planner.o: classical_planner.cc classical_planner.h \
   kp_problem.h problem.h name.h index.h options.h base.h ptr_table.h \
   string_table.h char_map.h state.h utils.h
+Inference.o: Inference.cc Inference.h
 grammar.o: grammar.cc base.h ptr_table.h string_table.h char_map.h \
   options.h problem.h name.h index.h utils.h
 scanner.o: scanner.cc scanner.h string_table.h char_map.h grammar.h \
