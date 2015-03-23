@@ -206,28 +206,32 @@ class State {
     bool operator()(const State *s1, const State *s2) const { return *s1 == *s2; }
     size_t operator()(const State *s) const { return s->hash(); }
 
-    void print(std::ostream &os, const Instance &ins) const {
-        os << "{";
-        for( unsigned *p = atoms_; *p; ++p )
-            os << ins.atoms_[(*p)-1]->name_ << (*(p+1) ? "," : "");
-        os << "}";
-    }
-    void print_bits(std::ostream &os) const {
-        os << "{";
-        for( unsigned *p = atoms_; *p; ++p )
-            os << *p-1 << (*(p+1) ? "," : "");
-        os << "}";
-    }
-    void write(std::ostream &os) const {
-        os << size_ << ":{";
-        for( unsigned *p = atoms_; *p; ++p )
-            os << (*p)-1 << (*(p+1) ? "," : "");
-        os << "}";
+    static void print_literal(std::ostream &os, const int literal, const Instance *ins = 0) {
+        if( ins == 0 ) {
+            os << literal;
+        } else {
+            os << (literal < 0 ? "(not " : "")
+               << ins->atoms_[literal < 0 ? -literal - 1 : literal - 1]->name_
+               << (literal < 0 ? ")" : "");
+        }
     }
 
-    struct ptr_map_fun {
-        bool operator()(const State *p1, const State *p2) const { return (*p1) < (*p2); }
-    };
+    void print(std::ostream &os, const Instance *ins = 0) const {
+        os << "{";
+        for( unsigned *p = atoms_; *p; ++p ) {
+            assert(*p > 0);
+            State::print_literal(os, *p, ins);
+            os << (*(p+1) ? "," : "");
+        }
+        os << "}";
+    }
+    void print(std::ostream &os, const Instance &ins) const {
+        print(os, &ins);
+    }
+
+    //struct ptr_map_fun {
+    //    bool operator()(const State *p1, const State *p2) const { return (*p1) < (*p2); }
+    //};
 
     // iterators
     struct const_iterator {
@@ -242,7 +246,7 @@ class State {
 };
 
 inline std::ostream& operator<<(std::ostream &os, const State &s) {
-    s.write(os);
+    s.print(os);
     return os;
 }
 

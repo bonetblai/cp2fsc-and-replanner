@@ -1108,12 +1108,12 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
             //const Action &action = *jt->first;
             const list<const And*> &dnf = jt->second;
 
-            size_t num_type1_drules = 0;
+            //size_t num_type1_drules = 0;
             size_t num_type2_drules = 0;
             size_t num_type3_drules = 0;
             for( list<const And*>::const_iterator term = dnf.begin(); term != dnf.end(); ++term) {
                 assert(dynamic_cast<const And*>(*term) != 0);
-                lw1_create_type1_sensing_drule(obs, **term, num_type1_drules++);
+                //lw1_create_type1_sensing_drule(obs, **term, num_type1_drules++); // disabled: see comment below
                 lw1_create_type2_sensing_drule(obs, **term, num_type2_drules++);
                 if( options_.is_enabled("lw1:drule:sensing:type3") )
                     lw1_create_type3_sensing_drule(obs, **term, dnf, num_type3_drules++);
@@ -1122,6 +1122,7 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
     }
 }
 
+// these rules are not necessary and may be wrong: they are of the form term => obs
 void PDDL_Base::lw1_create_type1_sensing_drule(const Atom &obs, const And &term, int index) {
     // type-1 sensing drules
     ostringstream s;
@@ -1171,6 +1172,7 @@ void PDDL_Base::lw1_create_type3_sensing_drule(const Atom &obs, const And &term,
     //    cout << **it << ",";
     //cout << "]" << endl;
 
+    // CHECK: need to generate "safe" type3 rules only and discard the warning message that is anoying
     cout << Utils::warning() << "type3 sensing drules are only sound for static observables" << endl;
 
     ostringstream s;
@@ -1839,6 +1841,10 @@ void PDDL_Base::emit_instance(Instance &ins) const {
     // emit sticky
     for( size_t k = 0; k < dom_stickies_.size(); ++k )
         dom_stickies_[k]->emit(ins);
+
+    // emit static atoms
+    for( unsigned_atom_set::const_iterator it = dom_static_atoms_.begin(); it != dom_static_atoms_.end(); ++it )
+        it->emit(ins, ins.static_atoms_from_base_);
 
     // declare original actions
     for( set<string>::const_iterator it = original_actions_.begin(); it != original_actions_.end(); ++it )
@@ -2830,19 +2836,30 @@ PDDL_Base::Effect* PDDL_Base::ForallEffect::ground(bool clone_variables, bool re
 }
 
 void PDDL_Base::ForallEffect::process_instance() const {
-    Effect *item = effect_->ground(clone_variables_stack_.back());
-    if( item != 0 ) {
-        assert(dynamic_cast<NullEffect*>(item) == 0);
-        if( dynamic_cast<AndEffect*>(item) != 0 ) {
-            AndEffect &item_list = *static_cast<AndEffect*>(item);
-            for( size_t i = 0; i < item_list.size(); ++i)
-                result_stack_.back()->push_back(item_list[i]);
-            item_list.clear();
-            delete item;
-        } else {
-            result_stack_.back()->push_back(item);
+    Condition *such_that = 0;
+    if( such_that_ != 0 ) such_that = such_that_->ground(false, false, true);
+    if( (such_that_ == 0) || (dynamic_cast<const Constant*>(such_that) != 0) ) {
+        const Constant *constant = static_cast<const Constant*>(such_that);
+        if( (such_that_ == 0) || constant->value_ ) {
+            Effect *item = effect_->ground(clone_variables_stack_.back());
+            if( item != 0 ) {
+                assert(dynamic_cast<NullEffect*>(item) == 0);
+                if( dynamic_cast<AndEffect*>(item) != 0 ) {
+                    AndEffect &item_list = *static_cast<AndEffect*>(item);
+                    for( size_t i = 0; i < item_list.size(); ++i)
+                        result_stack_.back()->push_back(item_list[i]);
+                    item_list.clear();
+                    delete item;
+                } else {
+                    result_stack_.back()->push_back(item);
+                }
+            }
         }
+    } else if( such_that_ != 0 ) {
+        cout << Utils::error() << "condition '" << *such_that_
+             << "' in such-that statement must ground to constant value" << endl;
     }
+    if( such_that_ != 0 ) delete such_that;
 }
 
 bool PDDL_Base::ForallEffect::has_free_variables(const var_symbol_vec &param, bool dont_extend) const {
@@ -2864,7 +2881,12 @@ string PDDL_Base::ForallEffect::to_string() const {
     string str("(forall (");
     for( size_t k = 0; k < param_.size(); ++k )
         str += (k > 0 ? " " : "") + param_[k]->to_string();
-    return str + ") " + effect_->to_string() + ")";
+    str += ")";
+    if( such_that_ != 0 ) {
+        str += " such-that ";
+        str += such_that_->to_string();
+    }
+    return str + " " + effect_->to_string() + ")";
 }
 
 PDDL_Base::SensingModel* PDDL_Base::SensingModelForStateVariable::ground(bool, bool) const {
@@ -3001,6 +3023,7 @@ bool PDDL_Base::SensingModelForObservableVariable::verify(const PDDL_Base *base)
         }
     }
 
+    // CHECK: don't issue warning for non-positive DNF when negated literal is valid value of binary variable
     // check format of DNF
     if( !dnf_->is_dnf() ) {
         cout << Utils::error() << "reduced formula '" << *dnf_
@@ -3109,13 +3132,24 @@ PDDL_Base::Sensing* PDDL_Base::BasicSensingModel::ground(bool clone_variables, b
 }
 
 void PDDL_Base::ForallSensing::process_instance() const {
-    Sensing *sensing = sensing_.ground(clone_variables_stack_.back(), replace_static_values_stack_.back());
-    if( sensing != 0 ) {
-        for( size_t k = 0; k < sensing->size(); ++k )
-            result_stack_.back()->push_back((*sensing)[k]);
-        sensing->clear();
-        delete sensing;
+    Condition *such_that = 0;
+    if( such_that_ != 0 ) such_that = such_that_->ground(false, false, true);
+    if( (such_that_ == 0) || (dynamic_cast<const Constant*>(such_that) != 0) ) {
+        const Constant *constant = static_cast<const Constant*>(such_that);
+        if( (such_that_ == 0) || constant->value_ ) {
+            Sensing *sensing = sensing_.ground(clone_variables_stack_.back(), replace_static_values_stack_.back());
+            if( sensing != 0 ) {
+                for( size_t k = 0; k < sensing->size(); ++k )
+                    result_stack_.back()->push_back((*sensing)[k]);
+                sensing->clear();
+                delete sensing;
+            }
+        }
+    } else if( such_that_ != 0 ) {
+        cout << Utils::error() << "condition '" << *such_that_
+             << "' in such-that statement must ground to constant value" << endl;
     }
+    if( such_that_ != 0 ) delete such_that;
 }
 
 bool PDDL_Base::ForallSensing::is_strongly_static(const PredicateSymbol &p) const {
@@ -3145,43 +3179,10 @@ std::string PDDL_Base::ForallSensing::to_string() const {
     for( size_t k = 0; k < param_.size(); ++k )
         str += (k > 0 ? " " : "") + param_[k]->to_string();
     str += ")";
-    for( size_t k = 0; k < sensing_.size(); ++k )
-        str += " " + sensing_[k]->to_string();
-    return str + ")";
-}
-
-bool PDDL_Base::SuchThatSensing::is_strongly_static(const PredicateSymbol &p) const {
-    for( size_t k = 0; k < sensing_.size(); ++k ) {
-        if( !sensing_[k]->is_strongly_static(p) )
-            return false;
+    if( such_that_ != 0 ) {
+        str += " such-that ";
+        str += such_that_->to_string();
     }
-    return true;
-}
-
-PDDL_Base::Sensing* PDDL_Base::SuchThatSensing::ground(bool clone_variables, bool replace_static_values) const {
-    Sensing *sensing = new Sensing;
-    Condition *condition = condition_->ground(clone_variables, false, replace_static_values);
-    if( dynamic_cast<const Constant*>(condition) != 0 ) {
-        const Constant *constant = static_cast<const Constant*>(condition);
-        if( constant->value_ ) {
-            Sensing *internal = sensing_.ground(clone_variables, replace_static_values);
-            if( internal != 0 ) {
-                for( size_t k = 0; k < internal->size(); ++k )
-                    sensing->push_back((*internal)[k]);
-                internal->clear();
-                delete internal;
-            }
-        }
-    } else {
-        cout << Utils::error() << "condition '" << *condition_
-             << "' must ground to constant value in (such-that ...) statement" << endl;
-    }
-    return sensing;
-}
-
-std::string PDDL_Base::SuchThatSensing::to_string() const {
-    string str("(such-that ");
-    str += condition_->to_string();
     for( size_t k = 0; k < sensing_.size(); ++k )
         str += " " + sensing_[k]->to_string();
     return str + ")";
@@ -3940,35 +3941,46 @@ void PDDL_Base::Variable::instantiate(variable_list &vlist) const {
 }
 
 void PDDL_Base::Variable::process_instance() const {
-    string variable_name("(");
-    variable_name += print_name_;
-    for( size_t k = 0; k < param_.size(); ++k )
-        variable_name += " " + param_[k]->to_string();
-    variable_name += ")";
+    Condition *such_that = 0;
+    if( such_that_ != 0 ) such_that = such_that_->ground(false, false, true);
+    if( (such_that_ == 0) || (dynamic_cast<const Constant*>(such_that) != 0) ) {
+        const Constant *constant = static_cast<const Constant*>(such_that);
+        if( (such_that_ == 0) || constant->value_ ) {
+            string variable_name("(");
+            variable_name += print_name_;
+            for( size_t k = 0; k < param_.size(); ++k )
+                variable_name += " " + param_[k]->to_string();
+            variable_name += ")";
 
-    Variable *var = make_instance(strdup(variable_name.c_str()));
-    var->grounded_ = true;
-    variable_list_ptr_->push_back(var);
+            Variable *var = make_instance(strdup(variable_name.c_str()));
+            var->grounded_ = true;
+            variable_list_ptr_->push_back(var);
 
-    for( size_t k = 0; k < domain_.size(); ++k ) {
-        Effect *grounded_value = domain_[k]->ground(true); // clone_variables=true
-        if( dynamic_cast<AtomicEffect*>(grounded_value) != 0 ) {
-            var->grounded_domain_.insert(*static_cast<AtomicEffect*>(grounded_value));
-        } else if( dynamic_cast<AndEffect*>(grounded_value) != 0 ) {
-            AndEffect &item_list = *static_cast<AndEffect*>(grounded_value);
-            for( size_t i = 0; i < item_list.size(); ++i ) {
-                assert(dynamic_cast<const AtomicEffect*>(item_list[i]) != 0);
-                var->grounded_domain_.insert(*static_cast<const AtomicEffect*>(item_list[i]));
+            for( size_t k = 0; k < domain_.size(); ++k ) {
+                Effect *grounded_value = domain_[k]->ground(true); // clone_variables=true
+                if( dynamic_cast<AtomicEffect*>(grounded_value) != 0 ) {
+                    var->grounded_domain_.insert(*static_cast<AtomicEffect*>(grounded_value));
+                } else if( dynamic_cast<AndEffect*>(grounded_value) != 0 ) {
+                    AndEffect &item_list = *static_cast<AndEffect*>(grounded_value);
+                    for( size_t i = 0; i < item_list.size(); ++i ) {
+                        assert(dynamic_cast<const AtomicEffect*>(item_list[i]) != 0);
+                        var->grounded_domain_.insert(*static_cast<const AtomicEffect*>(item_list[i]));
+                    }
+                } else {
+                    cout << *domain_[k] << endl;
+                    Effect *e = domain_[k]->ground(true); // clone_variables=true
+                    cout << "gdd-ptr=" << e << endl;
+                    cout << Utils::error() << "unrecognized format in variable '" << print_name_ << "'" << endl;
+                    exit(255);
+                }
+                delete grounded_value;
             }
-        } else {
-            cout << *domain_[k] << endl;
-            Effect *e = domain_[k]->ground(true); // clone_variables=true
-            cout << "gdd-ptr=" << e << endl;
-            cout << Utils::error() << "unrecognized format in variable '" << print_name_ << "'" << endl;
-            exit(255);
         }
-        delete grounded_value;
+    } else if( such_that_ != 0 ) {
+        cout << Utils::error() << "condition '" << *such_that_
+             << "' in such-that statement must ground to constant value" << endl;
     }
+    if( such_that_ != 0 ) delete such_that;
 }
 
 string PDDL_Base::StateVariable::to_string(bool only_name, bool cat) const {
@@ -3997,6 +4009,8 @@ string PDDL_Base::StateVariable::to_string(bool only_name, bool cat) const {
     } else {
         string str("(:variable ");
         str += print_name_;
+        if( such_that_ != 0 )
+            str += string(" such-that ") + such_that_->to_string();
         for( size_t k = 0; k < domain_.size(); ++k )
             str += " " + domain_[k]->to_string();
         if( is_observable_ ) str += " :observable";
@@ -4030,6 +4044,8 @@ string PDDL_Base::ObsVariable::to_string(bool only_name, bool cat) const {
     } else {
         string str("(:obs-variable ");
         str += print_name_;
+        if( such_that_ != 0 )
+            str += string(" such-that ") + such_that_->to_string();
         for( size_t k = 0; k < domain_.size(); ++k )
             str += " " + domain_[k]->to_string();
         return str + ")";

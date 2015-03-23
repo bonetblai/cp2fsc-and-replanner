@@ -112,6 +112,7 @@ const char *available_options[] = {
     "lw1:inference:forward-chaining",      "[LW1] uses forward chaining of drules to make inference (old and sometimes incorrect method)",
     "lw1:inference:up",                    "[LW1] uses unit resolution as inference mechanism",
     "lw1:inference:up:1-lookahead",        "[LW1] uses unit resolution with 1-lookahead as inference mechanism",
+    "lw1:inference:up:enhanced",           "[LW1] maintain inferred (non-forbidden) clauses",
 
     0
 };

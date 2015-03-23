@@ -12,9 +12,16 @@ class KP_Instance : public Instance {
     KP_Instance(const Options::Mode &options);
     virtual ~KP_Instance() { }
 
+    // for statistics
+    mutable float inference_time_;
+
     // for subgoaling
     Atom *new_goal_;
     size_t index_for_goal_action_;
+
+    float get_inference_time() const {
+        return inference_time_;
+    }
 
     virtual void cross_reference() = 0;
     virtual size_t remap_action(size_t action_id) const = 0;

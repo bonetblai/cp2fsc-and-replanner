@@ -17,56 +17,39 @@ struct LW1_State : public State {
     LW1_State(const index_set &s) : State(s) { }
     virtual ~LW1_State() { }
 
-    void print_cnf(std::ostream &os, const Instance &ins) const {
+    static void print_clause(std::ostream &os, const clause_t &clause, const Instance *ins = 0) {
         os << "{";
-        for( size_t k = 0; k < cnf_.size(); ++k ) {
-            os << "{";
-            for( size_t j = 0; j < cnf_[k].size(); ++j ) {
-                int lit = cnf_[k][j];
-                os << (lit < 0 ? "(not " : "")
-                   << ins.atoms_[lit < 0 ? -lit - 1 : lit - 1]
-                   << (lit < 0 ? ")" : "")
-                   << (j + 1 < cnf_[k].size() ? "," : "");
-            }
-            os << "}" << (k + 1 < cnf_.size() ? "," : "");
+        for( size_t k = 0; k < clause.size(); ++k ) {
+            State::print_literal(os, clause[k], ins);
+            os << (k + 1 < clause.size() ? "," : "");
         }
         os << "}";
     }
-    void print(std::ostream &os, const Instance &ins) const {
+    static void print_cnf(std::ostream &os, const cnf_t &cnf, const Instance *ins = 0) {
+        os << "{";
+        for( size_t k = 0; k < cnf.size(); ++k ) {
+            LW1_State::print_clause(os, cnf[k], ins);
+            os << (k + 1 < cnf.size() ? "," : "");
+        }
+        os << "}";
+    }
+
+    void print(std::ostream &os, const Instance *ins = 0) const {
         os << "[s=";
         State::print(os, ins);
         if( !cnf_.empty() ) {
             os << ",cnf=";
-            print_cnf(os, ins);
+            LW1_State::print_cnf(os, cnf_, ins);
         }
         os << "]";
     }
-
-    void write_cnf(std::ostream &os) const {
-        os << "{";
-        for( size_t k = 0; k < cnf_.size(); ++k ) {
-            os << "{";
-            for( size_t j = 0; j < cnf_[k].size(); ++j ) {
-                int lit = cnf_[k][j];
-                os << lit << (j + 1 < cnf_[k].size() ? "," : "");
-            }
-            os << "}" << (k + 1 < cnf_.size() ? "," : "");
-        }
-        os << "}";
-    }
-    void write(std::ostream &os) const {
-        os << "[s=";
-        State::write(os);
-        if( !cnf_.empty() ) {
-            os << ",cnf=";
-            write_cnf(os);
-        }
-        os << "]";
+    void print(std::ostream &os, const Instance &ins) const {
+        print(os, &ins);
     }
 };
 
 inline std::ostream& operator<<(std::ostream &os, const LW1_State &s) {
-    s.write(os);
+    s.print(os);
     return os;
 }
 

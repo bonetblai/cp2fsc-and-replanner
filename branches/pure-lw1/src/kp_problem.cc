@@ -15,7 +15,7 @@ static int get_atom_index(const Instance &ins, string atom_name) {
 }
 
 KP_Instance::KP_Instance(const Options::Mode &options)
-  : Instance(options), new_goal_(0), index_for_goal_action_(0) {
+  : Instance(options), inference_time_(0), new_goal_(0), index_for_goal_action_(0) {
 }
 
 void KP_Instance::write_problem(ostream &os, const State *state, int indent) const {
@@ -40,6 +40,7 @@ void KP_Instance::write_problem(ostream &os, const State *state, int indent) con
 // applying the (applicable) plan pi on state s, and regress(a, s, s') is the
 // minimum set of assumptions needed for the action a, which is applicable
 // at state s, to produce state s'.
+//
 // CHECK IMPLEMENTATION BELOW
 
 void KP_Instance::calculate_relevant_assumptions(const Plan &plan,

@@ -152,6 +152,8 @@ class Instance {
     index_set   given_observables_;
     index_set   given_stickies_;
 
+    index_set   static_atoms_from_base_; // static atoms detected in PDDL_Base
+
     // deductive rules to apply to hidden state
     action_vec  deductive_rules_;
 
