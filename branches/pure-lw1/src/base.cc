@@ -2132,6 +2132,25 @@ void PDDL_Base::Literal::extract_atoms(unsigned_atom_set &atoms) const {
     atoms.insert(*this);
 }
 
+bool PDDL_Base::Literal::is_term(bool positive, const PDDL_Base *base) const {
+    if( positive && negated_ ) {
+        if( base == 0 ) {
+            return false;
+        } else {
+            // if there is a non-binary var such that negated literal (atom) is value, return false
+            bool value_for_some_variable = false;
+            for( size_t k = 0; k < base->multivalued_variables_.size(); ++k ) {
+                const Variable &var = *base->multivalued_variables_[k];
+                if( var.grounded_domain_.find(*this) == var.grounded_domain_.end() ) continue;
+                value_for_some_variable = true;
+                if( var.grounded_domain_.size() != 1 ) return false;
+            }
+            return value_for_some_variable;
+        }
+    }
+    return true;
+}
+
 PDDL_Base::Condition* PDDL_Base::Literal::copy(bool clone_variables, bool negate, bool replace_static_values) const {
     Condition *result = 0;
     Atom *atom = Atom::ground(false);
@@ -2288,12 +2307,12 @@ void PDDL_Base::And::extract_atoms(unsigned_atom_set &atoms) const {
         (*this)[k]->extract_atoms(atoms);
 }
 
-bool PDDL_Base::And::is_term(bool positive) const {
+bool PDDL_Base::And::is_term(bool positive, const PDDL_Base *base) const {
     if( size() <= 1 ) return false;
     for( size_t k = 0; k < size(); ++k ) {
         if( dynamic_cast<const Literal*>((*this)[k]) == 0 )
             return false;
-        else if( !(*this)[k]->is_term(positive) )
+        else if( !(*this)[k]->is_term(positive, base) )
             return false;
     }
     return true;
@@ -2376,10 +2395,10 @@ void PDDL_Base::Or::extract_atoms(unsigned_atom_set &atoms) const {
         (*this)[k]->extract_atoms(atoms);
 }
 
-bool PDDL_Base::Or::is_dnf(bool positive) const {
+bool PDDL_Base::Or::is_dnf(bool positive, const PDDL_Base *base) const {
     if( size() <= 1 ) return false;
     for( size_t k = 0; k < size(); ++k ) {
-        if( !(*this)[k]->is_term(positive) )
+        if( !(*this)[k]->is_term(positive, base) )
             return false;
     }
     return true;
@@ -3023,13 +3042,12 @@ bool PDDL_Base::SensingModelForObservableVariable::verify(const PDDL_Base *base)
         }
     }
 
-    // CHECK: don't issue warning for non-positive DNF when negated literal is valid value of binary variable
     // check format of DNF
     if( !dnf_->is_dnf() ) {
         cout << Utils::error() << "reduced formula '" << *dnf_
              << "' for model of '" << *(const Atom*)literal_ << "' isn't dnf!" << endl;
         return_value = false;
-    } else if( !dnf_->is_dnf(true) ) {
+    } else if( !dnf_->is_dnf(true, base) ) {
         cout << Utils::warning() << "reduced dnf '" << *dnf_
              << "' for model of '" << *(const Atom*)literal_ << "' isn't positive!" << endl;
         return_value = true;

@@ -137,8 +137,8 @@ class PDDL_Base {
         virtual Condition* ground(bool clone_variables = false, bool negate = false, bool replace_static_values = true) const = 0;
         virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const = 0;
         virtual void extract_atoms(unsigned_atom_set &atoms) const = 0;
-        virtual bool is_dnf(bool positive = false) const = 0;
-        virtual bool is_term(bool positive = false) const = 0;
+        virtual bool is_dnf(bool positive = false, const PDDL_Base *base = 0) const = 0;
+        virtual bool is_term(bool positive = false, const PDDL_Base *base = 0) const = 0;
         virtual std::string to_string() const = 0;
         void print(std::ostream &os) const { os << to_string(); }
         Condition* copy_and_simplify(bool negate = false) const { return ground(false, negate, false); }
@@ -156,8 +156,8 @@ class PDDL_Base {
         virtual Condition* ground(bool clone_variables = false, bool negate = false, bool replace_static_values = true) const;
         virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const { return false; }
         virtual void extract_atoms(unsigned_atom_set &atoms) const { }
-        virtual bool is_dnf(bool positive = false) const { return true; }
-        virtual bool is_term(bool positive = false) const { return false; }
+        virtual bool is_dnf(bool positive = false, const PDDL_Base *base = 0) const { return true; }
+        virtual bool is_term(bool positive = false, const PDDL_Base *base = 0) const { return false; }
         virtual std::string to_string() const { return std::string(value_ ? "true" : "false"); }
     };
 
@@ -169,8 +169,8 @@ class PDDL_Base {
         virtual Condition* ground(bool clone_variables = false, bool negate = false, bool replace_static_values = true) const;
         virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const;
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
-        virtual bool is_dnf(bool positive = false) const { return is_term(positive); }
-        virtual bool is_term(bool positive = false) const { return !positive || !negated_; }
+        virtual bool is_dnf(bool positive = false, const PDDL_Base *base = 0) const { return is_term(positive, base); }
+        virtual bool is_term(bool positive = false, const PDDL_Base *base = 0) const;
         virtual std::string to_string() const { return to_string(false, false); }
         std::string to_string(bool extra_negation, bool mangled) const { return Atom::to_string(extra_negation, mangled); }
         Condition *copy(bool clone_variables = false, bool negate = false, bool replace_static_values = false) const;
@@ -187,8 +187,8 @@ class PDDL_Base {
         virtual Condition* ground(bool clone_variables = false, bool negate = false, bool replace_static_values = true) const;
         virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const;
         virtual void extract_atoms(unsigned_atom_set &atoms) const { }
-        virtual bool is_dnf(bool positive = false) const { return false; }
-        virtual bool is_term(bool positive = false) const { return false; }
+        virtual bool is_dnf(bool positive = false, const PDDL_Base *base = 0) const { return false; }
+        virtual bool is_term(bool positive = false, const PDDL_Base *base = 0) const { return false; }
         virtual std::string to_string() const;
     };
 
@@ -201,8 +201,8 @@ class PDDL_Base {
         virtual Condition* ground(bool clone_variables = false, bool negate = false, bool replace_static_values = true) const;
         virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const;
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
-        virtual bool is_dnf(bool positive = false) const { return is_term(positive); }
-        virtual bool is_term(bool positive = false) const;
+        virtual bool is_dnf(bool positive = false, const PDDL_Base *base = 0) const { return is_term(positive, base); }
+        virtual bool is_term(bool positive = false, const PDDL_Base *base = 0) const;
         virtual std::string to_string() const;
     };
 
@@ -215,8 +215,8 @@ class PDDL_Base {
         virtual Condition* ground(bool clone_variables = false, bool negate = false, bool replace_static_values = true) const;
         virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const;
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
-        virtual bool is_dnf(bool positive = false) const;
-        virtual bool is_term(bool positive = false) const { return false; }
+        virtual bool is_dnf(bool positive = false, const PDDL_Base *base = 0) const;
+        virtual bool is_term(bool positive = false, const PDDL_Base *base = 0) const { return false; }
         virtual std::string to_string() const;
     };
 
@@ -230,8 +230,8 @@ class PDDL_Base {
         virtual Condition* ground(bool clone_variables = false, bool negate = false, bool replace_static_values = true) const;
         virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const;
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
-        virtual bool is_dnf(bool positive = false) const { return false; }
-        virtual bool is_term(bool positive = false) const { return false; }
+        virtual bool is_dnf(bool positive = false, const PDDL_Base *base = 0) const { return false; }
+        virtual bool is_term(bool positive = false, const PDDL_Base *base = 0) const { return false; }
         virtual std::string to_string() const;
         mutable std::vector<bool> negate_stack_;
         mutable std::vector<bool> clone_variables_stack_;
@@ -248,8 +248,8 @@ class PDDL_Base {
         virtual Condition* ground(bool clone_variables = false, bool negate = false, bool replace_static_values = true) const;
         virtual bool has_free_variables(const var_symbol_vec &param, bool dont_extend = false) const;
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
-        virtual bool is_dnf(bool positive = false) const { return false; }
-        virtual bool is_term(bool positive = false) const { return false; }
+        virtual bool is_dnf(bool positive = false, const PDDL_Base *base = 0) const { return false; }
+        virtual bool is_term(bool positive = false, const PDDL_Base *base = 0) const { return false; }
         virtual std::string to_string() const;
         mutable std::vector<bool> negate_stack_;
         mutable std::vector<bool> clone_variables_stack_;
