@@ -38,25 +38,27 @@
 %}
 
 %union {
-    StringTable::Cell                  *sym;
-    PDDL_Base::VariableSymbol          *vsym;
-    PDDL_Base::Atom                    *atom;
-    PDDL_Base::symbol_vec              *param;
-    PDDL_Base::var_symbol_vec          *vparam;
-    PDDL_Base::condition_vec           *condition_vec;
-    PDDL_Base::effect_vec              *effect_vec;
-    const PDDL_Base::Condition         *condition;
-    const PDDL_Base::Effect            *effect;
-    const PDDL_Base::Invariant         *invariant;
-    const PDDL_Base::Clause            *clause;
-    const PDDL_Base::Oneof             *oneof;
-    const PDDL_Base::Unknown           *unknown;
-    const PDDL_Base::init_element_vec  *ilist;
-    const PDDL_Base::InitElement       *ielem;
-    const PDDL_Base::SensingModel      *sensing_model;
-    const PDDL_Base::SensingProxy      *sensing_proxy;
-    const PDDL_Base::sensing_proxy_vec *sensing_proxy_list;
-    int                                ival;
+    StringTable::Cell                         *sym;
+    PDDL_Base::VariableSymbol                 *vsym;
+    PDDL_Base::Atom                           *atom;
+    PDDL_Base::symbol_vec                     *param;
+    PDDL_Base::var_symbol_vec                 *vparam;
+    PDDL_Base::condition_vec                  *condition_vec;
+    PDDL_Base::effect_vec                     *effect_vec;
+    const PDDL_Base::Condition                *condition;
+    const PDDL_Base::Effect                   *effect;
+    const PDDL_Base::Invariant                *invariant;
+    const PDDL_Base::Clause                   *clause;
+    const PDDL_Base::Oneof                    *oneof;
+    const PDDL_Base::Unknown                  *unknown;
+    const PDDL_Base::init_element_vec         *ilist;
+    const PDDL_Base::InitElement              *ielem;
+    const PDDL_Base::SensingModel             *sensing_model;
+    const PDDL_Base::SensingProxy             *sensing_proxy;
+    const PDDL_Base::sensing_proxy_vec        *sensing_proxy_list;
+    const PDDL_Base::StateVariableList        *state_variable_list;
+    const PDDL_Base::state_variable_list_vec  *state_variable_list_vec;
+    int                                       ival;
 }
 
 %token                        TK_OPEN TK_CLOSE TK_OPEN_SQ TK_CLOSE_SQ TK_EQ TK_HYPHEN
@@ -107,6 +109,9 @@
 %type <sensing_proxy_list>    sensing sensing_decl_list
 %type <sensing_proxy>         sensing_decl forall_sensing
 %type <sensing_model>         sensing_model
+
+%type <state_variable_list>       state_variable forall_state_variable_list_decl
+%type <state_variable_list_vec>   state_variable_list_decl
 
 %type <ival>                  variable_type
 
@@ -378,7 +383,7 @@ domain_schemas:
               yyerrok;
           }
       }
-    /*| variable_group_decl { }*/
+    | variable_group_decl { }
     ;
 
 // structure declarations
@@ -490,7 +495,7 @@ argument_list:
           $1->push_back(static_cast<Symbol*>($2->val));
           $$ = $1;
       }
-    | /* empty */ { $$ = new PDDL_Base::symbol_vec; }
+    | /* empty */ { $$ = new symbol_vec; }
     ;
 
 and_condition:
@@ -895,52 +900,96 @@ variable_type:
     | KW_OBS_VARIABLE { $$ = 1; }
     ;
 
-/*
 variable_group_decl:
       TK_OPEN KW_VGROUP TK_NEW_SYMBOL {
+          VariableGroup *group = new VariableGroup($3->text);
+          variable_groups_.push_back(group);
       }
-      variable_list_decl TK_CLOSE {
+      state_variable_list_decl TK_CLOSE {
+          variable_groups_.back()->group_ = *$5;
+          delete $5;
       }
     | TK_OPEN KW_VGROUP TK_OPEN TK_NEW_SYMBOL {
+          VariableGroup *group = new VariableGroup($4->text);
+          schema_.push_back(group);
       }
       param_list TK_CLOSE {
+          schema_.back()->param_ = *$6;
+          delete $6;
       }
-      optional_such_that variable_list_decl TK_CLOSE {
+      optional_such_that state_variable_list_decl TK_CLOSE {
+          assert(dynamic_cast<VariableGroup*>(schema_.back()) != 0);
+          VariableGroup *group = static_cast<VariableGroup*>(schema_.back());
+          schema_.pop_back();
+          group->group_ = *$10;
+          delete $10;
+          clear_param(group->param_);
+          $4->val = group;
+          variable_groups_.push_back(group);
+      }
+    | TK_OPEN KW_VGROUP error TK_CLOSE {
+          log_error((char*)"syntax error in variable group declaration");
+          yyerrok;
       }
     ;
 
-variable_list_decl:
-      variable_list_decl variable
-      variable_list_decl forall_variable_list_decl
-    | empty
+state_variable_list_decl:
+      state_variable_list_decl state_variable {
+          state_variable_list_vec *varlist = const_cast<state_variable_list_vec*>($1);
+          assert(dynamic_cast<const SingleStateVariableList*>($2) != 0);
+          varlist->push_back(const_cast<StateVariableList*>($2));
+          $$ = varlist;
+      }
+    | state_variable_list_decl forall_state_variable_list_decl {
+          state_variable_list_vec *varlist = const_cast<state_variable_list_vec*>($1);
+          assert(dynamic_cast<const ForallStateVariableList*>($2) != 0);
+          varlist->push_back(const_cast<StateVariableList*>($2));
+          $$ = varlist;
+      }
+    | /* empty */ { $$ = new state_variable_list_vec; }
     ;
 
-variable:
+state_variable:
       TK_VARNAME_SYMBOL {
+          assert(static_cast<Symbol*>($1->val)->sym_class_ == sym_varname);
+          const Variable *var = static_cast<Variable*>($1->val);
+          if( dynamic_cast<const StateVariable*>(var) == 0 ) {
+              std::cout << Utils::error() << "only state variables can be grouped together" << std::endl;
+          }
+          $$ = new SingleStateVariableList(var->print_name_);
       }
     | TK_OPEN TK_VARNAME_SYMBOL argument_list TK_CLOSE {
+          assert(static_cast<Symbol*>($2->val)->sym_class_ == sym_varname);
+          const Variable *var = static_cast<Variable*>($2->val);
+          if( dynamic_cast<const StateVariable*>(var) == 0 ) {
+              std::cout << Utils::error() << "only state variables can be grouped together" << std::endl;
+          }
+          SingleStateVariableList *single = new SingleStateVariableList(var->print_name_);
+          single->param_ = *$3;
+          delete $3;
+          $$ = single;
       }
     ;
 
-forall_variable_list_decl:
+forall_state_variable_list_decl:
       TK_OPEN KW_FORALL TK_OPEN {
-          schema_.push_back(new ForallVariableList);
+          schema_.push_back(new ForallStateVariableList);
       }
       param_list TK_CLOSE {
           schema_.back()->param_ = *$5;
           delete $5;
       }
-      optional_such_that variable_list_decl TK_CLOSE {
-          assert(dynamic_cast<ForallVariableList*>(schema_.back()) != 0);
-          ForallVariableList *forall_variable_list = static_cast<ForallVariableList*>(schema_.back());
+      optional_such_that state_variable_list_decl TK_CLOSE {
+          assert(dynamic_cast<ForallStateVariableList*>(schema_.back()) != 0);
+          ForallStateVariableList *forall_state_variable_list = static_cast<ForallStateVariableList*>(schema_.back());
           schema_.pop_back();
-          //forall_sensing->sensing_ = *$9;
-          //delete $9;
-          clear_param(forall_variable_list->param_);
-          //$$ = forall_variable_list;
+          forall_state_variable_list->group_ = *$9;
+          delete $9;
+          clear_param(forall_state_variable_list->param_);
+          $$ = forall_state_variable_list;
       }
     ;
-*/
+
 
 // default sensing declaration
 
