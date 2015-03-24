@@ -386,6 +386,7 @@ domain_schemas:
     | variable_group_decl { }
     ;
 
+
 // structure declarations
 
 action_decl:

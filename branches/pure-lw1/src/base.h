@@ -712,26 +712,47 @@ class PDDL_Base {
     struct StateVariableList {
         StateVariableList() { }
         virtual ~StateVariableList() { }
+        virtual state_variable_vec* ground(const PDDL_Base *base) const = 0;
+        virtual std::string to_string() const = 0;
+        void print(std::ostream &os) const { os << to_string(); }
     };
     struct state_variable_list_vec : public std::vector<StateVariableList*> { };
 
     struct SingleStateVariableList : public Symbol, StateVariableList {
+        std::string variable_name_;
+        const StateVariable *variable_;
         symbol_vec param_;
         SingleStateVariableList(const char *name) : Symbol(name, sym_varinst) { }
         virtual ~SingleStateVariableList() { }
+        virtual state_variable_vec* ground(const PDDL_Base *base) const;
+        virtual std::string to_string() const { return "(not yet implemented"; } // CHECK
     };
 
     struct ForallStateVariableList : public StateVariableList, Schema {
         state_variable_list_vec group_;
-        virtual void process_instance() const { /* CHECK */ }
+        ForallStateVariableList() { }
+        virtual ~ForallStateVariableList() { }
+        virtual void process_instance() const;
+        virtual state_variable_vec* ground(const PDDL_Base *base) const;
+        virtual std::string to_string() const { return "(not yet implemented"; } // CHECK
+        mutable std::vector<state_variable_vec*> result_stack_;
+        mutable std::vector<const PDDL_Base*> base_stack_;
     };
 
+    struct VariableGroup;
+    struct variable_group_list : public std::list<VariableGroup*> { };
+
     struct VariableGroup : public Symbol, Schema {
+        bool grounded_;
         state_variable_list_vec group_;
         state_variable_vec grounded_group_;
-        VariableGroup(const char *name) : Symbol(name, sym_vargroup) { }
+        VariableGroup(const char *name) : Symbol(name, sym_vargroup), grounded_(false) { }
         virtual ~VariableGroup() { }
-        virtual void process_instance() const { /* CHECK */ }
+        void instantiate(const PDDL_Base *base, variable_group_list &vglist) const;
+        virtual void process_instance() const;
+        virtual std::string to_string() const;
+        mutable variable_group_list *variable_group_list_ptr_;
+        mutable const PDDL_Base *base_ptr_;
     };
     struct variable_group_vec : public std::vector<VariableGroup*> { };
 
