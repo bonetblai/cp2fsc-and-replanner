@@ -294,7 +294,7 @@ extern YY_PDDL_Parser_STYPE YY_PDDL_Parser_LVAL;
 #define	KW_EXACTLY_ONE	318
 #define	KW_VARIABLE	319
 #define	KW_OBS_VARIABLE	320
-#define	KW_VALUES	321
+#define	KW_VGROUP	321
 #define	KW_SENSING	322
 #define	KW_DEFAULT_SENSING	323
 #define	KW_MODEL_FOR	324
@@ -406,7 +406,7 @@ static const int KW_AT_MOST_ONE;
 static const int KW_EXACTLY_ONE;
 static const int KW_VARIABLE;
 static const int KW_OBS_VARIABLE;
-static const int KW_VALUES;
+static const int KW_VGROUP;
 static const int KW_SENSING;
 static const int KW_DEFAULT_SENSING;
 static const int KW_MODEL_FOR;
@@ -482,7 +482,7 @@ enum YY_PDDL_Parser_ENUM_TOKEN { YY_PDDL_Parser_NULL_TOKEN=0
 	,KW_EXACTLY_ONE=318
 	,KW_VARIABLE=319
 	,KW_OBS_VARIABLE=320
-	,KW_VALUES=321
+	,KW_VGROUP=321
 	,KW_SENSING=322
 	,KW_DEFAULT_SENSING=323
 	,KW_MODEL_FOR=324
