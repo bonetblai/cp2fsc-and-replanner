@@ -329,15 +329,15 @@ void LW1_Solver::fill_relevant_sensing_models(const LW1_Instance &lw1,
             const map<int, vector<vector<int> > > &sensing_models_for_var = sensing_models_for_action->find(var_key)->second;
 
             for( map<int, vector<vector<int> > >::const_iterator kt = sensing_models_for_var.begin(); kt != sensing_models_for_var.end(); ++kt ) {
-                cout << "SM: obs=";
-                LW1_State::print_literal(cout, kt->first, &instance_);
-                cout << ", trigger=" << (kt->first != value_key) << flush;
+                //cout << "SM: obs=";
+                //LW1_State::print_literal(cout, kt->first, &instance_);
+                //cout << ", trigger=" << (kt->first != value_key) << flush;
                 if( kt->first != value_key ) {
                     sensing_models[sensed_literal].push_back(&kt->second);
-                    cout << ", cnf=";
-                    LW1_State::print_cnf(cout, kt->second, &kp_instance_);
+                    //cout << ", cnf=";
+                    //LW1_State::print_cnf(cout, kt->second, &kp_instance_);
                 }
-                cout << endl;
+                //cout << endl;
             }
         }
     }

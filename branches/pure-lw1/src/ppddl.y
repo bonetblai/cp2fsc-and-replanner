@@ -78,7 +78,7 @@
                               KW_INVARIANT KW_AT_LEAST_ONE KW_AT_MOST_ONE KW_EXACTLY_ONE
 
 %token                        KW_TRANSLATION
-                              KW_VARIABLE KW_OBS_VARIABLE KW_VALUES
+                              KW_VARIABLE KW_OBS_VARIABLE KW_VGROUP
                               KW_SENSING KW_DEFAULT_SENSING KW_MODEL_FOR
 
 %type <vsym>                  new_var_symbol
@@ -378,6 +378,7 @@ domain_schemas:
               yyerrok;
           }
       }
+    /*| variable_group_decl { }*/
     ;
 
 // structure declarations
@@ -893,6 +894,53 @@ variable_type:
       KW_VARIABLE { $$ = 0; }
     | KW_OBS_VARIABLE { $$ = 1; }
     ;
+
+/*
+variable_group_decl:
+      TK_OPEN KW_VGROUP TK_NEW_SYMBOL {
+      }
+      variable_list_decl TK_CLOSE {
+      }
+    | TK_OPEN KW_VGROUP TK_OPEN TK_NEW_SYMBOL {
+      }
+      param_list TK_CLOSE {
+      }
+      optional_such_that variable_list_decl TK_CLOSE {
+      }
+    ;
+
+variable_list_decl:
+      variable_list_decl variable
+      variable_list_decl forall_variable_list_decl
+    | empty
+    ;
+
+variable:
+      TK_VARNAME_SYMBOL {
+      }
+    | TK_OPEN TK_VARNAME_SYMBOL argument_list TK_CLOSE {
+      }
+    ;
+
+forall_variable_list_decl:
+      TK_OPEN KW_FORALL TK_OPEN {
+          schema_.push_back(new ForallVariableList);
+      }
+      param_list TK_CLOSE {
+          schema_.back()->param_ = *$5;
+          delete $5;
+      }
+      optional_such_that variable_list_decl TK_CLOSE {
+          assert(dynamic_cast<ForallVariableList*>(schema_.back()) != 0);
+          ForallVariableList *forall_variable_list = static_cast<ForallVariableList*>(schema_.back());
+          schema_.pop_back();
+          //forall_sensing->sensing_ = *$9;
+          //delete $9;
+          clear_param(forall_variable_list->param_);
+          //$$ = forall_variable_list;
+      }
+    ;
+*/
 
 // default sensing declaration
 
