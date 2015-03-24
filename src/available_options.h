@@ -90,6 +90,7 @@ const char *available_options[] = {
     // lw1 planner
     "lw1:print:observable-atoms",          "[LW1] print observable atoms",
     "lw1:print:atoms-for-state-variables", "[LW1] print atoms for state variables",
+    "lw1:print:variables:groups",          "[LW1] print instantiated variable groups",
     "lw1:print:variables",                 "[LW1] print valued for instantiated variables",
     "lw1:print:beams",                     "[LW1] print beams for observable literals",
     "lw1:print:effect",                    "[LW1] print effect actions",

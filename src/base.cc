@@ -225,7 +225,26 @@ void PDDL_Base::instantiate_elements() {
         }
     }
 
-    // ground sensing model
+    // instantiate groups of variables
+    variable_group_list vglist;
+    for( size_t k = 0; k < variable_groups_.size(); ++k ) {
+        variable_groups_[k]->instantiate(this, vglist);
+        //delete variable_groups_[k]; // CHECK THIS: The symbol associated to orig var is deleted (not in instantiation)
+    }
+    variable_groups_.clear();
+    variable_groups_.reserve(vglist.size());
+    variable_groups_.insert(variable_groups_.end(), vglist.begin(), vglist.end());
+
+    if( options_.is_enabled("lw1:print:variables:groups") ) {
+        for( size_t k = 0; k < variable_groups_.size(); ++k ) {
+            const VariableGroup &group = *variable_groups_[k];
+            cout << Utils::magenta() << "variable group: " << Utils::normal()
+                 << group.to_string()
+                 << endl;
+        }
+    }
+
+    // ground default sensing model
     if( default_sensing_proxy_ != 0 ) {
         default_sensing_ = default_sensing_proxy_->ground();
         lw1_finish_grounding_of_sensing(default_sensing_);
@@ -2924,7 +2943,7 @@ PDDL_Base::SensingModel* PDDL_Base::SensingModelForStateVariable::ground(bool, b
 }
 
 void PDDL_Base::SensingModelForStateVariable::finish_grounding(PDDL_Base *base) {
-    // look for observable variable in base
+    // look for observable state variable in base
     if( !finished_grounding_ ) {
         for( size_t k = 0; k < base->multivalued_variables_.size(); ++k ) {
             Variable &var = *base->multivalued_variables_[k];
@@ -4068,6 +4087,113 @@ string PDDL_Base::ObsVariable::to_string(bool only_name, bool cat) const {
             str += " " + domain_[k]->to_string();
         return str + ")";
     }
+}
+
+PDDL_Base::state_variable_vec* PDDL_Base::SingleStateVariableList::ground(const PDDL_Base *base) const {
+    string variable_name("(");
+    variable_name += print_name_;
+    for( size_t k = 0; k < param_.size(); ++k )
+        variable_name += " " + param_[k]->to_string();
+    variable_name += ")";
+
+    const Variable *variable = 0;
+    for( size_t k = 0; k < base->multivalued_variables_.size(); ++k ) {
+        const Variable &var = *base->multivalued_variables_[k];
+        if( var.is_state_variable() && (variable_name == var.print_name_) ) {
+            variable = &var;
+            break;
+        }
+    }
+
+    state_variable_vec *result = new state_variable_vec;
+    if( variable != 0 ) {
+        assert(dynamic_cast<const StateVariable*>(variable) != 0);
+        result->push_back(const_cast<StateVariable*>(static_cast<const StateVariable*>(variable)));
+    } else {
+        cout << Utils::error()
+             << "variable groups can only be defined with state variables: discarding '"
+             << variable_name << "'"
+             << endl;
+    }
+    return result;
+}
+
+void PDDL_Base::ForallStateVariableList::process_instance() const {
+    Condition *such_that = 0;
+    if( such_that_ != 0 ) such_that = such_that_->ground(false, false, true);
+    if( (such_that_ == 0) || (dynamic_cast<const Constant*>(such_that) != 0) ) {
+        const Constant *constant = static_cast<const Constant*>(such_that);
+        if( (such_that_ == 0) || constant->value_ ) {
+            for( size_t k = 0; k < group_.size(); ++k ) {
+                const StateVariableList &vlist = *group_[k];
+                state_variable_vec *vec = vlist.ground(base_stack_.back());
+                result_stack_.back()->insert(result_stack_.back()->end(), vec->begin(), vec->end());
+                delete vec;
+            }
+        }
+    } else if( such_that_ != 0 ) {
+        cout << Utils::error() << "condition '" << *such_that_
+             << "' in such-that statement must ground to constant value" << endl;
+    }
+    if( such_that_ != 0 ) delete such_that;
+}
+
+PDDL_Base::state_variable_vec* PDDL_Base::ForallStateVariableList::ground(const PDDL_Base *base) const {
+    base_stack_.push_back(base);
+    result_stack_.push_back(new state_variable_vec);
+    enumerate();
+    state_variable_vec *result = result_stack_.back();
+    result_stack_.pop_back();
+    base_stack_.pop_back();
+    return result;
+}
+
+void PDDL_Base::VariableGroup::instantiate(const PDDL_Base *base, variable_group_list &vglist) const {
+    size_t base_count = vglist.size();
+    variable_group_list_ptr_ = &vglist;
+    base_ptr_ = base;
+    cout << "instantiating variable group '" << print_name_ << "' ..." << flush;
+    enumerate();
+    cout << " " << vglist.size() - base_count  << " variable group(s)";
+    if( vglist.size() - base_count == 0 ) cout << " [" << Utils::warning() << "no variable group instantiated!]";
+    cout << endl;
+}
+
+void PDDL_Base::VariableGroup::process_instance() const {
+    Condition *such_that = 0;
+    if( such_that_ != 0 ) such_that = such_that_->ground(false, false, true);
+    if( (such_that_ == 0) || (dynamic_cast<const Constant*>(such_that) != 0) ) {
+        const Constant *constant = static_cast<const Constant*>(such_that);
+        if( (such_that_ == 0) || constant->value_ ) {
+            string group_name("(");
+            group_name += print_name_;
+            for( size_t k = 0; k < param_.size(); ++k )
+                group_name += " " + param_[k]->to_string();
+            group_name += ")";
+
+            VariableGroup *group = new VariableGroup(strdup(group_name.c_str()));
+            group->grounded_ = true;
+            variable_group_list_ptr_->push_back(group);
+
+            for( size_t k = 0; k < group_.size(); ++k ) {
+                state_variable_vec *grounded_group = group_[k]->ground(base_ptr_);
+                group->grounded_group_.insert(grounded_group_.end(), grounded_group->begin(), grounded_group->end());
+                delete grounded_group;
+            }
+        }
+    } else if( such_that_ != 0 ) {
+        cout << Utils::error() << "condition '" << *such_that_
+             << "' in such-that statement must ground to constant value" << endl;
+    }
+    if( such_that_ != 0 ) delete such_that;
+}
+
+string PDDL_Base::VariableGroup::to_string() const {
+    string str("(var-group ");
+    str += string(print_name_);
+    for( size_t k = 0; k < grounded_group_.size(); ++k )
+        str += string(" ") + grounded_group_[k]->print_name_;
+    return str + ")";
 }
 
 ostream& operator<<(ostream &os, const PDDL_Base::unsigned_atom_set &atom_set) {
