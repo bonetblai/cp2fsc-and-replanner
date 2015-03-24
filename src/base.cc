@@ -1051,6 +1051,7 @@ void PDDL_Base::lw1_index_sensing_models() {
         for( size_t k = 0; k < sensing.size(); ++k ) {
             if( dynamic_cast<const SensingModelForObservableVariable*>(sensing[k]) != 0 ) {
                 const SensingModelForObservableVariable &model = *static_cast<const SensingModelForObservableVariable*>(sensing[k]);
+                const ObsVariable *variable = model.variable_;
                 const Literal &literal = *model.literal_;
                 const Condition *dnf = model.dnf_;
                 if( dynamic_cast<const Constant*>(dnf) != 0 ) {
@@ -1064,22 +1065,22 @@ void PDDL_Base::lw1_index_sensing_models() {
                         for( size_t j = 0; j < disjunction->size(); ++j ) {
                             const Condition *disjunct = (*disjunction)[j];
                             if( dynamic_cast<const And*>(disjunct) != 0 ) {
-                                sensing_models_index_[literal][&action].push_back(static_cast<const And*>(disjunct->copy_and_simplify()));
+                                sensing_models_index_[make_pair(variable, literal)][&action].push_back(static_cast<const And*>(disjunct->copy_and_simplify()));
                             } else if( dynamic_cast<const Literal*>(disjunct) != 0 ) {
                                 And *term = new And;
                                 term->push_back(disjunct->copy_and_simplify());
-                                sensing_models_index_[literal][&action].push_back(term);
+                                sensing_models_index_[make_pair(variable, literal)][&action].push_back(term);
                             } else {
                                 cout << Utils::error() << "expecting dnf; got (type=1) '" << *dnf << "'" << endl;
                                 continue;
                             }
                         }
                     } else if( dynamic_cast<const And*>(dnf) != 0 ) {
-                        sensing_models_index_[literal][&action].push_back(static_cast<const And*>(dnf->copy_and_simplify()));
+                        sensing_models_index_[make_pair(variable, literal)][&action].push_back(static_cast<const And*>(dnf->copy_and_simplify()));
                     } else if( dynamic_cast<const Literal*>(dnf) != 0 ) {
                         And *term = new And;
                         term->push_back(dnf->copy_and_simplify());
-                        sensing_models_index_[literal][&action].push_back(term);
+                        sensing_models_index_[make_pair(variable, literal)][&action].push_back(term);
                     } else {
                         cout << Utils::error() << "expecting dnf; got (type=2) '" << *dnf << "'" << endl;
                         continue;
@@ -1121,8 +1122,9 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
     // m is the max size of a term, and O(m^n) type-3 drules.
 
     // create deductive rules for sensing
-    for( map<Atom, map<const Action*, list<const And*> > >::const_iterator it = sensing_models_index_.begin(); it != sensing_models_index_.end(); ++it ) {
-        const Atom &obs = it->first;
+    for( map<pair<const ObsVariable*, Atom>, map<const Action*, list<const And*> > >::const_iterator it = sensing_models_index_.begin(); it != sensing_models_index_.end(); ++it ) {
+        const ObsVariable *variable = it->first.first;
+        const Atom &obs = it->first.second;
         for( map<const Action*, list<const And*> >::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt ) {
             //const Action &action = *jt->first;
             const list<const And*> &dnf = jt->second;
@@ -1135,7 +1137,7 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
                 //lw1_create_type1_sensing_drule(obs, **term, num_type1_drules++); // disabled: see comment below
                 lw1_create_type2_sensing_drule(obs, **term, num_type2_drules++);
                 if( options_.is_enabled("lw1:drule:sensing:type3") )
-                    lw1_create_type3_sensing_drule(obs, **term, dnf, num_type3_drules++);
+                    lw1_create_type3_sensing_drule(*variable, obs, **term, dnf, num_type3_drules++);
             }
         }
     }
@@ -1185,14 +1187,21 @@ void PDDL_Base::lw1_create_type2_sensing_drule(const Atom &obs, const And &term,
     }
 }
 
-void PDDL_Base::lw1_create_type3_sensing_drule(const Atom &obs, const And &term, const list<const And*> &dnf, int index) {
-    //cout << "Type3: obs=" << obs << ", term=" << term << ", dnf=[";
+void PDDL_Base::lw1_create_type3_sensing_drule(const ObsVariable &variable, const Atom &obs, const And &term, const list<const And*> &dnf, int index) {
+    //cout << "Type3: var=" << variable << ", obs=" << obs << ", term=" << term << ", dnf=[";
     //for( list<const And*>::const_iterator it = dnf.begin(); it != dnf.end(); ++it )
     //    cout << **it << ",";
     //cout << "]" << endl;
 
-    // CHECK: need to generate "safe" type3 rules only and discard the warning message that is anoying
-    cout << Utils::warning() << "type3 sensing drules are only sound for static observables" << endl;
+    // revise beam: at this stage, the beam only contains non-static atoms. Hence, if the beam
+    // for obs is non-empty, don't generate type3 sensing drule
+    assert(variable.grounded_domain_.find(obs) != variable.grounded_domain_.end());
+    map<Atom, unsigned_atom_set, Atom::unsigned_less_comparator>::const_iterator it = variable.beam_.find(obs);
+    assert(it != variable.beam_.end());
+    if( !it->second.empty() ) {
+        //cout << Utils::warning() << "skipping type3 sensing rules for '" << obs << "' because they are not safe" << endl;
+        return;
+    }
 
     ostringstream s;
     s << "drule-sensing-type3-" << obs.to_string(false, true) << "-" << index;
@@ -4062,8 +4071,13 @@ string PDDL_Base::ObsVariable::to_string(bool only_name, bool cat) const {
             str = print_name_;
         } else {
             str = string("(") + print_name_;
-            for( size_t k = 0; k < domain_.size(); ++k )
-                str += " " + domain_[k]->to_string();
+            if( grounded_ ) {
+                for( unsigned_atom_set::const_iterator it = grounded_domain_.begin(); it != grounded_domain_.end(); ++it )
+                    str += " " + it->to_string();
+            } else {
+                for( size_t k = 0; k < domain_.size(); ++k )
+                    str += " " + domain_[k]->to_string();
+            }
             str += ")";
         }
         if( cat ) {
