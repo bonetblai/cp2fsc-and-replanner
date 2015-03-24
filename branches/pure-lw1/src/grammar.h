@@ -56,25 +56,27 @@
 
 #line 40 "ppddl.y"
 typedef union {
-    StringTable::Cell                  *sym;
-    PDDL_Base::VariableSymbol          *vsym;
-    PDDL_Base::Atom                    *atom;
-    PDDL_Base::symbol_vec              *param;
-    PDDL_Base::var_symbol_vec          *vparam;
-    PDDL_Base::condition_vec           *condition_vec;
-    PDDL_Base::effect_vec              *effect_vec;
-    const PDDL_Base::Condition         *condition;
-    const PDDL_Base::Effect            *effect;
-    const PDDL_Base::Invariant         *invariant;
-    const PDDL_Base::Clause            *clause;
-    const PDDL_Base::Oneof             *oneof;
-    const PDDL_Base::Unknown           *unknown;
-    const PDDL_Base::init_element_vec  *ilist;
-    const PDDL_Base::InitElement       *ielem;
-    const PDDL_Base::SensingModel      *sensing_model;
-    const PDDL_Base::SensingProxy      *sensing_proxy;
-    const PDDL_Base::sensing_proxy_vec *sensing_proxy_list;
-    int                                ival;
+    StringTable::Cell                         *sym;
+    PDDL_Base::VariableSymbol                 *vsym;
+    PDDL_Base::Atom                           *atom;
+    PDDL_Base::symbol_vec                     *param;
+    PDDL_Base::var_symbol_vec                 *vparam;
+    PDDL_Base::condition_vec                  *condition_vec;
+    PDDL_Base::effect_vec                     *effect_vec;
+    const PDDL_Base::Condition                *condition;
+    const PDDL_Base::Effect                   *effect;
+    const PDDL_Base::Invariant                *invariant;
+    const PDDL_Base::Clause                   *clause;
+    const PDDL_Base::Oneof                    *oneof;
+    const PDDL_Base::Unknown                  *unknown;
+    const PDDL_Base::init_element_vec         *ilist;
+    const PDDL_Base::InitElement              *ielem;
+    const PDDL_Base::SensingModel             *sensing_model;
+    const PDDL_Base::SensingProxy             *sensing_proxy;
+    const PDDL_Base::sensing_proxy_vec        *sensing_proxy_list;
+    const PDDL_Base::StateVariableList        *state_variable_list;
+    const PDDL_Base::state_variable_list_vec  *state_variable_list_vec;
+    int                                       ival;
 } yy_PDDL_Parser_stype;
 #define YY_PDDL_Parser_STYPE yy_PDDL_Parser_stype
 
@@ -130,21 +132,21 @@ typedef union {
 #ifndef YY_PDDL_Parser_PURE
 
 /* #line 63 "/usr/local/lib/bison.h" */
-#line 134 "grammar.h"
+#line 136 "grammar.h"
 
 #line 63 "/usr/local/lib/bison.h"
 /* YY_PDDL_Parser_PURE */
 #endif
 
 /* #line 65 "/usr/local/lib/bison.h" */
-#line 141 "grammar.h"
+#line 143 "grammar.h"
 
 #line 65 "/usr/local/lib/bison.h"
 /* prefix */
 #ifndef YY_PDDL_Parser_DEBUG
 
 /* #line 67 "/usr/local/lib/bison.h" */
-#line 148 "grammar.h"
+#line 150 "grammar.h"
 
 #line 67 "/usr/local/lib/bison.h"
 /* YY_PDDL_Parser_DEBUG */
@@ -152,7 +154,7 @@ typedef union {
 #ifndef YY_PDDL_Parser_LSP_NEEDED
 
 /* #line 70 "/usr/local/lib/bison.h" */
-#line 156 "grammar.h"
+#line 158 "grammar.h"
 
 #line 70 "/usr/local/lib/bison.h"
  /* YY_PDDL_Parser_LSP_NEEDED*/
@@ -230,7 +232,7 @@ extern YY_PDDL_Parser_STYPE YY_PDDL_Parser_LVAL;
 
 
 /* #line 143 "/usr/local/lib/bison.h" */
-#line 234 "grammar.h"
+#line 236 "grammar.h"
 #define	TK_OPEN	258
 #define	TK_CLOSE	259
 #define	TK_OPEN_SQ	260
@@ -342,7 +344,7 @@ public:
 /* static const int token ... */
 
 /* #line 182 "/usr/local/lib/bison.h" */
-#line 346 "grammar.h"
+#line 348 "grammar.h"
 static const int TK_OPEN;
 static const int TK_CLOSE;
 static const int TK_OPEN_SQ;
@@ -418,7 +420,7 @@ static const int KW_MODEL_FOR;
 enum YY_PDDL_Parser_ENUM_TOKEN { YY_PDDL_Parser_NULL_TOKEN=0
 
 /* #line 185 "/usr/local/lib/bison.h" */
-#line 422 "grammar.h"
+#line 424 "grammar.h"
 	,TK_OPEN=258
 	,TK_CLOSE=259
 	,TK_OPEN_SQ=260
@@ -542,5 +544,5 @@ public:
 /* END */
 
 /* #line 236 "/usr/local/lib/bison.h" */
-#line 546 "grammar.h"
+#line 548 "grammar.h"
 #endif

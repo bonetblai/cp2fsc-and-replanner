@@ -28,7 +28,9 @@ class PDDL_Base {
         sym_action,
         sym_axiom,
         sym_sensor,
-        sym_varname
+        sym_varname,
+        sym_vargroup,
+        sym_varinst
     };
 
     struct Symbol {
@@ -696,6 +698,7 @@ class PDDL_Base {
         virtual bool is_observable_variable() const { return is_observable_; }
         virtual std::string to_string(bool only_name = false, bool cat = false) const;
     };
+    struct state_variable_vec : public std::vector<StateVariable*> { };
 
     struct ObsVariable : public Variable {
         ObsVariable(const char *name) : Variable(name) { }
@@ -706,6 +709,33 @@ class PDDL_Base {
         virtual std::string to_string(bool only_name = false, bool cat = false) const;
     };
 
+    struct StateVariableList {
+        StateVariableList() { }
+        virtual ~StateVariableList() { }
+    };
+    struct state_variable_list_vec : public std::vector<StateVariableList*> { };
+
+    struct SingleStateVariableList : public Symbol, StateVariableList {
+        symbol_vec param_;
+        SingleStateVariableList(const char *name) : Symbol(name, sym_varinst) { }
+        virtual ~SingleStateVariableList() { }
+    };
+
+    struct ForallStateVariableList : public StateVariableList, Schema {
+        state_variable_list_vec group_;
+        virtual void process_instance() const { /* CHECK */ }
+    };
+
+    struct VariableGroup : public Symbol, Schema {
+        state_variable_list_vec group_;
+        state_variable_vec grounded_group_;
+        VariableGroup(const char *name) : Symbol(name, sym_vargroup) { }
+        virtual ~VariableGroup() { }
+        virtual void process_instance() const { /* CHECK */ }
+    };
+    struct variable_group_vec : public std::vector<VariableGroup*> { };
+
+    // end of definitions for internal structures
 
     const char                                *domain_name_;
     const char                                *problem_name_;
@@ -759,6 +789,8 @@ class PDDL_Base {
 
     const Sensing                             *default_sensing_;
     const sensing_proxy_vec                   *default_sensing_proxy_;
+
+    variable_group_vec                        variable_groups_;
 
     std::map<Atom, std::map<const Action*, std::list<const And*> > > sensing_models_index_;
     std::list<std::pair<const Action*, const Sensing*> > sensing_models_;
