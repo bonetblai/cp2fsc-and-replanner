@@ -366,10 +366,16 @@ void Instance::remove_actions(const bool_vec &set, index_vec &map) {
 void Instance::remove_atoms(const bool_vec &set, index_vec &map) {
     index_vec rm_map(atoms_.size());
 
+    // avoid removing protected atoms
+    bool_vec new_set(set);
+    for( index_set::const_iterator it = atoms_protected_from_removal_.begin(); it != atoms_protected_from_removal_.end(); ++it ) {
+        new_set[*it] = false;
+    }
+
     // mark atoms to remove and re-index
     size_t j = 0;
     for( size_t k = 0; k < atoms_.size(); ++k ) {
-        if( !set[k] ) {
+        if( !new_set[k] ) {
             if( j < k ) {
 	        atoms_[j] = atoms_[k];
 	        atoms_[j]->index_ = j;

@@ -141,6 +141,7 @@ class PDDL_Base {
         virtual void extract_atoms(unsigned_atom_set &atoms) const = 0;
         virtual bool is_dnf(bool positive = false, const PDDL_Base *base = 0) const = 0;
         virtual bool is_term(bool positive = false, const PDDL_Base *base = 0) const = 0;
+        virtual Condition* as_dnf() const = 0;
         virtual std::string to_string() const = 0;
         void print(std::ostream &os) const { os << to_string(); }
         Condition* copy_and_simplify(bool negate = false) const { return ground(false, negate, false); }
@@ -160,6 +161,7 @@ class PDDL_Base {
         virtual void extract_atoms(unsigned_atom_set &atoms) const { }
         virtual bool is_dnf(bool positive = false, const PDDL_Base *base = 0) const { return true; }
         virtual bool is_term(bool positive = false, const PDDL_Base *base = 0) const { return false; }
+        virtual Condition* as_dnf() const;
         virtual std::string to_string() const { return std::string(value_ ? "true" : "false"); }
     };
 
@@ -173,6 +175,7 @@ class PDDL_Base {
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
         virtual bool is_dnf(bool positive = false, const PDDL_Base *base = 0) const { return is_term(positive, base); }
         virtual bool is_term(bool positive = false, const PDDL_Base *base = 0) const;
+        virtual Condition* as_dnf() const;
         virtual std::string to_string() const { return to_string(false, false); }
         std::string to_string(bool extra_negation, bool mangled) const { return Atom::to_string(extra_negation, mangled); }
         Condition *copy(bool clone_variables = false, bool negate = false, bool replace_static_values = false) const;
@@ -191,12 +194,13 @@ class PDDL_Base {
         virtual void extract_atoms(unsigned_atom_set &atoms) const { }
         virtual bool is_dnf(bool positive = false, const PDDL_Base *base = 0) const { return false; }
         virtual bool is_term(bool positive = false, const PDDL_Base *base = 0) const { return false; }
+        virtual Condition* as_dnf() const;
         virtual std::string to_string() const;
     };
 
     struct And : public Condition, condition_vec {
         And() { }
-        And(const condition_vec &vec) : condition_vec(vec) { }
+        explicit And(const condition_vec &vec) : condition_vec(vec) { }
         virtual ~And() { for( size_t k = 0; k < size(); ++k ) delete (*this)[k]; }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         virtual void emit(Instance &ins, index_set &condition) const;
@@ -205,12 +209,13 @@ class PDDL_Base {
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
         virtual bool is_dnf(bool positive = false, const PDDL_Base *base = 0) const { return is_term(positive, base); }
         virtual bool is_term(bool positive = false, const PDDL_Base *base = 0) const;
+        virtual Condition* as_dnf() const;
         virtual std::string to_string() const;
     };
 
     struct Or : public Condition, condition_vec {
         Or() { }
-        Or(const condition_vec &vec) : condition_vec(vec) { }
+        explicit Or(const condition_vec &vec) : condition_vec(vec) { }
         virtual ~Or() { for( size_t k = 0; k < size(); ++k ) delete (*this)[k]; }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         virtual void emit(Instance &ins, index_set &condition) const;
@@ -219,6 +224,7 @@ class PDDL_Base {
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
         virtual bool is_dnf(bool positive = false, const PDDL_Base *base = 0) const;
         virtual bool is_term(bool positive = false, const PDDL_Base *base = 0) const { return false; }
+        virtual Condition* as_dnf() const;
         virtual std::string to_string() const;
     };
 
@@ -234,6 +240,7 @@ class PDDL_Base {
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
         virtual bool is_dnf(bool positive = false, const PDDL_Base *base = 0) const { return false; }
         virtual bool is_term(bool positive = false, const PDDL_Base *base = 0) const { return false; }
+        virtual Condition* as_dnf() const;
         virtual std::string to_string() const;
         mutable std::vector<bool> negate_stack_;
         mutable std::vector<bool> clone_variables_stack_;
@@ -252,6 +259,7 @@ class PDDL_Base {
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
         virtual bool is_dnf(bool positive = false, const PDDL_Base *base = 0) const { return false; }
         virtual bool is_term(bool positive = false, const PDDL_Base *base = 0) const { return false; }
+        virtual Condition* as_dnf() const;
         virtual std::string to_string() const;
         mutable std::vector<bool> negate_stack_;
         mutable std::vector<bool> clone_variables_stack_;
@@ -598,6 +606,7 @@ class PDDL_Base {
           : Symbol(name, sym_action), precondition_(0), effect_(0), observe_(0),
             sensing_(0), sensing_proxy_(0) { }
         virtual ~Action() { delete precondition_; delete effect_; delete observe_; delete sensing_; }
+        bool is_special_action() const;
         void instantiate(action_list &alist) const;
         void emit(Instance &ins) const;
         virtual void process_instance() const;
@@ -806,14 +815,16 @@ class PDDL_Base {
     std::map<std::string, const Atom*>        need_set_sensing_atoms_;
     std::map<unsigned_atom_set, const Atom*>  need_post_atoms_;
     std::map<std::string, const Atom*>        sensing_atoms_;
-    std::map<signed_atom_set, Atom*>          atoms_for_terms_for_type3_sensing_drules_;
+    std::map<signed_atom_set, const Atom*>    atoms_for_terms_for_type3_sensing_drules_;
+    std::map<std::string, const Atom*>        last_action_atoms_;
 
     const Sensing                             *default_sensing_;
     const sensing_proxy_vec                   *default_sensing_proxy_;
 
     variable_group_vec                        variable_groups_;
 
-    std::map<std::pair<const ObsVariable*, Atom>, std::map<const Action*, std::list<const And*> > > sensing_models_index_;
+    std::map<const Action*, std::map<const ObsVariable*, std::map<Atom, std::list<const And*> > > > sensing_models_index_;
+    std::map<const StateVariable*, std::vector<const Action*> > actions_for_observable_state_variables_;
     std::list<std::pair<const Action*, const Sensing*> > sensing_models_;
 
     PDDL_Base(StringTable& t, const Options::Mode &options);
@@ -859,6 +870,9 @@ class PDDL_Base {
     void lw1_translate(Action &action);
     void lw1_create_post_action(const unsigned_atom_set &atoms);
 
+    void lw1_emit_and_protect_atoms_for_observable_variables(Instance &ins) const;
+    void lw1_translate_actions_strict();
+
     // methods to handle sensing
     void lw1_finish_grounding_of_sensing(const Sensing* &sensing);
 
@@ -873,9 +887,20 @@ class PDDL_Base {
     void lw1_create_type1_sensing_drule(const Atom &obs, const And &term, int index);
     void lw1_create_type2_sensing_drule(const Atom &obs, const And &term, int index);
 
-    // methods to create type-3 deductive rules (for multivalued variables)
+    // methods to create type3 deductive rules (for multivalued variables)
     void lw1_create_type3_sensing_drule(const ObsVariable &variable, const Atom &obs, const And &term, const std::list<const And*> &dnf, int index);
     const Atom& lw1_fetch_atom_for_negated_term(const And &term);
+
+    // methods to create type4 deductive rules (for multivalued variables)
+    void lw1_create_type4_sensing_drule(const Action &action,
+                                        const StateVariable &variable,
+                                        const Atom &value);
+    void lw1_create_type4_sensing_drule(const Action &action,
+                                        const ObsVariable &variable,
+                                        const Atom &value,
+                                        const std::map<Atom, std::list<const And*> > &sensing_models_for_action_and_var);
+    const Atom& lw1_fetch_last_action_atom(const Action &action);
+    void lw1_patch_actions_with_atoms_for_last_action();
 
     // methods to create sensors (for multivalued variables)
     void lw1_create_simple_sensors_for_atoms(const unsigned_atom_set &atoms);

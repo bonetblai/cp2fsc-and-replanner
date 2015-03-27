@@ -25,6 +25,9 @@ class LW1_Instance : public KP_Instance {
     std::vector<int> remap_;
     std::map<std::string, int> obs_rules_by_name_;
 
+    // last-action-atoms in po_instance
+    std::set<int> last_action_atoms_;
+
     // for subgoaling
     std::vector<Atom*> atoms_for_unknown_observables_at_init_;
 
@@ -45,7 +48,9 @@ class LW1_Instance : public KP_Instance {
     std::map<std::string, int> varmap_;
     std::vector<Variable*> multivalued_variables_;
     std::map<int, std::vector<int> > variables_for_atom_;
-    std::map<std::string, std::map<int, std::map<int, std::vector<std::vector<int> > > > > sensing_models_;
+    std::map<std::string, std::map<int, std::map<int, std::vector<std::vector<int> > > > > sensing_models_as_k_cnf_;
+    std::map<std::string, std::map<int, std::map<int, std::vector<std::vector<int> > > > > sensing_models_as_dnf_;
+    std::map<std::string, std::set<int> > vars_sensed_by_action_;
 
     // inference: clauses with the following literals should not be preserved
     std::set<int> clause_forbidden_literals_;

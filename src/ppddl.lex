@@ -103,7 +103,7 @@ COMMENT ;.*$
 ":var-group"               { return PDDL_Parser::KW_VGROUP; }
 ":sensing"                 { return PDDL_Parser::KW_SENSING; }
 ":default-sensing"         { return PDDL_Parser::KW_DEFAULT_SENSING; }
-":model-for"               { return PDDL_Parser::KW_MODEL_FOR; }
+"model-for"                { return PDDL_Parser::KW_MODEL_FOR; }
 "such-that"                { return PDDL_Parser::KW_SUCH_THAT; }
 
 

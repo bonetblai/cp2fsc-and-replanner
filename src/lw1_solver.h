@@ -39,33 +39,29 @@ class LW1_Solver : public BASE_CLASS {
 
     virtual int solve(const STATE_CLASS &initial_hidden_state,
                       Instance::Plan &final_plan,
-                      std::vector<std::set<int> > &fired_sensors,
-                      std::vector<std::set<int> > &sensed_literals) const {
+                      std::vector<std::set<int> > &fired_sensors_during_execution,
+                      std::vector<std::set<int> > &sensed_literals_during_execution) const {
         return BASE_CLASS::solve(initial_hidden_state,
                                  final_plan,
-                                 fired_sensors,
-                                 sensed_literals);
+                                 fired_sensors_during_execution,
+                                 sensed_literals_during_execution);
     }
 
   protected:
     typedef std::vector<int> clause_t;
     typedef std::vector<clause_t> cnf_t;
-    typedef std::vector<const cnf_t*> sensing_models_t;
-    typedef std::map<int, sensing_models_t> relevant_sensing_models_t;
+    typedef std::vector<const cnf_t*> sensing_models_as_cnf_t;
+    typedef std::map<int, std::map<int, sensing_models_as_cnf_t> > relevant_sensing_models_as_cnf_t;
 
-    virtual void compute_and_add_observations(const STATE_CLASS &hidden,
+    virtual void compute_and_add_observations(const Instance::Action *last_action,
+                                              const STATE_CLASS &hidden,
                                               STATE_CLASS &state,
-                                              std::set<int> &sensors,
-                                              std::set<int> &sensed) const;
+                                              std::set<int> &fired_sensors_at_step,
+                                              std::set<int> &sensed_at_step) const;
 
     virtual void apply_inference(const Instance::Action *action,
-                                 const std::set<int> &sensed,
+                                 const std::set<int> &sensed_at_step,
                                  STATE_CLASS &state) const;
-
-    virtual void fill_relevant_sensing_models(const LW1_Instance &lw1,
-                                              const Instance::Action *last_action,
-                                              const std::set<int> &sensed,
-                                              relevant_sensing_models_t &sensing_models) const;
 
     virtual void calculate_relevant_assumptions(const Instance::Plan &plan,
                                                 const Instance::Plan &raw_plan,
@@ -82,6 +78,16 @@ class LW1_Solver : public BASE_CLASS {
     virtual bool inconsistent(const STATE_CLASS &state, const std::vector<STATE_CLASS> &assumptions, size_t k) const {
         return BASE_CLASS::inconsistent(state, assumptions, k);
     }
+
+    bool value_observable_literal(const STATE_CLASS &hidden,
+                                  const Instance::Action &last_action,
+                                  int var_index,
+                                  int index) const;
+
+    void fill_relevant_sensing_models(const LW1_Instance &lw1,
+                                      const Instance::Action *last_action,
+                                      const std::set<int> &sensed_at_step,
+                                      relevant_sensing_models_as_cnf_t &sensing_models_as_cnf) const;
 
     bool is_forbidden(int literal) const;
     bool is_forbidden(const clause_t &clause) const;

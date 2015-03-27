@@ -37,7 +37,7 @@ struct LW1_State : public State {
     void print(std::ostream &os, const Instance *ins = 0) const {
         os << "[s=";
         State::print(os, ins);
-        if( !cnf_.empty() ) {
+        if( false && !cnf_.empty() ) { // CHECK
             os << ",cnf=";
             LW1_State::print_cnf(os, cnf_, ins);
         }

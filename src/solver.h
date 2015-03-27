@@ -33,16 +33,17 @@ class Solver {
 
     virtual int solve(const State &initial_hidden_state,
                       Instance::Plan &final_plan,
-                      std::vector<std::set<int> > &fired_sensors,
-                      std::vector<std::set<int> > &sensed_literals) const;
+                      std::vector<std::set<int> > &fired_sensors_during_execution,
+                      std::vector<std::set<int> > &sensed_literals_during_execution) const;
   protected:
-    virtual void compute_and_add_observations(const State &hidden,
+    virtual void compute_and_add_observations(const Instance::Action *last_action,
+                                              const State &hidden,
                                               State &state,
-                                              std::set<int> &sensors,
-                                              std::set<int> &sensed) const;
+                                              std::set<int> &fired_sensors_at_step,
+                                              std::set<int> &sensed_at_step) const;
 
     virtual void apply_inference(const Instance::Action *action,
-                                 const std::set<int> &sensed,
+                                 const std::set<int> &sensed_at_step,
                                  State &state) const;
 
     virtual void calculate_relevant_assumptions(const Instance::Plan &plan,

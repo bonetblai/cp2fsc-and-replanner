@@ -72,13 +72,23 @@ LW1_Instance::LW1_Instance(const Instance &ins,
              << Utils::normal() << endl;
     }
 
-    // create K0 atoms
+    // create K0 atoms and last-action-atoms
     atoms_.reserve(2*ins.n_atoms());
     for( size_t k = 0; k < ins.n_atoms(); ++k ) {
         string name = ins.atoms_[k]->name_->to_string();
-        new_atom(new CopyName("(K_" + name + ")"));      // even-numbered atoms
-        new_atom(new CopyName("(K_not_" + name + ")"));  // odd-numbered atoms
+        if( name.compare(0, 21, "last-action-atom-for-") != 0 ) {
+            new_atom(new CopyName("(K_" + name + ")"));      // even-numbered atoms
+            new_atom(new CopyName("(K_not_" + name + ")"));  // odd-numbered atoms
+        } else {
+            new_atom(new CopyName("(" + name + ")"));        // even-numbered atoms
+            new_atom(new CopyName("(" + name + "_UNUSED)")); // odd-numbered atoms
+            last_action_atoms_.insert(k);
+        }
     }
+
+    // create (new-goal) atom
+    new_goal_ = &new_atom(new CopyName("(new-goal)"));
+    goal_literals_.insert(1 + new_goal_->index_);
 
     // extract multivalued variables
     multivalued_variables_.reserve(multivalued_variables.size());
@@ -124,7 +134,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
         //multivalued_variables_.back()->print(cout); cout << endl;
     }
 
-    // extract sensing models
+    // extract sensing models into dnf and (complemented and into K-rules) cnf
     for( list<pair<const PDDL_Base::Action*, const PDDL_Base::Sensing*> >::const_iterator it = sensing_models.begin(); it != sensing_models.end(); ++it ) {
         const PDDL_Base::Action &action = *it->first;
         const PDDL_Base::Sensing &sensing = *it->second;
@@ -148,6 +158,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                 string action_key = action.print_name_;
                 int var_key = var_index;
                 int value_key = (model.literal_->negated_ ? -1 : 1) * (atom_index + 1);
+                vars_sensed_by_action_[action_key].insert(var_key);
 
                 assert(model.dnf_ != 0);
                 if( dynamic_cast<const PDDL_Base::Or*>(model.dnf_) != 0 ) {
@@ -155,6 +166,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                     //cout << "dnf is disjunction=" << disjunction << ":" << endl;
                     for( size_t j = 0; j < disjunction.size(); ++j ) {
                         assert(disjunction[j] != 0);
+
                         if( dynamic_cast<const PDDL_Base::And*>(disjunction[j]) != 0 ) {
                             const PDDL_Base::And &term = *static_cast<const PDDL_Base::And*>(disjunction[j]);
                             //cout << "  term is conjunction=" << term << ":" << endl;
@@ -172,7 +184,8 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                             }
                             if( !verified ) continue;
 
-                            // generate K clauses
+                            // generate K-clauses
+                            vector<int> term_for_dnf;
                             for( size_t i = 0; i < term.size(); ++i ) {
                                 const PDDL_Base::Literal &head = *static_cast<const PDDL_Base::Literal*>(term[i]);
                                 //cout << "  rule for head " << *(const PDDL_Base::Atom*)&head << ": " << flush;
@@ -180,10 +193,11 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                                 int head_index = get_atom_index(ins, head_name);
                                 assert(head_index != -1);
                                 int k_head_index = 2*head_index + (head.negated_ ? 0 : 1);
+                                term_for_dnf.push_back(head.negated_ ? -(1 + head_index) : 1 + head_index);
                                 //cout << atoms_[k_head_index]->name_ << flush << " <==" << flush;
 
                                 // fill clause
-                                vector<int> clause(1, 1 + k_head_index);
+                                vector<int> k_clause(1, 1 + k_head_index);
                                 for( size_t l = 0; l < term.size(); ++l ) {
                                     if( l == i ) continue;
                                     const PDDL_Base::Literal &literal = *static_cast<const PDDL_Base::Literal*>(term[l]);
@@ -192,17 +206,18 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                                     assert(index != -1);
                                     int k_index = 2*index + (literal.negated_ ? 1 : 0);
                                     //cout << " " << atoms_[k_index]->name_ << flush;
-                                    clause.push_back(-(1 + k_index));
+                                    k_clause.push_back(-(1 + k_index));
                                 }
                                 //cout << endl;
 
                                 // insert clause
-                                assert(clause.size() == term.size());
-                                sensing_models_[action_key][var_key][value_key].push_back(clause);
-                                //cout << "INSERT: clause="; LW1_State::print_clause(cout, clause, this); cout << endl;
+                                assert(k_clause.size() == term.size());
+                                sensing_models_as_k_cnf_[action_key][var_key][value_key].push_back(k_clause);
+                                //cout << "INSERT: k-clause="; LW1_State::print_clause(cout, k_clause, this); cout << endl;
                                 //cout << "INSERT: model for action-key=" << action_key << ", var-key=" << var_key << ", value-key=" << value_key << endl;
                                 //assert(0);
                             }
+                            sensing_models_as_dnf_[action_key][var_key][value_key].push_back(term_for_dnf);
                         } else if( dynamic_cast<const PDDL_Base::Literal*>(disjunction[j]) != 0 ) {
                             const PDDL_Base::Literal &literal = *static_cast<const PDDL_Base::Literal*>(disjunction[j]);
                             //cout << "  term is single literal=" << *(const PDDL_Base::Atom*)&literal << ": " << flush;
@@ -212,10 +227,15 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                             int k_index = 2*index + (literal.negated_ ? 0 : 1);
                             //cout << atoms_[k_index]->name_ << " <== true" << endl;
 
-                            // fill and insert unit clause
-                            vector<int> unit_clause(1, 1 + k_index);
-                            assert(unit_clause.size() == 1);
-                            sensing_models_[action_key][var_key][value_key].push_back(unit_clause);
+                            // fill and insert unit-term
+                            vector<int> unit_term;
+                            unit_term.push_back(literal.negated_ ? -(1 + index) : 1 + index);
+                            sensing_models_as_dnf_[action_key][var_key][value_key].push_back(unit_term);
+
+                            // fill and insert unit K-clause
+                            vector<int> unit_k_clause(1, 1 + k_index);
+                            assert(unit_k_clause.size() == 1);
+                            sensing_models_as_k_cnf_[action_key][var_key][value_key].push_back(unit_k_clause);
                             //cout << "INSERT: model for action-key=" << action_key << ", var-key=" << var_key << ", value-key=" << value_key << endl;
                             //assert(0);
                         } else {
@@ -243,6 +263,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                     if( !verified ) continue;
 
                     // generate K-clauses
+                    vector<int> term_for_dnf;
                     for( size_t j = 0; j < term.size(); ++j ) {
                         const PDDL_Base::Literal &head = *static_cast<const PDDL_Base::Literal*>(term[j]);
                         //cout << "  rule for head " << *(const PDDL_Base::Atom*)&head << ": " << flush;
@@ -250,10 +271,11 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                         int head_index = get_atom_index(ins, head_name);
                         assert(head_index != -1);
                         int k_head_index = 2*head_index + (head.negated_ ? 0 : 1);
+                        term_for_dnf.push_back(head.negated_ ? -(1 + head_index) : 1 + head_index);
                         //cout << atoms_[k_head_index]->name_ << flush << " <==" << flush;
 
                         // fill clause
-                        vector<int> clause(1, 1 + k_head_index);
+                        vector<int> k_clause(1, 1 + k_head_index);
                         for( size_t i = 0; i < term.size(); ++i ) {
                             if( i == j ) continue;
                             const PDDL_Base::Literal &literal = *static_cast<const PDDL_Base::Literal*>(term[i]);
@@ -262,17 +284,18 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                             assert(index != -1);
                             int k_index = 2*index + (literal.negated_ ? 1 : 0);
                             //cout << " " << atoms_[k_index]->name_ << flush;
-                            clause.push_back(-(1 + k_index));
+                            k_clause.push_back(-(1 + k_index));
                         }
                         //cout << endl;
 
                         // insert clause
-                        assert(clause.size() == term.size());
-                        sensing_models_[action_key][var_key][value_key].push_back(clause);
-                        //cout << "INSERT: clause="; LW1_State::print_clause(cout, clause, this); cout << endl;
+                        assert(k_clause.size() == term.size());
+                        sensing_models_as_k_cnf_[action_key][var_key][value_key].push_back(k_clause);
+                        //cout << "INSERT: k-clause="; LW1_State::print_clause(cout, k_clause, this); cout << endl;
                         //cout << "INSERT: model for action-key=" << action_key << ", var-key=" << var_key << ", value-key=" << value_key << endl;
                         //assert(0);
                     }
+                    sensing_models_as_dnf_[action_key][var_key][value_key].push_back(term_for_dnf);
                 } else if( dynamic_cast<const PDDL_Base::Literal*>(model.dnf_) != 0 ) {
                     const PDDL_Base::Literal &literal = *static_cast<const PDDL_Base::Literal*>(model.dnf_);
                     //cout << "dnf is single literal=" << *(const PDDL_Base::Atom*)&literal << ": " << flush;
@@ -282,10 +305,15 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                     int k_index = 2*index + (literal.negated_ ? 0 : 1);
                     //cout << atoms_[k_index]->name_ << " <== true" << endl;
 
-                    // fill and insert unit clause
-                    vector<int> unit_clause(1, 1 + k_index);
-                    assert(unit_clause.size() == 1);
-                    sensing_models_[action_key][var_key][value_key].push_back(unit_clause);
+                    // fill and insert unit-term
+                    vector<int> unit_term;
+                    unit_term.push_back(literal.negated_ ? -(1 + index) : 1 + index);
+                    sensing_models_as_dnf_[action_key][var_key][value_key].push_back(unit_term);
+
+                    // fill and insert unit K-clause
+                    vector<int> unit_k_clause(1, 1 + k_index);
+                    assert(unit_k_clause.size() == 1);
+                    sensing_models_as_k_cnf_[action_key][var_key][value_key].push_back(unit_k_clause);
                     //cout << "INSERT: model for action-key=" << action_key << ", var-key=" << var_key << ", value-key=" << value_key << endl;
                     //assert(0);
                 } else if( dynamic_cast<const PDDL_Base::Constant*>(model.dnf_) != 0 ) {
@@ -298,6 +326,12 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                          << "' isn't dnf!" << endl;
                     continue;
                 }
+            } else if( dynamic_cast<const PDDL_Base::SensingModelForStateVariable*>(sensing[k]) != 0 ) {
+                const PDDL_Base::SensingModelForStateVariable &model = *static_cast<const PDDL_Base::SensingModelForStateVariable*>(sensing[k]);
+                assert(model.variable_ != 0);
+                string var_name = model.variable_->print_name_;
+                assert(varmap_.find(var_name) != varmap_.end());
+                vars_sensed_by_action_[action.print_name_].insert(varmap_[var_name]);
             }
         }
     }
@@ -324,10 +358,6 @@ LW1_Instance::LW1_Instance(const Instance &ins,
             }
         }
     }
-
-    // create new goal
-    new_goal_ = &new_atom(new CopyName("(new-goal)"));
-    goal_literals_.insert(1 + new_goal_->index_);
 
     // create K-actions
     remap_ = vector<int>(ins.n_actions(),-1);
@@ -536,23 +566,26 @@ void LW1_Instance::create_regular_action(const Action &action,
     // preconditions
     for( index_set::const_iterator it = action.precondition_.begin(); it != action.precondition_.end(); ++it ) {
         int idx = *it > 0 ? *it-1 : -*it-1;
-        if( *it > 0 )
-            nact.precondition_.insert(1 + 2*idx);
-        else
-            nact.precondition_.insert(1 + 2*idx+1);
+        assert(last_action_atoms_.find(idx) == last_action_atoms_.end());
+        nact.precondition_.insert(*it > 0 ? 1 + 2*idx : 1 + 2*idx + 1);
     }
 
     // support and cancellation rules for unconditional effects
     for( index_set::const_iterator it = action.effect_.begin(); it != action.effect_.end(); ++it ) {
         int idx = *it > 0 ? *it-1 : -*it-1;
-        if( *it > 0 ) {
-            nact.effect_.insert(1 + 2*idx);
-            nact.effect_.insert(-(1 + 2*idx+1));
+        if( last_action_atoms_.find(idx) == last_action_atoms_.end() ) {
+            if( *it > 0 ) {
+                nact.effect_.insert(1 + 2*idx);
+                nact.effect_.insert(-(1 + 2*idx+1));
+            } else {
+                nact.effect_.insert(1 + 2*idx+1);
+                nact.effect_.insert(-(1 + 2*idx));
+            }
         } else {
-            nact.effect_.insert(1 + 2*idx+1);
-            nact.effect_.insert(-(1 + 2*idx));
+            nact.effect_.insert(*it > 0 ? 1 + 2*idx : -(1 + 2*idx));
         }
-        lw1_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, nact.effect_);
+        if( !options_.is_enabled("lw1:strict") )
+            lw1_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, nact.effect_); // CHECK
     }
 
     // support and cancellation rules for conditional effects
@@ -561,6 +594,7 @@ void LW1_Instance::create_regular_action(const Action &action,
         When sup_eff, can_eff;
         for( index_set::const_iterator it = when.condition_.begin(); it != when.condition_.end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
+            assert(last_action_atoms_.find(idx) == last_action_atoms_.end());
             if( *it > 0 ) {
                 sup_eff.condition_.insert(1 + 2*idx);
                 can_eff.condition_.insert(-(1 + 2*idx+1));
@@ -571,6 +605,7 @@ void LW1_Instance::create_regular_action(const Action &action,
         }
         for( index_set::const_iterator it = when.effect_.begin(); it != when.effect_.end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
+            assert(last_action_atoms_.find(idx) == last_action_atoms_.end());
             if( *it > 0 ) {
                 sup_eff.effect_.insert(1 + 2*idx);
                 if( observable_atoms.find(idx) == observable_atoms.end() )
@@ -580,8 +615,10 @@ void LW1_Instance::create_regular_action(const Action &action,
                 if( observable_atoms.find(idx) == observable_atoms.end() )
                     can_eff.effect_.insert(-(1 + 2*idx));
             }
-            lw1_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, sup_eff.effect_);
-            lw1_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, can_eff.effect_);
+            if( !options_.is_enabled("lw1:strict") ) {
+                lw1_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, sup_eff.effect_); // CHECK
+                lw1_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, can_eff.effect_); // CHECK
+            }
         }
         nact.when_.push_back(sup_eff);
         if( !can_eff.effect_.empty() ) nact.when_.push_back(can_eff);
@@ -629,20 +666,61 @@ void LW1_Instance::create_drule_for_var(const Action &action) {
 
 void LW1_Instance::create_drule_for_sensing(const Action &action) {
     string action_name = action.name_->to_string();
-    assert(action_name.compare(0, 14, "drule-sensing-") == 0);
+    if( options_.is_enabled("lw1:strict") ) {
+        assert(action_name.compare(0, 20, "drule-sensing-type4-") == 0);
 
-    Action *nact = new Action(new CopyName(action_name));
-    for( index_set::const_iterator it = action.precondition_.begin(); it != action.precondition_.end(); ++it ) {
-        int index = *it > 0 ? *it - 1 : -*it - 1;
-        nact->precondition_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
+        Action *nact = new Action(new CopyName(action_name));
+
+        // copy preconditions: there should be just one
+        //assert(action.precondition_.size() == 1);
+        for( index_set::const_iterator it = action.precondition_.begin(); it != action.precondition_.end(); ++it ) {
+            int index = *it > 0 ? *it - 1 : -*it - 1;
+            nact->precondition_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
+        }
+
+        // each unconditional effect L becomes conditional of form: -K-L => KL
+        for( index_set::const_iterator it = action.effect_.begin(); it != action.effect_.end(); ++it ) {
+            int index = *it > 0 ? *it - 1 : -*it - 1;
+            When w;
+            w.condition_.insert(*it > 0 ? -(1 + 2*index + 1) : -(1 + 2*index));
+            w.effect_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
+            nact->when_.push_back(w);
+        }
+
+        // each conditional effect C => L becomes: KC, -K-L => KL
+        for( size_t k = 0; k < action.when_.size(); ++k ) {
+            const When &when = action.when_[k];
+            assert(when.effect_.size() == 1);
+            int head = *when.effect_.begin();
+            int head_index = head > 0 ? head - 1 : -head - 1;
+            When w;
+            w.effect_.insert(head > 0 ? 1 + 2*head_index : 1 + 2*head_index + 1);
+            w.condition_.insert(head > 0 ? -(1 + 2*head_index + 1) : -(1 + 2*head_index));
+            for( index_set::const_iterator it = when.condition_.begin(); it != when.condition_.end(); ++it ) {
+                int index = *it > 0 ? *it - 1 : -*it - 1;
+                w.condition_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
+            }
+            nact->when_.push_back(w);
+        }
+
+        drule_store_.insert(make_pair(nact->precondition_, nact));
+    } else {
+        assert(action_name.compare(0, 14, "drule-sensing-") == 0);
+
+        Action *nact = new Action(new CopyName(action_name));
+        for( index_set::const_iterator it = action.precondition_.begin(); it != action.precondition_.end(); ++it ) {
+            int index = *it > 0 ? *it - 1 : -*it - 1;
+            nact->precondition_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
+        }
+
+        for( index_set::const_iterator it = action.effect_.begin(); it != action.effect_.end(); ++it ) {
+            int index = *it > 0 ? *it - 1 : -*it - 1;
+            nact->effect_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
+            nact->precondition_.insert(*it > 0 ? -(1 + 2*index + 1) : -(1 + 2*index)); // CHECK: is this necessary?
+        }
+
+        drule_store_.insert(make_pair(nact->precondition_, nact));
     }
-
-    for( index_set::const_iterator it = action.effect_.begin(); it != action.effect_.end(); ++it ) {
-        int index = *it > 0 ? *it - 1 : -*it - 1;
-        nact->effect_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
-    }
-
-    drule_store_.insert(make_pair(nact->precondition_, nact));
 }
 
 void LW1_Instance::merge_drules() {
@@ -662,7 +740,7 @@ void LW1_Instance::merge_drules() {
             break;
         }
 
-        if( options_.is_enabled("kp:merge-drules") ) {
+        if( !options_.is_enabled("lw1:strict") && options_.is_enabled("kp:merge-drules") ) {
             if( !comparator(nact.precondition_, it->first) ) nact.comment_ = "<merge>";
             set<When> included_when_effects;
             included_when_effects.insert(nact.when_.begin(), nact.when_.end());
