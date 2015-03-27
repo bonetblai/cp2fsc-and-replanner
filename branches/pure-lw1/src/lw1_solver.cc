@@ -6,29 +6,95 @@
 
 using namespace std;
 
-void LW1_Solver::compute_and_add_observations(const STATE_CLASS &hidden,
+void LW1_Solver::compute_and_add_observations(const Instance::Action *last_action,
+                                              const STATE_CLASS &hidden,
                                               STATE_CLASS &state,
-                                              set<int> &sensors,
-                                              set<int> &sensed) const {
-    assert(sensors.empty());
-    assert(sensed.empty());
+                                              set<int> &fired_sensors_at_step,
+                                              set<int> &sensed_at_step) const {
+    assert(fired_sensors_at_step.empty());
+    assert(sensed_at_step.empty());
 
-    // fire observation rules
-    index_set observations;
-    for( size_t k = 0; k < instance_.n_sensors(); ++k ) {
-        const Instance::Sensor &r = *instance_.sensors_[k];
-        if( hidden.satisfy(r.condition_) ) {
-            sensors.insert(k);
-            for( index_set::const_iterator it = r.sense_.begin(); it != r.sense_.end(); ++it ) {
-                int obs = *it > 0 ? *it - 1 : -*it - 1;
-                sensed.insert(hidden.satisfy(obs) ? 1 + obs : -(1 + obs));
+    assert(translation_type_ == LW1);
+    assert(dynamic_cast<const LW1_Instance*>(&kp_instance_) != 0);
+    const LW1_Instance &lw1 = *static_cast<const LW1_Instance*>(&kp_instance_);
+
+    if( options_.is_enabled("lw1:strict") && (last_action != 0) ) {
+        map<string, set<int> >::const_iterator it = lw1.vars_sensed_by_action_.find(last_action->name_->to_string());
+        if( it != lw1.vars_sensed_by_action_.end() ) {
+            for( set<int>::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt ) {
+                const LW1_Instance::Variable &variable = *lw1.multivalued_variables_[*jt];
+
+                // if state variable, the value of observed literal (either true or false)
+                // is directly obtained from the hidden state. If non-state variable, need
+                // to use sensing model to determine the value. If the domain size is 1, 
+                // there are only two values for the variable, true or false corresponding
+                // to the positive and negative literal respectively. If domain size > 1,
+                // each value corresponds to a different literals (from which one and only
+                // one must be true).
+
+                if( variable.domain_.size() == 1 ) {
+                    int index = *variable.domain_.begin();
+                    bool satisfy = value_observable_literal(hidden, *last_action, *jt, index);
+                    sensed_at_step.insert(satisfy ? 1 + index : -(1 + index));
+                } else {
+                    bool some_value_sensed = false;
+                    for( set<int>::const_iterator kt = variable.domain_.begin(); kt != variable.domain_.end(); ++kt ) {
+                        int index = *kt;
+                        bool satisfy = value_observable_literal(hidden, *last_action, *jt, index);
+                        if( satisfy ) {
+                            if( !some_value_sensed ) {
+                                sensed_at_step.insert(1 + index);
+                                some_value_sensed = true;
+                            } else {
+                                cout << Utils::error() << "more than one value sensed for variable '"
+                                     << variable.name_ << "' with last-action '"
+                                     << last_action->name_->to_string() << "'"
+                                     << endl;
+                            }
+                        }
+                    }
+                    if( !some_value_sensed ) {
+                        cout << Utils::error() << "no value sensed for variable '"
+                             << variable.name_ << "' with last-action '"
+                             << last_action->name_->to_string() << "'"
+                             << endl;
+                    }
+                }
             }
+        }
+    } else if( !options_.is_enabled("lw1:strict") ) {
+        // fire observation rules
+        index_set observations;
+        for( size_t k = 0; k < instance_.n_sensors(); ++k ) {
+            const Instance::Sensor &r = *instance_.sensors_[k];
+            if( hidden.satisfy(r.condition_) ) {
+                //cout << "firing sensor: "; r.print(cout, instance_);
+                fired_sensors_at_step.insert(k);
+                for( index_set::const_iterator it = r.sense_.begin(); it != r.sense_.end(); ++it ) {
+                    int obs = *it > 0 ? *it - 1 : -*it - 1;
+                    bool satisfy = hidden.satisfy(obs);
+                    sensed_at_step.insert(satisfy ? 1 + obs : -(1 + obs));
+                }
+            }
+        }
+    }
+
+    if( true || options_.is_enabled("solver:print:sensed-literals") ) {
+        for( set<int>::const_iterator it = sensed_at_step.begin(); it != sensed_at_step.end(); ++it ) {
+            int obs = *it > 0 ? *it - 1 : -*it - 1;
+            cout << Utils::yellow()
+                 << "sensed: literal="
+                 << (*it > 0 ? "" : "(not ")
+                 << instance_.atoms_[obs]->name_
+                 << (*it > 0 ? "" : ")")
+                 << ", index=" << obs
+                 << Utils::normal() << endl;
         }
     }
 }
 
 void LW1_Solver::apply_inference(const Instance::Action *last_action,
-                                 const set<int> &sensed,
+                                 const set<int> &sensed_at_step,
                                  STATE_CLASS &state) const {
 
     float start_time = Utils::read_time_in_seconds();
@@ -50,7 +116,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         cout << Utils::cyan() << "Using inference: 'forward-chaining'" << Utils::normal() << endl;
 
         // add observations as state literals
-        for( set<int>::const_iterator it = sensed.begin(); it != sensed.end(); ++it ) {
+        for( set<int>::const_iterator it = sensed_at_step.begin(); it != sensed_at_step.end(); ++it ) {
             int sensed_literal = *it;
             if( sensed_literal > 0 ) {
                 --sensed_literal;
@@ -82,9 +148,9 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         cout << Utils::cyan() << "Using inference: 'unit propagation'" << Utils::normal() << endl;
 
         // find sensing models for given action that are incompatible with observations
-        relevant_sensing_models_t relevant_sensing_models;
+        relevant_sensing_models_as_cnf_t relevant_sensing_models_as_cnf;
         if( last_action != 0 )
-            fill_relevant_sensing_models(lw1, last_action, sensed, relevant_sensing_models);
+            fill_relevant_sensing_models(lw1, last_action, sensed_at_step, relevant_sensing_models_as_cnf);
 
         // construct logical theory for performing inference with unit propagation
 #if defined(UP)
@@ -93,11 +159,9 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
 #endif
 
         // 0. Add observations as unit clauses
-        set<int> unit_clauses_for_observations;
         if( options_.is_enabled("lw1:inference:up:enhanced") ) {
-            for( set<int>::const_iterator it = sensed.begin(); it != sensed.end(); ++it ) {
+            for( set<int>::const_iterator it = sensed_at_step.begin(); it != sensed_at_step.end(); ++it ) {
                 int k_literal = *it > 0 ? 2 * (*it - 1) : 2 * (-*it - 1) + 1;
-                unit_clauses_for_observations.insert(1 + k_literal);
                 //cout << Utils::red() << "[Theory] Add obs literal: ";
                 //state.print_literal(cout, 1 + k_literal, &kp_instance_);
                 //cout << Utils::normal() << endl;
@@ -139,21 +203,39 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         }
 
         // 3. Clauses from sensing models: K_o
-        for( relevant_sensing_models_t::const_iterator it = relevant_sensing_models.begin(); it != relevant_sensing_models.end(); ++it ) {
-            const sensing_models_t &sensing_models = it->second;
-            for( size_t k = 0; k < sensing_models.size(); ++k ) {
-                const cnf_t &cnf_for_sensing_model = *sensing_models[k];
-                for( size_t j = 0; j < cnf_for_sensing_model.size(); ++j ) {
-                    const clause_t &clause = cnf_for_sensing_model[j];
-                    //cout << Utils::red() << "[Theory] Add K_o clause: ";
-                    //state.print_clause(cout, clause, &kp_instance_);
+        for( relevant_sensing_models_as_cnf_t::const_iterator it = relevant_sensing_models_as_cnf.begin(); it != relevant_sensing_models_as_cnf.end(); ++it ) {
+            int sensed_literal = it->first;
+            for( map<int, sensing_models_as_cnf_t>::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt ) {
+                int var_key = jt->first;
+                const LW1_Instance::Variable &variable = *lw1.multivalued_variables_[var_key];
+                if( variable.is_state_variable_ ) {
+                    assert(jt->second.empty());
+                    int k_literal = sensed_literal > 0 ? 1 + 2*(sensed_literal - 1) : 1 + 2*(-sensed_literal - 1) + 1;
+                    //cout << Utils::red() << "[Theory] Add obs (state) literal: ";
+                    //state.print_literal(cout, k_literal, &kp_instance_);
                     //cout << Utils::normal() << endl;
 #if defined(UP)
                     Inference::Propositional::Clause cl;
-                    for( size_t i = 0; i < clause.size(); ++i )
-                        cl.push_back(clause[i]);
+                    cl.push_back(k_literal);
                     cnf.push_back(cl);
 #endif
+                } else {
+                    const sensing_models_as_cnf_t &sensing_models_as_cnf = jt->second;
+                    for( size_t k = 0; k < sensing_models_as_cnf.size(); ++k ) {
+                        const cnf_t &cnf_for_sensing_model = *sensing_models_as_cnf[k];
+                        for( size_t j = 0; j < cnf_for_sensing_model.size(); ++j ) {
+                            const clause_t &clause = cnf_for_sensing_model[j];
+                            cout << Utils::red() << "[Theory] Add K_o clause: ";
+                            state.print_clause(cout, clause, &kp_instance_);
+                            cout << Utils::normal() << endl;
+#if defined(UP)
+                            Inference::Propositional::Clause cl;
+                            for( size_t i = 0; i < clause.size(); ++i )
+                                cl.push_back(clause[i]);
+                            cnf.push_back(cl);
+#endif
+                        }
+                    }
                 }
             }
         }
@@ -164,9 +246,9 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
             assert(dynamic_cast<LW1_State*>(&state) != 0);
             for( size_t k = 0; k < state.cnf_.size(); ++k ) {
                 const clause_t &clause = state.cnf_[k];
-                cout << Utils::red() << "[Theory] Add extra clause: ";
-                state.print_clause(cout, clause, &kp_instance_);
-                cout << Utils::normal() << endl;
+                //cout << Utils::red() << "[Theory] Add extra clause: ";
+                //state.print_clause(cout, clause, &kp_instance_);
+                //cout << Utils::normal() << endl;
 #    if defined(UP)
                 Inference::Propositional::Clause cl;
                 for( size_t i = 0; i < clause.size(); ++i )
@@ -209,7 +291,6 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
             if( base_theory.find(cl) != base_theory.end() ) continue;
             if( cl.size() == 1 ) {
                 int literal = *cl.begin();
-                if( unit_clauses_for_observations.find(literal) != unit_clauses_for_observations.end() ) continue;
                 if( is_forbidden(literal) ) continue;
                 assert(literal != 0);
                 assert((literal > 0) || options_.is_enabled("lw1:inference:up:enhanced"));
@@ -236,9 +317,9 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                         clause.push_back(*it);
                     if( is_forbidden(clause) ) continue;
 
-                    cout << Utils::yellow() << "[State] Add clause: ";
-                    state.print_clause(cout, clause, &kp_instance_);
-                    cout << Utils::normal() << endl;
+                    //cout << Utils::yellow() << "[State] Add clause: ";
+                    //state.print_clause(cout, clause, &kp_instance_);
+                    //cout << Utils::normal() << endl;
                     state.cnf_.push_back(clause);
                 }
             }
@@ -259,52 +340,133 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
     cout << Utils::normal() << endl;
 }
 
+bool LW1_Solver::value_observable_literal(const STATE_CLASS &hidden,
+                                          const Instance::Action &last_action,
+                                          int var_index,
+                                          int index) const {
+    assert(index >= 0);
+
+    // case when observed variable is not a state variable
+    assert(translation_type_ == LW1);
+    assert(dynamic_cast<const LW1_Instance*>(&kp_instance_) != 0);
+    const LW1_Instance &lw1 = *static_cast<const LW1_Instance*>(&kp_instance_);
+    const LW1_Instance::Variable &variable = *lw1.multivalued_variables_[var_index];
+    string action_key = last_action.name_->to_string();
+    cout << Utils::red() << "XXXXXX.0: index=" << index << ", name="; State::print_literal(cout, 1 + index, &instance_); cout << Utils::normal() << endl;
+
+    // handle easy case when the variable is a state variable
+    if( variable.is_state_variable_ ) {
+        cout << Utils::cyan()
+             << "Evaluation: last-action=" << action_key
+             << ", variable=" << variable.name_
+             << ", value=";
+        State::print_literal(cout, 1 + index, &instance_);
+        cout << " ==> " << (hidden.satisfy(index) ? "TRUE" : "FALSE")
+             << Utils::normal() << endl;
+        return hidden.satisfy(index);
+    }
+    //cout << "XXXXXX.1" << endl;
+
+    if( lw1.sensing_models_as_dnf_.find(action_key) == lw1.sensing_models_as_dnf_.end() ) {
+        cout << Utils::error() << "no sensing model for action '" << action_key << "'" << endl;
+        return false;
+    }
+    const map<int, map<int, vector<vector<int> > > > &sensing_models_for_action = lw1.sensing_models_as_dnf_.find(action_key)->second;
+    //cout << "XXXXXX.2" << endl;
+
+    if( sensing_models_for_action.find(var_index) == sensing_models_for_action.end() ) {
+        cout << Utils::error() << "no sensing model for variable '"
+             << variable.name_ << "' for action '"
+             << action_key << "'" << endl;
+        return false;
+    }
+    const map<int, vector<vector<int> > > &sensing_models_for_action_and_var = sensing_models_for_action.find(var_index)->second;
+    //cout << "XXXXXX.3" << endl;
+
+    if( sensing_models_for_action_and_var.find(1 + index) == sensing_models_for_action_and_var.end() ) {
+        // there is no sensing model for this value. Assuming it is false.
+        return false;
+    }
+    const vector<vector<int> > &dnf = sensing_models_for_action_and_var.find(1 + index)->second;
+    cout << Utils::red() << "XXXXXX.4: #terms=" << dnf.size() << Utils::normal() << endl;
+
+    // evaluate dnf at hidden state and return its value
+    bool value = false;
+    for( size_t k = 0; k < dnf.size(); ++k ) {
+        const vector<int> &term = dnf[k];
+        bool valid_term = true;
+        cout << Utils::red() << "XXXXXX.5: #lits in term[" << k << "]=" << term.size() << ", validity=" << flush;
+        for( size_t j = 0; j < term.size(); ++j ) {
+            int literal = term[j];
+            if( (literal > 0) && !hidden.satisfy(literal - 1) )
+                valid_term = false;
+            if( (literal < 0) && hidden.satisfy(-literal - 1) )
+                valid_term = false;
+            cout << " " << literal << "."; State::print_literal(cout, literal, &instance_); cout << ":" << (valid_term ? "TRUE" : "FALSE");
+            if( !valid_term ) break;
+        }
+        cout << Utils::normal() << endl;
+        value = value || valid_term;
+        if( value ) break;
+    }
+
+    cout << Utils::cyan()
+         << "Evaluation: last-action=" << action_key
+         << ", variable=" << variable.name_
+         << ", value=";
+    State::print_literal(cout, 1 + index, &instance_);
+    cout << " ==> " << (value ? "TRUE" : "FALSE")
+         << Utils::normal() << endl;
+
+    return value;
+}
+
 void LW1_Solver::fill_relevant_sensing_models(const LW1_Instance &lw1,
                                               const Instance::Action *last_action,
-                                              const set<int> &sensed,
-                                              LW1_Solver::relevant_sensing_models_t &sensing_models) const {
+                                              const set<int> &sensed_at_step,
+                                              LW1_Solver::relevant_sensing_models_as_cnf_t &sensing_models_as_cnf) const {
     assert(last_action != 0);
 
     // compute action-key for accessingn sensing models in lw1 instance
     string action_key;
-    size_t pos = last_action->name_->to_string().find("__set_sensing__");
-    if( pos != string::npos ) {
-        action_key = string(last_action->name_->to_string(), 0, pos);
-        pos = string::npos;
+    if( options_.is_enabled("lw1:strict") ) {
+        action_key = last_action->name_->to_string();
     } else {
-        pos = last_action->name_->to_string().find("__effect__");
-    }
-    if( pos != string::npos ) {
-        action_key = string(last_action->name_->to_string(), 0, pos);
-        pos = string::npos;
-    } else {
-        pos = last_action->name_->to_string().find("__turn_on_sensor__");
-    }
-    if( pos != string::npos ) {
-        action_key = string(last_action->name_->to_string(), 0, pos);
-        pos = string::npos;
+        size_t pos = last_action->name_->to_string().find("__set_sensing__");
+        if( pos != string::npos ) {
+            action_key = string(last_action->name_->to_string(), 0, pos);
+            pos = string::npos;
+        } else {
+            pos = last_action->name_->to_string().find("__effect__");
+        }
+        if( pos != string::npos ) {
+            action_key = string(last_action->name_->to_string(), 0, pos);
+            pos = string::npos;
+        } else {
+            pos = last_action->name_->to_string().find("__turn_on_sensor__");
+        }
+        if( pos != string::npos ) {
+            action_key = string(last_action->name_->to_string(), 0, pos);
+            pos = string::npos;
+        }
     }
     assert(action_key != "");
 
     // fill in relevant sensing models
     const map<int, map<int, vector<vector<int> > > > *sensing_models_for_action = 0;
-    if( lw1.sensing_models_.find(action_key) != lw1.sensing_models_.end() )
-        sensing_models_for_action = &lw1.sensing_models_.find(action_key)->second;
+    if( lw1.sensing_models_as_k_cnf_.find(action_key) != lw1.sensing_models_as_k_cnf_.end() )
+        sensing_models_for_action = &lw1.sensing_models_as_k_cnf_.find(action_key)->second;
 
-    for( set<int>::const_iterator it = sensed.begin(); it != sensed.end(); ++it ) {
+    for( set<int>::const_iterator it = sensed_at_step.begin(); it != sensed_at_step.end(); ++it ) {
         int sensed_literal = *it;
         int atom_index = sensed_literal < 0 ? -sensed_literal - 1 : sensed_literal - 1;
         bool negated = sensed_literal < 0;
         int value_key = !negated ? atom_index + 1 : -(atom_index + 1);
 
         if( options_.is_enabled("solver:print:sensed-literals") ) {
-            cout << Utils::yellow()
-                 << "sensed: literal="
-                 << (negated ? "(not " : "")
-                 << lw1.po_instance_.atoms_[atom_index]->name_
-                 << (negated ? ")" : "")
-                 << ", index=" << atom_index
-                 << Utils::normal() << endl;
+            cout << Utils::yellow() << "sensed: literal=";
+            State::print_literal(cout, sensed_literal, &instance_);
+            cout << ", index=" << atom_index << Utils::normal() << endl;
         }
 
         map<int, vector<int> >::const_iterator jt = lw1.variables_for_atom_.find(atom_index);
@@ -317,7 +479,11 @@ void LW1_Solver::fill_relevant_sensing_models(const LW1_Instance &lw1,
         for( size_t k = 0; k < jt->second.size(); ++k ) {
             int var_key = jt->second[k];
             const LW1_Instance::Variable &variable = *lw1.multivalued_variables_[var_key];
-            if( variable.is_state_variable_ ) continue;
+
+            if( variable.is_state_variable_ ) {
+                sensing_models_as_cnf[sensed_literal].insert(make_pair(var_key, sensing_models_as_cnf_t()));
+                continue;
+            }
 
             // for non-binary variables, the values for observables are positive atoms
             // and these are used to access the sensing models. Hence, we can discard
@@ -333,7 +499,7 @@ void LW1_Solver::fill_relevant_sensing_models(const LW1_Instance &lw1,
                 //LW1_State::print_literal(cout, kt->first, &instance_);
                 //cout << ", trigger=" << (kt->first != value_key) << flush;
                 if( kt->first != value_key ) {
-                    sensing_models[sensed_literal].push_back(&kt->second);
+                    sensing_models_as_cnf[sensed_literal][var_key].push_back(&kt->second);
                     //cout << ", cnf=";
                     //LW1_State::print_cnf(cout, kt->second, &kp_instance_);
                 }

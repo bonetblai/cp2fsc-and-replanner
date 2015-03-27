@@ -12,7 +12,7 @@ lw1.o: lw1.cc problem.h name.h index.h options.h preprocess.h parser.h \
   new_solver.h classical_planner.h lw1_state.h available_options.h
 string_table.o: string_table.cc string_table.h char_map.h
 base.o: base.cc base.h ptr_table.h string_table.h char_map.h options.h \
-  problem.h name.h index.h utils.h
+  problem.h name.h index.h base_dnf.h utils.h
 ptr_table.o: ptr_table.cc ptr_table.h
 char_map.o: char_map.cc char_map.h
 problem.o: problem.cc problem.h name.h index.h options.h state.h utils.h
@@ -22,8 +22,8 @@ clg_problem.o: clg_problem.cc clg_problem.h kp_problem.h problem.h name.h \
   index.h options.h base.h ptr_table.h string_table.h char_map.h state.h \
   utils.h
 lw1_problem.o: lw1_problem.cc lw1_problem.h kp_problem.h problem.h name.h \
-  index.h options.h base.h ptr_table.h string_table.h char_map.h state.h \
-  utils.h
+  index.h options.h base.h ptr_table.h string_table.h char_map.h \
+  lw1_state.h state.h utils.h
 cp_problem.o: cp_problem.cc cp_problem.h problem.h name.h index.h \
   options.h state.h utils.h
 ks0_problem.o: ks0_problem.cc ks0_problem.h cp_problem.h problem.h name.h \

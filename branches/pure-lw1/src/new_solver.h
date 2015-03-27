@@ -35,15 +35,16 @@ class NewSolver {
 
     virtual int solve(const T &initial_hidden_state,
                       Instance::Plan &final_plan,
-                      std::vector<std::set<int> > &fired_sensors,
-                      std::vector<std::set<int> > &sensed_literals) const;
+                      std::vector<std::set<int> > &fired_sensors_during_execution,
+                      std::vector<std::set<int> > &sensed_literals_during_execution) const;
   protected:
-    virtual void compute_and_add_observations(const T &hidden,
+    virtual void compute_and_add_observations(const Instance::Action *last_action,
+                                              const T &hidden,
                                               T &state,
-                                              std::set<int> &sensors,
-                                              std::set<int> &sensed) const;
+                                              std::set<int> &fired_sensors_at_step,
+                                              std::set<int> &sensed_at_step) const;
     virtual void apply_inference(const Instance::Action *action,
-                                 const std::set<int> &sensed,
+                                 const std::set<int> &sensed_at_step,
                                  T &state) const;
     virtual void calculate_relevant_assumptions(const Instance::Plan &plan,
                                                 const Instance::Plan &raw_plan,
@@ -56,12 +57,12 @@ class NewSolver {
 template<typename T>
 int NewSolver<T>::solve(const T &initial_hidden_state,
                         Instance::Plan &final_plan,
-                        std::vector<std::set<int> > &fired_sensors,
-                        std::vector<std::set<int> > &sensed_literals) const {
+                        std::vector<std::set<int> > &fired_sensors_during_execution,
+                        std::vector<std::set<int> > &sensed_literals_during_execution) const {
     std::vector<index_set> assumptions;
     T hidden(initial_hidden_state), state;
     Instance::Plan raw_plan, plan;
-    std::set<int> sensors, sensed;
+    std::set<int> fired_sensors_at_step, sensed_at_step;
     index_set goal_condition;
 
     // the initial hidden state is already closed with the axioms
@@ -81,12 +82,12 @@ int NewSolver<T>::solve(const T &initial_hidden_state,
     // set the initial state
     kp_instance_.set_initial_state(state);
     if( translation_type_ != LW1 )
-        compute_and_add_observations(hidden, state, sensors, sensed);
-    apply_inference(0, sensed, state);
-    fired_sensors.push_back(sensors);
-    sensed_literals.push_back(sensed);
-    sensors.clear();
-    sensed.clear();
+        compute_and_add_observations(0, hidden, state, fired_sensors_at_step, sensed_at_step);
+    apply_inference(0, sensed_at_step, state);
+    fired_sensors_during_execution.push_back(fired_sensors_at_step);
+    sensed_literals_during_execution.push_back(sensed_at_step);
+    fired_sensors_at_step.clear();
+    sensed_at_step.clear();
 
     if( options_.is_enabled("solver:print:steps") ) {
         std::cout << ">>> initial state=";
@@ -187,14 +188,14 @@ int NewSolver<T>::solve(const T &initial_hidden_state,
                 }
 
                 hidden.apply(act);
-                //instance_.apply_deductive_rules(hidden);
-                compute_and_add_observations(hidden, state, sensors, sensed);
-                if( (translation_type_ != LW1) || !sensed.empty() )
-                    apply_inference(&kp_act, sensed, state);
-                fired_sensors.push_back(sensors);
-                sensed_literals.push_back(sensed);
-                sensors.clear();
-                sensed.clear();
+                //instance_.apply_deductive_rules(hidden); // CHECK
+                compute_and_add_observations(&kp_act, hidden, state, fired_sensors_at_step, sensed_at_step);
+                if( (translation_type_ != LW1) || !sensed_at_step.empty() )
+                    apply_inference(&kp_act, sensed_at_step, state);
+                fired_sensors_during_execution.push_back(fired_sensors_at_step);
+                sensed_literals_during_execution.push_back(sensed_at_step);
+                fired_sensors_at_step.clear();
+                sensed_at_step.clear();
 
                 if( options_.is_enabled("solver:print:steps") ) {
                     std::cout << ">>> state=";
@@ -271,29 +272,30 @@ void NewSolver<T>::calculate_relevant_assumptions(const Instance::Plan &plan,
 }
 
 template<typename T>
-void NewSolver<T>::compute_and_add_observations(const T &hidden,
+void NewSolver<T>::compute_and_add_observations(const Instance::Action *last_action,
+                                                const T &hidden,
                                                 T &state,
-                                                std::set<int> &sensors,
-                                                std::set<int> &sensed) const {
-    assert(sensors.empty());
-    assert(sensed.empty());
+                                                std::set<int> &fired_sensors_at_step,
+                                                std::set<int> &sensed_at_step) const {
+    assert(fired_sensors_at_step.empty());
+    assert(sensed_at_step.empty());
 
     // fire observation rules
     index_set observations;
     for( size_t k = 0; k < instance_.n_sensors(); ++k ) {
         const Instance::Sensor &r = *instance_.sensors_[k];
         if( hidden.satisfy(r.condition_) ) {
-            sensors.insert(k);
+            fired_sensors_at_step.insert(k);
             for( index_set::const_iterator it = r.sense_.begin(); it != r.sense_.end(); ++it ) {
                 int obs = *it > 0 ? *it - 1 : -*it - 1;
                 if( hidden.satisfy(obs) ) {
                     state.remove(2*obs + 1);
                     state.add(2*obs);
-                    sensed.insert(1 + obs);
+                    sensed_at_step.insert(1 + obs);
                 } else {
                     state.remove(2*obs);
                     state.add(2*obs+1);
-                    sensed.insert(-(1 + obs));
+                    sensed_at_step.insert(-(1 + obs));
                 }
             }
         }
@@ -302,7 +304,7 @@ void NewSolver<T>::compute_and_add_observations(const T &hidden,
 
 template<typename T>
 void NewSolver<T>::apply_inference(const Instance::Action *last_action,
-                                   const std::set<int> &sensed,
+                                   const std::set<int> &sensed_at_step,
                                    T &state) const {
     // translation_type is either K_REPLANNER or CLG. 
     assert(translation_type_ != LW1);

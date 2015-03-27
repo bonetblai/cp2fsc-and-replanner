@@ -190,7 +190,9 @@ class Instance {
     int num_hidden_states() const { return hidden_.size(); }
 
     // NOTE: remove_atoms must be virtual because CP_Instance needs to 
-    // remap atoms in the initial states, rechable space, etc.
+    // remap atoms in the initial states, rechable space, etc. The following
+    // atoms are never removed.
+    index_set atoms_protected_from_removal_;
 
     // compute/clear secondary instance info
     void clear_cross_reference();
