@@ -4,11 +4,12 @@
         (file-in-dir ?file - FILE ?dir - DIR)
         (sub-dir ?par-dir - DIR ?child-dir - DIR)
         (is-cur-dir ?dir - DIR)
+        (obs-file-in-dir ?file - FILE ?dir - DIR)
     )
 
     (:variable (file-location ?f - FILE) (forall (?d - DIR) (file-in-dir ?f ?d)))
     (:variable current-dir (forall (?d - DIR) (is-cur-dir ?d)))
-    (:variable (dir-content ?d - DIR) (forall (?f - FILE) (file-in-dir ?f ?d)))
+    (:obs-variable (is-file-in-dir ?f - FILE ?d - DIR) (obs-file-in-dir ?f ?d))
  
     (:action cd-down
         :parameters (?cur-dir - DIR ?child-dir - DIR)
@@ -23,9 +24,13 @@
     )
  
     (:action ls
-        :parameters (?cur-dir - DIR)
-        :precondition (is-cur-dir ?cur-dir)
-        :sensing (:variable (dir-content ?cur-dir))
+        :parameters (?dir - DIR)
+        :precondition (is-cur-dir ?dir)
+        :sensing
+            (forall (?f - FILE)
+                (model-for (is-file-in-dir ?f ?dir) (obs-file-in-dir ?f ?dir) (file-in-dir ?f ?dir))
+                (model-for (is-file-in-dir ?f ?dir) (not (obs-file-in-dir ?f ?dir)) (not (file-in-dir ?f ?dir)))
+            )
     )
  
     (:action mv
