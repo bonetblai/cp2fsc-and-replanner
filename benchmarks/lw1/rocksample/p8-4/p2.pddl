@@ -1162,6 +1162,11 @@
         (antenna-height h0)
         (need-start)
 
+        (not (finished r0))
+        (not (finished r1))
+        (not (finished r2))
+        (not (finished r3))
+
         (rock-at r0 p7-4)
         (rock-at r1 p2-8)
         (rock-at r2 p1-3)
