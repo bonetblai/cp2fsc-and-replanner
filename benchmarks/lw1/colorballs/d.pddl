@@ -14,9 +14,9 @@
     )
 
     (:variable agent-pos (forall (?p - pos) (at ?p)))
-    (:variable (obj-pos ?o - obj) (holding ?o) (forall (?p - pos) (obj-at ?o ?p)))
+    (:variable (obj-pos ?o - obj) (holding ?o) (trashed ?o) (forall (?p - pos) (obj-at ?o ?p)))
     (:variable (obj-col ?o - obj) (forall (?c - col) (color ?o ?c)))
-    (:obs-variable (var-obj-at ?o - obj ?p - pos) (obs-obj-at ?o ?p))
+    (:obs-variable (var-obj-at ?o - obj ?p - pos) (obs-obj-at ?o ?p)) ; binary
 
     (:action observe-color
         :parameters (?o - obj)
@@ -30,8 +30,12 @@
         :effect (not (need-start))
         :sensing
             (forall (?o - obj)
-                (:model-for (var-obj-at ?o ?p) (obs-obj-at ?o ?p) (obj-at ?o ?p))
-                (:model-for (var-obj-at ?o ?p) (not (obs-obj-at ?o ?p)) (not (obj-at ?o ?p)))
+                (model-for (var-obj-at ?o ?p) (obs-obj-at ?o ?p) (obj-at ?o ?p))
+                (model-for (var-obj-at ?o ?p)
+                           (not (obs-obj-at ?o ?p))
+                           (or (holding ?o) (trashed ?o) (exists (?q - pos) (and (not (= ?p ?q)) (obj-at ?o ?q))))
+                )
+                ;(model-for (var-obj-at ?o ?p) (not (obs-obj-at ?o ?p)) (not (obj-at ?o ?p)))
             )
     )
 
@@ -41,8 +45,12 @@
         :effect (and (not (at ?i)) (at ?j))
         :sensing
             (forall (?o - obj)
-                (:model-for (var-obj-at ?o ?j) (obs-obj-at ?o ?j) (obj-at ?o ?j))
-                (:model-for (var-obj-at ?o ?j) (not (obs-obj-at ?o ?j)) (not (obj-at ?o ?j)))
+                (model-for (var-obj-at ?o ?j) (obs-obj-at ?o ?j) (obj-at ?o ?j))
+                (model-for (var-obj-at ?o ?j)
+                           (not (obs-obj-at ?o ?j))
+                           (or (holding ?o) (trashed ?o) (exists (?q - pos) (and (not (= ?j ?q)) (obj-at ?o ?q))))
+                )
+                ;(model-for (var-obj-at ?o ?j) (not (obs-obj-at ?o ?j)) (not (obj-at ?o ?j)))
             )
     )
 
@@ -55,7 +63,7 @@
     (:action trash
         :parameters (?o - obj ?c - col ?t - gar ?p - pos)
         :precondition (and (color ?o ?c) (holding ?o) (garbage-at ?t ?p) (at ?p) (not (need-start)))
-        :effect (when (garbage-color ?t ?c) (trashed ?o))
+        :effect (when (garbage-color ?t ?c) (and (trashed ?o) (not (holding ?o))))
     )
 )
 
