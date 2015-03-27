@@ -23,8 +23,8 @@
         :effect (not (need-start))
         :sensing
             (forall (?r - row ?c - col) such-that (and (at-row ?r ?i) (right-col ?c ?i))
-                (:model-for (obs-at ?i) (obs-open ?i) (exists (?y - pos) (and (at-col ?c ?y) (at-row ?r ?y) (opened ?y))))
-                (:model-for (obs-at ?i) (not (obs-open ?i)) (exists (?y - pos) (and (at-col ?y ?c) (not (at-row ?r ?y)) (opened ?y))))
+                (model-for (obs-at ?i) (obs-open ?i) (exists (?y - pos) (and (at-col ?c ?y) (at-row ?r ?y) (opened ?y))))
+                (model-for (obs-at ?i) (not (obs-open ?i)) (exists (?y - pos) (and (at-col ?c ?y) (not (at-row ?r ?y)) (opened ?y))))
             )
     )
 
@@ -34,8 +34,8 @@
         :effect (and (not (at ?i)) (at ?j)) 
         :sensing
             (forall (?r - row ?c - col) such-that (and (at-row ?r ?j) (right-col ?c ?j))
-                (:model-for (obs-at ?j) (obs-open ?j) (exists (?y - pos) (and (at-col ?c ?y) (at-row ?r ?y) (opened ?y))))
-                (:model-for (obs-at ?j) (not (obs-open ?j)) (exists (?y - pos) (and (at-col ?y ?c) (not (at-row ?r ?y)) (opened ?y))))
+                (model-for (obs-at ?j) (obs-open ?j) (exists (?y - pos) (and (at-col ?c ?y) (at-row ?r ?y) (opened ?y))))
+                (model-for (obs-at ?j) (not (obs-open ?j)) (exists (?y - pos) (and (at-col ?c ?y) (not (at-row ?r ?y)) (opened ?y))))
             )
     )
 )
