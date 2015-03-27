@@ -14,19 +14,19 @@
         :parameters (?i - ILLNESS)
         :precondition (not (dead))
         :effect
-            (and (forall (?j - ILLNESS)
-                     (and (when (and (ill ?j) (= ?i ?j)) (cured))
-                          (when (and (ill ?j) (not (= ?i ?j))) (dead))
-                     )
-                 )
+            (forall (?j - ILLNESS)
+                ;(and (when (and (ill ?j) (= ?i ?j)) (cured))
+                (and (when (and (ill ?j) (= ?i ?j)) (and (cured) (not (ill ?j))))
+                     (when (and (ill ?j) (not (= ?i ?j))) (dead))
+                )
             )
     )
 
     (:action do-test
         :precondition (not (dead))
         :sensing
-            (:model-for test-result (no-stain) (cured))
-            (forall (?i - ILLNESS) (:model-for test-result (stain ?i) (ill ?i)))
+            (model-for test-result (no-stain) (cured))
+            (forall (?i - ILLNESS) (model-for test-result (stain ?i) (ill ?i)))
     )
 )
 
