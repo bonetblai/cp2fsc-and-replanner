@@ -13,18 +13,7 @@
 
 using namespace std;
 
-Options::Mode options;
-
-void parse_options(const char *options_str) {
-    char *opts = strdup(options_str);
-    char *opt = strtok(opts, ",");
-    while( opt != 0 ) {
-        if( !options.enable(opt) )
-            cout << Utils::warning() << "unrecognized option '" << opt << "' (ignored)." << endl;
-        opt = strtok(0, ",");
-    }
-    free(opts);
-}
+Options::Mode g_options;
 
 void print_usage(ostream &os, const char *exec_name, const char **cmdline_options) {
     char *tmp = strdup(exec_name);
@@ -49,8 +38,8 @@ void print_usage(ostream &os, const char *exec_name, const char **cmdline_option
        << "where <options> is a comma-separated list of options from:" << endl
        << endl;
 
-    for( int i = 0, isz = options.options_.size(); i < isz; ++i ) {
-        const Options::Option &opt = options.options_[i];
+    for( Options::Mode::const_iterator it = g_options.begin(); it != g_options.end(); ++it ) {
+        const Options::Option &opt = *it;
         os << "    " << left << setw(35) << opt.name() << "  " << opt.desc() << endl;
     }
     os << endl;
@@ -73,7 +62,7 @@ int main(int argc, char *argv[]) {
     for( const char **opt = &available_options[0]; *opt != 0; ++opt ) {
         const char *name = *opt++;
         const char *desc = *opt;
-        options.add(name, desc);
+        g_options.add(name, desc);
     }
 
     // check correct number of parameters
@@ -84,7 +73,7 @@ int main(int argc, char *argv[]) {
     }
 
     int nfiles = 0;
-    Parser* reader = new Parser(Parser::cp2fsc, symbols, options);
+    Parser* reader = new Parser(Parser::cp2fsc, symbols, g_options);
 
     // parse options
     bool skip_options = false;
@@ -120,7 +109,7 @@ int main(int argc, char *argv[]) {
             opt_tag_all_literals = true;
         } else if( !skip_options && !strncmp(argv[k], "--options=", 10) ) {
             const char *options = &argv[k][10];
-            parse_options(options);
+            parse_options(g_options, options);
 
         // if '--', stop parsing options. Remaining fields are file names.
         } else if( !skip_options && !strcmp(argv[k], "--") ) {
@@ -150,16 +139,16 @@ int main(int argc, char *argv[]) {
     }
 
     // print file read by parser
-    if( options.is_enabled("parser:print:raw") ) {
+    if( g_options.is_enabled("parser:print:raw") ) {
         reader->print(cout);
     }
 
-    Instance instance(options);
+    Instance instance(g_options);
 
     cout << "instantiating control problem..." << endl;
     reader->emit_instance(instance);
     //delete reader;
-    if( options.is_enabled("problem:print:raw") ) {
+    if( g_options.is_enabled("problem:print:raw") ) {
         instance.print(cout);
         instance.write_domain(cout);
         instance.write_problem(cout);
@@ -168,7 +157,7 @@ int main(int argc, char *argv[]) {
     cout << "preprocessing control problem..." << endl;
     Preprocessor prep(instance);
     prep.preprocess(true);
-    if( options.is_enabled("problem:print:preprocessed") ) {
+    if( g_options.is_enabled("problem:print:preprocessed") ) {
         instance.print(cout);
         instance.write_domain(cout);
         instance.write_problem(cout);
@@ -177,7 +166,7 @@ int main(int argc, char *argv[]) {
     cout << "creating CP translation..." << endl;
     CP_Instance cp_instance(instance, opt_fsc_states,
                             opt_forbid_inconsistent_tuples, opt_compound_obs_as_fluents);
-    if( options.is_enabled("cp:print:raw") ) {
+    if( g_options.is_enabled("cp:print:raw") ) {
         cp_instance.write_domain(cout);
         cp_instance.write_problem(cout);
     }
@@ -190,14 +179,14 @@ int main(int argc, char *argv[]) {
     // static atoms. This odd behaviour could be a bug somewhere...
     cp_prep.preprocess(false);
   
-    if( options.is_enabled("cp:print:preprocessed") ) {
+    if( g_options.is_enabled("cp:print:preprocessed") ) {
         cp_instance.write_domain(cout);
         cp_instance.write_problem(cout);
     }
 
     cout << "creating KS0 translation..." << endl;
     KS0_Instance ks0_instance(cp_instance, opt_tag_all_literals);
-    if( options.is_enabled("ks0:print:raw") ) {
+    if( g_options.is_enabled("ks0:print:raw") ) {
         ks0_instance.write_domain(cout);
         ks0_instance.write_problem(cout);
     }
@@ -205,7 +194,7 @@ int main(int argc, char *argv[]) {
     cout << "preprocessing KS0 translation..." << endl;
     Preprocessor ks0_prep(ks0_instance);
     ks0_prep.preprocess(true);
-    if( options.is_enabled("ks0:print:preprocessed") ) {
+    if( g_options.is_enabled("ks0:print:preprocessed") ) {
         ks0_instance.write_domain(cout);
         ks0_instance.write_problem(cout);
     }

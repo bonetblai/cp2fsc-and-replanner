@@ -473,7 +473,6 @@ class PDDL_Base {
         void extract_atoms(unsigned_atom_set &atoms, bool only_sensed_atoms = false, bool only_affected_atoms = false) const;
         void extend_beam_for_variable(Variable &var) const;
         void extract_sensing_model_for_atom(const Atom &atom, std::vector<const SensingModelForObservableVariable*> &models) const;
-        void emit(Instance &ins, index_set &eff, Instance::when_vec &when = dummy_when_vec_) const;
         Effect* as_effect() const;
         std::string to_string() const;
         void print(std::ostream &os) const { os << to_string(); }
