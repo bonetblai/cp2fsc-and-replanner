@@ -164,7 +164,7 @@ int NewSolver<T>::solve(const T &initial_hidden_state,
 
             // apply action at state
             if( options_.is_enabled("solver:print:steps") ) {
-                std::cout << ">>> kp-action=" << kp_act.name_;
+                std::cout << ">>> kp-action=" << Utils::red() << kp_act.name_ << Utils::normal();
                 if( !kp_instance_.is_subgoaling_rule(plan[k]) )
                     std::cout << " [action=" << instance_.actions_[kp_instance_.remap_action(plan[k])]->name_ << "]" << std::endl;
                 else

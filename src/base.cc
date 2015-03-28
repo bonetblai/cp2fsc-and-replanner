@@ -1172,6 +1172,14 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
                 for( map<Atom, list<const And*> >::const_iterator kt = jt->second.begin(); kt != jt->second.end(); ++kt ) {
                     const Atom &value = kt->first;
                     lw1_create_type4_sensing_drule(action, variable, value, jt->second);
+                    if( options_.is_enabled("lw1:drule:sensing:type3") ) {
+                        const list<const And*> &dnf = kt->second;
+                        size_t num_type3_drules = 0;
+                        for( list<const And*>::const_iterator term = dnf.begin(); term != dnf.end(); ++term) {
+                            assert(dynamic_cast<const And*>(*term) != 0);
+                            lw1_create_type3_sensing_drule(variable, value, **term, dnf, num_type3_drules++);
+                        }
+                    }
                 }
             }
         }
@@ -1197,7 +1205,7 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
             for( map<const ObsVariable*, map<Atom, list<const And*> > >::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt ) {
                 const ObsVariable *variable = jt->first;
                 for( map<Atom, list<const And*> >::const_iterator kt = jt->second.begin(); kt != jt->second.end(); ++kt ) {
-                    const Atom &obs = kt->first;
+                    const Atom &value = kt->first;
                     const list<const And*> &dnf = kt->second;
 
                     //size_t num_type1_drules = 0;
@@ -1205,10 +1213,10 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
                     size_t num_type3_drules = 0;
                     for( list<const And*>::const_iterator term = dnf.begin(); term != dnf.end(); ++term) {
                         assert(dynamic_cast<const And*>(*term) != 0);
-                        //lw1_create_type1_sensing_drule(obs, **term, num_type1_drules++); // disabled: see comment below
-                        lw1_create_type2_sensing_drule(obs, **term, num_type2_drules++);
+                        //lw1_create_type1_sensing_drule(value, **term, num_type1_drules++); // disabled: see comment below
+                        lw1_create_type2_sensing_drule(value, **term, num_type2_drules++);
                         if( options_.is_enabled("lw1:drule:sensing:type3") )
-                            lw1_create_type3_sensing_drule(*variable, obs, **term, dnf, num_type3_drules++);
+                            lw1_create_type3_sensing_drule(*variable, value, **term, dnf, num_type3_drules++);
                     }
                 }
             }
@@ -3398,19 +3406,31 @@ bool PDDL_Base::SensingModelForObservableVariable::verify(const PDDL_Base *base)
     }
 
     // check format of DNF
-    if( !dnf_->is_dnf() ) {
-        cout << Utils::error() << "reduced formula '" << *dnf_
-             << "' for model of '" << *(const Atom*)literal_ << "' isn't dnf! "
-             << Utils::red() << "(discarding sensing model)" << Utils::normal() << endl;
-        cout << "AS-DNF=" << flush << *dnf_->as_dnf() << endl;
-        return_value = false;
-    } else if( !dnf_->is_dnf(true, base) ) {
+    bool in_dnf = dnf_->is_dnf();
+    if( !in_dnf ) {
+        if( base->options_.is_enabled("lw1:sensing:make-dnf") ) {
+            cout << Utils::yellow() << "transforming reduced formula '" << *dnf_
+                 << "' for model of '" << *(const Atom*)literal_ << "' into dnf"
+                 << Utils::normal() << endl;
+            const Condition *new_dnf = dnf_->as_dnf();
+            cout << "result is '" << *new_dnf << "'" << endl;
+            delete dnf_;
+            const_cast<SensingModelForObservableVariable*>(this)->dnf_ = new_dnf;
+            assert(dnf_->is_dnf());
+            in_dnf = true;
+        } else {
+            cout << Utils::error() << "reduced formula '" << *dnf_
+                 << "' for model of '" << *(const Atom*)literal_ << "' isn't dnf! "
+                 << Utils::red() << "(discarding sensing model)" << Utils::normal() << endl;
+            return_value = false;
+        }
+    }
+
+    if( in_dnf && !dnf_->is_dnf(true, base) ) {
         cout << Utils::warning() << "reduced dnf '" << *dnf_
              << "' for model of '" << *(const Atom*)literal_ << "' isn't positive!" << endl;
-        return_value = true;
-    } else {
-        return_value = true;
     }
+
     return return_value;
 }
 
@@ -3703,12 +3723,6 @@ void PDDL_Base::Sensing::extract_sensing_model_for_atom(const Atom &atom, vector
         const SensingModel *model = (*this)[k];
         model->extract_sensing_model_for_atom(atom, models);
     }
-}
-
-void PDDL_Base::Sensing::emit(Instance &ins, index_set &eff, Instance::when_vec &when) const {
-    //NEW_SENSING_SYNTAX: need fix // CHECK
-    cout << "void PDDL_Base::Sensing::emit(Instance &ins, index_set &eff, Instance::when_vec &when) const" << endl;
-    assert(0);
 }
 
 PDDL_Base::Effect* PDDL_Base::Sensing::as_effect() const {
@@ -4094,12 +4108,6 @@ void PDDL_Base::Action::emit(Instance &ins) const {
         effect_->emit(ins, act.effect_, act.when_);
         //cout << "    eff=" << *effect_ << endl;
     }
-#if 0 // CHECK
-    if( sensing_ != 0 ) {
-        sensing_->emit(ins, act.effect_, act.when_);
-        cout << "    sen=" << *sensing_ << endl;
-    }
-#endif
 }
 
 void PDDL_Base::Action::process_instance() const {

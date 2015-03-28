@@ -106,6 +106,7 @@ const char *available_options[] = {
     "lw1:print:axioms",                    "[LW1] print axioms generated when compiling static observables",
 
     "lw1:strict",                          "[LW1] strict compliance with lw1 specification",
+    "lw1:sensing:make-dnf",                "[LW1] when sensing model is not in DNF, do automatic translation (may be very inefficient)",
     "lw1:compile-static-observables",      "[LW1] compile the value of static observable fluents at init",
     "lw1:complete-effects",                "[LW1] complete effects for multivalued variables",
     "lw1:drule:sensing:type3",             "[LW1] generate deductive rules for sensing of type 3",
