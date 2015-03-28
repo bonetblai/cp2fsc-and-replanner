@@ -62,15 +62,15 @@
     (:variable wumpus-21 (wumpus-at p22-23) (wumpus-at p23-22))
     (:variable wumpus-22 (wumpus-at p23-24) (wumpus-at p24-23))
     (:variable wumpus-23 (wumpus-at p24-25) (wumpus-at p25-24))
-    (:obs-variable (stench-var ?p - pos) (stench ?p))
+    (:obs-variable (stench-var ?p - pos) (stench ?p))          ; binary variable
 
     (:action start
         :parameters (?j - pos)
         :precondition (and (need-start) (at ?j))
         :effect (not (need-start))
         :sensing
-            (:model-for (stench-var ?j) (stench ?j) (exists (?p - pos) (and (adj ?j ?p) (wumpus-at ?p))))
-            (:model-for (stench-var ?j) (not (stench ?j)) (forall (?p - pos) (or (not (adj ?j ?p)) (not (wumpus-at ?p)))))
+            (model-for (stench-var ?j) (stench ?j) (exists (?p - pos) (and (adj ?j ?p) (wumpus-at ?p))))
+            (model-for (stench-var ?j) (not (stench ?j)) (forall (?p - pos) (or (not (adj ?j ?p)) (not (wumpus-at ?p)))))
     )
 
     (:action move
@@ -78,8 +78,8 @@
         :precondition (and (adj ?i ?j) (at ?i) (not (wumpus-at ?j)) (not (need-start)))
         :effect (and (not (at ?i)) (at ?j))
         :sensing
-            (:model-for (stench-var ?j) (stench ?j) (exists (?p - pos) (and (adj ?j ?p) (wumpus-at ?p))))
-            (:model-for (stench-var ?j) (not (stench ?j)) (forall (?p - pos) (or (not (adj ?j ?p)) (not (wumpus-at ?p)))))
+            (model-for (stench-var ?j) (stench ?j) (exists (?p - pos) (and (adj ?j ?p) (wumpus-at ?p))))
+            (model-for (stench-var ?j) (not (stench ?j)) (forall (?p - pos) (or (not (adj ?j ?p)) (not (wumpus-at ?p)))))
     )
 
     (:action grab
