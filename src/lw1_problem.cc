@@ -721,11 +721,13 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                     assert(atoms_for_observables_[var_name].find(index) != atoms_for_observables_[var_name].end());
                     int var_index = varmap_[var_name];
                     const Variable &variable = *multivalued_variables_[var_index];
+                    assert(variable.domain_.find(index) != variable.domain_.end());
                     if( variable.domain_.size() == 1 ) {
-                        assert(variable.domain_.find(index) != variable.domain_.end());
                         nact->precondition_.insert(action.comment_[0] == '+' ? -(1 + 2*index + 1) : -(1 + 2*index));
                     } else {
-                        assert(0); // CHECK
+                        // CHECK: not sure if this is enough. Maybe need to generate clauses to reason about values of obs variables
+                        assert(action.comment_[0] == '+');
+                        nact->precondition_.insert(-(1 + 2*index + 1));
                     }
                 }
             }
