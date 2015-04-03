@@ -14,11 +14,12 @@
         :parameters (?i - ILLNESS)
         :precondition (not (dead))
         :effect
-            (forall (?j - ILLNESS)
-                ;(and (when (and (ill ?j) (= ?i ?j)) (cured))
-                (and (when (and (ill ?j) (= ?i ?j)) (and (cured) (not (ill ?j))))
-                     (when (and (ill ?j) (not (= ?i ?j))) (dead))
-                )
+            (and (forall (?j - ILLNESS)
+                     (and (when (and (ill ?j) (= ?i ?j)) (and (cured) (not (ill ?j))))
+                          (when (and (ill ?j) (not (= ?i ?j))) (dead))
+                     )
+                 )
+                 (when (cured) (dead))
             )
     )
 
