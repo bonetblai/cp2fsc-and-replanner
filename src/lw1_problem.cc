@@ -436,6 +436,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                             if( it != jt ) clause.push_back(-(1 + 2**jt+1));
                         }
                         clauses_for_axioms_.push_back(clause);
+                        //cout << "CLAUSE0: "; LW1_State::print_clause(cout, clause, this); cout << endl;
                     }
 
                     // for each pair of values x and x', Kx => K-x'
@@ -447,6 +448,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                                 clause.push_back(-(1 + 2**it));
                                 clause.push_back(1 + 2**jt+1);
                                 clauses_for_axioms_.push_back(clause);
+                                //cout << "CLAUSE1: "; LW1_State::print_clause(cout, clause, this); cout << endl;
                             }
                         }
                     }
@@ -473,6 +475,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                     int single_effect_index = *act.effect_.begin() > 0 ? *act.effect_.begin() - 1 : -*act.effect_.begin() - 1;
                     clause.push_back(*act.effect_.begin() > 0 ? 1 + 2*single_effect_index : 1 + 2*single_effect_index + 1);
                     clauses_for_axioms_.push_back(clause);
+                    //cout << "CLAUSE2: "; LW1_State::print_clause(cout, clause, this); cout << endl;
                 }
             }
         }
@@ -489,13 +492,14 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                         clause.reserve(1 + act.precondition_.size());
 
                         int index = *it > 0 ? *it - 1 : -*it - 1;
-                        clause.push_back(1 + (*it > 0 ? 2*index : 2*index+1));
-                        for( index_set::const_iterator it = act.precondition_.begin(); it != act.precondition_.end(); ++it ) {
-                            int index = *it > 0 ? *it - 1 : -*it - 1;
-                            clause.push_back(-(1 + (*it > 0 ? 2*index : 2*index+1)));
+                        clause.push_back(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
+                        for( index_set::const_iterator jt = act.precondition_.begin(); jt != act.precondition_.end(); ++jt ) {
+                            int index = *jt > 0 ? *jt - 1 : -*jt - 1;
+                            clause.push_back(*jt > 0 ? -(1 + 2*index) : -(1 + 2*index + 1));
                         }
-                        //cout << "CLAUSE: "; LW1_State::print_clause(cout, clause, this); cout << endl;
                         clauses_for_axioms_.push_back(clause);
+                        //cout << "CLAUSE3: "; LW1_State::print_clause(cout, clause, this); cout << endl;
+                        //act.print(cout, ins);
                     }
                 }
             }
@@ -511,7 +515,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                 clause.push_back(-(1 + 2*k));
                 clause.push_back(-(1 + 2*k + 1));
                 clauses_for_axioms_.push_back(clause);
-                //cout << "CLAUSE: " << flush; LW1_State::print_clause(cout, clause, this); cout << endl;
+                //cout << "CLAUSE4: " << flush; LW1_State::print_clause(cout, clause, this); cout << endl;
             }
 
             // observable literals
@@ -698,10 +702,25 @@ void LW1_Instance::create_drule_for_var(const Action &action) {
 void LW1_Instance::create_drule_for_sensing(const Action &action) {
     string action_name = action.name_->to_string();
     if( options_.is_enabled("lw1:strict") ) {
-        assert((action_name.compare(0, 20, "drule-sensing-type4-") == 0) || (action_name.compare(0, 20, "drule-sensing-type5-") == 0));
-        assert(options_.is_enabled("lw1:literals-for-observables") || (action_name.compare(0, 20, "drule-sensing-type4-") == 0));
+        assert((action_name.compare(0, 20, "drule-sensing-type3-") == 0) || (action_name.compare(0, 20, "drule-sensing-type4-") == 0) || (action_name.compare(0, 20, "drule-sensing-type5-") == 0));
+        assert(options_.is_enabled("lw1:literals-for-observables") || (action_name.compare(0, 20, "drule-sensing-type5-") != 0));
+        assert(options_.is_enabled("lw1:drule:sensing:type3") || (action_name.compare(0, 20, "drule-sensing-type3-") != 0));
 
-        if( action_name.compare(0, 20, "drule-sensing-type4-") == 0 ) {
+        if( action_name.compare(0, 20, "drule-sensing-type3-") == 0 ) {
+            Action *nact = new Action(new CopyName(action_name));
+            for( index_set::const_iterator it = action.precondition_.begin(); it != action.precondition_.end(); ++it ) {
+                int index = *it > 0 ? *it - 1 : -*it - 1;
+                nact->precondition_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
+            }
+
+            for( index_set::const_iterator it = action.effect_.begin(); it != action.effect_.end(); ++it ) {
+                int index = *it > 0 ? *it - 1 : -*it - 1;
+                nact->effect_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
+                //nact->precondition_.insert(*it > 0 ? -(1 + 2*index + 1) : -(1 + 2*index)); // CHECK: is this necessary?
+            }
+
+            drule_store_.insert(make_pair(nact->precondition_, nact));
+        } else if( action_name.compare(0, 20, "drule-sensing-type4-") == 0 ) {
             Action *nact = new Action(new CopyName(action_name));
 
             // copy preconditions: there should be just one or two
@@ -756,6 +775,7 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                 }
                 nact->when_.push_back(w);
             }
+
             drule_store_.insert(make_pair(nact->precondition_, nact));
         } else {
             // skip sensing drules of type5 as they are not passed to classical problem

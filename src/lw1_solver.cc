@@ -186,7 +186,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
 #endif
 
         // 0. Add observations as unit clauses
-        if( options_.is_enabled("lw1:inference:up:enhanced") ) {
+        if( true || options_.is_enabled("lw1:inference:up:enhanced") ) { // CHECK
             for( set<int>::const_iterator it = sensed_at_step.begin(); it != sensed_at_step.end(); ++it ) {
                 int k_literal = *it > 0 ? 2 * (*it - 1) : 2 * (-*it - 1) + 1;
 #ifdef DEBUG
@@ -261,9 +261,9 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                         for( size_t j = 0; j < cnf_for_sensing_model.size(); ++j ) {
                             const clause_t &clause = cnf_for_sensing_model[j];
 #ifdef DEBUG
-                            cout << Utils::red() << "[Theory] Add K_o clause: ";
-                            state.print_clause(cout, clause, &kp_instance_);
-                            cout << Utils::normal() << endl;
+                            //cout << Utils::red() << "[Theory] Add K_o clause: ";
+                            //state.print_clause(cout, clause, &kp_instance_);
+                            //cout << Utils::normal() << endl;
 #endif
 #if defined(UP)
                             Inference::Propositional::Clause cl;
