@@ -15,7 +15,7 @@
 
     (:variable agent-pos (forall (?i - pos) (at ?i)))
     (:variable (door-at ?c - col) such-that (even ?c) (forall (?i - pos) (when (at-col ?c ?i) (opened ?i))))
-    (:obs-variable (obs-at ?i - pos) (obs-open ?i))
+    (:obs-variable (obs-at ?i - pos) (obs-open ?i))  ; binary variable
                 
     (:action start
         :parameters (?i - pos)
