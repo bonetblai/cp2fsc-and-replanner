@@ -3,9 +3,10 @@
 
 #include "problem.h"
 #include "index.h"
+#include <cassert>
 #include <iostream>
 #include <list>
-#include <cassert>
+#include <string>
 
 #if __clang_major__ >= 5
 #include <unordered_map>
@@ -206,14 +207,20 @@ class State {
     bool operator()(const State *s1, const State *s2) const { return *s1 == *s2; }
     size_t operator()(const State *s) const { return s->hash(); }
 
-    static void print_literal(std::ostream &os, const int literal, const Instance *ins = 0) {
+    static std::string to_string(int literal, const Instance *ins = 0) {
         if( ins == 0 ) {
-            os << literal;
+            return std::to_string(literal);
         } else {
-            os << (literal < 0 ? "(not " : "")
-               << ins->atoms_[literal < 0 ? -literal - 1 : literal - 1]->name_
-               << (literal < 0 ? ")" : "");
-        }
+            std::string str;
+            if( literal < 0 ) str += "(not ";
+            str += std::string("(") + ins->atoms_[literal < 0 ? -literal - 1 : literal - 1]->name_->to_string() + ")";
+            if( literal < 0 ) str += ")";
+            return str;
+        } 
+    }
+
+    static void print_literal(std::ostream &os, int literal, const Instance *ins = 0) {
+        os << to_string(literal, ins);
     }
 
     void print(std::ostream &os, const Instance *ins = 0) const {

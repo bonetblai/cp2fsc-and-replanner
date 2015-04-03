@@ -107,10 +107,15 @@ const char *available_options[] = {
 
     "lw1:strict",                          "[LW1] strict compliance with lw1 specification",
     "lw1:sensing:make-dnf",                "[LW1] when sensing model is not in DNF, do automatic translation (may be very inefficient)",
-    "lw1:compile-static-observables",      "[LW1] compile the value of static observable fluents at init",
-    "lw1:complete-effects",                "[LW1] complete effects for multivalued variables",
-    "lw1:drule:sensing:type3",             "[LW1] generate deductive rules for sensing of type 3",
 
+    // lw1 planner (extensions)
+    "lw1:literals-for-observables",        "[LW1] add literals for observable variables (useful in problem with width > 1)",
+    //"lw1:literals-for-sensed-variables",        "",
+    "lw1:compile-static-observables",      "[LW1] compile the value of static observable fluents at init", // CHECK
+    "lw1:complete-effects",                "[LW1] complete effects for multivalued variables", // CHECK
+    "lw1:drule:sensing:type3",             "[LW1] generate deductive rules for sensing of type 3", // CHECK (rename types)
+
+    // lw1 planner (inference)
     "lw1:inference:forward-chaining",      "[LW1] uses forward chaining of drules to make inference (old and sometimes incorrect method)",
     "lw1:inference:up",                    "[LW1] uses unit resolution as inference mechanism",
     "lw1:inference:up:1-lookahead",        "[LW1] uses unit resolution with 1-lookahead as inference mechanism",

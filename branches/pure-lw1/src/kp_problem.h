@@ -22,6 +22,9 @@ class KP_Instance : public Instance {
     float get_inference_time() const {
         return inference_time_;
     }
+    void reset_inference_time() {
+        inference_time_ = 0;
+    }
 
     virtual void cross_reference() = 0;
     virtual size_t remap_action(size_t action_id) const = 0;

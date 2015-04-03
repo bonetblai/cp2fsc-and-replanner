@@ -457,9 +457,8 @@ positive_literal:
       TK_OPEN TK_PRED_SYMBOL argument_list TK_CLOSE {
           PredicateSymbol* p = static_cast<PredicateSymbol*>($2->val);
           if( p->param_.size() != $3->size() ) {
-              std::ostringstream msg;
-              msg << "wrong number of arguments for predicate '" << p->print_name_ << "'";
-              log_error(const_cast<char*>(msg.str().c_str()));
+              std::string msg = std::string("wrong number of arguments for predicate '") + p->print_name_ + "'";
+              log_error(const_cast<char*>(msg.c_str()));
           } else {
               $$ = new Atom(p);
               $$->param_ = *$3;
@@ -863,11 +862,11 @@ simple_variable_decl:
               var = new StateVariable($3->text);
           else
               var = new ObsVariable($3->text);
-          multivalued_variables_.push_back(var);
+          lw1_multivalued_variables_.push_back(var);
           effect_vec_ptr_ = &var->domain_;
       }
       fluent_list_decl TK_CLOSE {
-          $3->val = multivalued_variables_.back();
+          $3->val = lw1_multivalued_variables_.back();
       }
     | TK_OPEN variable_type TK_OPEN TK_NEW_SYMBOL {
           Variable *var = 0;
@@ -888,7 +887,7 @@ simple_variable_decl:
           schema_.pop_back();
           clear_param(variable->param_);
           $4->val = variable;
-          multivalued_variables_.push_back(variable);
+          lw1_multivalued_variables_.push_back(variable);
       }
     | TK_OPEN KW_VARIABLE error TK_CLOSE {
           log_error((char*)"syntax error in state variable declaration");
@@ -904,10 +903,10 @@ variable_type:
 variable_group_decl:
       TK_OPEN KW_VGROUP TK_NEW_SYMBOL {
           VariableGroup *group = new VariableGroup($3->text);
-          variable_groups_.push_back(group);
+          lw1_variable_groups_.push_back(group);
       }
       state_variable_list_decl TK_CLOSE {
-          variable_groups_.back()->group_ = *$5;
+          lw1_variable_groups_.back()->group_ = *$5;
           delete $5;
       }
     | TK_OPEN KW_VGROUP TK_OPEN TK_NEW_SYMBOL {
@@ -926,7 +925,7 @@ variable_group_decl:
           delete $10;
           clear_param(group->param_);
           $4->val = group;
-          variable_groups_.push_back(group);
+          lw1_variable_groups_.push_back(group);
       }
     | TK_OPEN KW_VGROUP error TK_CLOSE {
           log_error((char*)"syntax error in variable group declaration");
@@ -997,7 +996,7 @@ forall_state_variable_list_decl:
 domain_default_sensing:
       TK_OPEN KW_DEFAULT_SENSING sensing TK_CLOSE {
           declare_lw1_translation();
-          default_sensing_proxy_ = $3;
+          lw1_default_sensing_proxy_ = $3;
       }
     ;
 

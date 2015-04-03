@@ -38,6 +38,8 @@ void LW1_Solver::compute_and_add_observations(const Instance::Action *last_actio
                     int index = *variable.domain_.begin();
                     bool satisfy = value_observable_literal(hidden, *last_action, *jt, index);
                     sensed_at_step.insert(satisfy ? 1 + index : -(1 + index));
+                    if( options_.is_enabled("lw1:literals-for-observables") )
+                        update_state_with_literals_for_observables(state, *last_action, variable, satisfy ? 1 + index : -(1 + index));
                 } else {
                     bool some_value_sensed = false;
                     for( set<int>::const_iterator kt = variable.domain_.begin(); kt != variable.domain_.end(); ++kt ) {
@@ -47,9 +49,11 @@ void LW1_Solver::compute_and_add_observations(const Instance::Action *last_actio
                             if( !some_value_sensed ) {
                                 sensed_at_step.insert(1 + index);
                                 some_value_sensed = true;
+                                if( options_.is_enabled("lw1:literals-for-observables") )
+                                    update_state_with_literals_for_observables(state, *last_action, variable, 1 + index);
                             } else {
                                 cout << Utils::error() << "more than one value sensed for variable '"
-                                     << variable.name_ << "' with last-action '"
+                                     << variable.name_ << "' with action '"
                                      << last_action->name_->to_string() << "'"
                                      << endl;
                             }
@@ -57,7 +61,7 @@ void LW1_Solver::compute_and_add_observations(const Instance::Action *last_actio
                     }
                     if( !some_value_sensed ) {
                         cout << Utils::error() << "no value sensed for variable '"
-                             << variable.name_ << "' with last-action '"
+                             << variable.name_ << "' with action '"
                              << last_action->name_->to_string() << "'"
                              << endl;
                     }
@@ -202,9 +206,9 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         // 1. Positive literals from state
         for( STATE_CLASS::const_iterator it = state.begin(); it != state.end(); ++it ) {
 #ifdef DEBUG
-            cout << Utils::red() << "[Theory] Add literal: ";
-            state.print_literal(cout, 1 + *it, &kp_instance_);
-            cout << Utils::normal() << endl;
+            //cout << Utils::red() << "[Theory] Add literal: ";
+            //state.print_literal(cout, 1 + *it, &kp_instance_);
+            //cout << Utils::normal() << endl;
 #endif
 #if defined(UP)
             Inference::Propositional::Clause cl;
@@ -395,7 +399,7 @@ bool LW1_Solver::value_observable_literal(const STATE_CLASS &hidden,
     if( variable.is_state_variable_ ) {
 #ifdef DEBUG
         cout << Utils::cyan()
-             << "Evaluation: last-action=" << action_key
+             << "Evaluation: action=" << action_key
              << ", variable=" << variable.name_
              << ", value=";
         State::print_literal(cout, 1 + index, &instance_);
@@ -451,7 +455,7 @@ bool LW1_Solver::value_observable_literal(const STATE_CLASS &hidden,
 
 #ifdef DEBUG
     cout << Utils::cyan()
-         << "Evaluation: last-action=" << action_key
+         << "Evaluation: action=" << action_key
          << ", variable=" << variable.name_
          << ", value=";
     State::print_literal(cout, 1 + index, &instance_);
@@ -460,6 +464,27 @@ bool LW1_Solver::value_observable_literal(const STATE_CLASS &hidden,
 #endif
 
     return value;
+}
+
+void LW1_Solver::update_state_with_literals_for_observables(STATE_CLASS &state,
+                                                            const Instance::Action &action,
+                                                            const LW1_Instance::Variable &variable,
+                                                            int value) const {
+    const LW1_Instance &lw1 = *static_cast<const LW1_Instance*>(&kp_instance_);
+    int index = value > 0 ? value - 1 : -value - 1;
+    map<string, set<int> >::const_iterator it = lw1.atoms_for_observables_.find(variable.name_);
+    if( (it != lw1.atoms_for_observables_.end()) && (it->second.find(index) != it->second.end()) ) {
+        state.add(value > 0 ? 2*index : 2*index + 1);
+#ifdef DEBUG
+        cout << Utils::cyan()
+             << "Update state: variable=" << variable.name_
+             << ", value=" << value
+             << ", value-index=" << index
+             << ", atom=";
+        State::print_literal(cout, value, &lw1.po_instance_);
+        cout << endl;
+#endif
+    }
 }
 
 void LW1_Solver::fill_relevant_sensing_models(const LW1_Instance &lw1,
