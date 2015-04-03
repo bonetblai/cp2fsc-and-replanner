@@ -27,15 +27,16 @@
         (done-with ?p - pos)
 
         (start-obs ?p - pos)
-        (first-obs)
+        (first-obs ?p - pos) ; NEED FIX: remove parameter ?p
         (obs0-at ?p - pos)
         (obs1-at ?p - pos)
         (obs2-at ?p - pos)
     )
 
+    (:variable (mine-var ?p - pos) (mine-at ?p))
     (:variable first-movement (forall (?p - pos) (first-move ?p)))
     (:obs-variable obs-for-start-action (forall (?p - pos) (start-obs ?p)))
-    (:obs-variable first-obs-var (first-obs))
+    (:obs-variable (first-obs-var ?p - pos) (first-obs ?p)) ; NEED FIX: remove parameter ?p
     (:obs-variable (obs-at ?p - pos) (obs0-at ?p) (obs1-at ?p) (obs2-at ?p))
 
     (:action start-action
