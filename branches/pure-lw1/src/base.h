@@ -894,7 +894,7 @@ class PDDL_Base {
     void lw1_create_type2_sensing_drule(const Atom &obs, const And &term, int index);
 
     // methods to create type3 deductive rules (for multivalued variables)
-    void lw1_create_type3_sensing_drule(const ObsVariable &variable, const Atom &obs, const And &term, const std::list<const And*> &dnf, int index);
+    void lw1_create_type3_sensing_drule(const ObsVariable &variable, const Atom &value, const And &term, const std::list<const And*> &dnf, int index);
     const Atom& lw1_fetch_atom_for_negated_term(const And &term);
 
     // methods to create type4 deductive rules (for multivalued variables)

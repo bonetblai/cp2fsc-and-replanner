@@ -1300,23 +1300,25 @@ void PDDL_Base::lw1_create_type2_sensing_drule(const Atom &obs, const And &term,
     }
 }
 
-void PDDL_Base::lw1_create_type3_sensing_drule(const ObsVariable &variable, const Atom &obs, const And &term, const list<const And*> &dnf, int index) {
+void PDDL_Base::lw1_create_type3_sensing_drule(const ObsVariable &variable, const Atom &value, const And &term, const list<const And*> &dnf, int index) {
     // revise beam: at this stage, the beam only contains non-static atoms. Hence, if the beam
-    // for obs is non-empty, don't generate type3 sensing drule
-    assert(variable.grounded_domain_.find(obs) != variable.grounded_domain_.end());
-    map<Atom, unsigned_atom_set, Atom::unsigned_less_comparator>::const_iterator it = variable.beam_.find(obs);
+    // for value is non-empty, don't generate type3 sensing drule
+    assert(variable.grounded_domain_.find(value) != variable.grounded_domain_.end());
+    map<Atom, unsigned_atom_set, Atom::unsigned_less_comparator>::const_iterator it = variable.beam_.find(value);
     assert(it != variable.beam_.end());
     if( !it->second.empty() ) {
-        //cout << Utils::warning() << "skipping type3 sensing rules for '" << obs << "' because they are not safe" << endl;
+        //cout << Utils::warning() << "skipping type3 sensing rules for '" << value << "' because they are not safe" << endl;
         return;
     }
 
-    cout << "Type3: var=" << variable << ", obs=" << obs << ", term=" << term << ", dnf=[";
-    for( list<const And*>::const_iterator it = dnf.begin(); it != dnf.end(); ++it )
-        cout << **it << ",";
-    cout << "]" << endl;
+#ifdef DEBUG
+    //cout << "Type3: var=" << variable << ", value=" << value << ", term=" << term << ", dnf=[";
+    //for( list<const And*>::const_iterator it = dnf.begin(); it != dnf.end(); ++it )
+    //    cout << **it << ",";
+    //cout << "]" << endl;
+#endif
 
-    string name = string("drule-sensing-type3-") + obs.to_string(false, true) + "-" + to_string(index);
+    string name = string("drule-sensing-type3-") + value.to_string(false, true) + "-" + to_string(index);
     Action *drule = new Action(strdup(name.c_str()));
 
     // precondition
@@ -1325,7 +1327,7 @@ void PDDL_Base::lw1_create_type3_sensing_drule(const ObsVariable &variable, cons
         if( *other_term != &term )
             precondition->push_back(Literal(lw1_fetch_atom_for_negated_term(**other_term)).copy());
     }
-    precondition->push_back(Literal(obs).copy());
+    precondition->push_back(Literal(value).copy());
     drule->precondition_ = precondition;
 
     // effect
