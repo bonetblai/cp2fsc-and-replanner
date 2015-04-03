@@ -25,8 +25,9 @@ class LW1_Instance : public KP_Instance {
     std::vector<int> remap_;
     std::map<std::string, int> obs_rules_by_name_;
 
-    // last-action-atoms in po_instance
+    // last-action-atoms and atoms-for-sensing in po_instance
     std::set<int> last_action_atoms_;
+    std::map<std::string, std::set<int> > atoms_for_observables_;
 
     // for subgoaling
     std::vector<Atom*> atoms_for_unknown_observables_at_init_;
@@ -63,7 +64,8 @@ class LW1_Instance : public KP_Instance {
 
     LW1_Instance(const Instance &instance,
                  const PDDL_Base::variable_vec &multivalued_variables,
-                 const std::list<std::pair<const PDDL_Base::Action*, const PDDL_Base::Sensing*> > &sensing_models);
+                 const std::list<std::pair<const PDDL_Base::Action*, const PDDL_Base::Sensing*> > &sensing_models,
+                 const std::map<std::string, std::set<std::string> > &accepted_literals_for_observables);
     ~LW1_Instance();
 
     bool is_forbidden(int literal) const;

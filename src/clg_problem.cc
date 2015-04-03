@@ -183,11 +183,8 @@ void CLG_Instance::create_drules_from_invariant(const Invariant &invariant) {
     if( (invariant.size() == 2) && (invariant[0] == -invariant[1]) ) return;
 
     for( size_t k = 0; k < invariant.size(); ++k ) {
-        ostringstream s;
-        s << "drule-invariant-"
-          << (invariant.type_ == Invariant::AT_LEAST_ONE ? "alo-" : "amo-")
-          << drule_store_.size();
-        Action *nact = new Action(new CopyName(s.str()));
+        string name = string("drule-invariant-") + (invariant.type_ == Invariant::AT_LEAST_ONE ? "alo-" : "amo-") + to_string(drule_store_.size());
+        Action *nact = new Action(new CopyName(name));
 
         // setup precondition
         assert(invariant.Xprecondition_.empty());
@@ -290,9 +287,8 @@ void CLG_Instance::create_sensor(const Sensor &sensor) {
         assert(*it > 0);
         int idx = *it - 1;
         for( size_t n = 0; n < 2; ++n ) {
-            ostringstream s;
-            s << sensor.name_->to_string() << "-obs" << obs << "-ver" << n;
-            Action &nact = new_action(new CopyName(s.str()));
+            string name = sensor.name_->to_string() + "-obs" + to_string(obs) + "-ver" + to_string(n);
+            Action &nact = new_action(new CopyName(name));
 
             // precondition
             nact.precondition_.insert(common_condition.begin(), common_condition.end());

@@ -48,7 +48,8 @@ void LW1_Instance::Variable::print(ostream &os) const {
 
 LW1_Instance::LW1_Instance(const Instance &ins,
                            const PDDL_Base::variable_vec &multivalued_variables,
-                           const std::list<std::pair<const PDDL_Base::Action*, const PDDL_Base::Sensing*> > &sensing_models)
+                           const list<pair<const PDDL_Base::Action*, const PDDL_Base::Sensing*> > &sensing_models,
+                           const map<string, set<string> > &accepted_literals_for_observables)
   : KP_Instance(ins.options_),
     n_standard_actions_(0),
     n_sensor_actions_(0),
@@ -76,18 +77,18 @@ LW1_Instance::LW1_Instance(const Instance &ins,
     atoms_.reserve(2*ins.n_atoms());
     for( size_t k = 0; k < ins.n_atoms(); ++k ) {
         string name = ins.atoms_[k]->name_->to_string();
-        if( name.compare(0, 21, "last-action-atom-for-") != 0 ) {
-            new_atom(new CopyName("(K_" + name + ")"));      // even-numbered atoms
-            new_atom(new CopyName("(K_not_" + name + ")"));  // odd-numbered atoms
-        } else {
-            new_atom(new CopyName("(" + name + ")"));        // even-numbered atoms
-            new_atom(new CopyName("(" + name + "_UNUSED)")); // odd-numbered atoms
+        if( name.compare(0, 21, "last-action-atom-for-") == 0 ) {
+            new_atom(new CopyName(name));                  // even-numbered atoms
+            new_atom(new CopyName(name + "_UNUSED"));      // odd-numbered atoms
             last_action_atoms_.insert(k);
+        } else {
+            new_atom(new CopyName("K_" + name));           // even-numbered atoms
+            new_atom(new CopyName("K_not_" + name));       // odd-numbered atoms
         }
     }
 
     // create (new-goal) atom
-    new_goal_ = &new_atom(new CopyName("(new-goal)"));
+    new_goal_ = &new_atom(new CopyName("new-goal"));
     goal_literals_.insert(1 + new_goal_->index_);
 
     // extract multivalued variables
@@ -98,7 +99,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
         set<int> domain;
         map<int, index_set> beams;
         int var_index = multivalued_variables_.size();
-        varmap_.insert(make_pair(var.print_name_, var_index));
+        varmap_.insert(make_pair(var.to_string(false, true), var_index));
 
         for( PDDL_Base::unsigned_atom_set::const_iterator it = var.grounded_domain_.begin(); it != var.grounded_domain_.end(); ++it ) {
             assert(!it->negated_);
@@ -130,8 +131,24 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                 beams[atom_index] = beam;
             }
         }
-        multivalued_variables_.push_back(new Variable(var.print_name_, var.is_observable_variable(), var.is_state_variable(), domain, beams));
+        multivalued_variables_.push_back(new Variable(var.to_string(false, true), var.is_observable_variable(), var.is_state_variable(), domain, beams));
         //multivalued_variables_.back()->print(cout); cout << endl;
+    }
+
+    // store accepted literals for observables
+    if( options_.is_enabled("lw1:literals-for-observables") ) {
+        for( map<string, set<string> >::const_iterator it = accepted_literals_for_observables.begin(); it != accepted_literals_for_observables.end(); ++it ) {
+            const string &var_name = it->first;
+            assert(varmap_.find(var_name) != varmap_.end());
+            for( set<string>::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt ) {
+                const string &value_name = *jt;
+                if( value_name.substr(0, 4) != "not_" ) {
+                    int index = get_atom_index(ins, value_name);
+                    atoms_for_observables_[var_name].insert(index);
+                    //cout << "Literals for observables: variable=" << var_name << ", value=" << value_name << ", index=" << index << endl;
+                }
+            }
+        }
     }
 
     // extract sensing models into dnf and (complemented and into K-rules) cnf
@@ -142,7 +159,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
             if( dynamic_cast<const PDDL_Base::SensingModelForObservableVariable*>(sensing[k]) != 0 ) {
                 const PDDL_Base::SensingModelForObservableVariable &model = *static_cast<const PDDL_Base::SensingModelForObservableVariable*>(sensing[k]);
                 assert(model.variable_ != 0);
-                string var_name = model.variable_->print_name_;
+                string var_name = model.variable_->to_string(false, true);
                 assert(varmap_.find(var_name) != varmap_.end());
                 int var_index = varmap_[var_name];
                 string atom_name = model.literal_->to_string(model.literal_->negated_, true);
@@ -215,7 +232,6 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                                 sensing_models_as_k_cnf_[action_key][var_key][value_key].push_back(k_clause);
                                 //cout << "INSERT: k-clause="; LW1_State::print_clause(cout, k_clause, this); cout << endl;
                                 //cout << "INSERT: model for action-key=" << action_key << ", var-key=" << var_key << ", value-key=" << value_key << endl;
-                                //assert(0);
                             }
                             sensing_models_as_dnf_[action_key][var_key][value_key].push_back(term_for_dnf);
                         } else if( dynamic_cast<const PDDL_Base::Literal*>(disjunction[j]) != 0 ) {
@@ -237,7 +253,6 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                             assert(unit_k_clause.size() == 1);
                             sensing_models_as_k_cnf_[action_key][var_key][value_key].push_back(unit_k_clause);
                             //cout << "INSERT: model for action-key=" << action_key << ", var-key=" << var_key << ", value-key=" << value_key << endl;
-                            //assert(0);
                         } else {
                             cout << Utils::error() << "formula '" << *disjunction[j]
                                  << "' for model of '" << var_name << ":" << atom_name
@@ -293,7 +308,6 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                         sensing_models_as_k_cnf_[action_key][var_key][value_key].push_back(k_clause);
                         //cout << "INSERT: k-clause="; LW1_State::print_clause(cout, k_clause, this); cout << endl;
                         //cout << "INSERT: model for action-key=" << action_key << ", var-key=" << var_key << ", value-key=" << value_key << endl;
-                        //assert(0);
                     }
                     sensing_models_as_dnf_[action_key][var_key][value_key].push_back(term_for_dnf);
                 } else if( dynamic_cast<const PDDL_Base::Literal*>(model.dnf_) != 0 ) {
@@ -315,11 +329,9 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                     assert(unit_k_clause.size() == 1);
                     sensing_models_as_k_cnf_[action_key][var_key][value_key].push_back(unit_k_clause);
                     //cout << "INSERT: model for action-key=" << action_key << ", var-key=" << var_key << ", value-key=" << value_key << endl;
-                    //assert(0);
                 } else if( dynamic_cast<const PDDL_Base::Constant*>(model.dnf_) != 0 ) {
                     //cout << "dnf is constant: " << *model.dnf_ << endl;
                     // nothing to do. Obviate formula
-                    //assert(0);
                 } else {
                     cout << Utils::error() << "formula '" << *model.dnf_
                          << "' for model of '" << var_name << ":" << atom_name
@@ -329,7 +341,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
             } else if( dynamic_cast<const PDDL_Base::SensingModelForStateVariable*>(sensing[k]) != 0 ) {
                 const PDDL_Base::SensingModelForStateVariable &model = *static_cast<const PDDL_Base::SensingModelForStateVariable*>(sensing[k]);
                 assert(model.variable_ != 0);
-                string var_name = model.variable_->print_name_;
+                string var_name = model.variable_->to_string(false, true);
                 assert(varmap_.find(var_name) != varmap_.end());
                 vars_sensed_by_action_[action.print_name_].insert(varmap_[var_name]);
             }
@@ -338,12 +350,8 @@ LW1_Instance::LW1_Instance(const Instance &ins,
 
     // set initial atoms
     for( index_set::const_iterator it = ins.init_.literals_.begin(); it != ins.init_.literals_.end(); ++it ) {
-        int idx = *it > 0 ? *it-1 : -*it-1;
-        if( *it > 0 ) {
-            init_.literals_.insert(1 + 2*idx);
-        } else {
-            init_.literals_.insert(1 + 2*idx+1);
-        }
+        int index = *it > 0 ? *it-1 : -*it-1;
+        init_.literals_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
     }
 
     // add known literals in initial situation
@@ -442,6 +450,29 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                             }
                         }
                     }
+                }
+            }
+        }
+
+        // create clauses for type5 sensing drules
+        if( options_.is_enabled("lw1:literals-for-observables") ) {
+            for( size_t k = 0; k < ins.n_actions(); ++k ) {
+                const Action &act = *ins.actions_[k];
+                if( act.name_->to_string().compare(0, 20, "drule-sensing-type5-") == 0 ) {
+                    assert(act.effect_.size() == 1);
+                    assert(act.when_.empty());
+
+                    vector<int> clause;
+                    clause.reserve(act.precondition_.size() + 1);
+
+                    // preconditions and effects
+                    for( index_set::const_iterator it = act.precondition_.begin(); it != act.precondition_.end(); ++it ) {
+                        int index = *it > 0 ? *it - 1 : -*it - 1;
+                        clause.push_back(*it > 0 ? -(1 + 2*index) : -(1 + 2*index + 1));
+                    }
+                    int single_effect_index = *act.effect_.begin() > 0 ? *act.effect_.begin() - 1 : -*act.effect_.begin() - 1;
+                    clause.push_back(*act.effect_.begin() > 0 ? 1 + 2*single_effect_index : 1 + 2*single_effect_index + 1);
+                    clauses_for_axioms_.push_back(clause);
                 }
             }
         }
@@ -667,43 +698,66 @@ void LW1_Instance::create_drule_for_var(const Action &action) {
 void LW1_Instance::create_drule_for_sensing(const Action &action) {
     string action_name = action.name_->to_string();
     if( options_.is_enabled("lw1:strict") ) {
-        assert(action_name.compare(0, 20, "drule-sensing-type4-") == 0);
+        assert((action_name.compare(0, 20, "drule-sensing-type4-") == 0) || (action_name.compare(0, 20, "drule-sensing-type5-") == 0));
+        assert(options_.is_enabled("lw1:literals-for-observables") || (action_name.compare(0, 20, "drule-sensing-type4-") == 0));
 
-        Action *nact = new Action(new CopyName(action_name));
+        if( action_name.compare(0, 20, "drule-sensing-type4-") == 0 ) {
+            Action *nact = new Action(new CopyName(action_name));
 
-        // copy preconditions: there should be just one
-        //assert(action.precondition_.size() == 1);
-        for( index_set::const_iterator it = action.precondition_.begin(); it != action.precondition_.end(); ++it ) {
-            int index = *it > 0 ? *it - 1 : -*it - 1;
-            nact->precondition_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
-        }
-
-        // each unconditional effect L becomes conditional of form: -K-L => KL
-        for( index_set::const_iterator it = action.effect_.begin(); it != action.effect_.end(); ++it ) {
-            int index = *it > 0 ? *it - 1 : -*it - 1;
-            When w;
-            w.condition_.insert(*it > 0 ? -(1 + 2*index + 1) : -(1 + 2*index));
-            w.effect_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
-            nact->when_.push_back(w);
-        }
-
-        // each conditional effect C => L becomes: KC, -K-L => KL
-        for( size_t k = 0; k < action.when_.size(); ++k ) {
-            const When &when = action.when_[k];
-            assert(when.effect_.size() == 1);
-            int head = *when.effect_.begin();
-            int head_index = head > 0 ? head - 1 : -head - 1;
-            When w;
-            w.effect_.insert(head > 0 ? 1 + 2*head_index : 1 + 2*head_index + 1);
-            w.condition_.insert(head > 0 ? -(1 + 2*head_index + 1) : -(1 + 2*head_index));
-            for( index_set::const_iterator it = when.condition_.begin(); it != when.condition_.end(); ++it ) {
+            // copy preconditions: there should be just one or two
+            assert(options_.is_enabled("lw1:literals-for-observables") || (action.precondition_.size() == 1));
+            assert(!options_.is_enabled("lw1:literals-for-observables") || (action.precondition_.size() <= 2));
+            for( index_set::const_iterator it = action.precondition_.begin(); it != action.precondition_.end(); ++it ) {
                 int index = *it > 0 ? *it - 1 : -*it - 1;
-                w.condition_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
+                if( last_action_atoms_.find(index) != last_action_atoms_.end() ) {
+                    assert(*it > 0);
+                    nact->precondition_.insert(1 + 2*index);
+                } else {
+                    assert(*it < 0);
+                    assert(action.comment_ != "");
+                    string var_name = action.comment_.substr(1);
+                    assert(varmap_.find(var_name) != varmap_.end());
+                    assert(atoms_for_observables_.find(var_name) != atoms_for_observables_.end());
+                    assert(atoms_for_observables_[var_name].find(index) != atoms_for_observables_[var_name].end());
+                    int var_index = varmap_[var_name];
+                    const Variable &variable = *multivalued_variables_[var_index];
+                    if( variable.domain_.size() == 1 ) {
+                        assert(variable.domain_.find(index) != variable.domain_.end());
+                        nact->precondition_.insert(action.comment_[0] == '+' ? -(1 + 2*index + 1) : -(1 + 2*index));
+                    } else {
+                        assert(0); // CHECK
+                    }
+                }
             }
-            nact->when_.push_back(w);
-        }
 
-        drule_store_.insert(make_pair(nact->precondition_, nact));
+            // each unconditional effect L becomes conditional of form: -K-L => KL
+            for( index_set::const_iterator it = action.effect_.begin(); it != action.effect_.end(); ++it ) {
+                int index = *it > 0 ? *it - 1 : -*it - 1;
+                When w;
+                w.condition_.insert(*it > 0 ? -(1 + 2*index + 1) : -(1 + 2*index));
+                w.effect_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
+                nact->when_.push_back(w);
+            }
+
+            // each conditional effect C => L becomes: KC, -K-L => KL
+            for( size_t k = 0; k < action.when_.size(); ++k ) {
+                const When &when = action.when_[k];
+                assert(when.effect_.size() == 1);
+                int head = *when.effect_.begin();
+                int head_index = head > 0 ? head - 1 : -head - 1;
+                When w;
+                w.effect_.insert(head > 0 ? 1 + 2*head_index : 1 + 2*head_index + 1);
+                w.condition_.insert(head > 0 ? -(1 + 2*head_index + 1) : -(1 + 2*head_index));
+                for( index_set::const_iterator it = when.condition_.begin(); it != when.condition_.end(); ++it ) {
+                    int index = *it > 0 ? *it - 1 : -*it - 1;
+                    w.condition_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
+                }
+                nact->when_.push_back(w);
+            }
+            drule_store_.insert(make_pair(nact->precondition_, nact));
+        } else {
+            // skip sensing drules of type5 as they are not passed to classical problem
+        }
     } else {
         assert(action_name.compare(0, 14, "drule-sensing-") == 0);
 
@@ -942,7 +996,15 @@ void LW1_Instance::print_stats(ostream &os) const {
        << ", #dules-for-sensing=" << n_drules_for_sensing_
        << ", #dules-for-atoms=" << n_drules_for_atoms_
        << ", #subgoaling-actions=" << n_subgoaling_actions_
-       << ", #clauses-for-axioms=" << clauses_for_axioms_.size()
-       << endl;
+       << ", #clauses-for-axioms=" << clauses_for_axioms_.size();
+
+    if( options_.is_enabled("lw1:literals-for-observables" ) ) {
+        int num_atoms_for_observables = 0;
+        for( map<string, set<int> >::const_iterator it = atoms_for_observables_.begin(); it != atoms_for_observables_.end(); ++it )
+            num_atoms_for_observables += it->second.size();
+        os << ", #num-atoms-for-observables=" << num_atoms_for_observables;
+    }
+
+    os << endl;
 }
 

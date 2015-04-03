@@ -84,6 +84,11 @@ class LW1_Solver : public BASE_CLASS {
                                   int var_index,
                                   int index) const;
 
+    void update_state_with_literals_for_observables(STATE_CLASS &state,
+                                                    const Instance::Action &action,
+                                                    const LW1_Instance::Variable &variable,
+                                                    int value) const;
+
     void fill_relevant_sensing_models(const LW1_Instance &lw1,
                                       const Instance::Action *last_action,
                                       const std::set<int> &sensed_at_step,

@@ -601,6 +601,7 @@ class PDDL_Base {
         const Effect *observe_;
         const Sensing *sensing_;
         const sensing_proxy_vec *sensing_proxy_;
+        std::string comment_;
         Action(const char *name)
           : Symbol(name, sym_action), precondition_(0), effect_(0), observe_(0),
             sensing_(0), sensing_proxy_(0) { }
@@ -685,6 +686,10 @@ class PDDL_Base {
                 delete domain_[k];
         }
         void instantiate(variable_list &vlist) const;
+        const unsigned_atom_set& beam_for_value(const Atom &value) const {
+            assert(beam_.find(value) != beam_.end());
+            return beam_.find(value)->second;
+        } 
         virtual void process_instance() const;
         virtual Variable* make_instance(const char *name) const = 0;
         virtual bool is_state_variable() const = 0;
@@ -803,7 +808,7 @@ class PDDL_Base {
 
     // For multivalued variables formulations
     bool                                      lw1_translation_;
-    variable_vec                              multivalued_variables_;
+    variable_vec                              lw1_multivalued_variables_;
     unsigned_atom_set                         observable_atoms_;
     unsigned_atom_set                         atoms_for_state_variables_;
     unsigned_atom_set                         static_observable_atoms_;
@@ -815,16 +820,17 @@ class PDDL_Base {
     std::map<unsigned_atom_set, const Atom*>  need_post_atoms_;
     std::map<std::string, const Atom*>        sensing_atoms_;
     std::map<signed_atom_set, const Atom*>    atoms_for_terms_for_type3_sensing_drules_;
-    std::map<std::string, const Atom*>        last_action_atoms_;
+    std::map<std::string, const Atom*>        lw1_last_action_atoms_;
+    std::map<std::string, std::set<std::string> > lw1_accepted_literals_for_observables_;
 
-    const Sensing                             *default_sensing_;
-    const sensing_proxy_vec                   *default_sensing_proxy_;
+    const Sensing                             *lw1_default_sensing_;
+    const sensing_proxy_vec                   *lw1_default_sensing_proxy_;
 
-    variable_group_vec                        variable_groups_;
+    variable_group_vec                        lw1_variable_groups_;
 
-    std::map<const Action*, std::map<const ObsVariable*, std::map<Atom, std::list<const And*> > > > sensing_models_index_;
+    std::map<const Action*, std::map<const ObsVariable*, std::map<Atom, std::list<const And*> > > > lw1_sensing_models_index_;
     std::map<const StateVariable*, std::vector<const Action*> > actions_for_observable_state_variables_;
-    std::list<std::pair<const Action*, const Sensing*> > sensing_models_;
+    std::list<std::pair<const Action*, const Sensing*> > lw1_sensing_models_;
 
     PDDL_Base(StringTable& t, const Options::Mode &options);
     ~PDDL_Base();
@@ -845,7 +851,8 @@ class PDDL_Base {
     void do_translation();
     void do_lw1_translation(bool strict_lw1,
                             const variable_vec* &multivalued_variables,
-                            const std::list<std::pair<const Action*, const Sensing*> >* &sensing_models);
+                            const std::list<std::pair<const Action*, const Sensing*> >* &sensing_models,
+                            const std::map<std::string, std::set<std::string> >* &accepted_literals_for_observables);
     void emit_instance(Instance &ins) const;
     void print(std::ostream &os) const;
 
@@ -898,6 +905,7 @@ class PDDL_Base {
                                         const ObsVariable &variable,
                                         const Atom &value,
                                         const std::map<Atom, std::list<const And*> > &sensing_models_for_action_and_var);
+    void lw1_create_type5_sensing_drule(const ObsVariable &variable);
     const Atom& lw1_fetch_last_action_atom(const Action &action);
     void lw1_patch_actions_with_atoms_for_last_action();
 

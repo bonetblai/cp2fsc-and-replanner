@@ -159,7 +159,8 @@ int main(int argc, char *argv[]) {
     // perform necessary translations
     const PDDL_Base::variable_vec *multivalued_variables = 0;
     const list<pair<const PDDL_Base::Action*, const PDDL_Base::Sensing*> > *sensing_models = 0;
-    reader->do_lw1_translation(opt_strict_lw1, multivalued_variables, sensing_models);
+    const map<string, set<string> > *accepted_literals_for_observables = 0;
+    reader->do_lw1_translation(opt_strict_lw1, multivalued_variables, sensing_models, accepted_literals_for_observables);
     assert(multivalued_variables != 0);
     assert(sensing_models != 0);
 
@@ -196,7 +197,7 @@ int main(int argc, char *argv[]) {
     //instance.do_action_compilation(*multivalued_variables);
 
     cout << "creating KP translation..." << endl;
-    KP_Instance *kp_instance = new LW1_Instance(instance, *multivalued_variables, *sensing_models);
+    KP_Instance *kp_instance = new LW1_Instance(instance, *multivalued_variables, *sensing_models, *accepted_literals_for_observables);
 
     if( g_options.is_enabled("kp:print:raw") ) {
         kp_instance->print(cout);
@@ -206,7 +207,7 @@ int main(int argc, char *argv[]) {
 
     cout << "preprocessing KP translation..." << endl;
     Preprocessor kp_prep(*kp_instance);
-    //kp_prep.preprocess(false);
+    //kp_prep.preprocess(false); // CHECK
     if( g_options.is_enabled("kp:print:preprocessed") ) {
         kp_instance->write_domain(cout);
         kp_instance->write_problem(cout);
@@ -242,6 +243,7 @@ int main(int argc, char *argv[]) {
         cout << endl;
 
         planner->reset_stats();
+        kp_instance->reset_inference_time();
         LW1_Solver solver(instance, *kp_instance, *planner, opt_time_bound);
         int status = solver.solve(hidden_initial_state, plan, fired_sensors, sensed_literals);
         assert(1+plan.size() == fired_sensors.size());
