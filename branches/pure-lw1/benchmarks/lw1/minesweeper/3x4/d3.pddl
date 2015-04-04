@@ -40,7 +40,6 @@
     (:obs-variable obs-for-start-action (forall (?p - pos) (start-obs ?p)))
     (:obs-variable (first-obs-var ?p - pos) (first-obs ?p)) ; NEED FIX: remove parameter ?p
     (:obs-variable (obs-at ?p - pos) (obs0-at ?p) (obs1-at ?p) (obs2-at ?p))
-
     (:var-group (vgroup ?p - pos) (forall (?q - pos) such-that (neighborhood ?p ?q) (mine-var ?q)))
 
     (:action start-action
@@ -895,7 +894,7 @@
 
     (:action put-flag
         :parameters (?p - pos)
-        :precondition (and (mine-at ?p) (not (done-with ?p)))
+        :precondition (and (mine-at ?p) (not (done-with ?p)) (not (need-start)) (not (need-first-move))) ; CHECK
         :effect (done-with ?p)
     )
 )
