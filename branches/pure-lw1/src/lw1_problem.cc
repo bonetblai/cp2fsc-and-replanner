@@ -15,13 +15,14 @@ static int get_atom_index(const Instance &ins, string atom_name) {
     return -1;
 }
 
-static void lw1_extend_effect_with_ramifications_on_observables(int index,
-                                                                const map<int, index_set> &beams_for_observable_atoms,
+static void lw1_extend_effect_with_ramifications_on_observables(int affected_index,
+                                                                const map<pair<int, int>, index_set> &beams_for_observable_atoms,
                                                                 set<int> &effect) {
-    for( map<int, index_set>::const_iterator it = beams_for_observable_atoms.begin(); it != beams_for_observable_atoms.end(); ++it) {
-        int observable_index = it->first;
+    for( map<pair<int, int>, index_set>::const_iterator it = beams_for_observable_atoms.begin(); it != beams_for_observable_atoms.end(); ++it) {
+        //int var_index = it->first.first;
+        int observable_index = it->first.second;
         const set<int> &beam = it->second;
-        if( beam.find(index) != beam.end() ) {
+        if( beam.find(affected_index) != beam.end() ) {
             effect.insert(-(1 + 2*observable_index));
             effect.insert(-(1 + 2*observable_index + 1));
         }
@@ -127,7 +128,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                     assert(index != -1);
                     beam.insert(index);
                 }
-                beams_for_observable_atoms_[atom_index] = beam;
+                beams_for_observable_atoms_[make_pair(var_index, atom_index)] = beam;
                 beams[atom_index] = beam;
             }
         }
@@ -590,7 +591,7 @@ bool LW1_Instance::is_forbidden(const vector<int> &clause) const {
 void LW1_Instance::create_regular_action(const Action &action,
                                          int action_index,
                                          const index_set &observable_atoms,
-                                         const map<int, index_set> &beams_for_observable_atoms) {
+                                         const map<pair<int, int>, index_set> &beams_for_observable_atoms) {
     string action_name = action.name_->to_string();
     assert(action_name.compare(0, 6, "drule-") != 0);
 
@@ -619,8 +620,9 @@ void LW1_Instance::create_regular_action(const Action &action,
         } else {
             nact.effect_.insert(*it > 0 ? 1 + 2*idx : -(1 + 2*idx));
         }
-        if( !options_.is_enabled("lw1:strict") )
-            lw1_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, nact.effect_); // CHECK
+        if( !options_.is_enabled("lw1:strict") || options_.is_enabled("lw1:literals-for-observables:dynamic") ) {
+            lw1_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, nact.effect_);
+        }
     }
 
     // support and cancellation rules for conditional effects
@@ -650,9 +652,9 @@ void LW1_Instance::create_regular_action(const Action &action,
                 if( observable_atoms.find(idx) == observable_atoms.end() )
                     can_eff.effect_.insert(-(1 + 2*idx));
             }
-            if( !options_.is_enabled("lw1:strict") ) {
-                lw1_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, sup_eff.effect_); // CHECK
-                lw1_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, can_eff.effect_); // CHECK
+            if( !options_.is_enabled("lw1:strict") || options_.is_enabled("lw1:literals-for-observables:dynamic") ) {
+                lw1_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, sup_eff.effect_);
+                lw1_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, can_eff.effect_);
             }
         }
         nact.when_.push_back(sup_eff);
@@ -744,7 +746,8 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                     if( variable.domain_.size() == 1 ) {
                         nact->precondition_.insert(action.comment_[0] == '+' ? -(1 + 2*index + 1) : -(1 + 2*index));
                     } else {
-                        // CHECK: not sure if this is enough. Maybe need to generate clauses to reason about values of obs variables
+                        // CHECK: not sure if the following is enough.
+                        // Maybe need to generate clauses to reason about values for obs variables
                         assert(action.comment_[0] == '+');
                         nact->precondition_.insert(-(1 + 2*index + 1));
                     }

@@ -178,10 +178,11 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
     bool_vec pos_literal_in_init(n_atoms(), false);
     bool_vec neg_literal_in_init(n_atoms(), false);
     for( index_set::const_iterator it = init_.literals_.begin(); it != init_.literals_.end(); ++it ) {
+        int index = *it > 0 ? *it - 1 : -*it - 1;
         if( *it > 0 )
-            pos_literal_in_init[*it - 1] = true;
+            pos_literal_in_init[index] = true;
         else
-            neg_literal_in_init[-*it - 1] = true;
+            neg_literal_in_init[index] = true;
     }
 
     // iterate over actions
@@ -190,9 +191,14 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
 
         // precondition
         for( index_set::const_iterator p = act.precondition_.begin(); p != act.precondition_.end(); ) {
-            if( ((*p < 0) && !reachable_atoms[-*p-1]) ||
-                ((*p > 0) && static_atoms[*p-1] && pos_literal_in_init[*p-1]) ||
-                ((*p < 0) && static_atoms[-*p-1] && neg_literal_in_init[-*p-1]) ) {
+            int index = *p > 0 ? *p - 1 : -*p - 1;
+            if( protected_atoms_.find(index) != protected_atoms_.end() ) {
+                ++p;
+                continue;
+            }
+            if( ((*p < 0) && !reachable_atoms[index]) ||
+                ((*p > 0) && static_atoms[index] && pos_literal_in_init[index]) ||
+                ((*p < 0) && static_atoms[index] && neg_literal_in_init[index]) ) {
 #if 0
                 cout << "Eliminating ";
                 State::print_literal(cout, *p, this);
@@ -208,9 +214,14 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
         for( int j = 0; j < (int)act.when_.size(); ++j ) {
             When &when = act.when_[j];
             for( index_set::const_iterator p = when.condition_.begin(); p != when.condition_.end(); ) {
-                if( ((*p < 0) && !reachable_atoms[-*p-1]) ||
-                    ((*p > 0) && static_atoms[*p-1] && pos_literal_in_init[*p-1]) ||
-                    ((*p < 0) && static_atoms[-*p-1] && neg_literal_in_init[-*p-1]) ) {
+                int index = *p > 0 ? *p - 1 : -*p - 1;
+                if( protected_atoms_.find(index) != protected_atoms_.end() ) {
+                    ++p;
+                    continue;
+                }
+                if( ((*p < 0) && !reachable_atoms[index]) ||
+                    ((*p > 0) && static_atoms[index] && pos_literal_in_init[index]) ||
+                    ((*p < 0) && static_atoms[index] && neg_literal_in_init[index]) ) {
 #if 0
                     cout << "Eliminating " << flush;
                     State::print_literal(cout, *p, this);
@@ -237,9 +248,14 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
     for( size_t k = 0; k < axioms_.size(); ++k ) {
         Axiom &axiom = *axioms_[k];
         for( index_set::const_iterator p = axiom.body_.begin(); p != axiom.body_.end(); ) {
-            if( ((*p < 0) && !reachable_atoms[-*p-1]) ||
-                ((*p > 0) && static_atoms[*p-1] && pos_literal_in_init[*p-1]) ||
-                ((*p < 0) && static_atoms[-*p-1] && neg_literal_in_init[-*p-1]) ) {
+            int index = *p > 0 ? *p - 1 : -*p - 1;
+            if( protected_atoms_.find(index) != protected_atoms_.end() ) {
+                ++p;
+                continue;
+            }
+            if( ((*p < 0) && !reachable_atoms[index]) ||
+                ((*p > 0) && static_atoms[index] && pos_literal_in_init[index]) ||
+                ((*p < 0) && static_atoms[index] && neg_literal_in_init[index]) ) {
                 axiom.body_.erase(p++);
             } else {
                 ++p;
@@ -251,9 +267,14 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
     for( size_t k = 0; k < sensors_.size(); ++k ) {
         Sensor &sensor = *sensors_[k];
         for( index_set::const_iterator p = sensor.condition_.begin(); p != sensor.condition_.end(); ) {
-            if( ((*p < 0) && !reachable_atoms[-*p-1]) ||
-                ((*p > 0) && static_atoms[*p-1] && pos_literal_in_init[*p-1]) ||
-                ((*p < 0) && static_atoms[-*p-1] && neg_literal_in_init[-*p-1]) ) {
+            int index = *p > 0 ? *p - 1 : -*p - 1;
+            if( protected_atoms_.find(index) != protected_atoms_.end() ) {
+                ++p;
+                continue;
+            }
+            if( ((*p < 0) && !reachable_atoms[index]) ||
+                ((*p > 0) && static_atoms[index] && pos_literal_in_init[index]) ||
+                ((*p < 0) && static_atoms[index] && neg_literal_in_init[index]) ) {
                 sensor.condition_.erase(p++);
             } else {
                 ++p;
@@ -273,9 +294,11 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
         // simplify invariant
         for( int i = 0; i < (int)invariant.size(); ++i ) {
             int lit = invariant[i];
-            if( ((lit > 0) && !reachable_atoms[lit-1]) ||
-                ((lit > 0) && static_atoms[lit-1] && neg_literal_in_init[lit-1]) ||
-                ((lit < 0) && static_atoms[-lit-1] && pos_literal_in_init[-lit-1]) ) {
+            int index = lit > 0 ? lit - 1 : -lit - 1;
+            if( protected_atoms_.find(index) != protected_atoms_.end() ) continue;
+            if( ((lit > 0) && !reachable_atoms[index]) ||
+                ((lit > 0) && static_atoms[index] && neg_literal_in_init[index]) ||
+                ((lit < 0) && static_atoms[index] && pos_literal_in_init[index]) ) {
 #if 1
                 cout << "Dropping ";
                 State::print_literal(cout, lit, this);
@@ -286,9 +309,9 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
                 invariant.pop_back();
                 --i;
             }
-            if( ((lit < 0) && !reachable_atoms[-lit-1]) ||
-                ((lit > 0) && static_atoms[lit-1] && pos_literal_in_init[lit-1]) ||
-                ((lit < 0) && static_atoms[-lit-1] && neg_literal_in_init[-lit-1]) ) {
+            if( ((lit < 0) && !reachable_atoms[index]) ||
+                ((lit > 0) && static_atoms[index] && pos_literal_in_init[index]) ||
+                ((lit < 0) && static_atoms[index] && neg_literal_in_init[index]) ) {
                 remove_invariant = true;
                 invariant[i] = invariant.back();
                 invariant.pop_back();
@@ -368,8 +391,13 @@ void Instance::remove_atoms(const bool_vec &set, index_vec &map) {
 
     // avoid removing protected atoms
     bool_vec new_set(set);
-    for( index_set::const_iterator it = atoms_protected_from_removal_.begin(); it != atoms_protected_from_removal_.end(); ++it ) {
+    for( index_set::const_iterator it = protected_atoms_.begin(); it != protected_atoms_.end(); ++it )
         new_set[*it] = false;
+
+    if( options_.is_enabled("problem:print:atom:removal") ) {
+        cout << Utils::yellow() << "atoms to remove = ";
+        write_atom_set(cout, new_set);
+        cout << Utils::normal() << endl;
     }
 
     // mark atoms to remove and re-index

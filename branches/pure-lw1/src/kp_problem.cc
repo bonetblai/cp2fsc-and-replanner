@@ -41,7 +41,7 @@ void KP_Instance::write_problem(ostream &os, const State *state, int indent) con
 // minimum set of assumptions needed for the action a, which is applicable
 // at state s, to produce state s'.
 //
-// CHECK IMPLEMENTATION BELOW
+// CHECK IMPLEMENTATION BELOW (calculation of assumptions)
 
 void KP_Instance::calculate_relevant_assumptions(const Plan &plan,
                                                  const State &initial_state,
