@@ -4,7 +4,7 @@
 #include "base_dnf.h"
 #include "utils.h"
 
-#define DEBUG
+//#define DEBUG
 
 using namespace std;
 
@@ -238,6 +238,7 @@ void PDDL_Base::instantiate_elements() {
     lw1_variable_groups_.clear();
     lw1_variable_groups_.reserve(vglist.size());
     lw1_variable_groups_.insert(lw1_variable_groups_.end(), vglist.begin(), vglist.end());
+    lw1_remove_empty_variable_groups();
 
     if( options_.is_enabled("lw1:print:variables:groups") ) {
         for( size_t k = 0; k < lw1_variable_groups_.size(); ++k ) {
@@ -645,6 +646,32 @@ void PDDL_Base::lw1_calculate_beam_for_grounded_variable(Variable &var) {
     }
 }
 
+void PDDL_Base::lw1_remove_variables_with_empty_grounded_domain() {
+    for( int k = 0; k < int(lw1_multivalued_variables_.size()); ++k ) {
+        const Variable &var = *lw1_multivalued_variables_[k];
+        if( var.grounded_domain_.empty() ) {
+            cout << "removing variable '" << var.to_string(true) << "' because it has empty grounded domain" << endl;
+            delete &var;
+            lw1_multivalued_variables_[k] = lw1_multivalued_variables_.back();
+            lw1_multivalued_variables_.pop_back();
+            --k;
+        }
+    }
+}
+
+void PDDL_Base::lw1_remove_empty_variable_groups() {
+    for( int k = 0; k < int(lw1_variable_groups_.size()); ++k ) {
+        const VariableGroup &group = *lw1_variable_groups_[k];
+        if( group.grounded_group_.empty() ) {
+            cout << "removing variable group '" << group.print_name_ << "' because it is empty" << endl;
+            delete &group;
+            lw1_variable_groups_[k] = lw1_variable_groups_.back();
+            lw1_variable_groups_.pop_back();
+            --k;
+        }
+    }
+}
+
 void PDDL_Base::lw1_translate_actions() {
     assert(!options_.is_enabled("lw1:strict"));
     assert(lw1_translation_);
@@ -873,7 +900,7 @@ void PDDL_Base::lw1_emit_and_protect_atoms_for_observable_variables(Instance &in
                 const Atom &value = *it;
                 index_set index;
                 value.emit(ins, index);
-                ins.atoms_protected_from_removal_.insert(*index.begin() - 1);
+                ins.protected_atoms_.insert(*index.begin() - 1);
             }
         }
     }
@@ -1231,8 +1258,6 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
                 }
             }
         }
-
-
     } else {
         for( map<const Action*, map<const ObsVariable*, map<Atom, list<const And*> > > >::const_iterator it = lw1_sensing_models_index_.begin(); it != lw1_sensing_models_index_.end(); ++it ) {
             //const Action &action = *it->first;
@@ -1312,10 +1337,10 @@ void PDDL_Base::lw1_create_type3_sensing_drule(const ObsVariable &variable, cons
     }
 
 #ifdef DEBUG
-    //cout << "Type3: var=" << variable << ", value=" << value << ", term=" << term << ", dnf=[";
-    //for( list<const And*>::const_iterator it = dnf.begin(); it != dnf.end(); ++it )
-    //    cout << **it << ",";
-    //cout << "]" << endl;
+    cout << "Type3: var=" << variable << ", value=" << value << ", term=" << term << ", dnf=[";
+    for( list<const And*>::const_iterator it = dnf.begin(); it != dnf.end(); ++it )
+        cout << **it << ",";
+    cout << "]" << endl;
 #endif
 
     string name = string("drule-sensing-type3-") + value.to_string(false, true) + "-" + to_string(index);
@@ -1385,10 +1410,10 @@ const PDDL_Base::Atom& PDDL_Base::lw1_fetch_atom_for_negated_term(const And &ter
 
 void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action, const StateVariable &variable, const Atom &value) {
 #ifdef DEBUG
-    //cout << "Type4: action=" << action.print_name_
-    //     << ", state-variable=" << variable.to_string(true, false)
-    //     << ", value=" << value.to_string(false, false)
-    //     << endl;
+    cout << "Type4: action=" << action.print_name_
+         << ", state-variable=" << variable.to_string(true, false)
+         << ", value=" << value.to_string(false, false)
+         << endl;
 #endif
 
     assert(!value.negated_);
@@ -1421,10 +1446,10 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action,
                                                const Atom &value,
                                                const map<Atom, list<const And*> > &sensing_models_for_action_and_var) {
 #ifdef DEBUG
-    //cout << "Type4: action=" << action.print_name_
-    //     << ", observable-variable=" << variable.to_string(true, false)
-    //     << ", value=" << value.to_string(false, false)
-    //     << endl;
+    cout << "Type4: action=" << action.print_name_
+         << ", observable-variable=" << variable.to_string(true, false)
+         << ", value=" << value.to_string(false, false)
+         << endl;
 #endif
 
     if( sensing_models_for_action_and_var.size() <= 1 ) {
@@ -1512,8 +1537,16 @@ void PDDL_Base::lw1_create_type5_sensing_drule(const ObsVariable &variable) {
     // find those values for which a translation can be performed
     for( size_t k = 0; k < grounded_domain.size(); ++k ) {
         const Atom &value = grounded_domain[k];
+
+#ifdef DEBUG
+        cout << "       value=" << value << flush;
+#endif
+
         assert(variable.beam_.find(value) != variable.beam_.end());
-        if( !variable.beam_.find(value)->second.empty() ) continue;
+        if( !options_.is_enabled("lw1:literals-for-observables:dynamic") && !variable.beam_.find(value)->second.empty() ) {
+            cout << " ... skip because beam is non-empty" << endl;
+            continue;
+        }
 
         // the beam for atom is empty meaning that the formula is given by static variables: good to go!
         set<string> models_for_value;
@@ -1533,8 +1566,12 @@ void PDDL_Base::lw1_create_type5_sensing_drule(const ObsVariable &variable) {
                 }
             }
         }
-        //assert(dnf != 0);
-        if( dnf == 0 ) continue;
+        if( dnf == 0 ) {
+#ifdef DEBUG
+            cout << " ... skip because there is no dnf" << endl;
+#endif
+            continue;
+        }
 
         // if there is just one model, all actions that sense the atom have the same sensing model and we can generate a deductive rule for it
         if( models_for_value.size() == 1 ) {
@@ -1553,6 +1590,15 @@ void PDDL_Base::lw1_create_type5_sensing_drule(const ObsVariable &variable) {
                 if( options_.is_enabled("lw1:print:drule:sensing") || options_.is_enabled("lw1:print:drule") )
                     cout << Utils::yellow() << *drule << Utils::normal();
             }
+#ifdef DEBUG
+            cout << ", model=" << *models_for_value.begin() << endl;
+#endif
+        } else {
+#ifdef DEBUG
+            cout << " ... skip because there is more than one model:" << endl;
+            for( set<string>::const_iterator it = models_for_value.begin(); it != models_for_value.end(); ++it )
+                cout << "           " << *it << endl;
+#endif
         }
     }
 }
@@ -2140,6 +2186,7 @@ void PDDL_Base::do_lw1_translation(bool strict_lw1,
     if( lw1_translation_ ) {
         lw1_calculate_atoms_for_state_variables();
         lw1_calculate_beams_for_grounded_observable_variables();
+        lw1_remove_variables_with_empty_grounded_domain();
 
         if( options_.is_enabled("lw1:strict") ) {
             lw1_translate_actions_strict();

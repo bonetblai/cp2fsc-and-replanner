@@ -59,7 +59,7 @@ class LW1_Instance : public KP_Instance {
     // TODO: can we get rid of beams_for_observable_atoms_?
     std::multimap<index_set, const Action*> drule_store_;
     index_set observable_atoms_;
-    std::map<int, index_set> beams_for_observable_atoms_;
+    std::map<std::pair<int, int>, index_set> beams_for_observable_atoms_;
     std::vector<std::vector<int> > clauses_for_axioms_;
 
     LW1_Instance(const Instance &instance,
@@ -74,7 +74,7 @@ class LW1_Instance : public KP_Instance {
     void create_regular_action(const Action &action,
                                int action_index,
                                const index_set &observable_atoms,
-                               const std::map<int, index_set> &beams_for_observable_atoms);
+                               const std::map<std::pair<int, int>, index_set> &beams_for_observable_atoms);
     void create_drule_for_var(const Action &action);
     void create_drule_for_sensing(const Action &action);
     void create_drule_for_atom(const Action &action);

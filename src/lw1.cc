@@ -141,9 +141,13 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // set default inference
+    // set implied options and default inference
+    if( g_options.is_enabled("lw1:literals-for-observables:dynamic") )
+        g_options.enable("lw1:literals-for-observables");
+    if( g_options.is_enabled("lw1:inference:up:enhanced") || g_options.is_enabled("lw1:inference:up:1-lookahead") )
+        g_options.enable("lw1:inference:up");
     if( !g_options.is_enabled("lw1:inference:forward-chaining") && !g_options.is_enabled("lw1:inference:up") )
-        g_options.enable("lw1:inference:forward-chaining");
+        g_options.enable("lw1:inference:forward-chaining"); // CHECK: default should be UP
 
     // check that there is at least one input file
     if( nfiles == 0 ) {
@@ -179,7 +183,7 @@ int main(int argc, char *argv[]) {
     reader->emit_instance(instance);
     //delete reader;
     if( g_options.is_enabled("problem:print:raw") ) {
-        instance.print(cout);
+        //instance.print(cout);
         instance.write_domain(cout);
         instance.write_problem(cout);
     }

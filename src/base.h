@@ -872,6 +872,8 @@ class PDDL_Base {
     void lw1_calculate_atoms_for_state_variables();
     void lw1_calculate_beams_for_grounded_observable_variables();
     void lw1_calculate_beam_for_grounded_variable(Variable &var);
+    void lw1_remove_variables_with_empty_grounded_domain();
+    void lw1_remove_empty_variable_groups();
     void lw1_translate_actions();
     void lw1_translate(Action &action);
     void lw1_create_post_action(const unsigned_atom_set &atoms);
@@ -937,7 +939,7 @@ class PDDL_Base {
     const Atom* fetch_need_post_atom(const unsigned_atom_set &atoms);
     const Atom* fetch_sensing_atom(const Atom &atom);
 
-    // methods to perform action compilation // CHECK
+    // methods to perform action compilation // CHECK (action compilation outside preprocessing)
     void lw1_do_action_compilation();
     void lw1_do_action_compilation(Action &action);
 };

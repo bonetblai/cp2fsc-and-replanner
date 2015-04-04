@@ -183,16 +183,17 @@ class Instance {
     void remove_unreachable_sensors(const bool_vec &reachable_atoms, const bool_vec &static_atoms);
     void simplify_conditions_and_invariants(const bool_vec &reachable_atoms, const bool_vec &static_atoms);
     void remove_actions(const bool_vec &set, index_vec &map);
-    virtual void remove_atoms(const bool_vec &set, index_vec &map);
     void calculate_non_primitive_and_observable_fluents();
     void set_initial_state(State &state, bool apply_axioms = true) const;
     void set_hidden_state(int k, State &state) const;
     int num_hidden_states() const { return hidden_.size(); }
 
     // NOTE: remove_atoms must be virtual because CP_Instance needs to 
-    // remap atoms in the initial states, rechable space, etc. The following
-    // atoms are never removed.
-    index_set atoms_protected_from_removal_;
+    // remap atoms in the initial states, rechable space, etc.
+    virtual void remove_atoms(const bool_vec &set, index_vec &map);
+
+    // The following atoms should not be removed or simplified.
+    index_set protected_atoms_;
 
     // compute/clear secondary instance info
     void clear_cross_reference();

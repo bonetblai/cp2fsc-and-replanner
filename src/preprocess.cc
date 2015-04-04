@@ -675,14 +675,8 @@ void Preprocessor::preprocess(bool remove_atoms) {
     }
 #endif
 
-    if( remove_atoms && !atoms_to_remove.empty() ) {
-        if( options_.is_enabled("problem:print:atom:removal") ) {
-            cout << Utils::yellow() << "atoms to remove = ";
-            instance_.write_atom_set(cout, atoms_to_remove);
-            cout << Utils::normal() << endl;
-        }
+    if( remove_atoms && !atoms_to_remove.empty() )
         instance_.remove_atoms(atoms_to_remove, atom_map_);
-    }
 
     // recalculate non-primitive and observable atoms
     instance_.calculate_non_primitive_and_observable_fluents();
