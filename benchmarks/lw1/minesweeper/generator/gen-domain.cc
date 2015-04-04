@@ -24,16 +24,16 @@ void sensing_model(int max_obs, const int *dir) {
             if( bit_count == n ) valid.insert(m);
         }
 
-        cout << "            (:model-for (obs-at ?p) (obs" << n << "-at ?p)";
+        cout << "            (model-for (obs-at ?p) (obs" << n << "-at ?p)";
         if( valid.empty() ) {
             cout << " false)" << endl;
         } else {
-            cout << endl << "                        ";
+            cout << endl << "                       ";
             if( valid.size() > 1 ) cout << "(or ";
         }
 
         for( set<int>::const_iterator it = valid.begin(); it != valid.end(); ++it ) {
-            if( it != valid.begin() ) cout << "                            ";
+            if( it != valid.begin() ) cout << "                           ";
             int k = *it;
             cout << "(and ";
             bool first_conjunct = true;
@@ -41,7 +41,7 @@ void sensing_model(int max_obs, const int *dir) {
                 if( dir[i] ) {
                     if( !first_conjunct ) {
                         if( valid.size() > 1 ) cout << "    ";
-                        cout << "                             ";
+                        cout << "                            ";
                     }
                     cout << "(forall (?q - pos) (or (not (d" << i << " ?p ?q)) ";
                     if( (k >> i) & 0x1 )
@@ -56,7 +56,7 @@ void sensing_model(int max_obs, const int *dir) {
         }
 
         if( !valid.empty() ) {
-            if( valid.size() > 1 ) cout << "                        )" << endl;
+            if( valid.size() > 1 ) cout << "                       )" << endl;
             cout << "            )" << endl;
         }
     }
@@ -65,7 +65,7 @@ void sensing_model(int max_obs, const int *dir) {
 void open_generic(int max_obs, const int *dir, const char *name) {
     cout << "    (:action open-" << name << endl
          << "        :parameters (?p - pos)" << endl
-         << "        :precondition (and (" << name << " ?p) (not (mine-at ?p)) (not (done-with ?p)) (not (need-set-first-move)))" << endl
+         << "        :precondition (and (" << name << " ?p) (not (mine-at ?p)) (not (done-with ?p)))" << endl
          << "        :effect (done-with ?p)" << endl
          << "        :sensing" << endl;
     sensing_model(max_obs, dir);
@@ -151,35 +151,45 @@ int main(int argc, const char **argv) {
          << "        (edge-w ?p - pos)" << endl
          << "        (middle ?p - pos)" << endl
          << endl
+         << "        (neighborhood ?p ?q - pos)" << endl
+         << endl
          << "        (need-start)" << endl
-         << "        (need-set-first-move)" << endl
+         << "        (need-first-move)" << endl
          << "        (first-move ?p - pos)" << endl
          << "        (mine-at ?p - pos)" << endl
          << "        (done-with ?p - pos)" << endl
          << endl
-         << "        (obs-first-move ?p - pos)" << endl;
+         << "        (start-obs ?p - pos)" << endl
+         << "        (first-obs ?p - pos) ; NEED FIX: remove parameter ?p" << endl;
     for( int n = 0; n <= max_obs; ++n )
          cout << "        (obs" << n << "-at ?p - pos)" << endl;
     cout << "    )" << endl
          << endl;
 
-    cout << "    (:variable first-movement (forall (?p - pos) (first-move ?p)))" << endl
-         << "    (:obs-variable obs-for-first-movement (forall (?p - pos) (obs-first-move ?p)))" << endl
+    cout << "    (:variable (mine-var ?p - pos) (mine-at ?p))" << endl
+         << "    (:variable first-movement (forall (?p - pos) (first-move ?p)))" << endl
+         << "    (:obs-variable obs-for-start-action (forall (?p - pos) (start-obs ?p)))" << endl
+         << "    (:obs-variable (first-obs-var ?p - pos) (first-obs ?p)) ; NEED FIX: remove parameter ?p" << endl
          << "    (:obs-variable (obs-at ?p - pos)";
     for( int n = 0; n <= max_obs; ++n )
         cout << " (obs" << n << "-at ?p)";
     cout << ")" << endl
+         << "    (:var-group (vgroup ?p - pos) (forall (?q - pos) such-that (neighborhood ?p ?q) (mine-var ?q)))" << endl
          << endl;
 
     cout << "    (:action start-action" << endl
          << "        :precondition (need-start)" << endl
-         << "        :effect (and (not (need-start)) (need-set-first-move))" << endl
-         << "        :sensing (forall (?p - pos) (:model-for obs-for-first-movement (obs-first-move ?p) (first-move ?p)))" << endl
+         << "        :effect (and (not (need-start)) (need-first-move))" << endl
+         << "        :sensing" << endl
+         << "            (forall (?p - pos) (model-for obs-for-start-action (start-obs ?p) (first-move ?p)))" << endl
          << "    )" << endl
-         << "    (:action set-first-movement" << endl
+         << "    (:action make-first-move" << endl
          << "        :parameters (?p - pos)" << endl
-         << "        :precondition (and (first-move ?p) (need-set-first-move))" << endl
-         << "        :effect (and (not (mine-at ?p)) (not (need-set-first-move)))" << endl
+         << "        :precondition (and (first-move ?p) (need-first-move))" << endl
+         << "        :effect (not (need-first-move))" << endl
+         << "        :sensing" << endl
+         << "            (model-for (first-obs-var ?p) (first-obs ?p) (not (mine-at ?p)))" << endl
+         << "            (model-for (first-obs-var ?p) (not (first-obs ?p)) (mine-at ?p))" << endl
          << "    )" << endl
          << endl;
 
@@ -204,7 +214,7 @@ int main(int argc, const char **argv) {
 
     cout << "    (:action put-flag" << endl
          << "        :parameters (?p - pos)" << endl
-         << "        :precondition (and (mine-at ?p) (not (done-with ?p)) (not (need-set-first-move)))" << endl
+         << "        :precondition (and (mine-at ?p) (not (done-with ?p)) (not (need-start)) (not (need-first-move))) ; CHECK" << endl
          << "        :effect (done-with ?p)" << endl
          << "    )" << endl;
 
