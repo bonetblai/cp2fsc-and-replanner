@@ -1,0 +1,12 @@
+There is no way for planner to make assumption of obs0 at given position.
+
+- Type4 rules allows the planner to simulate obs0 but dnf for other observations
+are added as clauses and planner cannot derive anything 
+
+- Type5 rules go in the other direction allowing the planner to derive obsK literals
+
+- Type3 rules permit derivation of literals once obsK rules are present
+
+Need way for planner to assume a result like obs0 literal when lw1:literals-for-observables
+are active
+
