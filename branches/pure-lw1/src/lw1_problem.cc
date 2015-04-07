@@ -725,33 +725,60 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
         } else if( action_name.compare(0, 20, "drule-sensing-type4-") == 0 ) {
             Action *nact = new Action(new CopyName(action_name));
 
-            // copy preconditions: there should be just one or two
+            // preconditions
             assert(options_.is_enabled("lw1:literals-for-observables") || (action.precondition_.size() == 1));
-            assert(!options_.is_enabled("lw1:literals-for-observables") || (action.precondition_.size() <= 2));
+            assert(!options_.is_enabled("lw1:literals-for-observables") || (action.precondition_.size() == 2));
+
+            // precondition for last-action-atom
+            int index_for_last_action_atom = -1;
+            int literal_for_value = -1, index_for_value = -1;
             for( index_set::const_iterator it = action.precondition_.begin(); it != action.precondition_.end(); ++it ) {
                 int index = *it > 0 ? *it - 1 : -*it - 1;
                 if( last_action_atoms_.find(index) != last_action_atoms_.end() ) {
                     assert(*it > 0);
-                    nact->precondition_.insert(1 + 2*index);
+                    index_for_last_action_atom = index;
                 } else {
-                    assert(*it < 0);
-                    assert(action.comment_ != "");
-                    string var_name = action.comment_.substr(1);
-                    assert(varmap_.find(var_name) != varmap_.end());
-                    assert(atoms_for_observables_.find(var_name) != atoms_for_observables_.end());
-                    assert(atoms_for_observables_[var_name].find(index) != atoms_for_observables_[var_name].end());
-                    int var_index = varmap_[var_name];
-                    const Variable &variable = *multivalued_variables_[var_index];
-                    assert(variable.domain_.find(index) != variable.domain_.end());
-                    if( variable.domain_.size() == 1 ) {
-                        nact->precondition_.insert(action.comment_[0] == '+' ? -(1 + 2*index + 1) : -(1 + 2*index));
-                    } else {
-                        // CHECK: not sure if the following is enough.
-                        // Maybe need to generate clauses to reason about values for obs variables
-                        assert(action.comment_[0] == '+');
-                        nact->precondition_.insert(-(1 + 2*index + 1));
-                    }
+                    literal_for_value = *it;
+                    index_for_value = index;
                 }
+            }
+            assert(index_for_last_action_atom != -1);
+            nact->precondition_.insert(1 + 2*index_for_last_action_atom);
+
+            // Preconditions and effects for observable literals.
+            //
+            // If the rule corresponds to literal Y=y, the precondition needs to contain -KY=y' for *all*
+            // values of the variable Y and -KY!=y, and the effects need to include KY=y.
+            //
+            // If the rule corresponds to literal Y!=y, the precondition needs to contain -KY=y' for *all*
+            // values of the variable Y and -KY=y, and the effects need to include KY!=y.
+            //
+            // Special handling required when Y is a binary variable. The name of the variable comes in comment_
+            if( options_.is_enabled("lw1:literals-for-observables") ) {
+                assert(index_for_value != -1);
+                assert(action.comment_ != "");
+                string var_name = action.comment_;
+                assert(varmap_.find(var_name) != varmap_.end());
+                int var_index = varmap_[var_name];
+                const Variable &variable = *multivalued_variables_[var_index];
+
+                // preconditions
+                for( set<int>::const_iterator jt = variable.domain_.begin(); jt != variable.domain_.end(); ++jt ) {
+                    int index_for_value = *jt;
+                    assert(index_for_value >= 0);
+                    nact->precondition_.insert(-(1 + 2*index_for_value));
+                }
+
+                if( variable.domain_.size() == 1 ) {
+                    int index_for_value = *variable.domain_.begin();
+                    assert(index_for_value >= 0);
+                    nact->precondition_.insert(-(1 + 2*index_for_value + 1));
+                }
+
+                nact->precondition_.insert(literal_for_value > 0 ? -(1 + 2*index_for_value + 1) : -(1 + 2*index_for_value));
+
+                // effects
+                nact->effect_.insert(literal_for_value > 0 ? 1 + 2*index_for_value : 1 + 2*index_for_value + 1);
             }
 
             // each unconditional effect L becomes conditional of form: -K-L => KL
@@ -779,6 +806,7 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                 nact->when_.push_back(w);
             }
 
+            //nact->print(cout, *this);
             drule_store_.insert(make_pair(nact->precondition_, nact));
         } else {
             // skip sensing drules of type5 as they are not passed to classical problem
