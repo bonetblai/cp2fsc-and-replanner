@@ -186,7 +186,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
 #endif
 
         // 0. Add observations as unit clauses
-        if( true || options_.is_enabled("lw1:inference:up:enhanced") ) { // CHECK
+        if( options_.is_enabled("lw1:inference:up:enhanced") || options_.is_enabled("lw1:literals-for-observables") ) {
             for( set<int>::const_iterator it = sensed_at_step.begin(); it != sensed_at_step.end(); ++it ) {
                 int k_literal = *it > 0 ? 2 * (*it - 1) : 2 * (-*it - 1) + 1;
 #ifdef DEBUG
@@ -206,9 +206,9 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         // 1. Positive literals from state
         for( STATE_CLASS::const_iterator it = state.begin(); it != state.end(); ++it ) {
 #ifdef DEBUG
-            //cout << Utils::red() << "[Theory] Add literal from state: ";
-            //state.print_literal(cout, 1 + *it, &kp_instance_);
-            //cout << Utils::normal() << endl;
+            cout << Utils::red() << "[Theory] Add literal from state: ";
+            state.print_literal(cout, 1 + *it, &kp_instance_);
+            cout << Utils::normal() << endl;
 #endif
 #if defined(UP)
             Inference::Propositional::Clause cl;
@@ -222,9 +222,9 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         for( vector<vector<int> >::const_iterator it = lw1.clauses_for_axioms_.begin(); it != lw1.clauses_for_axioms_.end(); ++it ) {
             const vector<int> &clause = *it;
 #ifdef DEBUG
-            //cout << Utils::red() << "[Theory] Add axiom: ";
-            //state.print_clause(cout, clause, &kp_instance_);
-            //cout << Utils::normal() << endl;
+            cout << Utils::red() << "[Theory] Add axiom: ";
+            state.print_clause(cout, clause, &kp_instance_);
+            cout << Utils::normal() << endl;
 #endif
 #if defined(UP)
             Inference::Propositional::Clause cl;
@@ -245,9 +245,9 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                     assert(jt->second.empty());
                     int k_literal = sensed_literal > 0 ? 1 + 2*(sensed_literal - 1) : 1 + 2*(-sensed_literal - 1) + 1;
 #ifdef DEBUG
-                    //cout << Utils::red() << "[Theory] Add obs (state) literal: ";
-                    //state.print_literal(cout, k_literal, &kp_instance_);
-                    //cout << Utils::normal() << endl;
+                    cout << Utils::red() << "[Theory] Add obs (state) literal: ";
+                    state.print_literal(cout, k_literal, &kp_instance_);
+                    cout << Utils::normal() << endl;
 #endif
 #if defined(UP)
                     Inference::Propositional::Clause cl;
@@ -261,9 +261,9 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                         for( size_t j = 0; j < cnf_for_sensing_model.size(); ++j ) {
                             const clause_t &clause = cnf_for_sensing_model[j];
 #ifdef DEBUG
-                            //cout << Utils::red() << "[Theory] Add K_o clause: ";
-                            //state.print_clause(cout, clause, &kp_instance_);
-                            //cout << Utils::normal() << endl;
+                            cout << Utils::red() << "[Theory] Add K_o clause: ";
+                            state.print_clause(cout, clause, &kp_instance_);
+                            cout << Utils::normal() << endl;
 #endif
 #if defined(UP)
                             Inference::Propositional::Clause cl;
@@ -346,6 +346,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         if( options_.is_enabled("lw1:inference:up:enhanced") ) {
 #if BASE_SELECTOR == 1
 #    if defined(UP)
+            state.cnf_.clear();
             for( size_t k = 0; k < result.size(); ++k ) {
                 const Inference::Propositional::Clause &cl = result[k];
                 if( base_theory.find(cl) != base_theory.end() ) continue;
@@ -477,7 +478,7 @@ void LW1_Solver::update_state_with_literals_for_observables(STATE_CLASS &state,
         state.add(value > 0 ? 2*index : 2*index + 1);
 #ifdef DEBUG
         cout << Utils::cyan()
-             << "Update state: variable=" << variable.name_
+             << "Update state with literal for observable: variable=" << variable.name_
              << ", value=" << value
              << ", value-index=" << index
              << ", atom=";

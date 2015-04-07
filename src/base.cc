@@ -975,8 +975,8 @@ void PDDL_Base::lw1_create_sensors_for_atom(const Atom &atom, const Condition &c
             if( options_.is_enabled("lw1:print:sensors") || options_.is_enabled("lw1:print:generated") )
                 cout << Utils::yellow() << *sensor << Utils::normal();
 
-            // if this is a singleton variable, create a copy that sets value to false
-            if( var.grounded_domain_.size() == 1 ) {
+            // if this is a binary variable, create a copy that sets value to false
+            if( var.is_binary() ) {
                 string name = string("sensor-for-") + var.to_string(true, true) + "-" + atom.to_string(atom.negated_, true) + "-false";
                 if( sensor_index != -1 ) name += "-" + to_string(sensor_index);
                 Sensor *sensor = new Sensor(strdup(name.c_str()));
@@ -1054,7 +1054,7 @@ void PDDL_Base::lw1_create_deductive_rules_for_variables() {
     cout << Utils::blue() << "(lw1) creating deductive rules for multivalued variables..." << Utils::normal() << endl;
     for( size_t k = 0; k < lw1_multivalued_variables_.size(); ++k ) {
         const Variable &var = *lw1_multivalued_variables_[k];
-        if( var.grounded_domain_.size() == 1 ) continue;
+        if( var.is_binary() ) continue;
         for( unsigned_atom_set::const_iterator it = var.grounded_domain_.begin(); it != var.grounded_domain_.end(); ++it ) {
             lw1_create_type1_var_drule(var, *it);
             lw1_create_type2_var_drule(var, *it);
@@ -1219,13 +1219,20 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
                 const StateVariable &state_variable = *static_cast<const StateVariable*>(&variable);
                 assert(actions_for_observable_state_variables_.find(&state_variable) != actions_for_observable_state_variables_.end());
                 const vector<const Action*> &actions = actions_for_observable_state_variables_.find(&state_variable)->second;
+
+                // generate type4 drules for each value and action
                 for( unsigned_atom_set::const_iterator it = state_variable.grounded_domain_.begin(); it != state_variable.grounded_domain_.end(); ++it ) {
                     const Atom &value = *it;
-                    for( size_t j = 0; j < actions.size(); ++j ) {
-                        const Action *action = actions[j];
-                        assert(0); // CHECK: need to generate drule for negative value for binary variables
-                        lw1_create_type4_sensing_drule(*action, state_variable, value);
-                    }
+                    for( size_t j = 0; j < actions.size(); ++j )
+                        lw1_create_type4_sensing_drule(*actions[j], state_variable, value);
+                }
+
+                // if variable is binary, generate rule for negative value
+                if( state_variable.is_binary() ) {
+                    Atom negated_value(*state_variable.grounded_domain_.begin(), true);
+                    assert(negated_value.negated_);
+                    for( size_t j = 0; j < actions.size(); ++j )
+                        lw1_create_type4_sensing_drule(*actions[j], state_variable, negated_value);
                 }
             }
         }
@@ -1237,7 +1244,7 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
                 const ObsVariable &variable = *jt->first;
                 for( map<Atom, list<const And*> >::const_iterator kt = jt->second.begin(); kt != jt->second.end(); ++kt ) {
                     const Atom &value = kt->first;
-                    if( !value.negated_ || (variable.grounded_domain_.size() == 1) || options_.is_enabled("lw1:literals-for-observables") )
+                    if( !value.negated_ || variable.is_binary() || options_.is_enabled("lw1:literals-for-observables") )
                         lw1_create_type4_sensing_drule(action, variable, value, jt->second);
                 }
             }
@@ -1412,20 +1419,26 @@ const PDDL_Base::Atom& PDDL_Base::lw1_fetch_atom_for_negated_term(const And &ter
 
 void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action, const StateVariable &variable, const Atom &value) {
 #ifdef DEBUG
-    cout << "Type4: action=" << action.print_name_
-         << ", state-variable=" << variable.to_string(true, false)
+    cout << "Type4: class=STATE"
+         << ", action=" << action.print_name_
+         << ", variable=" << variable.to_string(true, false)
          << ", value=" << value.to_string(false, false)
          << endl;
 #endif
 
-    assert(!value.negated_);
+    assert(!value.negated_ || variable.is_binary());
 
-    string name = string("drule-sensing-type4-") + action.print_name_ + "-" + variable.to_string(false, true) + "-" + value.to_string(false, true);
+    string name = string("drule-sensing-type4state-") + action.print_name_ + "-" + variable.to_string(false, true) + "-" + value.to_string(false, true);
     Action *drule = new Action(strdup(name.c_str()));
 
-    // precondition
-    drule->precondition_ = Literal(lw1_fetch_last_action_atom(action)).copy();
+    // pass the variable name to lw1_problem.cc in the comment for this action
+    drule->comment_ = variable.to_string(false, true);
 
+    // precondition and effect
+    drule->precondition_ = Literal(lw1_fetch_last_action_atom(action)).copy();
+    drule->effect_ = AtomicEffect(value).copy();
+
+#if 0
     // effects
     AndEffect *and_effect = new AndEffect;
     and_effect->push_back(AtomicEffect(value, value.negated_).copy());
@@ -1436,6 +1449,7 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action, const State
     }
     assert(!and_effect->empty());
     drule->effect_ = and_effect;
+#endif
 
     // insert action for deductive rule
     dom_actions_.push_back(drule);
@@ -1448,7 +1462,8 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action,
                                                const Atom &value,
                                                const map<Atom, list<const And*> > &sensing_models_for_action_and_var) {
 #ifdef DEBUG
-    cout << "Type4: action=" << action.print_name_
+    cout << "Type4: class=OBS"
+         << ", action=" << action.print_name_
          << ", observable-variable=" << variable.to_string(true, false)
          << ", value=" << value.to_string(false, false)
          << endl;
@@ -1461,13 +1476,12 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action,
     }
 
     assert(variable.beam_.find(value) != variable.beam_.end());
-    assert(!value.negated_ || (variable.grounded_domain_.size() > 1) || options_.is_enabled("lw1:literals-for-observables"));
+    assert(!value.negated_ || variable.is_binary() || options_.is_enabled("lw1:literals-for-observables"));
 
-    string name = string("drule-sensing-type4-") + action.print_name_ + "-" + variable.to_string(false, true) + "-" + value.to_string(false, true);
+    string name = string("drule-sensing-type4obs-") + action.print_name_ + "-" + variable.to_string(false, true) + "-" + value.to_string(false, true);
     Action *drule = new Action(strdup(name.c_str()));
 
     // pass the variable name to lw1_problem.cc in the comment for this action
-    //drule->comment_ = string(value.negated_ ? "-" : "+") + variable.to_string(false, true); // CHECK
     drule->comment_ = variable.to_string(false, true);
 
     // precondition
@@ -1550,7 +1564,7 @@ void PDDL_Base::lw1_create_type5_sensing_drule(const ObsVariable &variable) {
         //if( !options_.is_enabled("lw1:literals-for-observables:dynamic") && !variable.beam_.find(value)->second.empty() ) {
         if( !variable.beam_.find(value)->second.empty() ) {
 #ifdef DEBUG
-            cout << " ... skip because beam is non-empty" << endl;
+            //cout << " ... skip because beam is non-empty" << endl;
 #endif
             continue;
         }
@@ -1594,7 +1608,7 @@ void PDDL_Base::lw1_create_type5_sensing_drule(const ObsVariable &variable) {
 
                 // insert action for deductive rule
                 dom_actions_.push_back(drule);
-                if( true || options_.is_enabled("lw1:print:drule:sensing") || options_.is_enabled("lw1:print:drule") )
+                if( options_.is_enabled("lw1:print:drule:sensing") || options_.is_enabled("lw1:print:drule") )
                     cout << Utils::yellow() << *drule << Utils::normal();
             }
 #ifdef DEBUG
@@ -1887,7 +1901,7 @@ void PDDL_Base::lw1_remove_subsumed_conditions(set<signed_atom_set> &conditions)
 
 void PDDL_Base::lw1_compile_static_observable(const Atom &atom) {
     cout << Utils::blue() << "(lw1) compiling static observable '" << atom << "'" << Utils::normal() << endl;
-    assert(0);
+    assert(0); // CHECK: compile_static_observables is deprecated in this version
 
     // iterate over all sensing models extracting those relevant to atom
     Atom negated_atom(atom, true);
@@ -2573,7 +2587,7 @@ bool PDDL_Base::Literal::is_term(bool positive, const PDDL_Base *base) const {
                 const Variable &var = *base->lw1_multivalued_variables_[k];
                 if( var.grounded_domain_.find(*this) == var.grounded_domain_.end() ) continue;
                 value_for_some_variable = true;
-                if( var.grounded_domain_.size() != 1 ) return false;
+                if( !var.is_binary() ) return false;
             }
             return value_for_some_variable;
         }
@@ -3540,7 +3554,7 @@ bool PDDL_Base::SensingModelForObservableVariable::verify(const PDDL_Base *base)
     // check that literal is value of observable variable
     if( variable_ != 0 ) {
         string literal_name = literal_->to_string();
-        if( variable_->grounded_domain_.size() == 1 ) {
+        if( variable_->is_binary() ) {
             const Atom &value = *variable_->grounded_domain_.begin();
             if( (value.to_string() != literal_name) && (string("(not ") + value.to_string() + ")" != literal_name) ) {
                 cout << Utils::error() << "value '" << literal_name
@@ -3790,7 +3804,7 @@ bool PDDL_Base::Sensing::finish_grounding(PDDL_Base *base) {
     for( set<const ObsVariable*>::const_iterator it = variables.begin(); it != variables.end(); ++it ) {
         const ObsVariable &var = **it;
         string varname = var.to_string();
-        if( var.grounded_domain_.size() == 1 ) {
+        if( var.is_binary() ) {
             string value = var.grounded_domain_.begin()->to_string();
             string not_value = string("(not ") + value + ")";
             if( sensed_values_for_var[varname].find(value) == sensed_values_for_var[varname].end() ) {

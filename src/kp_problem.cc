@@ -141,7 +141,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
     n_subgoaling_actions_(0),
     po_instance_(ins) {
 
-    assert(0);
+    assert(0); // CHECK
 
     // set name
     if( dynamic_cast<const InstanceName*>(ins.name_) != 0 ) {

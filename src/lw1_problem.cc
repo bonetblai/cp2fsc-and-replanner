@@ -423,34 +423,32 @@ LW1_Instance::LW1_Instance(const Instance &ins,
         // create fixed set of clauses (variable domain axioms) for UP inference
         for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
             const Variable &var = *multivalued_variables_[k];
-            if( var.is_state_variable_ ) {
+            if( var.is_state_variable_ && !var.is_binary() ) {
+                // for binary variables, nothing to add because all clauses are tautological
                 const set<int> &domain = var.domain_;
-                if( domain.size() == 1 ) {
-                    // nothing to add because all clauses are tautological
-                } else {
-                    // for each value x, Kx <= [K-x_i for all i with x_i != x]
-                    for( set<int>::const_iterator it = domain.begin(); it != domain.end(); ++it ) {
-                        vector<int> clause;
-                        clause.reserve(domain.size());
-                        clause.push_back(1 + 2**it);
-                        for( set<int>::const_iterator jt = domain.begin(); jt != domain.end(); ++jt ) {
-                            if( it != jt ) clause.push_back(-(1 + 2**jt+1));
-                        }
-                        clauses_for_axioms_.push_back(clause);
-                        //cout << "CLAUSE0: "; LW1_State::print_clause(cout, clause, this); cout << endl;
-                    }
 
-                    // for each pair of values x and x', Kx => K-x'
-                    for( set<int>::const_iterator it = domain.begin(); it != domain.end(); ++it ) {
-                        for( set<int>::const_iterator jt = it; jt != domain.end(); ++jt ) {
-                            if( it != jt ) {
-                                vector<int> clause;
-                                clause.reserve(2);
-                                clause.push_back(-(1 + 2**it));
-                                clause.push_back(1 + 2**jt+1);
-                                clauses_for_axioms_.push_back(clause);
-                                //cout << "CLAUSE1: "; LW1_State::print_clause(cout, clause, this); cout << endl;
-                            }
+                // for each value x, Kx <= [K-x_i for all i with x_i != x]
+                for( set<int>::const_iterator it = domain.begin(); it != domain.end(); ++it ) {
+                    vector<int> clause;
+                    clause.reserve(domain.size());
+                    clause.push_back(1 + 2**it);
+                    for( set<int>::const_iterator jt = domain.begin(); jt != domain.end(); ++jt ) {
+                        if( it != jt ) clause.push_back(-(1 + 2**jt+1));
+                    }
+                    clauses_for_axioms_.push_back(clause);
+                    //cout << "CLAUSE0: "; LW1_State::print_clause(cout, clause, this); cout << endl;
+                }
+
+                // for each pair of values x and x', Kx => K-x'
+                for( set<int>::const_iterator it = domain.begin(); it != domain.end(); ++it ) {
+                    for( set<int>::const_iterator jt = it; jt != domain.end(); ++jt ) {
+                        if( it != jt ) {
+                            vector<int> clause;
+                            clause.reserve(2);
+                            clause.push_back(-(1 + 2**it));
+                            clause.push_back(1 + 2**jt+1);
+                            clauses_for_axioms_.push_back(clause);
+                            //cout << "CLAUSE1: "; LW1_State::print_clause(cout, clause, this); cout << endl;
                         }
                     }
                 }
@@ -509,6 +507,14 @@ LW1_Instance::LW1_Instance(const Instance &ins,
         // add K-tautological clauses Kp => -K-P and define set of
         // literals that forbid clauses to enter the augmented state
         if( options_.is_enabled("lw1:inference:up:enhanced") ) {
+            assert(0); // CHECK: NEED TO FiX THIS
+
+            // Need to correctly identify literals/clauses that can be added to state after
+            // inference. Every state literal should be ok. For observable literals, only
+            // those that are statically defined in a unique way unless dynamic option
+            // is enabled. Clauses: only for static literals. No clause for dynamic
+            // literals should be added
+
             // create K-tautological clauses
             for( size_t k = 0; k < ins.n_atoms(); ++k ) {
                 vector<int> clause;
@@ -519,30 +525,23 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                 //cout << "CLAUSE4: " << flush; LW1_State::print_clause(cout, clause, this); cout << endl;
             }
 
-            // observable literals
+            // literals that forbid clauses to enter augmented state are observable
+            // non-state literals defined by non-static sensing models
             for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
                 const Variable &var = *multivalued_variables_[k];
-                if( !var.is_observable_ ) continue;
+                if( var.is_state_variable_ ) continue;
                 for( set<int>::const_iterator it = var.domain_.begin(); it != var.domain_.end(); ++it ) {
                     int value = *it;
-                    bool is_also_value_for_static_var = false;
-                    for( size_t j = 0; j < multivalued_variables_.size(); ++j ) {
-                        const Variable &other_var = *multivalued_variables_[j];
-                        if( var.is_observable_ ) continue;
-                        if( other_var.domain_.find(value) != other_var.domain_.end() ) {
-                            is_also_value_for_static_var = true;
-                            break;
-                        }
-                    }
-
-                    if( !is_also_value_for_static_var ) {
-                        clause_forbidden_literals_.insert(1 + 2*value);
-                        clause_forbidden_literals_.insert(1 + 2*value + 1);
-                        //cout << "Add clause-forbidden literals: ";
-                        //LW1_State::print_literal(cout, 1 + 2*value, this);
-                        //cout << " ";
-                        //LW1_State::print_literal(cout, 1 + 2*value + 1, this);
-                        //cout << endl;
+                    assert(var.beams_.find(value) != var.beams_.end());
+                    const index_set &beam = var.beams_.find(value)->second;
+                    if( !beam.empty() ) {
+                        clause_forbidding_literals_.insert(1 + 2*value);
+                        clause_forbidding_literals_.insert(1 + 2*value + 1);
+                        cout << "Add clause-forbidding literal: ";
+                        LW1_State::print_literal(cout, 1 + 2*value, this);
+                        cout << " ";
+                        LW1_State::print_literal(cout, 1 + 2*value + 1, this);
+                        cout << endl;
                     }
                 }
             }
@@ -555,13 +554,13 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                     int literal = *act.effect_.begin();
                     assert(literal > 0);
                     --literal;
-                    clause_forbidden_literals_.insert(1 + 2*literal);
-                    clause_forbidden_literals_.insert(1 + 2*literal + 1);
-                    //cout << "Add clause-forbidden literals: ";
-                    //LW1_State::print_literal(cout, 1 + 2*literal, this);
-                    //cout << " ";
-                    //LW1_State::print_literal(cout, 1 + 2*literal + 1, this);
-                    //cout << endl;
+                    clause_forbidding_literals_.insert(1 + 2*literal);
+                    clause_forbidding_literals_.insert(1 + 2*literal + 1);
+                    cout << "Add clause-forbidding literal: ";
+                    LW1_State::print_literal(cout, 1 + 2*literal, this);
+                    cout << " ";
+                    LW1_State::print_literal(cout, 1 + 2*literal + 1, this);
+                    cout << endl;
                 }
             }
         }
@@ -575,14 +574,14 @@ LW1_Instance::~LW1_Instance() {
 }
 
 bool LW1_Instance::is_forbidden(int literal) const {
-    return clause_forbidden_literals_.find(literal) != clause_forbidden_literals_.end();
+    return clause_forbidding_literals_.find(literal) != clause_forbidding_literals_.end();
 }
 
 bool LW1_Instance::is_forbidden(const vector<int> &clause) const {
     for( size_t k = 0; k < clause.size(); ++k ) {
-        if( clause_forbidden_literals_.find(clause[k]) != clause_forbidden_literals_.end() )
+        if( clause_forbidding_literals_.find(clause[k]) != clause_forbidding_literals_.end() )
             return true;
-        if( clause_forbidden_literals_.find(-clause[k]) != clause_forbidden_literals_.end() )
+        if( clause_forbidding_literals_.find(-clause[k]) != clause_forbidding_literals_.end() )
             return true;
     }
     return false;
@@ -704,12 +703,13 @@ void LW1_Instance::create_drule_for_var(const Action &action) {
 void LW1_Instance::create_drule_for_sensing(const Action &action) {
     string action_name = action.name_->to_string();
     if( options_.is_enabled("lw1:strict") ) {
-        assert((action_name.compare(0, 20, "drule-sensing-type3-") == 0) || (action_name.compare(0, 20, "drule-sensing-type4-") == 0) || (action_name.compare(0, 20, "drule-sensing-type5-") == 0));
+        assert((action_name.compare(0, 20, "drule-sensing-type3-") == 0) || (action_name.compare(0, 19, "drule-sensing-type4") == 0) || (action_name.compare(0, 20, "drule-sensing-type5-") == 0));
         assert(options_.is_enabled("lw1:literals-for-observables") || (action_name.compare(0, 20, "drule-sensing-type5-") != 0));
         assert(options_.is_enabled("lw1:drule:sensing:type3") || (action_name.compare(0, 20, "drule-sensing-type3-") != 0));
 
         if( action_name.compare(0, 20, "drule-sensing-type3-") == 0 ) {
             Action *nact = new Action(new CopyName(action_name));
+
             for( index_set::const_iterator it = action.precondition_.begin(); it != action.precondition_.end(); ++it ) {
                 int index = *it > 0 ? *it - 1 : -*it - 1;
                 nact->precondition_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
@@ -722,12 +722,72 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             }
 
             drule_store_.insert(make_pair(nact->precondition_, nact));
-        } else if( action_name.compare(0, 20, "drule-sensing-type4-") == 0 ) {
+        } else if( action_name.compare(0, 25, "drule-sensing-type4state-") == 0 ) {
             Action *nact = new Action(new CopyName(action_name));
 
-            // preconditions
+            assert(action.precondition_.size() == 1);
+            assert(action.effect_.size() == 1);
+            assert(action.when_.empty());
+
+            // variable
+            assert(action.comment_ != "");
+            string var_name = action.comment_;
+            assert(varmap_.find(var_name) != varmap_.end());
+            int var_index = varmap_[var_name];
+            const Variable &variable = *multivalued_variables_[var_index];
+            assert(variable.is_observable_);
+            assert(variable.is_state_variable_);
+
+            // index for precondition and effect
+            assert(*action.precondition_.begin() > 0);
+            int index_for_last_action_atom = *action.precondition_.begin() - 1;
+            int literal_for_value = *action.effect_.begin();
+            int index_for_value = literal_for_value > 0 ? literal_for_value - 1 : -literal_for_value - 1;
+            assert((literal_for_value > 0) || variable.is_binary());
+
+            // precondition for last-action-atom
+            nact->precondition_.insert(1 + 2*index_for_last_action_atom);
+
+            // other preconditions for action for literal KX=x
+            //
+            // For binary variable, -KX=x, -KX!=x
+            // For non-binary variable, -KX!=x, -KX=x' for *all* values x' of X
+            if( variable.is_binary() ) {
+                nact->precondition_.insert(-(1 + 2*index_for_value));
+                nact->precondition_.insert(-(1 + 2*index_for_value + 1));
+            } else {
+                nact->precondition_.insert(-(1 + 2*index_for_value + 1));
+                for( set<int>::const_iterator it = variable.domain_.begin(); it != variable.domain_.end(); ++it )
+                    nact->precondition_.insert(-(1 + 2**it));
+            }
+
+            // main effect: KX=x
+            nact->effect_.insert(literal_for_value > 0 ? 1 + 2*index_for_value : 1 + 2*index_for_value + 1);
+
+            // ramifications on other values of variable: for non-binary variables, KX!=x' for all values x' != x
+            if( !variable.is_binary() ) {
+                for( set<int>::const_iterator it = variable.domain_.begin(); it != variable.domain_.end(); ++it ) {
+                    if( *it != index_for_value )
+                        nact->effect_.insert(1 + 2**it + 1);
+                }
+            }
+
+            //nact->print(cout, *this);
+            drule_store_.insert(make_pair(nact->precondition_, nact));
+        } else if( action_name.compare(0, 23, "drule-sensing-type4obs-") == 0 ) {
+            Action *nact = new Action(new CopyName(action_name));
+
             assert(options_.is_enabled("lw1:literals-for-observables") || (action.precondition_.size() == 1));
             assert(!options_.is_enabled("lw1:literals-for-observables") || (action.precondition_.size() == 2));
+
+            // variable
+            assert(action.comment_ != "");
+            string var_name = action.comment_;
+            assert(varmap_.find(var_name) != varmap_.end());
+            int var_index = varmap_[var_name];
+            const Variable &variable = *multivalued_variables_[var_index];
+            assert(variable.is_observable_);
+            assert(!variable.is_state_variable_);
 
             // precondition for last-action-atom
             int index_for_last_action_atom = -1;
@@ -756,11 +816,6 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             // Special handling required when Y is a binary variable. The name of the variable comes in comment_
             if( options_.is_enabled("lw1:literals-for-observables") ) {
                 assert(index_for_value != -1);
-                assert(action.comment_ != "");
-                string var_name = action.comment_;
-                assert(varmap_.find(var_name) != varmap_.end());
-                int var_index = varmap_[var_name];
-                const Variable &variable = *multivalued_variables_[var_index];
 
                 // preconditions
                 for( set<int>::const_iterator jt = variable.domain_.begin(); jt != variable.domain_.end(); ++jt ) {
@@ -769,7 +824,7 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                     nact->precondition_.insert(-(1 + 2*index_for_value));
                 }
 
-                if( variable.domain_.size() == 1 ) {
+                if( variable.is_binary() ) {
                     int index_for_value = *variable.domain_.begin();
                     assert(index_for_value >= 0);
                     nact->precondition_.insert(-(1 + 2*index_for_value + 1));
@@ -810,6 +865,23 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             drule_store_.insert(make_pair(nact->precondition_, nact));
         } else {
             // skip sensing drules of type5 as they are not passed to classical problem
+            assert(action_name.compare(0, 20, "drule-sensing-type5-") == 0);
+#if 0
+            // CHECK: type5 rules make planner run slower for unknown reason
+            Action *nact = new Action(new CopyName(action_name));
+
+            for( index_set::const_iterator it = action.precondition_.begin(); it != action.precondition_.end(); ++it ) {
+                int index = *it > 0 ? *it - 1 : -*it - 1;
+                nact->precondition_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
+            }
+
+            for( index_set::const_iterator it = action.effect_.begin(); it != action.effect_.end(); ++it ) {
+                int index = *it > 0 ? *it - 1 : -*it - 1;
+                nact->effect_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
+            }
+
+            drule_store_.insert(make_pair(nact->precondition_, nact));
+#endif
         }
     } else {
         assert(action_name.compare(0, 14, "drule-sensing-") == 0);

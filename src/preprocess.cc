@@ -148,7 +148,13 @@ void Preprocessor::mark_unreachable_actions(const bool_vec &reachable_atoms, con
 // in the input vectors are false.
 
 void Preprocessor::compute_reachability(bool_vec &reachable_atoms, bool_vec &reachable_actions, bool_vec &reachable_sensors, bool_vec &reachable_axioms) const {
-    // initial set of reachable atoms are those in the initial situation
+    // initial set of reachable atoms are those that are protected in problem instance
+    for( index_set::const_iterator it = instance_.protected_atoms_.begin(); it != instance_.protected_atoms_.end(); ++it ) {
+        assert(*it >= 0);
+        reachable_atoms[*it] = true;
+    }
+
+    // extend reachable atoms with those in the initial situation
     for( index_set::const_iterator it = instance_.init_.literals_.begin(); it != instance_.init_.literals_.end(); ++it ) {
         if( *it > 0 ) reachable_atoms[*it - 1] = true;
     }
