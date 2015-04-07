@@ -206,13 +206,13 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         // 1. Positive literals from state
         for( STATE_CLASS::const_iterator it = state.begin(); it != state.end(); ++it ) {
 #ifdef DEBUG
-            cout << Utils::red() << "[Theory] Add literal from state: ";
-            state.print_literal(cout, 1 + *it, &kp_instance_);
-            cout << Utils::normal() << endl;
+            //cout << Utils::red() << "[Theory] Add literal from state: ";
+            //state.print_literal(cout, 1 + *it, &kp_instance_);
+            //cout << Utils::normal() << endl;
 #endif
 #if defined(UP)
             Inference::Propositional::Clause cl;
-            cl.push_back(1 + *it); // NOTA: en implementacion de clause, 'push_back' es un 'insert'
+            cl.push_back(1 + *it); // CHECK: en implementacion de clause, 'push_back' es un 'insert'
             cnf.push_back(cl);
             base_theory.insert(cl);
 #endif
@@ -261,9 +261,9 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                         for( size_t j = 0; j < cnf_for_sensing_model.size(); ++j ) {
                             const clause_t &clause = cnf_for_sensing_model[j];
 #ifdef DEBUG
-                            cout << Utils::red() << "[Theory] Add K_o clause: ";
-                            state.print_clause(cout, clause, &kp_instance_);
-                            cout << Utils::normal() << endl;
+                            //cout << Utils::red() << "[Theory] Add K_o clause: ";
+                            //state.print_clause(cout, clause, &kp_instance_);
+                            //cout << Utils::normal() << endl;
 #endif
 #if defined(UP)
                             Inference::Propositional::Clause cl;
