@@ -41,6 +41,7 @@ class LW1_Instance : public KP_Instance {
         Variable(const std::string &name, bool is_observable, bool is_state_variable, const std::set<int> &domain, const std::map<int, index_set> &beams)
             : name_(name), is_observable_(is_observable), is_state_variable_(is_state_variable), domain_(domain), beams_(beams) {
         }
+        bool is_binary() const { return domain_.size() == 1; }
         void print(std::ostream &os) const;
     };
 
@@ -53,8 +54,9 @@ class LW1_Instance : public KP_Instance {
     std::map<std::string, std::map<int, std::map<int, std::vector<std::vector<int> > > > > sensing_models_as_dnf_;
     std::map<std::string, std::set<int> > vars_sensed_by_action_;
 
-    // inference: clauses with the following literals should not be preserved
-    std::set<int> clause_forbidden_literals_;
+    // inference: literals that may enter state and/or cnf (aka augmented state)
+    std::set<int> non_state_literals_;
+    std::set<int> clause_forbidding_literals_;
 
     // TODO: can we get rid of beams_for_observable_atoms_?
     std::multimap<index_set, const Action*> drule_store_;

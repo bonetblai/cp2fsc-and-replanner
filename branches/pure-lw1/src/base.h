@@ -680,16 +680,20 @@ class PDDL_Base {
         effect_vec domain_;
         unsigned_atom_set grounded_domain_;
         std::map<Atom, unsigned_atom_set, Atom::unsigned_less_comparator> beam_;
+
         Variable(const char *name) : Symbol(name, sym_varname), grounded_(false) { }
         virtual ~Variable() {
             for( size_t k = 0; k < domain_.size(); ++k )
                 delete domain_[k];
         }
+
         void instantiate(variable_list &vlist) const;
         const unsigned_atom_set& beam_for_value(const Atom &value) const {
             assert(beam_.find(value) != beam_.end());
             return beam_.find(value)->second;
         } 
+        bool is_binary() const { return grounded_domain_.size() == 1; }
+
         virtual void process_instance() const;
         virtual Variable* make_instance(const char *name) const = 0;
         virtual bool is_state_variable() const = 0;

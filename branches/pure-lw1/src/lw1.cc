@@ -49,7 +49,7 @@ void print_usage(ostream &os, const char *exec_name, const char **cmdline_option
        << endl << endl;
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, const char *argv[]) {
     StringTable symbols(50, lowercase_map);
     bool        opt_debug_parser = false;
     bool        opt_print_plan = true;
@@ -60,6 +60,9 @@ int main(int argc, char *argv[]) {
     string      opt_planner_path = "";
     string      opt_tmpfile_path = "";
     bool        opt_strict_lw1 = false;
+
+    // print cmdline
+    cout << "cmdline: " << Utils::cmdline(argc, argv) << endl;
 
     // initialize options
     for( const char **opt = &available_options[0]; *opt != 0; ++opt ) {

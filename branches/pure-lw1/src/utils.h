@@ -39,6 +39,13 @@ inline std::string cyan() { return "\x1B[36;1m"; }
 inline std::string error() { return "\x1B[31;1merror: \x1B[0m"; }
 inline std::string warning() { return "\x1B[35;1mwarning: \x1B[0m"; }
 
+inline std::string cmdline(int argc, const char *argv[]) {
+    std::string cmd = argv[0];
+    for( int j = 1; j < argc; ++j )
+        cmd += std::string(" ") + argv[j];
+    return cmd;
+}
+
 };
 
 #endif
