@@ -360,7 +360,12 @@ LW1_Instance::LW1_Instance(const Instance &ins,
         //const Atom &atom = *ins.atoms_[k];
         if( (init_.literals_.find(1 + 2*k) == init_.literals_.end()) &&
             (init_.literals_.find(1 + 2*k+1) == init_.literals_.end()) ) {
-            cout << Utils::red() << "XXXXXX COMPLETION OF INIT is off!" << Utils::normal() << endl;
+            cout << Utils::red()
+                 << "XXXXXX COMPLETION OF INIT:"
+                 << Utils::normal()
+                 << " status=off, literal=";
+            State::print_literal(cout, 1 + 2*k + 1, this);
+            cout << endl; 
             //init_.literals_.insert(1 + 2*k+1);
             if( options_.is_enabled("kp:print:atom:init") ) {
                 cout << "Atom " << atoms_[2*k+1]->name_ << " added to init" << endl;
@@ -767,20 +772,15 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             nact->effect_.insert(literal_for_value > 0 ? 1 + 2*index_for_value : 1 + 2*index_for_value + 1);
 
             // ramifications on other values of variable: for non-binary variables, KX!=x' for all values x' != x
-            if( !variable.is_binary() ) {
-                for( set<int>::const_iterator it = variable.domain_.begin(); it != variable.domain_.end(); ++it ) {
-                    if( *it != index_for_value )
-                        nact->effect_.insert(1 + 2**it + 1);
-                }
-            }
+            if( !variable.is_binary() && options_.is_enabled("lw1:boost:complete-effects:type4:state") )
+                complete_effect(nact->effect_, literal_for_value, variable);
 
             //nact->print(cout, *this);
             drule_store_.insert(make_pair(nact->precondition_, nact));
         } else if( action_name.compare(0, 23, "drule-sensing-type4obs-") == 0 ) {
             Action *nact = new Action(new CopyName(action_name));
 
-            assert(options_.is_enabled("lw1:boost:literals-for-observables") || (action.precondition_.size() == 1));
-            assert(!options_.is_enabled("lw1:boost:literals-for-observables") || (action.precondition_.size() == 2));
+            assert(action.precondition_.size() == 2);
 
             // variable
             assert(action.comment_ != "");
@@ -805,38 +805,29 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                 }
             }
             assert(index_for_last_action_atom != -1);
+            assert(index_for_value != -1);
+
+            // add as precondition the last-action-atom. Also, if lw1:boost:literals-for-observables
+            // is enabled, add the literal -KY!=y when the sensed literal is Y=y or -KY=y
+            // when the sensed literal is Y!=y
             nact->precondition_.insert(1 + 2*index_for_last_action_atom);
+            if( options_.is_enabled("lw1:boost:literals-for-observables") )
+                nact->precondition_.insert(literal_for_value > 0 ? -(1 + 2*index_for_value + 1) : -(1 + 2*index_for_value));
 
-            // Preconditions and effects for observable literals.
-            //
-            // If the rule corresponds to literal Y=y, the precondition needs to contain -KY=y' for *all*
-            // values of the variable Y and -KY!=y, and the effects need to include KY=y.
-            //
-            // If the rule corresponds to literal Y!=y, the precondition needs to contain -KY=y' for *all*
-            // values of the variable Y and -KY=y, and the effects need to include KY!=y.
-            //
-            // Special handling required when Y is a binary variable. The name of the variable comes in comment_
+            // if lw1:boost:literals-for-observables is enabled, add preconditions -KY=y' for *all*
+            // values y' of sensed observable var Y. Special handling when Y is binary variable.
             if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
-                assert(index_for_value != -1);
-
-                // preconditions
                 for( set<int>::const_iterator jt = variable.domain_.begin(); jt != variable.domain_.end(); ++jt ) {
                     int index_for_value = *jt;
                     assert(index_for_value >= 0);
                     nact->precondition_.insert(-(1 + 2*index_for_value));
                 }
-
-                if( variable.is_binary() ) {
-                    int index_for_value = *variable.domain_.begin();
-                    assert(index_for_value >= 0);
-                    nact->precondition_.insert(-(1 + 2*index_for_value + 1));
-                }
-
-                nact->precondition_.insert(literal_for_value > 0 ? -(1 + 2*index_for_value + 1) : -(1 + 2*index_for_value));
-
-                // effects
-                nact->effect_.insert(literal_for_value > 0 ? 1 + 2*index_for_value : 1 + 2*index_for_value + 1);
+                if( variable.is_binary() ) nact->precondition_.insert(-(1 + 2*index_for_value + 1));
             }
+
+            // effects for observable literals
+            if( options_.is_enabled("lw1:boost:literals-for-observables") )
+                nact->effect_.insert(literal_for_value > 0 ? 1 + 2*index_for_value : 1 + 2*index_for_value + 1);
 
             // each unconditional effect L becomes conditional of form: -K-L => KL
             for( index_set::const_iterator it = action.effect_.begin(); it != action.effect_.end(); ++it ) {
@@ -844,6 +835,7 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                 When w;
                 w.condition_.insert(*it > 0 ? -(1 + 2*index + 1) : -(1 + 2*index));
                 w.effect_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
+                if( options_.is_enabled("lw1:boost:complete-effects:type4:obs") ) complete_effect(w.effect_, *it); // CHECK
                 nact->when_.push_back(w);
             }
 
@@ -860,6 +852,7 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                     int index = *it > 0 ? *it - 1 : -*it - 1;
                     w.condition_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
                 }
+                if( options_.is_enabled("lw1:boost:complete-effects:type4:obs") ) complete_effect(w.effect_, head); // CHECK
                 nact->when_.push_back(w);
             }
 
@@ -901,6 +894,22 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
         }
 
         drule_store_.insert(make_pair(nact->precondition_, nact));
+    }
+}
+
+void LW1_Instance::complete_effect(index_set &effect, int literal, const Variable &variable) const {
+    assert(variable.is_state_variable_ && !variable.is_binary());
+    int index = literal > 0 ? literal - 1 : -literal - 1;
+    if( (literal > 0) && (variable.domain_.find(index) != variable.domain_.end()) ) {
+        for( set<int>::const_iterator it = variable.domain_.begin(); it != variable.domain_.end(); ++it )
+            if( index != *it ) effect.insert(1 + 2**it + 1);
+    }
+}
+
+void LW1_Instance::complete_effect(index_set &effect, int literal) const {
+    for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
+        const Variable &variable = *multivalued_variables_[k];
+        if( variable.is_state_variable_ && !variable.is_binary() ) complete_effect(effect, literal, variable);
     }
 }
 

@@ -111,7 +111,6 @@ const char *available_options[] = {
 
     // lw1 (old extensions)
     "lw1:compile-static-observables",          "[LW1] compile the value of static observable fluents at init", // CHECK
-    "lw1:complete-effects",                    "[LW1] complete effects for multivalued variables", // CHECK
 
     // lw1 (inference)
     "lw1:inference:forward-chaining",          "[LW1] uses forward chaining of drules to make inference (old and sometimes incorrect method)",
@@ -120,6 +119,10 @@ const char *available_options[] = {
     "lw1:inference:up:enhanced",               "[LW1] maintain inferred (non-forbidden) clauses",
 
     // lw1 boost
+    "lw1:boost:complete-effects",                           "[LW1] complete effects for multivalued variables", // CHECK
+    "lw1:boost:complete-effects:type4",                     "[LW1] complete effects for multivalued variables", // CHECK
+    "lw1:boost:complete-effects:type4:obs",                 "[LW1] complete effects for multivalued variables", // CHECK
+    "lw1:boost:complete-effects:type4:state",               "[LW1] complete effects for multivalued variables", // CHECK
     "lw1:boost:disabling-actions-for-last-action-atoms",    "[LW1] XXXX", // CHECK
     "lw1:boost:drule:sensing:type4",                        "[LW1] XXXX", // CHECK
     "lw1:boost:drule:sensing:type3",                        "[LW1] generate deductive rules for sensing of type 3", // CHECK (rename types)
