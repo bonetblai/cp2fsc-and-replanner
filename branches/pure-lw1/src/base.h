@@ -833,8 +833,9 @@ class PDDL_Base {
     variable_group_vec                        lw1_variable_groups_;
 
     std::map<const Action*, std::map<const ObsVariable*, std::map<Atom, std::list<const And*> > > > lw1_sensing_models_index_;
-    std::map<const StateVariable*, std::vector<const Action*> > actions_for_observable_state_variables_;
+    std::map<const StateVariable*, std::vector<const Action*> > lw1_actions_for_observable_state_variables_;
     std::list<std::pair<const Action*, const Sensing*> > lw1_sensing_models_;
+    std::map<std::pair<const ObsVariable*, Atom>, std::map<std::string, std::set<const Action*> > > lw1_xxx_;
 
     PDDL_Base(StringTable& t, const Options::Mode &options);
     ~PDDL_Base();
@@ -919,6 +920,7 @@ class PDDL_Base {
                                         const std::map<Atom, std::list<const And*> > &sensing_models_for_action_and_var);
     void lw1_create_type5_sensing_drule(const ObsVariable &variable);
     const Atom& lw1_fetch_last_action_atom(const Action &action);
+    void associate_actions_with_equivalent_atoms_for_last_action();
     void lw1_patch_actions_with_atoms_for_last_action();
 
     // methods to create sensors (for multivalued variables)

@@ -80,6 +80,10 @@ class LW1_Instance : public KP_Instance {
     void create_drule_for_var(const Action &action);
     void create_drule_for_sensing(const Action &action);
     void create_drule_for_atom(const Action &action);
+
+    void complete_effect(index_set &effect, int literal, const Variable &variable) const;
+    void complete_effect(index_set &effect, int literal) const;
+
     void merge_drules();
     void create_sensor(const Sensor &sensor);
     void perform_subgoaling();

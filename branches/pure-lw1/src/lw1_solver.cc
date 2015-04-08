@@ -222,9 +222,9 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         for( vector<vector<int> >::const_iterator it = lw1.clauses_for_axioms_.begin(); it != lw1.clauses_for_axioms_.end(); ++it ) {
             const vector<int> &clause = *it;
 #ifdef DEBUG
-            cout << Utils::red() << "[Theory] Add axiom: ";
-            state.print_clause(cout, clause, &kp_instance_);
-            cout << Utils::normal() << endl;
+            //cout << Utils::red() << "[Theory] Add axiom: ";
+            //state.print_clause(cout, clause, &kp_instance_);
+            //cout << Utils::normal() << endl;
 #endif
 #if defined(UP)
             Inference::Propositional::Clause cl;
