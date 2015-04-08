@@ -137,7 +137,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
     }
 
     // store accepted literals for observables
-    if( options_.is_enabled("lw1:literals-for-observables") ) {
+    if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
         for( map<string, set<string> >::const_iterator it = accepted_literals_for_observables.begin(); it != accepted_literals_for_observables.end(); ++it ) {
             const string &var_name = it->first;
             assert(varmap_.find(var_name) != varmap_.end());
@@ -456,7 +456,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
         }
 
         // create clauses for type5 sensing drules
-        if( options_.is_enabled("lw1:literals-for-observables") ) {
+        if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
             for( size_t k = 0; k < ins.n_actions(); ++k ) {
                 const Action &act = *ins.actions_[k];
                 if( act.name_->to_string().compare(0, 20, "drule-sensing-type5-") == 0 ) {
@@ -480,7 +480,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
         }
 
         // create clauses for type3 sensing drules
-        if( options_.is_enabled("lw1:drule:sensing:type3") ) {
+        if( options_.is_enabled("lw1:boost:drule:sensing:type3") ) {
             for( size_t k = 0; k < ins.n_actions(); ++k ) {
                 const Action &act = *ins.actions_[k];
                 if( (act.name_->to_string().compare(0, 11, "drule-atom-") == 0) ||
@@ -601,8 +601,10 @@ void LW1_Instance::create_regular_action(const Action &action,
     // preconditions
     for( index_set::const_iterator it = action.precondition_.begin(); it != action.precondition_.end(); ++it ) {
         int idx = *it > 0 ? *it-1 : -*it-1;
-        assert(last_action_atoms_.find(idx) == last_action_atoms_.end());
-        nact.precondition_.insert(*it > 0 ? 1 + 2*idx : 1 + 2*idx + 1);
+        if( last_action_atoms_.find(idx) == last_action_atoms_.end() )
+            nact.precondition_.insert(*it > 0 ? 1 + 2*idx : 1 + 2*idx + 1);
+         else
+            nact.precondition_.insert(*it > 0 ? 1 + 2*idx : -(1 + 2*idx));
     }
 
     // support and cancellation rules for unconditional effects
@@ -619,7 +621,7 @@ void LW1_Instance::create_regular_action(const Action &action,
         } else {
             nact.effect_.insert(*it > 0 ? 1 + 2*idx : -(1 + 2*idx));
         }
-        if( !options_.is_enabled("lw1:strict") || options_.is_enabled("lw1:literals-for-observables:dynamic") ) {
+        if( !options_.is_enabled("lw1:strict") || options_.is_enabled("lw1:boost:literals-for-observables:dynamic") ) {
             lw1_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, nact.effect_);
         }
     }
@@ -651,7 +653,7 @@ void LW1_Instance::create_regular_action(const Action &action,
                 if( observable_atoms.find(idx) == observable_atoms.end() )
                     can_eff.effect_.insert(-(1 + 2*idx));
             }
-            if( !options_.is_enabled("lw1:strict") || options_.is_enabled("lw1:literals-for-observables:dynamic") ) {
+            if( !options_.is_enabled("lw1:strict") || options_.is_enabled("lw1:boost:literals-for-observables:dynamic") ) {
                 lw1_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, sup_eff.effect_);
                 lw1_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, can_eff.effect_);
             }
@@ -704,8 +706,8 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
     string action_name = action.name_->to_string();
     if( options_.is_enabled("lw1:strict") ) {
         assert((action_name.compare(0, 20, "drule-sensing-type3-") == 0) || (action_name.compare(0, 19, "drule-sensing-type4") == 0) || (action_name.compare(0, 20, "drule-sensing-type5-") == 0));
-        assert(options_.is_enabled("lw1:literals-for-observables") || (action_name.compare(0, 20, "drule-sensing-type5-") != 0));
-        assert(options_.is_enabled("lw1:drule:sensing:type3") || (action_name.compare(0, 20, "drule-sensing-type3-") != 0));
+        assert(options_.is_enabled("lw1:boost:literals-for-observables") || (action_name.compare(0, 20, "drule-sensing-type5-") != 0));
+        assert(options_.is_enabled("lw1:boost:drule:sensing:type3") || (action_name.compare(0, 20, "drule-sensing-type3-") != 0));
 
         if( action_name.compare(0, 20, "drule-sensing-type3-") == 0 ) {
             Action *nact = new Action(new CopyName(action_name));
@@ -777,8 +779,8 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
         } else if( action_name.compare(0, 23, "drule-sensing-type4obs-") == 0 ) {
             Action *nact = new Action(new CopyName(action_name));
 
-            assert(options_.is_enabled("lw1:literals-for-observables") || (action.precondition_.size() == 1));
-            assert(!options_.is_enabled("lw1:literals-for-observables") || (action.precondition_.size() == 2));
+            assert(options_.is_enabled("lw1:boost:literals-for-observables") || (action.precondition_.size() == 1));
+            assert(!options_.is_enabled("lw1:boost:literals-for-observables") || (action.precondition_.size() == 2));
 
             // variable
             assert(action.comment_ != "");
@@ -814,7 +816,7 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             // values of the variable Y and -KY=y, and the effects need to include KY!=y.
             //
             // Special handling required when Y is a binary variable. The name of the variable comes in comment_
-            if( options_.is_enabled("lw1:literals-for-observables") ) {
+            if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
                 assert(index_for_value != -1);
 
                 // preconditions
@@ -1117,13 +1119,13 @@ void LW1_Instance::print_stats(ostream &os) const {
     os << "kp-instance: source=lw1-translation"
        << ", #standard-actions=" << n_standard_actions_
        << ", #sensor-actions=" << n_sensor_actions_
-       << ", #dules-for-vars=" << n_drules_for_vars_
-       << ", #dules-for-sensing=" << n_drules_for_sensing_
-       << ", #dules-for-atoms=" << n_drules_for_atoms_
+       << ", #drules-for-vars=" << n_drules_for_vars_
+       << ", #drules-for-sensing=" << n_drules_for_sensing_
+       << ", #drules-for-atoms=" << n_drules_for_atoms_
        << ", #subgoaling-actions=" << n_subgoaling_actions_
        << ", #clauses-for-axioms=" << clauses_for_axioms_.size();
 
-    if( options_.is_enabled("lw1:literals-for-observables" ) ) {
+    if( options_.is_enabled("lw1:boost:literals-for-observables" ) ) {
         int num_atoms_for_observables = 0;
         for( map<string, set<int> >::const_iterator it = atoms_for_observables_.begin(); it != atoms_for_observables_.end(); ++it )
             num_atoms_for_observables += it->second.size();

@@ -41,9 +41,16 @@ namespace Options {
       void add(const std::string &opt) { add(Option(opt)); }
       void add(const std::string &opt, const std::string &desc) { add(Option(opt, desc)); }
 
-      bool is_option(const Option &opt) const { return options_.find(opt) != options_.end(); }
-      bool is_enabled(const Option &opt) const { return enabled_.find(opt) != enabled_.end(); }
+      bool is_option(const std::string &opt) const { return is_option(Option(opt)); }
       bool is_enabled(const std::string &opt) const { return is_enabled(Option(opt)); }
+      bool is_option(const Option &opt) const { return options_.find(opt) != options_.end(); }
+      bool is_enabled(const Option &opt) const {
+          if( !is_option(opt) ) {
+              std::cout << Utils::internal_error() << "checking for inexistent option '" << opt.name_ << "'" << std::endl;
+              return false;
+          }
+          return enabled_.find(opt) != enabled_.end();
+      }
 
       bool enable(const Option &opt) {
           bool good_option = is_option(opt);

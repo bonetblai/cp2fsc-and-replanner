@@ -49,7 +49,7 @@ const char *available_options[] = {
     "ks0:print:merge:literals",                "[KS0] print the name of literals to be merged",
     "ks0:print:merge:action",                  "[KS0] print the name of the merge actions",
 
-    // kp-translation options (k_replanner)
+    // kp-translation options (k_replanner, clg, lw1)
     "kp:print:raw",                            "[KP] print the translation before preprocessing",
     "kp:print:preprocessed",                   "[KP] print the translation after preprocessing",
     "kp:print:atom:init",                      "[KP] print the name of atoms added to initial situation",
@@ -62,13 +62,13 @@ const char *available_options[] = {
     "kp:merge-drules",                         "[KP] merge decision rules with common precondition",
     "kp:subgoaling",                           "[KP] goal of KP problem is either goal or unknown static fluents",
 
-    // planner options (k_replanner)
+    // planner options (k_replanner, clg, lw1)
     "planner:print:plan",                      "[PLANNER] print classical plan (reduced)",
     "planner:print:plan:raw",                  "[PLANNER] print classical plan (raw)",
     "planner:remove-intermediate-files",       "[PLANNER] remove the files created for calling the classical planner",
     "planner:support-for-axioms",              "[PLANNER] indicates that the classical planner supports axioms (aka derived predicates)",
 
-    // solver options (k_replanner)
+    // solver options (k_replanner, clg, lw1)
     "solver:print:assumptions",                "[SOLVER] print assumptions made in classical plan",
     "solver:print:steps",                      "[SOLVER] print the result of each action in the plan",
     //"solver:print:inconsistency",              "[SOLVER] print when detecting an inconsistency",
@@ -77,7 +77,7 @@ const char *available_options[] = {
     "solver:print:fired-sensors",              "[SOLVER] print the fired sensors at each step of the plan",
     "solver:print:sensed-literals",            "[SOLVER] print the sensed literals at each step of the plan",
 
-    // clg translation
+    // clg
     "clg:print:effect",                        "[CLG] print effect actions",
     "clg:print:set-sensing",                   "[CLG] print set-sensing actions",
     "clg:print:turn-on-sensor",                "[CLG] print turn-on-sensor actions (only when no effect and set-sensing actions)",
@@ -88,7 +88,7 @@ const char *available_options[] = {
     "clg:print:invariants:sensing",            "[CLG] print sensing invariants",
     "clg:print:invariants",                    "[CLG] print all invariants",
     
-    // lw1 planner
+    // lw1
     "lw1:print:observable-atoms",              "[LW1] print observable atoms",
     "lw1:print:atoms-for-state-variables",     "[LW1] print atoms for state variables",
     "lw1:print:variables:groups",              "[LW1] print instantiated variable groups",
@@ -109,18 +109,22 @@ const char *available_options[] = {
     "lw1:strict",                              "[LW1] strict compliance with lw1 specification",
     "lw1:sensing:make-dnf",                    "[LW1] when sensing model is not in DNF, do automatic translation (may be very inefficient)",
 
-    // lw1 planner (extensions)
-    "lw1:literals-for-observables",            "[LW1] add literals for static observable variables (useful in problem with width > 1)",
-    "lw1:literals-for-observables:dynamic",    "[LW1] add literals for observable variables (useful in problem with width > 1)",
+    // lw1 (old extensions)
     "lw1:compile-static-observables",          "[LW1] compile the value of static observable fluents at init", // CHECK
     "lw1:complete-effects",                    "[LW1] complete effects for multivalued variables", // CHECK
-    "lw1:drule:sensing:type3",                 "[LW1] generate deductive rules for sensing of type 3", // CHECK (rename types)
 
-    // lw1 planner (inference)
+    // lw1 (inference)
     "lw1:inference:forward-chaining",          "[LW1] uses forward chaining of drules to make inference (old and sometimes incorrect method)",
     "lw1:inference:up",                        "[LW1] uses unit resolution as inference mechanism",
-    "lw1:inference:up:1-lookahead",            "[LW1] uses unit resolution with 1-lookahead as inference mechanism",
+    "lw1:inference:up:lookahead",              "[LW1] uses unit resolution with 1-lookahead as inference mechanism",
     "lw1:inference:up:enhanced",               "[LW1] maintain inferred (non-forbidden) clauses",
+
+    // lw1 boost
+    "lw1:boost:disabling-actions-for-last-action-atoms",    "[LW1] XXXX", // CHECK
+    "lw1:boost:drule:sensing:type4",                        "[LW1] XXXX", // CHECK
+    "lw1:boost:drule:sensing:type3",                        "[LW1] generate deductive rules for sensing of type 3", // CHECK (rename types)
+    "lw1:boost:literals-for-observables",                   "[LW1] add literals for static observables (useful in problem with width > 1)", // CHECK
+    "lw1:boost:literals-for-observables:dynamic",           "[LW1] add literals for observables (useful in problem with width > 1)", // CHECK
 
     0
 };

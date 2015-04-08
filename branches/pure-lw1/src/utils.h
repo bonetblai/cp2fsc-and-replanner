@@ -38,6 +38,7 @@ inline std::string magenta() { return "\x1B[35;1m"; }
 inline std::string cyan() { return "\x1B[36;1m"; }
 inline std::string error() { return "\x1B[31;1merror: \x1B[0m"; }
 inline std::string warning() { return "\x1B[35;1mwarning: \x1B[0m"; }
+inline std::string internal_error() { return "\x1B[31;1minternal error: \x1B[0m"; }
 
 inline std::string cmdline(int argc, const char *argv[]) {
     std::string cmd = argv[0];

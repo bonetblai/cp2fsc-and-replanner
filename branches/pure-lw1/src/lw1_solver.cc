@@ -38,7 +38,7 @@ void LW1_Solver::compute_and_add_observations(const Instance::Action *last_actio
                     int index = *variable.domain_.begin();
                     bool satisfy = value_observable_literal(hidden, *last_action, *jt, index);
                     sensed_at_step.insert(satisfy ? 1 + index : -(1 + index));
-                    if( options_.is_enabled("lw1:literals-for-observables") )
+                    if( options_.is_enabled("lw1:boost:literals-for-observables") )
                         update_state_with_literals_for_observables(state, *last_action, variable, satisfy ? 1 + index : -(1 + index));
                 } else {
                     bool some_value_sensed = false;
@@ -49,7 +49,7 @@ void LW1_Solver::compute_and_add_observations(const Instance::Action *last_actio
                             if( !some_value_sensed ) {
                                 sensed_at_step.insert(1 + index);
                                 some_value_sensed = true;
-                                if( options_.is_enabled("lw1:literals-for-observables") )
+                                if( options_.is_enabled("lw1:boost:literals-for-observables") )
                                     update_state_with_literals_for_observables(state, *last_action, variable, 1 + index);
                             } else {
                                 cout << Utils::error() << "more than one value sensed for variable '"
@@ -186,7 +186,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
 #endif
 
         // 0. Add observations as unit clauses
-        if( options_.is_enabled("lw1:inference:up:enhanced") || options_.is_enabled("lw1:literals-for-observables") ) {
+        if( options_.is_enabled("lw1:inference:up:enhanced") || options_.is_enabled("lw1:boost:literals-for-observables") ) {
             for( set<int>::const_iterator it = sensed_at_step.begin(); it != sensed_at_step.end(); ++it ) {
                 int k_literal = *it > 0 ? 2 * (*it - 1) : 2 * (-*it - 1) + 1;
 #ifdef DEBUG
@@ -303,8 +303,8 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
 #if defined(UP)
         Inference::Propositional::CNF result;
 #endif
-        if( options_.is_enabled("lw1:inference:up:1-lookahead") ) {
-            cout << Utils::error() << "inference method 'lw1:inference:up:1-lookahead' not yet implemented" << endl;
+        if( options_.is_enabled("lw1:inference:up:lookahead") ) {
+            cout << Utils::error() << "inference method 'lw1:inference:up:lookahead' not yet implemented" << endl;
             exit(255);
         } else {
 #if defined(UP)
