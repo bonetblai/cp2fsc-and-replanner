@@ -145,9 +145,9 @@ int main(int argc, const char *argv[]) {
     }
 
     // set implied options and default inference
-    if( g_options.is_enabled("lw1:literals-for-observables:dynamic") )
-        g_options.enable("lw1:literals-for-observables");
-    if( g_options.is_enabled("lw1:inference:up:enhanced") || g_options.is_enabled("lw1:inference:up:1-lookahead") )
+    if( g_options.is_enabled("lw1:boost:literals-for-observables:dynamic") )
+        g_options.enable("lw1:boost:literals-for-observables");
+    if( g_options.is_enabled("lw1:inference:up:enhanced") || g_options.is_enabled("lw1:inference:up:lookahead") )
         g_options.enable("lw1:inference:up");
     if( !g_options.is_enabled("lw1:inference:forward-chaining") && !g_options.is_enabled("lw1:inference:up") )
         g_options.enable("lw1:inference:forward-chaining"); // CHECK: default should be UP

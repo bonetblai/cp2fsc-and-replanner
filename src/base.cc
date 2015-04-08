@@ -213,7 +213,7 @@ void PDDL_Base::instantiate_elements() {
     variable_list vlist;
     for( size_t k = 0; k < lw1_multivalued_variables_.size(); ++k ) {
         lw1_multivalued_variables_[k]->instantiate(vlist);
-        //delete lw1_multivalued_variables_[k]; // CHECK THIS: The symbol associated to orig var is deleted (not in instantiation)
+        //delete lw1_multivalued_variables_[k]; // CHECK: The symbol associated to orig var is deleted (not in instantiation)
     }
     lw1_multivalued_variables_.clear();
     lw1_multivalued_variables_.reserve(vlist.size());
@@ -233,7 +233,7 @@ void PDDL_Base::instantiate_elements() {
     variable_group_list vglist;
     for( size_t k = 0; k < lw1_variable_groups_.size(); ++k ) {
         lw1_variable_groups_[k]->instantiate(this, vglist);
-        //delete lw1_variable_groups_[k]; // CHECK THIS: The symbol associated to orig var is deleted (not in instantiation)
+        //delete lw1_variable_groups_[k]; // CHECK: The symbol associated to orig var is deleted (not in instantiation)
     }
     lw1_variable_groups_.clear();
     lw1_variable_groups_.reserve(vglist.size());
@@ -373,6 +373,23 @@ bool PDDL_Base::is_static_atom(const Atom &atom) const {
     return atom.pred_->strongly_static_ || (dom_static_atoms_.find(atom) != dom_static_atoms_.end());
 }
 
+PDDL_Base::PredicateSymbol* PDDL_Base::create_predicate(const string &name, const var_symbol_vec *param) {
+    PredicateSymbol *new_predicate_symbol = new PredicateSymbol(strdup(name.c_str()));
+    if( param != 0 ) new_predicate_symbol->param_ = *param;
+    dom_predicates_.push_back(new_predicate_symbol);
+    return new_predicate_symbol;
+}
+
+PDDL_Base::Atom* PDDL_Base::create_atom(const string &name, const var_symbol_vec *param) {
+    Atom *atom = new Atom(create_predicate(name, param));
+    //cout << "Atom " << *atom << " created!" << endl;
+    return atom;
+}
+
+void PDDL_Base::create_normal_execution_atom() {
+    normal_execution_ = create_atom("normal-execution");
+}
+
 void PDDL_Base::declare_clg_translation() {
     if( !clg_translation_ )
         cout << Utils::blue() << "entering CLG-compatibility mode" << Utils::normal() << endl;
@@ -436,9 +453,7 @@ void PDDL_Base::clg_translate_actions() {
 
     // create atoms needed in translation
     if( !actions_to_translate.empty() ) {
-        PredicateSymbol *execution_status = new PredicateSymbol("normal-execution");
-        dom_predicates_.push_back(execution_status);
-        normal_execution_ = new Atom(execution_status);
+        create_normal_execution_atom();
 
         // extend initial and goal situations with (normal-execution)
         dom_init_.push_back(new InitLiteral(*normal_execution_));
@@ -485,11 +500,8 @@ void PDDL_Base::clg_translate(Action &action) {
 
     // save observations and create (do-post-sense-for-<action> <args>) predicate
     const Effect *observe = action.observe_;
-    PredicateSymbol *post_sense_pred = new PredicateSymbol(strdup((string("need-post-for-") + action.print_name_).c_str()));
-    post_sense_pred->param_ = action.param_;
-    dom_predicates_.push_back(post_sense_pred);
-    Atom need_post(post_sense_pred);
-    need_post.param_.insert(need_post.param_.begin(), post_sense_pred->param_.begin(), post_sense_pred->param_.end());
+    Atom need_post(create_predicate(string("need-post-for-") + action.print_name_, &action.param_));
+    need_post.param_.insert(need_post.param_.begin(), action.param_.begin(), action.param_.end());
 
     // Must do 3 things for this action:
     //
@@ -692,9 +704,7 @@ void PDDL_Base::lw1_translate_actions() {
 
     // create atoms needed in translation
     if( !actions_to_translate.empty() ) {
-        PredicateSymbol *execution_status = new PredicateSymbol("normal-execution");
-        dom_predicates_.push_back(execution_status);
-        normal_execution_ = new Atom(execution_status);
+        create_normal_execution_atom();
 
         // extend initial and goal situations with (normal-execution)
         dom_init_.push_back(new InitLiteral(*normal_execution_));
@@ -717,7 +727,7 @@ void PDDL_Base::lw1_translate_actions() {
                 Action &action = *dom_actions_[k];
                 And *precondition = new And;
                 if( action.precondition_ != 0 ) precondition->push_back(action.precondition_);
-                precondition->push_back(new Literal(*normal_execution_));
+                precondition->push_back(Literal(*normal_execution_).copy());
                 assert(precondition->is_grounded());
                 action.precondition_ = precondition->copy_and_simplify();
                 delete precondition;
@@ -730,7 +740,7 @@ void PDDL_Base::lw1_translate_actions() {
         Action *action = actions_to_translate[k];
         assert(action->sensing_->is_grounded());
         lw1_translate(*action);
-        //delete action; // NEED FIX: guess: delete params that are needed in sensing model (invariants)
+        //delete action; // CHECK: guess: delete params that are needed in sensing model (invariants)
     }
 
     // complete actions' effects
@@ -920,9 +930,109 @@ void PDDL_Base::lw1_translate_actions_strict() {
         original_actions_.insert(action.print_name_);
     }
 
+    // if requested, implement mechanism for disabling last-action-atoms 
+    if( options_.is_enabled("lw1:boost:disabling-actions-for-last-action-atoms") ) {
+        // compute actions that need translation (those with non-null sensing model)
+        action_vec actions_to_translate;
+        for( int k = 0; k < (int)dom_actions_.size(); ++k ) {
+            if( dom_actions_[k]->sensing_ != 0 ) {
+                actions_to_translate.push_back(dom_actions_[k]);
+                dom_actions_[k] = dom_actions_.back();
+                dom_actions_.pop_back();
+                --k;
+            }
+        }
+
+        // create atoms needed in translation
+        if( !actions_to_translate.empty() ) {
+            create_normal_execution_atom();
+
+            // extend initial and goal situations with (normal-execution)
+            dom_init_.push_back(new InitLiteral(*normal_execution_));
+            if( dom_goal_ == 0 ) {
+                dom_goal_ = new And;
+            } else if( dynamic_cast<const And*>(dom_goal_) == 0 ) {
+                And *new_goal = new And;
+                assert(dom_goal_->is_grounded());
+                new_goal->push_back(dom_goal_->copy_and_simplify());
+                delete dom_goal_;
+                dom_goal_ = new_goal;
+            }
+            static_cast<And*>(const_cast<Condition*>(dom_goal_))->push_back(Literal(*normal_execution_).copy());
+
+            // extend preconditions of other actions with (normal-execution).
+            if( !dom_actions_.empty() ) {
+                cout << Utils::blue() << "(lw1) extending preconditions with '(normal-execution)' for "
+                     << dom_actions_.size() << " action(s)" << Utils::normal() << endl;
+                for( size_t k = 0; k < dom_actions_.size(); ++k ) {
+                    Action &action = *dom_actions_[k];
+                    And *precondition = new And;
+                    if( action.precondition_ != 0 ) precondition->push_back(action.precondition_);
+                    precondition->push_back(Literal(*normal_execution_).copy());
+                    assert(precondition->is_grounded());
+                    action.precondition_ = precondition->copy_and_simplify();
+                    delete precondition;
+                }
+            }
+        }
+
+        // translate actions
+        for( size_t k = 0; k < actions_to_translate.size(); ++k ) {
+            Action *action = actions_to_translate[k];
+            assert(action->sensing_->is_grounded());
+            lw1_translate_strict(*action);
+        }
+    }
+
     // complete actions' effects
     if( options_.is_enabled("lw1:complete-effects") )
         lw1_complete_effect_for_actions();
+}
+
+void PDDL_Base::lw1_translate_strict(Action &action) {
+    assert(options_.is_enabled("lw1:strict"));
+    assert(action.param_.empty()); // action must be instantiated
+
+    // (normal-execution) must be inserted in precondition and it must
+    // be deleted in effects. The effects should also assert the corresponding
+    // last-action-atom
+
+    const Atom &last_action_atom = lw1_fetch_last_action_atom(action);
+
+    if( dynamic_cast<const And*>(action.precondition_) == 0 ) {
+        And *new_precondition = new And;
+        if( action.precondition_ != 0 ) new_precondition->push_back(action.precondition_);
+        action.precondition_ = new_precondition;
+    }
+    const_cast<And*>(static_cast<const And*>(action.precondition_))->push_back(Literal(*normal_execution_).copy());
+
+    if( dynamic_cast<const AndEffect*>(action.effect_) == 0 ) {
+        AndEffect *new_effect = new AndEffect;
+        if( action.effect_ != 0 ) new_effect->push_back(action.effect_);
+        action.effect_ = new_effect;
+    }
+    const_cast<AndEffect*>(static_cast<const AndEffect*>(action.effect_))->push_back(AtomicEffect(*normal_execution_).negate());
+    const_cast<AndEffect*>(static_cast<const AndEffect*>(action.effect_))->push_back(AtomicEffect(last_action_atom).copy());
+
+    dom_actions_.push_back(&action);
+    if( options_.is_enabled("lw1:print:effect") || options_.is_enabled("lw1:print:generated") )
+        cout << Utils::yellow() << action << Utils::normal();
+
+    // create post-action that remove last-action-atom and resumes normal-execution
+    Action *post_action = new Action(strdup((string(action.print_name_) + "__post-action__").c_str()));
+    And *precondition = new And;
+    precondition->push_back(Literal(*normal_execution_).negate());
+    precondition->push_back(Literal(last_action_atom).copy());
+    post_action->precondition_ = precondition;
+
+    AndEffect *effect = new AndEffect;
+    effect->push_back(AtomicEffect(*normal_execution_).copy());
+    effect->push_back(AtomicEffect(last_action_atom).negate());
+    post_action->effect_ = effect;
+
+    dom_actions_.push_back(post_action);
+    if( true || options_.is_enabled("lw1:print:post") || options_.is_enabled("lw1:print:generated") )
+        cout << Utils::yellow() << *post_action << Utils::normal();
 }
 
 void PDDL_Base::lw1_create_simple_sensors_for_atoms(const unsigned_atom_set &atoms) {
@@ -1182,7 +1292,7 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
     // there are three types of deductive rules associated to such a model.
     // The first two types are required for completeness for width 1 problems,
     // while the third type is optional, useful for problems with larger width,
-    // and turned on with the option "lw1:drule:sensing:type3"
+    // and turned on with the option "lw1:boost:drule:sensing:type3"
 
     // type 1 deductive rules are: Last=a & L^i_1 & L^i_2 & ... & L^i_{n_i} => S
     // for each 1 <= i <= n
@@ -1201,7 +1311,7 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
     // create deductive rules for sensing
     if( options_.is_enabled("lw1:strict") ) {
         // deductive rules for sensing for literals of observable variables (must be performed before default sensing drules)
-        if( options_.is_enabled("lw1:literals-for-observables") ) {
+        if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
             for( size_t k = 0; k < lw1_multivalued_variables_.size(); ++k ) {
                 const Variable &variable = *lw1_multivalued_variables_[k];
                 if( !variable.is_state_variable() ) {
@@ -1244,14 +1354,14 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
                 const ObsVariable &variable = *jt->first;
                 for( map<Atom, list<const And*> >::const_iterator kt = jt->second.begin(); kt != jt->second.end(); ++kt ) {
                     const Atom &value = kt->first;
-                    if( !value.negated_ || variable.is_binary() || options_.is_enabled("lw1:literals-for-observables") )
+                    if( !value.negated_ || variable.is_binary() || options_.is_enabled("lw1:boost:literals-for-observables") )
                         lw1_create_type4_sensing_drule(action, variable, value, jt->second);
                 }
             }
         }
 
         // type3 deductive rules for sensing for observable non-state variables
-        if( options_.is_enabled("lw1:drule:sensing:type3") ) {
+        if( options_.is_enabled("lw1:boost:drule:sensing:type3") ) {
             for( map<const Action*, map<const ObsVariable*, map<Atom, list<const And*> > > >::const_iterator it = lw1_sensing_models_index_.begin(); it != lw1_sensing_models_index_.end(); ++it ) {
                 for( map<const ObsVariable*, map<Atom, list<const And*> > >::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt ) {
                     const ObsVariable &variable = *jt->first;
@@ -1283,7 +1393,7 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
                         assert(dynamic_cast<const And*>(*term) != 0);
                         //lw1_create_type1_sensing_drule(value, **term, num_type1_drules++); // disabled: see comment below
                         lw1_create_type2_sensing_drule(value, **term, num_type2_drules++);
-                        if( options_.is_enabled("lw1:drule:sensing:type3") )
+                        if( options_.is_enabled("lw1:boost:drule:sensing:type3") )
                             lw1_create_type3_sensing_drule(*variable, value, **term, dnf, num_type3_drules++);
                     }
                 }
@@ -1392,11 +1502,8 @@ const PDDL_Base::Atom& PDDL_Base::lw1_fetch_atom_for_negated_term(const And &ter
     } else {
         // first create atom
         string name = string("negated-term-") + to_string(atoms_for_terms_for_type3_sensing_drules_.size());
-        PredicateSymbol *predicate = new PredicateSymbol(strdup(name.c_str()));
-        dom_predicates_.push_back(predicate);
-        Atom *atom = new Atom(predicate);
+        Atom *atom = create_atom(name);
         atoms_for_terms_for_type3_sensing_drules_.insert(make_pair(condition, atom));
-        //cout << "Atom " << *atom << " created!" << endl;
 
         // now create deductive rules for this atom: -L => -atom for each literal L in term
         for( size_t k = 0; k < term.size(); ++k ) {
@@ -1438,19 +1545,6 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action, const State
     drule->precondition_ = Literal(lw1_fetch_last_action_atom(action)).copy();
     drule->effect_ = AtomicEffect(value).copy();
 
-#if 0
-    // effects
-    AndEffect *and_effect = new AndEffect;
-    and_effect->push_back(AtomicEffect(value, value.negated_).copy());
-    for( unsigned_atom_set::const_iterator it = variable.grounded_domain_.begin(); it != variable.grounded_domain_.end(); ++it ) {
-        const Atom &other_value = *it;
-        if( other_value != value )
-            and_effect->push_back(AtomicEffect(other_value, !value.negated_).copy());
-    }
-    assert(!and_effect->empty());
-    drule->effect_ = and_effect;
-#endif
-
     // insert action for deductive rule
     dom_actions_.push_back(drule);
     if( options_.is_enabled("lw1:print:drule:sensing") || options_.is_enabled("lw1:print:drule") )
@@ -1476,7 +1570,7 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action,
     }
 
     assert(variable.beam_.find(value) != variable.beam_.end());
-    assert(!value.negated_ || variable.is_binary() || options_.is_enabled("lw1:literals-for-observables"));
+    assert(!value.negated_ || variable.is_binary() || options_.is_enabled("lw1:boost:literals-for-observables"));
 
     string name = string("drule-sensing-type4obs-") + action.print_name_ + "-" + variable.to_string(false, true) + "-" + value.to_string(false, true);
     Action *drule = new Action(strdup(name.c_str()));
@@ -1487,10 +1581,10 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action,
     // precondition
     drule->precondition_ = Literal(lw1_fetch_last_action_atom(action)).copy();
 
-    // if lw1:literals-for-observables, add as precondition literal for observable.
+    // if lw1:boost:literals-for-observables, add as precondition literal for observable.
     // This literal is then converted into appropriate preconditions and effect in
     // lw1_problem.cc
-    if( options_.is_enabled("lw1:literals-for-observables") ) {
+    if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
         And *precondition = new And;
         precondition->push_back(drule->precondition_);
         precondition->push_back(Literal(value).copy());
@@ -1510,12 +1604,12 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action,
                     // this unconditional effect becomes conditional when lw1 problem is constructed
                     assert(dynamic_cast<const Literal*>(term[0]) != 0);
                     const Literal &literal = *static_cast<const Literal*>(term[0]);
-                    and_effect->push_back(AtomicEffect(literal).copy(false, true));
+                    and_effect->push_back(AtomicEffect(literal).negate());
                 } else {
                     for( size_t k = 0; k < term.size(); ++k ) {
                         assert(dynamic_cast<const Literal*>(term[k]) != 0);
                         const Literal &literal = *static_cast<const Literal*>(term[k]);
-                        AtomicEffect *effect = AtomicEffect(literal).copy(false, true);
+                        AtomicEffect *effect = AtomicEffect(literal).negate();
                         And *condition = new And;
                         for( size_t j = 0; j < term.size(); ++j ) {
                             if( j != k ) {
@@ -1527,6 +1621,14 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action,
                         and_effect->push_back(new ConditionalEffect(condition, effect));
                     }
                 }
+            }
+        } else if( options_.is_enabled("lw1:boost:drule:sensing:type4") && (dnf.size() == 1) ) {
+            const And &term = **dnf.begin();
+            assert(!term.empty());
+            for( size_t k = 0; k < term.size(); ++k ) {
+                assert(dynamic_cast<const Literal*>(term[k]) != 0);
+                const Literal &literal = *static_cast<const Literal*>(term[k]);
+                and_effect->push_back(AtomicEffect(literal).copy());
             }
         }
     }
@@ -1561,7 +1663,7 @@ void PDDL_Base::lw1_create_type5_sensing_drule(const ObsVariable &variable) {
 #endif
 
         assert(variable.beam_.find(value) != variable.beam_.end());
-        //if( !options_.is_enabled("lw1:literals-for-observables:dynamic") && !variable.beam_.find(value)->second.empty() ) {
+        //if( !options_.is_enabled("lw1:boost:literals-for-observables:dynamic") && !variable.beam_.find(value)->second.empty() ) { // CHECK
         if( !variable.beam_.find(value)->second.empty() ) {
 #ifdef DEBUG
             //cout << " ... skip because beam is non-empty" << endl;
@@ -1631,11 +1733,8 @@ const PDDL_Base::Atom& PDDL_Base::lw1_fetch_last_action_atom(const Action &actio
     } else {
         // create new atom
         string name = string("last-action-atom-for-") + action.print_name_;
-        PredicateSymbol *predicate = new PredicateSymbol(strdup(name.c_str()));
-        dom_predicates_.push_back(predicate);
-        Atom *atom = new Atom(predicate);
+        Atom *atom = create_atom(name);
         lw1_last_action_atoms_.insert(make_pair(action.print_name_, atom));
-        //cout << "Atom " << *atom << " created!" << " [action=" << &action << "]" << endl;
         return *atom;
     }
 }
@@ -1657,11 +1756,11 @@ void PDDL_Base::lw1_patch_actions_with_atoms_for_last_action() {
         if( it != lw1_last_action_atoms_.end() ) {
             effect.push_back(AtomicEffect(*it->second).copy());
             for( map<string, const Atom*>::const_iterator jt = lw1_last_action_atoms_.begin(); jt != lw1_last_action_atoms_.end(); ++jt ) {
-                if( jt != it ) effect.push_back(AtomicEffect(*jt->second).copy(false, true));
+                if( jt != it ) effect.push_back(AtomicEffect(*jt->second).negate());
             }
         } else if( !action.is_special_action() ) {
             for( map<string, const Atom*>::const_iterator jt = lw1_last_action_atoms_.begin(); jt != lw1_last_action_atoms_.end(); ++jt ) {
-                effect.push_back(AtomicEffect(*jt->second).copy(false, true));
+                effect.push_back(AtomicEffect(*jt->second).negate());
             }
         }
     }
@@ -2135,13 +2234,10 @@ void PDDL_Base::lw1_complete_effect_with_variable(AndEffect *effect, const Varia
 const PDDL_Base::Atom* PDDL_Base::fetch_need_set_sensing_atom(const Action &action) {
     const map<string, const Atom*>::const_iterator it = need_set_sensing_atoms_.find(action.print_name_);
     if( it == need_set_sensing_atoms_.end() ) {
-        string predicate_name = string("need-set-sensing-for-") + action.print_name_;
-        PredicateSymbol *predicate = new PredicateSymbol(strdup(predicate_name.c_str()));
-        dom_predicates_.push_back(predicate);
-        Atom *new_atom = new Atom(predicate);
-        need_set_sensing_atoms_.insert(make_pair(action.print_name_, new_atom));
-        //cout << "Atom " << *new_atom << " created!" << endl;
-        return new_atom;
+        string name = string("need-set-sensing-for-") + action.print_name_;
+        Atom *atom = create_atom(name);
+        need_set_sensing_atoms_.insert(make_pair(action.print_name_, atom));
+        return atom;
     } else {
         return it->second;
     }
@@ -2151,12 +2247,9 @@ const PDDL_Base::Atom* PDDL_Base::fetch_need_post_atom(const unsigned_atom_set &
     const map<unsigned_atom_set, const Atom*>::const_iterator it = need_post_atoms_.find(atoms);
     if( it == need_post_atoms_.end() ) {
         string name = string("need-post-atom-") + to_string(need_post_atoms_.size());
-        PredicateSymbol *predicate = new PredicateSymbol(strdup(name.c_str()));
-        dom_predicates_.push_back(predicate);
-        Atom *new_atom = new Atom(predicate);
-        need_post_atoms_.insert(make_pair(atoms, new_atom));
-        //cout << "Atom " << *new_atom << " created!" << endl;
-        return new_atom;
+        Atom *atom = create_atom(name);
+        need_post_atoms_.insert(make_pair(atoms, atom));
+        return atom;
     } else {
         return it->second;
     }
@@ -2165,12 +2258,9 @@ const PDDL_Base::Atom* PDDL_Base::fetch_need_post_atom(const unsigned_atom_set &
 const PDDL_Base::Atom* PDDL_Base::fetch_sensing_atom(const Atom &atom) {
     const map<string, const Atom*>::const_iterator it = sensing_atoms_.find(atom.to_string(atom.negated_, true));
     if( it == sensing_atoms_.end() ) {
-        string predicate_name = string("sensing-for-") + atom.to_string(atom.negated_, true);
-        PredicateSymbol *predicate = new PredicateSymbol(strdup(predicate_name.c_str()));
-        dom_predicates_.push_back(predicate);
-        Atom *new_atom = new Atom(predicate);
+        string name = string("sensing-for-") + atom.to_string(atom.negated_, true);
+        Atom *new_atom = create_atom(name);
         sensing_atoms_.insert(make_pair(atom.to_string(atom.negated_, true), new_atom));
-        //cout << "Atom " << *new_atom << " created!" << endl;
         return new_atom;
     } else {
         return it->second;
@@ -2217,7 +2307,10 @@ void PDDL_Base::do_lw1_translation(bool strict_lw1,
 
         lw1_create_deductive_rules_for_variables();
         lw1_create_deductive_rules_for_sensing();
-        lw1_patch_actions_with_atoms_for_last_action();
+
+        if( !options_.is_enabled("lw1:boost:disabling-actions-for-last-action-atoms") )
+            lw1_patch_actions_with_atoms_for_last_action();
+
         multivalued_variables = &lw1_multivalued_variables_;
         sensing_models = &lw1_sensing_models_;
         accepted_literals_for_observables = &lw1_accepted_literals_for_observables_;

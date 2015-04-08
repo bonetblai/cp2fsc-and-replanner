@@ -863,6 +863,11 @@ class PDDL_Base {
     // translations
     int get_translation_type() const { return clg_translation() ? 1 : (lw1_translation() ? 2 : 0); }
 
+    // creation of atoms
+    PredicateSymbol* create_predicate(const std::string &name, const var_symbol_vec *param = 0);
+    Atom* create_atom(const std::string &name, const var_symbol_vec *param = 0);
+    void create_normal_execution_atom();
+
     // methods for formulations in CLG-like syntax
     void declare_clg_translation();
     bool clg_translation() const { return clg_translation_; }
@@ -884,6 +889,7 @@ class PDDL_Base {
 
     void lw1_emit_and_protect_atoms_for_observable_variables(Instance &ins) const;
     void lw1_translate_actions_strict();
+    void lw1_translate_strict(Action &action);
 
     // methods to handle sensing
     void lw1_finish_grounding_of_sensing(const Sensing* &sensing);
