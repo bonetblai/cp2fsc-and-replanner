@@ -123,6 +123,7 @@ const char *available_options[] = {
     "lw1:boost:complete-effects:type4",                     "[LW1] complete effects for multivalued variables", // CHECK
     "lw1:boost:complete-effects:type4:obs",                 "[LW1] complete effects for multivalued variables", // CHECK
     "lw1:boost:complete-effects:type4:state",               "[LW1] complete effects for multivalued variables", // CHECK
+    "lw1:boost:single-sensing-literal-enablers",            "[LW1] XXXX", // CHECK
     "lw1:boost:disabling-actions-for-last-action-atoms",    "[LW1] XXXX", // CHECK
     "lw1:boost:drule:sensing:type4",                        "[LW1] XXXX", // CHECK
     "lw1:boost:drule:sensing:type3",                        "[LW1] generate deductive rules for sensing of type 3", // CHECK (rename types)
