@@ -826,6 +826,7 @@ class PDDL_Base {
     std::map<signed_atom_set, const Atom*>    atoms_for_terms_for_type3_sensing_drules_;
     std::map<std::string, const Atom*>        lw1_sensing_enabler_atoms_;
     std::map<std::pair<const Action*, std::pair<const ObsVariable*, Atom> >, const Atom*> lw1_sensing_enablers_;
+    std::map<std::string, std::set<std::string> > lw1_enablers_for_actions_;
     std::map<std::string, const Atom*>        lw1_last_action_atoms_;
     std::map<std::string, std::set<std::string> > lw1_accepted_literals_for_observables_;
 
@@ -913,17 +914,15 @@ class PDDL_Base {
     const Atom& lw1_fetch_atom_for_negated_term(const And &term);
 
     // methods to create type4 deductive rules (for multivalued variables)
-    void lw1_create_type4_sensing_drule(const Action &action,
-                                        const StateVariable &variable,
-                                        const Atom &value);
+    void lw1_create_type4_sensing_drule(const Action *action, const StateVariable &variable, const Atom &value);
     void lw1_create_type4_sensing_drule(const Action &action,
                                         const ObsVariable &variable,
                                         const Atom &value,
                                         const std::map<Atom, std::list<const And*> > &sensing_models_for_action_and_var);
     void lw1_create_type5_sensing_drule(const ObsVariable &variable);
-    const Atom& lw1_fetch_sensing_literal(const std::string &action, const std::string &variable, const std::string &value);
-    const Atom& lw1_fetch_sensing_literal(const Action &action, const ObsVariable &variable, const Atom &value);
-    const Atom& lw1_fetch_sensing_literal(const StateVariable &variable, const Atom &value);
+    const Atom& lw1_fetch_sensing_enabler(const std::string &action, const std::string &variable, const std::string &value);
+    const Atom& lw1_fetch_sensing_enabler(const Action &action, const ObsVariable &variable, const Atom &value);
+    const Atom& lw1_fetch_sensing_enabler(const StateVariable &variable, const Atom &value);
     const Atom& lw1_fetch_last_action_atom(const Action &action);
     void lw1_calculate_enablers_for_sensing();
     void lw1_patch_actions_with_enablers_for_sensing();
