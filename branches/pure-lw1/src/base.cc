@@ -1405,33 +1405,32 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
         }
 
         // default deductive rules for sensing for observable non-state variables
-#if 1
-        for( map<pair<const ObsVariable*, Atom>, map<string, set<const Action*> > >::const_iterator it = lw1_xxx_.begin(); it != lw1_xxx_.end(); ++it ) {
-            const ObsVariable &variable = *it->first.first;
-            const Atom &value = it->first.second;
-            if( !value.negated_ || variable.is_binary() || options_.is_enabled("lw1:boost:literals-for-observables") ) {
-                for( map<string, set<const Action*> >::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt ) {
-                    assert(!jt->second.empty());
-                    const Action &action = **jt->second.begin();
-                    const map<Atom, list<const And*> > &sensing_models_for_var = lw1_sensing_models_index_[&action][&variable];
-                    lw1_create_type4_sensing_drule(action, variable, value, sensing_models_for_var);
+        if( options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
+            for( map<pair<const ObsVariable*, Atom>, map<string, set<const Action*> > >::const_iterator it = lw1_xxx_.begin(); it != lw1_xxx_.end(); ++it ) {
+                const ObsVariable &variable = *it->first.first;
+                const Atom &value = it->first.second;
+                if( !value.negated_ || variable.is_binary() || options_.is_enabled("lw1:boost:literals-for-observables") ) {
+                    for( map<string, set<const Action*> >::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt ) {
+                        assert(!jt->second.empty());
+                        const Action &action = **jt->second.begin();
+                        const map<Atom, list<const And*> > &sensing_models_for_var = lw1_sensing_models_index_[&action][&variable];
+                        lw1_create_type4_sensing_drule(action, variable, value, sensing_models_for_var);
+                    }
+                }
+            }
+        } else {
+            for( map<const Action*, map<const ObsVariable*, map<Atom, list<const And*> > > >::const_iterator it = lw1_sensing_models_index_.begin(); it != lw1_sensing_models_index_.end(); ++it ) {
+                const Action &action = *it->first;
+                for( map<const ObsVariable*, map<Atom, list<const And*> > >::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt ) {
+                    const ObsVariable &variable = *jt->first;
+                    for( map<Atom, list<const And*> >::const_iterator kt = jt->second.begin(); kt != jt->second.end(); ++kt ) {
+                        const Atom &value = kt->first;
+                        if( !value.negated_ || variable.is_binary() || options_.is_enabled("lw1:boost:literals-for-observables") )
+                            lw1_create_type4_sensing_drule(action, variable, value, jt->second);
+                    }
                 }
             }
         }
-#endif
-#if 0
-        for( map<const Action*, map<const ObsVariable*, map<Atom, list<const And*> > > >::const_iterator it = lw1_sensing_models_index_.begin(); it != lw1_sensing_models_index_.end(); ++it ) {
-            const Action &action = *it->first;
-            for( map<const ObsVariable*, map<Atom, list<const And*> > >::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt ) {
-                const ObsVariable &variable = *jt->first;
-                for( map<Atom, list<const And*> >::const_iterator kt = jt->second.begin(); kt != jt->second.end(); ++kt ) {
-                    const Atom &value = kt->first;
-                    if( !value.negated_ || variable.is_binary() || options_.is_enabled("lw1:boost:literals-for-observables") )
-                        lw1_create_type4_sensing_drule(action, variable, value, jt->second);
-                }
-            }
-        }
-#endif
 
         // type3 deductive rules for sensing for observable non-state variables
         if( options_.is_enabled("lw1:boost:drule:sensing:type3") ) {
@@ -1473,7 +1472,6 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
             }
         }
     }
-    assert(0);
 }
 
 // these rules are not necessary and may be wrong: they are of the form term => obs
@@ -1872,7 +1870,7 @@ void PDDL_Base::lw1_calculate_enablers_for_sensing() {
                     //     << ", var=" << variable.to_string(false, true)
                     //     << ", value=" << value.to_string(false, true)
                     //     << endl;
-                    cout << Utils::red() << "Store: enabler=" << enabler << ", action=" << (*kt)->print_name_ << Utils::normal() << endl;
+                    cout << Utils::red() << "       enabler=" << enabler << ", action=" << (*kt)->print_name_ << Utils::normal() << endl;
                 }
             }
         }
