@@ -308,8 +308,8 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
             exit(255);
         } else {
 #if defined(UP)
-            Inference::Propositional::UnitPropagation up;
-            up.reduce(cnf, result);
+            Inference::Propositional::DPLL up;
+            up.solve(cnf, result);
 #endif
         }
 
