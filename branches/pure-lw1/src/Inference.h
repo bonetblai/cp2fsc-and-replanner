@@ -17,8 +17,8 @@ namespace Inference {
 
         class Clause : public set<int> {
         public:
-            void push_back(int e); // See comment at lw1_solver.cc
-            struct compare {   // Overloading < 
+            void push_back(int e) { insert(e); } // See comment at lw1_solver.cc
+            struct compare {   // Overloading <
                 bool operator() (Clause a, Clause b) { return a.size() < b.size(); }
             } compare;
         };
@@ -61,13 +61,13 @@ namespace Inference {
             vector< vector<int> > inverted_index;
             vector< pair<set_it, set_it> > watched;
             int imax;
-            set_it replace(const CNF &a, vector<int> &assigned, int clause); 
+            set_it replace(const CNF &a, vector<int> &assigned, int clause);
 
             void InvertedIndex(const CNF &a);
-            virtual void propagate(const CNF &a, vector<int> &assigned, int p);
+            virtual bool propagate(const CNF &a, vector<int> &assigned, int p);
         public:
             WatchedLiterals() { };
-            void initialize(const CNF &a); 
+            void initialize(const CNF &a);
             // PROVISIONAL: This method should make the class abstract,
             // in order to use better and implementations of reduce under
             // classic UP transparently.
