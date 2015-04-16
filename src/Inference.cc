@@ -50,26 +50,27 @@ void Inference::Propositional::WatchedLiterals::InvertedIndex(const CNF &a) {
 
 void Inference::Propositional::WatchedLiterals::initialize(const CNF &a) {
     imax = a.calculate_max();
-    satisfied.assign(a.size(), false); 
+    satisfied.assign(a.size(), false);
     propagated.assign(imax + 1, false); //anything has been propagated
     InvertedIndex(a);
 
     //watch first (0) and last (size - 1) element
     for (int i = 0; i < a.size(); i++)
-        watched.push_back(pair<set_it, set_it>(a[i].begin(), 
+        watched.push_back(pair<set_it, set_it>(a[i].begin(),
                                                --a[i].end()));
 };
 
 
-void Inference::Propositional::WatchedLiterals::solve(const CNF &a, 
-                                                      vector<int> &assigned) { 
+void Inference::Propositional::WatchedLiterals::solve(const CNF &a,
+                                                      vector<int> &assigned) {
     initialize(a);
     assigned.assign(imax + 1, -1);      //initially, every proposition is unassigned
     for (const_vec_set_it it = a.begin(); it != a.end(); it++) {
         int p = *(it->begin());
         if ( (it->size() == 1) && !propagated[ abs(p) ] ) {
             assigned[ abs(p) ] = p > 0 ? 1 : 0;
-            propagate(a, assigned, abs(p));
+            cout << "Propagando con: " << p << endl;
+            assert(propagate(a, assigned, abs(p)));
             propagated[ abs(p) ] = true;
         }
     }
@@ -79,14 +80,15 @@ set_it Inference::Propositional::WatchedLiterals::replace(const CNF &a,
                                                           vector<int> &assigned,
                                                           int clause) {
     set_it w1 = a[clause].begin(), w2 = watched[clause].second;
-    for (; w1 != a[clause].end(); w1++) 
-        if (assigned[ *w1 ] == -1 && w1 != w2) break;
+    for (; w1 != a[clause].end(); w1++)
+        if (assigned[ abs(*w1) ] == -1 && w1 != w2) break;
     return w1;
 }
 
-void Inference::Propositional::WatchedLiterals::propagate(const CNF &a, 
+bool Inference::Propositional::WatchedLiterals::propagate(const CNF &a,
                                                           vector<int> &assigned,
                                                           int prop) {
+    bool noConflict = true;
     assert(prop > 0);
     vector<int> cp = vector<int>(); //index of clauses where not p exist
     int value = assigned[prop] ? prop : -prop;
@@ -97,20 +99,60 @@ void Inference::Propositional::WatchedLiterals::propagate(const CNF &a,
         bool is_watched = value == -1 * (* w1) || value == -1 * (* w2);
 
         if (is_watched && !satisfied[clause])
-            cp.push_back(clause);  
+            cp.push_back(clause);
     }
-    
+
     for (int i = 0; i < cp.size(); i++) {
         int clause = cp[i];
-        if (*(watched[clause].first) != -1 * value) 
+        if (*(watched[clause].first) != -1 * value)
             swap(watched[clause].first, watched[clause].second);
 
         set_it w1 = replace(a, assigned, clause), w2 = watched[clause].second;
-        //Propagate
-        if (w1 == a[clause].end() && assigned[*w2] == -1) {
-            int p1 = *w2; 
+        // If w1 cannot be replaced and w2 is unnassigned, recursive call
+        if (w1 == a[clause].end() && assigned[abs(*w2)] == -1) {
+            int p1 = *w2;
             assigned[ abs(p1) ] = p1 > 0 ? 1 : 0;
-            propagate(a, assigned, p1);
+            if (!propagate(a, assigned, abs(p1)))
+                noConflict = false;
+            // propagated[ abs(p1) ] = true;
+        }
+
+        if (w1 == a[clause].end() && assigned[abs(*w2)] == 0) {
+        // If w1 cannot be replaced and w2 is false there's conflict
+            noConflict = false;
+        }
+
+    }
+    return noConflict;
+}
+
+void Inference::Propositional::WatchedLiterals::lookahead(const CNF &a,
+                                                        vector<int> &assigned) {
+
+    vector<int> assigned_cp;
+    for(unsigned i = 1; i < assigned.size(); ++i) {
+        assigned_cp = vector<int>(assigned);
+
+        if(assigned_cp[i] == -1) {
+            assigned_cp[i] = 1;
+            if(!propagate(a, assigned_cp, i)) {
+                assigned[i] = 0;
+                /////////////////////
+                //Testing purposes //
+                /////////////////////
+                assigned_cp = vector<int>(assigned);
+                assigned_cp[i] = 0;
+                assert(propagate(a, assigned_cp, i));
+                /////////////////////
+                //Testing purposes //
+                /////////////////////
+            } else {
+                assigned_cp = vector<int>(assigned);
+                assigned_cp[i] = 0;
+                if(!propagate(a, assigned_cp, i)) {
+                    assigned[i] = 1;
+                }
+            }
         }
     }
 }
