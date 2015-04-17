@@ -69,7 +69,6 @@ void Inference::Propositional::WatchedLiterals::solve(const CNF &a,
         int p = *(it->begin());
         if ( (it->size() == 1) && !propagated[ abs(p) ] ) {
             assigned[ abs(p) ] = p > 0 ? 1 : 0;
-            cout << "Propagando con: " << p << endl;
             assert(propagate(a, assigned, abs(p)));
             propagated[ abs(p) ] = true;
         }
@@ -88,7 +87,7 @@ set_it Inference::Propositional::WatchedLiterals::replace(const CNF &a,
 bool Inference::Propositional::WatchedLiterals::propagate(const CNF &a,
                                                           vector<int> &assigned,
                                                           int prop) {
-    bool noConflict = true;
+    bool no_conflict = true;
     assert(prop > 0);
     vector<int> cp = vector<int>(); //index of clauses where not p exist
     int value = assigned[prop] ? prop : -prop;
@@ -109,33 +108,33 @@ bool Inference::Propositional::WatchedLiterals::propagate(const CNF &a,
 
         set_it w1 = replace(a, assigned, clause), w2 = watched[clause].second;
         // If w1 cannot be replaced and w2 is unnassigned, recursive call
-        if (w1 == a[clause].end() && assigned[abs(*w2)] == -1) {
-            int p1 = *w2;
-            assigned[ abs(p1) ] = p1 > 0 ? 1 : 0;
-            if (!propagate(a, assigned, abs(p1)))
-                noConflict = false;
+
+        int new_prop = *w2;
+        if (w1 != a[clause].end()) {
+            watched[clause].first = w1;
+        } else if (assigned[ abs(new_prop) ] == -1) {
+            assigned[ abs(new_prop) ] = new_prop > 0 ? 1 : 0;
+            if (!propagate(a, assigned, abs(new_prop)))
+                no_conflict = false;
             // propagated[ abs(p1) ] = true;
+        } else if ((assigned[ abs(new_prop) ] ? 1 : -1) * (new_prop) < 0) {
+            // If w1 cannot be replaced and w2 is false there's conflict
+            no_conflict = false;
         }
-
-        if (w1 == a[clause].end() && assigned[abs(*w2)] == 0) {
-        // If w1 cannot be replaced and w2 is false there's conflict
-            noConflict = false;
-        }
-
     }
-    return noConflict;
+    return no_conflict;
 }
 
 void Inference::Propositional::WatchedLiterals::lookahead(const CNF &a,
                                                         vector<int> &assigned) {
 
     vector<int> assigned_cp;
-    for(unsigned i = 1; i < assigned.size(); ++i) {
+    for (int i = 1; i < assigned.size(); ++i) {
         assigned_cp = vector<int>(assigned);
 
-        if(assigned_cp[i] == -1) {
+        if (assigned[i] == -1) {   //not assigned yet
             assigned_cp[i] = 1;
-            if(!propagate(a, assigned_cp, i)) {
+            if (! propagate(a, assigned_cp, i)) {
                 assigned[i] = 0;
                 /////////////////////
                 //Testing purposes //
