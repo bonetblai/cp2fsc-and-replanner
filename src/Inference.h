@@ -3,6 +3,9 @@
 #include <vector>
 #include <iostream>
 #include <algorithm>
+
+#define UP
+
 using namespace std;
 
 #ifndef INFERENCE_H

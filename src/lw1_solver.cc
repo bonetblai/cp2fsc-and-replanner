@@ -28,7 +28,7 @@ void LW1_Solver::compute_and_add_observations(const Instance::Action *last_actio
 
                 // if state variable, the value of observed literal (either true or false)
                 // is directly obtained from the hidden state. If non-state variable, need
-                // to use sensing model to determine the value. If the domain size is 1, 
+                // to use sensing model to determine the value. If the domain size is 1,
                 // there are only two values for the variable, true or false corresponding
                 // to the positive and negative literal respectively. If domain size > 1,
                 // each value corresponds to a different literals (from which one and only
@@ -180,7 +180,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
             fill_relevant_sensing_models(lw1, last_action, sensed_at_step, relevant_sensing_models_as_cnf);
 
         // construct logical theory for performing inference with unit propagation
-#if defined(UP)
+#ifdef UP
         set<Inference::Propositional::Clause> base_theory;
         Inference::Propositional::CNF cnf;
 #endif
@@ -194,7 +194,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                 state.print_literal(cout, 1 + k_literal, &kp_instance_);
                 cout << Utils::normal() << endl;
 #endif
-#if defined(UP)
+#ifdef UP
                 Inference::Propositional::Clause cl;
                 cl.push_back(1 + k_literal);
                 cnf.push_back(cl);
@@ -210,7 +210,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
             state.print_literal(cout, 1 + *it, &kp_instance_);
             cout << Utils::normal() << endl;
 #endif
-#if defined(UP)
+#ifdef UP
             Inference::Propositional::Clause cl;
             cl.push_back(1 + *it); // CHECK: en implementacion de clause, 'push_back' es un 'insert'
             cnf.push_back(cl);
@@ -226,7 +226,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
             //state.print_clause(cout, clause, &kp_instance_);
             //cout << Utils::normal() << endl;
 #endif
-#if defined(UP)
+#ifdef UP
             Inference::Propositional::Clause cl;
             for( size_t k = 0; k < clause.size(); ++k )
                 cl.push_back(clause[k]);
@@ -249,7 +249,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                     state.print_literal(cout, k_literal, &kp_instance_);
                     cout << Utils::normal() << endl;
 #endif
-#if defined(UP)
+#ifdef UP
                     Inference::Propositional::Clause cl;
                     cl.push_back(k_literal);
                     cnf.push_back(cl);
@@ -265,7 +265,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                             state.print_clause(cout, clause, &kp_instance_);
                             cout << Utils::normal() << endl;
 #endif
-#if defined(UP)
+#ifdef UP
                             Inference::Propositional::Clause cl;
                             for( size_t i = 0; i < clause.size(); ++i )
                                 cl.push_back(clause[i]);
@@ -288,7 +288,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                 state.print_clause(cout, clause, &kp_instance_);
                 cout << Utils::normal() << endl;
 #    endif
-#    if defined(UP)
+#    ifdef UP
                 Inference::Propositional::Clause cl;
                 for( size_t i = 0; i < clause.size(); ++i )
                     cl.push_back(clause[i]);
@@ -300,21 +300,21 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         }
 
         // 5. Perform inference
-#if defined(UP)
+#ifdef UP
         Inference::Propositional::CNF result;
 #endif
         if( options_.is_enabled("lw1:inference:up:lookahead") ) {
             cout << Utils::error() << "inference method 'lw1:inference:up:lookahead' not yet implemented" << endl;
             exit(255);
         } else {
-#if defined(UP)
+#ifdef UP
             Inference::Propositional::DPLL up;
             up.solve(cnf, result);
 #endif
         }
 
         // 6. Insert positive literals from result into state
-#if defined(UP)
+#ifdef UP
         for( size_t k = 0; k < result.size(); ++k ) {
             if( result[k].empty() ) {
                 cout << Utils::error() << "inconsistency derived during inference" << endl;
@@ -345,7 +345,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         // 7. Insert non-forbidden clauses in result into state
         if( options_.is_enabled("lw1:inference:up:enhanced") ) {
 #if BASE_SELECTOR == 1
-#    if defined(UP)
+#    ifdef UP
             state.cnf_.clear();
             for( size_t k = 0; k < result.size(); ++k ) {
                 const Inference::Propositional::Clause &cl = result[k];
