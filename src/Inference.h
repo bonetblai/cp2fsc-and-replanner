@@ -73,6 +73,7 @@ namespace Inference {
             // classic UP transparently.
             // virtual void reduce() = 0;
             void solve(const CNF &a, vector<int> &assigned);
+            void lookahead(const CNF &a, vector<int> &assigned);
         };
     } // Propositional namespace
 } // Inference namespace
