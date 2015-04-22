@@ -17,7 +17,7 @@ void Inference::Propositional::DPLL::solve(const CNF &a, CNF &b) {
     bool change = true;
     while (change) {
         change = false;
-        sort(b.begin(), b.end());
+        sort(b.begin(), b.end(), this->compare);
         for (CNF::iterator it = b.begin(); it != b.end(); it++) {
             if (it->size() == 1) {
                 int L = *(it->begin());
@@ -36,6 +36,7 @@ void Inference::Propositional::DPLL::solve(const CNF &a, CNF &b) {
         }
     }
 }
+
 
 void Inference::Propositional::WatchedLiterals::InvertedIndex(const CNF &a) {
     inverted_index.assign(imax + 1, vector<int>());
