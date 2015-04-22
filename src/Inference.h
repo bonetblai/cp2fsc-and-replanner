@@ -21,9 +21,6 @@ namespace Inference {
         class Clause : public set<int> {
         public:
             void push_back(int e) { insert(e); } // See comment at lw1_solver.cc
-            struct compare {   // Overloading <
-                bool operator() (Clause a, Clause b) { return a.size() < b.size(); }
-            } compare;
         };
 
         class CNF : public vector<Clause> {
@@ -54,6 +51,10 @@ namespace Inference {
             public:
             DPLL() { };
             void solve(const CNF &a, CNF &b);
+            struct compare {   // Overloading <
+                bool operator() (Clause a, Clause b) { return a.size() < b.size(); }
+            } compare;
+
         };
 
 
