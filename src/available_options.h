@@ -87,7 +87,7 @@ const char *available_options[] = {
     "clg:print:invariants:var",                "[CLG] print variable invariants",
     "clg:print:invariants:sensing",            "[CLG] print sensing invariants",
     "clg:print:invariants",                    "[CLG] print all invariants",
-    
+
     // lw1
     "lw1:print:observable-atoms",              "[LW1] print observable atoms",
     "lw1:print:atoms-for-state-variables",     "[LW1] print atoms for state variables",
@@ -115,6 +115,7 @@ const char *available_options[] = {
     // lw1 (inference)
     "lw1:inference:forward-chaining",          "[LW1] uses forward chaining of drules to make inference (old and sometimes incorrect method)",
     "lw1:inference:up",                        "[LW1] uses unit resolution as inference mechanism",
+    "lw1:inference:watched-literals",          "[LW1] uses the watched literals method for unit resolution (to be used with lw1:inference:up)",
     "lw1:inference:up:lookahead",              "[LW1] uses unit resolution with 1-lookahead as inference mechanism",
     "lw1:inference:up:enhanced",               "[LW1] maintain inferred (non-forbidden) clauses",
 
