@@ -78,19 +78,23 @@ LW1_Instance::LW1_Instance(const Instance &ins,
     atoms_.reserve(2*ins.n_atoms());
     for( size_t k = 0; k < ins.n_atoms(); ++k ) {
         string name = ins.atoms_[k]->name_->to_string();
+        cout << "NAME=" << name << ": " << flush;
         if( name.compare(0, 16, "last-action-was-") == 0 ) {
             assert(!options_.is_enabled("lw1:boost:single-sensing-literal-enablers"));
             new_atom(new CopyName(name));                  // even-numbered atoms
             new_atom(new CopyName(name + "_UNUSED"));      // odd-numbered atoms
             last_action_atoms_.insert(k);
+            cout << "type=last-action, index=" << k << ", k-indices=" << 2*k << "," << 2*k+1 << endl;
         } else if( name.compare(0, 19, "enable-sensing-for-") == 0 ) {
             //assert(options_.is_enabled("lw1:boost:single-sensing-literal-enablers")); // CHECK
             new_atom(new CopyName(name));                  // even-numbered atoms
             new_atom(new CopyName(name + "_UNUSED"));      // odd-numbered atoms
             sensing_enabler_atoms_.insert(k);
+            cout << "type=enabler, index=" << k << ", k-indices=" << 2*k << "," << 2*k+1 << endl;
         } else {
             new_atom(new CopyName("K_" + name));           // even-numbered atoms
             new_atom(new CopyName("K_not_" + name));       // odd-numbered atoms
+            cout << "type=regular, index=" << k << ", k-indices=" << 2*k << "," << 2*k+1 << endl;
         }
     }
 
@@ -764,10 +768,12 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             assert((literal_for_value > 0) || variable.is_binary());
 
             // precondition for sensing enabler
-            if( !options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
+            if( !options_.is_enabled("lw1:boost:enable-post-actions") &&
+                !options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
                 assert(last_action_atoms_.find(index_for_enabler) != last_action_atoms_.end());
                 nact->precondition_.insert(1 + 2*index_for_enabler);
             } else {
+                cout << "INDEX=" << index_for_enabler << ", NAME=" << endl;
                 assert(sensing_enabler_atoms_.find(index_for_enabler) != sensing_enabler_atoms_.end());
                 nact->precondition_.insert(1 + 2*index_for_enabler);
             }
@@ -828,7 +834,8 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             assert(index_for_value != -1);
 
             // add as precondition the sensing enablers
-            if( !options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
+            if( !options_.is_enabled("lw1:boost:enable-post-actions") &&
+                !options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
                 assert(index_for_last_action_atom != -1);
                 nact->precondition_.insert(1 + 2*index_for_last_action_atom);
             } else {

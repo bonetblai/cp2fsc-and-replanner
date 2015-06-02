@@ -1762,9 +1762,11 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action *action, const State
     drule->comment_ = variable.to_string(false, true);
 
     // precondition and effect
-    if( options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
-        assert(0); // lw1:boost:single-sensing-literal-enablers
-        drule->precondition_ = Literal(lw1_fetch_sensing_enabler(variable, value)).copy();
+    if( options_.is_enabled("lw1:boost:enable-post-actions") || // CHECK: if this the way that we want to enable this?
+        options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
+        //assert(0); // lw1:boost:single-sensing-literal-enablers
+        //drule->precondition_ = Literal(lw1_fetch_sensing_enabler(variable, value)).copy();
+        drule->precondition_ = Literal(*lw1_fetch_enabler_for_sensing(value)).copy();
     } else {
         assert(action != 0);
         drule->precondition_ = Literal(lw1_fetch_last_action_atom(*action)).copy();
@@ -1808,10 +1810,12 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action,
     // later in lw1_problem.cc if lw1:literals-for-observables is disabled), and
     // the sensing enabler atom
     And *precondition = new And;
-    if( options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
-        assert(0); // lw1:boost:single-sensing-literal-enablers
-        assert(lw1_sensing_enablers_.find(make_pair(&action, make_pair(&variable, value))) != lw1_sensing_enablers_.end());
-        precondition->push_back(Literal(*lw1_sensing_enablers_[make_pair(&action, make_pair(&variable, value))]).copy());
+    if( options_.is_enabled("lw1:boost:enable-post-actions") || // CHECK: if this the way that we want to enable this?
+        options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
+        //assert(0); // lw1:boost:single-sensing-literal-enablers
+        //assert(lw1_sensing_enablers_.find(make_pair(&action, make_pair(&variable, value))) != lw1_sensing_enablers_.end());
+        //precondition->push_back(Literal(*lw1_sensing_enablers_[make_pair(&action, make_pair(&variable, value))]).copy());
+        precondition->push_back(Literal(*lw1_fetch_enabler_for_sensing(value)).copy());
     } else {
         precondition->push_back(Literal(lw1_fetch_last_action_atom(action)).copy());
     }
