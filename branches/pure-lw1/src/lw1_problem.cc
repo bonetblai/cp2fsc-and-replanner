@@ -84,7 +84,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
             new_atom(new CopyName(name + "_UNUSED"));      // odd-numbered atoms
             last_action_atoms_.insert(k);
         } else if( name.compare(0, 19, "enable-sensing-for-") == 0 ) {
-            assert(options_.is_enabled("lw1:boost:single-sensing-literal-enablers"));
+            //assert(options_.is_enabled("lw1:boost:single-sensing-literal-enablers")); // CHECK
             new_atom(new CopyName(name));                  // even-numbered atoms
             new_atom(new CopyName(name + "_UNUSED"));      // odd-numbered atoms
             sensing_enabler_atoms_.insert(k);

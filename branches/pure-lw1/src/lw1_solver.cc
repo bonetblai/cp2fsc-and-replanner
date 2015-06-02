@@ -38,8 +38,10 @@ void LW1_Solver::compute_and_add_observations(const Instance::Action *last_actio
                     int index = *variable.domain_.begin();
                     bool satisfy = value_observable_literal(hidden, *last_action, *jt, index);
                     sensed_at_step.insert(satisfy ? 1 + index : -(1 + index));
-                    if( options_.is_enabled("lw1:boost:literals-for-observables") )
+                    if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
+                        assert(0); // lw1:boost:literals-for-observables
                         update_state_with_literals_for_observables(state, *last_action, variable, satisfy ? 1 + index : -(1 + index));
+                    }
                 } else {
                     bool some_value_sensed = false;
                     for( set<int>::const_iterator kt = variable.domain_.begin(); kt != variable.domain_.end(); ++kt ) {
@@ -49,8 +51,10 @@ void LW1_Solver::compute_and_add_observations(const Instance::Action *last_actio
                             if( !some_value_sensed ) {
                                 sensed_at_step.insert(1 + index);
                                 some_value_sensed = true;
-                                if( options_.is_enabled("lw1:boost:literals-for-observables") )
+                                if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
+                                    assert(0); // lw1:boost:literals-for-observables
                                     update_state_with_literals_for_observables(state, *last_action, variable, 1 + index);
+                                }
                             } else {
                                 cout << Utils::error() << "more than one value sensed for variable '"
                                      << variable.name_ << "' with action '"
@@ -187,6 +191,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
 
         // 0. Add observations as unit clauses
         if( options_.is_enabled("lw1:inference:up:enhanced") || options_.is_enabled("lw1:boost:literals-for-observables") ) {
+            assert(0); // CHECK
             for( set<int>::const_iterator it = sensed_at_step.begin(); it != sensed_at_step.end(); ++it ) {
                 int k_literal = *it > 0 ? 2 * (*it - 1) : 2 * (-*it - 1) + 1;
 #ifdef DEBUG

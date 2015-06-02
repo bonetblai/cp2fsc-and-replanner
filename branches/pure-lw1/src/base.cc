@@ -1049,7 +1049,6 @@ void PDDL_Base::lw1_translate_actions_strict() {
             assert(action->sensing_->is_grounded());
             lw1_translate_strict_NEW(*action);
         }
-        assert(0); // CHECK: need to fix lw1:boost:enable-post-actions
     }
 
     // complete actions' effects
@@ -1082,7 +1081,7 @@ void PDDL_Base::lw1_translate_strict(Action &action) {
 
     const Atom *last_action_atom = 0;
     if( options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
-        assert(0);
+        assert(0); // lw1:boost:single-sensing-literal-enablers
     } else {
         last_action_atom = &lw1_fetch_last_action_atom(action);
         const_cast<AndEffect*>(static_cast<const AndEffect*>(action.effect_))->push_back(AtomicEffect(*last_action_atom).copy());
@@ -1124,24 +1123,35 @@ void PDDL_Base::lw1_translate_strict_NEW(Action &action) {
     unsigned_atom_set sensed_atoms;
     action.sensing_->extract_atoms(sensed_atoms, true);
     const Atom &enabler_for_sensing = *lw1_fetch_enabler_for_sensing(sensed_atoms);
-    cout << "HOLA: " << enabler_for_sensing << endl;
+    cout << "HOLA: enabler=" << enabler_for_sensing << endl;
 
+    And *new_precondition = 0;
     if( dynamic_cast<const And*>(action.precondition_) == 0 ) {
-        And *new_precondition = new And;
+        new_precondition = new And;
         if( action.precondition_ != 0 ) new_precondition->push_back(action.precondition_);
-        action.precondition_ = new_precondition;
+    } else {
+        new_precondition = const_cast<And*>(static_cast<const And*>(action.precondition_));
     }
-    const_cast<And*>(static_cast<const And*>(action.precondition_))->push_back(Literal(*normal_execution_).copy());
-    cout << "HOLA: new-precondition=" << *action.precondition_ << endl;
+    new_precondition->push_back(Literal(*normal_execution_).copy());
+    action.precondition_ = new_precondition;
+    cout << "HOLA: precondition=" << *action.precondition_ << endl;
 
+    AndEffect *new_effect = 0;
     if( dynamic_cast<const AndEffect*>(action.effect_) == 0 ) {
-        AndEffect *new_effect = new AndEffect;
+        new_effect = new AndEffect;
         if( action.effect_ != 0 ) new_effect->push_back(action.effect_);
-        action.effect_ = new_effect;
+    } else {
+        new_effect = const_cast<AndEffect*>(static_cast<const AndEffect*>(action.effect_));
     }
-    const_cast<AndEffect*>(static_cast<const AndEffect*>(action.effect_))->push_back(AtomicEffect(*normal_execution_).negate());
-    const_cast<AndEffect*>(static_cast<const AndEffect*>(action.effect_))->push_back(AtomicEffect(enabler_for_sensing).copy());
-    cout << "HOLA: new-effect=" << *action.effect_ << endl;
+    new_effect->push_back(AtomicEffect(*normal_execution_).negate());
+    new_effect->push_back(AtomicEffect(enabler_for_sensing).copy());
+
+    for( unsigned_atom_set::const_iterator it = sensed_atoms.begin(); it != sensed_atoms.end(); ++it ) {
+        const Atom &enabler = *lw1_fetch_enabler_for_sensing(*it);
+        new_effect->push_back(AtomicEffect(enabler).copy());
+    }
+    action.effect_ = new_effect;
+    cout << "HOLA: effect=" << *action.effect_ << endl;
 
     dom_actions_.push_back(&action);
     if( true || options_.is_enabled("lw1:print:effect") || options_.is_enabled("lw1:print:generated") )
@@ -1413,7 +1423,7 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
 
     // create single enablers
     if( options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
-        assert(0);
+        assert(0); // lw1:boost:single-sensing-literal-enablers
         lw1_calculate_enablers_for_sensing();
     }
 
@@ -1491,7 +1501,7 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
                 const vector<const Action*> &actions = lw1_actions_for_observable_state_variables_.find(&state_variable)->second;
 
                 if( options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
-                    assert(0);
+                    assert(0); // lw1:boost:single-sensing-literal-enablers
                     // generate type4 drules for each value
                     for( unsigned_atom_set::const_iterator it = domain.begin(); it != domain.end(); ++it )
                         lw1_create_type4_sensing_drule(0, state_variable, *it);
@@ -1543,7 +1553,7 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
 
         // default deductive rules for sensing for observable non-state variables
         if( options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
-            assert(0);
+            assert(0); // lw1:boost:single-sensing-literal-enablers
             for( map<pair<const ObsVariable*, Atom>, map<string, set<const Action*> > >::const_iterator it = lw1_xxx_.begin(); it != lw1_xxx_.end(); ++it ) {
                 const ObsVariable &variable = *it->first.first;
                 const Atom &value = it->first.second;
@@ -1753,7 +1763,7 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action *action, const State
 
     // precondition and effect
     if( options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
-        assert(0);
+        assert(0); // lw1:boost:single-sensing-literal-enablers
         drule->precondition_ = Literal(lw1_fetch_sensing_enabler(variable, value)).copy();
     } else {
         assert(action != 0);
@@ -1763,7 +1773,7 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action *action, const State
 
     // insert action for deductive rule
     dom_actions_.push_back(drule);
-    if( options_.is_enabled("lw1:print:drule:sensing") || options_.is_enabled("lw1:print:drule") )
+    if( true || options_.is_enabled("lw1:print:drule:sensing") || options_.is_enabled("lw1:print:drule") )
         cout << Utils::yellow() << *drule << Utils::normal();
 }
 
@@ -1799,7 +1809,7 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action,
     // the sensing enabler atom
     And *precondition = new And;
     if( options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
-        assert(0);
+        assert(0); // lw1:boost:single-sensing-literal-enablers
         assert(lw1_sensing_enablers_.find(make_pair(&action, make_pair(&variable, value))) != lw1_sensing_enablers_.end());
         precondition->push_back(Literal(*lw1_sensing_enablers_[make_pair(&action, make_pair(&variable, value))]).copy());
     } else {
@@ -1854,7 +1864,7 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action,
 
     // insert action for deductive rule
     dom_actions_.push_back(drule);
-    if( options_.is_enabled("lw1:print:drule:sensing") || options_.is_enabled("lw1:print:drule") )
+    if( true || options_.is_enabled("lw1:print:drule:sensing") || options_.is_enabled("lw1:print:drule") )
         cout << Utils::yellow() << *drule << Utils::normal();
 }
 
@@ -2041,7 +2051,7 @@ void PDDL_Base::lw1_patch_actions_with_enablers_for_sensing() {
                 }
             }
         } else {
-            assert(0);
+            assert(0); // lw1:boost:single-sensing-literal-enablers
             //cout << "hola: action=" << action.print_name_ << ", enablers=" << flush;  // CHECK
             map<string, set<string> >::const_iterator it = lw1_enablers_for_actions_.find(action.print_name_);
             if( it != lw1_enablers_for_actions_.end() ) {
@@ -2681,7 +2691,7 @@ void PDDL_Base::emit_instance(Instance &ins) const {
     if( lw1_translation_ && options_.is_enabled("lw1:strict") ) {
         lw1_emit_and_protect_atoms_for_observable_variables(ins);
         if( options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
-            assert(0);
+            assert(0); // lw1:boost:single-sensing-literal-enablers
             lw1_protect_enablers_for_sensing(ins); // CHECK: can this be removed?
         }
     }

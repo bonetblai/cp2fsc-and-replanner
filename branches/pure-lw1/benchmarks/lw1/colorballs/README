@@ -1,1 +1,6 @@
 To be filled with description of problem.
+
+Domains:
+  - d.pddl : domain in (strict) required format with observation models in positive DNF
+  - d2.pddl : domain in which not all observation models are in nonpositive DNF
+
