@@ -926,7 +926,7 @@ static const char * const yytname[] = {   "$","error","$illegal.","TK_OPEN",
 "state_variable","forall_state_variable_list_decl","@21","@22","domain_default_sensing",
 "pddl_problem","@23","problem_elements","initial_state","init_elements","single_init_element",
 "at_least_one_invariant","at_most_one_invariant","exactly_one_invariant","invariant",
-"clause","oneof","unknown","hidden_state","goal_spec",""
+"clause","oneof","unknown","hidden_state","goal_spec","goal_list"
 };
 #endif
 
@@ -2541,14 +2541,14 @@ case 174:
               var = new StateVariable(yyvsp[0].sym->text);
           else
               var = new ObsVariable(yyvsp[0].sym->text);
-          lw1_multivalued_variables_.push_back(var);
+          lw1_variables_.push_back(var);
           effect_vec_ptr_ = &var->domain_;
       ;
     break;}
 case 175:
 #line 868 "ppddl.y"
 {
-          yyvsp[-3].sym->val = lw1_multivalued_variables_.back();
+          yyvsp[-3].sym->val = lw1_variables_.back();
       ;
     break;}
 case 176:
@@ -2578,7 +2578,7 @@ case 178:
           schema_.pop_back();
           clear_param(variable->param_);
           yyvsp[-7].sym->val = variable;
-          lw1_multivalued_variables_.push_back(variable);
+          lw1_variables_.push_back(variable);
       ;
     break;}
 case 179:

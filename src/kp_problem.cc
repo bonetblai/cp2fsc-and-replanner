@@ -133,7 +133,7 @@ void KP_Instance::calculate_relevant_assumptions(const Plan &plan,
     assumptions.insert(assumptions.end(), condition_vec.rbegin(), condition_vec.rend());
 }
 
-Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &multivalued_variables)
+Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &variables)
   : KP_Instance(ins.options_),
     n_standard_actions_(0),
     n_sensor_actions_(0),
@@ -158,12 +158,12 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
         new_atom(new CopyName("(K_not_" + name + ")"));  // odd-numbered atoms
     }
 
-    // prepare data for handling problems with multivalued variables
+    // prepare data for handling problems with variables
     set<int> observable_atoms;
     map<int, set<int> > beams_for_observable_atoms;
-    vector<set<int > > multivalued_state_variables;
-    for( size_t k = 0; k < multivalued_variables.size(); ++k ) {
-        const PDDL_Base::Variable &var = *multivalued_variables[k];
+    vector<set<int > > state_variables;
+    for( size_t k = 0; k < variables.size(); ++k ) {
+        const PDDL_Base::Variable &var = *variables[k];
         if( var.is_observable_variable() ) {
             for( PDDL_Base::unsigned_atom_set::const_iterator it = var.grounded_domain_.begin(); it != var.grounded_domain_.end(); ++it ) {
                 string atom_name = it->to_string(false, true);
@@ -190,7 +190,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
                 assert(atom_index != -1);
                 values.insert(atom_index);
             }
-            multivalued_state_variables.push_back(values);
+            state_variables.push_back(values);
         }
     }
 

@@ -173,11 +173,11 @@ int main(int argc, const char *argv[]) {
     }
 
     // perform necessary translations
-    const PDDL_Base::variable_vec *multivalued_variables = 0;
+    const PDDL_Base::variable_vec *variables = 0;
     const list<pair<const PDDL_Base::Action*, const PDDL_Base::Sensing*> > *sensing_models = 0;
     const map<string, set<string> > *accepted_literals_for_observables = 0;
-    reader->do_lw1_translation(opt_strict_lw1, multivalued_variables, sensing_models, accepted_literals_for_observables);
-    assert(multivalued_variables != 0);
+    reader->do_lw1_translation(opt_strict_lw1, variables, sensing_models, accepted_literals_for_observables);
+    assert(variables != 0);
     assert(sensing_models != 0);
 
     if( g_options.is_enabled("parser:print:translated") ) {
@@ -210,10 +210,10 @@ int main(int argc, const char *argv[]) {
     }
 
     //cout << "perform action compilation..." << endl;
-    //instance.do_action_compilation(*multivalued_variables);
+    //instance.do_action_compilation(*variables);
 
     cout << "creating KP translation..." << endl;
-    KP_Instance *kp_instance = new LW1_Instance(instance, *multivalued_variables, *sensing_models, *accepted_literals_for_observables);
+    KP_Instance *kp_instance = new LW1_Instance(instance, *variables, *sensing_models, *accepted_literals_for_observables);
 
     if( g_options.is_enabled("kp:print:raw") ) {
         kp_instance->print(cout);

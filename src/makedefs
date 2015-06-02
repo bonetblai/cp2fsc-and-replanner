@@ -1,10 +1,10 @@
 # Define compiler/linker:
-CC     = gcc
-C++    = g++
-LINK   = g++
-#CC     = clang
-#C++    = clang++
-#LINK   = clang++
+#CC     = gcc
+#C++    = g++
+#LINK   = g++
+CC     = clang
+C++    = clang++
+LINK   = clang++
 
 # Define bison++ and flex++.
 # NOTE: These are NOT the standard GNU programs, but a C++ adaption.
@@ -26,7 +26,7 @@ FLEX    = /usr/local/bin/flex++
 DEBUG = -g
 OPTIMIZE = #-O3 #-DNDEBUG
 
-CFLAGS = $(DEBUG) $(OPTIMIZE) -I. -Wall
+CFLAGS = $(DEBUG) $(OPTIMIZE) -I. -Wall #-std=c++11
 LFLAGS = $(DEBUG) $(OPTIMIZE) -L. -Wall
 
 # Libraries to be linked.

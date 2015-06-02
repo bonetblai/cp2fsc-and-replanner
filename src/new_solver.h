@@ -67,12 +67,12 @@ int NewSolver<T>::solve(const T &initial_hidden_state,
 
     // the initial hidden state is already closed with the axioms
     // (see set_initial_state in problem.cc).
-    // Axioms appear in k-replanner only in translations of multivalued
-    // variable problems when compiling static observables. These axioms
-    // are only present in the original problem (instance_) and not in
-    // the kp-problem (kp_instance_). The axioms are only used once to
-    // complete the initial *hidden* state with the hidden observable
-    // fluents.
+    // Axioms appear in k-replanner only in translations of lw1
+    // problems when compiling static observables. These axioms
+    // are only present in the original problem (instance_) and
+    // not in the kp-problem (kp_instance_). The axioms are only
+    // used once to complete the initial *hidden* state with the
+    // hidden observable fluents.
 
     // close hidden state with deductive rule.
     // (Disabled since if hidden is not corect, result is a propositional
