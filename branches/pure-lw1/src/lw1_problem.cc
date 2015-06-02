@@ -48,7 +48,7 @@ void LW1_Instance::Variable::print(ostream &os) const {
 }
 
 LW1_Instance::LW1_Instance(const Instance &ins,
-                           const PDDL_Base::variable_vec &multivalued_variables,
+                           const PDDL_Base::variable_vec &variables,
                            const list<pair<const PDDL_Base::Action*, const PDDL_Base::Sensing*> > &sensing_models,
                            const map<string, set<string> > &accepted_literals_for_observables)
   : KP_Instance(ins.options_),
@@ -74,14 +74,20 @@ LW1_Instance::LW1_Instance(const Instance &ins,
              << Utils::normal() << endl;
     }
 
-    // create K0 atoms and last-action-atoms
+    // create K0 atoms and special atoms
     atoms_.reserve(2*ins.n_atoms());
     for( size_t k = 0; k < ins.n_atoms(); ++k ) {
         string name = ins.atoms_[k]->name_->to_string();
-        if( name.compare(0, 21, "last-action-atom-for-") == 0 ) {
+        if( name.compare(0, 16, "last-action-was-") == 0 ) {
+            assert(!options_.is_enabled("lw1:boost:single-sensing-literal-enablers"));
             new_atom(new CopyName(name));                  // even-numbered atoms
             new_atom(new CopyName(name + "_UNUSED"));      // odd-numbered atoms
             last_action_atoms_.insert(k);
+        } else if( name.compare(0, 19, "enable-sensing-for-") == 0 ) {
+            assert(options_.is_enabled("lw1:boost:single-sensing-literal-enablers"));
+            new_atom(new CopyName(name));                  // even-numbered atoms
+            new_atom(new CopyName(name + "_UNUSED"));      // odd-numbered atoms
+            sensing_enabler_atoms_.insert(k);
         } else {
             new_atom(new CopyName("K_" + name));           // even-numbered atoms
             new_atom(new CopyName("K_not_" + name));       // odd-numbered atoms
@@ -92,14 +98,14 @@ LW1_Instance::LW1_Instance(const Instance &ins,
     new_goal_ = &new_atom(new CopyName("new-goal"));
     goal_literals_.insert(1 + new_goal_->index_);
 
-    // extract multivalued variables
-    multivalued_variables_.reserve(multivalued_variables.size());
-    for( size_t k = 0; k < multivalued_variables.size(); ++k ) {
-        const PDDL_Base::Variable &var = *multivalued_variables[k];
+    // extract variables
+    variables_.reserve(variables.size());
+    for( size_t k = 0; k < variables.size(); ++k ) {
+        const PDDL_Base::Variable &var = *variables[k];
 
         set<int> domain;
         map<int, index_set> beams;
-        int var_index = multivalued_variables_.size();
+        int var_index = variables_.size();
         varmap_.insert(make_pair(var.to_string(false, true), var_index));
 
         for( PDDL_Base::unsigned_atom_set::const_iterator it = var.grounded_domain_.begin(); it != var.grounded_domain_.end(); ++it ) {
@@ -132,8 +138,8 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                 beams[atom_index] = beam;
             }
         }
-        multivalued_variables_.push_back(new Variable(var.to_string(false, true), var.is_observable_variable(), var.is_state_variable(), domain, beams));
-        //multivalued_variables_.back()->print(cout); cout << endl;
+        variables_.push_back(new Variable(var.to_string(false, true), var.is_observable_variable(), var.is_state_variable(), domain, beams));
+        //variables_.back()->print(cout); cout << endl;
     }
 
     // store accepted literals for observables
@@ -381,7 +387,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
             create_regular_action(act, k, observable_atoms_, beams_for_observable_atoms_);
     }
 
-    // fix decision rules for multivalued variables
+    // fix decision rules for variables
     for( size_t k = 0; k < ins.n_actions(); ++k ) {
         const Action &act = *ins.actions_[k];
         if( act.name_->to_string().compare(0, 10, "drule-var-") == 0 )
@@ -426,8 +432,8 @@ LW1_Instance::LW1_Instance(const Instance &ins,
 
     if( options_.is_enabled("lw1:inference:up") ) {
         // create fixed set of clauses (variable domain axioms) for UP inference
-        for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
-            const Variable &var = *multivalued_variables_[k];
+        for( size_t k = 0; k < variables_.size(); ++k ) {
+            const Variable &var = *variables_[k];
             if( var.is_state_variable_ && !var.is_binary() ) {
                 // for binary variables, nothing to add because all clauses are tautological
                 const set<int> &domain = var.domain_;
@@ -532,8 +538,8 @@ LW1_Instance::LW1_Instance(const Instance &ins,
 
             // literals that forbid clauses to enter augmented state are observable
             // non-state literals defined by non-static sensing models
-            for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
-                const Variable &var = *multivalued_variables_[k];
+            for( size_t k = 0; k < variables_.size(); ++k ) {
+                const Variable &var = *variables_[k];
                 if( var.is_state_variable_ ) continue;
                 for( set<int>::const_iterator it = var.domain_.begin(); it != var.domain_.end(); ++it ) {
                     int value = *it;
@@ -606,16 +612,19 @@ void LW1_Instance::create_regular_action(const Action &action,
     // preconditions
     for( index_set::const_iterator it = action.precondition_.begin(); it != action.precondition_.end(); ++it ) {
         int idx = *it > 0 ? *it-1 : -*it-1;
-        if( last_action_atoms_.find(idx) == last_action_atoms_.end() )
+        if( (last_action_atoms_.find(idx) == last_action_atoms_.end()) &&
+            (sensing_enabler_atoms_.find(idx) == sensing_enabler_atoms_.end()) ) {
             nact.precondition_.insert(*it > 0 ? 1 + 2*idx : 1 + 2*idx + 1);
-         else
+        } else {
             nact.precondition_.insert(*it > 0 ? 1 + 2*idx : -(1 + 2*idx));
+        }
     }
 
     // support and cancellation rules for unconditional effects
     for( index_set::const_iterator it = action.effect_.begin(); it != action.effect_.end(); ++it ) {
         int idx = *it > 0 ? *it-1 : -*it-1;
-        if( last_action_atoms_.find(idx) == last_action_atoms_.end() ) {
+        if( (last_action_atoms_.find(idx) == last_action_atoms_.end()) &&
+            (sensing_enabler_atoms_.find(idx) == sensing_enabler_atoms_.end()) ) {
             if( *it > 0 ) {
                 nact.effect_.insert(1 + 2*idx);
                 nact.effect_.insert(-(1 + 2*idx+1));
@@ -638,6 +647,7 @@ void LW1_Instance::create_regular_action(const Action &action,
         for( index_set::const_iterator it = when.condition_.begin(); it != when.condition_.end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
             assert(last_action_atoms_.find(idx) == last_action_atoms_.end());
+            assert(sensing_enabler_atoms_.find(idx) == sensing_enabler_atoms_.end());
             if( *it > 0 ) {
                 sup_eff.condition_.insert(1 + 2*idx);
                 can_eff.condition_.insert(-(1 + 2*idx+1));
@@ -649,6 +659,7 @@ void LW1_Instance::create_regular_action(const Action &action,
         for( index_set::const_iterator it = when.effect_.begin(); it != when.effect_.end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
             assert(last_action_atoms_.find(idx) == last_action_atoms_.end());
+            assert(sensing_enabler_atoms_.find(idx) == sensing_enabler_atoms_.end());
             if( *it > 0 ) {
                 sup_eff.effect_.insert(1 + 2*idx);
                 if( observable_atoms.find(idx) == observable_atoms.end() )
@@ -741,19 +752,25 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             string var_name = action.comment_;
             assert(varmap_.find(var_name) != varmap_.end());
             int var_index = varmap_[var_name];
-            const Variable &variable = *multivalued_variables_[var_index];
+            const Variable &variable = *variables_[var_index];
             assert(variable.is_observable_);
             assert(variable.is_state_variable_);
 
             // index for precondition and effect
             assert(*action.precondition_.begin() > 0);
-            int index_for_last_action_atom = *action.precondition_.begin() - 1;
+            int index_for_enabler = *action.precondition_.begin() - 1;
             int literal_for_value = *action.effect_.begin();
             int index_for_value = literal_for_value > 0 ? literal_for_value - 1 : -literal_for_value - 1;
             assert((literal_for_value > 0) || variable.is_binary());
 
-            // precondition for last-action-atom
-            nact->precondition_.insert(1 + 2*index_for_last_action_atom);
+            // precondition for sensing enabler
+            if( !options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
+                assert(last_action_atoms_.find(index_for_enabler) != last_action_atoms_.end());
+                nact->precondition_.insert(1 + 2*index_for_enabler);
+            } else {
+                assert(sensing_enabler_atoms_.find(index_for_enabler) != sensing_enabler_atoms_.end());
+                nact->precondition_.insert(1 + 2*index_for_enabler);
+            }
 
             // other preconditions for action for literal KX=x
             //
@@ -787,11 +804,12 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             string var_name = action.comment_;
             assert(varmap_.find(var_name) != varmap_.end());
             int var_index = varmap_[var_name];
-            const Variable &variable = *multivalued_variables_[var_index];
+            const Variable &variable = *variables_[var_index];
             assert(variable.is_observable_);
             assert(!variable.is_state_variable_);
 
-            // precondition for last-action-atom
+            // precondition for sensing enablers
+            vector<int> sensing_enablers;
             int index_for_last_action_atom = -1;
             int literal_for_value = -1, index_for_value = -1;
             for( index_set::const_iterator it = action.precondition_.begin(); it != action.precondition_.end(); ++it ) {
@@ -799,20 +817,31 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                 if( last_action_atoms_.find(index) != last_action_atoms_.end() ) {
                     assert(*it > 0);
                     index_for_last_action_atom = index;
+                } else if( sensing_enabler_atoms_.find(index) != sensing_enabler_atoms_.end() ) {
+                    assert(*it > 0);
+                    sensing_enablers.push_back(index);
                 } else {
                     literal_for_value = *it;
                     index_for_value = index;
                 }
             }
-            assert(index_for_last_action_atom != -1);
             assert(index_for_value != -1);
 
-            // add as precondition the last-action-atom. Also, if lw1:boost:literals-for-observables
-            // is enabled, add the literal -KY!=y when the sensed literal is Y=y or -KY=y
-            // when the sensed literal is Y!=y
-            nact->precondition_.insert(1 + 2*index_for_last_action_atom);
-            if( options_.is_enabled("lw1:boost:literals-for-observables") )
+            // add as precondition the sensing enablers
+            if( !options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
+                assert(index_for_last_action_atom != -1);
+                nact->precondition_.insert(1 + 2*index_for_last_action_atom);
+            } else {
+                assert(!sensing_enablers.empty());
+                for( size_t k = 0; k < sensing_enablers.size(); ++k )
+                    nact->precondition_.insert(1 + 2*sensing_enablers[k]);
+            }
+
+            // If lw1:boost:literals-for-observables is enabled, add the literal -KY!=y
+            // when the sensed literal is Y=y or -KY=y when the sensed literal is Y!=y
+            if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
                 nact->precondition_.insert(literal_for_value > 0 ? -(1 + 2*index_for_value + 1) : -(1 + 2*index_for_value));
+            }
 
             // if lw1:boost:literals-for-observables is enabled, add preconditions -KY=y' for *all*
             // values y' of sensed observable var Y. Special handling when Y is binary variable.
@@ -907,8 +936,8 @@ void LW1_Instance::complete_effect(index_set &effect, int literal, const Variabl
 }
 
 void LW1_Instance::complete_effect(index_set &effect, int literal) const {
-    for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
-        const Variable &variable = *multivalued_variables_[k];
+    for( size_t k = 0; k < variables_.size(); ++k ) {
+        const Variable &variable = *variables_[k];
         if( variable.is_state_variable_ && !variable.is_binary() ) complete_effect(effect, literal, variable);
     }
 }
@@ -975,8 +1004,8 @@ void LW1_Instance::create_sensor(const Sensor &sensor) {
     int sensed_index = sensed > 0 ? sensed - 1 : -sensed - 1;
 
     int varid = -1;
-    for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
-        const Variable &var = *multivalued_variables_[k];
+    for( size_t k = 0; k < variables_.size(); ++k ) {
+        const Variable &var = *variables_[k];
         if( var.domain_.find(sensed_index) != var.domain_.end() ) {
             varid = k;
             break;
@@ -998,7 +1027,7 @@ void LW1_Instance::create_sensor(const Sensor &sensor) {
 
     // complete condition with conditions on other values of the variable (if applicable)
     if( (sensed > 0) && (varid != -1) ) {
-        const Variable &var = *multivalued_variables_[varid];
+        const Variable &var = *variables_[varid];
         for( set<int>::const_iterator it = var.domain_.begin(); it != var.domain_.end(); ++it ) {
             if( *it != sensed_index ) nact.precondition_.insert(-(1 + 2**it));
         }

@@ -96,6 +96,7 @@ const char *available_options[] = {
     "lw1:print:beams",                         "[LW1] print beams for observable literals",
     "lw1:print:effect",                        "[LW1] print effect actions",
     "lw1:print:set-sensing",                   "[LW1] print set-sensing actions",
+    "lw1:print:turn-on-sensor",                "[LW1] print turn-on-sensor actions (only when no effect and set-sensing actions)",
     "lw1:print:post",                          "[LW1] print post actions",
     "lw1:print:sensors",                       "[LW1] print sensors",
     "lw1:print:generated",                     "[LW1] print all actions and sensors",
@@ -120,16 +121,19 @@ const char *available_options[] = {
     "lw1:inference:up:enhanced",               "[LW1] maintain inferred (non-forbidden) clauses",
 
     // lw1 boost
-    "lw1:boost:complete-effects",                           "[LW1] complete effects for multivalued variables", // CHECK
-    "lw1:boost:complete-effects:type4",                     "[LW1] complete effects for multivalued variables", // CHECK
-    "lw1:boost:complete-effects:type4:obs",                 "[LW1] complete effects for multivalued variables", // CHECK
-    "lw1:boost:complete-effects:type4:state",               "[LW1] complete effects for multivalued variables", // CHECK
-    "lw1:boost:single-sensing-literal-enablers",            "[LW1] XXXX", // CHECK
-    "lw1:boost:disabling-actions-for-last-action-atoms",    "[LW1] XXXX", // CHECK
-    "lw1:boost:drule:sensing:type4",                        "[LW1] XXXX", // CHECK
-    "lw1:boost:drule:sensing:type3",                        "[LW1] generate deductive rules for sensing of type 3", // CHECK (rename types)
-    "lw1:boost:literals-for-observables",                   "[LW1] add literals for static observables (useful in problem with width > 1)", // CHECK
-    "lw1:boost:literals-for-observables:dynamic",           "[LW1] add literals for observables (useful in problem with width > 1)", // CHECK
+    "lw1:boost:complete-effects",                       "[LW1] complete effects for variables", // CHECK
+    "lw1:boost:complete-effects:type4",                 "[LW1] complete effects for variables", // CHECK
+    "lw1:boost:complete-effects:type4:obs",             "[LW1] complete effects for variables", // CHECK
+    "lw1:boost:complete-effects:type4:state",           "[LW1] complete effects for variables", // CHECK
+
+    "lw1:boost:disabling-actions-for-last-action-atoms","[LW1] XXXX", // CHECK
+    "lw1:boost:single-sensing-literal-enablers",        "[LW1] XXXX", // CHECK
+    "lw1:boost:enable-post-actions",                    "[LW1] XXXX", // CHECK
+
+    "lw1:boost:drule:sensing:type4",                    "[LW1] XXXX", // CHECK
+    "lw1:boost:drule:sensing:type3",                    "[LW1] generate deductive rules for sensing of type 3", // CHECK (rename types)
+    "lw1:boost:literals-for-observables",               "[LW1] add literals for static observables (useful in problem with width > 1)", // CHECK
+    "lw1:boost:literals-for-observables:dynamic",       "[LW1] add literals for observables (useful in problem with width > 1)", // CHECK
 
     0
 };

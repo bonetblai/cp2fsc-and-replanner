@@ -862,11 +862,11 @@ simple_variable_decl:
               var = new StateVariable($3->text);
           else
               var = new ObsVariable($3->text);
-          lw1_multivalued_variables_.push_back(var);
+          lw1_variables_.push_back(var);
           effect_vec_ptr_ = &var->domain_;
       }
       fluent_list_decl TK_CLOSE {
-          $3->val = lw1_multivalued_variables_.back();
+          $3->val = lw1_variables_.back();
       }
     | TK_OPEN variable_type TK_OPEN TK_NEW_SYMBOL {
           Variable *var = 0;
@@ -887,7 +887,7 @@ simple_variable_decl:
           schema_.pop_back();
           clear_param(variable->param_);
           $4->val = variable;
-          lw1_multivalued_variables_.push_back(variable);
+          lw1_variables_.push_back(variable);
       }
     | TK_OPEN KW_VARIABLE error TK_CLOSE {
           log_error((char*)"syntax error in state variable declaration");

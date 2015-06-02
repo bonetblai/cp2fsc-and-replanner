@@ -24,7 +24,7 @@ void LW1_Solver::compute_and_add_observations(const Instance::Action *last_actio
         map<string, set<int> >::const_iterator it = lw1.vars_sensed_by_action_.find(last_action->name_->to_string());
         if( it != lw1.vars_sensed_by_action_.end() ) {
             for( set<int>::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt ) {
-                const LW1_Instance::Variable &variable = *lw1.multivalued_variables_[*jt];
+                const LW1_Instance::Variable &variable = *lw1.variables_[*jt];
 
                 // if state variable, the value of observed literal (either true or false)
                 // is directly obtained from the hidden state. If non-state variable, need
@@ -240,7 +240,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
             int sensed_literal = it->first;
             for( map<int, sensing_models_as_cnf_t>::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt ) {
                 int var_key = jt->first;
-                const LW1_Instance::Variable &variable = *lw1.multivalued_variables_[var_key];
+                const LW1_Instance::Variable &variable = *lw1.variables_[var_key];
                 if( variable.is_state_variable_ ) {
                     assert(jt->second.empty());
                     int k_literal = sensed_literal > 0 ? 1 + 2*(sensed_literal - 1) : 1 + 2*(-sensed_literal - 1) + 1;
@@ -422,7 +422,7 @@ bool LW1_Solver::value_observable_literal(const STATE_CLASS &hidden,
     assert(translation_type_ == LW1);
     assert(dynamic_cast<const LW1_Instance*>(&kp_instance_) != 0);
     const LW1_Instance &lw1 = *static_cast<const LW1_Instance*>(&kp_instance_);
-    const LW1_Instance::Variable &variable = *lw1.multivalued_variables_[var_index];
+    const LW1_Instance::Variable &variable = *lw1.variables_[var_index];
     string action_key = last_action.name_->to_string();
     //cout << Utils::red() << "XXXXXX.0: index=" << index << ", name="; State::print_literal(cout, 1 + index, &instance_); cout << Utils::normal() << endl;
 
@@ -575,7 +575,7 @@ void LW1_Solver::fill_relevant_sensing_models(const LW1_Instance &lw1,
         // consider complemented value explicitly
         for( size_t k = 0; k < jt->second.size(); ++k ) {
             int var_key = jt->second[k];
-            const LW1_Instance::Variable &variable = *lw1.multivalued_variables_[var_key];
+            const LW1_Instance::Variable &variable = *lw1.variables_[var_key];
 
             if( variable.is_state_variable_ ) {
                 sensing_models_as_cnf[sensed_literal].insert(make_pair(var_key, sensing_models_as_cnf_t()));

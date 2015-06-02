@@ -70,7 +70,7 @@ class Standard_KP_Instance : public KP_Instance {
     // for subgoaling
     std::vector<Atom*> atoms_for_unknown_observables_at_init_;
 
-    Standard_KP_Instance(const Instance &instance, const PDDL_Base::variable_vec &multivalued_variables);
+    Standard_KP_Instance(const Instance &instance, const PDDL_Base::variable_vec &variables);
     Standard_KP_Instance(const Instance &instance);
     ~Standard_KP_Instance();
 

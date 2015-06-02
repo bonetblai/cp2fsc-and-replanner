@@ -532,7 +532,7 @@ void Instance::set_hidden_state(int k, State &state) const {
             state.add(*it-1);
     }
     // close initial hidden state with axioms. Axioms in k-replanner
-    // only appear in translations of multivalued variable problems.
+    // only appear in translations of lw1 problems.
     // (See explanation in solver.cc and generation of axioms in base.cc).
     state.apply_axioms(*this);
 }

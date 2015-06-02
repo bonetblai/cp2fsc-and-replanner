@@ -804,22 +804,21 @@ class PDDL_Base {
     // name of original actions in problem
     std::set<std::string>                     original_actions_;
 
-    // For CLG and multivalued variables translations
+    // For CLG and lw1 translations
     const Atom                                *normal_execution_;
 
     // For CLG-type syntax and translations
     bool                                      clg_translation_;
 
-    // For multivalued variables formulations
+    // For lw1 formulations
     bool                                      lw1_translation_;
-    variable_vec                              lw1_multivalued_variables_;
+    variable_vec                              lw1_variables_;
     unsigned_atom_set                         observable_atoms_;
     unsigned_atom_set                         atoms_for_state_variables_;
     unsigned_atom_set                         static_observable_atoms_;
     unsigned_atom_set                         sensed_atoms_;
-    std::set<std::string>                     simple_sensors_for_multivalued_variables_;
-    std::map<std::string, const Sensor*>      sensors_for_multivalued_variable_translation_;
-    std::map<unsigned_atom_set, const Action*> post_actions_for_multivalued_variable_translation_;
+    std::set<std::string>                     simple_sensors_for_variables_;
+    std::map<unsigned_atom_set,const Action*> post_actions_for_lw1_translation_;
     std::map<std::string, const Atom*>        need_set_sensing_atoms_;
     std::map<unsigned_atom_set, const Atom*>  need_post_atoms_;
     std::map<std::string, const Atom*>        sensing_atoms_;
@@ -858,7 +857,7 @@ class PDDL_Base {
 
     void do_translation();
     void do_lw1_translation(bool strict_lw1,
-                            const variable_vec* &multivalued_variables,
+                            const variable_vec* &variables,
                             const std::list<std::pair<const Action*, const Sensing*> >* &sensing_models,
                             const std::map<std::string, std::set<std::string> >* &accepted_literals_for_observables);
     void emit_instance(Instance &ins) const;
@@ -879,7 +878,7 @@ class PDDL_Base {
     void clg_translate_actions();
     void clg_translate(Action &action);
 
-    // methods for formulations in terms of multivalued variables
+    // methods for lw1 formulation
     void declare_lw1_translation();
     bool lw1_translation() const { return lw1_translation_; }
     void lw1_calculate_atoms_for_state_variables();
@@ -892,13 +891,15 @@ class PDDL_Base {
     void lw1_create_post_action(const unsigned_atom_set &atoms);
 
     void lw1_emit_and_protect_atoms_for_observable_variables(Instance &ins) const;
+    void lw1_protect_enablers_for_sensing(Instance &ins) const;
     void lw1_translate_actions_strict();
     void lw1_translate_strict(Action &action);
+    void lw1_translate_strict_NEW(Action &action);
 
-    // methods to handle sensing
+    // methods to handle sensing for lw1
     void lw1_finish_grounding_of_sensing(const Sensing* &sensing);
 
-    // methods to create deductive rules for multivalued variables
+    // methods to create deductive rules for lw1
     void lw1_create_deductive_rules_for_variables();
     void lw1_create_type1_var_drule(const Variable &variable, const Atom &value);
     void lw1_create_type2_var_drule(const Variable &variable, const Atom &value);
@@ -909,11 +910,11 @@ class PDDL_Base {
     void lw1_create_type1_sensing_drule(const Atom &obs, const And &term, int index);
     void lw1_create_type2_sensing_drule(const Atom &obs, const And &term, int index);
 
-    // methods to create type3 deductive rules (for multivalued variables)
+    // methods to create type3 deductive rules (for lw1)
     void lw1_create_type3_sensing_drule(const ObsVariable &variable, const Atom &value, const And &term, const std::list<const And*> &dnf, int index);
     const Atom& lw1_fetch_atom_for_negated_term(const And &term);
 
-    // methods to create type4 deductive rules (for multivalued variables)
+    // methods to create type4 deductive rules (for lw1)
     void lw1_create_type4_sensing_drule(const Action *action, const StateVariable &variable, const Atom &value);
     void lw1_create_type4_sensing_drule(const Action &action,
                                         const ObsVariable &variable,
@@ -927,12 +928,12 @@ class PDDL_Base {
     void lw1_calculate_enablers_for_sensing();
     void lw1_patch_actions_with_enablers_for_sensing();
 
-    // methods to create sensors (for multivalued variables)
+    // methods to create sensors (for lw1)
     void lw1_create_simple_sensors_for_atoms(const unsigned_atom_set &atoms);
     void lw1_create_sensors_for_atom(const Atom &atom, const Condition &condition, int sensor_index = -1);
     void lw1_create_sensors_for_atom(const Atom &atom, const signed_atom_set &condition, int sensor_index = -1);
 
-    // methods to compile static observables (for multivalued variables)
+    // methods to compile static observables (for lw1)
     void lw1_calculate_post_condition(const Condition *precondition, const Effect *effect, signed_atom_set &post_condition) const;
     void lw1_simplify_post_condition(signed_atom_set &post_condition) const;
     bool lw1_is_literal_implied(const Atom &literal, const Condition &condition, bool complement_literal = false) const;
@@ -944,16 +945,16 @@ class PDDL_Base {
     void lw1_compile_static_observable(const Atom &atom);
     void lw1_add_axiom_for_static_observable(const Literal &literal, const Condition &condition);
 
-    // methods to complete effects (for multivalued variables)
+    // methods to complete effects (for lw1)
     void lw1_complete_effect_for_actions();
     const AndEffect* lw1_complete_effect(Effect *effect) const;
     const AndEffect* lw1_canonize_effect(Effect *effect) const;
     void lw1_complete_effect_with_variable(AndEffect *effect, const Variable &var) const;
 
     // methods to fetch/create support atoms for translations
-    const Atom* fetch_need_set_sensing_atom(const Action &action);
-    const Atom* fetch_need_post_atom(const unsigned_atom_set &atoms);
-    const Atom* fetch_sensing_atom(const Atom &atom);
+    const Atom* lw1_fetch_need_set_sensing_atom(const Action &action);
+    const Atom* lw1_fetch_enabler_for_sensing(const unsigned_atom_set &atoms);
+    const Atom* lw1_fetch_enabler_for_sensing(const Atom &atom);
 
     // methods to perform action compilation // CHECK (action compilation outside preprocessing)
     void lw1_do_action_compilation();

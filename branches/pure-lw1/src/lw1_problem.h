@@ -27,6 +27,7 @@ class LW1_Instance : public KP_Instance {
 
     // last-action-atoms and atoms-for-sensing in po_instance
     std::set<int> last_action_atoms_;
+    std::set<int> sensing_enabler_atoms_;
     std::map<std::string, std::set<int> > atoms_for_observables_;
 
     // for subgoaling
@@ -48,7 +49,7 @@ class LW1_Instance : public KP_Instance {
     // lw1 variables and sensing models.
     // Sensing models are indexed by (action-name, value-index, var-index) and return DNF
     std::map<std::string, int> varmap_;
-    std::vector<Variable*> multivalued_variables_;
+    std::vector<Variable*> variables_;
     std::map<int, std::vector<int> > variables_for_atom_;
     std::map<std::string, std::map<int, std::map<int, std::vector<std::vector<int> > > > > sensing_models_as_k_cnf_;
     std::map<std::string, std::map<int, std::map<int, std::vector<std::vector<int> > > > > sensing_models_as_dnf_;
@@ -65,7 +66,7 @@ class LW1_Instance : public KP_Instance {
     std::vector<std::vector<int> > clauses_for_axioms_;
 
     LW1_Instance(const Instance &instance,
-                 const PDDL_Base::variable_vec &multivalued_variables,
+                 const PDDL_Base::variable_vec &variables,
                  const std::list<std::pair<const PDDL_Base::Action*, const PDDL_Base::Sensing*> > &sensing_models,
                  const std::map<std::string, std::set<std::string> > &accepted_literals_for_observables);
     ~LW1_Instance();
