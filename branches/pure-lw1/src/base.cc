@@ -917,6 +917,7 @@ void PDDL_Base::lw1_emit_and_protect_atoms_for_observable_variables(Instance &in
 }
 
 // CHECK: is this function needed? After fixing lw1_problem, it may be not!
+// lw1:boost:single-sensing-literal-enablers
 void PDDL_Base::lw1_protect_enablers_for_sensing(Instance &ins) const {
     for( map<string, const Atom*>::const_iterator it = lw1_sensing_enabler_atoms_.begin(); it != lw1_sensing_enabler_atoms_.end(); ++it ) {
         const Atom &value = *it->second;
@@ -1624,6 +1625,8 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
 
 // these rules are not necessary and may be wrong: they are of the form term => obs
 void PDDL_Base::lw1_create_type1_sensing_drule(const Atom &obs, const And &term, int index) {
+    assert(options_.is_enabled("lw1:aaai"));
+
     // type-1 sensing drules
     string name = string("drule-sensing-type1-") + obs.to_string(false, true) + "-" + to_string(index);
     Action *drule = new Action(strdup(name.c_str()));
@@ -1637,6 +1640,8 @@ void PDDL_Base::lw1_create_type1_sensing_drule(const Atom &obs, const And &term,
 }
 
 void PDDL_Base::lw1_create_type2_sensing_drule(const Atom &obs, const And &term, int index) {
+    assert(options_.is_enabled("lw1:aaai"));
+
     for( size_t k = 0; k < term.size(); ++k ) {
         string name = string("drule-sensing-type2-") + obs.to_string(false, true) + "-" + to_string(index);
         Action *drule = new Action(strdup(name.c_str()));
@@ -1665,7 +1670,9 @@ void PDDL_Base::lw1_create_type2_sensing_drule(const Atom &obs, const And &term,
 }
 
 void PDDL_Base::lw1_create_type3_sensing_drule(const ObsVariable &variable, const Atom &value, const And &term, const list<const And*> &dnf, int index) {
+    assert(options_.is_enabled("lw1:aaai") || options_.is_enabled("lw1::strict"));
     assert(0); // CHECK: need to fix last-action-atom
+
     // revise beam: at this stage, the beam only contains non-static atoms. Hence, if the beam
     // for value is non-empty, don't generate type3 sensing drule
     assert(variable.grounded_domain_.find(value) != variable.grounded_domain_.end());
@@ -1746,6 +1753,8 @@ const PDDL_Base::Atom& PDDL_Base::lw1_fetch_atom_for_negated_term(const And &ter
 }
 
 void PDDL_Base::lw1_create_type4_sensing_drule(const Action *action, const StateVariable &variable, const Atom &value) {
+    assert(options_.is_enabled("lw1:strict"));
+
 #ifdef DEBUG
     //cout << "Type4: class=STATE"
     //     << ", variable=" << variable.to_string(true, false)
@@ -1783,6 +1792,8 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action,
                                                const ObsVariable &variable,
                                                const Atom &value,
                                                const map<Atom, list<const And*> > &sensing_models_for_action_and_var) {
+    assert(options_.is_enabled("lw1:strict"));
+
 #ifdef DEBUG
     //cout << "Type4: class=OBS"
     //     << ", action=" << action.print_name_
@@ -1873,6 +1884,8 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action,
 }
 
 void PDDL_Base::lw1_create_type5_sensing_drule(const ObsVariable &variable) {
+    assert(options_.is_enabled("lw1:strict"));
+
 #ifdef DEBUG
     //cout << "Type5: observable-variable=" << variable.to_string(true, false) << ", domain-sz=" << variable.grounded_domain_.size() << endl;
     //assert(!variable.grounded_domain_.empty());
@@ -1991,6 +2004,7 @@ const PDDL_Base::Atom& PDDL_Base::lw1_fetch_last_action_atom(const Action &actio
     }
 }
 
+// lw1:boost:single-sensing-literal-enablers
 void PDDL_Base::lw1_calculate_enablers_for_sensing() {
     for( map<pair<const ObsVariable*, Atom>, map<string, set<const Action*> > >::const_iterator it = lw1_xxx_.begin(); it != lw1_xxx_.end(); ++it ) {
         const ObsVariable &variable = *it->first.first;
@@ -2601,8 +2615,7 @@ void PDDL_Base::do_translation() {
     }
 }
 
-void PDDL_Base::do_lw1_translation(bool strict_lw1,
-                                   const variable_vec* &variables,
+void PDDL_Base::do_lw1_translation(const variable_vec* &variables,
                                    const list<pair<const Action*, const Sensing*> >* &sensing_models,
                                    const map<string, set<string> >* &accepted_literals_for_observables) {
     instantiate_elements();

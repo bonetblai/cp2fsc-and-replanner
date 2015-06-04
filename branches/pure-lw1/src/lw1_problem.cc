@@ -966,7 +966,8 @@ void LW1_Instance::merge_drules() {
             break;
         }
 
-        if( !options_.is_enabled("lw1:strict") && options_.is_enabled("kp:merge-drules") ) {
+        //if( !options_.is_enabled("lw1:strict") && options_.is_enabled("kp:merge-drules") ) {
+        if( options_.is_enabled("kp:merge-drules") ) {
             if( !comparator(nact.precondition_, it->first) ) nact.comment_ = "<merge>";
             set<When> included_when_effects;
             included_when_effects.insert(nact.when_.begin(), nact.when_.end());

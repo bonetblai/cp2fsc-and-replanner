@@ -107,6 +107,7 @@ const char *available_options[] = {
     "lw1:print:compiled-static-sensing",       "[LW1] print compiled static sensing models",
     "lw1:print:axioms",                        "[LW1] print axioms generated when compiling static observables",
 
+    "lw1:aaai",                                "[LW1] translation used in AAAI-14 paper",
     "lw1:strict",                              "[LW1] strict compliance with lw1 specification",
     "lw1:sensing:make-dnf",                    "[LW1] when sensing model is not in DNF, do automatic translation (may be very inefficient)",
 

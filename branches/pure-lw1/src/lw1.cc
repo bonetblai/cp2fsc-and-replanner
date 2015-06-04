@@ -59,7 +59,6 @@ int main(int argc, const char *argv[]) {
     float       start_time = Utils::read_time_in_seconds();
     string      opt_planner_path = "";
     string      opt_tmpfile_path = "";
-    bool        opt_strict_lw1 = false;
 
     // print cmdline
     cout << "cmdline: " << Utils::cmdline(argc, argv) << endl;
@@ -115,8 +114,6 @@ int main(int argc, const char *argv[]) {
             opt_planner = argv[++k];
         } else if( !skip_options && !strcmp(argv[k], "--planner-path") ) {
             opt_planner_path = argv[++k];
-        } else if( !skip_options && !strcmp(argv[k], "--strict-lw1") ) {
-            opt_strict_lw1 = true;
         } else if( !skip_options && !strcmp(argv[k], "--tmpfile-path") ) {
             opt_tmpfile_path = argv[++k];
         } else if( !skip_options && !strncmp(argv[k], "--options=", 10) ) {
@@ -145,21 +142,45 @@ int main(int argc, const char *argv[]) {
     }
 
     // set implied options and default inference
-    if( g_options.is_enabled("lw1:boost:literals-for-observables:dynamic") )
+    if( g_options.is_enabled("lw1:aaai") ) {
+        g_options.disable("lw1:strict");
+    }
+    if( g_options.is_enabled("lw1:strict") ) {
+        g_options.disable("lw1:aaai");
+    }
+
+    if( !g_options.is_enabled("lw1:strict") ) {
+        g_options.disable("lw1:boost:disabling-actions-for-last-action-atoms");
+        g_options.disable("lw1:boost:single-sensing-literal-enablers");
+        g_options.disable("lw1:boost:enable-post-actions");
+        g_options.disable("lw1:boost:drule:sensing:type4");
+        g_options.disable("lw1:boost:drule:sensing:type3");
+        g_options.disable("lw1:boost:literals-for-observables");
+        g_options.disable("lw1:boost:literals-for-observables:dynamic");
+    }
+
+    if( g_options.is_enabled("lw1:boost:literals-for-observables:dynamic") ) {
         g_options.enable("lw1:boost:literals-for-observables");
+    }
+
     if( g_options.is_enabled("lw1:boost:complete-effects:type4") ) {
         g_options.enable("lw1:boost:complete-effects:type4:state");
         g_options.enable("lw1:boost:complete-effects:type4:obs");
     }
     if( g_options.is_enabled("lw1:boost:complete-effects:type4:state") ||
-        g_options.is_enabled("lw1:boost:complete-effects:type4:obs") )
+        g_options.is_enabled("lw1:boost:complete-effects:type4:obs") ) {
         g_options.enable("lw1:boost:complete-effects");
+    }
+
     if( g_options.is_enabled("lw1:inference:up:enhanced") ||
-        g_options.is_enabled("lw1:inference:up:lookahead") )
+        g_options.is_enabled("lw1:inference:up:lookahead") ) {
         g_options.enable("lw1:inference:up");
+    }
+
     if( !g_options.is_enabled("lw1:inference:forward-chaining") &&
-        !g_options.is_enabled("lw1:inference:up") )
+        !g_options.is_enabled("lw1:inference:up") ) {
         g_options.enable("lw1:inference:forward-chaining"); // CHECK: default should be UP
+    }
 
     // check that there is at least one input file
     if( nfiles == 0 ) {
@@ -176,7 +197,7 @@ int main(int argc, const char *argv[]) {
     const PDDL_Base::variable_vec *variables = 0;
     const list<pair<const PDDL_Base::Action*, const PDDL_Base::Sensing*> > *sensing_models = 0;
     const map<string, set<string> > *accepted_literals_for_observables = 0;
-    reader->do_lw1_translation(opt_strict_lw1, variables, sensing_models, accepted_literals_for_observables);
+    reader->do_lw1_translation(variables, sensing_models, accepted_literals_for_observables);
     assert(variables != 0);
     assert(sensing_models != 0);
 
