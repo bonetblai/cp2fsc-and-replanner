@@ -856,8 +856,7 @@ class PDDL_Base {
     bool is_static_atom(const Atom &atom) const;
 
     void do_translation();
-    void do_lw1_translation(bool strict_lw1,
-                            const variable_vec* &variables,
+    void do_lw1_translation(const variable_vec* &variables,
                             const std::list<std::pair<const Action*, const Sensing*> >* &sensing_models,
                             const std::map<std::string, std::set<std::string> >* &accepted_literals_for_observables);
     void emit_instance(Instance &ins) const;
