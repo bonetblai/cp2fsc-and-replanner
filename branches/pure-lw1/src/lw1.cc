@@ -151,7 +151,6 @@ int main(int argc, const char *argv[]) {
 
     if( !g_options.is_enabled("lw1:strict") ) {
         g_options.disable("lw1:boost:disabling-actions-for-last-action-atoms");
-        g_options.disable("lw1:boost:single-sensing-literal-enablers");
         g_options.disable("lw1:boost:enable-post-actions");
         g_options.disable("lw1:boost:drule:sensing:type4");
         g_options.disable("lw1:boost:drule:sensing:type3");

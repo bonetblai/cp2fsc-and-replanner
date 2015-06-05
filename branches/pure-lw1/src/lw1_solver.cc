@@ -79,13 +79,26 @@ void LW1_Solver::compute_and_add_observations(const Instance::Action *last_actio
             const Instance::Sensor &r = *instance_.sensors_[k];
             if( hidden.satisfy(r.condition_) ) {
 #ifdef DEBUG
-                cout << Utils::yellow() << "firing sensor: " << Utils::normal();
-                r.print(cout, instance_);
+                //cout << Utils::yellow() << "firing sensor: " << Utils::normal();
+                //r.print(cout, instance_);
 #endif
                 fired_sensors_at_step.insert(k);
                 for( index_set::const_iterator it = r.sense_.begin(); it != r.sense_.end(); ++it ) {
                     int obs = *it > 0 ? *it - 1 : -*it - 1;
                     bool satisfy = hidden.satisfy(obs);
+#ifdef DEBUG
+                    if( satisfy ) {
+                        //cout << Utils::yellow() << "[State] Add inferred literal: ";
+                        //hidden.print_literal(cout, obs, &kp_instance_);
+                        //cout << Utils::normal() << endl;
+                    }
+                    if( !satisfy ) {
+                        //cout << Utils::yellow() << "[State] Add inferred literal: ";
+                        //cout << "(not ";
+                        //hidden.print_literal(cout, obs, &kp_instance_);
+                        //cout << ")" << Utils::normal() << endl;
+                    }
+#endif
                     sensed_at_step.insert(satisfy ? 1 + obs : -(1 + obs));
                 }
             }
@@ -168,7 +181,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                 const Instance::Action &act = *kp_instance_.actions_[k];
                 if( state.applicable(act) ) {
                     state.apply(act);
-                    //act.print(cout, kp_instance_);
+                    act.print(cout, kp_instance_);
                 }
             }
             fix_point_reached = old_state == state;
@@ -195,9 +208,9 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
             for( set<int>::const_iterator it = sensed_at_step.begin(); it != sensed_at_step.end(); ++it ) {
                 int k_literal = *it > 0 ? 2 * (*it - 1) : 2 * (-*it - 1) + 1;
 #ifdef DEBUG
-                cout << Utils::red() << "[Theory] Add obs literal: ";
-                state.print_literal(cout, 1 + k_literal, &kp_instance_);
-                cout << Utils::normal() << endl;
+                //cout << Utils::red() << "[Theory] Add obs literal: ";
+                //state.print_literal(cout, 1 + k_literal, &kp_instance_);
+                //cout << Utils::normal() << endl;
 #endif
 #ifdef UP
                 Inference::Propositional::Clause cl;
@@ -211,9 +224,9 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         // 1. Positive literals from state
         for( STATE_CLASS::const_iterator it = state.begin(); it != state.end(); ++it ) {
 #ifdef DEBUG
-            cout << Utils::red() << "[Theory] Add literal from state: ";
-            state.print_literal(cout, 1 + *it, &kp_instance_);
-            cout << Utils::normal() << endl;
+            //cout << Utils::red() << "[Theory] Add literal from state: ";
+            //state.print_literal(cout, 1 + *it, &kp_instance_);
+            //cout << Utils::normal() << endl;
 #endif
 #ifdef UP
             Inference::Propositional::Clause cl;
@@ -250,9 +263,9 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                     assert(jt->second.empty());
                     int k_literal = sensed_literal > 0 ? 1 + 2*(sensed_literal - 1) : 1 + 2*(-sensed_literal - 1) + 1;
 #ifdef DEBUG
-                    cout << Utils::red() << "[Theory] Add obs (state) literal: ";
-                    state.print_literal(cout, k_literal, &kp_instance_);
-                    cout << Utils::normal() << endl;
+                    //cout << Utils::red() << "[Theory] Add obs (state) literal: ";
+                    //state.print_literal(cout, k_literal, &kp_instance_);
+                    //cout << Utils::normal() << endl;
 #endif
 #ifdef UP
                     Inference::Propositional::Clause cl;
@@ -266,9 +279,9 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                         for( size_t j = 0; j < cnf_for_sensing_model.size(); ++j ) {
                             const clause_t &clause = cnf_for_sensing_model[j];
 #ifdef DEBUG
-                            cout << Utils::red() << "[Theory] Add K_o clause: ";
-                            state.print_clause(cout, clause, &kp_instance_);
-                            cout << Utils::normal() << endl;
+                            //cout << Utils::red() << "[Theory] Add K_o clause: ";
+                            //state.print_clause(cout, clause, &kp_instance_);
+                            //cout << Utils::normal() << endl;
 #endif
 #ifdef UP
                             Inference::Propositional::Clause cl;
@@ -289,9 +302,9 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
             for( size_t k = 0; k < state.cnf_.size(); ++k ) {
                 const clause_t &clause = state.cnf_[k];
 #    ifdef DEBUG
-                cout << Utils::red() << "[Theory] Add extra clause: ";
-                state.print_clause(cout, clause, &kp_instance_);
-                cout << Utils::normal() << endl;
+                //cout << Utils::red() << "[Theory] Add extra clause: ";
+                //state.print_clause(cout, clause, &kp_instance_);
+                //cout << Utils::normal() << endl;
 #    endif
 #    ifdef UP
                 Inference::Propositional::Clause cl;
