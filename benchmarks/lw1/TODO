@@ -1,0 +1,1 @@
+/Users/blaibonet/software/cp2fsc-and-replanner/pure-lw1/src/lw1 --options=lw1:strict,lw1:inference:up,lw1:inference:watched-literals,lw1:boost:enable-post-actions,kp:merge-drules,-lw1:boost:drule:sensing:type4 --planner-path /Users/blaibonet/software/FF-v2.3-parse-patch --keep-intermediate-files d2.pddl p2.pddl h.pddl
