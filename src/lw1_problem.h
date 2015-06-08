@@ -60,7 +60,6 @@ class LW1_Instance : public KP_Instance {
     std::set<int> clause_forbidding_literals_;
 
     // TODO: can we get rid of beams_for_observable_atoms_?
-    std::multimap<index_set, const Action*> drule_store_;
     index_set observable_atoms_;
     std::map<std::pair<int, int>, index_set> beams_for_observable_atoms_;
     std::vector<std::vector<int> > clauses_for_axioms_;
@@ -85,9 +84,7 @@ class LW1_Instance : public KP_Instance {
     void complete_effect(index_set &effect, int literal, const Variable &variable) const;
     void complete_effect(index_set &effect, int literal) const;
 
-    void merge_drules();
     void create_sensor(const Sensor &sensor);
-    void perform_subgoaling();
 
     virtual void cross_reference();
     virtual size_t remap_action(size_t action_id) const {

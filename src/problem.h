@@ -42,6 +42,9 @@ class Instance {
             return (condition_ < when.condition_) ||
                    ((condition_ == when.condition_) && (effect_ < when.effect_));
         }
+        bool operator==(const When &when) const {
+            return (condition_ == when.condition_) && (effect_ == when.effect_);
+        }
     };
     struct when_vec : public std::vector<When> { };
 

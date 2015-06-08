@@ -420,7 +420,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
 
     // update time for inference
     float end_time = Utils::read_time_in_seconds();
-    kp_instance_.inference_time_ += end_time - start_time;
+    kp_instance_.increase_inference_time(end_time - start_time);
 
 #ifdef DEBUG
     cout << Utils::green() << ">>> state  after inference=";
