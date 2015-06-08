@@ -1481,6 +1481,7 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
 
                 if( options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
                     assert(0); // lw1:boost:single-sensing-literal-enablers
+#if 0
                     // generate type4 drules for each value
                     for( unsigned_atom_set::const_iterator it = domain.begin(); it != domain.end(); ++it )
                         lw1_create_type4_sensing_drule(0, state_variable, *it);
@@ -1510,6 +1511,7 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
                             cout << Utils::red() << "Store: enabler=" << enabler << ", action=" << action.print_name_ << Utils::normal() << endl;
                         }
                     }
+#endif
                 } else {
                     // generate type4 drules for each value and action
                     for( size_t j = 0; j < actions.size(); ++j ) {
@@ -1533,6 +1535,7 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
         // default deductive rules for sensing for observable non-state variables
         if( options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
             assert(0); // lw1:boost:single-sensing-literal-enablers
+#if 0
             for( map<pair<const ObsVariable*, Atom>, map<string, set<const Action*> > >::const_iterator it = lw1_xxx_.begin(); it != lw1_xxx_.end(); ++it ) {
                 const ObsVariable &variable = *it->first.first;
                 const Atom &value = it->first.second;
@@ -1545,6 +1548,7 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
                     }
                 }
             }
+#endif
         } else {
             for( map<const Action*, map<const ObsVariable*, map<Atom, list<const And*> > > >::const_iterator it = lw1_sensing_models_index_.begin(); it != lw1_sensing_models_index_.end(); ++it ) {
                 const Action &action = *it->first;
@@ -1648,7 +1652,7 @@ void PDDL_Base::lw1_create_type2_sensing_drule(const Atom &obs, const And &term,
 }
 
 void PDDL_Base::lw1_create_type3_sensing_drule(const ObsVariable &variable, const Atom &value, const And &term, const list<const And*> &dnf, int index) {
-    assert(options_.is_enabled("lw1:aaai") || options_.is_enabled("lw1::strict"));
+    assert(options_.is_enabled("lw1:aaai") || options_.is_enabled("lw1:strict"));
     assert(0); // CHECK: need to fix last-action-atom
 
     // revise beam: at this stage, the beam only contains non-static atoms. Hence, if the beam
@@ -1749,10 +1753,7 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action *action, const State
     drule->comment_ = variable.to_string(false, true);
 
     // precondition and effect
-    if( options_.is_enabled("lw1:boost:enable-post-actions") || // CHECK: if this the way that we want to enable this?
-        options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
-        //assert(0); // lw1:boost:single-sensing-literal-enablers
-        //drule->precondition_ = Literal(lw1_fetch_sensing_enabler(variable, value)).copy();
+    if( options_.is_enabled("lw1:boost:enable-post-actions") ) {
         drule->precondition_ = Literal(*lw1_fetch_enabler_for_sensing(value)).copy();
     } else {
         assert(action != 0);
@@ -1773,11 +1774,11 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action,
     assert(options_.is_enabled("lw1:strict"));
 
 #ifdef DEBUG
-    //cout << "Type4: class=OBS"
-    //     << ", action=" << action.print_name_
-    //     << ", observable-variable=" << variable.to_string(true, false)
-    //     << ", value=" << value.to_string(false, false)
-    //     << endl;
+    cout << "Type4: class=OBS"
+         << ", action=" << action.print_name_
+         << ", observable-variable=" << variable.to_string(true, false)
+         << ", value=" << value.to_string(false, false)
+         << endl;
 #endif
 
     if( sensing_models_for_action_and_var.size() <= 1 ) {
@@ -1793,17 +1794,13 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action,
     Action *drule = new Action(strdup(name.c_str()));
 
     // pass the variable name to lw1_problem.cc in the comment for this action
-    drule->comment_ = variable.to_string(false, true);
+    drule->comment_ = variable.to_string(false, true) + " " + value.to_string(false, true);
 
     // exactly 2 preconditions: the value for the sensed var (this may be removed
     // later in lw1_problem.cc if lw1:literals-for-observables is disabled), and
     // the sensing enabler atom
     And *precondition = new And;
-    if( options_.is_enabled("lw1:boost:enable-post-actions") || // CHECK: if this the way that we want to enable this?
-        options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
-        //assert(0); // lw1:boost:single-sensing-literal-enablers
-        //assert(lw1_sensing_enablers_.find(make_pair(&action, make_pair(&variable, value))) != lw1_sensing_enablers_.end());
-        //precondition->push_back(Literal(*lw1_sensing_enablers_[make_pair(&action, make_pair(&variable, value))]).copy());
+    if( options_.is_enabled("lw1:boost:enable-post-actions") ) {
         precondition->push_back(Literal(*lw1_fetch_enabler_for_sensing(value)).copy());
     } else {
         precondition->push_back(Literal(lw1_fetch_last_action_atom(action)).copy());
@@ -2048,29 +2045,22 @@ void PDDL_Base::lw1_patch_actions_with_enablers_for_sensing() {
             }
         } else {
             assert(0); // lw1:boost:single-sensing-literal-enablers
-            //cout << "hola: action=" << action.print_name_ << ", enablers=" << flush;  // CHECK
             map<string, set<string> >::const_iterator it = lw1_enablers_for_actions_.find(action.print_name_);
             if( it != lw1_enablers_for_actions_.end() ) {
-                //cout << "FOUND" << endl;
                 const set<string> &enablers_for_action = it->second;
                 for( map<std::string, const Atom*>::const_iterator jt = lw1_sensing_enabler_atoms_.begin(); jt != lw1_sensing_enabler_atoms_.end(); ++jt ) {
                     if( enablers_for_action.find(jt->first) != enablers_for_action.end() ) {
                         effect.push_back(AtomicEffect(*jt->second).copy());
-                        //cout << "should ADD enabler " << *jt->second << " in action " << action.print_name_ << endl; // CHECK
                     } else {
                         effect.push_back(AtomicEffect(*jt->second).negate());
-                        //cout << "should DEL enabler " << *jt->second << " in action " << action.print_name_ << endl; // CHECK
                     }
                 }
             } else if( !action.is_special_action() ) {
-                //cout << "NONE" << endl;
-                //cout << "should DEL all enablers" << endl; // CHECK
                 for( map<std::string, const Atom*>::const_iterator jt = lw1_sensing_enabler_atoms_.begin(); jt != lw1_sensing_enabler_atoms_.end(); ++jt ) {
                     effect.push_back(AtomicEffect(*jt->second).negate());
                 }
             }
         }
-        //cout << Utils::green() << action << Utils::normal();
         //assert(0);
     }
 }

@@ -17,16 +17,12 @@ class CLG_Instance : public KP_Instance {
     // maps standard actions in kp-problem into standard actions in po problem
     std::vector<int> remap_;
 
-    std::multimap<index_set, const Action*> drule_store_;
-
     CLG_Instance(const Instance &instance);
     ~CLG_Instance();
 
     void create_regular_action(const Action &action, int action_index);
     void create_drules_from_invariant(const Invariant &invariant);
-    void merge_drules();
     void create_sensor(const Sensor &sensor);
-    void perform_subgoaling();
 
     virtual void cross_reference();
     virtual size_t remap_action(size_t action_id) const {

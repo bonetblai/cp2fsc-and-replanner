@@ -229,42 +229,7 @@ void CLG_Instance::create_drules_from_invariant(const Invariant &invariant) {
         }
 
         // store invariant action
-        drule_store_.insert(make_pair(nact->precondition_, nact));
-    }
-}
-
-void CLG_Instance::merge_drules() {
-    multimap<index_set, const Action*>::key_compare comparator = drule_store_.key_comp();
-    for( multimap<index_set, const Action*>::const_iterator it = drule_store_.begin(); it != drule_store_.end(); ) {
-        const Action &drule = *it->second;
-        Action &nact = new_action(new CopyName(drule.name_->to_string()));
-        nact.precondition_ = drule.precondition_;
-        nact.effect_ = drule.effect_;
-        nact.when_ = drule.when_;
-        nact.cost_ = drule.cost_;
-        nact.comment_ = drule.comment_;
-        delete it->second;
-        if( ++it == drule_store_.end() ) {
-            if( options_.is_enabled("kp:print:action:drule:sensing") || options_.is_enabled("kp:print:action:drule") )
-                nact.print(cout, *this);
-            break;
-        }
-
-        if( options_.is_enabled("kp:merge-drules") ) {
-            if( !comparator(nact.precondition_, it->first) ) nact.comment_ = "<merge>";
-            set<When> included_when_effects;
-            included_when_effects.insert(nact.when_.begin(), nact.when_.end());
-            while( !comparator(nact.precondition_, it->first) ) {
-                assert(it != drule_store_.end());
-                nact.effect_.insert(it->second->effect_.begin(), it->second->effect_.end());
-                nact.when_.insert(nact.when_.end(), it->second->when_.begin(), it->second->when_.end());
-                delete it->second;
-                if( ++it == drule_store_.end() ) break;
-            }
-        }
-
-        if( options_.is_enabled("kp:print:action:drule:sensing") || options_.is_enabled("kp:print:action:drule") )
-            nact.print(cout, *this);
+        drule_store_.insert(DRTemplate(nact));
     }
 }
 
@@ -308,20 +273,11 @@ void CLG_Instance::create_sensor(const Sensor &sensor) {
     }
 }
 
-void CLG_Instance::perform_subgoaling() {
-    if( options_.is_enabled("kp:subgoaling") ) {
-        cout << Utils::error() << "subgoaling feature not yet supported." << endl;
-        exit(255);
-    }
-}
-
 void CLG_Instance::cross_reference() {
     n_standard_actions_ = 0;
     n_sensor_actions_ = 0;
     n_drule_actions_ = 0;
     n_subgoaling_actions_ = 0;
-
-    //for( size_t k = 0; k < n_actions(); ++k ) cout << "ACTION: " << actions_[k]->name_->to_string() << endl;
 
     size_t k = 0;
     while( k < n_actions() ) {

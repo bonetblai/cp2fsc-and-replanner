@@ -703,6 +703,7 @@ void LW1_Instance::create_drule_for_var(const Action &action) {
         }
         nact.precondition_.insert(-(1 + 2*(eff - 1) + 1));
     } else {
+        assert(action_name.compare(0, 16, "drule-var-type2-") == 0);
         assert(action.precondition_.size() == 1);
         int pre = *action.precondition_.begin();
         assert(pre > 0);
@@ -731,19 +732,16 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
 
         if( action_name.compare(0, 20, "drule-sensing-type3-") == 0 ) {
             Action *nact = new Action(new CopyName(action_name));
-
             for( index_set::const_iterator it = action.precondition_.begin(); it != action.precondition_.end(); ++it ) {
                 int index = *it > 0 ? *it - 1 : -*it - 1;
                 nact->precondition_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
             }
-
             for( index_set::const_iterator it = action.effect_.begin(); it != action.effect_.end(); ++it ) {
                 int index = *it > 0 ? *it - 1 : -*it - 1;
                 nact->effect_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
                 //nact->precondition_.insert(*it > 0 ? -(1 + 2*index + 1) : -(1 + 2*index)); // CHECK: is this necessary?
             }
-
-            drule_store_.insert(make_pair(nact->precondition_, nact));
+            drule_store_.insert(DRTemplate(nact));
         } else if( action_name.compare(0, 25, "drule-sensing-type4state-") == 0 ) {
             Action *nact = new Action(new CopyName(action_name));
 
@@ -797,7 +795,7 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                 complete_effect(nact->effect_, literal_for_value, variable);
 
             //nact->print(cout, *this);
-            drule_store_.insert(make_pair(nact->precondition_, nact));
+            drule_store_.insert(DRTemplate(nact));
         } else if( action_name.compare(0, 23, "drule-sensing-type4obs-") == 0 ) {
             Action *nact = new Action(new CopyName(action_name));
 
@@ -805,10 +803,13 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
 
             // variable
             assert(action.comment_ != "");
-            string var_name = action.comment_;
+            size_t blank_pos = action.comment_.find(" ");
+            string var_name(action.comment_, 0, blank_pos);
             assert(varmap_.find(var_name) != varmap_.end());
             int var_index = varmap_[var_name];
             const Variable &variable = *variables_[var_index];
+            string value_name(action.comment_, 1 + blank_pos);
+
             assert(variable.is_observable_);
             assert(!variable.is_state_variable_);
 
@@ -834,8 +835,10 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             // add as precondition the sensing enablers
             if( options_.is_enabled("lw1:boost:enable-post-actions") ) {
                 assert(!sensing_enablers.empty());
-                for( size_t k = 0; k < sensing_enablers.size(); ++k )
+                for( size_t k = 0; k < sensing_enablers.size(); ++k ) {
                     nact->precondition_.insert(1 + 2*sensing_enablers[k]);
+                    nact->effect_.insert(-(1 + 2*sensing_enablers[k]));
+                }
             } else {
                 assert(index_for_last_action_atom != -1);
                 nact->precondition_.insert(1 + 2*index_for_last_action_atom);
@@ -890,43 +893,37 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             }
 
             //nact->print(cout, *this);
-            drule_store_.insert(make_pair(nact->precondition_, nact));
+            drule_store_.insert(DRTemplate(nact));
         } else {
             // skip sensing drules of type5 as they are not passed to classical problem
             assert(action_name.compare(0, 20, "drule-sensing-type5-") == 0);
 #if 0
             // CHECK: type5 rules make planner run slower for unknown reason
             Action *nact = new Action(new CopyName(action_name));
-
             for( index_set::const_iterator it = action.precondition_.begin(); it != action.precondition_.end(); ++it ) {
                 int index = *it > 0 ? *it - 1 : -*it - 1;
                 nact->precondition_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
             }
-
             for( index_set::const_iterator it = action.effect_.begin(); it != action.effect_.end(); ++it ) {
                 int index = *it > 0 ? *it - 1 : -*it - 1;
                 nact->effect_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
             }
-
-            drule_store_.insert(make_pair(nact->precondition_, nact));
+            drule_store_.insert(DRTemplate(nact));
 #endif
         }
     } else {
         assert(action_name.compare(0, 14, "drule-sensing-") == 0);
-
         Action *nact = new Action(new CopyName(action_name));
         for( index_set::const_iterator it = action.precondition_.begin(); it != action.precondition_.end(); ++it ) {
             int index = *it > 0 ? *it - 1 : -*it - 1;
             nact->precondition_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
         }
-
         for( index_set::const_iterator it = action.effect_.begin(); it != action.effect_.end(); ++it ) {
             int index = *it > 0 ? *it - 1 : -*it - 1;
             nact->effect_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
             nact->precondition_.insert(*it > 0 ? -(1 + 2*index + 1) : -(1 + 2*index)); // CHECK: is this necessary?
         }
-
-        drule_store_.insert(make_pair(nact->precondition_, nact));
+        drule_store_.insert(DRTemplate(nact));
     }
 }
 
@@ -946,59 +943,19 @@ void LW1_Instance::complete_effect(index_set &effect, int literal) const {
     }
 }
 
-void LW1_Instance::merge_drules() {
-    multimap<index_set, const Action*>::key_compare comparator = drule_store_.key_comp();
-    for( multimap<index_set, const Action*>::const_iterator it = drule_store_.begin(); it != drule_store_.end(); ) {
-        const Action &drule = *it->second;
-        Action &nact = new_action(new CopyName(drule.name_->to_string()));
-        nact.precondition_ = drule.precondition_;
-        nact.effect_ = drule.effect_;
-        nact.when_ = drule.when_;
-        nact.cost_ = drule.cost_;
-        nact.comment_ = drule.comment_;
-        delete it->second;
-        if( ++it == drule_store_.end() ) {
-            if( options_.is_enabled("kp:print:action:drule:sensing") || options_.is_enabled("kp:print:action:drule") )
-                nact.print(cout, *this);
-            break;
-        }
-
-        //if( !options_.is_enabled("lw1:strict") && options_.is_enabled("kp:merge-drules") ) {
-        if( options_.is_enabled("kp:merge-drules") ) {
-            if( !comparator(nact.precondition_, it->first) ) nact.comment_ = "<merge>";
-            set<When> included_when_effects;
-            included_when_effects.insert(nact.when_.begin(), nact.when_.end());
-            while( !comparator(nact.precondition_, it->first) ) {
-                assert(it != drule_store_.end());
-                nact.effect_.insert(it->second->effect_.begin(), it->second->effect_.end());
-                nact.when_.insert(nact.when_.end(), it->second->when_.begin(), it->second->when_.end());
-                delete it->second;
-                if( ++it == drule_store_.end() ) break;
-            }
-        }
-
-        if( options_.is_enabled("kp:print:action:drule:sensing") || options_.is_enabled("kp:print:action:drule") )
-            nact.print(cout, *this);
-    }
-    drule_store_.clear();
-}
-
 void LW1_Instance::create_drule_for_atom(const Action &action) {
     string action_name = action.name_->to_string();
     assert(action_name.compare(0, 11, "drule-atom-") == 0);
-
     Action *nact = new Action(new CopyName(action_name));
     for( index_set::const_iterator it = action.precondition_.begin(); it != action.precondition_.end(); ++it ) {
         int index = *it > 0 ? *it - 1 : -*it - 1;
         nact->precondition_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
     }
-
     for( index_set::const_iterator it = action.effect_.begin(); it != action.effect_.end(); ++it ) {
         int index = *it > 0 ? *it - 1 : -*it - 1;
         nact->effect_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
     }
-
-    drule_store_.insert(make_pair(nact->precondition_, nact));
+    drule_store_.insert(DRTemplate(nact));
 }
 
 void LW1_Instance::create_sensor(const Sensor &sensor) {
@@ -1040,40 +997,6 @@ void LW1_Instance::create_sensor(const Sensor &sensor) {
 
     if( options_.is_enabled("kp:print:action:sensor") )
         nact.print(cout, *this);
-}
-
-void LW1_Instance::perform_subgoaling() {
-    if( options_.is_enabled("kp:subgoaling") ) {
-        cout << Utils::error() << "subgoaling feature not yet supported." << endl;
-        exit(255);
-#if 0
-        // Other actions are for observable literals that are unknown at initial state
-        atoms_for_unknown_observables_at_init_ = vector<Atom*>(ins.n_atoms());
-        for( size_t k = 0; k < ins.n_sensors(); ++k ) {
-            const Sensor &r = *ins.sensors_[k];
-            assert(!r.sense_.empty());
-
-            for( index_set::const_iterator it = r.sense_.begin(); it != r.sense_.end(); ++it ) {
-                assert(*it > 0);
-                int idx = *it - 1;
-                if( atoms_for_unknown_observables_at_init_[idx] == 0 ) {
-                    string atom_name("(unknown_");
-                    atom_name += ins.atoms_[idx]->name_->to_string() + ")";
-                    atoms_for_unknown_observables_at_init_[idx] = &new_atom(new CopyName(atom_name));
-                    for( int n = 0; n < 2; ++n ) {
-                        string action_name("reach_goal_through_knowledge_of_");
-                        action_name += ins.atoms_[idx]->name_->to_string() + "_" + (n == 0 ? "0__" : "1__");
-                        Action &nact = new_action(new CopyName(action_name));
-                        nact.precondition_.insert(1 + atoms_for_unknown_observables_at_init_[idx]->index_);
-                        nact.precondition_.insert(1 + 2*idx+n);
-                        nact.effect_.insert(1 + new_goal_->index_);
-                        cout << nact.index_ << "."; nact.print(cout, *this);
-                    }
-                }
-            }
-        }
-#endif
-    }
 }
 
 void LW1_Instance::cross_reference() {

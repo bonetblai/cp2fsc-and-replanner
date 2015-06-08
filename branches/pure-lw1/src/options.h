@@ -36,6 +36,7 @@ namespace Options {
   struct Mode {
       std::set<Option> options_;
       std::set<Option> enabled_;
+      std::set<Option> disabled_;
 
       void add(const Option &opt) { options_.insert(opt); }
       void add(const std::string &opt) { add(Option(opt)); }
@@ -51,6 +52,13 @@ namespace Options {
           }
           return enabled_.find(opt) != enabled_.end();
       }
+      bool is_disabled(const Option &opt) const {
+          if( !is_option(opt) ) {
+              std::cout << Utils::internal_error() << "checking for inexistent option '" << opt.name_ << "'" << std::endl;
+              return false;
+          }
+          return disabled_.find(opt) != enabled_.end();
+      }
 
       bool enable(const Option &opt) {
           bool good_option = is_option(opt);
@@ -61,7 +69,10 @@ namespace Options {
 
       bool disable(const Option &opt) {
           bool good_option = is_option(opt);
-          if( good_option ) enabled_.erase(opt);
+          if( good_option ) {
+              disabled_.insert(opt);
+              enabled_.erase(opt);
+          }
           return good_option;
       }
       bool disable(const std::string &opt) { return disable(Option(opt)); }

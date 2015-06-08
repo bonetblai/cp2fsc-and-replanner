@@ -148,14 +148,26 @@ int main(int argc, const char *argv[]) {
     if( g_options.is_enabled("lw1:strict") ) {
         g_options.disable("lw1:aaai");
     }
+    if( !g_options_.is_enabled("lw1:aaai") && !g_options_.is_enabled("lw1:strict") ) {
+        cout << Utils::error() << "lw1:aaai or lw1:strict must be enabled" << endl;
+    }
 
-    if( !g_options.is_enabled("lw1:strict") ) {
+    if( g_options.is_enabled("lw1:aaai") ) {
+        assert(!g_options.is_enabled("lw1:strict"));
         g_options.disable("lw1:boost:disabling-actions-for-last-action-atoms");
         g_options.disable("lw1:boost:enable-post-actions");
         g_options.disable("lw1:boost:drule:sensing:type4");
         g_options.disable("lw1:boost:drule:sensing:type3");
         g_options.disable("lw1:boost:literals-for-observables");
         g_options.disable("lw1:boost:literals-for-observables:dynamic");
+    } else {
+        assert(g_options.is_enabled("lw1:strict"));
+        if( !g_options.is_disabled("lw1:inference:up") ) g_options.enable("lw1:inference:up");
+        if( !g_options.is_disabled("lw1:boost:enable-post-actions") ) g_options.enable("lw1:boost:enable-post-actions");
+        //if( !g_options.is_disabled("lw1:boost:enable-post-actions") ) g_options.enable("lw1:boost:enable-post-actions");
+    }
+
+    if( !g_options.is_enabled("lw1:strict") ) {
     }
 
     if( g_options.is_enabled("lw1:boost:literals-for-observables:dynamic") ) {

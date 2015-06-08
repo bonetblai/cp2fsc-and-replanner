@@ -15,7 +15,7 @@ static int get_atom_index(const Instance &ins, string atom_name) {
 }
 
 KP_Instance::KP_Instance(const Options::Mode &options)
-  : Instance(options), inference_time_(0), new_goal_(0), index_for_goal_action_(0) {
+  : Instance(options), new_goal_(0), index_for_goal_action_(0), inference_time_(0)  {
 }
 
 void KP_Instance::write_problem(ostream &os, const State *state, int indent) const {
@@ -25,6 +25,74 @@ void KP_Instance::write_problem(ostream &os, const State *state, int indent) con
     Instance::write_problem(os, state, indent);
     if( options_.is_enabled("kp:subgoaling") ) {
         cout << "XXXXXXXXX" << endl;
+    }
+}
+
+void KP_Instance::merge_drules() {
+    multiset<DRTemplate, DRTemplate>::key_compare comparator = drule_store_.key_comp();
+    for( multiset<DRTemplate, DRTemplate>::const_iterator it = drule_store_.begin(); it != drule_store_.end(); ) {
+        //string type = it->first.second;
+        const DRTemplate &record = *it;
+        const Action &drule = *it->action_;
+        Action &nact = new_action(new CopyName(drule.name_->to_string()));
+        nact.precondition_ = drule.precondition_;
+        nact.effect_ = drule.effect_;
+        nact.when_ = drule.when_;
+        nact.cost_ = drule.cost_;
+        nact.comment_ = drule.comment_;
+        if( ++it == drule_store_.end() ) {
+            if( options_.is_enabled("kp:print:action:drule:sensing") || options_.is_enabled("kp:print:action:drule") )
+                nact.print(cout, *this);
+            break;
+        }
+
+        if( options_.is_enabled("kp:merge-drules") ) {
+            while( !comparator(record, *it) ) {
+                assert(it != drule_store_.end());
+                nact.comment_ = "<merge>";
+                delete it->action_;
+                if( ++it == drule_store_.end() ) break;
+            }
+        }
+
+        delete record.action_;
+        if( options_.is_enabled("kp:print:action:drule:sensing") || options_.is_enabled("kp:print:action:drule") )
+            nact.print(cout, *this);
+    }
+    drule_store_.clear();
+}
+
+void KP_Instance::perform_subgoaling() {
+    if( options_.is_enabled("kp:subgoaling") ) {
+        cout << Utils::error() << "subgoaling feature not yet supported." << endl;
+        exit(255);
+#if 0
+        // Other actions are for observable literals that are unknown at initial state
+        atoms_for_unknown_observables_at_init_ = vector<Atom*>(ins.n_atoms());
+        for( size_t k = 0; k < ins.n_sensors(); ++k ) {
+            const Sensor &r = *ins.sensors_[k];
+            assert(!r.sense_.empty());
+
+            for( index_set::const_iterator it = r.sense_.begin(); it != r.sense_.end(); ++it ) {
+                assert(*it > 0);
+                int idx = *it - 1;
+                if( atoms_for_unknown_observables_at_init_[idx] == 0 ) {
+                    string atom_name("(unknown_");
+                    atom_name += ins.atoms_[idx]->name_->to_string() + ")";
+                    atoms_for_unknown_observables_at_init_[idx] = &new_atom(new CopyName(atom_name));
+                    for( int n = 0; n < 2; ++n ) {
+                        string action_name("reach_goal_through_knowledge_of_");
+                        action_name += ins.atoms_[idx]->name_->to_string() + "_" + (n == 0 ? "0__" : "1__");
+                        Action &nact = new_action(new CopyName(action_name));
+                        nact.precondition_.insert(1 + atoms_for_unknown_observables_at_init_[idx]->index_);
+                        nact.precondition_.insert(1 + 2*idx+n);
+                        nact.effect_.insert(1 + new_goal_->index_);
+                        cout << nact.index_ << "."; nact.print(cout, *this);
+                    }
+                }
+            }
+        }
+#endif
     }
 }
 

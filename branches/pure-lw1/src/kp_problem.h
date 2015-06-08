@@ -5,20 +5,47 @@
 #include "base.h"
 #include "options.h"
 #include <map>
+#include <set>
 #include <string>
 
 class KP_Instance : public Instance {
-  public:
-    KP_Instance(const Options::Mode &options);
-    virtual ~KP_Instance() { }
-
-    // for statistics
-    mutable float inference_time_;
+  protected:
+    // merge of deductive rules
+    struct DRTemplate {
+        const Action *action_;
+        std::set<When> when_;
+        std::string extra_;
+        DRTemplate(const Action *action = 0, const std::string &extra = "") : action_(action), extra_(extra) {
+            if( action != 0 ) {
+                for( size_t i = 0; i < action_->when_.size(); ++i )
+                    when_.insert(action_->when_[i]);
+            }
+        }
+        bool operator()(const DRTemplate &d1, const DRTemplate &d2) const {
+            return (d1.action_->precondition_ < d2.action_->precondition_) ||
+                   ((d1.action_->precondition_ == d2.action_->precondition_) && (d1.action_->effect_ < d2.action_->effect_)) ||
+                   ((d1.action_->precondition_ == d2.action_->precondition_) && (d1.action_->effect_ == d2.action_->effect_) && (d1.when_ < d2.when_)) ||
+                   ((d1.action_->precondition_ == d2.action_->precondition_) && (d1.action_->effect_ == d2.action_->effect_) && (d1.when_ == d2.when_) && (d1.extra_ < d2.extra_));
+        }
+    };
+    std::multiset<DRTemplate, DRTemplate> drule_store_;
+    void merge_drules();
 
     // for subgoaling
     Atom *new_goal_;
     size_t index_for_goal_action_;
+    void perform_subgoaling();
 
+    // for statistics
+    mutable float inference_time_;
+
+  public:
+    KP_Instance(const Options::Mode &options);
+    virtual ~KP_Instance() { }
+
+    void increase_inference_time(float new_inference_time) const {
+        inference_time_ += new_inference_time;
+    }
     float get_inference_time() const {
         return inference_time_;
     }
