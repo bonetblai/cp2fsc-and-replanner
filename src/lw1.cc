@@ -73,7 +73,7 @@ int main(int argc, const char *argv[]) {
     // set default options
     g_options.enable("planner:remove-intermediate-files");
     g_options.enable("problem:action-compilation");
-    g_options.enable("kp:merge-drules");
+    //g_options.enable("kp:merge-drules");
     //g_options.enable("lw1:compile-static-observables");
 
     // check correct number of parameters
@@ -142,14 +142,18 @@ int main(int argc, const char *argv[]) {
     }
 
     // set implied options and default inference
+    if( !g_options.is_disabled("kp:merge-drules") )
+        g_options.enable("kp:merge-drules");
+
     if( g_options.is_enabled("lw1:aaai") ) {
         g_options.disable("lw1:strict");
     }
     if( g_options.is_enabled("lw1:strict") ) {
         g_options.disable("lw1:aaai");
     }
-    if( !g_options_.is_enabled("lw1:aaai") && !g_options_.is_enabled("lw1:strict") ) {
+    if( !g_options.is_enabled("lw1:aaai") && !g_options.is_enabled("lw1:strict") ) {
         cout << Utils::error() << "lw1:aaai or lw1:strict must be enabled" << endl;
+        exit(-1);
     }
 
     if( g_options.is_enabled("lw1:aaai") ) {
@@ -163,11 +167,8 @@ int main(int argc, const char *argv[]) {
     } else {
         assert(g_options.is_enabled("lw1:strict"));
         if( !g_options.is_disabled("lw1:inference:up") ) g_options.enable("lw1:inference:up");
+        if( !g_options.is_disabled("lw1:inference:watched-literals") ) g_options.enable("lw1:inference:watched-literals");
         if( !g_options.is_disabled("lw1:boost:enable-post-actions") ) g_options.enable("lw1:boost:enable-post-actions");
-        //if( !g_options.is_disabled("lw1:boost:enable-post-actions") ) g_options.enable("lw1:boost:enable-post-actions");
-    }
-
-    if( !g_options.is_enabled("lw1:strict") ) {
     }
 
     if( g_options.is_enabled("lw1:boost:literals-for-observables:dynamic") ) {
