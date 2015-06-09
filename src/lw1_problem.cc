@@ -75,11 +75,18 @@ LW1_Instance::LW1_Instance(const Instance &ins,
     }
 
     // create K0 atoms and special atoms
+    normal_execution_atom_ = -1;
     atoms_.reserve(2*ins.n_atoms());
     for( size_t k = 0; k < ins.n_atoms(); ++k ) {
         string name = ins.atoms_[k]->name_->to_string();
         //cout << "NAME=" << name << ": " << flush;
-        if( name.compare(0, 16, "last-action-was-") == 0 ) {
+        if( name.compare(0, 16, "normal-execution") == 0 ) {
+            assert(options_.is_enabled("lw1:aaai") || options_.is_enabled("lw1:boost:enable-post-actions"));
+            new_atom(new CopyName(name));                  // even-numbered atoms
+            new_atom(new CopyName(name + "_UNUSED"));      // odd-numbered atoms
+            normal_execution_atom_ = k;
+            //cout << "type=normal-execution, index=" << k << ", k-indices=" << 2*k << "," << 2*k+1 << endl;
+        } else if( name.compare(0, 16, "last-action-was-") == 0 ) {
             assert(!options_.is_enabled("lw1:boost:enable-post-actions"));
             new_atom(new CopyName(name));                  // even-numbered atoms
             new_atom(new CopyName(name + "_UNUSED"));      // odd-numbered atoms
@@ -616,7 +623,8 @@ void LW1_Instance::create_regular_action(const Action &action,
     // preconditions
     for( index_set::const_iterator it = action.precondition_.begin(); it != action.precondition_.end(); ++it ) {
         int idx = *it > 0 ? *it-1 : -*it-1;
-        if( (last_action_atoms_.find(idx) == last_action_atoms_.end()) &&
+        if( (normal_execution_atom_ != idx) &&
+            (last_action_atoms_.find(idx) == last_action_atoms_.end()) &&
             (sensing_enabler_atoms_.find(idx) == sensing_enabler_atoms_.end()) ) {
             nact.precondition_.insert(*it > 0 ? 1 + 2*idx : 1 + 2*idx + 1);
         } else {
@@ -627,7 +635,8 @@ void LW1_Instance::create_regular_action(const Action &action,
     // support and cancellation rules for unconditional effects
     for( index_set::const_iterator it = action.effect_.begin(); it != action.effect_.end(); ++it ) {
         int idx = *it > 0 ? *it-1 : -*it-1;
-        if( (last_action_atoms_.find(idx) == last_action_atoms_.end()) &&
+        if( (normal_execution_atom_ != idx) &&
+            (last_action_atoms_.find(idx) == last_action_atoms_.end()) &&
             (sensing_enabler_atoms_.find(idx) == sensing_enabler_atoms_.end()) ) {
             if( *it > 0 ) {
                 nact.effect_.insert(1 + 2*idx);
@@ -650,6 +659,7 @@ void LW1_Instance::create_regular_action(const Action &action,
         When sup_eff, can_eff;
         for( index_set::const_iterator it = when.condition_.begin(); it != when.condition_.end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
+            assert(normal_execution_atom_ != idx);
             assert(last_action_atoms_.find(idx) == last_action_atoms_.end());
             assert(sensing_enabler_atoms_.find(idx) == sensing_enabler_atoms_.end());
             if( *it > 0 ) {
@@ -662,6 +672,7 @@ void LW1_Instance::create_regular_action(const Action &action,
         }
         for( index_set::const_iterator it = when.effect_.begin(); it != when.effect_.end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
+            assert(normal_execution_atom_ != idx);
             assert(last_action_atoms_.find(idx) == last_action_atoms_.end());
             assert(sensing_enabler_atoms_.find(idx) == sensing_enabler_atoms_.end());
             if( *it > 0 ) {

@@ -78,12 +78,10 @@ namespace Options {
       }
       bool disable(const std::string &opt) { return disable(Option(opt)); }
 
-      void print(std::ostream &os) const {
-          //std::cout << "xxx=" << options_.size() << std::endl;
+      void print(std::ostream &os, bool only_enabled = false) const {
           for( std::set<Option>::const_iterator it = options_.begin(); it != options_.end(); ++it ) {
-              std::cout << "option: " << *it << " = "
-                        << (is_enabled(*it) ? "on" : "off")
-                        << std::endl;
+              if( !only_enabled || (only_enabled && is_enabled(*it)) )
+                  std::cout << *it << " ";
           }
       }
 
@@ -112,6 +110,11 @@ namespace Options {
   }
 
 };
+
+inline std::ostream& operator<<(std::ostream &os, const Options::Mode &mode) {
+    mode.print(os, true);
+    return os;
+}
 
 #endif
 

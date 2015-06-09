@@ -127,7 +127,6 @@ const char *available_options[] = {
     "lw1:boost:complete-effects:type4:obs",             "[LW1] complete effects for variables", // CHECK
     "lw1:boost:complete-effects:type4:state",           "[LW1] complete effects for variables", // CHECK
 
-    "lw1:boost:disabling-actions-for-last-action-atoms","[LW1] XXXX", // CHECK
     "lw1:boost:single-sensing-literal-enablers",        "[LW1] XXXX", // CHECK
     "lw1:boost:enable-post-actions",                    "[LW1] XXXX", // CHECK
 
