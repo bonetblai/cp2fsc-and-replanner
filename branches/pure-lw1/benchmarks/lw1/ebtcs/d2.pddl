@@ -8,8 +8,8 @@
     (:action sense
         :parameters (?p - package ?b - bomb)
         :sensing (model-for (bomb-in-package ?b ?p) (sensed ?p ?b) (in ?p ?b))
-                 (model-for (bomb-in-package ?b ?p) (not (sensed ?p ?b)) (exists (?q - package) (and (not (= ?p ?q)) (in ?q ?b))))
-                 ;(model-for (bomb-in-package ?b ?p) (not (sensed ?p ?b)) (not (in ?p ?b)))
+                 ;(model-for (bomb-in-package ?b ?p) (not (sensed ?p ?b)) (exists (?q - package) (and (not (= ?p ?q)) (in ?q ?b))))
+                 (model-for (bomb-in-package ?b ?p) (not (sensed ?p ?b)) (not (in ?p ?b)))
     )
 
     (:action dunk	
