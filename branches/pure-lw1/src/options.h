@@ -79,9 +79,12 @@ namespace Options {
       bool disable(const std::string &opt) { return disable(Option(opt)); }
 
       void print(std::ostream &os, bool only_enabled = false) const {
+          std::string suffix = "";
           for( std::set<Option>::const_iterator it = options_.begin(); it != options_.end(); ++it ) {
-              if( !only_enabled || (only_enabled && is_enabled(*it)) )
-                  std::cout << *it << " ";
+              if( !only_enabled || (only_enabled && is_enabled(*it)) ) {
+                  std::cout << suffix << *it;
+                  suffix = ",";
+              }
           }
       }
 

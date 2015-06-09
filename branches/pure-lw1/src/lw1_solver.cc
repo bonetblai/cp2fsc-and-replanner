@@ -4,7 +4,7 @@
 #include "utils.h"
 #include "Inference.h"
 
-#define DEBUG
+//#define DEBUG
 
 using namespace std;
 
