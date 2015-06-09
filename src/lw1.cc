@@ -170,6 +170,13 @@ int main(int argc, const char *argv[]) {
         if( !g_options.is_disabled("lw1:boost:enable-post-actions") ) g_options.enable("lw1:boost:enable-post-actions");
     }
 
+    if( g_options.is_enabled("lw1:boost:drule:sensing:type4:add") ) {
+        g_options.enable("lw1:boost:drule:sensing:type4");
+    }
+
+
+
+
     if( g_options.is_enabled("lw1:boost:literals-for-observables:dynamic") ) {
         g_options.enable("lw1:boost:literals-for-observables");
     }

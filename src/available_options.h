@@ -131,6 +131,8 @@ const char *available_options[] = {
     "lw1:boost:enable-post-actions",                    "[LW1] XXXX", // CHECK
 
     "lw1:boost:drule:sensing:type4",                    "[LW1] XXXX", // CHECK
+    "lw1:boost:drule:sensing:type4:add",                "[LW1] XXXX", // CHECK
+
     "lw1:boost:drule:sensing:type3",                    "[LW1] generate deductive rules for sensing of type 3", // CHECK (rename types)
     "lw1:boost:literals-for-observables",               "[LW1] add literals for static observables (useful in problem with width > 1)", // CHECK
     "lw1:boost:literals-for-observables:dynamic",       "[LW1] add literals for observables (useful in problem with width > 1)", // CHECK

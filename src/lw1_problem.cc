@@ -750,7 +750,6 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             for( index_set::const_iterator it = action.effect_.begin(); it != action.effect_.end(); ++it ) {
                 int index = *it > 0 ? *it - 1 : -*it - 1;
                 nact->effect_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
-                //nact->precondition_.insert(*it > 0 ? -(1 + 2*index + 1) : -(1 + 2*index)); // CHECK: is this necessary?
             }
             drule_store_.insert(DRTemplate(nact));
         } else if( action_name.compare(0, 25, "drule-sensing-type4state-") == 0 ) {
@@ -807,12 +806,75 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
 
             //nact->print(cout, *this);
             drule_store_.insert(DRTemplate(nact));
-        } else if( action_name.compare(0, 23, "drule-sensing-type4obs-") == 0 ) {
+        } else if( action_name.compare(0, 29, "drule-sensing-type4obs-boost-") == 0 ) {
+            assert(!options_.is_enabled("lw1:boost:literals-for-observables"));
+            assert(action.when_.empty());
+
             Action *nact = new Action(new CopyName(action_name));
 
-            assert(action.precondition_.size() == 2);
+            // obtain variable
+            assert(action.comment_ != "");
+            size_t blank_pos = action.comment_.find(" ");
+            string var_name(action.comment_, 0, blank_pos);
+            assert(varmap_.find(var_name) != varmap_.end());
+            int var_index = varmap_[var_name];
+            const Variable &variable = *variables_[var_index];
+            string value_name(action.comment_, 1 + blank_pos);
 
-            // variable
+            assert(variable.is_observable_);
+            assert(!variable.is_state_variable_);
+
+            // read preconditions
+            vector<int> sensing_enablers;
+            int index_for_last_action_atom = -1;
+            vector<pair<int, int> > other_preconditions;
+            for( index_set::const_iterator it = action.precondition_.begin(); it != action.precondition_.end(); ++it ) {
+                int index = *it > 0 ? *it - 1 : -*it - 1;
+                if( last_action_atoms_.find(index) != last_action_atoms_.end() ) {
+                    assert(*it > 0);
+                    index_for_last_action_atom = index;
+                } else if( sensing_enabler_atoms_.find(index) != sensing_enabler_atoms_.end() ) {
+                    assert(*it > 0);
+                    sensing_enablers.push_back(index);
+                } else {
+                    other_preconditions.push_back(make_pair(*it, index));
+                }
+            }
+            assert(!other_preconditions.empty());
+            assert(other_preconditions.size() == action.effect_.size());
+
+            // add as precondition the sensing enablers
+            if( options_.is_enabled("lw1:boost:enable-post-actions") ) {
+                assert(!sensing_enablers.empty());
+                for( size_t k = 0; k < sensing_enablers.size(); ++k ) {
+                    nact->precondition_.insert(1 + 2*sensing_enablers[k]);
+                    nact->effect_.insert(-(1 + 2*sensing_enablers[k]));
+                }
+            } else {
+                assert(index_for_last_action_atom != -1);
+                nact->precondition_.insert(1 + 2*index_for_last_action_atom);
+            }
+
+            // add the other preconditions
+            for( size_t k = 0; k < other_preconditions.size(); ++k ) {
+                int literal = other_preconditions[k].first;
+                int index = other_preconditions[k].second;
+                nact->precondition_.insert(literal > 0 ? -(1 + 2*index) : -(1 + 2*index + 1));
+            }
+
+            // add the effects (unconditional)
+            for( index_set::const_iterator it = action.effect_.begin(); it != action.effect_.end(); ++it ) {
+                int index = *it > 0 ? *it - 1 : -*it - 1;
+                nact->effect_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
+            }
+
+            //nact->print(cout, *this);
+            drule_store_.insert(DRTemplate(nact));
+        } else if( action_name.compare(0, 23, "drule-sensing-type4obs-") == 0 ) {
+            Action *nact = new Action(new CopyName(action_name));
+            assert(action.precondition_.size() == 1);
+
+            // obtain variable
             assert(action.comment_ != "");
             size_t blank_pos = action.comment_.find(" ");
             string var_name(action.comment_, 0, blank_pos);
@@ -827,7 +889,6 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             // precondition for sensing enablers
             vector<int> sensing_enablers;
             int index_for_last_action_atom = -1;
-            int literal_for_value = -1, index_for_value = -1;
             for( index_set::const_iterator it = action.precondition_.begin(); it != action.precondition_.end(); ++it ) {
                 int index = *it > 0 ? *it - 1 : -*it - 1;
                 if( last_action_atoms_.find(index) != last_action_atoms_.end() ) {
@@ -837,11 +898,9 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                     assert(*it > 0);
                     sensing_enablers.push_back(index);
                 } else {
-                    literal_for_value = *it;
-                    index_for_value = index;
+                    assert(0);
                 }
             }
-            assert(index_for_value != -1);
 
             // add as precondition the sensing enablers
             if( options_.is_enabled("lw1:boost:enable-post-actions") ) {
@@ -858,23 +917,27 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             // If lw1:boost:literals-for-observables is enabled, add the literal -KY!=y
             // when the sensed literal is Y=y or -KY=y when the sensed literal is Y!=y
             if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
-                nact->precondition_.insert(literal_for_value > 0 ? -(1 + 2*index_for_value + 1) : -(1 + 2*index_for_value));
+                assert(0); // index_for_value must be calculate when decoding comment
+                //nact->precondition_.insert(literal_for_value > 0 ? -(1 + 2*index_for_value + 1) : -(1 + 2*index_for_value));
             }
 
             // if lw1:boost:literals-for-observables is enabled, add preconditions -KY=y' for *all*
             // values y' of sensed observable var Y. Special handling when Y is binary variable.
             if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
+                assert(0); // index_for_value must be calculate when decoding comment
                 for( set<int>::const_iterator jt = variable.domain_.begin(); jt != variable.domain_.end(); ++jt ) {
-                    int index_for_value = *jt;
-                    assert(index_for_value >= 0);
-                    nact->precondition_.insert(-(1 + 2*index_for_value));
+                    //int index_for_value = *jt;
+                    //assert(index_for_value >= 0);
+                    //nact->precondition_.insert(-(1 + 2*index_for_value));
                 }
-                if( variable.is_binary() ) nact->precondition_.insert(-(1 + 2*index_for_value + 1));
+                //if( variable.is_binary() ) nact->precondition_.insert(-(1 + 2*index_for_value + 1));
             }
 
             // effects for observable literals
-            if( options_.is_enabled("lw1:boost:literals-for-observables") )
-                nact->effect_.insert(literal_for_value > 0 ? 1 + 2*index_for_value : 1 + 2*index_for_value + 1);
+            if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
+                assert(0); // index_for_value must be calculate when decoding comment
+                //nact->effect_.insert(literal_for_value > 0 ? 1 + 2*index_for_value : 1 + 2*index_for_value + 1);
+            }
 
             // each unconditional effect L becomes conditional of form: -K-L => KL
             for( index_set::const_iterator it = action.effect_.begin(); it != action.effect_.end(); ++it ) {

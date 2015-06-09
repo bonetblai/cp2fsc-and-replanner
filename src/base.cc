@@ -1365,6 +1365,7 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
     }
 #endif
 
+
     // The models are now stored in lw1_sensing_models_index_. Indexed by
     //
     //   (action a, variable Y, value y)
@@ -1385,6 +1386,58 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
     // while the third type is optional, useful for problems with larger width,
     // and turned on with the option "lw1:boost:drule:sensing:type3"
 
+    // for observable state variables:
+    //
+    // * type 4 deductive rules for (action a, variable Y, value y):
+    //
+    //       precondition = <enabler>
+    //       effect = not <enabler> & Y=y
+    //
+    // for observable non-state variables:
+    //
+    // * type 4 deductive rules for (action a, variable Y, value y):
+    //
+    //   if not lw1:boost:drule:type4 || lw1:boost:drule:type4:add || 
+    //      DNF for W_a(Y=y) has more than one term:
+    //
+    //       precondition = <enabler>
+    //       effect = not <enabler>
+    //           [for each term t_i = Li1 & Li2 & ... Lin in W_a(Y=y') with y' != y]
+    //               [for k = 1 to n]
+    //                   &_[j != k] Lij => -Lik
+    //
+    //   else [i.e. if lw1:boost:drule:type4 && DNF for W_a(Y=y) = L1 & ... & Ln]
+    //
+    //       precondition = <enabler> & -L1 & -L2 & ... & -Ln
+    //       effect = not <enabler> & L1 & L2 & ... & Ln
+    //
+    //   where <enabler> is either Last-Action=a or sensing enabler atom.
+    //
+    // * type 3 deductive rules for (action a, variable Y, value y) with
+    //   model W_a(Y=y) = t1 v t2 v ... v tn:
+    //
+    //     for i = 1 to n:
+    //
+    //       precondition = <enabler>, &_{j != i} negated-tj, Y=y
+    //       effect = ti
+    //
+    //     rules for adding negated-ti:
+    //
+    //       precondition = <enabler>, -Lij
+    //       effect = negated-ti
+    //
+    //  * type 5 deductive rules for (action a, variable Y, value y):
+    //   
+
+
+    // type 4 deductive rules: enabler & L^i_1 & L^i_2 & ... & L^i_{n_i} => S
+    //
+    //     precondition = enabler
+    //
+    //
+    //
+    //
+    //
     // type 1 deductive rules are: Last=a & L^i_1 & L^i_2 & ... & L^i_{n_i} => S
     // for each 1 <= i <= n
     //
@@ -1413,7 +1466,7 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
             }
         }
 
-        // default deductive rules for sensing for observable state variables
+        // deductive rules for sensing for observable state variables
         for( size_t k = 0; k < lw1_variables_.size(); ++k ) {
             const Variable &variable = *lw1_variables_[k];
             if( variable.is_state_variable() && variable.is_observable_variable() ) {
@@ -1423,7 +1476,24 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
                 assert(lw1_actions_for_observable_state_variables_.find(&state_variable) != lw1_actions_for_observable_state_variables_.end());
                 const vector<const Action*> &actions = lw1_actions_for_observable_state_variables_.find(&state_variable)->second;
 
-                if( options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
+                if( !options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
+                    // generate type4 drules for each value and action
+                    for( size_t j = 0; j < actions.size(); ++j ) {
+                        const Action *action = actions[j];
+
+                        // generate type4 drules for each value
+                        for( unsigned_atom_set::const_iterator it = domain.begin(); it != domain.end(); ++it )
+                            lw1_create_type4_sensing_drule(action, state_variable, *it);
+
+                        // if variable is binary, generate rule for negative value
+                        if( state_variable.is_binary() ) {
+                            Atom negated_value(*domain.begin(), true);
+                            assert(negated_value.negated_);
+                            lw1_create_type4_sensing_drule(action, state_variable, negated_value);
+                        }
+                    }
+                } else {
+                    assert(options_.is_enabled("lw1:boost:single-sensing-literal-enablers"));
                     assert(0); // lw1:boost:single-sensing-literal-enablers
 #if 0
                     // generate type4 drules for each value
@@ -1456,28 +1526,28 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
                         }
                     }
 #endif
-                } else {
-                    // generate type4 drules for each value and action
-                    for( size_t j = 0; j < actions.size(); ++j ) {
-                        const Action *action = actions[j];
-
-                        // generate type4 drules for each value
-                        for( unsigned_atom_set::const_iterator it = domain.begin(); it != domain.end(); ++it )
-                            lw1_create_type4_sensing_drule(action, state_variable, *it);
-
-                        // if variable is binary, generate rule for negative value
-                        if( state_variable.is_binary() ) {
-                            Atom negated_value(*domain.begin(), true);
-                            assert(negated_value.negated_);
-                            lw1_create_type4_sensing_drule(action, state_variable, negated_value);
-                        }
-                    }
                 }
             }
         }
 
-        // default deductive rules for sensing for observable non-state variables
-        if( options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
+        // deductive rules for sensing for observable non-state variables
+        if( !options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
+            for( map<const Action*, map<const ObsVariable*, map<Atom, list<const And*> > > >::const_iterator it = lw1_sensing_models_index_.begin(); it != lw1_sensing_models_index_.end(); ++it ) {
+                const Action &action = *it->first;
+                for( map<const ObsVariable*, map<Atom, list<const And*> > >::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt ) {
+                    const ObsVariable &variable = *jt->first;
+                    for( map<Atom, list<const And*> >::const_iterator kt = jt->second.begin(); kt != jt->second.end(); ++kt ) {
+                        const Atom &value = kt->first;
+                        if( !value.negated_ || variable.is_binary() || options_.is_enabled("lw1:boost:literals-for-observables") ) {
+                            lw1_create_type4_sensing_drule(action, variable, value, jt->second);
+                            if( options_.is_enabled("lw1:boost:drule:sensing:type4") )
+                                lw1_create_type4_boost_sensing_drule(action, variable, value, jt->second);
+                        }
+                    }
+                }
+            }
+        } else {
+            assert(options_.is_enabled("lw1:boost:single-sensing-literal-enablers"));
             assert(0); // lw1:boost:single-sensing-literal-enablers
 #if 0
             for( map<pair<const ObsVariable*, Atom>, map<string, set<const Action*> > >::const_iterator it = lw1_xxx_.begin(); it != lw1_xxx_.end(); ++it ) {
@@ -1489,27 +1559,18 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
                         const Action &action = **jt->second.begin();
                         const map<Atom, list<const And*> > &sensing_models_for_var = lw1_sensing_models_index_[&action][&variable];
                         lw1_create_type4_sensing_drule(action, variable, value, sensing_models_for_var);
+                        if( options_.is_enabled("lw1:boost:drule:sensing:type4") )
+                            lw1_create_type4_boost_sensing_drule(action, variable, value, jt->second);
                     }
                 }
             }
 #endif
-        } else {
-            for( map<const Action*, map<const ObsVariable*, map<Atom, list<const And*> > > >::const_iterator it = lw1_sensing_models_index_.begin(); it != lw1_sensing_models_index_.end(); ++it ) {
-                const Action &action = *it->first;
-                for( map<const ObsVariable*, map<Atom, list<const And*> > >::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt ) {
-                    const ObsVariable &variable = *jt->first;
-                    for( map<Atom, list<const And*> >::const_iterator kt = jt->second.begin(); kt != jt->second.end(); ++kt ) {
-                        const Atom &value = kt->first;
-                        if( !value.negated_ || variable.is_binary() || options_.is_enabled("lw1:boost:literals-for-observables") )
-                            lw1_create_type4_sensing_drule(action, variable, value, jt->second);
-                    }
-                }
-            }
         }
 
         // type3 deductive rules for sensing for observable non-state variables
         if( options_.is_enabled("lw1:boost:drule:sensing:type3") ) {
             for( map<const Action*, map<const ObsVariable*, map<Atom, list<const And*> > > >::const_iterator it = lw1_sensing_models_index_.begin(); it != lw1_sensing_models_index_.end(); ++it ) {
+                const Action &action = *it->first;
                 for( map<const ObsVariable*, map<Atom, list<const And*> > >::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt ) {
                     const ObsVariable &variable = *jt->first;
                     for( map<Atom, list<const And*> >::const_iterator kt = jt->second.begin(); kt != jt->second.end(); ++kt ) {
@@ -1518,7 +1579,7 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
                         size_t num_type3_drules = 0;
                         for( list<const And*>::const_iterator term = dnf.begin(); term != dnf.end(); ++term) {
                             assert(dynamic_cast<const And*>(*term) != 0);
-                            lw1_create_type3_sensing_drule(variable, value, **term, dnf, num_type3_drules++);
+                            lw1_create_type3_sensing_drule(action, variable, value, **term, dnf, num_type3_drules++);
                         }
                     }
                 }
@@ -1526,7 +1587,7 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
         }
     } else {
         for( map<const Action*, map<const ObsVariable*, map<Atom, list<const And*> > > >::const_iterator it = lw1_sensing_models_index_.begin(); it != lw1_sensing_models_index_.end(); ++it ) {
-            //const Action &action = *it->first;
+            const Action &action = *it->first;
             for( map<const ObsVariable*, map<Atom, list<const And*> > >::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt ) {
                 const ObsVariable *variable = jt->first;
                 for( map<Atom, list<const And*> >::const_iterator kt = jt->second.begin(); kt != jt->second.end(); ++kt ) {
@@ -1541,7 +1602,7 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
                         //lw1_create_type1_sensing_drule(value, **term, num_type1_drules++); // disabled: see comment below
                         lw1_create_type2_sensing_drule(value, **term, num_type2_drules++);
                         if( options_.is_enabled("lw1:boost:drule:sensing:type3") )
-                            lw1_create_type3_sensing_drule(*variable, value, **term, dnf, num_type3_drules++);
+                            lw1_create_type3_sensing_drule(action, *variable, value, **term, dnf, num_type3_drules++);
                     }
                 }
             }
@@ -1595,9 +1656,13 @@ void PDDL_Base::lw1_create_type2_sensing_drule(const Atom &obs, const And &term,
     }
 }
 
-void PDDL_Base::lw1_create_type3_sensing_drule(const ObsVariable &variable, const Atom &value, const And &term, const list<const And*> &dnf, int index) {
+void PDDL_Base::lw1_create_type3_sensing_drule(const Action &action,
+                                               const ObsVariable &variable,
+                                               const Atom &value,
+                                               const And &term,
+                                               const list<const And*> &dnf,
+                                               int index) {
     assert(options_.is_enabled("lw1:aaai") || options_.is_enabled("lw1:strict"));
-    assert(0); // CHECK: need to fix last-action-atom
 
     // revise beam: at this stage, the beam only contains non-static atoms. Hence, if the beam
     // for value is non-empty, don't generate type3 sensing drule
@@ -1621,6 +1686,11 @@ void PDDL_Base::lw1_create_type3_sensing_drule(const ObsVariable &variable, cons
 
     // precondition
     And *precondition = new And;
+    if( options_.is_enabled("lw1:boost:enable-post-actions") )
+        drule->precondition_ = Literal(*lw1_fetch_enabler_for_sensing(value)).copy();
+    else
+        drule->precondition_ = Literal(lw1_fetch_last_action_atom(action)).copy();
+
     for( list<const And*>::const_iterator other_term = dnf.begin(); other_term != dnf.end(); ++other_term ) {
         if( *other_term != &term )
             precondition->push_back(Literal(lw1_fetch_atom_for_negated_term(**other_term)).copy());
@@ -1718,11 +1788,11 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action,
     assert(options_.is_enabled("lw1:strict"));
 
 #ifdef DEBUG
-    cout << "Type4: class=OBS"
-         << ", action=" << action.print_name_
-         << ", observable-variable=" << variable.to_string(true, false)
-         << ", value=" << value.to_string(false, false)
-         << endl;
+    //cout << "Type4: class=OBS"
+    //     << ", action=" << action.print_name_
+    //     << ", observable-variable=" << variable.to_string(true, false)
+    //     << ", value=" << value.to_string(false, false)
+    //     << endl;
 #endif
 
     if( sensing_models_for_action_and_var.size() <= 1 ) {
@@ -1734,23 +1804,32 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action,
     assert(variable.beam_.find(value) != variable.beam_.end());
     assert(!value.negated_ || variable.is_binary() || options_.is_enabled("lw1:boost:literals-for-observables"));
 
+    // find out whether something needs to be done
+    if( options_.is_enabled("lw1:boost:drule:sensing:type4") ) {
+        const And *term = 0;
+        for( map<Atom, list<const And*> >::const_iterator it = sensing_models_for_action_and_var.begin(); it != sensing_models_for_action_and_var.end(); ++it ) {
+            const Atom &other_value = it->first;
+            const list<const And*> &dnf = it->second;
+            if( (other_value == value) && (dnf.size() == 1) ) {
+                term = *dnf.begin();
+                break;
+            }
+        }
+        if( (term != 0) && !options_.is_enabled("lw1:boost:drule:sensing:type4:add") )
+            return;
+    }
+
     string name = string("drule-sensing-type4obs-") + action.print_name_ + "-" + variable.to_string(false, true) + "-" + value.to_string(false, true);
     Action *drule = new Action(strdup(name.c_str()));
 
     // pass the variable name to lw1_problem.cc in the comment for this action
     drule->comment_ = variable.to_string(false, true) + " " + value.to_string(false, true);
 
-    // exactly 2 preconditions: the value for the sensed var (this may be removed
-    // later in lw1_problem.cc if lw1:literals-for-observables is disabled), and
-    // the sensing enabler atom
-    And *precondition = new And;
-    if( options_.is_enabled("lw1:boost:enable-post-actions") ) {
-        precondition->push_back(Literal(*lw1_fetch_enabler_for_sensing(value)).copy());
-    } else {
-        precondition->push_back(Literal(lw1_fetch_last_action_atom(action)).copy());
-    }
-    precondition->push_back(Literal(value).copy());
-    drule->precondition_ = precondition;
+    // exactly 1 precondition, the sensing enabler atom
+    if( options_.is_enabled("lw1:boost:enable-post-actions") )
+        drule->precondition_ = Literal(*lw1_fetch_enabler_for_sensing(value)).copy();
+    else
+        drule->precondition_ = Literal(lw1_fetch_last_action_atom(action)).copy();
 
     // effects
     AndEffect *and_effect = new AndEffect;
@@ -1783,14 +1862,6 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action,
                     }
                 }
             }
-        } else if( options_.is_enabled("lw1:boost:drule:sensing:type4") && (dnf.size() == 1) ) {
-            const And &term = **dnf.begin();
-            assert(!term.empty());
-            for( size_t k = 0; k < term.size(); ++k ) {
-                assert(dynamic_cast<const Literal*>(term[k]) != 0);
-                const Literal &literal = *static_cast<const Literal*>(term[k]);
-                and_effect->push_back(AtomicEffect(literal).copy());
-            }
         }
     }
     assert(!and_effect->empty());
@@ -1802,8 +1873,81 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action,
         cout << Utils::yellow() << *drule << Utils::normal();
 }
 
+void PDDL_Base::lw1_create_type4_boost_sensing_drule(const Action &action,
+                                                     const ObsVariable &variable,
+                                                     const Atom &value,
+                                                     const map<Atom, list<const And*> > &sensing_models_for_action_and_var) {
+    assert(options_.is_enabled("lw1:strict"));
+    assert(options_.is_enabled("lw1:boost:drule:sensing:type4"));
+
+#ifdef DEBUG
+    //cout << "Type4: class=OBS-BOOST"
+    //     << ", action=" << action.print_name_
+    //     << ", observable-variable=" << variable.to_string(true, false)
+    //     << ", value=" << value.to_string(false, false)
+    //     << endl;
+#endif
+
+    if( sensing_models_for_action_and_var.size() <= 1 ) {
+        cout << Utils::error() << "not enough sensing models for action '" << action.print_name_
+             << "' and obs-variable '" << variable.to_string(true, false) << "'" << endl;
+        return;
+    }
+
+    assert(variable.beam_.find(value) != variable.beam_.end());
+    assert(!value.negated_ || variable.is_binary() || options_.is_enabled("lw1:boost:literals-for-observables"));
+
+    // find out whether something needs to be done
+    const And *term = 0;
+    for( map<Atom, list<const And*> >::const_iterator it = sensing_models_for_action_and_var.begin(); it != sensing_models_for_action_and_var.end(); ++it ) {
+        const Atom &other_value = it->first;
+        const list<const And*> &dnf = it->second;
+        if( (other_value == value) && (dnf.size() == 1) ) {
+            term = *dnf.begin();
+            break;
+        }
+    }
+    if( term == 0 ) return;
+
+    string name = string("drule-sensing-type4obs-boost-") + action.print_name_ + "-" + variable.to_string(false, true) + "-" + value.to_string(false, true);
+    Action *drule = new Action(strdup(name.c_str()));
+
+    // pass the variable name to lw1_problem.cc in the comment for this action
+    drule->comment_ = variable.to_string(false, true) + " " + value.to_string(false, true);
+
+    // preconditions are the sensing enabler atom and all the complemented
+    // literals in the term
+    And *precondition = new And;
+    if( options_.is_enabled("lw1:boost:enable-post-actions") )
+        precondition->push_back(Literal(*lw1_fetch_enabler_for_sensing(value)).copy());
+    else
+        precondition->push_back(Literal(lw1_fetch_last_action_atom(action)).copy());
+    for( size_t k = 0; k < term->size(); ++k ) {
+        assert(dynamic_cast<const Literal*>((*term)[k]) != 0);
+        const Literal &literal = *static_cast<const Literal*>((*term)[k]);
+        precondition->push_back(literal.negate());
+    }
+    drule->precondition_ = precondition;
+
+    // effects
+    assert(!term->empty());
+    AndEffect *effect = new AndEffect;
+    for( size_t k = 0; k < term->size(); ++k ) {
+        assert(dynamic_cast<const Literal*>((*term)[k]) != 0);
+        const Literal &literal = *static_cast<const Literal*>((*term)[k]);
+        effect->push_back(AtomicEffect(literal).copy());
+    }
+    drule->effect_ = effect;
+
+    // insert action for deductive rule
+    dom_actions_.push_back(drule);
+    if( options_.is_enabled("lw1:print:drule:sensing") || options_.is_enabled("lw1:print:drule") )
+        cout << Utils::yellow() << *drule << Utils::normal();
+}
+
 void PDDL_Base::lw1_create_type5_sensing_drule(const ObsVariable &variable) {
     assert(options_.is_enabled("lw1:strict"));
+    assert(options_.is_enabled("lw1:boost:literals-for-observables"));
 
 #ifdef DEBUG
     //cout << "Type5: observable-variable=" << variable.to_string(true, false) << ", domain-sz=" << variable.grounded_domain_.size() << endl;

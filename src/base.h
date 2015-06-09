@@ -910,7 +910,12 @@ class PDDL_Base {
     void lw1_create_type2_sensing_drule(const Atom &obs, const And &term, int index);
 
     // methods to create type3 deductive rules (for lw1)
-    void lw1_create_type3_sensing_drule(const ObsVariable &variable, const Atom &value, const And &term, const std::list<const And*> &dnf, int index);
+    void lw1_create_type3_sensing_drule(const Action &action,
+                                        const ObsVariable &variable,
+                                        const Atom &value,
+                                        const And &term,
+                                        const std::list<const And*> &dnf,
+                                        int index);
     const Atom& lw1_fetch_atom_for_negated_term(const And &term);
 
     // methods to create type4 deductive rules (for lw1)
@@ -919,6 +924,10 @@ class PDDL_Base {
                                         const ObsVariable &variable,
                                         const Atom &value,
                                         const std::map<Atom, std::list<const And*> > &sensing_models_for_action_and_var);
+    void lw1_create_type4_boost_sensing_drule(const Action &action,
+                                              const ObsVariable &variable,
+                                              const Atom &value,
+                                              const std::map<Atom, std::list<const And*> > &sensing_models_for_action_and_var);
     void lw1_create_type5_sensing_drule(const ObsVariable &variable);
     const Atom& lw1_fetch_sensing_enabler(const std::string &action, const std::string &variable, const std::string &value);
     const Atom& lw1_fetch_sensing_enabler(const Action &action, const ObsVariable &variable, const Atom &value);
