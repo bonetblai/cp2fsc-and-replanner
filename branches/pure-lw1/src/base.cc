@@ -943,62 +943,6 @@ void PDDL_Base::lw1_translate_actions_strict() {
     }
 
     // if requested, manage sensing with post actions
-    if( options_.is_enabled("lw1:boost:disabling-actions-for-last-action-atoms") ) {
-        assert(0); // to be replaced by lw1:boost:enable-post-actions (below)
-
-        // compute actions that need translation (those with non-null sensing model)
-        action_vec actions_to_translate;
-        for( int k = 0; k < (int)dom_actions_.size(); ++k ) {
-            if( dom_actions_[k]->sensing_ != 0 ) {
-                actions_to_translate.push_back(dom_actions_[k]);
-                dom_actions_[k] = dom_actions_.back();
-                dom_actions_.pop_back();
-                --k;
-            }
-        }
-
-        // create atoms needed in translation
-        if( !actions_to_translate.empty() ) {
-            create_normal_execution_atom();
-
-            // extend initial and goal situations with (normal-execution)
-            dom_init_.push_back(new InitLiteral(*normal_execution_));
-            if( dom_goal_ == 0 ) {
-                dom_goal_ = new And;
-            } else if( dynamic_cast<const And*>(dom_goal_) == 0 ) {
-                And *new_goal = new And;
-                assert(dom_goal_->is_grounded());
-                new_goal->push_back(dom_goal_->copy_and_simplify());
-                delete dom_goal_;
-                dom_goal_ = new_goal;
-            }
-            static_cast<And*>(const_cast<Condition*>(dom_goal_))->push_back(Literal(*normal_execution_).copy());
-
-            // extend preconditions of other actions with (normal-execution).
-            if( !dom_actions_.empty() ) {
-                cout << Utils::blue() << "(lw1) extending preconditions with '(normal-execution)' for "
-                     << dom_actions_.size() << " action(s)" << Utils::normal() << endl;
-                for( size_t k = 0; k < dom_actions_.size(); ++k ) {
-                    Action &action = *dom_actions_[k];
-                    And *precondition = new And;
-                    if( action.precondition_ != 0 ) precondition->push_back(action.precondition_);
-                    precondition->push_back(Literal(*normal_execution_).copy());
-                    assert(precondition->is_grounded());
-                    action.precondition_ = precondition->copy_and_simplify();
-                    delete precondition;
-                }
-            }
-        }
-
-        // translate actions
-        for( size_t k = 0; k < actions_to_translate.size(); ++k ) {
-            Action *action = actions_to_translate[k];
-            assert(action->sensing_->is_grounded());
-            lw1_translate_strict(*action);
-        }
-    }
-
-    // if requested, manage sensing with post actions
     if( options_.is_enabled("lw1:boost:enable-post-actions") ) {
         // compute actions that need post actions (those with non-null sensing model)
         action_vec actions_to_translate;
@@ -2605,7 +2549,6 @@ void PDDL_Base::do_lw1_translation(const variable_vec* &variables,
         lw1_create_deductive_rules_for_sensing();
 
         if( !options_.is_enabled("lw1:boost:enable-post-actions") ) {
-            //!options_.is_enabled("lw1:boost:disabling-actions-for-last-action-atoms") ) {
             lw1_patch_actions_with_enablers_for_sensing();
         }
 

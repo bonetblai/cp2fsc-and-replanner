@@ -25,7 +25,8 @@ class LW1_Instance : public KP_Instance {
     std::vector<int> remap_;
     std::map<std::string, int> obs_rules_by_name_;
 
-    // last-action-atoms and atoms-for-sensing in po_instance
+    // normal-execution atom, last-action-atoms and atoms-for-sensing in po_instance
+    int normal_execution_atom_;
     std::set<int> last_action_atoms_;
     std::set<int> sensing_enabler_atoms_;
     std::map<std::string, std::set<int> > atoms_for_observables_;
