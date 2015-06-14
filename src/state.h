@@ -3,6 +3,7 @@
 
 #include "problem.h"
 #include "index.h"
+#include "utils.h"
 #include <cassert>
 #include <iostream>
 #include <list>
