@@ -32,8 +32,9 @@ class LW1_Solver : public BASE_CLASS {
     LW1_Solver(const Instance &instance,
                const KP_Instance &kp_instance,
                const ClassicalPlanner &planner,
-               int time_bound)
-      : BASE_CLASS(LW1, instance, kp_instance, planner, time_bound) {
+               int time_bound,
+               int ncalls_bound)
+      : BASE_CLASS(LW1, instance, kp_instance, planner, time_bound, ncalls_bound) {
     }
     ~LW1_Solver() { }
 

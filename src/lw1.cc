@@ -55,6 +55,7 @@ int main(int argc, const char *argv[]) {
     bool        opt_print_plan = true;
     string      opt_planner = "ff";
     int         opt_time_bound = 3600;
+    int         opt_ncalls_bound = 1000;
     string      opt_prefix = "";
     float       start_time = Utils::read_time_in_seconds();
     string      opt_planner_path = "";
@@ -95,11 +96,17 @@ int main(int argc, const char *argv[]) {
         } else if( !skip_options && !strcmp(argv[k], "--debug-parser") ) {
             opt_debug_parser = true;
         } else if( !skip_options && !strcmp(argv[k], "--max-time") ) {
-            if( k == argc-1 ) {
+            if( k == argc - 1 ) {
                 cout << Utils::error() << "not enough arguments for '" << argv[k] << "'." << endl;
                 exit(-1);
             }
             opt_time_bound = atoi(argv[++k]);
+        } else if( !skip_options && !strcmp(argv[k], "--max-ncalls") ) {
+            if( k == argc - 1 ) {
+                cout << Utils::error() << "not enough arguments for '" << argv[k] << "'." << endl;
+                exit(-1);
+            }
+            opt_ncalls_bound = atoi(argv[++k]);
         } else if( !skip_options && !strcmp(argv[k], "--no-print-plan") ) {
             opt_print_plan = false;
         } else if( !skip_options && !strcmp(argv[k], "--prefix") ) {
@@ -302,7 +309,7 @@ int main(int argc, const char *argv[]) {
 
         planner->reset_stats();
         kp_instance->reset_inference_time();
-        LW1_Solver solver(instance, *kp_instance, *planner, opt_time_bound);
+        LW1_Solver solver(instance, *kp_instance, *planner, opt_time_bound, opt_ncalls_bound);
         int status = solver.solve(hidden_initial_state, plan, fired_sensors, sensed_literals);
         assert(1+plan.size() == fired_sensors.size());
 
@@ -377,6 +384,8 @@ int main(int argc, const char *argv[]) {
                 cout << "problem has no solution!" << endl;
             } else if( status == LW1_Solver::TIME ) {
                 cout << "reached time limit of " << opt_time_bound << " seconds" << endl;
+            } else if( status == LW1_Solver::NCALLS ) {
+                cout << "reached limit for #calls to classical planner of " << opt_ncalls_bound << " calls" << endl;
             } else if( status == LW1_Solver::ERROR ) {
                 cout << "planner error" << endl;
             } else  {
