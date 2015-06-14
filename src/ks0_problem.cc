@@ -91,7 +91,7 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals) :
         }
         char *t = strtok(dup, " ");
         lit_name = string("(K_") + t;
-        if( tagged_[k] && (n_tags_ > 1) ) lit_name += string("__tag") + to_string(tag0_);
+        if( tagged_[k] && (n_tags_ > 1) ) lit_name += string("__tag") + Utils::to_string(tag0_);
         while( (t = strtok(0, " ")) ) {
             lit_name += string(" ") + t;
         }
@@ -119,7 +119,7 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals) :
                         dup[strlen(dup)-1] = '\0';
                     }
                     char *t = strtok(dup, " ");
-                    lit_name = string("(K_") + t + "__tag" + to_string(tag);
+                    lit_name = string("(K_") + t + "__tag" + Utils::to_string(tag);
                     while( (t = strtok(0, " ")) ) {
                         lit_name += string(" ") + t;
                     }
@@ -149,7 +149,7 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals) :
                         dup[strlen(dup)-1] = '\0';
                     }
                     char *t = strtok(dup, " ");
-                    lit_name = string("(K_") + t + "__tag" + to_string(tag);
+                    lit_name = string("(K_") + t + "__tag" + Utils::to_string(tag);
                     while( (t = strtok(0, " ")) ) {
                         lit_name += string(" ") + t;
                     }

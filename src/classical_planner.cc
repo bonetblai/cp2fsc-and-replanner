@@ -26,27 +26,27 @@ ClassicalPlanner::ClassicalPlanner(const char *name,
 
     string domain_fname;
     if( tmpfile_path_ != "" ) domain_fname += tmpfile_path_ + "/";
-    domain_fname += string("gen-d") + to_string(pid) + ".pddl";
+    domain_fname += string("gen-d") + Utils::to_string(pid) + ".pddl";
     domain_fn_ = strdup(domain_fname.c_str());
 
     string problem_fname;
     if( tmpfile_path_ != "" ) problem_fname += tmpfile_path_ + "/";
-    problem_fname += string("gen-p") + to_string(pid) + ".pddl";
+    problem_fname += string("gen-p") + Utils::to_string(pid) + ".pddl";
     problem_fn_ = strdup(problem_fname.c_str());
 
     string output_fname;
     if( tmpfile_path_ != "" ) output_fname += tmpfile_path_ + "/";
-    output_fname += planner_name_ + ".output." + to_string(pid);
+    output_fname += planner_name_ + ".output." + Utils::to_string(pid);
     output_fn_ = strdup(output_fname.c_str());
 
     string tmp_fname;
     if( tmpfile_path_ != "" ) tmp_fname += tmpfile_path_ + "/";
-    tmp_fname += planner_name_ + ".tmp." + to_string(pid);
+    tmp_fname += planner_name_ + ".tmp." + Utils::to_string(pid);
     tmp_fn_ = strdup(tmp_fname.c_str());
 
     string plan_fname;
     if( tmpfile_path_ != "" ) plan_fname += tmpfile_path_ + "/";
-    plan_fname += planner_name_ + ".plan." + to_string(pid);
+    plan_fname += planner_name_ + ".plan." + Utils::to_string(pid);
     plan_fn_ = strdup(plan_fname.c_str());
 }
 

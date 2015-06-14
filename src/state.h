@@ -209,7 +209,7 @@ class State {
 
     static std::string to_string(int literal, const Instance *ins = 0) {
         if( ins == 0 ) {
-            return std::to_string(literal);
+            return Utils::to_string(literal);
         } else {
             std::string str;
             if( literal < 0 ) str += "(not ";
