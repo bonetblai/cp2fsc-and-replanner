@@ -1131,7 +1131,7 @@ void Instance::create_deductive_rules() {
         assert(invariant.type_ == Invariant::AT_LEAST_ONE);
 
         for( size_t k = 0; k < invariant.size(); ++k ) {
-            string name = string("deductive-rule-") + to_string(deductive_rules_.size());
+            string name = string("deductive-rule-") + Utils::to_string(deductive_rules_.size());
             Action *rule = new Action(new CopyName(name), deductive_rules_.size());
 
             // conditional effects

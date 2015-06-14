@@ -387,7 +387,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
             assert(*it > 0);
             int idx = *it-1;
             for( size_t n = 0; n < 2; ++n ) {
-                string name = string("sensor-") + r.name_->to_string() + "-obs" + to_string(obs) + "-ver" + to_string(n);
+                string name = string("sensor-") + r.name_->to_string() + "-obs" + Utils::to_string(obs) + "-ver" + Utils::to_string(n);
                 Action &nact = new_action(new CopyName(name));
 
                 // conditional effect
@@ -424,7 +424,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
 
         //cout << "Processing invariant "; invariant.write(cout, 0, ins);
         for( size_t k = 0; k < invariant.size(); ++k ) {
-            string name = string("invariant-") + (invariant.type_ == Invariant::AT_LEAST_ONE ? "at-least-one" : "at-most-one") + "-" + to_string(invariant_no++);
+            string name = string("invariant-") + (invariant.type_ == Invariant::AT_LEAST_ONE ? "at-least-one" : "at-most-one") + "-" + Utils::to_string(invariant_no++);
             Action *nact = new Action(new CopyName(name));
             vector<int> completion;
 
@@ -546,7 +546,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
 
         //cout << "Processing invariant "; invariant.write(cout, 0, ins);
         for( size_t k = 0; k < invariant.size(); ++k ) {
-            string name = string("invariant-") + (invariant.type_ == Invariant::AT_LEAST_ONE ? "at-least-one" : "at-most-one") + "-" + to_string(invariant_no++);
+            string name = string("invariant-") + (invariant.type_ == Invariant::AT_LEAST_ONE ? "at-least-one" : "at-most-one") + "-" + Utils::to_string(invariant_no++);
             Action &nact = new_action(new CopyName(name));
             vector<int> completion;
 
@@ -818,7 +818,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
             assert(*it > 0);
             int idx = *it-1;
             for( size_t n = 0; n < 2; ++n ) {
-                string name = string("sensor-") + r.name_->to_string() + "-obs" + to_string(obs) + "-ver" + to_string(n);
+                string name = string("sensor-") + r.name_->to_string() + "-obs" + Utils::to_string(obs) + "-ver" + Utils::to_string(n);
                 Action &nact = new_action(new CopyName(name));
 
                 // conditional effect
@@ -856,7 +856,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
 
         //cout << "Processing invariant "; invariant.write(cout, 0, ins);
         for( size_t k = 0; k < invariant.size(); ++k ) {
-            string name = string("invariant-") + (invariant.type_ == Invariant::AT_LEAST_ONE ? "at-least-one" : "at-most-one") + "-" + to_string(invariant_no++);
+            string name = string("invariant-") + (invariant.type_ == Invariant::AT_LEAST_ONE ? "at-least-one" : "at-most-one") + "-" + Utils::to_string(invariant_no++);
             Action *nact = new Action(new CopyName(name));
             vector<int> completion;
 
@@ -978,7 +978,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
 
         //cout << "Processing invariant "; invariant.write(cout, 0, ins);
         for( size_t k = 0; k < invariant.size(); ++k ) {
-            string name = string("invariant-") + (invariant.type_ == Invariant::AT_LEAST_ONE ? "at-least-one" : "at-most-one") + "-" + to_string(invariant_no++);
+            string name = string("invariant-") + (invariant.type_ == Invariant::AT_LEAST_ONE ? "at-least-one" : "at-most-one") + "-" + Utils::to_string(invariant_no++);
             Action &nact = new_action(new CopyName(name));
             vector<int> completion;
 

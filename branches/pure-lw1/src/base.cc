@@ -1128,7 +1128,7 @@ void PDDL_Base::lw1_create_sensors_for_atom(const Atom &atom, const Condition &c
 
             // create sensor for each enabler
             string name = string("sensor-for-") + var.to_string(true, true) + "-" + atom.to_string(atom.negated_, true) + "-true";
-            if( sensor_index != -1 ) name += "-" + to_string(sensor_index);
+            if( sensor_index != -1 ) name += "-" + Utils::to_string(sensor_index);
             Sensor *sensor = new Sensor(strdup(name.c_str()));
 
             // condition of sensor is enabler plus conditions on other values of variable
@@ -1155,7 +1155,7 @@ void PDDL_Base::lw1_create_sensors_for_atom(const Atom &atom, const Condition &c
             // if this is a binary variable, create a copy that sets value to false
             if( var.is_binary() ) {
                 string name = string("sensor-for-") + var.to_string(true, true) + "-" + atom.to_string(atom.negated_, true) + "-false";
-                if( sensor_index != -1 ) name += "-" + to_string(sensor_index);
+                if( sensor_index != -1 ) name += "-" + Utils::to_string(sensor_index);
                 Sensor *sensor = new Sensor(strdup(name.c_str()));
 
                 // condition of sensor is just enabler because there are no other values for the variable
@@ -1189,7 +1189,7 @@ void PDDL_Base::lw1_create_sensors_for_atom(const Atom &atom, const signed_atom_
 void PDDL_Base::lw1_create_post_action(const unsigned_atom_set &atoms) {
     map<unsigned_atom_set, const Action*>::const_iterator it = post_actions_for_lw1_translation_.find(atoms);
     if( it == post_actions_for_lw1_translation_.end() ) {
-        string name = string("post-action-") + to_string(post_actions_for_lw1_translation_.size());
+        string name = string("post-action-") + Utils::to_string(post_actions_for_lw1_translation_.size());
         Action *post_action = new Action(strdup(name.c_str()));
 
         // precondition
@@ -1615,7 +1615,7 @@ void PDDL_Base::lw1_create_type1_sensing_drule(const Atom &obs, const And &term,
     assert(options_.is_enabled("lw1:aaai"));
 
     // type-1 sensing drules
-    string name = string("drule-sensing-type1-") + obs.to_string(false, true) + "-" + to_string(index);
+    string name = string("drule-sensing-type1-") + obs.to_string(false, true) + "-" + Utils::to_string(index);
     Action *drule = new Action(strdup(name.c_str()));
     drule->precondition_ = term.copy_and_simplify();
     drule->effect_ = AtomicEffect(obs).copy();
@@ -1630,7 +1630,7 @@ void PDDL_Base::lw1_create_type2_sensing_drule(const Atom &obs, const And &term,
     assert(options_.is_enabled("lw1:aaai"));
 
     for( size_t k = 0; k < term.size(); ++k ) {
-        string name = string("drule-sensing-type2-") + obs.to_string(false, true) + "-" + to_string(index);
+        string name = string("drule-sensing-type2-") + obs.to_string(false, true) + "-" + Utils::to_string(index);
         Action *drule = new Action(strdup(name.c_str()));
 
         // precondition
@@ -1681,7 +1681,7 @@ void PDDL_Base::lw1_create_type3_sensing_drule(const Action &action,
     //cout << "]" << endl;
 #endif
 
-    string name = string("drule-sensing-type3-") + value.to_string(false, true) + "-" + to_string(index);
+    string name = string("drule-sensing-type3-") + value.to_string(false, true) + "-" + Utils::to_string(index);
     Action *drule = new Action(strdup(name.c_str()));
 
     // precondition
@@ -1725,14 +1725,14 @@ const PDDL_Base::Atom& PDDL_Base::lw1_fetch_atom_for_negated_term(const And &ter
         return *it->second;
     } else {
         // first create atom
-        string name = string("negated-term-") + to_string(atoms_for_terms_for_type3_sensing_drules_.size());
+        string name = string("negated-term-") + Utils::to_string(atoms_for_terms_for_type3_sensing_drules_.size());
         Atom *atom = create_atom(name);
         atoms_for_terms_for_type3_sensing_drules_.insert(make_pair(condition, atom));
 
         // now create deductive rules for this atom: -L => -atom for each literal L in term
         for( size_t k = 0; k < term.size(); ++k ) {
             const Literal &literal = *static_cast<const Literal*>(term[k]);
-            string name = string("drule-atom-") + atom->to_string(false, true) + "-" + to_string(k);
+            string name = string("drule-atom-") + atom->to_string(false, true) + "-" + Utils::to_string(k);
             Action *drule = new Action(strdup(name.c_str()));
             drule->precondition_ = literal.negate();
             drule->effect_ = AtomicEffect(*atom).copy();
@@ -2008,7 +2008,7 @@ void PDDL_Base::lw1_create_type5_sensing_drule(const ObsVariable &variable) {
             lw1_accepted_literals_for_observables_[variable.to_string(false, true)].insert(value.to_string(false, true));
             size_t n = 0;
             for( list<const And*>::const_iterator term = dnf->begin(); term != dnf->end(); ++term, ++n ) {
-                string name = string("drule-sensing-type5-") + variable.to_string(false, true) + "-" + value.to_string(false, true) + "-term-" + to_string(1 + n);
+                string name = string("drule-sensing-type5-") + variable.to_string(false, true) + "-" + value.to_string(false, true) + "-term-" + Utils::to_string(1 + n);
                 Action *drule = new Action(strdup(name.c_str()));
 
                 // precondition and effect
@@ -2631,7 +2631,7 @@ const PDDL_Base::Atom* PDDL_Base::lw1_fetch_need_set_sensing_atom(const Action &
 const PDDL_Base::Atom* PDDL_Base::lw1_fetch_enabler_for_sensing(const unsigned_atom_set &atoms) {
     const map<unsigned_atom_set, const Atom*>::const_iterator it = need_post_atoms_.find(atoms);
     if( it == need_post_atoms_.end() ) {
-        string name = string("enable-sensing-for-set-") + to_string(need_post_atoms_.size());
+        string name = string("enable-sensing-for-set-") + Utils::to_string(need_post_atoms_.size());
         Atom *atom = create_atom(name);
         need_post_atoms_.insert(make_pair(atoms, atom));
         return atom;

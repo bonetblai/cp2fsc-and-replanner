@@ -47,6 +47,16 @@ inline std::string cmdline(int argc, const char *argv[]) {
     return cmd;
 }
 
+inline std::string to_string(int n) {
+#if 1
+    return std::to_string(n);
+#else
+    char buff[256];
+    sprintf(buff, "%d", n);
+    return std::string(buff);
+#endif
+}
+
 };
 
 #endif
