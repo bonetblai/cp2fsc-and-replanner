@@ -58,6 +58,7 @@ int Solver::solve(const State &initial_hidden_state,
     while( !state.goal(kp_instance_) ) {
 
         // obtain plan for state
+        if( planner_calls >= ncalls_bound_ ) return NCALLS;
         int status = planner_.get_plan(state, raw_plan, plan);
         if( status != ClassicalPlanner::SOLVED ) {
             if( status == ClassicalPlanner::NO_SOLUTION )
