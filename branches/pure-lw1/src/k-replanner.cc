@@ -70,6 +70,7 @@ int main(int argc, char *argv[]) {
     // set default options
     g_options.enable("planner:remove-intermediate-files");
     g_options.enable("problem:action-compilation");
+    g_options.enable("solver:forced-moves");
     g_options.enable("kp:merge-drules");
 
     // check correct number of parameters
