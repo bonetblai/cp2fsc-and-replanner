@@ -115,7 +115,7 @@ int NewSolver<T>::solve(const T &initial_hidden_state,
 
         // if there is only one applicable operator, there is no need
         // to call planner
-        if( options_.is_enabled("lw1:boost:forced-moves") ) {
+        if( options_.is_enabled("solver:forced-moves") ) {
             int action_index = -1;
             int num_applicable_actions = 0;
             for( size_t i = 0; i < kp_instance_.actions_.size(); ++i ) {
