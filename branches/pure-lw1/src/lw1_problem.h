@@ -88,7 +88,7 @@ class LW1_Instance : public KP_Instance {
     void create_sensor(const Sensor &sensor);
 
     virtual void cross_reference();
-    virtual size_t remap_action(size_t action_id) const {
+    virtual int remap_action(size_t action_id) const {
         assert(action_id < remap_.size());
         return remap_[action_id];
     }

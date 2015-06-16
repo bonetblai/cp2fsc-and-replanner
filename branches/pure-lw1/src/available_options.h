@@ -69,6 +69,7 @@ const char *available_options[] = {
     "planner:support-for-axioms",              "[PLANNER] indicates that the classical planner supports axioms (aka derived predicates)",
 
     // solver options (k_replanner, clg, lw1)
+    "solver:forced-moves",                     "[SOLVER] don't call planner when there is just one applicable operator",
     "solver:print:assumptions",                "[SOLVER] print assumptions made in classical plan",
     "solver:print:steps",                      "[SOLVER] print the result of each action in the plan",
     //"solver:print:inconsistency",              "[SOLVER] print when detecting an inconsistency",
@@ -136,8 +137,6 @@ const char *available_options[] = {
     "lw1:boost:drule:sensing:type3",                    "[LW1] generate deductive rules for sensing of type 3", // CHECK (rename types)
     "lw1:boost:literals-for-observables",               "[LW1] add literals for static observables (useful in problem with width > 1)", // CHECK
     "lw1:boost:literals-for-observables:dynamic",       "[LW1] add literals for observables (useful in problem with width > 1)", // CHECK
-
-    "lw1:boost:forced-moves",                           "[LW1] don't call planner when there is just one applicable operator", // CHECK
 
     0
 };

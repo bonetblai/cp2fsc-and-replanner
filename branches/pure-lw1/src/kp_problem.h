@@ -54,7 +54,7 @@ class KP_Instance : public Instance {
     }
 
     virtual void cross_reference() = 0;
-    virtual size_t remap_action(size_t action_id) const = 0;
+    virtual int remap_action(size_t action_id) const = 0;
     virtual void set_goal_condition(index_set &condition) const = 0;
 
     virtual size_t first_deductive_action() const = 0;
@@ -102,7 +102,7 @@ class Standard_KP_Instance : public KP_Instance {
     ~Standard_KP_Instance();
 
     virtual void cross_reference();
-    virtual size_t remap_action(size_t action_id) const {
+    virtual int remap_action(size_t action_id) const {
         assert(action_id < remap_.size());
         return remap_[action_id];
     }
