@@ -137,6 +137,8 @@ const char *available_options[] = {
     "lw1:boost:literals-for-observables",               "[LW1] add literals for static observables (useful in problem with width > 1)", // CHECK
     "lw1:boost:literals-for-observables:dynamic",       "[LW1] add literals for observables (useful in problem with width > 1)", // CHECK
 
+    "lw1:boost:forced-moves",                           "[LW1] don't call planner when there is just one applicable operator", // CHECK
+
     0
 };
 
