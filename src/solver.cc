@@ -55,7 +55,7 @@ int Solver::solve(const State &initial_hidden_state,
     Instance::Plan raw_plan, plan;
     final_plan.clear();
 
-    size_t planner_calls = 0;
+    int planner_calls = 0;
     while( !state.goal(kp_instance_) ) {
 
         plan.clear();
