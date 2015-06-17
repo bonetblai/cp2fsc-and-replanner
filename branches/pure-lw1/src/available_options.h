@@ -71,6 +71,7 @@ const char *available_options[] = {
     // solver options (k_replanner, clg, lw1)
     "solver:forced-moves",                     "[SOLVER] don't call planner when there is just one applicable operator",
     "solver:print:assumptions",                "[SOLVER] print assumptions made in classical plan",
+    "solver:print:assumptions:raw",            "[SOLVER] print assumptions made in raw classical plan",
     "solver:print:steps",                      "[SOLVER] print the result of each action in the plan",
     //"solver:print:inconsistency",              "[SOLVER] print when detecting an inconsistency",
     //"solver:print:inconsistency:details",      "[SOLVER] print details of the inconsistency",

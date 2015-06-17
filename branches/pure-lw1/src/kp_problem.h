@@ -69,7 +69,7 @@ class KP_Instance : public Instance {
     }
     virtual void print_stats(std::ostream &os) const = 0;
 
-    virtual void calculate_relevant_assumptions(const Plan &plan,
+    virtual bool calculate_relevant_assumptions(const Plan &plan,
                                                 const State &initial_state,
                                                 const index_set &goal,
                                                 std::vector<index_set> &assumptions) const;
