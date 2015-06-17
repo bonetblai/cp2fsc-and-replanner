@@ -128,13 +128,13 @@ const char *available_options[] = {
     "lw1:boost:complete-effects:type4:obs",             "[LW1] complete effects for variables", // CHECK
     "lw1:boost:complete-effects:type4:state",           "[LW1] complete effects for variables", // CHECK
 
-    "lw1:boost:single-sensing-literal-enablers",        "[LW1] XXXX", // CHECK
     "lw1:boost:enable-post-actions",                    "[LW1] XXXX", // CHECK
+    "lw1:boost:single-sensing-literal-enablers",        "[LW1] XXXX", // CHECK
 
-    "lw1:boost:drule:sensing:type4",                    "[LW1] XXXX", // CHECK
-    "lw1:boost:drule:sensing:type4:add",                "[LW1] XXXX", // CHECK
+    "lw1:boost:drule:sensing:type3",                    "[LW1] generate type3 deductive rules for sensing", // CHECK (rename types)
+    "lw1:boost:drule:sensing:type4",                    "[LW1] replace type4 deductive rule by boosted version when DNF has just one term",
+    "lw1:boost:drule:sensing:type4:add",                "[LW1] add bossted type4 deductive rules in addition to standard rules",
 
-    "lw1:boost:drule:sensing:type3",                    "[LW1] generate deductive rules for sensing of type 3", // CHECK (rename types)
     "lw1:boost:literals-for-observables",               "[LW1] add literals for static observables (useful in problem with width > 1)", // CHECK
     "lw1:boost:literals-for-observables:dynamic",       "[LW1] add literals for observables (useful in problem with width > 1)", // CHECK
 

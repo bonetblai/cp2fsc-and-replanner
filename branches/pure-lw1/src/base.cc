@@ -5,7 +5,7 @@
 #include "base_dnf.h"
 #include "utils.h"
 
-#define DEBUG
+//#define DEBUG
 
 using namespace std;
 
@@ -1667,8 +1667,8 @@ void PDDL_Base::lw1_create_type3_sensing_drule(const Action &action,
                                                int index) {
     assert(options_.is_enabled("lw1:aaai") || options_.is_enabled("lw1:strict"));
 
-    // revise beam: at this stage, the beam only contains non-static atoms. Hence, if the beam
-    // for value is non-empty, don't generate type3 sensing drule
+    // revise beam: at this stage, the beam only contains non-static atoms.
+    // Hence, if the beam for value is non-empty, don't generate type3 sensing drule
     assert(variable.grounded_domain_.find(value) != variable.grounded_domain_.end());
     map<Atom, unsigned_atom_set, Atom::unsigned_less_comparator>::const_iterator it = variable.beam_.find(value);
     assert(it != variable.beam_.end());
@@ -1818,6 +1818,8 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action,
                 break;
             }
         }
+
+        // if boosting type4 drules and not adding redundant rules, return (do nothing)
         if( (term != 0) && !options_.is_enabled("lw1:boost:drule:sensing:type4:add") )
             return;
     }
@@ -1953,8 +1955,8 @@ void PDDL_Base::lw1_create_type5_sensing_drule(const ObsVariable &variable) {
     assert(options_.is_enabled("lw1:boost:literals-for-observables"));
 
 #ifdef DEBUG
-    //cout << "Type5: observable-variable=" << variable.to_string(true, false) << ", domain-sz=" << variable.grounded_domain_.size() << endl;
-    //assert(!variable.grounded_domain_.empty());
+    cout << "Type5: observable-variable=" << variable.to_string(true, false) << ", domain-sz=" << variable.grounded_domain_.size() << endl;
+    assert(!variable.grounded_domain_.empty());
 #endif
 
     // collect all values of variable as strings into vector. If variable is binary, extend domain with negative literal
@@ -1969,14 +1971,14 @@ void PDDL_Base::lw1_create_type5_sensing_drule(const ObsVariable &variable) {
         const Atom &value = grounded_domain[k];
 
 #ifdef DEBUG
-        //cout << "       value=" << value << flush;
+        cout << "       value=" << value << flush;
 #endif
 
         assert(variable.beam_.find(value) != variable.beam_.end());
         //if( !options_.is_enabled("lw1:boost:literals-for-observables:dynamic") && !variable.beam_.find(value)->second.empty() ) { // CHECK
         if( !variable.beam_.find(value)->second.empty() ) {
 #ifdef DEBUG
-            //cout << " ... skip because beam is non-empty" << endl;
+            cout << " ... skip because beam is non-empty" << endl;
 #endif
             continue;
         }
@@ -2001,7 +2003,7 @@ void PDDL_Base::lw1_create_type5_sensing_drule(const ObsVariable &variable) {
         }
         if( dnf == 0 ) {
 #ifdef DEBUG
-            //cout << " ... skip because there is no dnf" << endl;
+            cout << " ... skip because there is no dnf" << endl;
 #endif
             continue;
         }
@@ -2024,13 +2026,13 @@ void PDDL_Base::lw1_create_type5_sensing_drule(const ObsVariable &variable) {
                     cout << Utils::yellow() << *drule << Utils::normal();
             }
 #ifdef DEBUG
-            //cout << ", model=" << *models_for_value.begin() << endl;
+            cout << ", model=" << *models_for_value.begin() << endl;
 #endif
         } else {
 #ifdef DEBUG
-            //cout << " ... skip because there is more than one model:" << endl;
-            //for( set<string>::const_iterator it = models_for_value.begin(); it != models_for_value.end(); ++it )
-            //    cout << "           " << *it << endl;
+            cout << " ... skip because there is more than one model:" << endl;
+            for( set<string>::const_iterator it = models_for_value.begin(); it != models_for_value.end(); ++it )
+                cout << "           " << *it << endl;
 #endif
         }
     }
