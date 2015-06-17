@@ -4,6 +4,7 @@
 #include "problem.h"
 #include "base.h"
 #include "options.h"
+#include <cassert>
 #include <map>
 #include <set>
 #include <string>

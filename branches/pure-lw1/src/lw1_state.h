@@ -1,10 +1,10 @@
 #ifndef LW1_STATE_H
 #define LW1_STATE_H
 
+#include "state.h"
+#include <cassert>
 #include <iostream>
 #include <list>
-#include <cassert>
-#include "state.h"
 
 struct LW1_State : public State {
     typedef std::vector<int> clause_t;

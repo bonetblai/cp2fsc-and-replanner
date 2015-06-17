@@ -1,5 +1,6 @@
-#include <stdlib.h>
+#include <cassert>
 #include <iomanip>
+#include <stdlib.h>
 #include "base.h"
 #include "base_dnf.h"
 #include "utils.h"
@@ -1297,8 +1298,10 @@ void PDDL_Base::lw1_index_sensing_models() {
                 const Condition *dnf = model.dnf_;
                 if( dynamic_cast<const Constant*>(dnf) != 0 ) {
                     // nothing to do
+#ifndef NDEBUG
                     const Constant *constant = static_cast<const Constant*>(dnf);
                     assert(constant->value_);
+#endif
                 } else {
                     assert(dnf->is_dnf());
                     if( dynamic_cast<const Or*>(dnf) != 0 ) {
@@ -4097,8 +4100,10 @@ PDDL_Base::SensingModel* PDDL_Base::SensingModelForObservableVariable::reduce(co
     assert(literal_->is_grounded());
     assert(dnf_->is_grounded());
     if( dynamic_cast<const Constant*>(dnf_) != 0 ) {
+#ifndef NDEBUG
         const Constant *constant = static_cast<const Constant*>(dnf_);
         assert(constant->value_);
+#endif
     }
     return atoms_to_remove.find(*literal_) != atoms_to_remove.end() ? 0 : copy_and_simplify();
 }

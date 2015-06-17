@@ -1,9 +1,10 @@
 #ifndef BASE_DNF_H
 #define BASE_DNF_H
 
+#include "base.h"
+#include <cassert>
 #include <set>
 #include <string>
-#include "base.h"
 
 inline PDDL_Base::Condition* distribute_and(const PDDL_Base::Or &dnf1, const PDDL_Base::Or &dnf2) {
     std::set<std::string> included_terms;
