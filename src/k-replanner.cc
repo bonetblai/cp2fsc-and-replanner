@@ -315,7 +315,7 @@ int main(int argc, char *argv[]) {
             } else if( status == Solver::TIME ) {
                 cout << "reached time limit of " << opt_time_bound << " seconds" << endl;
             } else if( status == Solver::NCALLS ) {
-                cout << "reached limit for #calls to classical planner of " << opt_ncalls_bound << " calls" << endl;
+                cout << "reached limit of " << opt_ncalls_bound << " for #calls to classical planner" << endl;
             } else if( status == Solver::ERROR ) {
                 cout << "planner error" << endl;
             } else  {

@@ -107,19 +107,6 @@ int Solver::solve(const State &initial_hidden_state,
             calculate_relevant_assumptions(plan, raw_plan, state, goal_condition, assumptions);
         }
 
-        // print assumptions
-        assert(plan.size() == assumptions.size());
-        if( options_.is_enabled("solver:print:assumptions") ) {
-            cout << "Assumptions (sz=" << assumptions.size() << "):" << endl;
-            for( size_t k = 0; k < assumptions.size(); ++k ) {
-                cout << "    step=" << k << ", "
-                     << plan[k] << "." << kp_instance_.actions_[plan[k]]->name_->to_string()
-                     << ": ";
-                kp_instance_.write_atom_set(cout, assumptions[k]);
-                cout << endl;
-            }
-        }
-
         // first assumption for reduced plan should be satisfied by current state.
         // If not, there must be an incomplete or invalid specification of hidden
         // state or initial state, or problem with domain
@@ -243,8 +230,24 @@ void Solver::calculate_relevant_assumptions(const Instance::Plan &plan,
                                             vector<index_set> &assumptions) const {
     // calculate assumptions for raw plan
     vector<index_set> assumptions_on_raw_plan;
-    kp_instance_.calculate_relevant_assumptions(raw_plan, initial_state, goal, assumptions_on_raw_plan);
+    bool status = kp_instance_.calculate_relevant_assumptions(raw_plan, initial_state, goal, assumptions_on_raw_plan);
+    if( !status ) {
+        cout << Utils::error() << "assumptions on raw plan could not be calculated" << endl;
+        return;
+    }
     assert(raw_plan.size() == assumptions_on_raw_plan.size());
+
+    // print assumptions on raw plan
+    if( options_.is_enabled("solver:print:assumptions:raw") ) {
+        cout << "Assumptions on raw plan (sz=" << assumptions_on_raw_plan.size() << "):" << endl;
+        for( size_t k = 0; k < assumptions_on_raw_plan.size(); ++k ) {
+            cout << "    step=" << k << ", "
+                 << raw_plan[k] << "." << kp_instance_.actions_[raw_plan[k]]->name_->to_string()
+                 << ": ";
+            kp_instance_.write_atom_set(cout, assumptions_on_raw_plan[k]);
+            cout << endl;
+        }
+    }
 
     // extract assumptions for cooked plan
     assumptions.clear();
@@ -255,6 +258,18 @@ void Solver::calculate_relevant_assumptions(const Instance::Plan &plan,
         if( k < raw_plan.size() ) assumptions.push_back(assumptions_on_raw_plan[k]);
     }
     assert(plan.size() == assumptions.size());
+
+    // print assumptions
+    if( options_.is_enabled("solver:print:assumptions") ) {
+        cout << "Assumptions (sz=" << assumptions.size() << "):" << endl;
+        for( size_t k = 0; k < assumptions.size(); ++k ) {
+            cout << "    step=" << k << ", "
+                 << plan[k] << "." << kp_instance_.actions_[plan[k]]->name_->to_string()
+                 << ": ";
+            kp_instance_.write_atom_set(cout, assumptions[k]);
+            cout << endl;
+        }
+    }
 }
 
 void Solver::compute_and_add_observations(const Instance::Action *last_action,

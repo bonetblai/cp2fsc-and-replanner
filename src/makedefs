@@ -24,7 +24,7 @@ FLEX    = /usr/local/bin/flex++
 
 # Define compiler/linker flags:
 DEBUG = -g
-OPTIMIZE = -O3 -DNDEBUG
+OPTIMIZE = #-O3 -DNDEBUG
 
 CFLAGS = $(DEBUG) $(OPTIMIZE) -I. -Wall #-std=c++11
 LFLAGS = $(DEBUG) $(OPTIMIZE) -L. -Wall
