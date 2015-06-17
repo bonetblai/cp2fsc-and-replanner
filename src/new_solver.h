@@ -1,12 +1,13 @@
 #ifndef NEW_SOLVER_H
 #define NEW_SOLVER_H
 
-#include <iostream>
-#include <vector>
 #include "classical_planner.h"
 #include "problem.h"
 #include "kp_problem.h"
 #include "utils.h"
+#include <cassert>
+#include <iostream>
+#include <vector>
 
 template<typename T>
 class NewSolver {

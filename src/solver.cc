@@ -1,3 +1,4 @@
+#include <cassert>
 #include <iostream>
 #include "solver.h"
 #include "classical_planner.h"

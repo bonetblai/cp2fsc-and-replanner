@@ -1,3 +1,4 @@
+#include <cassert>
 #include <iostream>
 #include <iomanip>
 #include <libgen.h>
@@ -235,8 +236,10 @@ int main(int argc, const char *argv[]) {
     }
 
     // get translation type: 0=no translation, 1=clg, 2=lw1
+#ifndef NDEBUG
     int translation_type = reader->get_translation_type();
     assert(translation_type == 2);
+#endif
 
     // create fresh instance
     Instance instance(g_options);

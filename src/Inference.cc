@@ -1,10 +1,12 @@
-#include <set>
-#include <queue>
-#include <vector>
-#include <iostream>
 #include <algorithm>
+#undef NDEBUG // error: the output changes when compiling with -DNDEBUG
 #include <cassert>
+#include <iostream>
+#include <queue>
+#include <set>
+#include <vector>
 #include "Inference.h"
+
 using namespace std;
 
 typedef Inference::Propositional::CNF::const_iterator const_vec_set_it;

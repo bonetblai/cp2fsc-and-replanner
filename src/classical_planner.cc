@@ -1,12 +1,12 @@
 #include <algorithm>
-#include <iostream>
+#include <cassert>
 #include <fstream>
+#include <fcntl.h>
+#include <iostream>
 #include <stdlib.h>
+#include <unistd.h>
 #include "classical_planner.h"
 #include "utils.h"
-
-#include <fcntl.h>
-#include <unistd.h>
 
 using namespace std;
 

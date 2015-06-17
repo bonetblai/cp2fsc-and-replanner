@@ -3,6 +3,7 @@
 
 #include "kp_problem.h"
 #include "options.h"
+#include <cassert>
 #include <iostream>
 #include <list>
 #include <map>
