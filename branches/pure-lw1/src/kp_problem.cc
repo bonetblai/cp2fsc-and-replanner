@@ -173,9 +173,14 @@ bool KP_Instance::calculate_relevant_assumptions(const Plan &plan,
             const When &when = action.when_[i];
             for( index_set::const_iterator it = when.effect_.begin(); it != when.effect_.end(); ++it ) {
                 if( (*it < 0) && (open.find(-*it) != open.end()) ) {
-                    //cout << Utils::warning() << "plan may remove the open condition: ";
-                    //State::print_literal(cout, -*it, this);
-                    //cout << endl;
+                    if( when.condition_.size() > 1 ) {
+                        cout << Utils::warning()
+                             << "conditional effect with more than one literal in condition removes open condition ";
+                        State::print_literal(std::cout, *it, this);
+                        cout << "." << endl
+                             << "Regression may be too strong. Consider removing conditional effect by enlarging precondition."
+                             << endl;
+                    }
                     for( index_set::const_iterator jt = when.condition_.begin(); jt != when.condition_.end(); ++jt )
                         to_be_added.insert(*jt > 0 ? (*jt % 2 == 0 ? *jt + 1 : *jt - 1) : -*jt);
                 }
