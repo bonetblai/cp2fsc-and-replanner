@@ -1805,7 +1805,7 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action,
     }
 
     assert(variable.beam_.find(value) != variable.beam_.end());
-    assert(!value.negated_ || variable.is_binary() || options_.is_enabled("lw1:boost:literals-for-observables"));
+    assert(!value.negated_ || variable.is_binary()); // || options_.is_enabled("lw1:boost:literals-for-observables"));
 
     // find out whether something needs to be done
     if( options_.is_enabled("lw1:boost:drule:sensing:type4") ) {
@@ -1900,7 +1900,7 @@ void PDDL_Base::lw1_create_type4_boost_sensing_drule(const Action &action,
     }
 
     assert(variable.beam_.find(value) != variable.beam_.end());
-    assert(!value.negated_ || variable.is_binary() || options_.is_enabled("lw1:boost:literals-for-observables"));
+    assert(!value.negated_ || variable.is_binary()); // || options_.is_enabled("lw1:boost:literals-for-observables"));
 
     // find out whether something needs to be done
     const And *term = 0;
