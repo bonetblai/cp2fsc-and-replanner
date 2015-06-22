@@ -5,7 +5,7 @@
 #include "base_dnf.h"
 #include "utils.h"
 
-//#define DEBUG
+#define DEBUG
 
 using namespace std;
 
@@ -1541,7 +1541,7 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
                     const ObsVariable &variable = *jt->first;
                     for( map<Atom, list<const And*> >::const_iterator kt = jt->second.begin(); kt != jt->second.end(); ++kt ) {
                         const Atom &value = kt->first;
-                        if( !value.negated_ || variable.is_binary() || options_.is_enabled("lw1:boost:literals-for-observables") ) {
+                        if( !value.negated_ || variable.is_binary() ) { //|| options_.is_enabled("lw1:boost:literals-for-observables") ) {
                             lw1_create_type4_sensing_drule(action, variable, value, jt->second);
                             if( options_.is_enabled("lw1:boost:drule:sensing:type4") )
                                 lw1_create_type4_boost_sensing_drule(action, variable, value, jt->second);
@@ -2022,7 +2022,7 @@ void PDDL_Base::lw1_create_type5_sensing_drule(const ObsVariable &variable) {
 
                 // insert action for deductive rule
                 dom_actions_.push_back(drule);
-                if( options_.is_enabled("lw1:print:drule:sensing") || options_.is_enabled("lw1:print:drule") )
+                if( true || options_.is_enabled("lw1:print:drule:sensing") || options_.is_enabled("lw1:print:drule") )
                     cout << Utils::yellow() << *drule << Utils::normal();
             }
 #ifdef DEBUG

@@ -93,7 +93,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
             last_action_atoms_.insert(k);
             //cout << "type=last-action, index=" << k << ", k-indices=" << 2*k << "," << 2*k+1 << endl;
         } else if( name.compare(0, 19, "enable-sensing-for-") == 0 ) {
-            assert(options_.is_enabled("lw1:aaai") || options_.is_enabled("lw1:boost:enable-post-actions")); // CHECK
+            assert(options_.is_enabled("lw1:aaai") || options_.is_enabled("lw1:boost:enable-post-actions"));
             new_atom(new CopyName(name));                  // even-numbered atoms
             new_atom(new CopyName(name + "_UNUSED"));      // odd-numbered atoms
             sensing_enabler_atoms_.insert(k);
@@ -163,10 +163,11 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                 if( value_name.substr(0, 4) != "not_" ) {
                     int index = get_atom_index(ins, value_name);
                     atoms_for_observables_[var_name].insert(index);
-                    //cout << "Literals for observables: variable=" << var_name << ", value=" << value_name << ", index=" << index << endl;
+                    cout << "Literal for observable: variable=" << var_name << ", value=" << value_name << ", index=" << index << endl;
                 }
             }
         }
+        //assert(0); CHECK
     }
 
     // extract sensing models into dnf and (complemented and into K-rules) cnf
@@ -496,9 +497,10 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                     int single_effect_index = *act.effect_.begin() > 0 ? *act.effect_.begin() - 1 : -*act.effect_.begin() - 1;
                     clause.push_back(*act.effect_.begin() > 0 ? 1 + 2*single_effect_index : 1 + 2*single_effect_index + 1);
                     clauses_for_axioms_.push_back(clause);
-                    //cout << "CLAUSE2: "; LW1_State::print_clause(cout, clause, this); cout << endl;
+                    cout << "CLAUSE2: "; LW1_State::print_clause(cout, clause, this); cout << endl;
                 }
             }
+            assert(0);
         }
 
         // create clauses for type3 sensing drules
@@ -1168,6 +1170,7 @@ void LW1_Instance::print_stats(ostream &os) const {
        << ", #clauses-for-axioms=" << clauses_for_axioms_.size();
 
     if( options_.is_enabled("lw1:boost:literals-for-observables" ) ) {
+        assert(0);
         int num_atoms_for_observables = 0;
         for( map<string, set<int> >::const_iterator it = atoms_for_observables_.begin(); it != atoms_for_observables_.end(); ++it )
             num_atoms_for_observables += it->second.size();
