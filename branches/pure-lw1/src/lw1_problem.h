@@ -31,6 +31,7 @@ class LW1_Instance : public KP_Instance {
     std::set<int> last_action_atoms_;
     std::set<int> sensing_enabler_atoms_;
     std::map<std::string, std::set<int> > atoms_for_observables_;
+    std::map<std::string, int> literals_for_observables_;
 
     // for subgoaling
     std::vector<Atom*> atoms_for_unknown_observables_at_init_;

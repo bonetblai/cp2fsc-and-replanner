@@ -163,11 +163,11 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                 if( value_name.substr(0, 4) != "not_" ) {
                     int index = get_atom_index(ins, value_name);
                     atoms_for_observables_[var_name].insert(index);
-                    cout << "Literal for observable: variable=" << var_name << ", value=" << value_name << ", index=" << index << endl;
+                    literals_for_observables_[var_name + "-" + value_name] = index;
+                    //cout << "Literal for observable: variable=" << var_name << ", value=" << value_name << ", index=" << index << endl;
                 }
             }
         }
-        //assert(0); CHECK
     }
 
     // extract sensing models into dnf and (complemented and into K-rules) cnf
@@ -500,7 +500,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                     cout << "CLAUSE2: "; LW1_State::print_clause(cout, clause, this); cout << endl;
                 }
             }
-            assert(0);
+            //assert(0); // CHECK
         }
 
         // create clauses for type3 sensing drules
@@ -809,7 +809,6 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             //nact->print(cout, *this);
             drule_store_.insert(DRTemplate(nact));
         } else if( action_name.compare(0, 29, "drule-sensing-type4obs-boost-") == 0 ) {
-            assert(!options_.is_enabled("lw1:boost:literals-for-observables"));
             assert(action.when_.empty());
 
             Action *nact = new Action(new CopyName(action_name));
@@ -872,13 +871,49 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                 nact->effect_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
             }
 
+            // if lw1:boost:literals-for-observables, add precondition on sensed literal
+            if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
+                // compute index for observable literal
+                bool negative_value = value_name.compare(0, 4, "not_") == 0;
+                int index_for_observable_literal = -1;
+                if( !negative_value ) {
+                    map<string, int>::const_iterator it = literals_for_observables_.find(var_name + "-" + value_name);
+                    index_for_observable_literal = it != literals_for_observables_.end() ? it->second : -1;
+                } else {
+                    map<string, int>::const_iterator it = literals_for_observables_.find(var_name + "-" + value_name.substr(4));
+                    index_for_observable_literal = it != literals_for_observables_.end() ? it->second : -1;
+                }
+                //cout << "Sensed: " << var_name << " " << value_name << " " << index_for_observable_literal << endl;
+                if( index_for_observable_literal != -1 ) {
+                    // - if sensed literal is Y=y, then
+                    //     * add preconditions -KY!=y and -KY=y' for *all* values y' of Y
+                    //
+                    // - if sensed literal is Y!=y, then
+                    //     * add preconditions -KY=y and -KY!=y
+                    //
+                    if( !negative_value ) {
+                        nact->precondition_.insert(-(1 + 2*index_for_observable_literal + 1));
+                        if( !variable.is_binary() ) {
+                            for( set<int>::const_iterator jt = variable.domain_.begin(); jt != variable.domain_.end(); ++jt ) {
+                                int index_for_value = *jt;
+                                assert(index_for_value >= 0);
+                                nact->precondition_.insert(-(1 + 2*index_for_value));
+                            }
+                        }
+                    } else {
+                        nact->precondition_.insert(-(1 + 2*index_for_observable_literal));
+                        nact->precondition_.insert(-(1 + 2*index_for_observable_literal + 1));
+                    }
+                }
+            }
+
             //nact->print(cout, *this);
             drule_store_.insert(DRTemplate(nact));
         } else if( action_name.compare(0, 23, "drule-sensing-type4obs-") == 0 ) {
             Action *nact = new Action(new CopyName(action_name));
             assert(action.precondition_.size() == 1);
 
-            // obtain variable
+            // obtain variable and value
             assert(action.comment_ != "");
             size_t blank_pos = action.comment_.find(" ");
             string var_name(action.comment_, 0, blank_pos);
@@ -918,29 +953,101 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                 nact->precondition_.insert(1 + 2*index_for_last_action_atom);
             }
 
-            // If lw1:boost:literals-for-observables is enabled, add the literal -KY!=y
-            // when the sensed literal is Y=y or -KY=y when the sensed literal is Y!=y
-            if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
-                assert(0); // index_for_value must be calculate when decoding comment
-                //nact->precondition_.insert(literal_for_value > 0 ? -(1 + 2*index_for_value + 1) : -(1 + 2*index_for_value));
-            }
-
-            // if lw1:boost:literals-for-observables is enabled, add preconditions -KY=y' for *all*
-            // values y' of sensed observable var Y. Special handling when Y is binary variable.
-            if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
-                assert(0); // index_for_value must be calculate when decoding comment
-                for( set<int>::const_iterator jt = variable.domain_.begin(); jt != variable.domain_.end(); ++jt ) {
-                    //int index_for_value = *jt;
-                    //assert(index_for_value >= 0);
-                    //nact->precondition_.insert(-(1 + 2*index_for_value));
+            if( !options_.is_enabled("lw1:boost:literals-for-observables") ) {
+                // each unconditional effect L becomes conditional of form: -K-L => KL
+                for( index_set::const_iterator it = action.effect_.begin(); it != action.effect_.end(); ++it ) {
+                    int index = *it > 0 ? *it - 1 : -*it - 1;
+                    When w;
+                    w.condition_.insert(*it > 0 ? -(1 + 2*index + 1) : -(1 + 2*index));
+                    w.effect_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
+                    if( options_.is_enabled("lw1:boost:complete-effects:type4:obs") ) complete_effect(w.effect_, *it); // CHECK
+                    nact->when_.push_back(w);
                 }
-                //if( variable.is_binary() ) nact->precondition_.insert(-(1 + 2*index_for_value + 1));
+
+                // each conditional effect C => L becomes: KC, -K-L => KL
+                for( size_t k = 0; k < action.when_.size(); ++k ) {
+                    const When &when = action.when_[k];
+                    assert(when.effect_.size() == 1);
+                    int head = *when.effect_.begin();
+                    int head_index = head > 0 ? head - 1 : -head - 1;
+                    When w;
+                    w.effect_.insert(head > 0 ? 1 + 2*head_index : 1 + 2*head_index + 1);
+                    w.condition_.insert(head > 0 ? -(1 + 2*head_index + 1) : -(1 + 2*head_index));
+                    for( index_set::const_iterator it = when.condition_.begin(); it != when.condition_.end(); ++it ) {
+                        int index = *it > 0 ? *it - 1 : -*it - 1;
+                        w.condition_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
+                    }
+                    if( options_.is_enabled("lw1:boost:complete-effects:type4:obs") ) complete_effect(w.effect_, head); // CHECK
+                    nact->when_.push_back(w);
+                }
+            } else {
+                // compute index for observable literal
+                bool negative_value = value_name.compare(0, 4, "not_") == 0;
+                int index_for_observable_literal = -1;
+                if( !negative_value ) {
+                    map<string, int>::const_iterator it = literals_for_observables_.find(var_name + "-" + value_name);
+                    index_for_observable_literal = it != literals_for_observables_.end() ? it->second : -1;
+                } else {
+                    map<string, int>::const_iterator it = literals_for_observables_.find(var_name + "-" + value_name.substr(4));
+                    index_for_observable_literal = it != literals_for_observables_.end() ? it->second : -1;
+                }
+                //cout << "Sensed: " << var_name << " " << value_name << " " << index_for_observable_literal << endl;
+                if( index_for_observable_literal != -1 ) {
+                    // - if sensed literal is Y=y, then
+                    //     * add preconditions -KY!=y and -KY=y' for *all* values y' of Y
+                    //     * add effect KY=y
+                    //
+                    // - if sensed literal is Y!=y, then
+                    //     * add preconditions -KY=y and -KY!=y
+                    //     * add effect KY!=y
+                    //
+                    if( !negative_value ) {
+                        nact->precondition_.insert(-(1 + 2*index_for_observable_literal + 1));
+                        if( !variable.is_binary() ) {
+                            for( set<int>::const_iterator jt = variable.domain_.begin(); jt != variable.domain_.end(); ++jt ) {
+                                int index_for_value = *jt;
+                                assert(index_for_value >= 0);
+                                nact->precondition_.insert(-(1 + 2*index_for_value));
+                            }
+                        }
+                        nact->effect_.insert(1 + 2*index_for_observable_literal);
+                    } else {
+                        assert(0);
+                    }
+                }
             }
 
-            // effects for observable literals
-            if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
-                assert(0); // index_for_value must be calculate when decoding comment
-                //nact->effect_.insert(literal_for_value > 0 ? 1 + 2*index_for_value : 1 + 2*index_for_value + 1);
+#if 0
+            // compute index for observable literals (only meaningful when lw1:boost:literals-for-observables)
+            map<string, int>::const_iterator it = literals_for_observables_.find(var_name + "-" + value_name);
+            int index_for_literal_for_observable = it != literals_for_observables_.end() ? it->second : -1;
+
+            // precondition for sensing enablers
+            vector<int> sensing_enablers;
+            int index_for_last_action_atom = -1;
+            for( index_set::const_iterator it = action.precondition_.begin(); it != action.precondition_.end(); ++it ) {
+                int index = *it > 0 ? *it - 1 : -*it - 1;
+                if( last_action_atoms_.find(index) != last_action_atoms_.end() ) {
+                    assert(*it > 0);
+                    index_for_last_action_atom = index;
+                } else if( sensing_enabler_atoms_.find(index) != sensing_enabler_atoms_.end() ) {
+                    assert(*it > 0);
+                    sensing_enablers.push_back(index);
+                } else {
+                    assert(0);
+                }
+            }
+
+            // add as precondition the sensing enablers
+            if( options_.is_enabled("lw1:boost:enable-post-actions") ) {
+                assert(!sensing_enablers.empty());
+                for( size_t k = 0; k < sensing_enablers.size(); ++k ) {
+                    nact->precondition_.insert(1 + 2*sensing_enablers[k]);
+                    nact->effect_.insert(-(1 + 2*sensing_enablers[k]));
+                }
+            } else {
+                assert(index_for_last_action_atom != -1);
+                nact->precondition_.insert(1 + 2*index_for_last_action_atom);
             }
 
             // each unconditional effect L becomes conditional of form: -K-L => KL
@@ -970,10 +1077,68 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                 nact->when_.push_back(w);
             }
 
+            // When lw1:boost:literals-for-observables is enabled:
+            //
+            //   - if sensed literal is Y=y, then
+            //       * add preconditions -KY!=y and -KY=y' for *all* values y' of Y
+            //       * add effect KY=y
+            //
+            //   - if sensed literal is Y!=y, then
+            //       * add preconditions -KY=y and -KY!=y
+            //       * add effect KY!=y
+            //
+            if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
+                cout << "Sensed: " << var_name << " " << value_name << " " << index_for_literal_for_observable << endl;
+                if( value_name.compare(0, 4, "not_") != 0 ) {
+                    nact->precondition_.insert(-(1 + 2*index_for_literal_for_observable + 1));
+                    if( !variable.is_binary() ) {
+                        for( set<int>::const_iterator jt = variable.domain_.begin(); jt != variable.domain_.end(); ++jt ) {
+                            int index_for_value = *jt;
+                            assert(index_for_value >= 0);
+                            nact->precondition_.insert(-(1 + 2*index_for_value));
+                        }
+                    }
+                    nact->effect_.insert(1 + 2*index_for_literal_for_observable);
+                } else {
+                    assert(0);
+                }
+            }
+
+#if 0
+            // When lw1:boost:literals-for-observables is enabled, add the literal -KY!=y
+            // when the sensed literal is Y=y or -KY=y when the sensed literal is Y!=y
+            if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
+                cout << "Sensed: " << var_name << " " << value_name << " " << index_for_literal_for_observable << endl;
+                assert(value_name.compare(0, 4, "not_") != 0);
+                nact->precondition_.insert(-(1 + 2*index_for_literal_for_observable + 1));
+                //assert(0); // index_for_value must be calculate when decoding comment
+                //nact->precondition_.insert(literal_for_value > 0 ? -(1 + 2*index_for_value + 1) : -(1 + 2*index_for_value));
+            }
+
+            // if lw1:boost:literals-for-observables is enabled, add preconditions -KY=y' for *all*
+            // values y' of sensed observable var Y. Special handling when Y is binary variable.
+            if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
+                assert(0); // index_for_value must be calculate when decoding comment
+                for( set<int>::const_iterator jt = variable.domain_.begin(); jt != variable.domain_.end(); ++jt ) {
+                    //int index_for_value = *jt;
+                    //assert(index_for_value >= 0);
+                    //nact->precondition_.insert(-(1 + 2*index_for_value));
+                }
+                //if( variable.is_binary() ) nact->precondition_.insert(-(1 + 2*index_for_value + 1));
+            }
+
+            // effects for observable literals
+            if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
+                assert(0); // index_for_value must be calculate when decoding comment
+                //nact->effect_.insert(literal_for_value > 0 ? 1 + 2*index_for_value : 1 + 2*index_for_value + 1);
+            }
+#endif
+#endif
+
             //nact->print(cout, *this);
             drule_store_.insert(DRTemplate(nact));
         } else {
-            // skip sensing drules of type5 as they are not passed to classical problem
+            // skip sensing drules of type5 as they are not passed to classical problem (CHECK: WHY?)
             assert(action_name.compare(0, 20, "drule-sensing-type5-") == 0);
 #if 0
             // CHECK: type5 rules make planner run slower for unknown reason
@@ -1170,7 +1335,6 @@ void LW1_Instance::print_stats(ostream &os) const {
        << ", #clauses-for-axioms=" << clauses_for_axioms_.size();
 
     if( options_.is_enabled("lw1:boost:literals-for-observables" ) ) {
-        assert(0);
         int num_atoms_for_observables = 0;
         for( map<string, set<int> >::const_iterator it = atoms_for_observables_.begin(); it != atoms_for_observables_.end(); ++it )
             num_atoms_for_observables += it->second.size();
