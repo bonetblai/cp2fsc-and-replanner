@@ -5,7 +5,7 @@
 #include "base_dnf.h"
 #include "utils.h"
 
-#define DEBUG
+//#define DEBUG
 
 using namespace std;
 
@@ -1464,7 +1464,7 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
                 if( !variable.is_state_variable() ) {
                     assert(variable.is_observable_variable());
                     const ObsVariable &obs_variable = *static_cast<const ObsVariable*>(&variable);
-                    lw1_create_type5_sensing_drule(obs_variable);
+                    lw1_create_type5_sensing_drule(obs_variable); // CHECK
                 }
             }
         }
@@ -1678,10 +1678,10 @@ void PDDL_Base::lw1_create_type3_sensing_drule(const Action &action,
     }
 
 #ifdef DEBUG
-    //cout << "Type3: var=" << variable << ", value=" << value << ", term=" << term << ", dnf=[";
-    //for( list<const And*>::const_iterator it = dnf.begin(); it != dnf.end(); ++it )
-    //    cout << **it << ",";
-    //cout << "]" << endl;
+    cout << "Type3: var=" << variable << ", value=" << value << ", term=" << term << ", dnf=[";
+    for( list<const And*>::const_iterator it = dnf.begin(); it != dnf.end(); ++it )
+        cout << **it << ",";
+    cout << "]" << endl;
 #endif
 
     string name = string("drule-sensing-type3-") + value.to_string(false, true) + "-" + Utils::to_string(index);
@@ -1791,11 +1791,11 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action,
     assert(options_.is_enabled("lw1:strict"));
 
 #ifdef DEBUG
-    //cout << "Type4: class=OBS"
-    //     << ", action=" << action.print_name_
-    //     << ", observable-variable=" << variable.to_string(true, false)
-    //     << ", value=" << value.to_string(false, false)
-    //     << endl;
+    cout << "Type4: class=OBS"
+         << ", action=" << action.print_name_
+         << ", observable-variable=" << variable.to_string(true, false)
+         << ", value=" << value.to_string(false, false)
+         << endl;
 #endif
 
     if( sensing_models_for_action_and_var.size() <= 1 ) {
@@ -1886,11 +1886,11 @@ void PDDL_Base::lw1_create_type4_boost_sensing_drule(const Action &action,
     assert(options_.is_enabled("lw1:boost:drule:sensing:type4"));
 
 #ifdef DEBUG
-    //cout << "Type4: class=OBS-BOOST"
-    //     << ", action=" << action.print_name_
-    //     << ", observable-variable=" << variable.to_string(true, false)
-    //     << ", value=" << value.to_string(false, false)
-    //     << endl;
+    cout << "Type4: class=OBS-BOOST"
+         << ", action=" << action.print_name_
+         << ", observable-variable=" << variable.to_string(true, false)
+         << ", value=" << value.to_string(false, false)
+         << endl;
 #endif
 
     if( sensing_models_for_action_and_var.size() <= 1 ) {
@@ -2011,6 +2011,7 @@ void PDDL_Base::lw1_create_type5_sensing_drule(const ObsVariable &variable) {
         // if there is just one model, all actions that sense the atom have the same sensing model and we can generate a deductive rule for it
         if( models_for_value.size() == 1 ) {
             lw1_accepted_literals_for_observables_[variable.to_string(false, true)].insert(value.to_string(false, true));
+#if 0 // CHECK: type5
             size_t n = 0;
             for( list<const And*>::const_iterator term = dnf->begin(); term != dnf->end(); ++term, ++n ) {
                 string name = string("drule-sensing-type5-") + variable.to_string(false, true) + "-" + value.to_string(false, true) + "-term-" + Utils::to_string(1 + n);
@@ -2022,9 +2023,10 @@ void PDDL_Base::lw1_create_type5_sensing_drule(const ObsVariable &variable) {
 
                 // insert action for deductive rule
                 dom_actions_.push_back(drule);
-                if( true || options_.is_enabled("lw1:print:drule:sensing") || options_.is_enabled("lw1:print:drule") )
+                if( options_.is_enabled("lw1:print:drule:sensing") || options_.is_enabled("lw1:print:drule") )
                     cout << Utils::yellow() << *drule << Utils::normal();
             }
+#endif
 #ifdef DEBUG
             cout << ", model=" << *models_for_value.begin() << endl;
 #endif

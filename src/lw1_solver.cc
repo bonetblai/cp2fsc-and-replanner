@@ -32,7 +32,7 @@ void LW1_Solver::compute_and_add_observations(const Instance::Action *last_actio
                 // to use sensing model to determine the value. If the domain size is 1,
                 // there are only two values for the variable, true or false corresponding
                 // to the positive and negative literal respectively. If domain size > 1,
-                // each value corresponds to a different literals (from which one and only
+                // each value corresponds to a different literal (from which one and only
                 // one must be true).
 
                 if( variable.domain_.size() == 1 ) {
@@ -40,7 +40,6 @@ void LW1_Solver::compute_and_add_observations(const Instance::Action *last_actio
                     bool satisfy = value_observable_literal(hidden, *last_action, *jt, index);
                     sensed_at_step.insert(satisfy ? 1 + index : -(1 + index));
                     if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
-                        assert(0); // lw1:boost:literals-for-observables
                         update_state_with_literals_for_observables(state, *last_action, variable, satisfy ? 1 + index : -(1 + index));
                     }
                 } else {
@@ -205,7 +204,6 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
 
         // 0. Add observations as unit clauses
         if( options_.is_enabled("lw1:inference:up:enhanced") || options_.is_enabled("lw1:boost:literals-for-observables") ) {
-            assert(0); // CHECK
             for( set<int>::const_iterator it = sensed_at_step.begin(); it != sensed_at_step.end(); ++it ) {
                 int k_literal = *it > 0 ? 2 * (*it - 1) : 2 * (-*it - 1) + 1;
 #ifdef DEBUG
