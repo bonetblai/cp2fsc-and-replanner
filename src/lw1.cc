@@ -246,7 +246,7 @@ int main(int argc, const char *argv[]) {
 
     cout << "instantiating p.o. problem..." << endl;
     reader->emit_instance(instance);
-    //delete reader;
+    //delete reader; // CHECK
     if( g_options.is_enabled("problem:print:raw") ) {
         //instance.print(cout);
         instance.write_domain(cout);
