@@ -820,12 +820,10 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             assert(varmap_.find(var_name) != varmap_.end());
             string value_name(action.comment_, 1 + blank_pos);
 
-#ifndef NDEBUG
             int var_index = varmap_[var_name];
             const Variable &variable = *variables_[var_index];
             assert(variable.is_observable_);
             assert(!variable.is_state_variable_);
-#endif
 
             // read preconditions
             vector<int> sensing_enablers;
