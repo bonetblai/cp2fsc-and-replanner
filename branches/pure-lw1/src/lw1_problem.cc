@@ -464,7 +464,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
 
                 // for each pair of values x and x', Kx => K-x'
                 for( set<int>::const_iterator it = domain.begin(); it != domain.end(); ++it ) {
-                    for( set<int>::const_iterator jt = it; jt != domain.end(); ++jt ) {
+                    for( set<int>::const_iterator jt = domain.begin(); jt != domain.end(); ++jt ) {
                         if( it != jt ) {
                             vector<int> clause;
                             clause.reserve(2);
@@ -497,7 +497,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                     int single_effect_index = *act.effect_.begin() > 0 ? *act.effect_.begin() - 1 : -*act.effect_.begin() - 1;
                     clause.push_back(*act.effect_.begin() > 0 ? 1 + 2*single_effect_index : 1 + 2*single_effect_index + 1);
                     clauses_for_axioms_.push_back(clause);
-                    cout << "CLAUSE2: "; LW1_State::print_clause(cout, clause, this); cout << endl;
+                    //cout << "CLAUSE2: "; LW1_State::print_clause(cout, clause, this); cout << endl;
                 }
             }
             //assert(0); // CHECK
