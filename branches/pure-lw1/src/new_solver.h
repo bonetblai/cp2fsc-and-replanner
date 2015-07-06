@@ -36,6 +36,7 @@ class NewSolver {
     }
     virtual ~NewSolver() { }
 
+    virtual void initialize();
     virtual int solve(const T &initial_hidden_state,
                       Instance::Plan &final_plan,
                       std::vector<std::set<int> > &fired_sensors_during_execution,
@@ -56,6 +57,10 @@ class NewSolver {
                                                 std::vector<index_set> &assumptions) const;
     virtual bool inconsistent(const T &state, const std::vector<T> &assumptions, size_t k) const;
 };
+
+template<typename T>
+void NewSolver<T>::initialize() {
+}
 
 template<typename T>
 int NewSolver<T>::solve(const T &initial_hidden_state,

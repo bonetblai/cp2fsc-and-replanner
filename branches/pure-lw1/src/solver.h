@@ -33,6 +33,7 @@ class Solver {
     }
     virtual ~Solver() { }
 
+    virtual void initialize();
     virtual int solve(const State &initial_hidden_state,
                       Instance::Plan &final_plan,
                       std::vector<std::set<int> > &fired_sensors_during_execution,
