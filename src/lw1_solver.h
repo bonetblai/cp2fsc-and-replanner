@@ -38,6 +38,7 @@ class LW1_Solver : public BASE_CLASS {
     }
     ~LW1_Solver() { }
 
+    virtual void initialize();
     virtual int solve(const STATE_CLASS &initial_hidden_state,
                       Instance::Plan &final_plan,
                       std::vector<std::set<int> > &fired_sensors_during_execution,

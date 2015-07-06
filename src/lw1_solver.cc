@@ -9,6 +9,10 @@
 
 using namespace std;
 
+void LW1_Solver::initialize() {
+    cout << "Inicializando el motor de inferencia" << endl;
+}
+
 void LW1_Solver::compute_and_add_observations(const Instance::Action *last_action,
                                               const STATE_CLASS &hidden,
                                               STATE_CLASS &state,

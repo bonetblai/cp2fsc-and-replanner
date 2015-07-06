@@ -306,14 +306,21 @@ int main(int argc, const char *argv[]) {
         STATE_CLASS hidden_initial_state; // STATE_CLASS is defined in lw1_solver.h (this is provisional)
         Instance::Plan plan;
 
+        // set hidden state
         instance.set_hidden_state(k, hidden_initial_state);
         cout << "hidden[" << k << "]=";
         hidden_initial_state.print(cout, instance);
         cout << endl;
 
+        // reset stats
         planner->reset_stats();
         kp_instance->reset_inference_time();
+
+        // create and initialize solver
         LW1_Solver solver(instance, *kp_instance, *planner, opt_time_bound, opt_ncalls_bound);
+        solver.initialize();
+
+        // solve
         int status = solver.solve(hidden_initial_state, plan, fired_sensors, sensed_literals);
         assert(1+plan.size() == fired_sensors.size());
 

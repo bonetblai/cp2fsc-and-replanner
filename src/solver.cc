@@ -6,6 +6,9 @@
 
 using namespace std;
 
+void Solver::initialize() {
+}
+
 int Solver::solve(const State &initial_hidden_state,
                   Instance::Plan &final_plan,
                   vector<set<int> > &fired_sensors_during_execution,
