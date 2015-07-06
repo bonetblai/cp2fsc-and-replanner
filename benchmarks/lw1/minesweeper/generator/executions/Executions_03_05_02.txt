@@ -1,0 +1,201 @@
+3 5 100
+minefield: 1 1 1 0 0 2 * 1 0 0 * 2 1 0 0
+execution: open 4 2 obs 0 open 4 1 obs 0 open 4 0 obs 0 open 3 0 obs 0 open 2 1 obs 1 open 2 0 obs 1 open 2 2 obs 1 flag 1 1 obs -1 open 1 0 obs 1 open 0 1 obs 2 flag 0 2 obs -1 open 0 0 obs 1 open 1 2 obs 2 open 3 2 obs 0 open 3 1 obs 0 
+minefield: 0 0 0 0 0 1 1 0 1 1 * 1 0 1 *
+execution: open 2 1 obs 0 open 3 2 obs 1 open 3 1 obs 1 open 4 0 obs 0 flag 4 2 obs -1 open 4 1 obs 1 open 3 0 obs 0 open 2 2 obs 0 open 2 0 obs 0 open 1 2 obs 1 open 1 1 obs 1 open 0 0 obs 0 flag 0 2 obs -1 open 0 1 obs 1 open 1 0 obs 0 
+minefield: 0 0 0 1 * 1 1 0 1 1 * 1 0 0 0
+execution: open 1 0 obs 0 open 2 1 obs 0 open 3 2 obs 0 open 4 2 obs 0 open 4 1 obs 1 flag 4 0 obs -1 open 3 1 obs 1 open 3 0 obs 1 open 2 2 obs 0 open 1 2 obs 1 flag 0 2 obs -1 open 2 0 obs 0 open 1 1 obs 1 open 0 1 obs 1 open 0 0 obs 0 
+minefield: 0 0 1 1 1 0 0 2 * 2 0 0 2 * 2
+execution: open 1 1 obs 0 open 2 2 obs 2 flag 3 2 obs -1 flag 3 1 obs -1 open 2 1 obs 2 open 3 0 obs 1 open 4 1 obs 2 open 4 2 obs 2 open 4 0 obs 1 open 2 0 obs 1 open 1 2 obs 0 open 1 0 obs 0 open 0 2 obs 0 open 0 1 obs 0 open 0 0 obs 0 
+minefield: * 1 0 1 * 1 1 0 1 1 0 0 0 0 0
+execution: open 1 2 obs 0 open 2 2 obs 0 open 3 2 obs 0 open 4 2 obs 0 open 4 1 obs 1 open 3 1 obs 1 open 2 0 obs 0 flag 4 0 obs -1 open 3 0 obs 1 open 1 0 obs 1 flag 0 0 obs -1 open 2 1 obs 0 open 1 1 obs 1 open 0 2 obs 0 open 0 1 obs 1 
+minefield: 0 0 0 0 0 1 1 2 1 1 1 * 2 * 1
+execution: open 3 0 obs 0 open 4 1 obs 1 open 4 0 obs 0 open 3 1 obs 1 open 2 2 obs 2 open 2 1 obs 2 open 1 0 obs 0 flag 3 2 obs -1 flag 1 2 obs -1 open 4 2 obs 1 open 1 1 obs 1 open 0 2 obs 1 open 0 1 obs 1 open 0 0 obs 0 open 2 0 obs 0 
+minefield: 0 1 * 2 * 0 1 1 2 1 0 0 0 0 0
+execution: open 3 2 obs 0 open 4 2 obs 0 open 4 1 obs 1 open 3 1 obs 2 flag 2 0 obs -1 open 2 2 obs 0 open 1 2 obs 0 open 0 2 obs 0 open 0 1 obs 0 open 1 0 obs 1 open 0 0 obs 0 open 1 1 obs 1 open 2 1 obs 1 flag 4 0 obs -1 open 3 0 obs 2 
+minefield: 0 1 * 1 0 1 2 2 1 0 1 * 1 0 0
+execution: open 4 1 obs 0 open 4 2 obs 0 open 4 0 obs 0 open 3 2 obs 0 open 2 2 obs 1 open 2 1 obs 2 open 3 1 obs 1 flag 2 0 obs -1 open 1 0 obs 1 flag 1 2 obs -1 open 1 1 obs 2 open 0 2 obs 1 open 0 1 obs 1 open 0 0 obs 0 open 3 0 obs 1 
+minefield: 0 0 1 1 1 0 0 1 * 2 0 0 1 2 *
+execution: open 1 1 obs 0 open 2 2 obs 1 open 2 1 obs 1 open 3 0 obs 1 open 2 0 obs 1 flag 3 1 obs -1 open 4 1 obs 2 flag 4 2 obs -1 open 4 0 obs 1 open 3 2 obs 2 open 1 2 obs 0 open 1 0 obs 0 open 0 2 obs 0 open 0 1 obs 0 open 0 0 obs 0 
+minefield: 0 0 0 1 1 0 0 1 2 * 0 0 1 * 2
+execution: open 1 1 obs 0 open 2 2 obs 1 open 2 1 obs 1 open 3 0 obs 1 open 2 0 obs 0 flag 3 2 obs -1 open 3 1 obs 2 open 4 2 obs 2 flag 4 1 obs -1 open 4 0 obs 1 open 1 2 obs 0 open 1 0 obs 0 open 0 2 obs 0 open 0 1 obs 0 open 0 0 obs 0 
+minefield: 0 0 0 1 1 0 0 0 2 * 0 0 0 2 *
+execution: open 1 1 obs 0 open 2 2 obs 0 open 3 2 obs 2 flag 4 2 obs -1 flag 4 1 obs -1 open 3 1 obs 2 open 4 0 obs 1 open 3 0 obs 1 open 2 1 obs 0 open 2 0 obs 0 open 1 2 obs 0 open 1 0 obs 0 open 0 2 obs 0 open 0 1 obs 0 open 0 0 obs 0 
+minefield: 1 1 1 0 0 2 * 1 0 0 * 2 1 0 0
+execution: open 3 1 obs 0 open 4 2 obs 0 open 4 1 obs 0 open 4 0 obs 0 open 3 2 obs 0 open 3 0 obs 0 open 2 2 obs 1 open 2 1 obs 1 open 1 0 obs 1 open 2 0 obs 1 flag 1 1 obs -1 open 1 2 obs 2 flag 0 2 obs -1 open 0 1 obs 2 open 0 0 obs 1 
+minefield: 0 0 1 * 1 0 0 1 2 2 0 0 0 1 *
+execution: open 0 1 obs 0 open 1 2 obs 0 open 2 2 obs 0 open 3 2 obs 1 open 3 1 obs 2 open 2 1 obs 1 open 4 0 obs 1 open 1 1 obs 0 flag 4 2 obs -1 flag 3 0 obs -1 open 4 1 obs 2 open 2 0 obs 1 open 1 0 obs 0 open 0 2 obs 0 open 0 0 obs 0 
+minefield: 0 0 0 1 1 0 0 1 2 * 0 0 1 * 2
+execution: open 0 0 obs 0 open 1 1 obs 0 open 2 2 obs 1 open 2 1 obs 1 open 3 0 obs 1 open 2 0 obs 0 flag 3 2 obs -1 open 3 1 obs 2 open 4 2 obs 2 flag 4 1 obs -1 open 4 0 obs 1 open 1 2 obs 0 open 0 2 obs 0 open 1 0 obs 0 open 0 1 obs 0 
+minefield: 0 0 0 0 0 1 2 1 1 0 * 2 * 1 0
+execution: open 4 1 obs 0 open 4 2 obs 0 open 4 0 obs 0 open 3 2 obs 1 open 3 1 obs 1 open 2 0 obs 0 flag 2 2 obs -1 open 2 1 obs 1 open 1 2 obs 2 open 1 1 obs 2 open 0 0 obs 0 flag 0 2 obs -1 open 0 1 obs 1 open 1 0 obs 0 open 3 0 obs 0 
+minefield: 1 * 1 0 0 1 1 1 1 1 0 0 0 1 *
+execution: open 3 0 obs 0 open 4 1 obs 1 open 4 0 obs 0 open 3 1 obs 1 open 2 2 obs 0 flag 4 2 obs -1 open 3 2 obs 1 open 1 2 obs 0 open 0 2 obs 0 open 0 1 obs 1 open 1 1 obs 1 open 2 1 obs 1 flag 1 0 obs -1 open 0 0 obs 1 open 2 0 obs 1 
+minefield: 0 0 1 * * 0 0 1 2 2 0 0 0 0 0
+execution: open 1 1 obs 0 open 2 2 obs 0 open 3 2 obs 0 open 4 2 obs 0 open 4 1 obs 2 flag 4 0 obs -1 flag 3 0 obs -1 open 3 1 obs 2 open 2 1 obs 1 open 2 0 obs 1 open 1 2 obs 0 open 1 0 obs 0 open 0 2 obs 0 open 0 1 obs 0 open 0 0 obs 0 
+minefield: * 1 1 1 1 1 1 1 * 1 0 0 1 1 1
+execution: open 0 2 obs 0 open 1 2 obs 0 open 2 2 obs 1 open 2 1 obs 1 open 3 0 obs 1 open 2 0 obs 1 flag 3 1 obs -1 open 4 1 obs 1 open 4 2 obs 1 open 4 0 obs 1 open 3 2 obs 1 open 1 0 obs 1 flag 0 0 obs -1 open 1 1 obs 1 open 0 1 obs 1 
+minefield: * 2 0 0 0 * 2 0 0 0 1 1 0 0 0
+execution: open 3 0 obs 0 open 4 1 obs 0 open 4 2 obs 0 open 3 2 obs 0 open 2 2 obs 0 open 1 2 obs 1 open 1 1 obs 2 open 4 0 obs 0 open 3 1 obs 0 open 2 1 obs 0 flag 0 0 obs -1 open 1 0 obs 2 flag 0 1 obs -1 open 0 2 obs 1 open 2 0 obs 0 
+minefield: 0 0 1 * * 0 0 1 2 2 0 0 0 0 0
+execution: open 3 2 obs 0 open 4 2 obs 0 open 4 1 obs 2 flag 4 0 obs -1 flag 3 0 obs -1 open 3 1 obs 2 open 2 0 obs 1 open 1 1 obs 0 open 1 2 obs 0 open 0 2 obs 0 open 0 1 obs 0 open 0 0 obs 0 open 1 0 obs 0 open 2 2 obs 0 open 2 1 obs 1 
+minefield: 0 0 0 1 * 0 0 1 2 2 0 0 1 * 1
+execution: open 0 0 obs 0 open 1 1 obs 0 open 2 2 obs 1 open 2 1 obs 1 open 3 0 obs 1 open 2 0 obs 0 flag 3 2 obs -1 open 3 1 obs 2 open 4 2 obs 1 flag 4 0 obs -1 open 4 1 obs 2 open 1 2 obs 0 open 0 2 obs 0 open 1 0 obs 0 open 0 1 obs 0 
+minefield: 1 1 0 0 0 * 1 0 1 1 1 1 0 1 *
+execution: open 2 0 obs 0 open 3 1 obs 1 open 3 0 obs 0 open 4 1 obs 1 open 2 2 obs 0 flag 4 2 obs -1 open 3 2 obs 1 open 1 2 obs 1 open 4 0 obs 0 open 2 1 obs 0 open 1 1 obs 1 open 0 0 obs 1 flag 0 1 obs -1 open 0 2 obs 1 open 1 0 obs 1 
+minefield: 1 1 0 1 1 * 1 0 1 * 1 1 0 1 1
+execution: open 2 0 obs 0 open 3 1 obs 1 open 3 0 obs 1 open 4 2 obs 1 flag 4 1 obs -1 open 4 0 obs 1 open 3 2 obs 1 open 2 2 obs 0 open 1 2 obs 1 open 2 1 obs 0 open 1 1 obs 1 open 0 0 obs 1 flag 0 1 obs -1 open 0 2 obs 1 open 1 0 obs 1 
+minefield: 1 * 1 0 0 1 2 2 1 0 0 1 * 1 0
+execution: open 3 0 obs 0 open 4 1 obs 0 open 4 2 obs 0 open 3 2 obs 1 flag 2 2 obs -1 open 4 0 obs 0 open 3 1 obs 1 open 2 1 obs 2 open 2 0 obs 1 open 1 2 obs 1 flag 1 0 obs -1 open 1 1 obs 2 open 0 0 obs 1 open 0 2 obs 0 open 0 1 obs 1 
+minefield: 0 0 1 * 1 0 1 2 2 1 0 1 * 1 0
+execution: open 1 0 obs 0 open 2 1 obs 2 open 2 0 obs 1 open 1 1 obs 1 open 0 1 obs 0 flag 2 2 obs -1 open 3 2 obs 1 flag 3 0 obs -1 open 4 2 obs 0 open 4 1 obs 1 open 4 0 obs 1 open 3 1 obs 2 open 1 2 obs 1 open 0 2 obs 0 open 0 0 obs 0 
+minefield: 0 0 0 1 1 1 1 1 1 * 1 * 1 1 1
+execution: open 0 0 obs 0 open 1 1 obs 1 open 1 0 obs 0 open 2 1 obs 1 open 2 0 obs 0 open 3 1 obs 1 open 3 0 obs 1 flag 1 2 obs -1 open 4 2 obs 1 flag 4 1 obs -1 open 4 0 obs 1 open 3 2 obs 1 open 2 2 obs 1 open 0 2 obs 1 open 0 1 obs 1 
+minefield: * 1 0 0 0 2 2 1 0 0 1 * 1 0 0
+execution: open 4 0 obs 0 open 4 1 obs 0 open 4 2 obs 0 open 3 2 obs 0 open 2 2 obs 1 open 2 1 obs 1 open 2 0 obs 0 flag 1 2 obs -1 open 1 1 obs 2 open 1 0 obs 1 open 0 2 obs 1 flag 0 0 obs -1 open 0 1 obs 2 open 3 1 obs 0 open 3 0 obs 0 
+minefield: 0 0 0 1 * 1 1 1 1 1 1 * 1 0 0
+execution: open 2 0 obs 0 open 3 1 obs 1 open 3 0 obs 1 open 4 2 obs 0 flag 4 0 obs -1 open 4 1 obs 1 open 3 2 obs 0 open 2 2 obs 1 flag 1 2 obs -1 open 2 1 obs 1 open 1 1 obs 1 open 0 2 obs 1 open 0 1 obs 1 open 0 0 obs 0 open 1 0 obs 0 
+minefield: 0 0 0 1 * 1 1 0 1 1 * 1 0 0 0
+execution: open 2 0 obs 0 open 3 1 obs 1 open 3 0 obs 1 open 4 2 obs 0 flag 4 0 obs -1 open 4 1 obs 1 open 3 2 obs 0 open 2 2 obs 0 open 1 2 obs 1 open 2 1 obs 0 open 1 1 obs 1 open 0 0 obs 0 flag 0 2 obs -1 open 0 1 obs 1 open 1 0 obs 0 
+minefield: 1 1 1 0 0 2 * 2 0 0 2 * 2 0 0
+execution: open 3 2 obs 0 open 4 2 obs 0 open 4 1 obs 0 open 4 0 obs 0 open 3 0 obs 0 open 2 0 obs 1 open 3 1 obs 0 open 2 2 obs 2 flag 1 2 obs -1 flag 1 1 obs -1 open 1 0 obs 1 open 0 1 obs 2 open 0 2 obs 2 open 0 0 obs 1 open 2 1 obs 2 
+minefield: 0 0 0 0 0 0 1 2 2 1 0 1 * * 1
+execution: open 2 0 obs 0 open 3 1 obs 2 open 3 0 obs 0 open 4 1 obs 1 flag 2 2 obs -1 open 4 0 obs 0 open 2 1 obs 2 open 1 1 obs 1 flag 3 2 obs -1 open 4 2 obs 1 open 1 2 obs 1 open 0 2 obs 0 open 0 1 obs 0 open 0 0 obs 0 open 1 0 obs 0 
+minefield: 1 * 1 0 0 1 2 2 1 0 0 1 * 1 0
+execution: open 4 0 obs 0 open 4 1 obs 0 open 4 2 obs 0 open 3 2 obs 1 open 3 1 obs 1 open 2 0 obs 1 open 3 0 obs 0 flag 2 2 obs -1 open 2 1 obs 2 open 1 2 obs 1 flag 1 0 obs -1 open 1 1 obs 2 open 0 0 obs 1 open 0 2 obs 0 open 0 1 obs 1 
+minefield: 0 0 0 2 * 0 0 0 2 * 0 0 0 1 1
+execution: open 0 1 obs 0 open 1 2 obs 0 open 2 2 obs 0 open 3 2 obs 1 open 3 1 obs 2 open 2 1 obs 0 flag 4 0 obs -1 open 3 0 obs 2 flag 4 1 obs -1 open 4 2 obs 1 open 2 0 obs 0 open 1 1 obs 0 open 1 0 obs 0 open 0 2 obs 0 open 0 0 obs 0 
+minefield: 0 0 1 2 * 0 0 1 * 2 0 0 1 1 1
+execution: open 1 2 obs 0 open 2 2 obs 1 open 2 1 obs 1 open 3 0 obs 2 open 2 0 obs 1 flag 3 1 obs -1 open 3 2 obs 1 flag 4 0 obs -1 open 4 2 obs 1 open 4 1 obs 2 open 1 0 obs 0 open 0 0 obs 0 open 1 1 obs 0 open 0 2 obs 0 open 0 1 obs 0 
+minefield: 0 1 1 1 0 0 2 * 2 0 0 2 * 2 0
+execution: open 4 1 obs 0 open 4 2 obs 0 open 4 0 obs 0 open 3 2 obs 2 flag 2 2 obs -1 flag 2 1 obs -1 open 3 1 obs 2 open 2 0 obs 1 open 1 1 obs 2 open 1 2 obs 2 open 0 2 obs 0 open 0 1 obs 0 open 0 0 obs 0 open 1 0 obs 1 open 3 0 obs 1 
+minefield: 1 * * 1 0 1 2 2 1 0 0 0 0 0 0
+execution: open 3 2 obs 0 open 4 2 obs 0 open 4 1 obs 0 open 4 0 obs 0 open 3 0 obs 1 flag 2 0 obs -1 open 3 1 obs 1 open 2 2 obs 0 open 1 2 obs 0 open 0 2 obs 0 open 0 1 obs 1 open 1 1 obs 2 open 2 1 obs 2 flag 1 0 obs -1 open 0 0 obs 1 
+minefield: * 1 0 0 0 2 2 1 0 0 1 * 1 0 0
+execution: open 2 0 obs 0 open 3 1 obs 0 open 4 2 obs 0 open 4 1 obs 0 open 4 0 obs 0 open 3 2 obs 0 open 2 2 obs 1 flag 1 2 obs -1 open 3 0 obs 0 open 2 1 obs 1 open 1 1 obs 2 open 1 0 obs 1 open 0 2 obs 1 flag 0 0 obs -1 open 0 1 obs 2 
+minefield: 0 0 0 1 * 0 0 1 2 2 0 0 1 * 1
+execution: open 1 1 obs 0 open 2 2 obs 1 open 2 1 obs 1 open 3 0 obs 1 open 2 0 obs 0 flag 3 2 obs -1 open 3 1 obs 2 open 4 2 obs 1 flag 4 0 obs -1 open 4 1 obs 2 open 1 2 obs 0 open 1 0 obs 0 open 0 2 obs 0 open 0 1 obs 0 open 0 0 obs 0 
+minefield: * 1 0 1 * 1 1 0 1 1 0 0 0 0 0
+execution: open 1 2 obs 0 open 2 2 obs 0 open 3 2 obs 0 open 4 2 obs 0 open 4 1 obs 1 open 3 1 obs 1 open 2 0 obs 0 flag 4 0 obs -1 open 3 0 obs 1 open 1 0 obs 1 flag 0 0 obs -1 open 2 1 obs 0 open 1 1 obs 1 open 0 2 obs 0 open 0 1 obs 1 
+minefield: 0 0 0 0 0 0 1 1 2 1 0 1 * 2 *
+execution: open 0 2 obs 0 open 1 2 obs 1 open 1 1 obs 1 open 2 0 obs 0 flag 2 2 obs -1 open 3 1 obs 2 open 3 0 obs 0 open 4 1 obs 1 open 4 0 obs 0 open 2 1 obs 1 flag 4 2 obs -1 open 3 2 obs 2 open 1 0 obs 0 open 0 0 obs 0 open 0 1 obs 0 
+minefield: 0 0 1 2 * 0 0 1 * 2 0 0 1 1 1
+execution: open 0 1 obs 0 open 1 2 obs 0 open 2 2 obs 1 open 2 1 obs 1 open 3 0 obs 2 open 2 0 obs 1 flag 3 1 obs -1 open 3 2 obs 1 flag 4 0 obs -1 open 4 2 obs 1 open 4 1 obs 2 open 1 1 obs 0 open 1 0 obs 0 open 0 2 obs 0 open 0 0 obs 0 
+minefield: 0 0 0 1 1 1 1 0 1 * * 1 0 1 1
+execution: open 2 1 obs 0 open 3 2 obs 1 open 3 1 obs 1 open 4 0 obs 1 flag 4 1 obs -1 open 4 2 obs 1 open 3 0 obs 1 open 2 2 obs 0 open 2 0 obs 0 open 1 2 obs 1 open 1 1 obs 1 open 0 0 obs 0 flag 0 2 obs -1 open 0 1 obs 1 open 1 0 obs 0 
+minefield: 0 0 0 0 0 0 1 2 2 1 0 1 * * 1
+execution: open 3 0 obs 0 open 4 1 obs 1 open 4 0 obs 0 open 3 1 obs 2 flag 2 2 obs -1 open 2 1 obs 2 open 2 0 obs 0 open 1 1 obs 1 flag 3 2 obs -1 open 4 2 obs 1 open 1 2 obs 1 open 0 2 obs 0 open 0 1 obs 0 open 0 0 obs 0 open 1 0 obs 0 
+minefield: 0 1 * 1 0 1 2 1 1 0 * 1 0 0 0
+execution: open 2 2 obs 0 open 3 2 obs 0 open 4 2 obs 0 open 4 1 obs 0 open 4 0 obs 0 open 3 0 obs 1 flag 2 0 obs -1 open 3 1 obs 1 open 2 1 obs 1 open 1 0 obs 1 open 0 1 obs 1 flag 0 2 obs -1 open 0 0 obs 0 open 1 2 obs 1 open 1 1 obs 2 
+minefield: 1 1 0 0 0 * 1 1 1 1 1 1 1 * 1
+execution: open 3 0 obs 0 open 4 1 obs 1 open 4 0 obs 0 open 3 1 obs 1 open 2 2 obs 1 open 2 1 obs 1 open 1 0 obs 1 open 2 0 obs 0 open 1 1 obs 1 flag 3 2 obs -1 open 4 2 obs 1 open 1 2 obs 1 flag 0 1 obs -1 open 0 0 obs 1 open 0 2 obs 1 
+minefield: 0 0 1 * 1 1 1 1 1 1 * 1 0 0 0
+execution: open 4 2 obs 0 open 4 1 obs 1 open 3 2 obs 0 open 2 2 obs 0 open 1 2 obs 1 open 1 1 obs 1 open 2 0 obs 1 flag 3 0 obs -1 open 4 0 obs 1 open 1 0 obs 0 flag 0 2 obs -1 open 0 1 obs 1 open 0 0 obs 0 open 2 1 obs 1 open 3 1 obs 1 
+minefield: * 1 0 0 0 2 2 0 0 0 * 1 0 0 0
+execution: open 2 1 obs 0 open 3 2 obs 0 open 4 2 obs 0 open 4 1 obs 0 open 4 0 obs 0 open 3 1 obs 0 open 3 0 obs 0 open 2 2 obs 0 open 2 0 obs 0 open 1 2 obs 1 open 1 1 obs 2 flag 0 0 obs -1 open 1 0 obs 1 flag 0 2 obs -1 open 0 1 obs 2 
+minefield: 0 1 * 2 1 0 1 1 2 * 0 0 0 1 1
+execution: open 0 0 obs 0 open 1 1 obs 1 open 1 0 obs 1 open 2 2 obs 0 flag 2 0 obs -1 open 3 2 obs 1 open 3 1 obs 2 open 4 0 obs 1 flag 4 1 obs -1 open 4 2 obs 1 open 3 0 obs 2 open 2 1 obs 1 open 1 2 obs 0 open 0 2 obs 0 open 0 1 obs 0 
+minefield: * 1 0 0 0 2 2 0 0 0 * 1 0 0 0
+execution: open 3 1 obs 0 open 4 2 obs 0 open 4 1 obs 0 open 4 0 obs 0 open 3 2 obs 0 open 3 0 obs 0 open 2 2 obs 0 open 1 2 obs 1 open 1 1 obs 2 open 2 1 obs 0 flag 0 0 obs -1 open 1 0 obs 1 flag 0 2 obs -1 open 0 1 obs 2 open 2 0 obs 0 
+minefield: 0 0 0 0 0 1 2 1 1 0 * 2 * 1 0
+execution: open 4 1 obs 0 open 4 2 obs 0 open 4 0 obs 0 open 3 2 obs 1 open 3 1 obs 1 open 2 0 obs 0 flag 2 2 obs -1 open 2 1 obs 1 open 1 2 obs 2 open 1 1 obs 2 open 0 0 obs 0 flag 0 2 obs -1 open 0 1 obs 1 open 1 0 obs 0 open 3 0 obs 0 
+minefield: 1 * 2 1 1 1 1 2 * 1 0 0 1 1 1
+execution: open 0 2 obs 0 open 1 2 obs 0 open 2 2 obs 1 open 2 1 obs 2 open 1 1 obs 1 open 0 1 obs 1 open 2 0 obs 2 flag 3 1 obs -1 open 3 2 obs 1 open 4 2 obs 1 open 4 1 obs 1 flag 1 0 obs -1 open 4 0 obs 1 open 3 0 obs 1 open 0 0 obs 1 
+minefield: 0 0 1 1 1 1 1 2 * 1 1 * 2 1 1
+execution: open 0 0 obs 0 open 1 1 obs 1 open 1 0 obs 0 open 2 1 obs 2 open 2 0 obs 1 open 0 1 obs 1 open 2 2 obs 2 flag 3 1 obs -1 open 3 0 obs 1 open 4 1 obs 1 flag 1 2 obs -1 open 4 2 obs 1 open 3 2 obs 1 open 0 2 obs 1 open 4 0 obs 1 
+minefield: 0 0 0 1 1 0 0 1 2 * 0 0 1 * 2
+execution: open 1 1 obs 0 open 2 2 obs 1 open 2 1 obs 1 open 3 0 obs 1 open 2 0 obs 0 flag 3 2 obs -1 open 3 1 obs 2 open 4 2 obs 2 flag 4 1 obs -1 open 4 0 obs 1 open 1 2 obs 0 open 1 0 obs 0 open 0 2 obs 0 open 0 1 obs 0 open 0 0 obs 0 
+minefield: 0 0 0 0 0 0 1 2 2 1 0 1 * * 1
+execution: open 2 0 obs 0 open 3 1 obs 2 open 3 0 obs 0 open 4 1 obs 1 flag 2 2 obs -1 open 4 0 obs 0 open 2 1 obs 2 open 1 1 obs 1 flag 3 2 obs -1 open 4 2 obs 1 open 1 2 obs 1 open 0 2 obs 0 open 0 1 obs 0 open 0 0 obs 0 open 1 0 obs 0 
+minefield: * 2 1 0 0 2 * 1 0 0 1 1 1 0 0
+execution: open 3 0 obs 0 open 4 1 obs 0 open 4 2 obs 0 open 3 2 obs 0 open 2 2 obs 1 open 4 0 obs 0 open 3 1 obs 0 open 2 1 obs 1 open 1 0 obs 2 open 2 0 obs 1 flag 1 1 obs -1 open 1 2 obs 1 flag 0 0 obs -1 open 0 2 obs 1 open 0 1 obs 2 
+minefield: 0 1 * 2 1 0 1 1 2 * 0 0 0 1 1
+execution: open 1 2 obs 0 open 2 2 obs 0 open 3 2 obs 1 open 3 1 obs 2 open 2 1 obs 1 open 1 1 obs 1 open 0 2 obs 0 open 0 1 obs 0 flag 2 0 obs -1 open 4 0 obs 1 flag 4 1 obs -1 open 4 2 obs 1 open 3 0 obs 2 open 1 0 obs 1 open 0 0 obs 0 
+minefield: 0 1 1 1 0 0 1 * 2 1 0 1 1 2 *
+execution: open 0 1 obs 0 open 1 2 obs 1 open 1 1 obs 1 open 2 0 obs 1 open 1 0 obs 1 flag 2 1 obs -1 open 3 1 obs 2 open 3 0 obs 1 open 4 1 obs 1 open 4 0 obs 0 open 2 2 obs 1 flag 4 2 obs -1 open 3 2 obs 2 open 0 2 obs 0 open 0 0 obs 0 
+minefield: 1 1 1 0 0 2 * 1 0 0 * 2 1 0 0
+execution: open 4 1 obs 0 open 4 2 obs 0 open 4 0 obs 0 open 3 2 obs 0 open 2 2 obs 1 open 2 1 obs 1 open 2 0 obs 1 flag 1 1 obs -1 open 1 2 obs 2 open 1 0 obs 1 flag 0 2 obs -1 open 0 1 obs 2 open 0 0 obs 1 open 3 1 obs 0 open 3 0 obs 0 
+minefield: 2 * 2 0 0 2 * 2 0 0 1 1 1 0 0
+execution: open 4 2 obs 0 open 4 1 obs 0 open 4 0 obs 0 open 3 0 obs 0 open 2 1 obs 2 open 2 0 obs 2 flag 1 1 obs -1 flag 1 0 obs -1 open 2 2 obs 1 open 1 2 obs 1 open 0 2 obs 1 open 0 1 obs 2 open 0 0 obs 2 open 3 2 obs 0 open 3 1 obs 0 
+minefield: 0 1 * 1 0 1 2 1 1 0 * 1 0 0 0
+execution: open 4 1 obs 0 open 4 2 obs 0 open 4 0 obs 0 open 3 2 obs 0 open 2 2 obs 0 open 1 2 obs 1 open 1 1 obs 2 open 2 1 obs 1 open 0 0 obs 0 flag 2 0 obs -1 flag 0 2 obs -1 open 1 0 obs 1 open 0 1 obs 1 open 3 1 obs 1 open 3 0 obs 1 
+minefield: 0 0 1 * 1 0 0 2 2 2 0 0 1 * 1
+execution: open 1 1 obs 0 open 2 2 obs 1 open 2 1 obs 2 flag 3 0 obs -1 open 2 0 obs 1 flag 3 2 obs -1 open 3 1 obs 2 open 4 2 obs 1 open 4 1 obs 2 open 4 0 obs 1 open 1 2 obs 0 open 1 0 obs 0 open 0 2 obs 0 open 0 1 obs 0 open 0 0 obs 0 
+minefield: 0 0 1 1 1 0 0 2 * 2 0 0 2 * 2
+execution: open 0 0 obs 0 open 1 1 obs 0 open 2 2 obs 2 flag 3 2 obs -1 flag 3 1 obs -1 open 2 1 obs 2 open 3 0 obs 1 open 4 1 obs 2 open 4 2 obs 2 open 4 0 obs 1 open 2 0 obs 1 open 1 2 obs 0 open 0 2 obs 0 open 1 0 obs 0 open 0 1 obs 0 
+minefield: 0 2 * 2 0 0 2 * 2 0 0 1 1 1 0
+execution: open 4 2 obs 0 open 4 1 obs 0 open 4 0 obs 0 open 3 0 obs 2 flag 2 1 obs -1 flag 2 0 obs -1 open 3 2 obs 1 open 2 2 obs 1 open 1 2 obs 1 open 0 2 obs 0 open 0 1 obs 0 open 1 0 obs 2 open 0 0 obs 0 open 1 1 obs 2 open 3 1 obs 2 
+minefield: * 2 0 0 0 * 2 0 0 0 1 1 0 0 0
+execution: open 3 2 obs 0 open 4 2 obs 0 open 4 1 obs 0 open 4 0 obs 0 open 3 0 obs 0 open 2 0 obs 0 open 1 1 obs 2 open 1 0 obs 2 flag 0 1 obs -1 flag 0 0 obs -1 open 1 2 obs 1 open 0 2 obs 1 open 3 1 obs 0 open 2 2 obs 0 open 2 1 obs 0 
+minefield: 0 0 0 0 0 1 1 2 1 1 1 * 2 * 1
+execution: open 1 0 obs 0 open 2 1 obs 2 open 2 0 obs 0 open 3 1 obs 1 flag 1 2 obs -1 open 4 2 obs 1 flag 3 2 obs -1 open 2 2 obs 2 open 4 1 obs 1 open 4 0 obs 0 open 3 0 obs 0 open 1 1 obs 1 open 0 2 obs 1 open 0 1 obs 1 open 0 0 obs 0 
+minefield: 0 1 1 1 0 1 2 * 1 0 1 * 2 1 0
+execution: open 4 1 obs 0 open 4 2 obs 0 open 4 0 obs 0 open 3 2 obs 1 open 3 1 obs 1 open 2 0 obs 1 open 3 0 obs 1 flag 2 1 obs -1 open 2 2 obs 2 flag 1 2 obs -1 open 1 1 obs 2 open 0 2 obs 1 open 0 1 obs 1 open 0 0 obs 0 open 1 0 obs 1 
+minefield: 0 0 0 0 0 1 2 2 1 0 1 * * 1 0
+execution: open 3 0 obs 0 open 4 1 obs 0 open 4 2 obs 0 open 3 2 obs 1 flag 2 2 obs -1 open 4 0 obs 0 open 3 1 obs 1 open 2 1 obs 2 open 2 0 obs 0 flag 1 2 obs -1 open 1 1 obs 2 open 0 2 obs 1 open 0 1 obs 1 open 0 0 obs 0 open 1 0 obs 0 
+minefield: 1 1 1 0 0 2 * 2 0 0 2 * 2 0 0
+execution: open 4 2 obs 0 open 4 1 obs 0 open 4 0 obs 0 open 3 0 obs 0 open 2 1 obs 2 open 2 0 obs 1 open 3 2 obs 0 flag 1 2 obs -1 open 2 2 obs 2 flag 1 1 obs -1 open 1 0 obs 1 open 0 1 obs 2 open 0 2 obs 2 open 0 0 obs 1 open 3 1 obs 0 
+minefield: 0 0 1 1 1 0 0 2 * 2 0 0 2 * 2
+execution: open 1 2 obs 0 open 2 2 obs 2 flag 3 2 obs -1 flag 3 1 obs -1 open 2 1 obs 2 open 3 0 obs 1 open 4 1 obs 2 open 4 2 obs 2 open 4 0 obs 1 open 2 0 obs 1 open 1 0 obs 0 open 0 0 obs 0 open 1 1 obs 0 open 0 2 obs 0 open 0 1 obs 0 
+minefield: 0 0 1 * 2 0 0 1 2 * 0 0 0 1 1
+execution: open 1 1 obs 0 open 2 2 obs 0 open 3 2 obs 1 open 3 1 obs 2 open 2 1 obs 1 flag 3 0 obs -1 open 4 0 obs 2 flag 4 1 obs -1 open 4 2 obs 1 open 2 0 obs 1 open 1 2 obs 0 open 1 0 obs 0 open 0 2 obs 0 open 0 1 obs 0 open 0 0 obs 0 
+minefield: 0 0 0 0 0 1 2 1 1 0 * 2 * 1 0
+execution: open 3 0 obs 0 open 4 1 obs 0 open 4 2 obs 0 open 3 2 obs 1 flag 2 2 obs -1 open 4 0 obs 0 open 3 1 obs 1 open 2 1 obs 1 open 1 2 obs 2 open 1 1 obs 2 open 0 0 obs 0 flag 0 2 obs -1 open 0 1 obs 1 open 1 0 obs 0 open 2 0 obs 0 
+minefield: 0 0 0 1 * 0 0 0 2 2 0 0 0 1 *
+execution: open 1 2 obs 0 open 2 2 obs 0 open 3 2 obs 1 open 3 1 obs 2 open 2 1 obs 0 flag 4 0 obs -1 open 3 0 obs 1 flag 4 2 obs -1 open 4 1 obs 2 open 2 0 obs 0 open 1 0 obs 0 open 0 0 obs 0 open 1 1 obs 0 open 0 2 obs 0 open 0 1 obs 0 
+minefield: 0 0 1 * 1 0 0 1 2 2 0 0 0 1 *
+execution: open 2 2 obs 0 open 3 2 obs 1 open 3 1 obs 2 open 2 1 obs 1 open 1 2 obs 0 open 0 2 obs 0 open 0 1 obs 0 open 4 0 obs 1 open 1 0 obs 0 flag 4 2 obs -1 flag 3 0 obs -1 open 4 1 obs 2 open 2 0 obs 1 open 0 0 obs 0 open 1 1 obs 0 
+minefield: 1 1 0 0 0 * 1 1 1 1 1 1 1 * 1
+execution: open 2 0 obs 0 open 3 1 obs 1 open 3 0 obs 0 open 4 1 obs 1 open 2 2 obs 1 open 4 0 obs 0 open 2 1 obs 1 open 1 1 obs 1 open 1 0 obs 1 flag 3 2 obs -1 open 4 2 obs 1 open 1 2 obs 1 flag 0 1 obs -1 open 0 0 obs 1 open 0 2 obs 1 
+minefield: 0 0 0 0 0 0 1 1 2 1 0 1 * 2 *
+execution: open 0 0 obs 0 open 1 1 obs 1 open 1 0 obs 0 open 2 1 obs 1 open 2 0 obs 0 open 3 1 obs 2 open 3 0 obs 0 flag 4 2 obs -1 open 4 1 obs 1 flag 2 2 obs -1 open 3 2 obs 2 open 0 2 obs 0 open 4 0 obs 0 open 1 2 obs 1 open 0 1 obs 0 
+minefield: * 2 * 1 0 1 2 1 1 0 0 0 0 0 0
+execution: open 2 2 obs 0 open 3 2 obs 0 open 4 2 obs 0 open 4 1 obs 0 open 4 0 obs 0 open 3 0 obs 1 flag 2 0 obs -1 open 3 1 obs 1 open 2 1 obs 1 open 1 0 obs 2 open 1 2 obs 0 flag 0 0 obs -1 open 0 2 obs 0 open 0 1 obs 1 open 1 1 obs 2 
+minefield: 1 1 0 0 0 * 1 0 1 1 1 1 0 1 *
+execution: open 2 1 obs 0 open 3 2 obs 1 open 3 1 obs 1 open 4 0 obs 0 flag 4 2 obs -1 open 4 1 obs 1 open 3 0 obs 0 open 2 2 obs 0 open 2 0 obs 0 open 1 2 obs 1 open 1 1 obs 1 open 0 0 obs 1 flag 0 1 obs -1 open 0 2 obs 1 open 1 0 obs 1 
+minefield: 0 1 1 2 1 0 1 * 2 * 0 1 1 2 1
+execution: open 0 2 obs 0 open 1 2 obs 1 open 1 1 obs 1 open 2 0 obs 1 open 1 0 obs 1 flag 2 1 obs -1 open 3 1 obs 2 open 3 0 obs 2 open 4 2 obs 1 flag 4 1 obs -1 open 4 0 obs 1 open 3 2 obs 2 open 2 2 obs 1 open 0 0 obs 0 open 0 1 obs 0 
+minefield: 0 1 * 1 0 0 2 2 2 0 0 1 * 1 0
+execution: open 0 0 obs 0 open 1 1 obs 2 open 1 0 obs 1 open 0 1 obs 0 flag 2 2 obs -1 open 1 2 obs 1 flag 2 0 obs -1 open 2 1 obs 2 open 3 2 obs 1 open 4 2 obs 0 open 4 1 obs 0 open 4 0 obs 0 open 3 1 obs 2 open 3 0 obs 1 open 0 2 obs 0 
+minefield: 0 0 0 0 0 1 1 0 1 1 * 1 0 1 *
+execution: open 2 1 obs 0 open 3 2 obs 1 open 3 1 obs 1 open 4 0 obs 0 flag 4 2 obs -1 open 4 1 obs 1 open 3 0 obs 0 open 2 2 obs 0 open 2 0 obs 0 open 1 2 obs 1 open 1 1 obs 1 open 0 0 obs 0 flag 0 2 obs -1 open 0 1 obs 1 open 1 0 obs 0 
+minefield: 0 0 1 1 1 0 0 2 * 2 0 0 2 * 2
+execution: open 1 1 obs 0 open 2 2 obs 2 flag 3 2 obs -1 flag 3 1 obs -1 open 2 1 obs 2 open 3 0 obs 1 open 4 1 obs 2 open 4 2 obs 2 open 4 0 obs 1 open 2 0 obs 1 open 1 2 obs 0 open 1 0 obs 0 open 0 2 obs 0 open 0 1 obs 0 open 0 0 obs 0 
+minefield: 1 1 0 0 0 * 1 0 1 1 1 1 0 1 *
+execution: open 2 1 obs 0 open 3 2 obs 1 open 3 1 obs 1 open 4 0 obs 0 flag 4 2 obs -1 open 4 1 obs 1 open 3 0 obs 0 open 2 2 obs 0 open 2 0 obs 0 open 1 2 obs 1 open 1 1 obs 1 open 0 0 obs 1 flag 0 1 obs -1 open 0 2 obs 1 open 1 0 obs 1 
+minefield: 0 0 0 1 * 1 1 1 1 1 1 * 1 0 0
+execution: open 3 2 obs 0 open 4 2 obs 0 open 4 1 obs 1 open 3 1 obs 1 open 2 0 obs 0 flag 4 0 obs -1 open 3 0 obs 1 open 1 1 obs 1 open 1 0 obs 0 open 0 1 obs 1 open 0 0 obs 0 open 2 2 obs 1 flag 1 2 obs -1 open 0 2 obs 1 open 2 1 obs 1 
+minefield: 1 1 1 0 0 1 * 1 1 1 1 1 1 1 *
+execution: open 3 0 obs 0 open 4 1 obs 1 open 4 0 obs 0 open 3 1 obs 1 open 2 2 obs 1 open 2 1 obs 1 open 1 0 obs 1 open 2 0 obs 1 flag 4 2 obs -1 flag 1 1 obs -1 open 3 2 obs 1 open 1 2 obs 1 open 0 2 obs 1 open 0 1 obs 1 open 0 0 obs 1 
+minefield: 0 0 1 1 1 0 0 2 * 2 0 0 2 * 2
+execution: open 1 2 obs 0 open 2 2 obs 2 flag 3 2 obs -1 flag 3 1 obs -1 open 2 1 obs 2 open 3 0 obs 1 open 4 1 obs 2 open 4 2 obs 2 open 4 0 obs 1 open 2 0 obs 1 open 1 0 obs 0 open 0 0 obs 0 open 1 1 obs 0 open 0 2 obs 0 open 0 1 obs 0 
+minefield: 0 0 0 0 0 2 2 1 0 0 * * 1 0 0
+execution: open 3 0 obs 0 open 4 1 obs 0 open 4 2 obs 0 open 3 2 obs 0 open 2 2 obs 1 open 4 0 obs 0 open 3 1 obs 0 open 2 1 obs 1 open 1 0 obs 0 flag 1 2 obs -1 open 1 1 obs 2 flag 0 2 obs -1 open 0 1 obs 2 open 0 0 obs 0 open 2 0 obs 0 
+minefield: 0 0 0 1 1 0 0 1 2 * 0 0 1 * 2
+execution: open 1 1 obs 0 open 2 2 obs 1 open 2 1 obs 1 open 3 0 obs 1 open 2 0 obs 0 flag 3 2 obs -1 open 3 1 obs 2 open 4 2 obs 2 flag 4 1 obs -1 open 4 0 obs 1 open 1 2 obs 0 open 1 0 obs 0 open 0 2 obs 0 open 0 1 obs 0 open 0 0 obs 0 
+minefield: 1 1 0 1 1 * 1 0 1 * 1 1 0 1 1
+execution: open 2 1 obs 0 open 3 2 obs 1 open 3 1 obs 1 open 4 0 obs 1 flag 4 1 obs -1 open 4 2 obs 1 open 3 0 obs 1 open 2 2 obs 0 open 2 0 obs 0 open 1 2 obs 1 open 1 1 obs 1 open 0 0 obs 1 flag 0 1 obs -1 open 0 2 obs 1 open 1 0 obs 1 
+minefield: 0 0 0 0 0 2 2 1 0 0 * * 1 0 0
+execution: open 4 0 obs 0 open 4 1 obs 0 open 4 2 obs 0 open 3 2 obs 0 open 2 2 obs 1 open 2 1 obs 1 open 2 0 obs 0 flag 1 2 obs -1 open 1 1 obs 2 open 1 0 obs 0 flag 0 2 obs -1 open 0 1 obs 2 open 0 0 obs 0 open 3 1 obs 0 open 3 0 obs 0 
+minefield: * 1 0 0 0 2 2 0 0 0 * 1 0 0 0
+execution: open 3 1 obs 0 open 4 2 obs 0 open 4 1 obs 0 open 4 0 obs 0 open 3 2 obs 0 open 3 0 obs 0 open 2 2 obs 0 open 1 2 obs 1 open 1 1 obs 2 open 2 1 obs 0 flag 0 0 obs -1 open 1 0 obs 1 flag 0 2 obs -1 open 0 1 obs 2 open 2 0 obs 0 
+minefield: 0 0 0 1 * 0 0 0 2 2 0 0 0 1 *
+execution: open 1 2 obs 0 open 2 2 obs 0 open 3 2 obs 1 open 3 1 obs 2 open 2 1 obs 0 flag 4 0 obs -1 open 3 0 obs 1 flag 4 2 obs -1 open 4 1 obs 2 open 2 0 obs 0 open 1 0 obs 0 open 0 0 obs 0 open 1 1 obs 0 open 0 2 obs 0 open 0 1 obs 0 
+minefield: * 2 1 1 0 1 2 * 1 0 0 1 1 1 0
+execution: open 4 1 obs 0 open 4 2 obs 0 open 4 0 obs 0 open 3 2 obs 1 open 3 1 obs 1 open 2 0 obs 1 open 3 0 obs 1 flag 2 1 obs -1 open 2 2 obs 1 open 1 2 obs 1 open 0 2 obs 0 open 0 1 obs 1 flag 0 0 obs -1 open 1 1 obs 2 open 1 0 obs 2 
+minefield: * 1 0 0 0 1 2 1 1 0 0 1 * 1 0
+execution: open 2 0 obs 0 open 3 1 obs 1 open 3 0 obs 0 open 4 1 obs 0 flag 2 2 obs -1 open 4 2 obs 0 open 3 2 obs 1 open 4 0 obs 0 open 2 1 obs 1 open 1 2 obs 1 open 0 2 obs 0 open 0 1 obs 1 flag 0 0 obs -1 open 1 1 obs 2 open 1 0 obs 1 
+minefield: 2 * 1 0 0 * 2 1 0 0 1 1 0 0 0
+execution: open 2 2 obs 0 open 3 2 obs 0 open 4 2 obs 0 open 4 1 obs 0 open 4 0 obs 0 open 3 0 obs 0 open 2 0 obs 1 flag 1 0 obs -1 open 3 1 obs 0 open 2 1 obs 1 open 1 2 obs 1 open 1 1 obs 2 open 0 0 obs 2 flag 0 1 obs -1 open 0 2 obs 1 
+minefield: 0 0 0 0 0 1 2 2 1 0 1 * * 1 0
+execution: open 1 0 obs 0 open 2 1 obs 2 open 2 0 obs 0 open 3 1 obs 1 flag 1 2 obs -1 open 4 2 obs 0 flag 2 2 obs -1 open 3 2 obs 1 open 4 1 obs 0 open 4 0 obs 0 open 3 0 obs 0 open 1 1 obs 2 open 0 2 obs 1 open 0 1 obs 1 open 0 0 obs 0 
+minefield: 1 * * 1 0 1 2 2 1 0 0 0 0 0 0
+execution: open 1 2 obs 0 open 2 2 obs 0 open 3 2 obs 0 open 4 2 obs 0 open 4 1 obs 0 open 4 0 obs 0 open 3 0 obs 1 flag 2 0 obs -1 open 3 1 obs 1 open 2 1 obs 2 flag 1 0 obs -1 open 1 1 obs 2 open 0 0 obs 1 open 0 2 obs 0 open 0 1 obs 1 
+minefield: 1 1 0 0 0 * 2 0 0 0 * 2 0 0 0
+execution: open 3 2 obs 0 open 4 2 obs 0 open 4 1 obs 0 open 4 0 obs 0 open 3 0 obs 0 open 2 0 obs 0 open 1 1 obs 2 open 1 0 obs 1 open 3 1 obs 0 open 2 2 obs 0 flag 0 2 obs -1 open 1 2 obs 2 flag 0 1 obs -1 open 0 0 obs 1 open 2 1 obs 0 
+minefield: 0 0 0 1 1 1 1 0 1 * * 1 0 1 1
+execution: open 2 1 obs 0 open 3 2 obs 1 open 3 1 obs 1 open 4 0 obs 1 flag 4 1 obs -1 open 4 2 obs 1 open 3 0 obs 1 open 2 2 obs 0 open 2 0 obs 0 open 1 2 obs 1 open 1 1 obs 1 open 0 0 obs 0 flag 0 2 obs -1 open 0 1 obs 1 open 1 0 obs 0 
+minefield: 0 0 1 * 1 1 1 1 1 1 * 1 0 0 0
+execution: open 4 2 obs 0 open 4 1 obs 1 open 3 2 obs 0 open 2 2 obs 0 open 1 2 obs 1 open 1 1 obs 1 open 2 0 obs 1 flag 3 0 obs -1 open 4 0 obs 1 open 1 0 obs 0 flag 0 2 obs -1 open 0 1 obs 1 open 0 0 obs 0 open 2 1 obs 1 open 3 1 obs 1 
+minefield: 0 0 0 0 0 0 0 1 2 2 0 0 1 * *
+execution: open 2 0 obs 0 open 3 1 obs 2 open 3 0 obs 0 open 4 1 obs 2 flag 4 2 obs -1 flag 3 2 obs -1 open 2 2 obs 1 open 1 2 obs 0 open 0 2 obs 0 open 0 1 obs 0 open 0 0 obs 0 open 4 0 obs 0 open 2 1 obs 1 open 1 1 obs 0 open 1 0 obs 0 
