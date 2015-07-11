@@ -73,6 +73,19 @@ int main(int argc, const char **argv) {
     cout << endl;
 
     for( int r = 0; r < nrows; ++r ) {
+        for( int c = 0; c < ncols; ++c ) {
+            for( int dr = -1; dr < 2; ++dr ) {
+                if( (r + dr < 0) || (r + dr >= nrows) ) continue;
+                for( int dc = -1; dc < 2; ++dc ) {
+                    if( (c + dc < 0) || (c + dc >= ncols) ) continue;
+                    cout << "        (neighborhood p" << 1+c << "-" << 1+r << " p" << 1+(c+dc) << "-" << 1+(r+dr) << ")" << endl;
+                }
+            }
+        }
+    }
+    cout << endl;
+
+    for( int r = 0; r < nrows; ++r ) {
         for( int c = 0; c < ncols; ++c )
             cout << "        (not (done-with p" << 1+c << "-" << 1+r << "))" << endl;
     }
