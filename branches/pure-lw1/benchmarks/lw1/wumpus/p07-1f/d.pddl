@@ -60,7 +60,7 @@
 
     (:action grab
         :parameters (?i - pos)
-        :precondition (and (at ?i) (alive) (gold-at ?i))
+        :precondition (and (at ?i) (alive) (gold-at ?i) (not (need-start)))
         :effect (and (got-the-treasure) (not (gold-at ?i)))
     )
 )
