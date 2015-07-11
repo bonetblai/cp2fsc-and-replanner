@@ -21,12 +21,13 @@
         (middle ?p - pos)
 
         (need-start)
-        (need-set-first-move)
+        (need-first-move)
         (first-move ?p - pos)
         (mine-at ?p - pos)
         (done-with ?p - pos)
 
-        (obs-first-move ?p - pos)
+        (start-obs ?p - pos)
+        (first-obs ?p - pos) ; NEED FIX: remove parameter ?p
         (obs0-at ?p - pos)
         (obs1-at ?p - pos)
         (obs2-at ?p - pos)
@@ -34,24 +35,27 @@
         (obs4-at ?p - pos)
     )
 
+    (:variable (mine-var ?p - pos) (mine-at ?p))
     (:variable first-movement (forall (?p - pos) (first-move ?p)))
-    (:obs-variable obs-for-first-movement (forall (?p - pos) (obs-first-move ?p)))
+    (:obs-variable obs-for-start-action (forall (?p - pos) (start-obs ?p)))
+    (:obs-variable (first-obs-var ?p - pos) (first-obs ?p)) ; NEED FIX: remove parameter ?p
     (:obs-variable (obs-at ?p - pos) (obs0-at ?p) (obs1-at ?p) (obs2-at ?p) (obs3-at ?p) (obs4-at ?p))
 
     (:action start-action
         :precondition (need-start)
-        :effect (and (not (need-start)) (need-set-first-move))
-        :sensing (forall (?p - pos) (:model-for obs-for-first-movement (obs-first-move ?p) (first-move ?p)))
+        :effect (and (not (need-start)) (need-first-move))
+        :sensing
+            (forall (?p - pos) (:model-for obs-for-start-action (start-obs ?p) (first-move ?p)))
     )
-    (:action set-first-movement
+    (:action make-first-move
         :parameters (?p - pos)
-        :precondition (and (first-move ?p) (need-set-first-move))
-        :effect (and (not (mine-at ?p)) (not (need-set-first-move)))
+        :precondition (and (first-move ?p) (need-first-move))
+        :effect (and (not (mine-at ?p)) (not (need-first-move)))
     )
 
     (:action open-corner-ul
         :parameters (?p - pos)
-        :precondition (and (corner-ul ?p) (not (mine-at ?p)) (not (done-with ?p)) (not (need-set-first-move)))
+        :precondition (and (corner-ul ?p) (not (mine-at ?p)) (not (done-with ?p)))
         :effect (done-with ?p)
         :sensing
             (:model-for (obs-at ?p) (obs0-at ?p)
@@ -93,7 +97,7 @@
 
     (:action open-corner-ur
         :parameters (?p - pos)
-        :precondition (and (corner-ur ?p) (not (mine-at ?p)) (not (done-with ?p)) (not (need-set-first-move)))
+        :precondition (and (corner-ur ?p) (not (mine-at ?p)) (not (done-with ?p)))
         :effect (done-with ?p)
         :sensing
             (:model-for (obs-at ?p) (obs0-at ?p)
@@ -135,7 +139,7 @@
 
     (:action open-corner-ll
         :parameters (?p - pos)
-        :precondition (and (corner-ll ?p) (not (mine-at ?p)) (not (done-with ?p)) (not (need-set-first-move)))
+        :precondition (and (corner-ll ?p) (not (mine-at ?p)) (not (done-with ?p)))
         :effect (done-with ?p)
         :sensing
             (:model-for (obs-at ?p) (obs0-at ?p)
@@ -177,7 +181,7 @@
 
     (:action open-corner-lr
         :parameters (?p - pos)
-        :precondition (and (corner-lr ?p) (not (mine-at ?p)) (not (done-with ?p)) (not (need-set-first-move)))
+        :precondition (and (corner-lr ?p) (not (mine-at ?p)) (not (done-with ?p)))
         :effect (done-with ?p)
         :sensing
             (:model-for (obs-at ?p) (obs0-at ?p)
@@ -219,7 +223,7 @@
 
     (:action open-edge-n
         :parameters (?p - pos)
-        :precondition (and (edge-n ?p) (not (mine-at ?p)) (not (done-with ?p)) (not (need-set-first-move)))
+        :precondition (and (edge-n ?p) (not (mine-at ?p)) (not (done-with ?p)))
         :effect (done-with ?p)
         :sensing
             (:model-for (obs-at ?p) (obs0-at ?p)
@@ -395,7 +399,7 @@
 
     (:action open-edge-e
         :parameters (?p - pos)
-        :precondition (and (edge-e ?p) (not (mine-at ?p)) (not (done-with ?p)) (not (need-set-first-move)))
+        :precondition (and (edge-e ?p) (not (mine-at ?p)) (not (done-with ?p)))
         :effect (done-with ?p)
         :sensing
             (:model-for (obs-at ?p) (obs0-at ?p)
@@ -571,7 +575,7 @@
 
     (:action open-edge-s
         :parameters (?p - pos)
-        :precondition (and (edge-s ?p) (not (mine-at ?p)) (not (done-with ?p)) (not (need-set-first-move)))
+        :precondition (and (edge-s ?p) (not (mine-at ?p)) (not (done-with ?p)))
         :effect (done-with ?p)
         :sensing
             (:model-for (obs-at ?p) (obs0-at ?p)
@@ -747,7 +751,7 @@
 
     (:action open-edge-w
         :parameters (?p - pos)
-        :precondition (and (edge-w ?p) (not (mine-at ?p)) (not (done-with ?p)) (not (need-set-first-move)))
+        :precondition (and (edge-w ?p) (not (mine-at ?p)) (not (done-with ?p)))
         :effect (done-with ?p)
         :sensing
             (:model-for (obs-at ?p) (obs0-at ?p)
@@ -923,7 +927,7 @@
 
     (:action open-middle
         :parameters (?p - pos)
-        :precondition (and (middle ?p) (not (mine-at ?p)) (not (done-with ?p)) (not (need-set-first-move)))
+        :precondition (and (middle ?p) (not (mine-at ?p)) (not (done-with ?p)))
         :effect (done-with ?p)
         :sensing
             (:model-for (obs-at ?p) (obs0-at ?p)
@@ -2248,7 +2252,7 @@
 
     (:action put-flag
         :parameters (?p - pos)
-        :precondition (and (mine-at ?p) (not (done-with ?p)) (not (need-set-first-move)))
+        :precondition (and (mine-at ?p) (not (done-with ?p)))
         :effect (done-with ?p)
     )
 )
