@@ -17,20 +17,28 @@ namespace Inference {
         typedef vector< vector<int> >::iterator vec_vec_it;
         typedef set<int>::iterator set_it;
         typedef vector<int>::iterator vec_it;
+        typedef vector<int>::const_iterator cvec_it;
 
-        class Clause : public set<int> {
+        // Class for clause of boolean sat problem
+        class Clause : public vector<int> {
         public:
-            void push_back(int e) { insert(e); } // See comment at lw1_solver.cc
+            // void push_back(int e) { insert(e); } // See comment at lw1_solver.cc
+            vector<int>::const_iterator find(int p) const {
+                vector<int>::const_iterator it = cbegin();
+                for (; it != end(); it++)
+                    if (*it == p) return it;
+                return it;
+            }
         };
 
         class CNF : public vector<Clause> {
             typedef CNF::const_iterator const_vec_set_it;
         public:
             CNF() : vector<Clause>() { };
-            CNF(const CNF& a) : vector<Clause>(a.begin(), a.end()) { };
+            CNF(const CNF& cnf) : vector<Clause>(cnf.begin(), cnf.end()) { };
             int calculate_max() const {
                 int imax = 0;
-                for (const_vec_set_it it = begin(); it != end(); it++) {
+                for (auto it = begin(); it != end(); it++) {
                     int L1 =  abs(*(it->begin()));
                     int L2 =  abs(*(it->rbegin()));
                     imax = max(L1, max(L2, imax));
@@ -63,21 +71,21 @@ namespace Inference {
             vector<bool> propagated;
             vector<bool> satisfied;  //satisfied clauses
             vector< vector<int> > inverted_index;
-            vector< pair<set_it, set_it> > watched;
+            vector< pair<cvec_it, cvec_it> > watched;
             int imax;
-            set_it replace(const CNF &a, vector<int> &assigned, int clause);
+            cvec_it replace(const CNF &cnf, vector<int> &assigned, int clause);
 
-            void InvertedIndex(const CNF &a);
-            virtual bool propagate(const CNF &a, vector<int> &assigned, int p);
+            void InvertedIndex(const CNF &cnf);
+            virtual bool propagate(const CNF &cnf, vector<int> &assigned, int p);
         public:
             WatchedLiterals() { };
-            void initialize(const CNF &a);
+            void initialize(const CNF &cnf);
             // PROVISIONAL: This method should make the class abstract,
             // in order to use better and implementations of reduce under
             // classic UP transparently.
             // virtual void reduce() = 0;
-            void solve(const CNF &a, vector<int> &assigned);
-            void lookahead(const CNF &a, vector<int> &assigned);
+            void solve(const CNF &cnf, vector<int> &assigned);
+            void lookahead(const CNF &cnf, vector<int> &assigned);
         };
     } // Propositional namespace
 } // Inference namespace
