@@ -5,12 +5,31 @@
 #include "utils.h"
 #include "Inference.h"
 
-//#define DEBUG
+#define DEBUG
 
 using namespace std;
 
-void LW1_Solver::initialize() {
-    cout << "Inicializando el motor de inferencia" << endl;
+// Fills the CNF in the solver. 
+void LW1_Solver::initialize(const KP_Instance &kp) {
+    assert(dynamic_cast<const LW1_Instance*>(&kp) != 0);
+    const LW1_Instance &lw1 = *static_cast<const LW1_Instance*>(&kp_instance_);
+    for (auto it = lw1.clauses_for_axioms_.begin(); it != lw1.clauses_for_axioms_.end(); it++) {
+        const vector<int> &clause = *it;
+        
+        Inference::Propositional::Clause cl;
+        for(auto k = 0; k < clause.size(); ++k)
+            cl.push_back(clause[k]);
+        cnf.push_back(cl);
+        base_theory_axioms.insert(cl);
+    }
+
+    frontier = cnf.size()-1;
+}
+
+// Deletes all clauses preserving the axioms
+// TODO: Make this safe
+void LW1_Solver::clean_cnf() const {
+    cnf.erase(cnf.begin()+1+frontier, cnf.end());
 }
 
 void LW1_Solver::compute_and_add_observations(const Instance::Action *last_action,
@@ -202,8 +221,11 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
 
         // construct logical theory for performing inference with unit propagation
 #ifdef UP
-        set<Inference::Propositional::Clause> base_theory;
         Inference::Propositional::CNF cnf;
+        set<Inference::Propositional::Clause> base_theory;
+
+        if( options_.is_enabled("lw1:inference:preload") )
+            cnf = this->cnf;
 #endif
 
         // 0. Add observations as unit clauses
@@ -239,21 +261,23 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
 #endif
         }
 
-        // 2. Axioms: D'
-        for( vector<vector<int> >::const_iterator it = lw1.clauses_for_axioms_.begin(); it != lw1.clauses_for_axioms_.end(); ++it ) {
-            const vector<int> &clause = *it;
+//         // 2. Axioms: D'
+        if( ! options_.is_enabled("lw1:inference:preload") ) {
+            for( vector<vector<int> >::const_iterator it = lw1.clauses_for_axioms_.begin(); it != lw1.clauses_for_axioms_.end(); ++it ) {
+                const vector<int> &clause = *it;
 #ifdef DEBUG
-            cout << Utils::red() << "[Theory] Add axiom: ";
-            state.print_clause(cout, clause, &kp_instance_);
-            cout << Utils::normal() << endl;
+                cout << Utils::red() << "[Theory] Add axiom: ";
+                state.print_clause(cout, clause, &kp_instance_);
+                cout << Utils::normal() << endl;
 #endif
 #ifdef UP
-            Inference::Propositional::Clause cl;
-            for( size_t k = 0; k < clause.size(); ++k )
-                cl.push_back(clause[k]);
-            cnf.push_back(cl);
-            base_theory.insert(cl);
+                Inference::Propositional::Clause cl;
+                for( size_t k = 0; k < clause.size(); ++k )
+                    cl.push_back(clause[k]);
+                cnf.push_back(cl);
+                base_theory.insert(cl);
 #endif
+            }
         }
 
         // 3. Clauses from sensing models: K_o
@@ -372,6 +396,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
             for( size_t k = 0; k < result.size(); ++k ) {
                 const Inference::Propositional::Clause &cl = result[k];
                 if( base_theory.find(cl) != base_theory.end() ) continue;
+                if( base_theory_axioms.find(cl) != base_theory_axioms.end() ) continue;
                 if( cl.size() == 1 ) {
                     int literal = *cl.begin();
                     if( is_forbidden(literal) ) continue;
@@ -399,6 +424,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
             for( size_t k = 0; k < result.size(); ++k ) {
                 const Inference::Propositional::Clause &cl = result[k];
                 if( base_theory.find(cl) != base_theory.end() ) continue;
+                if( base_theory_axioms.find(cl) != base_theory_axioms.end() ) continue;
                 if( cl.size() > 1 ) {
                     clause_t clause;
                     for( Inference::Propositional::Clause::const_iterator it = cl.begin(); it != cl.end(); ++it )
@@ -413,6 +439,10 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                 }
             }
         }
+
+        // Cleaning CNF 
+        if( options_.is_enabled("lw1:inference:preload") )
+            clean_cnf();
 #endif
 #endif
 

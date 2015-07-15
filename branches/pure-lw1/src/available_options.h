@@ -118,6 +118,7 @@ const char *available_options[] = {
 
     // lw1 (inference)
     "lw1:inference:forward-chaining",          "[LW1] uses forward chaining of drules to make inference (old and sometimes incorrect method)",
+    "lw1:inference:preload",                   "[LW1] preload axioms before applying inference",
     "lw1:inference:up",                        "[LW1] uses unit resolution as inference mechanism",
     "lw1:inference:watched-literals",          "[LW1] uses the watched literals method for unit resolution (to be used with lw1:inference:up)",
     "lw1:inference:up:lookahead",              "[LW1] uses unit resolution with 1-lookahead as inference mechanism",

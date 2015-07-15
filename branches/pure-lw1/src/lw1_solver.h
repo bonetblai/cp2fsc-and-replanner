@@ -1,3 +1,5 @@
+#include "Inference.h"
+
 #ifndef LW1_SOLVER_H
 #define LW1_SOLVER_H
 
@@ -38,7 +40,9 @@ class LW1_Solver : public BASE_CLASS {
     }
     ~LW1_Solver() { }
 
-    virtual void initialize();
+    virtual void initialize(const KP_Instance &kp);
+    virtual void clean_cnf() const;
+
     virtual int solve(const STATE_CLASS &initial_hidden_state,
                       Instance::Plan &final_plan,
                       std::vector<std::set<int> > &fired_sensors_during_execution,
@@ -54,6 +58,14 @@ class LW1_Solver : public BASE_CLASS {
     typedef std::vector<clause_t> cnf_t;
     typedef std::vector<const cnf_t*> sensing_models_as_cnf_t;
     typedef std::map<int, std::map<int, sensing_models_as_cnf_t> > relevant_sensing_models_as_cnf_t;
+
+    // A CNF is kept internally by the solver.
+    // It is filled in initialize and it is completed in every iteration of 
+    // apply_inference.
+    // TODO: Make this safe. 
+    mutable Inference::Propositional::CNF cnf;
+    set<Inference::Propositional::Clause> base_theory_axioms;
+    size_t frontier {0};
 
     virtual void compute_and_add_observations(const Instance::Action *last_action,
                                               const STATE_CLASS &hidden,
