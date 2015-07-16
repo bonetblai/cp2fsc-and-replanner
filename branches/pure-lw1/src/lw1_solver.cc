@@ -260,7 +260,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
 #endif
         }
 
-//         // 2. Axioms: D'
+        // 2. Axioms: D'
         if( ! options_.is_enabled("lw1:inference:preload") ) {
             for( vector<vector<int> >::const_iterator it = lw1.clauses_for_axioms_.begin(); it != lw1.clauses_for_axioms_.end(); ++it ) {
                 const vector<int> &clause = *it;

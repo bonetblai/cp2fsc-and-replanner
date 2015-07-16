@@ -175,14 +175,15 @@ int main(int argc, const char *argv[]) {
     } else {
         assert(g_options.is_enabled("lw1:strict"));
         if( !g_options.is_disabled("lw1:inference:up") ) g_options.enable("lw1:inference:up");
-        if( !g_options.is_disabled("lw1:inference:watched-literals") ) 
-            g_options.enable("lw1:inference:watched-literals");
+        if( !g_options.is_disabled("lw1:inference:watched-literals") ) g_options.enable("lw1:inference:watched-literals");
         if( !g_options.is_disabled("lw1:boost:enable-post-actions") ) g_options.enable("lw1:boost:enable-post-actions");
     }
 
     if( g_options.is_enabled("lw1:boost:drule:sensing:type4:add") ) {
         g_options.enable("lw1:boost:drule:sensing:type4");
     }
+
+
 
 
     if( g_options.is_enabled("lw1:boost:literals-for-observables:dynamic") ) {
@@ -222,7 +223,6 @@ int main(int argc, const char *argv[]) {
         reader->print(cout);
     }
 
-
     // perform necessary translations
     const PDDL_Base::variable_vec *variables = 0;
     const list<pair<const PDDL_Base::Action*, const PDDL_Base::Sensing*> > *sensing_models = 0;
@@ -250,6 +250,7 @@ int main(int argc, const char *argv[]) {
     if( g_options.is_enabled("problem:print:raw") ) {
         //instance.print(cout);
         instance.write_domain(cout);
+        instance.write_problem(cout);
     }
 
     cout << "preprocessing p.o. problem..." << endl;
@@ -267,14 +268,11 @@ int main(int argc, const char *argv[]) {
     cout << "creating KP translation..." << endl;
     KP_Instance *kp_instance = new LW1_Instance(instance, *variables, *sensing_models, *accepted_literals_for_observables);
 
-
     if( g_options.is_enabled("kp:print:raw") ) {
         kp_instance->print(cout);
         kp_instance->write_domain(cout);
         kp_instance->write_problem(cout);
     }
-
-    
 
     cout << "preprocessing KP translation..." << endl;
     Preprocessor kp_prep(*kp_instance);
