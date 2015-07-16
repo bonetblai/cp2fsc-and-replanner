@@ -91,8 +91,7 @@ class LW1_Instance : public KP_Instance {
 
     virtual void cross_reference();
     virtual int remap_action(size_t action_id) const {
-        assert(action_id < remap_.size());
-        return remap_[action_id];
+        return action_id < remap_.size() ? remap_[action_id] : -1;
     }
     virtual void set_goal_condition(index_set &condition) const;
 

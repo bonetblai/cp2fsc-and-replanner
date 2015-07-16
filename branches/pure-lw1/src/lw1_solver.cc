@@ -75,7 +75,6 @@ void LW1_Solver::compute_and_add_observations(const Instance::Action *last_actio
                                 sensed_at_step.insert(1 + index);
                                 some_value_sensed = true;
                                 if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
-                                    assert(0); // lw1:boost:literals-for-observables
                                     update_state_with_literals_for_observables(state, *last_action, variable, 1 + index);
                                 }
                             } else {
@@ -354,15 +353,15 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
             exit(255);
         } else if( options_.is_enabled("lw1:inference:watched-literals") ) {
 #ifdef UP
-            #ifdef DEBUG
-                    cout << Utils::cyan() << "Using method: 'watched-literals'" << Utils::normal() << endl;
-            #endif
+#    ifdef DEBUG
+            cout << Utils::cyan() << "Using method: 'watched-literals'" << Utils::normal() << endl;
+#    endif
             Inference::Propositional::WatchedLiterals wl;
             wl.solve(cnf, assignment);
         } else {
-            #ifdef DEBUG
-                    cout << Utils::cyan() << "Using method: 'DPLL'" << Utils::normal() << endl;
-            #endif
+#    ifdef DEBUG
+            cout << Utils::cyan() << "Using method: 'DPLL'" << Utils::normal() << endl;
+#    endif
             Inference::Propositional::DPLL up;
             up.solve(cnf, result);
         }
@@ -373,17 +372,17 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         if( options_.is_enabled("lw1:inference:watched-literals") ) {
             for(unsigned i = 1; i < assignment.size(); ++i) {
                 int literal = assignment[i];
-                    if( is_forbidden(i) ) continue;
-                    assert(literal != 0);
-                    // assert((literal > 0) || options_.is_enabled("lw1:inference:up:enhanced"));
-                    if( literal == 1 ) {
-                        state.add(i-1);
-#ifdef DEBUG
-                        cout << Utils::yellow() << "[State] Add inferred literal: ";
-                        state.print_literal(cout, i, &kp_instance_);
-                        cout << Utils::normal() << endl;
-#endif
-                    }
+                if( is_forbidden(i) ) continue;
+                assert(literal != 0); // CHECK
+                // assert((literal > 0) || options_.is_enabled("lw1:inference:up:enhanced"));
+                if( literal == 1 ) {
+                    state.add(i-1);
+#    ifdef DEBUG
+                    cout << Utils::yellow() << "[State] Add inferred literal: ";
+                    state.print_literal(cout, i, &kp_instance_);
+                    cout << Utils::normal() << endl;
+#    endif
+                }
             }
         } else {
             for( size_t k = 0; k < result.size(); ++k ) {
@@ -396,7 +395,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
             for( size_t k = 0; k < result.size(); ++k ) {
                 const Inference::Propositional::Clause &cl = result[k];
                 if( base_theory.find(cl) != base_theory.end() ) continue;
-                if( base_theory_axioms.find(cl) != base_theory_axioms.end() ) continue;
+                if( base_theory_axioms.find(cl) != base_theory_axioms.end() ) continue; // CHECK
                 if( cl.size() == 1 ) {
                     int literal = *cl.begin();
                     if( is_forbidden(literal) ) continue;
@@ -404,22 +403,22 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                     assert((literal > 0) || options_.is_enabled("lw1:inference:up:enhanced"));
                     if( literal > 0 ) {
                         state.add(literal - 1);
-#ifdef DEBUG
+#    ifdef DEBUG
                         cout << Utils::yellow() << "[State] Add inferred literal: ";
                         state.print_literal(cout, literal, &kp_instance_);
                         cout << Utils::normal() << endl;
-#endif
+#    endif
                     }
                 }
             }
         }
-#endif
+#endif // ifdef UP
 
 
         // 7. Insert non-forbidden clauses in result into state
         if( options_.is_enabled("lw1:inference:up:enhanced") ) {
 #if BASE_SELECTOR == 1
-#ifdef UP
+#    ifdef UP
             state.cnf_.clear();
             for( size_t k = 0; k < result.size(); ++k ) {
                 const Inference::Propositional::Clause &cl = result[k];
@@ -430,11 +429,11 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                     for( Inference::Propositional::Clause::const_iterator it = cl.begin(); it != cl.end(); ++it )
                         clause.push_back(*it);
                     if( is_forbidden(clause) ) continue;
-#ifdef DEBUG
+#        ifdef DEBUG
                     cout << Utils::yellow() << "[State] Add clause: ";
                     state.print_clause(cout, clause, &kp_instance_);
                     cout << Utils::normal() << endl;
-#endif
+#        endif
                     state.cnf_.push_back(clause);
                 }
             }
@@ -443,9 +442,8 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         // Cleaning CNF 
         if( options_.is_enabled("lw1:inference:preload") )
             clean_cnf();
-#endif
-#endif
-
+#    endif // ifdef UP
+#endif // if BASE_SELECTOR == 1
     } else {
         cout << Utils::error() << "unspecified inference method for lw1" << endl;
         exit(255);
@@ -460,7 +458,6 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
     state.print(cout, kp_instance_);
     cout << Utils::normal() << endl;
 #endif
-
 }
 
 bool LW1_Solver::value_observable_literal(const STATE_CLASS &hidden,
