@@ -9,6 +9,7 @@
 #include "clg_problem.h"
 #include "lw1_problem.h"
 #include "lw1_solver.h"
+#include "Inference.h"
 #include "options.h"
 #include "available_options.h"
 #include "utils.h"
@@ -318,8 +319,11 @@ int main(int argc, const char *argv[]) {
 
         // create and initialize solver
         LW1_Solver solver(instance, *kp_instance, *planner, opt_time_bound, opt_ncalls_bound);
-        if( g_options.is_enabled("lw1:inference:preload") )
+        if( g_options.is_enabled("lw1:inference:preload") ) {
             solver.initialize(*kp_instance);
+            Inference::Propositional::WatchedLiterals wl;
+            wl.initialize_axioms(solver.getCNF());
+        }
 
         // solve
         int status = solver.solve(hidden_initial_state, plan, fired_sensors, sensed_literals);

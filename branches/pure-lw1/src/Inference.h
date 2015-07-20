@@ -37,12 +37,18 @@ namespace Inference {
             CNF() : vector<Clause>() { };
             CNF(const CNF& cnf) : vector<Clause>(cnf.begin(), cnf.end()) { };
             int calculate_max() const {
+                const CNF &a = *this;
                 int imax = 0;
                 for (auto it = begin(); it != end(); it++) {
                     int L1 =  abs(*(it->begin()));
                     int L2 =  abs(*(it->rbegin()));
                     imax = max(L1, max(L2, imax));
                 }
+                //for (int i = 0; i < a.size(); i++) {
+                //    for (int j = 0; j < a[i].size(); j++) {
+                //        imax = max(imax, a[i][j]);
+                //    }
+                //}
                 return imax;
             }
         };
@@ -68,18 +74,22 @@ namespace Inference {
 
         class WatchedLiterals : public UnitPropagation {
         private:
-            vector<bool> propagated;
-            vector<bool> satisfied;  //satisfied clauses
-            vector< vector<int> > inverted_index;
-            vector< pair<cvec_it, cvec_it> > watched;
-            int imax;
-            cvec_it replace(const CNF &cnf, vector<int> &assigned, int clause);
+            static vector< vector<int> > inverted_index_axioms_;
+            static int frontier_;
+            static int imax_;
+            static vector< pair<cvec_it, cvec_it> > watched;
 
-            void InvertedIndex(const CNF &cnf);
+            vector< vector<int> > inverted_index;
+
+            /* Private Methods */
+            cvec_it replace(const CNF &cnf, vector<int> &assigned, int clause);
+            //void InvertedIndex(const CNF &cnf);
+            void initialize(const CNF &cnf);
+            void setInvertedIndex(const CNF &cnf, vector< vector<int> > &mapper);
             virtual bool propagate(const CNF &cnf, vector<int> &assigned, int p);
         public:
             WatchedLiterals() { };
-            void initialize(const CNF &cnf);
+            void initialize_axioms(const CNF &cnf);
             // PROVISIONAL: This method should make the class abstract,
             // in order to use better and implementations of reduce under
             // classic UP transparently.
