@@ -14,6 +14,15 @@ typedef vector< vector<int> >::iterator vec_vec_it;
 typedef set<int>::iterator set_it;
 typedef vector<int>::iterator vec_it;
 typedef vector<int>::const_iterator cvec_it;
+typedef vector<int> vi;
+typedef vector<vi> vvi;
+typedef vector< pair< cvec_it, cvec_it> > vpit;
+
+
+int Inference::Propositional::WatchedLiterals::frontier_ = 0;
+vvi Inference::Propositional::WatchedLiterals::inverted_index_axioms_ = vvi();
+int Inference::Propositional::WatchedLiterals::imax_ = 0;
+vpit Inference::Propositional::WatchedLiterals::watched = vpit();
 
 void Inference::Propositional::DPLL::solve(const CNF &a, CNF &b) {
     b = CNF(a);
@@ -40,24 +49,45 @@ void Inference::Propositional::DPLL::solve(const CNF &a, CNF &b) {
     }
 }
 
-
-void Inference::Propositional::WatchedLiterals::InvertedIndex(const CNF &cnf) {
-    inverted_index.assign(imax + 1, vector<int>());
-    int clause = 0;
-    for (auto it = cnf.begin(); it != cnf.end(); it++) {
+void Inference::Propositional::WatchedLiterals::setInvertedIndex(const CNF &cnf, 
+                                                   vector< vector<int> > &mapper) {
+    imax_ = cnf.calculate_max();  // max literate number
+    mapper.assign(imax_ + 1, vector<int>());
+    int clause = frontier_;
+    for (auto it = cnf.begin() + frontier_; it != cnf.end(); it++) {
         for (auto s_it = it->begin(); s_it != it->end(); s_it++) {
-            inverted_index[ abs(*s_it) ].push_back(clause);
+            assert( abs(*s_it) <= imax_);
+            mapper[ abs(*s_it) ].push_back(clause);
         }
         clause++;
     }
 }
 
-void Inference::Propositional::WatchedLiterals::initialize(const CNF &cnf) {
-    imax = cnf.calculate_max();
-    satisfied.assign(cnf.size(), false);
-    propagated.assign(imax + 1, false); //anything has been propagated
-    InvertedIndex(cnf);
+//void Inference::Propositional::WatchedLiterals::InvertedIndex(const CNF &cnf) {
+//    inverted_index.assign(imax_ + 1, vector<int>());
+//    int clause = 0;
+//    for (auto it = cnf.begin(); it != cnf.end(); it++) {
+//        for (auto s_it = it->begin(); s_it != it->end(); s_it++) {
+//            inverted_index[ abs(*s_it) ].push_back(clause);
+//        }
+//        clause++;
+//    }
+//}
 
+void Inference::Propositional::WatchedLiterals::initialize_axioms(const CNF &axioms) {
+    frontier_ = 0;
+    setInvertedIndex(axioms, inverted_index_axioms_);
+    frontier_ = axioms.size();
+
+    //watch first (0) and last (size - 1) element
+    watched = vpit();
+    for (size_t i = 0; i < axioms.size(); i++)
+        watched.push_back(pair<cvec_it, cvec_it>(axioms[i].begin(),--axioms[i].end()));
+
+};
+
+void Inference::Propositional::WatchedLiterals::initialize(const CNF &cnf) {
+    setInvertedIndex(cnf, inverted_index);
 
     //watch first (0) and last (size - 1) element
     for (size_t i = 0; i < cnf.size(); i++)
@@ -68,15 +98,17 @@ void Inference::Propositional::WatchedLiterals::initialize(const CNF &cnf) {
 void Inference::Propositional::WatchedLiterals::solve(const CNF &cnf,
                                                       vector<int> &assigned) {
     initialize(cnf);
-    assigned.assign(imax + 1, -1);      //initially, every proposition is unassigned
+    assigned.assign(imax_ + 1, -1);      //initially, every proposition is unassigned
     for (auto it = cnf.begin(); it != cnf.end(); it++) {
         int p = *(it->begin());
-        if ( (it->size() == 1) && !propagated[ abs(p) ] ) {
+        if ( (it->size() == 1) && assigned[ abs(p) ] == -1 ) {
             assigned[ abs(p) ] = p > 0 ? 1 : 0;
-            assert(propagate(cnf, assigned, abs(p)));
-            propagated[ abs(p) ] = true;
+            if (! propagate(cnf, assigned, abs(p))) assert(false);
         }
     }
+
+    // cleaning up clauses after axiom clauses
+    watched.erase(watched.begin(), watched.end());
 }
 
 cvec_it Inference::Propositional::WatchedLiterals::replace(const CNF &cnf,
@@ -101,8 +133,17 @@ bool Inference::Propositional::WatchedLiterals::propagate(const CNF &cnf,
         cvec_it w1 = watched[clause].first, w2 = watched[clause].second;
         bool is_watched = value == -1 * (* w1) || value == -1 * (* w2);
 
-        if (is_watched && !satisfied[clause])
-            cp.push_back(clause);
+        if (is_watched) cp.push_back(clause);
+    }
+
+    if (prop < inverted_index_axioms_.size()) {
+        for (size_t i = 0; i < inverted_index_axioms_[prop].size(); i++) {
+            int clause = inverted_index_axioms_[prop][i];
+            cvec_it w1 = watched[clause].first, w2 = watched[clause].second;
+            bool is_watched = value == -1 * (* w1) || value == -1 * (* w2);
+
+            if (is_watched) cp.push_back(clause);
+        }
     }
 
     for (size_t i = 0; i < cp.size(); i++) {
@@ -159,3 +200,5 @@ void Inference::Propositional::WatchedLiterals::lookahead(const CNF &cnf,
         }
     }
 }
+
+

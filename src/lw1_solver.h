@@ -53,6 +53,8 @@ class LW1_Solver : public BASE_CLASS {
                                  sensed_literals_during_execution);
     }
 
+    Inference::Propositional::CNF getCNF() const { return cnf; }
+
   protected:
     typedef std::vector<int> clause_t;
     typedef std::vector<clause_t> cnf_t;
@@ -66,6 +68,7 @@ class LW1_Solver : public BASE_CLASS {
     mutable Inference::Propositional::CNF cnf;
     set<Inference::Propositional::Clause> base_theory_axioms;
     size_t frontier {0};
+
 
     virtual void compute_and_add_observations(const Instance::Action *last_action,
                                               const STATE_CLASS &hidden,
