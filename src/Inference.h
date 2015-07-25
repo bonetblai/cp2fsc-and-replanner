@@ -37,7 +37,7 @@ namespace Inference {
             CNF() : vector<Clause>() { };
             CNF(const CNF& cnf) : vector<Clause>(cnf.begin(), cnf.end()) { };
             int calculate_max() const {
-                const CNF &a = *this;
+                //const CNF &a = *this;
                 int imax = 0;
                 for (auto it = begin(); it != end(); it++) {
                     int L1 =  abs(*(it->begin()));
@@ -77,16 +77,21 @@ namespace Inference {
             static vector< vector<int> > inverted_index_axioms_;
             static int frontier_;
             static int imax_;
-            static vector< pair<cvec_it, cvec_it> > watched;
+            static vector< pair<int, int> > watched;
 
             vector< vector<int> > inverted_index;
 
             /* Private Methods */
-            cvec_it replace(const CNF &cnf, vector<int> &assigned, int clause);
-            //void InvertedIndex(const CNF &cnf);
+            int replace(const CNF &cnf, vector<int> &assigned, int clause);
             void initialize(const CNF &cnf);
             void setInvertedIndex(const CNF &cnf, vector< vector<int> > &mapper);
+            inline bool isWatched(const CNF &cnf, int clause, int value);
             virtual bool propagate(const CNF &cnf, vector<int> &assigned, int p);
+            void add_negative_propositions(const CNF &cnf, 
+                                           const vector< vector<int> > &inv_index,
+                                           int prop,
+                                           int value,
+                                           vector<int> &cp);
         public:
             WatchedLiterals() { };
             void initialize_axioms(const CNF &cnf);
