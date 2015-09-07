@@ -1,0 +1,155 @@
+# Planning and Control Models #
+
+The model from which finite-state controllers are derived stands for a class of contingent planning problems. The problems considered are required to satisfy the following assumptions. First, the actions are deterministic and thus all uncertainty results from incomplete information in the initial situation. Second, the actions may have conditional effects but no preconditions, and thus are always executable. And third, the sensing is passive meaning that the set of observable fluents is fixed and does not depend on the action taken. The contingent planning problem remains challenging even under these assumptions, and in particular, the controllers obtained from these models often work when the assumption of determinism is dropped.
+
+Under these assumptions, the syntax for expressing contingent problems is similar to the one used for defining classical problems P=(F, I, A, G), where F is the set of fluents, I and G stand for the initial and goal situations, and A is the set of actions, except for the following features.
+
+Actions a in A have all empty preconditions but may have a number of conditional effects C → C, where C is a set of fluent literals and C is either one such set or one such literal.
+
+The initial situation I is given by a set of clauses over the fluents in F so the possible initial states are the truth valuations over F that satisfy I.
+
+A set D of axioms or ramification rules r ⇐ C are used to define a set of _non-primitive fluents_ r ∈ R, where C is a set of literals defined over the _primitive fluents_ in F (Thiebaux, Hoffmann, and Nebel 2005). The sets R and F are disjoint, and it is allowed to have non-primitive fluents in the body C of conditional effects C → C and goals, but they are not allowed in the heads of conditional effect.
+
+A state s is a truth valuation over the primitive fluents that defines the truth value of the non-primitive fluents r ∈ R through the axioms:
+
+  * The fluent r is true in state s iff there is an axiom r ⇐ C such that C is true in s.
+
+The observable fluents or simply the observables refer to a set O ⊆ R of non-primitive fluents whose truth value in a given state s is known to the agent. An observation o represents the conjunction of O-literals that are true in a given state. The observation that corresponds to the state s is referred as o(s) and the set of all possible observations as O<sup>*</sup>. Clearly, the size of O<sup>∗</sup> is exponential in the number of observable fluents. The observables along with the set of axioms defining them constitute what is called the sensor model, that relates the true but hidden state s with the information o(s) available to the agent.
+
+These elements define the class of contingent problems considered, that are called Partially Observable Deterministic Control Problems (PODCPs), abbreviated simply as control problems and denoted by tuples P=(F, I, A, G, R, O, D) where:
+
+  * F is a set of (primitive) fluents,
+  * I is a set of F-clauses representing the initial situation,
+  * A is a set of deterministic actions with conditional effects but no preconditions,
+  * G is a set of literals representing the goal situation,
+  * R is a set of non-primitive fluents,
+  * O is the set of observable fluents, O ⊆ R, and
+  * D is the set of axioms defining the fluents in R.
+
+In PODCPs, the initial situation defines a set S<sub>0</sub> of possible initial states s<sub>0</sub>, and from any such state, a sequence of actions (a<sub>0</sub>, a<sub>1</sub>, ..., a<sub>n</sub>) defines a unique trajectory (s<sub>0</sub>, a<sub>0</sub>, ... , a<sub>n</sub>, s<sub>n+1</sub>) of state-action pairs, and a unique trajectory (o<sub>0</sub>, a<sub>0</sub>, ... , a<sub>n</sub>, o<sub>n+1</sub>) of observation-action pairs, that can be obtained by replacing s<sub>i</sub> by o(s<sub>i</sub>).
+
+
+# Finite-State Controllers #
+
+Finite-state controllers (FSCs) provide a convenient solution form for PODCP of the type P=(F, I, A, G, R, O, D). Formally, a finite-state controller is a tuple C = (Q, A, O<sup>∗</sup>, δ, q<sub>0</sub>) with a non-empty and finite set Q of controller states, sets A and O<sup>∗</sup> of actions and observations, a (partial) transition function δ that maps observation and controller state pairs (o, q) ∈ O<sup>∗</sup> × Q into action and controller state pairs (a, q) ∈ A × Q, and an initial controller state q<sub>0</sub> ∈ Q.
+
+Controller states serve as controller memory allowing the selection of different actions given the same observation. A FSC with a single state represents a memoryless controller.
+
+The transition function can be described with rules of the form (o, q) → (a, q') that express that the transition function for C is defined on the pair (o, q) and maps it into the pair (a, q'). It is also convenient to understand a controller C as a set of such rules, that is expressed as a set of tuples. Thus, the notation t ∈ C, for a tuple t = (o, q, a, q), means that the controller C is defined over the pair (o, q) and maps it into the pair (a, q). Note, however, that if t = (o, q, a, q) is a tuple in C, C cannot contain a tuple t' != t with the same (o, q) pair, as δ is a transition function over such pairs.
+
+A finite-state controller C provides, like contingent trees and POMDP policies, an specification of the action a<sub>i+1</sub> to do next after a given observation-action sequence (o<sub>0</sub>, a<sub>0</sub>, ... , a<sub>i</sub>, o<sub>i+1</sub>). The action to do at time i = 0 is a<sub>0</sub> = a if t =(o<sub>0</sub>, q<sub>0</sub>, a, q) is in C and o(s<sub>0</sub>) = o<sub>0</sub>, and the controller state that results at time i = 1 is q. Similarly, the action to do at time i > 0 is a if o and q are the observation and state at time i, and t = (o, q, a, q) is a tuple in C, and the controller state that results at time i + 1 is then q.
+
+A controller C and an initial state s<sub>0</sub> determine a unique trajectory s<sub>0</sub>, a<sub>0</sub>, ... , a<sub>i</sub>, s<sub>i+1</sub> ...  of state-action
+pairs, and a unique trajectory o<sub>0</sub>, a<sub>0</sub>, ... , a<sub>i</sub>, o<sub>i+1</sub>, ... of observation-action pairs. These trajectories terminate at time i + 1 if the controller state at time i + 1 is q and there is no tuple t = (o<sub>i+1</sub>, q, a, q) in C defined over the pair (o<sub>i+1</sub>, q). If this is not the case, the observation-action trajectory resulting from s<sub>0</sub> and C is infinite. A controller C solves a control problem P if all the state-action pair trajectories that it produces, starting in a possible initial state s<sub>0</sub> ∈ I, reach a goal state. This is a weak form of solution as it does not demand all state trajectories to **terminate** in a goal state. The difference does not matter when the goals are observable but is relevant otherwise.
+
+
+# Translation #
+
+cp2fsc solves the input PODCP problem P by computing a finite-state controller with N states for P. The FSC is found by solving a **conformant planning problem** P<sub>N</sub> that is automatically obtained from P and N. The problem P<sub>N</sub> is designed in such a way that any plan for it, necessarily encodes a finite-state controller C<sub>N</sub> for P with N controller states.
+
+The problem P<sub>N</sub> can be solved with different methods, as recently, many solvers for this class of problems had been developed. In the case of cp2fsc, the conformant problem P<sub>N</sub> is translated into a **classical planning problem** K<sub>T,M</sub>(P<sub>N</sub>) which then can be solved with any classical planner. Thus, cp2fsc works by composing two translations: the first from the control problem P and number N into the conformant problem P<sub>N</sub>, and then from the conformant problem P<sub>N</sub> into the classical problem K<sub>T,M</sub>(P<sub>N</sub>).
+
+
+# Syntax #
+
+The PODCP problem P is expressed with a PDDL-like syntax that is then parsed by `cp2fsc` in order to generate P<sub>N</sub> and then K<sub>T,M</sub>(P<sub>N</sub>). The syntax for PODCP domains and problems is the following:
+
+```
+<domain>       ::= (define (domain <name>) <domain-item>*)
+<domain-item>  ::= (:requirements <require-keyword>*)
+                 | (:types <type-decl>*)
+                 | (:constants <typed-obj>*)
+                 | (:predicates  <predicate>*)
+                 | <structure>*
+
+<type-decl>    ::= <type>+ | <type>+ - <type>
+<typed-obj>    ::= <obj>+ | <obj>+ - <type>
+<predicate>    ::= (<name> <parameter>*)
+<structure>    ::= <action> | <axiom> | <observable> | <sticky>
+
+<action>       ::= (:action <name> <action-item>*)
+<axiom>        ::= (:axiom <name> <axiom-item>*)
+<observable>   ::= (:observable <obs-item>*)
+<sticky>       ::= (:sticky <sticky-item>*)
+
+<action-item>  ::= :parameters (<parameter>*)
+                 | :precondition <condition>
+                 | :effect <effect>
+
+<axiom-item>   ::= :parameters (<parameter>*)
+                 | :body <condition>
+                 | :head <fluent>+
+
+<obs-item>     ::= :parameters (<parameter>*)
+                 | :fluents <fluent>+
+
+<stikcky-item> ::= :parameters (<parameter>*)
+                 | :fluents <fluent>+
+
+
+<parameter>    ::= <variable>+ | <variable>+ - <type>
+<condition>    ::= <fluent> | (and <fluent>*)
+
+<effect>       ::= <single-eff> | (and <single-eff>*)
+<single-eff>   ::= <atomic-eff>
+                 | (when <condition> <atomic-eff>*)
+                 | (forall (<parameters>) <effect>)
+<atomic-eff>   ::= <fluent> | (not <fluent>)
+
+
+<problem>      ::= (define (problem <name>) <problem-item>*)
+<problem-item> ::= (:domain <name>)
+                 | (:requirements <require-keyword>*)
+                 | (:init <init-item>*)
+                 | (:goal <goal-decl>)
+
+<init-item>    ::= <fluent> | <oneof> | <clause>
+<goal-decl>    ::= <single-goal> | (and <single-goal>*)
+<sigle-goal>   ::= <fluent> | (not <fluent>)
+<oneof>        ::= (oneof <fluent>+)
+<clause>       ::= (or <fluent>+)
+```
+
+In this implementation, `cp2fsc` only supports initial state description whose non-unit clauses are captured by statements of the form '`(oneof <fluent-1> ... <fluent-n>)`' that should be interpreted as a the clause made of all the fluents in the oneof, and clauses with 2 literals asserting that at most one such fluent should be true. On the other hand, `cp2fsc` extends the basic PODCP model with the `sticky` statements: when a fluent is declared as 'sticky', it remains valid once it is achieved, even if it is a fluent defined through axioms (i.e., a defined fluent).
+
+
+# User's Guide #
+
+If `cp2fsc` is called without arguments, it prints the following usage information:
+
+```
+   Usage: cp2fsc [--compound-obs-as-fluents]
+                 [--fsc-states `<n>`]
+                 [--help]
+                 [--no-forbid-inconsistent-tuples]
+                 [--output-metadata <filename>]
+                 [--prefix <prefix>]
+                 [--tag-all-literals]
+                 [--options=<comma-separated-list-of-options>]
+                 <pddl-files>
+```
+
+`cp2fsc` expects at least one PDDL file describing a problem, but it is typical to have the domain and problem descriptions split in two files. Without any other arguments, `cp2fsc` generates an encoding for a FSC with just 1 state (i.e., a memoryless controller) in the form of a classical planning problem encoded with domain and problem files named '`d.pddl`' and '`p.pddl`' respectively. The number of controller states can be specified with the option '`--fsc-states <n>`', while the prefix '`<prefix>`' can be added to the names of the files if the option '`--prefix <prefix>`' is used.
+
+The option `'--output-metadata <filename>'` can be used to tell `cp2fsc` to write to the file named '`<filiename>`' some data associated with the problem, FSC and translation. If a prefix is specified, it is appended at the beginning of the string defining name of the output file.
+
+The option '`--no-forbid-inconsistent-tuples`' can be used to generate a planning problem whose solution does not necessarily correspond to a FSC because the set of tuples C defining the FSC may contain inconsistent pairs of tuples. This option exists because sometimes the resulting classical problem can be solved with tailored and specialized SAT-based solvers.
+
+The option '`--tag-all-literals`' is used to enable the tagging of all literals when doing the K<sub>T,M</sub> translation, instead of just tagging the strictly necessary literals. The use of this option changes the translation, but still remains a valid translation. However, its use proves beneficial in terms of performance in some domains, not all.
+
+The option `'--compound-observations-as-fluents'` is not yet supported and should not be used.
+
+Finally, different options can be passed to `cp2fsc` with '`--options=<comma-separated-list-of-options>`' together with a list of different options, whose main purpose is to generate output about the different translation processes and their results.
+
+
+# Examples #
+
+The `benchamarks/fsc` folder contains examples for 4 different domains:
+
+  * **Blocksworld:** there are two problems for this domain. In the first, a green block that is located in a tower of blocks must be recognized and collected. The blocks are popped out the stack until the green block revels itself and the agent grabs it. The second problem consists of moving a visual marker over a scene of blocksworld trying to locate the marker over a green block. The movements of the marker are restricted and the agent receives only partial information from the environment.
+  * **Grid:** an agent should scan all the cells in a grid world in order to locate a hidden object.
+  * **Gripper:** in the classical gripper problem from planning, a robot must move all the objects in one room to the next room. In this variation, the robot has a gripper of varying capacity and has partial information from the environment.
+  * **Hall:** problems involving halls and corridors that must be traveled around in order to reach designated points. There are two versions of the domains and controllers with 1 or 2 states are required.
+  * **Visual-marker:** a problem in which a visual marker must be moved around a visual scene of blocksworld in order to locate it over a green block. The marker can be moved in a restricted manner and the agent receives partial information from the environment. The controllers obtained work for any scenes with any number of blocks and any placement of them.
+
+For each domain, the corresponding directory contains the files `experiment.sh` and README that describe how `cp2fsc` is called and the results for the SAT-based planner M/Mp.

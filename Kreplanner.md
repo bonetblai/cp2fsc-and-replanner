@@ -1,0 +1,147 @@
+# Planning Models #
+
+The language is a simple extension of STRIPS with conditional effects, negation, an uncertain initial situation, and sensing. More precisely, a partially observable problem is a tuple P = (F, O, I, G, M) where F stands for the fluent symbols, O for the actions, I is a set of clauses over F defining the initial situation, G is a set of F-literals defining the goal situation, and M represents the sensor model. An action a has preconditions given by a set of literals, and a set of conditional effects a : C → L where C is a set of literals and L is a literal. The sensor model M is a set of pairs (C,L) where C is a set of literals and L is a positive literal. The pair indicates that the truth value of L is observable when C is true. Each pair (C,L) can be understood as a sensor that is active when C is true, or as an information-gathering action with precondition C that reveals the boolean value of L. Unlike the other actions, however, these sensing actions trigger when their preconditions hold. The notation ¬L denotes the complement of literal L.
+
+The definitions above are general and standard. The following focuses on the restrictions and transformations that allow the replacement of belief states by plain states. Recall that an invariant in a planning problem is a formula that is true in each possible initial state, and remains true in any state that can be reached from them with the available actions. For example, for an object o that can be picked up and dropped into a number of different positions l<sub>i</sub>, i = 1, ... , n, formulas like at(o, l<sub>1</sub>) ∨ ··· ∨ at(o, l<sub>n</sub>) ∨ hold(o), ¬at(o, l<sub>i</sub>) ∨ ¬hold(o), and ¬at(o, l<sub>i</sub>) ∨ ¬at(o, l<sub>k</sub>), for i != k, are all invariant. The first expresses that a set of literals is exhaustive, meaning that at least one of them must be true in every reachable state, while the other two, capture mutual exclusivity, meaning that at most one of them can be true in a reachable state. There are several algorithms for detecting such invariants, and some of them, focus exactly on the detection of sets of literals that are mutually exhaustive and exclusive, and which can be assumed to represent the different values of a multi-valued variable.
+
+Interestingly, it turns out that when the non-unary clauses in I are all invariant (i.e., those expressing uncertainty) and the effects of the actions do not depend on fluents that are hidden in I (these are the fluents p such that neither p nor ¬p are known to be true in I), then the beliefs that need to be maintained in the planning process can be characterized in a simple form. We say that such problems are simple:
+
+**Definition**. A (deterministic) partially observable problem P = (F, O, I, G, M) is **simple** if the non-unary clauses in I are all invariant, and no hidden fluent appears in the body of a conditional effect.
+
+It turns out that for simple problems, it is enough to track the set of literals that are true; the additional information needed is captured by the invariants that are given in I, which as invariants, do not change and hence do not have to be tracked.
+
+
+# Translation #
+
+Given a simple planning problem P, the first translation K'(P) captures
+the partially observable problem P at the **knowledge level** by applying an extension of the K<sub>0</sub> translation for conformant planning. The K<sub>0</sub> translation replaces each literal L by two fluents KL and ¬KL that stand for whether L is known to be true or not.
+
+**Definition**. For a partially observable problem P = (F, O, I, G, M), K'(P) = (F, O, I, G, M, D) is the fully observable non-deterministic problem where:
+
+  * F = { KL, K¬L : L ∈ F },
+  * I = { KL : L ∈ I },
+  * G = { KL : L ∈ G },
+  * M = { KC, ¬KL, ¬K¬L → KL | K¬L : (C,L) ∈ M },
+  * D = { KC ⊃ KL : if ¬C ∨ L invariant in I },
+  * O = O but with each precondition L for a ∈ O replaced by KL, and each conditional effect C → L replaced by KC → KL and ¬K¬C → ¬K¬L.
+
+The expressions KC and ¬K¬C for C = L<sub>1</sub> ∧ L<sub>2</sub> ... are abbreviations of the formulas KL<sub>1</sub> ∧ KL<sub>2</sub> ... and ¬K¬L<sub>1</sub> ∧ ¬K¬L<sub>2</sub> ... respectively.
+
+In K(P), the M component stands for a set non-deterministic rules KC, ¬KL, ¬K¬L → KL | K¬L, that capture the effects of the sensors (C,L) in P at the knowledge-level. Namely, such rules make L known (either true or false), when C is known to be true, and L is not known. Likewise, the D component captures the invariants in I with the literals L replaced by KL.
+
+For planning, and without loosing completeness or generality, it is enough to focus on policies that map beliefs reachable from I into goal beliefs or beliefs that activate a sensor (C,L). This type of policies are called **reduced policies**.
+
+In order to compute reduced policies that are always goal oriented, the classical planning problem K(P)`[`s`]`, for a state s that encodes a belief state b, is defined according to the following guidelines. First, the goal of K(P) is set to the goal of K'(P). Second, in order to make the goal achievable from any state even when information from sensors is needed, the invariants and sensors in P are translated into **actions** in K(P). A sensor (C,L) is translated into two deterministic actions, one with preconditions KC, ¬KL and ¬K¬L, and effect KL, and the other with same preconditions but effect K¬L. These actions are denoted as A(C, L) and A(C, ¬L), and called assumptions, as each makes an assumption about the truth value of the literal L whose value is observed when C is true. On the other hand, invariants of the form ¬C ∨ L are translated into actions with a conditional effects KC → KL.
+Formally,
+
+**Definition**. The classical problem K(P)`[`s`]` is defined from P and the translation K'(P) = (F' , O', I', G', M', D') as K(P)`[`s`]` = (F'', O'', I'', G'') where F'' = F', G'' = G', I'' = s, and O'' is O' union the actions KC → KL for the invariants ¬C ∨ L in P, and the actions A(C,L) and  A(C, ¬L) for the sensors (C,L) in P.
+
+The K-translation is the basis for an on-line K-Replanner for partially observable problems. The K-Replanner constructs a policy that solves P in on-line fashion, setting the response Π(b) for the current belief as the prefix π of the plan obtained with an off-the-shelf classical planner for the classical problem K(P)[s<sub>b</sub>], where s<sub>b</sub> is the state defined by the belief b. The K-Replanner is always sound, and it is complete if P is simple and connected. The K-Replanner solves an instance with a given hidden initial state if the single execution that results from the policy Π(b) computed in this fashion reaches the goal. In the K-Replanner, the beliefs b over P are represented by the states over the translation K(P).
+
+
+# Syntax #
+
+Contingent problems P are expressed with a  PDDL-like syntax that is parsed by `k-replanner` in order to generate the different classucal translations. The syntax for writing domains and problems is the following:
+
+```
+<domain>       ::= (define (domain <name>) <domain-item>*)
+<domain-item>  ::= (:requirements <require-keyword>*)
+                 | (:types <type-decl>*)
+                 | (:constants <typed-obj>*)
+                 | (:predicates  <predicate>*)
+                 | <structure>*
+
+<type-decl>    ::= <type>+ | <type>+ - <type>
+<typed-obj>    ::= <obj>+ | <obj>+ - <type>
+<predicate>    ::= (<name> <parameter>*)
+<structure>    ::= <action> | <sensor>
+
+<action>       ::= (:action <name> <action-item>*)
+<sensor>       ::= (:sensor <name> <sensor-item>*)
+
+<action-item>  ::= :parameters (<parameter>*)
+                 | :precondition <condition>
+                 | :effect <effect>
+                 | :observe <fluent>+
+
+<sensor-item>  ::= :parameters (<parameter>*)
+                 | :condition <condition>
+                 | :sense <fluent>+
+
+<parameter>    ::= <variable>+ | <variable>+ - <type>
+<condition>    ::= <fluent> | (and <fluent>*)
+
+<effect>       ::= <single-eff> | (and <single-eff>*)
+<single-eff>   ::= <atomic-eff>
+                 | (when <condition> <atomic-eff>*)
+                 | (forall (<parameters>) <effect>)
+<atomic-eff>   ::= <fluent> | (not <fluent>)
+
+
+<problem>      ::= (define (problem <name>) <problem-item>*)
+<problem-item> ::= (:domain <name>)
+                 | (:requirements <require-keyword>*)
+                 | (:init <init-item>*) | (:init (and <init-item>*))
+                 | (:hidden <hidden-item>*)
+                 | (:goal <goal-decl>)
+
+<init-item>    ::= <fluent> | (not (fluen)) | <invariant> | <oneof>
+<hidden-item>  ::= <fluent>
+<goal-decl>    ::= <single-goal> | (and <single-goal>*)
+<sigle-goal>   ::= <fluent> | (not <fluent>)
+
+<invariant>    ::= <at-least-one> | <at-most-one> | <exactly-one>
+<at-least-one> ::= (invariant <fluent>+) | (at-least-one <fluent>+)
+<at-most-one>  ::= (at-most-one <fluent>+)
+<exactly-one>  ::= (exactly-one <fluent>+)
+<oneof>        ::= (oneof <fluent>+) // equivalent to <exactly-one> (for CLG compatibility mode)
+```
+
+
+# User's Guide #
+
+If `k-replanner` is called without arguments, it prints the following usage information:
+
+```
+   Usage: k_replanner [--help]
+                      [--max-time <time>]
+                      [--no-print-plan]
+                      [--prefix <prefix>]
+                      [--no-remove-intermediate-files]
+                      [--use-{ff|lama|m|mp}]
+                      [--planner-path <path>]
+                      [--tmpfile-path <path>]
+                      [--options=<options>]
+                      <pddl-files>
+
+```
+
+`k-replanner` expects at least one PDDL file describing a problem, but it is typical to have the domain and problem descriptions split in two files. Without any other arguments, `k-replanner` tries to generate an execution that ends at a goal state, or discover that such execution does not exist. This is guaranteed for contingent planning problems that satisfies the conditions for completeness. The execution is generated by calling a classical planner (default FF) over a sequence of classical planning problems that are generated along the execution.
+
+The options '`--use={ff|lama|m|mp}`' are used to change the classical planner that is called.
+
+If the user want to see what are the classical plans that are solved along the execution, then s/he should use the option '`--no-remove-intermediate-files`'.
+
+The option '`--no-print-plan`' is used to tell `k-replanner` to not print the complete sequence of actions (plan) during the execution. The default is to print such sequence of actions.
+
+The option '`--max-time <time>`' is to used to put an absolute bound on the cumulative time incurred by the classical planner when solving classical problems. If this time is surpassed, the execution terminates and fails.
+
+The option '`--prefix <prefix>`' is for future use and does nothing in the current implementation.
+
+Finally, different options can be passed to `k-replanner` with '`--options=<comma-separated-list-of-options>`' together with a list of different options, whose main purpose is to generate output about the different translation processes and their results.
+
+
+# Examples #
+
+K-Replanner is tested on instances from several domains, all of which can be naturally encoded as simple partially observable problems. Several of these domains are beyond the reach of simple replanners as non-trivial beliefs that integrate the observations gathered need to be maintained. In the K-Replanner, this is achieved by keeping track of literals while maintaining the invariants. The domains are:
+
+  * **Freespace:** the agent needs to reach a final position by moving through unknown terrain. Each cell of the grid is either blocked or clear. As the agent moves, it senses the status of adjacent cells.
+
+  * **Doors:** the agent moves in a grid to reach a final position, yet is has to cross doors whose positions are only partially known.
+
+  * **Wumpus:** different variants of the well-known domain where the agent moves in a grid to reach a final position while avoiding multiple wumpus monsters and dangerous pits. As the agent moves, it smells the stench of nearby wumpuses and feel the breeze caused by nearby pits.
+
+  * **Colored-balls:** the agent navigates a grid to pick up and deliver balls of different colors to destinations that depend on the color of the ball. The positions and colors of the balls are unknown, but when the agent is at a position, he observes if there are balls in there, and if so, their colors.
+
+  * **Trail:** the agent must follow a trail of stones til the end. The shape and length of the trail are not known. The agent cannot get off trail but can observe the presence of stones in the nearby cells.
+
