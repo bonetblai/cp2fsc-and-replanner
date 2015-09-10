@@ -39,16 +39,13 @@ namespace Inference {
             int calculate_max() const {
                 //const CNF &a = *this;
                 int imax = 0;
-                for (auto it = begin(); it != end(); it++) {
-                    int L1 =  abs(*(it->begin()));
-                    int L2 =  abs(*(it->rbegin()));
-                    imax = max(L1, max(L2, imax));
+                for (auto it = cbegin(); it != cend(); it++) {
+                    Clause cl = *it;
+                    for (auto clit = cl.cbegin(); clit != cl.cend(); clit++) {
+                        int L1 = abs(*clit);
+                        imax = max(L1, imax);
+                    }
                 }
-                //for (int i = 0; i < a.size(); i++) {
-                //    for (int j = 0; j < a[i].size(); j++) {
-                //        imax = max(imax, a[i][j]);
-                //    }
-                //}
                 return imax;
             }
         };
