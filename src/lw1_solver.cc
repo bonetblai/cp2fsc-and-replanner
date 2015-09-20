@@ -24,6 +24,8 @@ void LW1_Solver::initialize(const KP_Instance &kp) {
     }
 
     frontier = cnf.size()-1;
+
+    fill_atoms_to_var_map(lw1);
 }
 
 // Deletes all clauses preserving the axioms
@@ -148,7 +150,7 @@ void LW1_Solver::compute_and_add_observations(const Instance::Action *last_actio
 void LW1_Solver::apply_inference(const Instance::Action *last_action,
                                  const set<int> &sensed_at_step,
                                  STATE_CLASS &state) const {
-
+    std::cout << "Bookmark 2: Entered apply_inference method" << std::endl;
     float start_time = Utils::read_time_in_seconds();
 
 #ifdef DEBUG
@@ -308,6 +310,19 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                             cout << Utils::red() << "[Theory] Add K_o clause: ";
                             state.print_clause(cout, clause, &kp_instance_);
                             cout << Utils::normal() << endl;
+
+                            // The clause holds the indexes for the atoms
+                            // To find it in atoms_, 1 must be substracted.
+#ifdef DEBUG
+                            for (auto cl = clause.cbegin(); cl != clause.cend(); cl++) {
+                                int cl_index = abs(*cl);
+                                int k_literal = cl_index > 0 ? (cl_index - 1) / 2 : (-cl_index - 1) / 2 + 1;
+                                cout << Utils::magenta() << "Related variable: ";
+                                cout << lw1.variables_[atoms_to_vars_.at(k_literal)]->name_;
+                                cout << Utils::normal() << endl;
+                            }
+#endif
+
 #endif
 #ifdef UP
                             Inference::Propositional::Clause cl;
@@ -663,6 +678,20 @@ bool LW1_Solver::is_forbidden(const LW1_Solver::clause_t &clause) const {
     assert(dynamic_cast<const LW1_Instance*>(&kp_instance_) != 0);
     return static_cast<const LW1_Instance&>(kp_instance_).is_forbidden(clause);
 }
+
+void LW1_Solver::fill_atoms_to_var_map(const LW1_Instance &lw1) {
+    const std::vector<LW1_Instance::Variable*> &vars = lw1.variables_;
+    for (int v = 0; v < vars.size(); v++) {
+        const LW1_Instance::Variable &var = *vars[v];
+        // Iterating the domain of variables, inserting in atoms_to_vars the
+        for (std::set<int>::const_iterator dom = var.domain_.cbegin(); dom != var.domain_.cend(); dom++) {
+            assert(atoms_to_vars_.find(*dom) == atoms_to_vars_.cend());
+            atoms_to_vars_.insert(make_pair(*dom, v));
+
+        }
+    }
+}
+
 
 #undef DEBUG
 

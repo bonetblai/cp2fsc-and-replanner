@@ -55,7 +55,13 @@ class LW1_Solver : public BASE_CLASS {
 
     Inference::Propositional::CNF getCNF() const { return cnf; }
 
-  protected:
+    // This is kept for the AC3 algorithm. It relates an atom index to its
+    // corresponding variable. Public as of now
+    // TODO: Make this protected
+    typedef std::map<int, int> atoms_to_vars_map;
+    atoms_to_vars_map atoms_to_vars_;
+
+protected:
     typedef std::vector<int> clause_t;
     typedef std::vector<clause_t> cnf_t;
     typedef std::vector<const cnf_t*> sensing_models_as_cnf_t;
@@ -113,6 +119,7 @@ class LW1_Solver : public BASE_CLASS {
 
     bool is_forbidden(int literal) const;
     bool is_forbidden(const clause_t &clause) const;
+    void fill_atoms_to_var_map(const LW1_Instance &lw1);
 };
 
 #endif
