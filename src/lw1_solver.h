@@ -40,7 +40,7 @@ class LW1_Solver : public BASE_CLASS {
     }
     ~LW1_Solver() { }
 
-    virtual void initialize(const KP_Instance &kp);
+    void initialize(const KP_Instance &kp);
     virtual void clean_cnf() const;
 
     virtual int solve(const STATE_CLASS &initial_hidden_state,
@@ -68,12 +68,12 @@ protected:
     typedef std::map<int, std::map<int, sensing_models_as_cnf_t> > relevant_sensing_models_as_cnf_t;
 
     // A CNF is kept internally by the solver.
-    // It is filled in initialize and it is completed in every iteration of 
+    // It is filled in initialize and it is completed in every iteration of
     // apply_inference.
-    // TODO: Make this safe. 
+    // TODO: Make this safe.
     mutable Inference::Propositional::CNF cnf;
     set<Inference::Propositional::Clause> base_theory_axioms;
-    size_t frontier {0};
+//    size_t frontier {0};
 
 
     virtual void compute_and_add_observations(const Instance::Action *last_action,
@@ -119,8 +119,8 @@ protected:
 
     bool is_forbidden(int literal) const;
     bool is_forbidden(const clause_t &clause) const;
+public:
     void fill_atoms_to_var_map(const LW1_Instance &lw1);
 };
 
 #endif
-

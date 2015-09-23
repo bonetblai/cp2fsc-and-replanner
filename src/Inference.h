@@ -1,8 +1,10 @@
-#include <set>
-#include <queue>
-#include <vector>
-#include <iostream>
 #include <algorithm>
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <map>
+#include <set>
+#include "lw1_problem.h"
 
 #define UP
 
@@ -84,7 +86,7 @@ namespace Inference {
             void setInvertedIndex(const CNF &cnf, vector< vector<int> > &mapper);
             inline bool isWatched(const CNF &cnf, int clause, int value);
             virtual bool propagate(const CNF &cnf, vector<int> &assigned, int p);
-            void add_negative_propositions(const CNF &cnf, 
+            void add_negative_propositions(const CNF &cnf,
                                            const vector< vector<int> > &inv_index,
                                            int prop,
                                            int value,
@@ -98,6 +100,20 @@ namespace Inference {
             // virtual void reduce() = 0;
             void solve(const CNF &cnf, vector<int> &assigned);
             void lookahead(const CNF &cnf, vector<int> &assigned);
+        };
+
+        class CSP {
+        private:
+            // Static attributes to be available for instances inside solver
+            static vector<LW1_Instance::Variable*> variables_;
+            static map<int, int> atoms_to_var_map_;
+
+            // Changes with every propagation
+            map<int, set<int>> domains_;
+            // TODO: Constraints
+        public:
+            CSP() { };
+            void initialize(const vector<LW1_Instance::Variable*> &vars, const map<int, int> &map);
         };
     } // Propositional namespace
 } // Inference namespace

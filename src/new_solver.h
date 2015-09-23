@@ -36,7 +36,7 @@ class NewSolver {
     }
     virtual ~NewSolver() { }
 
-    virtual void initialize();
+    virtual void initialize(const KP_Instance &kp);
     virtual int solve(const T &initial_hidden_state,
                       Instance::Plan &final_plan,
                       std::vector<std::set<int> > &fired_sensors_during_execution,
@@ -59,7 +59,7 @@ class NewSolver {
 };
 
 template<typename T>
-void NewSolver<T>::initialize() {
+void NewSolver<T>::initialize(const KP_Instance &kp) {
 }
 
 template<typename T>
@@ -366,7 +366,7 @@ template<typename T>
 void NewSolver<T>::apply_inference(const Instance::Action *last_action,
                                    const std::set<int> &sensed_at_step,
                                    T &state) const {
-    // translation_type is either K_REPLANNER or CLG. 
+    // translation_type is either K_REPLANNER or CLG.
     assert(translation_type_ != LW1);
 
     // compute deductive closure with respect to invariants (for K-replanner and clg)
@@ -381,7 +381,7 @@ void NewSolver<T>::apply_inference(const Instance::Action *last_action,
         fix_point_reached = old_state == state;
     }
 }
- 
+
 template<typename T>
 bool NewSolver<T>::inconsistent(const T &state, const std::vector<T> &assumptions, size_t k) const {
     bool verbose = options_.is_enabled("solver:print:consistency:check");
@@ -410,4 +410,3 @@ bool NewSolver<T>::inconsistent(const T &state, const std::vector<T> &assumption
 }
 
 #endif
-

@@ -123,6 +123,8 @@ const char *available_options[] = {
     "lw1:inference:watched-literals",          "[LW1] uses the watched literals method for unit resolution (to be used with lw1:inference:up)",
     "lw1:inference:up:lookahead",              "[LW1] uses unit resolution with 1-lookahead as inference mechanism",
     "lw1:inference:up:enhanced",               "[LW1] maintain inferred (non-forbidden) clauses",
+    "lw1:inference:arc-consistency",           "[LW1] uses arc consistency as inference method",
+
 
     // lw1 boost
     "lw1:boost:complete-effects",                       "[LW1] complete effects for variables", // CHECK

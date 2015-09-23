@@ -175,9 +175,17 @@ int main(int argc, const char *argv[]) {
         g_options.disable("lw1:boost:literals-for-observables:dynamic");
     } else {
         assert(g_options.is_enabled("lw1:strict"));
-        if( !g_options.is_disabled("lw1:inference:up") ) g_options.enable("lw1:inference:up");
-        if( !g_options.is_disabled("lw1:inference:watched-literals") ) g_options.enable("lw1:inference:watched-literals");
-        if( !g_options.is_disabled("lw1:boost:enable-post-actions") ) g_options.enable("lw1:boost:enable-post-actions");
+
+        if ( g_options.is_enabled("lw1:inference:arc-consistency") ) {
+            if( g_options.is_enabled("lw1:inference:up") ) {
+                cout << Utils::error() << "only one method of inference is allowed" << endl;
+                exit(-1);
+            }
+        } else {
+            if( !g_options.is_disabled("lw1:inference:up") ) g_options.enable("lw1:inference:up");
+            if( !g_options.is_disabled("lw1:inference:watched-literals") ) g_options.enable("lw1:inference:watched-literals");
+            if( !g_options.is_disabled("lw1:boost:enable-post-actions") ) g_options.enable("lw1:boost:enable-post-actions");
+        }
     }
 
     if( g_options.is_enabled("lw1:boost:drule:sensing:type4:add") ) {
@@ -267,7 +275,7 @@ int main(int argc, const char *argv[]) {
     //instance.do_action_compilation(*variables);
 
     cout << "creating KP translation..." << endl;
-    KP_Instance *kp_instance = new LW1_Instance(instance, *variables, *sensing_models, *accepted_literals_for_observables);
+    LW1_Instance *kp_instance = new LW1_Instance(instance, *variables, *sensing_models, *accepted_literals_for_observables);
 
     if( g_options.is_enabled("kp:print:raw") ) {
         kp_instance->print(cout);
@@ -321,8 +329,17 @@ int main(int argc, const char *argv[]) {
         LW1_Solver solver(instance, *kp_instance, *planner, opt_time_bound, opt_ncalls_bound);
         if( g_options.is_enabled("lw1:inference:preload") ) {
             solver.initialize(*kp_instance);
-            Inference::Propositional::WatchedLiterals wl;
-            wl.initialize_axioms(solver.getCNF());
+            if (g_options.is_enabled("lw1:inference:watched-literals")) {
+                solver.fill_atoms_to_var_map(*kp_instance);
+                Inference::Propositional::WatchedLiterals wl;
+                wl.initialize_axioms(solver.getCNF());
+            }
+        }
+
+        if (g_options.is_enabled("lw1:inference:arc-consistency")) {
+            solver.fill_atoms_to_var_map(*kp_instance);
+            Inference::Propositional::CSP csp;
+            csp.initialize(kp_instance->variables_, solver.atoms_to_vars_);
         }
 
         // solve
@@ -435,4 +452,3 @@ int main(int argc, const char *argv[]) {
     delete planner;
     return 0;
 }
-
