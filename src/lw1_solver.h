@@ -73,8 +73,7 @@ protected:
     // TODO: Make this safe.
     mutable Inference::Propositional::CNF cnf;
     set<Inference::Propositional::Clause> base_theory_axioms;
-//    size_t frontier {0};
-
+    size_t frontier = 0;
 
     virtual void compute_and_add_observations(const Instance::Action *last_action,
                                               const STATE_CLASS &hidden,
