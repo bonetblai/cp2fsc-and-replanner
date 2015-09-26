@@ -466,6 +466,71 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
 #ifdef DEBUG
         cout << Utils::cyan() << "Using inference: 'arc consistency'" << Utils::normal() << endl;
 #endif
+
+        Inference::Propositional::CSP csp;
+
+        // Compute relevant sensing model
+        // From this method the K_o used for AC3 are extracted
+        relevant_sensing_models_as_cnf_t relevant_sensing_models_as_cnf;
+        if (last_action != 0)
+            fill_relevant_sensing_models(lw1, last_action, sensed_at_step, relevant_sensing_models_as_cnf);
+
+        for (relevant_sensing_models_as_cnf_t::const_iterator it = relevant_sensing_models_as_cnf.begin();
+             it != relevant_sensing_models_as_cnf.end(); ++it) {
+            int sensed_literal = it->first;
+            for (map<int, sensing_models_as_cnf_t>::const_iterator jt = it->second.begin();
+                 jt != it->second.end(); ++jt) {
+                int var_key = jt->first;
+                const LW1_Instance::Variable &variable = *lw1.variables_[var_key];
+                if (variable.is_state_variable_) {
+                    assert(jt->second.empty());
+                    int k_literal =
+                            sensed_literal > 0 ? 1 + 2 * (sensed_literal - 1) : 1 + 2 * (-sensed_literal - 1) + 1;
+#ifdef DEBUG
+                    cout << Utils::red() << "[Theory] Add obs (state) literal: ";
+                    state.print_literal(cout, k_literal, &kp_instance_);
+                    cout << Utils::normal() << endl;
+#endif
+//                    Inference::Propositional::Clause cl;
+//                    cl.push_back(k_literal);
+////                    cnf.push_back(cl);
+                } else {
+                    const sensing_models_as_cnf_t &sensing_models_as_cnf = jt->second;
+
+                    for (size_t k = 0; k < sensing_models_as_cnf.size(); ++k) {
+                        const cnf_t &cnf_for_sensing_model = *sensing_models_as_cnf[k];
+
+                        for (size_t j = 0; j < cnf_for_sensing_model.size(); ++j) {
+                            const clause_t &clause = cnf_for_sensing_model[j];
+#ifdef DEBUG
+                            cout << Utils::red() << "[Theory] Add K_o clause: ";
+                            state.print_clause(cout, clause, &kp_instance_);
+                            cout << Utils::normal() << endl;
+
+                            // The clause holds the indexes for the atoms
+                            // To find it in atoms_, 1 must be substracted.
+//                            for (auto cl = clause.cbegin(); cl != clause.cend(); cl++) {
+//                                int cl_index = abs(*cl);
+//                                int k_literal = cl_index > 0 ? (cl_index - 1) / 2 : (-cl_index - 1) / 2 + 1;
+//                                cout << Utils::magenta() << "Related variable: ";
+//                                cout << lw1.variables_[atoms_to_vars_.at(k_literal)]->name_;
+//                                cout << Utils::normal() << endl;
+//                            }
+
+#endif
+                            Inference::Propositional::Clause cl;
+                            for (size_t i = 0; i < clause.size(); ++i) {
+                                cl.push_back(clause[i]);
+                            }
+                            csp.add_constraint(cl);
+                        }
+                    }
+                }
+            }
+        }
+        csp.remove_unary_constraints();
+        // print CSP
+        csp.print(cout);
     } else {
         cout << Utils::error() << "unspecified inference method for lw1" << endl;
         exit(255);

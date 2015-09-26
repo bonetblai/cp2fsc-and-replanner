@@ -31,6 +31,7 @@ namespace Inference {
                     if (*it == p) return it;
                 return it;
             }
+            void print(ostream &os);
         };
 
         class CNF : public vector<Clause> {
@@ -104,16 +105,16 @@ namespace Inference {
 
         class CSP {
         private:
-            // Static attributes to be available for instances inside solver
             static vector<LW1_Instance::Variable*> variables_;
             static map<int, int> atoms_to_var_map_;
-
-            // Changes with every propagation
-            map<int, set<int>> domains_;
-            // TODO: Constraints
+            static map<int, set<int>> domains_;
+            static vector<Clause> constraints_;
         public:
             CSP() { };
             void initialize(const vector<LW1_Instance::Variable*> &vars, const map<int, int> &map);
+            void add_constraint(Clause &c);
+            void print(std::ostream &os);
+            void remove_unary_constraints();
         };
     } // Propositional namespace
 } // Inference namespace

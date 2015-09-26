@@ -214,7 +214,8 @@ int main(int argc, const char *argv[]) {
     }
 
     if( !g_options.is_enabled("lw1:inference:forward-chaining") &&
-        !g_options.is_enabled("lw1:inference:up") ) {
+        !g_options.is_enabled("lw1:inference:up") &&
+        !g_options.is_enabled("lw1:inference:arc-consistency") ) {
         g_options.enable("lw1:inference:forward-chaining"); // CHECK: default should be UP
     }
 

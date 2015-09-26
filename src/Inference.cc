@@ -10,6 +10,7 @@ using namespace std;
 
 typedef vector<LW1_Instance::Variable*> var_vec;
 typedef Inference::Propositional::CNF::const_iterator const_vec_set_it;
+typedef vector<Inference::Propositional::Clause> cl_t;
 typedef vector< vector<int> >::iterator vec_vec_it;
 typedef set<int>::iterator set_it;
 typedef vector<int>::iterator vec_it;
@@ -32,6 +33,8 @@ vii Inference::Propositional::WatchedLiterals::watched = vii();
 // CSP
 var_vec Inference::Propositional::CSP::variables_ = var_vec();
 av_map Inference::Propositional::CSP::atoms_to_var_map_ = av_map();
+map<int, set<int>> Inference::Propositional::CSP::domains_ = map<int, set<int>>();
+cl_t Inference::Propositional::CSP::constraints_ = cl_t();
 
 
 void Inference::Propositional::DPLL::solve(const CNF &a, CNF &b) {
@@ -234,4 +237,51 @@ void Inference::Propositional::CSP::initialize(const vector<LW1_Instance::Variab
                                                    const map<int, int> &map) {
     variables_.assign(vars.cbegin(), vars.cend());
     atoms_to_var_map_ = map;
+    constraints_ = vector<Clause>();
+    for (int i = 0; i < variables_.size(); i++) {
+        LW1_Instance::Variable *var = variables_[i];
+        domains_[i] = var->domain_;
+    }
+}
+
+void Inference::Propositional::CSP::add_constraint(Inference::Propositional::Clause &c) {
+    constraints_.push_back(c);
+}
+
+
+void Inference::Propositional::CSP::print(ostream &os) {
+    os << "CSP:" << endl;
+    os << "Variables: " << endl;
+    for (int i = 0; i < variables_.size(); i++) {
+        variables_[i]->print(os);
+        os << endl;
+    }
+
+    os << "Constraints: " << endl;
+    for (cl_t::const_iterator it = constraints_.cbegin(); it != constraints_.cend(); it++) {
+        Clause cl = *it;
+        cl.print(os);
+        os << endl;
+    }
+}
+
+void Inference::Propositional::Clause::print(ostream &os) {
+    os << "{ ";
+    for (Clause::const_iterator it = cbegin(); it != cend(); it++) {
+        os << *it << ", ";
+    }
+    os << " }";
+}
+
+void Inference::Propositional::CSP::remove_unary_constraints() {
+    for (vector<Clause>::const_iterator it = constraints_.cbegin(); it != constraints_.cend(); it++) {
+        Clause cl = *it;
+        if (cl.size() == 1) {
+            // Do trasformation of indexes and remove l-atom from domains
+            int cl_index = abs(cl[0]);
+            int k_literal = cl_index > 0 ? (cl_index - 1) / 2 : (-cl_index - 1) / 2 + 1;
+            int var_index = atoms_to_var_map_.at(k_literal);
+            variables_[var_index]->domain_.erase(k_literal);
+        }
+    }
 }
