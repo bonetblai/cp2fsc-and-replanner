@@ -3,7 +3,7 @@
 #include "lw1_solver.h"
 #include "classical_planner.h"
 #include "utils.h"
-#include "Inference.h"
+#include "inference.h"
 
 #define DEBUG
 

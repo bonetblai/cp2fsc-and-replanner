@@ -9,7 +9,7 @@
 #include "clg_problem.h"
 #include "lw1_problem.h"
 #include "lw1_solver.h"
-#include "Inference.h"
+#include "inference.h"
 #include "options.h"
 #include "available_options.h"
 #include "utils.h"

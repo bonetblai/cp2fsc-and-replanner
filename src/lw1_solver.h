@@ -1,4 +1,4 @@
-#include "Inference.h"
+#include "inference.h"
 
 #ifndef LW1_SOLVER_H
 #define LW1_SOLVER_H

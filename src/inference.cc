@@ -4,7 +4,7 @@
 #include <iostream>
 #include <queue>
 #include <set>
-#include "Inference.h"
+#include "inference.h"
 #include "lw1_state.h"
 
 using namespace std;
