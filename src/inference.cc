@@ -306,8 +306,19 @@ int Inference::Propositional::CSP::get_literal(int k_literal) {
 }
 
 void Inference::Propositional::CSP::add_to_state(LW1_State *state) {
-//    for (auto vit = variables_.cbegin(); vit != variables_.cend(); vit++) {
-//        LW1_Instance::Variable *var =
-//    }
-//    state->cnf_.push_back(nullptr);
+    for (map<int, set<int>>::const_iterator it = domains_.cbegin();
+         it != domains_.cend(); it++) {
+        const set<int> &domain = it->second;
+        int var_index = it->first;
+        LW1_Instance::Variable *var = variables_[var_index];
+        if (var->is_state_variable_) {
+            if (domain.size() == 1) {
+                Clause cl;
+                int literal = *domain.cbegin();
+                int k_literal = literal * 2 + 1;
+                cl.push_back(k_literal);
+                state->cnf_.push_back(cl);
+            }
+        }
+    }
 }
