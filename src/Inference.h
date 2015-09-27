@@ -5,6 +5,7 @@
 #include <map>
 #include <set>
 #include "lw1_problem.h"
+#include "lw1_state.h"
 
 #define UP
 
@@ -115,7 +116,8 @@ namespace Inference {
             void add_constraint(Clause &c);
             void print(std::ostream &os);
             void remove_unary_constraints();
-            int get_k_literal(int cl_index);
+            int get_literal(int k_literal);
+            void add_to_state(LW1_State *state);
         };
     } // Propositional namespace
 } // Inference namespace

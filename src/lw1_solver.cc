@@ -531,8 +531,9 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         csp.remove_unary_constraints();
         // print CSP
         csp.print(cout);
-        // Here we should add to state the result
 
+        // Here we should add to state the result
+        csp.add_to_state(&state);
     } else {
         cout << Utils::error() << "unspecified inference method for lw1" << endl;
         exit(255);

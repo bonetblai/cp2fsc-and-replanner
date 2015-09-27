@@ -5,6 +5,7 @@
 #include <queue>
 #include <set>
 #include "Inference.h"
+#include "lw1_state.h"
 
 using namespace std;
 
@@ -253,7 +254,11 @@ void Inference::Propositional::CSP::print(ostream &os) {
     os << "CSP:" << endl;
     os << "Variables: " << endl;
     for (int i = 0; i < variables_.size(); i++) {
-        variables_[i]->print(os);
+        os << variables_[i]->name_ << " -> ";
+        set<int> &domain = domains_.at(i);
+        for (auto it = domain.cbegin(); it != domain.cend(); it++) {
+            os << *it << ", ";
+        }
         os << endl;
     }
 
@@ -279,23 +284,30 @@ void Inference::Propositional::CSP::remove_unary_constraints() {
         if (cl.size() == 1) {
             // Do trasformation of indexes and remove l-atom from domains
             int cl_index = cl[0];
-            int k_literal = get_k_literal(cl_index);
+            int k_literal = get_literal(cl_index);
             int var_index = atoms_to_var_map_.at(k_literal);
+            set<int> &domain = domains_.at(var_index);
 
             if (cl_index % 2 == 0) {
                 // if the atom is a K_not atom, remove the atom
-                variables_[var_index]->domain_.erase(k_literal);
+                domain.erase(k_literal);
             } else {
                 // if the atom is a K atom, remove everything else from domain
-                auto dit = variables_[var_index]->domain_.find(k_literal);
-                variables_[var_index]->domain_.erase(variables_[var_index]->domain_.cbegin(), dit);
-                variables_[var_index]->domain_.erase(dit, variables_[var_index]->domain_.cend());
+                auto dit = domain.find(k_literal);
+                domain.erase(domain.cbegin(), dit);
+                domain.erase(dit, domain.cend());
             }
         }
     }
 }
 
-int Inference::Propositional::CSP::get_k_literal(int cl_index) {
-    return cl_index > 0 ? (cl_index - 1) / 2 : (-cl_index - 1) / 2 + 1;
+int Inference::Propositional::CSP::get_literal(int k_literal) {
+    return k_literal > 0 ? (k_literal - 1) / 2 : (-k_literal - 1) / 2 + 1;
 }
 
+void Inference::Propositional::CSP::add_to_state(LW1_State *state) {
+//    for (auto vit = variables_.cbegin(); vit != variables_.cend(); vit++) {
+//        LW1_Instance::Variable *var =
+//    }
+//    state->cnf_.push_back(nullptr);
+}
