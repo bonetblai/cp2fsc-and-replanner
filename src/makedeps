@@ -38,11 +38,11 @@ solver.o: solver.cc solver.h classical_planner.h kp_problem.h problem.h \
 lw1_solver.o: lw1_solver.cc lw1_solver.h new_solver.h classical_planner.h \
   kp_problem.h problem.h name.h index.h options.h utils.h base.h \
   ptr_table.h string_table.h char_map.h state.h lw1_state.h \
-  lw1_problem.h Inference.h
+  lw1_problem.h inference.h
 classical_planner.o: classical_planner.cc classical_planner.h \
   kp_problem.h problem.h name.h index.h options.h utils.h base.h \
   ptr_table.h string_table.h char_map.h state.h
-Inference.o: Inference.cc Inference.h
+inference.o: inference.cc inference.h
 grammar.o: grammar.cc base.h ptr_table.h string_table.h char_map.h \
   options.h utils.h problem.h name.h index.h
 scanner.o: scanner.cc scanner.h string_table.h char_map.h grammar.h \
