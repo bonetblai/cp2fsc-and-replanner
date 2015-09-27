@@ -318,9 +318,9 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                             // To find it in atoms_, 1 must be substracted.
 #ifdef DEBUG
 //                            for (auto cl = clause.cbegin(); cl != clause.cend(); cl++) {
-//                                int cl_index = abs(*cl);
+//                                int cl_index = *cl;
 //                                int k_literal = cl_index > 0 ? (cl_index - 1) / 2 : (-cl_index - 1) / 2 + 1;
-//                                cout << Utils::magenta() << "Related variable: ";
+//                                cout << Utils::magenta() << "Related variable to " << cl_index << ": ";
 //                                cout << lw1.variables_[atoms_to_vars_.at(k_literal)]->name_;
 //                                cout << Utils::normal() << endl;
 //                            }
@@ -510,9 +510,9 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                             // The clause holds the indexes for the atoms
                             // To find it in atoms_, 1 must be substracted.
 //                            for (auto cl = clause.cbegin(); cl != clause.cend(); cl++) {
-//                                int cl_index = abs(*cl);
+//                                int cl_index = *cl;
 //                                int k_literal = cl_index > 0 ? (cl_index - 1) / 2 : (-cl_index - 1) / 2 + 1;
-//                                cout << Utils::magenta() << "Related variable: ";
+//                                cout << Utils::magenta() << "Related variable to " << cl_index << ": ";
 //                                cout << lw1.variables_[atoms_to_vars_.at(k_literal)]->name_;
 //                                cout << Utils::normal() << endl;
 //                            }
@@ -531,6 +531,8 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         csp.remove_unary_constraints();
         // print CSP
         csp.print(cout);
+        // Here we should add to state the result
+
     } else {
         cout << Utils::error() << "unspecified inference method for lw1" << endl;
         exit(255);

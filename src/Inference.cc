@@ -278,10 +278,24 @@ void Inference::Propositional::CSP::remove_unary_constraints() {
         Clause cl = *it;
         if (cl.size() == 1) {
             // Do trasformation of indexes and remove l-atom from domains
-            int cl_index = abs(cl[0]);
-            int k_literal = cl_index > 0 ? (cl_index - 1) / 2 : (-cl_index - 1) / 2 + 1;
+            int cl_index = cl[0];
+            int k_literal = get_k_literal(cl_index);
             int var_index = atoms_to_var_map_.at(k_literal);
-            variables_[var_index]->domain_.erase(k_literal);
+
+            if (cl_index % 2 == 0) {
+                // if the atom is a K_not atom, remove the atom
+                variables_[var_index]->domain_.erase(k_literal);
+            } else {
+                // if the atom is a K atom, remove everything else from domain
+                auto dit = variables_[var_index]->domain_.find(k_literal);
+                variables_[var_index]->domain_.erase(variables_[var_index]->domain_.cbegin(), dit);
+                variables_[var_index]->domain_.erase(dit, variables_[var_index]->domain_.cend());
+            }
         }
     }
 }
+
+int Inference::Propositional::CSP::get_k_literal(int cl_index) {
+    return cl_index > 0 ? (cl_index - 1) / 2 : (-cl_index - 1) / 2 + 1;
+}
+

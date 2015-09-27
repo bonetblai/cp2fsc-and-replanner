@@ -115,6 +115,7 @@ namespace Inference {
             void add_constraint(Clause &c);
             void print(std::ostream &os);
             void remove_unary_constraints();
+            int get_k_literal(int cl_index);
         };
     } // Propositional namespace
 } // Inference namespace
