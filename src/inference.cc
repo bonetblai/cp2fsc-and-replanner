@@ -316,8 +316,9 @@ void Inference::Propositional::CSP::add_to_state(LW1_State *state) {
                 Clause cl;
                 int literal = *domain.cbegin();
                 int k_literal = literal * 2 + 1;
-                cl.push_back(k_literal);
-                state->cnf_.push_back(cl);
+//                cl.push_back(k_literal);
+//                state->cnf_.push_back(cl);
+                state->add(k_literal - 1);
             }
         }
     }
