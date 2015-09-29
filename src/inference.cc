@@ -278,22 +278,27 @@ void Inference::Propositional::Clause::print(ostream &os) {
     os << " }";
 }
 
-void Inference::Propositional::CSP::remove_unary_constraints() {
+void Inference::Propositional::CSP::remove_unary_constraints(LW1_State *state) {
     for (vector<Clause>::const_iterator it = constraints_.cbegin(); it != constraints_.cend(); it++) {
         Clause cl = *it;
         if (cl.size() == 1) {
             // Do trasformation of indexes and remove l-atom from domains
             int cl_index = cl[0];
-            int k_literal = get_literal(cl_index);
-            int var_index = atoms_to_var_map_.at(k_literal);
+            int l_atom = get_l_atom(cl_index);
+            int var_index = atoms_to_var_map_.at(l_atom);
             set<int> &domain = domains_.at(var_index);
 
             if (cl_index % 2 == 0) {
                 // if the atom is a K_not atom, remove the atom
-                domain.erase(k_literal);
+                domain.erase(l_atom);
+                state->add(cl_index -1);
             } else {
                 // if the atom is a K atom, remove everything else from domain
-                auto dit = domain.find(k_literal);
+                for (auto it = domain.cbegin(); it != domain.cend(); it++)
+                    if (*it != l_atom)
+                        state->add(get_h_atom(*it));  // this has to be K_NOT
+
+                auto dit = domain.find(l_atom);
                 domain.erase(domain.cbegin(), dit);
                 domain.erase(dit, domain.cend());
             }
@@ -301,8 +306,21 @@ void Inference::Propositional::CSP::remove_unary_constraints() {
     }
 }
 
-int Inference::Propositional::CSP::get_literal(int k_literal) {
+int Inference::Propositional::CSP::get_l_atom(int k_literal) {
     return k_literal > 0 ? (k_literal - 1) / 2 : (-k_literal - 1) / 2 + 1;
+}
+
+int Inference::Propositional::CSP::get_h_atom(int l_atom) {
+    return l_atom * 2 + 1;
+}
+
+void Inference::Propositional::CSP::solve(LW1_State *state) {
+    remove_unary_constraints(state);
+    // print CSP
+    print(cout);
+
+    // Here we should add to state the result
+    add_to_state(state);
 }
 
 void Inference::Propositional::CSP::add_to_state(LW1_State *state) {

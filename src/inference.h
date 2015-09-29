@@ -106,18 +106,24 @@ namespace Inference {
 
         class CSP {
         private:
+            typedef int L_ATOM;
+            typedef int H_ATOM;
+            typedef int VAR_INDEX;
+
             static vector<LW1_Instance::Variable*> variables_;
-            static map<int, int> atoms_to_var_map_;
-            static map<int, set<int>> domains_;
+            static map<L_ATOM, VAR_INDEX> atoms_to_var_map_;
+            static map<VAR_INDEX, set<L_ATOM> > domains_;
             static vector<Clause> constraints_;
         public:
             CSP() { };
             void initialize(const vector<LW1_Instance::Variable*> &vars, const map<int, int> &map);
+            void solve(LW1_State *state);
+            void remove_unary_constraints(LW1_State *state);
+            void add_to_state(LW1_State *state);
             void add_constraint(Clause &c);
             void print(std::ostream &os);
-            void remove_unary_constraints();
-            int get_literal(int k_literal);
-            void add_to_state(LW1_State *state);
+            int get_l_atom(int h_atom);
+            int get_h_atom(int l_atom);
         };
     } // Propositional namespace
 } // Inference namespace

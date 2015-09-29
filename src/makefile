@@ -48,7 +48,7 @@ deps:	$(TARGET1).cc $(TARGET2).cc $(TARGET3).cc $(LIBSRCS) $(LIBGENSRCS)
 	$(C++) -MM $(TARGET1).cc $(TARGET2).cc $(TARGET3).cc $(LIBSRCS) $(LIBGENSRCS) > makedeps
 
 clean:
-	rm -f *~ *.o *.a core $(TARGET1) $(TARGET2) $(TARGET3) gen-[pd].*.pddl
+	rm -f *~ *.o *.a core $(TARGET1) $(TARGET2) $(TARGET3) gen-[pd]*.pddl
 
 remake: clean
 	rm -f grammar.* scanner.*
