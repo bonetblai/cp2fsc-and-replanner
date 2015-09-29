@@ -1,4 +1,11 @@
+!gitignore
 .idea/
 CMakeLists.txt
 grammar.*
 scanner.*
+*.o
+.*
+cp2fsc
+k-replanner
+lw1
+libp.a
