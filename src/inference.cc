@@ -293,10 +293,8 @@ void Inference::Propositional::CSP::remove_unary_constraints(LW1_State *state) {
                 domain.erase(l_atom);
                 state->add(cl_index -1);
             } else {
+                cout << "XXX: Esto esta pasando" << endl;
                 // if the atom is a K atom, remove everything else from domain
-                for (auto it = domain.cbegin(); it != domain.cend(); it++)
-                    if (*it != l_atom)
-                        state->add(get_h_atom(*it));  // this has to be K_NOT
 
                 auto dit = domain.find(l_atom);
                 domain.erase(domain.cbegin(), dit);
@@ -331,12 +329,20 @@ void Inference::Propositional::CSP::add_to_state(LW1_State *state) {
         LW1_Instance::Variable *var = variables_[var_index];
         if (var->is_state_variable_) {
             if (domain.size() == 1) {
-                Clause cl;
                 int literal = *domain.cbegin();
                 int k_literal = literal * 2 + 1;
 //                cl.push_back(k_literal);
 //                state->cnf_.push_back(cl);
                 state->add(k_literal - 1);
+                for (auto it2 = variables_[var_index]->domain_.cbegin();
+                     it2 != variables_[var_index]->domain_.cend();
+                     it2++) {
+
+                    if (*it2 != literal) {
+                        int k_literal = get_h_atom(*it2);
+                        state->add(k_literal);
+                    }
+                }
             }
         }
     }
