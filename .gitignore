@@ -10,4 +10,5 @@ k-replanner
 lw1
 libp.a
 gen-*
+ff.*
 Debug/
