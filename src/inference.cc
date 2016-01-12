@@ -331,19 +331,20 @@ void Inference::Propositional::CSP::update_state(LW1_State *state) {
         const set<int> &domain = it->second;
         int var_index = it->first;
         LW1_Instance::Variable *var = variables_[var_index];
+
+        // Only the state variables whose domains are unary are inserted
+        // into the state
         if (var->is_state_variable_) {
             if (domain.size() == 1) {
                 int literal = *domain.cbegin();
                 int k_literal = literal * 2 + 1;
-//                cl.push_back(k_literal);
-//                state->cnf_.push_back(cl);
                 state->add(k_literal - 1);
                 for (auto it2 = variables_[var_index]->domain_.cbegin();
                      it2 != variables_[var_index]->domain_.cend();
                      it2++) {
 
                     if (*it2 != literal) {
-                        int k_literal = get_h_atom(*it2);
+                        k_literal = get_h_atom(*it2);
                         state->add(k_literal);
                     }
                 }
