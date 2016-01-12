@@ -9,3 +9,5 @@ cp2fsc
 k-replanner
 lw1
 libp.a
+gen-*
+Debug/
