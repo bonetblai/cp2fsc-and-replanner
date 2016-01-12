@@ -181,6 +181,7 @@ int main(int argc, const char *argv[]) {
                 cout << Utils::error() << "only one method of inference is allowed" << endl;
                 exit(-1);
             }
+            if( !g_options.is_disabled("lw1:boost:enable-post-actions") ) g_options.enable("lw1:boost:enable-post-actions");
         } else {
             if( !g_options.is_disabled("lw1:inference:up") ) g_options.enable("lw1:inference:up");
             if( !g_options.is_disabled("lw1:inference:watched-literals") ) g_options.enable("lw1:inference:watched-literals");
