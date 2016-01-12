@@ -317,11 +317,15 @@ void Inference::Propositional::CSP::solve(LW1_State *state) {
     // print CSP
     print(cout);
 
-    // Here we should add to state the result
-    add_to_state(state);
+    ///////////////////////////////
+    // Insert code for AC3 here ///
+    ///////////////////////////////
+
+    // The state must be updated with results
+    update_state(state);
 }
 
-void Inference::Propositional::CSP::add_to_state(LW1_State *state) {
+void Inference::Propositional::CSP::update_state(LW1_State *state) {
     for (map<int, set<int>>::const_iterator it = domains_.cbegin();
          it != domains_.cend(); it++) {
         const set<int> &domain = it->second;

@@ -119,7 +119,7 @@ namespace Inference {
             void initialize(const vector<LW1_Instance::Variable*> &vars, const map<int, int> &map);
             void solve(LW1_State *state);
             void remove_unary_constraints(LW1_State *state);
-            void add_to_state(LW1_State *state);
+            void update_state(LW1_State *state);
             void add_constraint(Clause &c);
             void print(std::ostream &os);
             int get_l_atom(int h_atom);
