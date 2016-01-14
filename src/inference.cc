@@ -253,24 +253,32 @@ void Inference::Propositional::CSP::add_constraint(Inference::Propositional::Cla
 }
 
 
-void Inference::Propositional::CSP::print(ostream &os) {
+void Inference::Propositional::CSP::print(ostream &os,
+                                          const Instance *instance,
+                                          const LW1_State *state) {
     os << "CSP:" << endl;
+
+    // Variables and domains
     os << "Variables: " << endl;
     for (int i = 0; i < variables_.size(); i++) {
         os << variables_[i]->name_ << " -> ";
         set<int> &domain = domains_.at(i);
         for (auto it = domain.cbegin(); it != domain.cend(); it++) {
-            os << *it << ", ";
+            int k_literal = get_h_atom(*it);
+            state->print_literal(os, k_literal, instance);
+            os << ", ";
         }
         os << endl;
     }
 
-    os << "Constraints: " << endl;
+    // Constraints
+    os << Utils::blue();
+    os << "Constraints: ";
     for (cl_t::const_iterator it = constraints_.cbegin(); it != constraints_.cend(); it++) {
         Clause cl = *it;
-        cl.print(os);
-        os << endl;
+        state->print_clause(os, cl, instance);
     }
+    os << Utils::normal() << endl;
 }
 
 void Inference::Propositional::Clause::print(ostream &os) {
@@ -294,14 +302,16 @@ void Inference::Propositional::CSP::remove_unary_constraints(LW1_State *state,
 
             if (cl_index % 2 == 0) {
                 // if the atom is a K_not atom, remove the atom
-                domain.erase(l_atom);
+                int erased = domain.erase(l_atom);
                 state->add(cl_index -1);
 #ifdef DEBUG
-                cout << Utils::magenta();
-                cout << "[CSP] Removed from domain: ";
-                cout << Utils::normal();
-                state->print_literal(cout, cl_index - 1, instance);
-                cout << endl;
+                if (erased > 0) {
+                    cout << Utils::magenta();
+                    cout << "[CSP] Removed from domain: ";
+                    cout << Utils::normal();
+                    state->print_literal(cout, cl_index - 1, instance);
+                    cout << endl;
+                }
 #endif
             } else {
                 cout << "XXX: Esto esta pasando" << endl;
@@ -326,7 +336,7 @@ void Inference::Propositional::CSP::solve(LW1_State *state,
                                           const Instance *instance) {
     remove_unary_constraints(state, instance);
     // print CSP
-//    print(cout);
+    print(cout, instance, state);
 
     ///////////////////////////////
     // Insert code for AC3 here ///

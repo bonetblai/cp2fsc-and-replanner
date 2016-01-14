@@ -123,7 +123,7 @@ namespace Inference {
                                           const Instance *instance);
             void update_state(LW1_State *state);
             void add_constraint(Clause &c);
-            void print(std::ostream &os);
+            void print(std::ostream &os, const Instance *instance, const LW1_State *state);
             int get_l_atom(int h_atom);
             int get_h_atom(int l_atom);
         };
