@@ -521,13 +521,17 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                             for (size_t i = 0; i < clause.size(); ++i) {
                                 cl.push_back(clause[i]);
                             }
+
+                            // Constraints are added to the CSP
                             csp.add_constraint(cl);
                         }
                     }
                 }
             }
         }
-        csp.solve(&state);
+
+        // The CSP is solved
+        csp.solve(&state, &kp_instance_);
     } else {
         cout << Utils::error() << "unspecified inference method for lw1" << endl;
         exit(255);

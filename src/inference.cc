@@ -5,7 +5,10 @@
 #include <queue>
 #include <set>
 #include "inference.h"
+#include "utils.h"
 #include "lw1_state.h"
+
+#define DEBUG
 
 using namespace std;
 
@@ -278,7 +281,8 @@ void Inference::Propositional::Clause::print(ostream &os) {
     os << " }";
 }
 
-void Inference::Propositional::CSP::remove_unary_constraints(LW1_State *state) {
+void Inference::Propositional::CSP::remove_unary_constraints(LW1_State *state,
+                                                             const Instance *instance) {
     for (vector<Clause>::const_iterator it = constraints_.cbegin(); it != constraints_.cend(); it++) {
         Clause cl = *it;
         if (cl.size() == 1) {
@@ -292,10 +296,16 @@ void Inference::Propositional::CSP::remove_unary_constraints(LW1_State *state) {
                 // if the atom is a K_not atom, remove the atom
                 domain.erase(l_atom);
                 state->add(cl_index -1);
+#ifdef DEBUG
+                cout << Utils::magenta();
+                cout << "[CSP] Removed from domain: ";
+                cout << Utils::normal();
+                state->print_literal(cout, cl_index - 1, instance);
+                cout << endl;
+#endif
             } else {
                 cout << "XXX: Esto esta pasando" << endl;
                 // if the atom is a K atom, remove everything else from domain
-
                 auto dit = domain.find(l_atom);
                 domain.erase(domain.cbegin(), dit);
                 domain.erase(dit, domain.cend());
@@ -312,10 +322,11 @@ int Inference::Propositional::CSP::get_h_atom(int l_atom) {
     return l_atom * 2 + 1;
 }
 
-void Inference::Propositional::CSP::solve(LW1_State *state) {
-    remove_unary_constraints(state);
+void Inference::Propositional::CSP::solve(LW1_State *state,
+                                          const Instance *instance) {
+    remove_unary_constraints(state, instance);
     // print CSP
-    print(cout);
+//    print(cout);
 
     ///////////////////////////////
     // Insert code for AC3 here ///
