@@ -6,14 +6,14 @@
 #include <set>
 #include "csp.h"
 
-
 typedef std::set<int>::iterator SI_I;
 typedef std::set<int>::const_iterator SI_CI;
 
+typedef std::vector<int>VI;
 typedef std::vector<int>::iterator VI_I;
 typedef std::vector<int>::const_iterator VI_CI;
 
-typedef std::vector< std::vector<int> > VVI;
+typedef std::vector< VI > VVI;
 typedef VVI::iterator VVI_I;
 typedef VVI::const_iterator VVI_CI;
 
@@ -141,8 +141,31 @@ void Inference::CSP::Csp::print(std::ostream &os) const {
     }
 }
 
+void Inference::CSP::Csp::apply_unary_constraints() {
+    for (VVI_CI it = constraints_.cbegin(); it != constraints_.cend(); it++) {
+        VI cl = *it;
+        if (cl.size() == 1) {  // Unary constraint (vector<h_atom>)
+            variables_[get_var_index(cl[0])]->apply_unary_constraint(cl[0]);
+        }
+    }
+}
+
+void Inference::CSP::Variable::apply_unary_constraint(int h_atom) {
+    if (h_atom % 2 == 0) { 
+        // If h_atom is a K_not_atom, remove the K_atom which is K_not_atom - 1
+        current_domain_.erase(h_atom - 1);
+    } else {
+        // if the atom is a K_atom, remove everything else from domain
+        current_domain_.clear();
+        current_domain_.insert(h_atom);
+    }
+}
 
 void Inference::CSP::AC3::solve(Csp &csp, LW1_State &state,
                                 const Instance &instance) {
+    
+    csp.apply_unary_constraints();
+    // apply binary constraints
+    csp.dump_into(state);
     return;
 }
