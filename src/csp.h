@@ -25,14 +25,19 @@ namespace Inference {
                 /* Constructors for Variable */
                 Variable() { };
                 Variable(const LW1_Instance::Variable &var);
-                
+
                 std::set<int> get_original_domain() { return original_domain_; }
                 std::set<int> get_current_domain() { return current_domain_; }
 
                 //virtual void eval() = 0;  // Evaluation method
                 virtual bool is_binary() const = 0;
                 virtual void dump_into(std::vector<int> &info) const = 0;
-                
+
+                // Get negate K_not_literal of literal
+                int negate(int val) const {
+                    return -1;
+                }
+
                 // Debugging
                 void print(std::ostream &os) const;
         };
@@ -61,8 +66,6 @@ namespace Inference {
                 void dump_into(std::vector<int> &info) const;
                 // An arithmetic variables is not binary
                 bool is_binary() const { return false; }
-                // Get negate K_not_literal of literal 
-                int negate(int k) const; 
         };
 
         /**
@@ -78,22 +81,22 @@ namespace Inference {
                 static std::map<int, int> atoms_to_var_map_;
             public:
                 Csp() { };
-                void initialize(const std::vector<LW1_Instance::Variable*> &vars);
+                void initialize(
+                        const std::vector<LW1_Instance::Variable *> &vars,
+                        const std::map<int, int> map);
 
                 // Add a constraint to constraints_
                 void add_constraint(std::vector<int> &c) { 
-                    constraints_.push_back(c); 
-                };  
-
-                // Reduce domains by applying constraints
-                // CSP has to be consistent 
-                void apply_unary_constraints(LW1_State *state); 
+                    constraints_.push_back(c);
+                };
 
                 // Change (Add to) state relevant information of current csp
                 void dump_into(LW1_State &state) const;
 
                 // Debugging
                 void print(std::ostream &os) const; // Print CSP
+
+                void solve(LW1_State *state, const Instance *instance);
 
                 //int get_l_atom(int h_atom);
                 //int get_h_atom(int l_atom);
@@ -103,10 +106,12 @@ namespace Inference {
           * AC3 Algorithm for solvign CSP
           */
         class AC3 {
-            private: 
+            private:
+                // Reduce domains by applying constraints
+                // CSP has to be consistent
                 void unary_constraints(Csp &csp); // Apply unary constrains
             public:
-                void solve(Csp &csp);
+                void solve(Csp &csp, LW1_State &state, const Instance &instance);
         };
     }
 }

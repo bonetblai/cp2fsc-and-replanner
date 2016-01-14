@@ -13,20 +13,27 @@ typedef std::set<int>::const_iterator SI_CI;
 typedef std::vector<int>::iterator VI_I;
 typedef std::vector<int>::const_iterator VI_CI;
 
-typedef std::vector< std::vector<int> >::iterator VVI_I;
-typedef std::vector< std::vector<int> >::const_iterator VVI_CI;
+typedef std::vector< std::vector<int> > VVI;
+typedef VVI::iterator VVI_I;
+typedef VVI::const_iterator VVI_CI;
 
-typedef std::vector<Inference::CSP::Variable *>::iterator V_VAR_I;
-typedef std::vector<Inference::CSP::Variable *>::const_iterator V_VAR_CI;
+typedef std::vector<Inference::CSP::Variable *> V_VAR;
+typedef V_VAR::iterator V_VAR_I;
+typedef V_VAR::const_iterator V_VAR_CI;
 
+typedef std::map<int, int> MII;
+
+// Static members definitions
+V_VAR Inference::CSP::Csp::variables_ = V_VAR();
+VVI Inference::CSP::Csp::constraints_ = VVI();
+MII Inference::CSP::Csp::atoms_to_var_map_ = MII();
 
 /************************ Variable Abstract Class  ************************/
 
 Inference::CSP::Variable::Variable(const LW1_Instance::Variable &var):
     name_(var.name_),
     original_domain_(var.domain_), 
-    current_domain_(var.domain_) 
-{ 
+    current_domain_(var.domain_) {
 }
 
 
@@ -74,12 +81,38 @@ void Inference::CSP::Binary::dump_into(std::vector<int> &info) const {
 /************************ Csp Class ************************/
 
 /**
+  *  Initialize the CSP object
+  */
+void Inference::CSP::Csp::initialize(
+        const std::vector<LW1_Instance::Variable *> &vars,
+        const std::map<int, int> map) {
+
+    // Fill variables from Instance
+    for (auto it = vars.cbegin(); it != vars.cend(); it++) {
+        LW1_Instance::Variable *var = *it;
+        Inference::CSP::Variable *variable;
+
+        if (var->is_binary()) {
+            variable = new Binary(*var);
+        } else {
+            variable = new Arithmetic(*var);
+        }
+
+        variables_.push_back(variable);
+    }
+
+    // Copy atoms to vars
+    atoms_to_var_map_ = map;
+}
+
+/**
   * Dump information into state
   * This function is idempotent over state
   */
 void Inference::CSP::Csp::dump_into(LW1_State &state) const {
     for (V_VAR_CI var = variables_.begin(); var != variables_.end(); var++) {
-        std::vector<int> info; (*var)->dump_into(info);
+        std::vector<int> info;
+        (*var)->dump_into(info);
         for (VI_CI st = info.begin(); st != info.end(); st++) {
             state.add(*st);
         }
@@ -106,4 +139,10 @@ void Inference::CSP::Csp::print(std::ostream &os) const {
         }
         os << std::endl;
     }
+}
+
+
+void Inference::CSP::AC3::solve(Csp &csp, LW1_State &state,
+                                const Instance &instance) {
+    return;
 }

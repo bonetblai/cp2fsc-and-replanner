@@ -4,6 +4,7 @@
 #include "classical_planner.h"
 #include "utils.h"
 #include "inference.h"
+#include "csp.h"
 
 #define DEBUG
 
@@ -465,8 +466,8 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
 #ifdef DEBUG
         cout << Utils::cyan() << "Using inference: 'arc consistency'" << Utils::normal() << endl;
 #endif
-
-        Inference::Propositional::CSP csp;
+        Inference::CSP::Csp csp;
+        Inference::CSP::AC3 ac3;
 
         // Compute relevant sensing model
         // From this method the K_o used for AC3 are extracted
@@ -531,7 +532,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         }
 
         // The CSP is solved
-        csp.solve(&state, &kp_instance_);
+        ac3.solve(csp, state, kp_instance_);
     } else {
         cout << Utils::error() << "unspecified inference method for lw1" << endl;
         exit(255);

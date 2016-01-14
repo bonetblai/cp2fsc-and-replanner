@@ -13,6 +13,7 @@
 #include "options.h"
 #include "available_options.h"
 #include "utils.h"
+#include "csp.h"
 
 using namespace std;
 
@@ -332,7 +333,6 @@ int main(int argc, const char *argv[]) {
         if( g_options.is_enabled("lw1:inference:preload") ) {
             solver.initialize(*kp_instance);
             if (g_options.is_enabled("lw1:inference:watched-literals")) {
-                solver.fill_atoms_to_var_map(*kp_instance);
                 Inference::Propositional::WatchedLiterals wl;
                 wl.initialize_axioms(solver.getCNF());
             }
@@ -340,7 +340,7 @@ int main(int argc, const char *argv[]) {
 
         if (g_options.is_enabled("lw1:inference:arc-consistency")) {
             solver.fill_atoms_to_var_map(*kp_instance);
-            Inference::Propositional::CSP csp;
+            Inference::CSP::Csp csp;
             csp.initialize(kp_instance->variables_, solver.atoms_to_vars_);
         }
 
