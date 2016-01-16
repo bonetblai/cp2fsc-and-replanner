@@ -13,6 +13,15 @@
 namespace Inference {
     namespace CSP {
 
+        int get_h_atom(int l_atom) { return l_atom * 2 + 1; }
+
+        // Get K_not_literal of h_atom
+        int get_k_not(int h_atom) { return h_atom + 1; }
+
+        int get_l_atom(int h_atom) {
+            return h_atom > 0 ? (h_atom - 1) / 2 : (-h_atom - 1) / 2 + 1;
+        }
+
         /**
           *  Variable, Abstract Class used in CSP structure
           */
@@ -37,11 +46,8 @@ namespace Inference {
 
                 void apply_unary_constraint(int k_atom);
 
-                // Get K_not_literal of h_atom
-                int negate(int h_atom) const { return h_atom + 1; }
-
                 // Debugging
-                void print(std::ostream &os) const;
+                void print(std::ostream &os, const Instance *instance, const LW1_State *state) const;
         };
 
         /**
@@ -51,8 +57,8 @@ namespace Inference {
         public:
             Binary() { };
             Binary(const LW1_Instance::Variable &var) : Variable(var) {
-                original_domain_.insert(negate(*original_domain_.cbegin()));
-                current_domain_.insert(negate(*current_domain_.cbegin()));
+                original_domain_.insert(get_k_not(*original_domain_.cbegin()));
+                current_domain_.insert(get_k_not(*current_domain_.cbegin()));
             };
             // Implementation of pure virtual method
             void dump_into(std::vector<int> &info, const Instance *instance,
@@ -74,8 +80,6 @@ namespace Inference {
                                const LW1_State *state) const;
                 // An arithmetic variables is not binary
                 bool is_binary() const { return false; }
-
-
         };
 
         /**
@@ -103,24 +107,17 @@ namespace Inference {
                     constraints_.push_back(c);
                 };
 
-                int get_var_index(int h_atom) const {
-                    return atoms_to_var_map_.at(get_l_atom(h_atom));
-                }
-
-                int get_l_atom(int h_atom) const {
-                    return h_atom > 0 ? (h_atom - 1) / 2 : (-h_atom - 1) / 2 + 1;
-                }
-
                 // Change (Add to) state relevant information of current csp
                 void dump_into(LW1_State &state, const Instance &instance) const;
 
+                int get_var_index(int h_atom) {
+                    return atoms_to_var_map_.at(get_l_atom(h_atom));
+                }
+
                 // Debugging
-                void print(std::ostream &os) const; // Print CSP
+                void print(std::ostream &os, const Instance *instance, const LW1_State *state) const; // Print CSP
 
                 void solve(LW1_State *state, const Instance *instance);
-
-                //int get_l_atom(int h_atom);
-                //int get_h_atom(int l_atom);
         };
 
         /**

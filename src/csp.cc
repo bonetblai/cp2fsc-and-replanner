@@ -6,7 +6,8 @@
 #include <set>
 #include "csp.h"
 
-typedef std::set<int>::iterator SI_I;
+typedef std::set<int> SI;
+typedef SI::iterator SI_I;
 typedef std::set<int>::const_iterator SI_CI;
 
 typedef std::vector<int>VI;
@@ -30,17 +31,20 @@ MII Inference::CSP::Csp::atoms_to_var_map_ = MII();
 
 /************************ Variable Abstract Class  ************************/
 
-Inference::CSP::Variable::Variable(const LW1_Instance::Variable &var):
-    name_(var.name_),
-    original_domain_(var.domain_), 
-    current_domain_(var.domain_) {
+Inference::CSP::Variable::Variable(const LW1_Instance::Variable &var): 
+    name_(var.name_) {
+
+    VI domain = VI(var.domain_.begin(), var.domain_.end()); 
+    transform(domain.begin(), domain.end(), domain.begin(), get_h_atom);
+    original_domain_ = SI(domain.begin(), domain.end());
+    current_domain_ = SI(domain.begin(), domain.end());
 }
 
 
 /**
   * Print info about a variable (debugging)
   */
-void Inference::CSP::Variable::print(std::ostream &os) const {
+void Inference::CSP::Variable::print(std::ostream &os, const Instance *instance, const LW1_State *state) const {
     os << "Name of variable " << name_ << std::endl;
     os << "Original domain" << std::endl;
     const std::set<int> &od = original_domain_;
@@ -67,7 +71,7 @@ void Inference::CSP::Arithmetic::dump_into(std::vector<int> &info,
     info.clear();
     for (SI_CI o = original_domain_.cbegin(); o != original_domain_.cend(); o++) {
         if (current_domain_.find(*o) == current_domain_.end()) {   // Not found
-            info.push_back(negate(*o));
+            info.push_back(get_k_not(*o));
         }
     }
     if (current_domain_.size() == 1) {
@@ -129,11 +133,11 @@ void Inference::CSP::Csp::dump_into(LW1_State &state, const Instance &instance) 
 /**
   *  Print CSP  (debugging)
   */
-void Inference::CSP::Csp::print(std::ostream &os) const {
+void Inference::CSP::Csp::print(std::ostream &os, const Instance *instance, const LW1_State *state) const {
     os << "CSP:" << std::endl;
     os << "Variables: " << std::endl;
     for (int i = 0; i < variables_.size(); i++) {
-        variables_[i]->print(os);
+        variables_[i]->print(os, instance, state);
     }
     os << "Constraints: " << std::endl;
     for (VVI_CI it = constraints_.cbegin(); 
