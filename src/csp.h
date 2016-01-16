@@ -13,14 +13,12 @@
 namespace Inference {
     namespace CSP {
 
-        int get_h_atom(int l_atom) { return l_atom * 2 + 1; }
+        int get_h_atom(int l_atom);
 
         // Get K_not_literal of h_atom
-        int get_k_not(int h_atom) { return h_atom + 1; }
+        int get_k_not(int h_atom);
 
-        int get_l_atom(int h_atom) {
-            return h_atom > 0 ? (h_atom - 1) / 2 : (-h_atom - 1) / 2 + 1;
-        }
+        int get_l_atom(int h_atom);
 
         /**
           *  Variable, Abstract Class used in CSP structure

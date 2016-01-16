@@ -181,3 +181,12 @@ void Inference::CSP::AC3::solve(Csp &csp, LW1_State &state,
     csp.dump_into(state, instance);
     return;
 }
+
+int Inference::CSP::get_h_atom(int l_atom) { return l_atom * 2 + 1; }
+
+// Get K_not_literal of h_atom
+int Inference::CSP::get_k_not(int h_atom) { return h_atom + 1; }
+
+int Inference::CSP::get_l_atom(int h_atom) {
+    return h_atom > 0 ? (h_atom - 1) / 2 : (-h_atom - 1) / 2 + 1;
+}
