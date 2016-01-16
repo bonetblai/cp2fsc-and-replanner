@@ -1,5 +1,6 @@
 #include <algorithm>
 #undef NDEBUG // error: the output changes when compiling with -DNDEBUG
+#define DEBUG
 #include <cassert>
 #include <iostream>
 #include <queue>
@@ -125,7 +126,13 @@ void Inference::CSP::Csp::dump_into(LW1_State &state, const Instance &instance) 
         std::vector<int> info;
         (*var)->dump_into(info, &instance, &state);
         for (VI_CI st = info.begin(); st != info.end(); st++) {
-            state.add(*st);
+#ifdef DEBUG
+            std::cout << Utils::yellow() << "[CSP] Added literal into state: ";
+            state.print_literal(std::cout, *st, &instance);
+            std::cout << Utils::normal() << std::endl;
+#endif
+            state.add(*st - 1);
+
         }
     }
 }
