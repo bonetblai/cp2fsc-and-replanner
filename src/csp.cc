@@ -27,7 +27,6 @@ typedef std::map<int, int> MII;
 
 // Static members definitions
 V_VAR Inference::CSP::Csp::variables_ = V_VAR();
-VVI Inference::CSP::Csp::constraints_ = VVI();
 MII Inference::CSP::Csp::atoms_to_var_map_ = MII();
 
 /************************ Variable Abstract Class  ************************/
@@ -49,7 +48,7 @@ void Inference::CSP::Variable::print(std::ostream &os, const Instance *instance,
     os << "Name of variable " << name_ << std::endl;
     os << "Original domain" << std::endl;
     const std::set<int> &od = original_domain_;
-    const std::set<int> &cd = original_domain_;
+    const std::set<int> &cd = current_domain_;
     for (std::set<int>::iterator it = od.cbegin(); it != od.cend(); it++) {
         os << *it << ", ";
     }

@@ -88,7 +88,7 @@ namespace Inference {
                 // State Variables
                 static std::vector<Inference::CSP::Variable *> variables_;
                 // Constraints of problem
-                static std::vector< std::vector<int> > constraints_;
+                std::vector< std::vector<int> > constraints_;
                 // Map for finding var_index of l_atom
                 static std::map<int, int> atoms_to_var_map_;
             public:
