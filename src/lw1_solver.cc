@@ -531,6 +531,22 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
             }
         }
 
+        // 1. Positive literals from state
+        for (STATE_CLASS::const_iterator it = state.begin(); it != state.end(); ++it) {
+#ifdef DEBUG
+            cout << Utils::red() << "[Theory] Add literal from state: ";
+            state.print_literal(cout, 1 + *it, &kp_instance_);
+            cout << Utils::normal() << endl;
+#endif
+#ifdef UP
+            Inference::Propositional::Clause cl;
+            cl.push_back(1 + *it); // CHECK: en implementacion de clause, 'push_back' es un 'insert'
+            cnf.push_back(cl);
+            csp.add_constraint(cl);
+#endif
+        }
+
+
         // The CSP is solved
         ac3.solve(csp, state, kp_instance_);
     } else {

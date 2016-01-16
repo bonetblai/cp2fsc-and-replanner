@@ -158,11 +158,24 @@ void Inference::CSP::Csp::print(std::ostream &os, const Instance *instance, cons
     }
 }
 
+void Inference::CSP::Variable::clean_domain() {
+    current_domain_ = SI(original_domain_);
+}
+
+void Inference::CSP::Csp::clean_domains() {
+    for (V_VAR_I it = variables_.begin(); it != variables_.end(); it++) {
+        (*it)->clean_domain();
+    }
+}
+
 void Inference::CSP::Csp::apply_unary_constraints(const Instance *instance, const LW1_State *state) {
+    clean_domains();
     for (VVI_CI it = constraints_.cbegin(); it != constraints_.cend(); it++) {
         VI cl = *it;
         if (cl.size() == 1) {  // Unary constraint (vector<h_atom>)
-            variables_[get_var_index(cl[0])]->apply_unary_constraint(cl[0]);
+            int index = get_var_index(cl[0]);
+            if (index != -1)
+                variables_[index]->apply_unary_constraint(cl[0]);
         }
     }
 }
@@ -183,7 +196,6 @@ void Inference::CSP::AC3::solve(Csp &csp, LW1_State &state,
 
     csp.apply_unary_constraints(&instance, &state);
     // apply binary constraints
-
     csp.dump_into(state, instance);
     return;
 }

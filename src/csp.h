@@ -42,6 +42,8 @@ namespace Inference {
                                                        const Instance *instance,
                                                        const LW1_State *state) const = 0;
 
+
+                void clean_domain();
                 void apply_unary_constraint(int k_atom);
 
                 // Debugging
@@ -105,11 +107,15 @@ namespace Inference {
                     constraints_.push_back(c);
                 };
 
+                void clean_domains();
+
                 // Change (Add to) state relevant information of current csp
                 void dump_into(LW1_State &state, const Instance &instance) const;
 
                 int get_var_index(int h_atom) {
-                    return atoms_to_var_map_.at(get_l_atom(h_atom));
+                    if (atoms_to_var_map_.find(get_l_atom(h_atom)) != atoms_to_var_map_.end())
+                        return atoms_to_var_map_.at(get_l_atom(h_atom));
+                    return -1;
                 }
 
                 // Debugging
