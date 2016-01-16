@@ -31,9 +31,14 @@ namespace Inference {
 
                 //virtual void eval() = 0;  // Evaluation method
                 virtual bool is_binary() const = 0;
-                virtual void dump_into(std::vector<int> &info) const = 0;
+                virtual void dump_into(std::vector<int> &info,
+                                                       const Instance *instance,
+                                                       const LW1_State *state) const = 0;
 
                 void apply_unary_constraint(int k_atom);
+
+                // Get K_not_literal of h_atom
+                int negate(int h_atom) const { return h_atom + 1; }
 
                 // Debugging
                 void print(std::ostream &os) const;
@@ -43,13 +48,17 @@ namespace Inference {
           *  Binary Variable Class
           */
         class Binary : public Variable {
-            public:
-                Binary() { };
-                Binary(const LW1_Instance::Variable &var) : Variable(var) { };
-                // Implementation of pure virtual method
-                void dump_into(std::vector<int> &info) const;
-                // It's a binary variable
-                bool is_binary() const { return true; }
+        public:
+            Binary() { };
+            Binary(const LW1_Instance::Variable &var) : Variable(var) {
+                original_domain_.insert(negate(*original_domain_.cbegin()));
+                current_domain_.insert(negate(*current_domain_.cbegin()));
+            };
+            // Implementation of pure virtual method
+            void dump_into(std::vector<int> &info, const Instance *instance,
+                           const LW1_State *state) const;
+            // It's a binary variable
+            bool is_binary() const { return true; }
         };
 
         /**
@@ -60,12 +69,13 @@ namespace Inference {
                 Arithmetic() { };
                 Arithmetic(const LW1_Instance::Variable &var) : Variable(var) { };
                 // Implementation of pure virtual method
-                void dump_into(std::vector<int> &info) const;
+                void dump_into(std::vector<int> &info,
+                               const Instance *instance,
+                               const LW1_State *state) const;
                 // An arithmetic variables is not binary
                 bool is_binary() const { return false; }
 
-                // Get K_not_literal of h_atom 
-                int negate(int h_atom) const { return h_atom + 1; }
+
         };
 
         /**
@@ -86,7 +96,7 @@ namespace Inference {
                         const std::map<int, int> map);
 
                 // Apply unary constraints
-                void apply_unary_constraints();
+                void apply_unary_constraints(const Instance *instance, const LW1_State *state);
 
                 // Add a constraint to constraints_
                 void add_constraint(std::vector<int> &c) { 
@@ -102,7 +112,7 @@ namespace Inference {
                 }
 
                 // Change (Add to) state relevant information of current csp
-                void dump_into(LW1_State &state) const;
+                void dump_into(LW1_State &state, const Instance &instance) const;
 
                 // Debugging
                 void print(std::ostream &os) const; // Print CSP
