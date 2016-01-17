@@ -155,9 +155,9 @@ void Inference::CSP::Csp::print(std::ostream &os, const Instance *instance, cons
 
         const std::vector<int> &cl = *it;
         state->print_clause(os, cl, instance);
-//        for (VI_CI it2 = cl.cbegin(); it2 != cl.cend(); it2++) {
-//            os << *it2 << ", ";
-//        }
+        for (VI_CI it2 = cl.cbegin(); it2 != cl.cend(); it2++) {
+            os << *it2 << ", ";
+        }
         os << std::endl;
     }
 }
@@ -192,17 +192,6 @@ int Inference::CSP::get_l_atom(int h_atom) {
     return h_atom > 0 ? (h_atom - 1) / 2 : (-h_atom - 1) / 2 + 1;
 }
 
-void Inference::CSP::AC3::apply_binary_constraints(Csp &csp, 
-                                                   const Instance *instance,
-                                                   const LW1_State *state) const {
-    std::cout << Utils::cyan();
-    std::cout << "XXX BINARY CONSTRAINTS PRINT XXX";
-    csp.print(std::cout, instance, state);
-    std::cout << Utils::normal() << std::endl;
-
-    return;
-}
-
 void Inference::CSP::AC3::apply_unary_constraints(Csp &csp, const Instance *instance, const LW1_State *state) const {
     csp.clean_domains();
     const VVI &constraints_ = csp.get_constraints_();
@@ -217,14 +206,56 @@ void Inference::CSP::AC3::apply_unary_constraints(Csp &csp, const Instance *inst
     }
 }
 
+void Inference::CSP::AC3::prepare_constraints(VVI constraints_) const {
+     
+}
+
+void Inference::CSP::AC3::apply_binary_constraints(Csp &csp, 
+                                                   const Instance *instance,
+                                                   const LW1_State *state) const {
+    
+    VVI constraints_ = csp.get_constraints_();
+    prepare_constraints(constraints_);  
+    while (! constraints_.empty()) {
+        std::vector<int> clause = constraints_.back();
+        constraints_.pop_back();
+        if (arc_reduce(csp, clause)) {
+            // add constraints (clause[0], clause[1]') clause[0] when 
+            // clause'[1] != clause[1])
+        }
+    } 
+}
+
+bool Inference::CSP::AC3::arc_reduce(const Csp &csp, const VI &clause) const {
+    if (clause.size() != 2) return false;
+    const Variable *x = csp.get_var(clause[0]), *y = csp.get_var(clause[1]);
+    SI dx = x->get_current_domain(), dy = y->get_current_domain();    
+    bool change = false; // An element has been erase from dx ?
+    for (SI_I vx = dx.begin(); vx != dx.end(); vx++) {
+        if (x->evaluate(*vx, clause[0])) continue; // If constraint is already satisfied
+
+        bool found = false;
+        for (SI_I vy = dy.begin(); vy != dy.end(); vy++) {
+            if (y->evaluate(*vy, clause[1])) { 
+                found = true;
+                break;
+            }
+        }
+        // Erase from domain, and set iterator before next element
+        if (!found) {
+            vx = dx.erase(vx);
+            vx--;
+        }
+    }
+    return change;
+}
+
 void Inference::CSP::AC3::solve(Csp &csp, LW1_State &state,
                                 const Instance &instance) {
 
     apply_unary_constraints(csp, &instance, &state);
-    //apply_binary_constraints(csp, &instance, &state);
-
+    apply_binary_constraints(csp, &instance, &state);
     csp.dump_into(state, instance);
+    csp.print(std::cout, &instance, &state);
     return;
 }
-
-

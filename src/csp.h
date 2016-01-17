@@ -33,9 +33,19 @@ namespace Inference {
                 Variable() { };
                 Variable(const LW1_Instance::Variable &var);
 
-                std::set<int> get_original_domain() { return original_domain_; }
-                std::set<int> get_current_domain() { return current_domain_; }
+                std::set<int> get_original_domain() const { 
+                    return original_domain_; 
+                }
 
+                std::set<int> get_current_domain() const { 
+                    return current_domain_; 
+                }
+
+                bool evaluate(int value, int h_atom) const { 
+                    if (value == h_atom) return true;
+                    if (h_atom < 0 && h_atom + value != 0) return true;
+                    return false; 
+                }
                 //virtual void eval() = 0;  // Evaluation method
                 virtual bool is_binary() const = 0;
                 virtual void dump_into(std::vector<int> &info,
@@ -149,6 +159,9 @@ namespace Inference {
                 void apply_binary_constraints(Csp &csp, 
                                               const Instance *instance, 
                                               const LW1_State *state) const;
+
+                void prepare_constraints(std::vector< std::vector<int> > constraints_) const;
+                bool arc_reduce(const Csp &csp, const std::vector<int> &clause) const;
             public:
                 void solve(Csp &csp, LW1_State &state, const Instance &instance);
         };
