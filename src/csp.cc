@@ -172,18 +172,6 @@ void Inference::CSP::Csp::clean_domains() {
     }
 }
 
-void Inference::CSP::Csp::apply_unary_constraints(const Instance *instance, const LW1_State *state) {
-    clean_domains();
-    for (VVI_CI it = constraints_.cbegin(); it != constraints_.cend(); it++) {
-        VI cl = *it;
-        if (cl.size() == 1) {  // Unary constraint (vector<h_atom>)
-            int index = get_var_index(cl[0]);
-            if (index != -1)
-                variables_[index]->apply_unary_constraint(cl[0]);
-        }
-    }
-}
-
 void Inference::CSP::Variable::apply_unary_constraint(int h_atom) {
     if (h_atom % 2 == 0) { 
         // If h_atom is a K_not_atom, remove the K_atom which is K_not_atom - 1
@@ -195,16 +183,6 @@ void Inference::CSP::Variable::apply_unary_constraint(int h_atom) {
     }
 }
 
-void Inference::CSP::AC3::solve(Csp &csp, LW1_State &state,
-                                const Instance &instance) {
-
-    csp.apply_unary_constraints(&instance, &state);
-    csp.apply_binary_constraints(&instance, &state);
-
-    csp.dump_into(state, instance);
-    return;
-}
-
 int Inference::CSP::get_h_atom(int l_atom) { return l_atom * 2 + 1; }
 
 // Get K_not_literal of h_atom
@@ -214,12 +192,39 @@ int Inference::CSP::get_l_atom(int h_atom) {
     return h_atom > 0 ? (h_atom - 1) / 2 : (-h_atom - 1) / 2 + 1;
 }
 
-void Inference::CSP::Csp::apply_binary_constraints(const Instance *instance,
-                                                   const LW1_State *state) {
+void Inference::CSP::AC3::apply_binary_constraints(Csp &csp, 
+                                                   const Instance *instance,
+                                                   const LW1_State *state) const {
     std::cout << Utils::cyan();
     std::cout << "XXX BINARY CONSTRAINTS PRINT XXX";
-    print(std::cout, instance, state);
+    csp.print(std::cout, instance, state);
     std::cout << Utils::normal() << std::endl;
 
     return;
 }
+
+void Inference::CSP::AC3::apply_unary_constraints(Csp &csp, const Instance *instance, const LW1_State *state) const {
+    csp.clean_domains();
+    const VVI &constraints_ = csp.get_constraints_();
+    V_VAR variables_ = csp.get_variables_(); 
+    for (VVI_CI it = constraints_.cbegin(); it != constraints_.cend(); it++) {
+        VI cl = *it;
+        if (cl.size() == 1) {  // Unary constraint (vector<h_atom>)
+            int index = csp.get_var_index(cl[0]);
+            if (index != -1)
+                variables_[index]->apply_unary_constraint(cl[0]);
+        }
+    }
+}
+
+void Inference::CSP::AC3::solve(Csp &csp, LW1_State &state,
+                                const Instance &instance) {
+
+    apply_unary_constraints(csp, &instance, &state);
+    //apply_binary_constraints(csp, &instance, &state);
+
+    csp.dump_into(state, instance);
+    return;
+}
+
+

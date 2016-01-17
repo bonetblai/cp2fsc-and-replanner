@@ -99,12 +99,13 @@ namespace Inference {
                         const std::vector<LW1_Instance::Variable *> &vars,
                         const std::map<int, int> map);
 
-                // Apply unary constraints
-                void apply_unary_constraints(const Instance *instance, const LW1_State *state);
+                std::vector< std::vector<int> > get_constraints_() const {
+                    return constraints_;
+                }
 
-                void apply_binary_constraints(const Instance *instance,
-                                              const LW1_State *state);
-
+                std::vector<Inference::CSP::Variable *> get_variables_() const {
+                    return variables_;
+                }
 
                 // Add a constraint to constraints_
                 void add_constraint(std::vector<int> &c) { 
@@ -116,12 +117,18 @@ namespace Inference {
                 // Change (Add to) state relevant information of current csp
                 void dump_into(LW1_State &state, const Instance &instance) const;
 
-                int get_var_index(int h_atom) {
+                int get_var_index(int h_atom) const {
                     if (atoms_to_var_map_.find(get_l_atom(h_atom)) != atoms_to_var_map_.end())
                         return atoms_to_var_map_.at(get_l_atom(h_atom));
                     return -1;
                 }
-
+                
+                Variable *get_var(int h_atom) const {
+                    int var_index = get_var_index(h_atom);
+                    if (var_index == -1) return NULL; 
+                    return variables_[var_index];
+                }
+                
                 // Debugging
                 void print(std::ostream &os, const Instance *instance, const LW1_State *state) const; // Print CSP
 
@@ -135,7 +142,13 @@ namespace Inference {
             private:
                 // Reduce domains by applying constraints
                 // CSP has to be consistent
-                void unary_constraints(Csp &csp); // Apply unary constrains
+                void apply_unary_constraints(Csp &csp, 
+                                              const Instance *instance, 
+                                              const LW1_State *state) const;
+                // Apply unary constrains
+                void apply_binary_constraints(Csp &csp, 
+                                              const Instance *instance, 
+                                              const LW1_State *state) const;
             public:
                 void solve(Csp &csp, LW1_State &state, const Instance &instance);
         };
