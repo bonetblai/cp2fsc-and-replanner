@@ -45,22 +45,25 @@ Inference::CSP::Variable::Variable(const LW1_Instance::Variable &var):
   * Print info about a variable (debugging)
   */
 void Inference::CSP::Variable::print(std::ostream &os, const Instance *instance, const LW1_State *state) const {
-    os << "Name of variable " << name_ << std::endl;
-    os << "Original domain" << std::endl;
+    os << ">>>VARIABLE " << name_ << std::endl;
     const std::set<int> &od = original_domain_;
     const std::set<int> &cd = current_domain_;
+
+    os << ">>>ORIGINAL DOMAIN" << std::endl;
     for (std::set<int>::iterator it = od.cbegin(); it != od.cend(); it++) {
-        os << *it << ", ";
+        state->print_literal(os, *it, instance);
+        os << " [" << *it << "] , ";
     }
-    os << std::endl << "Current domain" << std::endl;
+    os << std::endl << ">>>CURRENT DOMAIN" << std::endl;
     for (auto it = cd.cbegin(); it != cd.cend(); it++) {
-        os << *it << ", ";
+        state->print_literal(os, *it, instance);
+        os << " [" << *it << "] , ";
     }
     os << std::endl;
 
-    os << "Is binary? " << is_binary();
+    os << ">>>BINARY? " << is_binary();
 
-    os << std::endl;
+    os << std::endl << std::endl;
 }
 
 /************************ Arithmetic Class ************************/
@@ -140,20 +143,21 @@ void Inference::CSP::Csp::dump_into(LW1_State &state, const Instance &instance) 
   *  Print CSP  (debugging)
   */
 void Inference::CSP::Csp::print(std::ostream &os, const Instance *instance, const LW1_State *state) const {
-    os << "CSP:" << std::endl;
-    os << "Variables: " << std::endl;
+    os << ">>>CSP" << std::endl;
+    os << ">>>VARIABLES" << std::endl;
     for (int i = 0; i < variables_.size(); i++) {
         variables_[i]->print(os, instance, state);
     }
-    os << "Constraints: " << std::endl;
+    os << ">>>CONSTRAINTS" << std::endl;
     for (VVI_CI it = constraints_.cbegin(); 
                              it != constraints_.cend(); 
                              it++) {
 
         const std::vector<int> &cl = *it;
-        for (VI_CI it2 = cl.cbegin(); it2 != cl.cend(); it2++) {
-            os << *it2 << ", ";
-        }
+        state->print_clause(os, cl, instance);
+//        for (VI_CI it2 = cl.cbegin(); it2 != cl.cend(); it2++) {
+//            os << *it2 << ", ";
+//        }
         os << std::endl;
     }
 }
@@ -195,7 +199,8 @@ void Inference::CSP::AC3::solve(Csp &csp, LW1_State &state,
                                 const Instance &instance) {
 
     csp.apply_unary_constraints(&instance, &state);
-    // apply binary constraints
+    csp.apply_binary_constraints(&instance, &state);
+
     csp.dump_into(state, instance);
     return;
 }
@@ -207,4 +212,14 @@ int Inference::CSP::get_k_not(int h_atom) { return h_atom + 1; }
 
 int Inference::CSP::get_l_atom(int h_atom) {
     return h_atom > 0 ? (h_atom - 1) / 2 : (-h_atom - 1) / 2 + 1;
+}
+
+void Inference::CSP::Csp::apply_binary_constraints(const Instance *instance,
+                                                   const LW1_State *state) {
+    std::cout << Utils::cyan();
+    std::cout << "XXX BINARY CONSTRAINTS PRINT XXX";
+    print(std::cout, instance, state);
+    std::cout << Utils::normal() << std::endl;
+
+    return;
 }

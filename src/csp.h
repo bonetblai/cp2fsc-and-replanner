@@ -102,6 +102,10 @@ namespace Inference {
                 // Apply unary constraints
                 void apply_unary_constraints(const Instance *instance, const LW1_State *state);
 
+                void apply_binary_constraints(const Instance *instance,
+                                              const LW1_State *state);
+
+
                 // Add a constraint to constraints_
                 void add_constraint(std::vector<int> &c) { 
                     constraints_.push_back(c);
