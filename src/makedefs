@@ -26,8 +26,8 @@ FLEX    = /usr/local/bin/flex++
 DEBUG = -g
 OPTIMIZE = #-O3 -DNDEBUG
 
-CFLAGS = $(DEBUG) $(OPTIMIZE) -I. -Wall #-std=c++11
-LFLAGS = $(DEBUG) $(OPTIMIZE) -L. -Wall
+CFLAGS = $(DEBUG) $(OPTIMIZE) -I. -Wall -std=c++11
+LFLAGS = $(DEBUG) $(OPTIMIZE) -L. -Wall -std=c++11
 
 # Libraries to be linked.
 # The malloc lib may be needed
