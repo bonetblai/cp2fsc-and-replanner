@@ -25,6 +25,9 @@ typedef V_VAR::const_iterator V_VAR_CI;
 
 typedef std::map<int, int> MII;
 
+typedef std::map<int, std::vector<int>> MIVI;
+typedef std::map<int, std::vector<int>>::const_iterator MIVI_CI;
+
 // Static members definitions
 V_VAR Inference::CSP::Csp::variables_ = V_VAR();
 MII Inference::CSP::Csp::atoms_to_var_map_ = MII();
@@ -198,20 +201,36 @@ int Inference::CSP::get_l_atom(int h_atom) {
 
 void Inference::CSP::AC3::apply_unary_constraints(Csp &csp, const Instance *instance, const LW1_State *state) const {
     csp.clean_domains();
-    const VVI &constraints_ = csp.get_constraints_();
+    VVI constraints_ = csp.get_constraints_();
     V_VAR variables_ = csp.get_variables_(); 
-    for (VVI_CI it = constraints_.cbegin(); it != constraints_.cend(); it++) {
+    for (VVI_I it = constraints_.begin(); it != constraints_.end();) {
         VI cl = *it;
         if (cl.size() == 1) {  // Unary constraint (vector<h_atom>)
             int index = csp.get_var_index(cl[0]);
             if (index != -1)
                 variables_[index]->apply_unary_constraint(cl[0]);
+            it = constraints_.erase(it);
+        } else {
+            it++;
         }
     }
 }
 
-void Inference::CSP::AC3::prepare_constraints(VVI constraints_) const {
-     
+void Inference::CSP::AC3::prepare_constraints(const Csp &csp) {
+    VVI constraints = csp.get_constraints_();
+
+    // Build inverted index table
+    for (size_t i = 0; i < constraints.size(); i++) {
+        for (size_t j = 0; j < constraints[i].size(); j++) {
+            int var_index = csp.get_var_index(j);
+            if (var_index == -1) continue;
+            MIVI_CI jt = inv_clauses_.find(var_index);
+
+            if (jt == inv_clauses_.cend())
+                inv_clauses_[var_index] = std::vector<int>();
+            inv_clauses_[var_index].push_back(i);
+        }
+    }
 }
 
 void Inference::CSP::AC3::apply_binary_constraints(Csp &csp, 
@@ -219,7 +238,7 @@ void Inference::CSP::AC3::apply_binary_constraints(Csp &csp,
                                                    const LW1_State *state) const {
     
     VVI constraints_ = csp.get_constraints_();
-    prepare_constraints(constraints_);  
+
     while (! constraints_.empty()) {
         std::vector<int> clause = constraints_.back();
         constraints_.pop_back();
@@ -235,6 +254,7 @@ bool Inference::CSP::AC3::arc_reduce(const Csp &csp, const VI &clause) const {
     const Variable *x = csp.get_var(clause[0]), *y = csp.get_var(clause[1]);
     SI dx = x->get_current_domain(), dy = y->get_current_domain();    
     bool change = false; // An element has been erase from dx ?
+
     for (SI_I vx = dx.begin(); vx != dx.end(); vx++) {
         if (x->evaluate(*vx, clause[0])) continue; // If constraint is already satisfied
 
@@ -258,8 +278,28 @@ void Inference::CSP::AC3::solve(Csp &csp, LW1_State &state,
                                 const Instance &instance) {
 
     apply_unary_constraints(csp, &instance, &state);
+    prepare_constraints(csp);
     apply_binary_constraints(csp, &instance, &state);
     csp.dump_into(state, instance);
-    csp.print(std::cout, &instance, &state);
     return;
+}
+
+void Inference::CSP::AC3::print(std::ostream &os, const Instance *instance,
+                                const Csp &csp, LW1_State *state) const {
+    os << "[AC3] Inverted index table" << std::endl;
+    V_VAR variables = csp.get_variables_();
+    VVI constraints = csp.get_constraints_();
+
+    for (MIVI_CI it = inv_clauses_.cbegin();
+         it != inv_clauses_.cend(); it++) {
+        os << "[AC3] Variable: " << std::endl;
+        variables[it->first]->print(os, instance, state);
+        os << "[AC3] Constraints: " << std::endl;
+        VI constraint = it->second;
+        for (VI_CI vit = constraint.cbegin(); vit != constraint.cend(); vit++) {
+            state->print_clause(os, constraints[*vit], instance);
+            os << std::endl;
+        }
+    }
+    os << "END OF AC3" << std::endl;
 }

@@ -150,6 +150,10 @@ namespace Inference {
           */
         class AC3 {
             private:
+                // map that associates variables indexes with clauses
+                // that involve related atoms
+                std::map<int, std::vector<int>> inv_clauses_;
+
                 // Reduce domains by applying constraints
                 // CSP has to be consistent
                 void apply_unary_constraints(Csp &csp, 
@@ -160,10 +164,12 @@ namespace Inference {
                                               const Instance *instance, 
                                               const LW1_State *state) const;
 
-                void prepare_constraints(std::vector< std::vector<int> > constraints_) const;
+                void prepare_constraints(const Csp &csp);
                 bool arc_reduce(const Csp &csp, const std::vector<int> &clause) const;
             public:
                 void solve(Csp &csp, LW1_State &state, const Instance &instance);
+                void print(std::ostream &os, const Instance *instance,
+                           const Csp &csp, LW1_State *state) const;
         };
     }
 }
