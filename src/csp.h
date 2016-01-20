@@ -11,6 +11,10 @@
 #define CSP_H
 
 namespace Inference {
+
+    typedef std::vector<int>VI;
+    typedef std::vector< VI > VVI;
+
     namespace CSP {
 
         int get_h_atom(int l_atom);
@@ -39,6 +43,10 @@ namespace Inference {
 
                 std::set<int> get_current_domain() const { 
                     return current_domain_; 
+                }
+
+                size_t get_domain_size() const {
+                    return current_domain_.size();
                 }
 
                 bool evaluate(int value, int h_atom) const { 
@@ -163,6 +171,12 @@ namespace Inference {
                                               const LW1_State *state) const;
 
                 void prepare_constraints(const Csp &csp);
+
+                void fill_watchlist(const VVI constraints_, VVI watchlist,
+                                                    const Csp &csp) const;
+
+                bool is_active(const VI clause, const Csp &csp) const;
+
                 bool arc_reduce(const Csp &csp, const std::vector<int> &clause) const;
             public:
                 void solve(Csp &csp, LW1_State &state, const Instance &instance);

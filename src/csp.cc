@@ -237,13 +237,16 @@ void Inference::CSP::AC3::apply_binary_constraints(Csp &csp,
                                                    const Instance *instance,
                                                    const LW1_State *state) const {
     
-    VVI constraints_ = csp.get_constraints_();
+    VVI constraints = csp.get_constraints_();
+    VVI watchlist;
+    fill_watchlist(constraints, watchlist,
+                   csp);
 
-    while (! constraints_.empty()) {
-        std::vector<int> clause = constraints_.back();
-        constraints_.pop_back();
+    while (! watchlist.empty()) {
+        std::vector<int> clause = watchlist.back();
+        watchlist.pop_back();
         if (arc_reduce(csp, clause)) {
-            // add constraints (clause[0], clause[1]') clause[0] when 
+            // add constraints (clause[0], clause[1]') clause[0] when
             // clause'[1] != clause[1])
         }
     } 
@@ -302,4 +305,20 @@ void Inference::CSP::AC3::print(std::ostream &os, const Instance *instance,
         }
     }
     os << "END OF AC3" << std::endl;
+}
+
+void Inference::CSP::AC3::fill_watchlist(const VVI constraints_, VVI watchlist,
+                                         const Csp &csp) const {
+    for (VVI_CI ci = constraints_.cbegin(); ci != constraints_.cend(); ci++)
+        if (is_active(*ci, csp)) watchlist.push_back(*ci);
+}
+
+bool Inference::CSP::AC3::is_active(const VI clause, const Csp &csp) const {
+    int counter = 0;
+    for (VI_CI it = clause.cbegin(); it != clause.cend(); it++) {
+        Variable *var = csp.get_var(*it);
+        if (var && var->get_domain_size() > 1) counter++;
+        if (counter > 2) return false;
+    }
+    return true;
 }
