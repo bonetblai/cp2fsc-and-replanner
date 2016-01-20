@@ -141,8 +141,6 @@ namespace Inference {
                 
                 // Debugging
                 void print(std::ostream &os, const Instance *instance, const LW1_State *state) const; // Print CSP
-
-                void solve(LW1_State *state, const Instance *instance);
         };
 
         /**
