@@ -45,25 +45,29 @@ Inference::CSP::Variable::Variable(const LW1_Instance::Variable &var):
   * Print info about a variable (debugging)
   */
 void Inference::CSP::Variable::print(std::ostream &os, const Instance *instance, const LW1_State *state) const {
-    os << ">>>VARIABLE " << name_ << std::endl;
     const std::set<int> &od = original_domain_;
     const std::set<int> &cd = current_domain_;
+    std::set<int>::const_iterator od_end = od.cend(); --od_end;
+    std::set<int>::const_iterator cd_end = cd.cend(); --cd_end;
 
-    os << ">>>ORIGINAL DOMAIN" << std::endl;
-    for (std::set<int>::iterator it = od.cbegin(); it != od.cend(); it++) {
+    os << name_ << ": ";
+    os << "od: {";
+    for (std::set<int>::const_iterator it = od.cbegin(); it != od.cend(); it++) {
         state->print_literal(os, *it, instance);
-        os << " [" << *it << "] , ";
+        os << " [" << *it << "]";
+        if (it != od_end) os << ", ";
     }
-    os << std::endl << ">>>CURRENT DOMAIN" << std::endl;
+    os << "} ";
+
+    os << "cd: {";
     for (auto it = cd.cbegin(); it != cd.cend(); it++) {
         state->print_literal(os, *it, instance);
-        os << " [" << *it << "] , ";
+        os << " [" << *it << "]";
+        if (it != cd_end) os << ", ";
     }
-    os << std::endl;
+    os << "} ";
 
-    os << ">>>BINARY? " << is_binary();
-
-    os << std::endl << std::endl;
+    os << "b? " << (is_binary() ? "yes" : "no") << std::endl;
 }
 
 /************************ Arithmetic Class ************************/
