@@ -224,6 +224,17 @@ class State {
         os << to_string(literal, ins);
     }
 
+    static bool is_special(int literal, const Instance *ins = 0) {
+        std::string literal_name = to_string(literal, ins);
+        if (literal_name.find("need-start") != std::string::npos or
+            literal_name.find("normal-execution") != std::string::npos or
+            literal_name.find("normal-execution") != std::string::npos or
+            literal_name.find("sensing") != std::string::npos) {
+            return true;
+        }
+        return false;
+    }
+
     void print(std::ostream &os, const Instance *ins = 0) const {
         os << "{";
         for( unsigned *p = atoms_; *p; ++p ) {

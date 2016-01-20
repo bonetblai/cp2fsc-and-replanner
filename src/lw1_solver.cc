@@ -533,8 +533,9 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
 
         // 1. Positive literals from state
         for (STATE_CLASS::const_iterator it = state.begin(); it != state.end(); ++it) {
+            if (state.is_special(*it + 1, &kp_instance_)) continue;
 #ifdef DEBUG
-            cout << Utils::red() << "[Theory] Add literal from state: ";
+            cout << Utils::red() << "[CSP] Add literal from state: ";
             state.print_literal(cout, 1 + *it, &kp_instance_);
             cout << Utils::normal() << endl;
 #endif
