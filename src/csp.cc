@@ -47,7 +47,8 @@ Inference::CSP::Variable::Variable(const LW1_Instance::Variable &var):
 /**
   * Print info about a variable (debugging)
   */
-void Inference::CSP::Variable::print(std::ostream &os, const Instance *instance, const LW1_State *state) const {
+void Inference::CSP::Variable::print(std::ostream &os, const Instance *instance,
+                                     const LW1_State *state) const {
     const std::set<int> &od = original_domain_;
     const std::set<int> &cd = current_domain_;
     std::set<int>::const_iterator od_end = od.cend(); --od_end;
@@ -55,7 +56,7 @@ void Inference::CSP::Variable::print(std::ostream &os, const Instance *instance,
 
     os << name_ << ": ";
     os << "od: {";
-    for (std::set<int>::const_iterator it = od.cbegin(); it != od.cend(); it++) {
+    for (SI::const_iterator it = od.cbegin(); it != od.cend(); it++) {
         state->print_literal(os, *it, instance);
         os << " [" << *it << "]";
         if (it != od_end) os << ", ";
@@ -91,7 +92,8 @@ void Inference::CSP::Arithmetic::dump_into(std::vector<int> &info,
 
 /************************ Binary Class ************************/
 
-void Inference::CSP::Binary::dump_into(std::vector<int> &info, const Instance *instance,
+void Inference::CSP::Binary::dump_into(std::vector<int> &info,
+                                       const Instance *instance,
                                        const LW1_State *state) const {
     info.clear();
     if (current_domain_.size() == 1) {
@@ -149,16 +151,15 @@ void Inference::CSP::Csp::dump_into(LW1_State &state, const Instance &instance) 
 /**
   *  Print CSP  (debugging)
   */
-void Inference::CSP::Csp::print(std::ostream &os, const Instance *instance, const LW1_State *state) const {
+void Inference::CSP::Csp::print(std::ostream &os, const Instance *instance,
+                                const LW1_State *state) const {
     os << ">>>CSP" << std::endl;
     os << ">>>VARIABLES" << std::endl;
     for (int i = 0; i < variables_.size(); i++) {
         variables_[i]->print(os, instance, state);
     }
     os << ">>>CONSTRAINTS" << std::endl;
-    for (VVI_CI it = constraints_.cbegin(); 
-                             it != constraints_.cend(); 
-                             it++) {
+    for (auto it = constraints_.cbegin(); it != constraints_.cend(); it++) {
 
         const std::vector<int> &cl = *it;
         state->print_clause(os, cl, instance);
@@ -199,12 +200,14 @@ int Inference::CSP::get_l_atom(int h_atom) {
     return h_atom > 0 ? (h_atom - 1) / 2 : (-h_atom - 1) / 2 + 1;
 }
 
-void Inference::CSP::AC3::apply_unary_constraints(Csp &csp, const Instance *instance, const LW1_State *state) const {
+void Inference::CSP::AC3::apply_unary_constraints(Csp &csp,
+                                                  const Instance *instance,
+                                                  const LW1_State *state) const {
     csp.clean_domains();
-    VVI constraints_ = csp.get_constraints_();
+    auto constraints_ = csp.get_constraints_();
     V_VAR variables_ = csp.get_variables_();
 
-    for (VVI_I it = constraints_.begin(); it != constraints_.end();) {
+    for (auto it = constraints_.begin(); it != constraints_.end();) {
         VI cl = *it;
         if (cl.size() == 1) {  // Unary constraint (vector<h_atom>)
             int index = csp.get_var_index(cl[0]);
@@ -218,7 +221,7 @@ void Inference::CSP::AC3::apply_unary_constraints(Csp &csp, const Instance *inst
 }
 
 void Inference::CSP::AC3::prepare_constraints(const Csp &csp) {
-    VVI constraints = csp.get_constraints_();
+    auto constraints = csp.get_constraints_();
 
     // Build inverted index table
     for (size_t i = 0; i < constraints.size(); i++) {
@@ -234,10 +237,8 @@ void Inference::CSP::AC3::prepare_constraints(const Csp &csp) {
     }
 }
 
-void Inference::CSP::AC3::apply_binary_constraints(Csp &csp, 
-                                                   const Instance *instance,
-                                                   const LW1_State *state) const {
-    VVI constraints = csp.get_constraints_();
+void Inference::CSP::AC3::apply_binary_constraints(Csp &csp) const {
+    auto constraints = csp.get_constraints_();
     VVI watchlist;
     fill_watchlist(constraints, watchlist, csp);
 
@@ -245,6 +246,7 @@ void Inference::CSP::AC3::apply_binary_constraints(Csp &csp,
         std::vector<int> clause = watchlist.back();
         watchlist.pop_back();
         if (arc_reduce(csp, clause)) {
+            std::cout << "[DEBUG] REDUCED" << std::endl;
             // add constraints (clause[0], clause[1]') clause[0] when
             // clause'[1] != clause[1])
         }
@@ -279,7 +281,7 @@ void Inference::CSP::AC3::solve(Csp &csp, LW1_State &state,
                                 const Instance &instance) {
     apply_unary_constraints(csp, &instance, &state);
     prepare_constraints(csp);
-    apply_binary_constraints(csp, &instance, &state);
+    apply_binary_constraints(csp);
     csp.dump_into(state, instance);
 }
 
@@ -287,7 +289,7 @@ void Inference::CSP::AC3::print(std::ostream &os, const Instance *instance,
                                 const Csp &csp, LW1_State *state) const {
     os << "[AC3] Inverted index table" << std::endl;
     V_VAR variables = csp.get_variables_();
-    VVI constraints = csp.get_constraints_();
+    auto constraints = csp.get_constraints_();
 
     for (MIVI_CI it = inv_clauses_.cbegin();
          it != inv_clauses_.cend(); it++) {
@@ -303,18 +305,29 @@ void Inference::CSP::AC3::print(std::ostream &os, const Instance *instance,
     os << "END OF AC3" << std::endl;
 }
 
-void Inference::CSP::AC3::fill_watchlist(const VVI constraints_, VVI watchlist,
-                                         const Csp &csp) const {
-    for (VVI_CI ci = constraints_.cbegin(); ci != constraints_.cend(); ci++)
-        if (is_active(*ci, csp)) watchlist.push_back(*ci);
+void Inference::CSP::AC3::fill_watchlist(
+        const std::vector<Constraint> constraints, VVI watchlist,
+        const Csp &csp) const {
+    for (auto ci = constraints.cbegin(); ci != constraints.cend(); ci++)
+        if ((*ci).size() > 1 && is_active(*ci, csp)) watchlist.push_back(*ci);
 }
 
+// TODO: The constraint representation must be modified to make activeness
+// verification cosntant and not linear on the size of the clause.
 bool Inference::CSP::AC3::is_active(const VI clause, const Csp &csp) const {
+
+//    std::cout << Utils::blue();
+//    std::cout << "[DEBUG] Clause: ";
+//    state->print_clause(std::cout, clause, instance);
+//    std::cout << Utils::normal() << std::endl;
+
     int counter = 0;
     for (VI_CI it = clause.cbegin(); it != clause.cend(); it++) {
         Variable *var = csp.get_var(*it);
+//        var->print(std::cout, instance, state);
         if (var && var->get_domain_size() > 1) counter++;
         if (counter > 2) return false;
     }
+    std::cout << "[DEBUG] ACTIVE" << std::endl;
     return true;
 }

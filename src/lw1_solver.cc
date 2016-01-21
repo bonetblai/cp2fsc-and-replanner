@@ -503,7 +503,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                         for (size_t j = 0; j < cnf_for_sensing_model.size(); ++j) {
                             const clause_t &clause = cnf_for_sensing_model[j];
 #ifdef DEBUG
-                            cout << Utils::red() << "[Theory] Add K_o clause: ";
+                            cout << Utils::red() << "[CSP] Add K_o clause to constraints: ";
                             state.print_clause(cout, clause, &kp_instance_);
                             cout << Utils::normal() << endl;
 
@@ -516,7 +516,6 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
 //                                cout << lw1.variables_[atoms_to_vars_.at(k_literal)]->name_;
 //                                cout << Utils::normal() << endl;
 //                            }
-
 #endif
                             Inference::Propositional::Clause cl;
                             for (size_t i = 0; i < clause.size(); ++i) {
