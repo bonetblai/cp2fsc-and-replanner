@@ -102,14 +102,20 @@ namespace Inference {
         class Constraint : public std::vector<int> {
           private:
             bool active_;
-            int v1_, v2_;
+            int v1_, v2_, undeterm_;
           public:
-            Constraint() : active_(false), v1_(-1), v2_(-1) {};
+            Constraint() : active_(false), v1_(-1), v2_(-1), undeterm_(-1) {};
             Constraint(const VI& cl) : VI(cl.cbegin(), cl.cend()),
-                                       active_(false), v1_(-1), v2_(-1) {};
-            bool is_active() { return active_; };
-            int get_v1() { return v1_; }
-            int get_v2() { return v2_; }
+                                       active_(false), v1_(-1), v2_(-1),
+                                       undeterm_(-1) {};
+            bool is_active() const { return active_; };
+            void set_active(bool b) { active_ = b; };
+            int get_v1() { return v1_; };
+            int get_v2() { return v2_; };
+            void set_v1(int v) { v1_ = v; };
+            void set_v2(int v) { v2_ = v; };
+            int get_undeterm() { return undeterm_; };
+            void set_undeterm(int u) { undeterm_ = u; };
         };
 
         /**
@@ -180,20 +186,19 @@ namespace Inference {
             // Apply unary constrains
             void apply_binary_constraints(Csp &csp) const;
 
-            void prepare_constraints(const Csp &csp);
+            void prepare_constraints(Csp &csp);
 
             void fill_watchlist(const std::vector<Constraint> constraints_,
                                 VVI watchlist, const Csp &csp) const;
 
-            bool is_active(const VI clause, const Csp &csp) const;
-
-            bool arc_reduce(const Csp &csp, const std::vector<int> &clause) const;
+            bool arc_reduce(const Csp &csp, const VI &clause) const;
           public:
             void solve(Csp &csp, LW1_State &state, const Instance &instance);
             void print(std::ostream &os, const Instance *instance,
                        const Csp &csp, LW1_State *state) const;
         };
     }
+
 }
 
 #endif

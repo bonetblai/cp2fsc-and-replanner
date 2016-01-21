@@ -220,20 +220,41 @@ void Inference::CSP::AC3::apply_unary_constraints(Csp &csp,
     }
 }
 
-void Inference::CSP::AC3::prepare_constraints(const Csp &csp) {
+void Inference::CSP::AC3::prepare_constraints(Csp &csp) {
     auto constraints = csp.get_constraints_();
 
-    // Build inverted index table
+    // Build inverted index table and fill activeness info for constraints
     for (size_t i = 0; i < constraints.size(); i++) {
+        bool active = true;
+        int counter = 0;
+        std::vector<int> deter_indexes;
+
         for (size_t j = 0; j < constraints[i].size(); j++) {
             int var_index = csp.get_var_index(j);
             if (var_index == -1) continue;
-            MIVI_CI jt = inv_clauses_.find(var_index);
 
+            // Fill info on inverted indexes
+            MIVI_CI jt = inv_clauses_.find(var_index);
             if (jt == inv_clauses_.cend())
                 inv_clauses_[var_index] = std::vector<int>();
             inv_clauses_[var_index].push_back(i);
+
+            // Fill info of activeness
+            Variable *var = csp.get_var(j);
+            if (var->get_domain_size() > 1) {
+                counter++;
+            } else {
+                deter_indexes.push_back(j);
+            }
+            if (counter > 2) active = false;
         }
+
+        if (active) {
+            constraints[i].set_v1(deter_indexes[0]);
+            if (counter == 2) constraints[i].set_v2(deter_indexes[1]);
+        }
+        constraints[i].set_active(active);
+        constraints[i].set_undeterm(counter);
     }
 }
 
@@ -309,25 +330,5 @@ void Inference::CSP::AC3::fill_watchlist(
         const std::vector<Constraint> constraints, VVI watchlist,
         const Csp &csp) const {
     for (auto ci = constraints.cbegin(); ci != constraints.cend(); ci++)
-        if ((*ci).size() > 1 && is_active(*ci, csp)) watchlist.push_back(*ci);
-}
-
-// TODO: The constraint representation must be modified to make activeness
-// verification cosntant and not linear on the size of the clause.
-bool Inference::CSP::AC3::is_active(const VI clause, const Csp &csp) const {
-
-//    std::cout << Utils::blue();
-//    std::cout << "[DEBUG] Clause: ";
-//    state->print_clause(std::cout, clause, instance);
-//    std::cout << Utils::normal() << std::endl;
-
-    int counter = 0;
-    for (VI_CI it = clause.cbegin(); it != clause.cend(); it++) {
-        Variable *var = csp.get_var(*it);
-//        var->print(std::cout, instance, state);
-        if (var && var->get_domain_size() > 1) counter++;
-        if (counter > 2) return false;
-    }
-    std::cout << "[DEBUG] ACTIVE" << std::endl;
-    return true;
+        if ((*ci).size() > 1 && (*ci).is_active()) watchlist.push_back(*ci);
 }
