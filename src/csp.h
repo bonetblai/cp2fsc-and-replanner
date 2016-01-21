@@ -142,7 +142,7 @@ namespace Inference {
                 }
                 
                 Variable *get_var(int h_atom) const {
-                    int var_index = get_var_index(h_atom);
+                    int var_index = get_var_index(abs(h_atom));
                     if (var_index == -1) return NULL; 
                     return variables_[var_index];
                 }
