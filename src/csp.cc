@@ -202,7 +202,8 @@ int Inference::CSP::get_l_atom(int h_atom) {
 void Inference::CSP::AC3::apply_unary_constraints(Csp &csp, const Instance *instance, const LW1_State *state) const {
     csp.clean_domains();
     VVI constraints_ = csp.get_constraints_();
-    V_VAR variables_ = csp.get_variables_(); 
+    V_VAR variables_ = csp.get_variables_();
+
     for (VVI_I it = constraints_.begin(); it != constraints_.end();) {
         VI cl = *it;
         if (cl.size() == 1) {  // Unary constraint (vector<h_atom>)
@@ -236,11 +237,9 @@ void Inference::CSP::AC3::prepare_constraints(const Csp &csp) {
 void Inference::CSP::AC3::apply_binary_constraints(Csp &csp, 
                                                    const Instance *instance,
                                                    const LW1_State *state) const {
-    
     VVI constraints = csp.get_constraints_();
     VVI watchlist;
-    fill_watchlist(constraints, watchlist,
-                   csp);
+    fill_watchlist(constraints, watchlist, csp);
 
     while (! watchlist.empty()) {
         std::vector<int> clause = watchlist.back();
@@ -260,7 +259,6 @@ bool Inference::CSP::AC3::arc_reduce(const Csp &csp, const VI &clause) const {
 
     for (SI_I vx = dx.begin(); vx != dx.end(); vx++) {
         if (x->evaluate(*vx, clause[0])) continue; // If constraint is already satisfied
-
         bool found = false;
         for (SI_I vy = dy.begin(); vy != dy.end(); vy++) {
             if (y->evaluate(*vy, clause[1])) { 
@@ -279,12 +277,10 @@ bool Inference::CSP::AC3::arc_reduce(const Csp &csp, const VI &clause) const {
 
 void Inference::CSP::AC3::solve(Csp &csp, LW1_State &state,
                                 const Instance &instance) {
-
     apply_unary_constraints(csp, &instance, &state);
     prepare_constraints(csp);
     apply_binary_constraints(csp, &instance, &state);
     csp.dump_into(state, instance);
-    return;
 }
 
 void Inference::CSP::AC3::print(std::ostream &os, const Instance *instance,
