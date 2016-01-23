@@ -204,7 +204,7 @@ void Inference::CSP::AC3::apply_unary_constraints(Csp &csp,
                                                   const Instance *instance,
                                                   const LW1_State *state) const {
     csp.clean_domains();
-    auto constraints_ = csp.get_constraints_();
+    std::vector<Constraint>& constraints_ = csp.get_constraints_();
     V_VAR variables_ = csp.get_variables_();
 
     for (auto it = constraints_.begin(); it != constraints_.end();) {
@@ -221,7 +221,7 @@ void Inference::CSP::AC3::apply_unary_constraints(Csp &csp,
 }
 
 void Inference::CSP::AC3::prepare_constraints(Csp &csp) {
-    auto constraints = csp.get_constraints_();
+    std::vector<Constraint>& constraints = csp.get_constraints_();
 
     // Build inverted index table and fill activeness info for constraints
     for (size_t i = 0; i < constraints.size(); i++) {
@@ -229,7 +229,8 @@ void Inference::CSP::AC3::prepare_constraints(Csp &csp) {
         int counter = 0;
         std::vector<int> deter_indexes;
 
-        if (constraints.size() == 1) {
+        if (constraints[i].size() == 1) {
+            std::cout << "[AC3] Unary constraint removed." << std::endl;
             constraints.erase(constraints.begin() + i);
             continue;
         }
@@ -264,7 +265,7 @@ void Inference::CSP::AC3::prepare_constraints(Csp &csp) {
 }
 
 void Inference::CSP::AC3::apply_binary_constraints(Csp &csp) const {
-    auto constraints = csp.get_constraints_();
+    std::vector<Constraint>& constraints = csp.get_constraints_();
     VVI watchlist;
     fill_watchlist(constraints, watchlist, csp);
 
@@ -313,10 +314,10 @@ void Inference::CSP::AC3::solve(Csp &csp, LW1_State &state,
 }
 
 void Inference::CSP::AC3::print(std::ostream& os, const Instance& instance,
-                                const Csp& csp, LW1_State& state) const {
+                                Csp& csp, LW1_State& state) const {
     os << "[AC3] Inverted index table" << std::endl;
     V_VAR variables = csp.get_variables_();
-    auto constraints = csp.get_constraints_();
+    std::vector<Constraint>& constraints = csp.get_constraints_();
 
     for (MIVI_CI it = inv_clauses_.cbegin();
          it != inv_clauses_.cend(); it++) {

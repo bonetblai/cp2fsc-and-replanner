@@ -37,11 +37,11 @@ namespace Inference {
             Variable() { };
             Variable(const LW1_Instance::Variable &var);
 
-            std::set<int> get_original_domain() const {
+            const std::set<int>& get_original_domain() const {
                 return original_domain_;
             }
 
-            std::set<int> get_current_domain() const {
+            const std::set<int>& get_current_domain() const {
                 return current_domain_;
             }
 
@@ -135,11 +135,11 @@ namespace Inference {
                     const std::vector<LW1_Instance::Variable *> &vars,
                     const std::map<int, int> map);
 
-            std::vector<Constraint> get_constraints_() const {
+            std::vector<Constraint>& get_constraints_()  {
                 return constraints_;
             }
 
-            std::vector<Inference::CSP::Variable *> get_variables_() const {
+            std::vector<Inference::CSP::Variable*>& get_variables_() {
                 return variables_;
             }
 
@@ -195,7 +195,7 @@ namespace Inference {
           public:
             void solve(Csp &csp, LW1_State &state, const Instance &instance);
             void print(std::ostream &os, const Instance &instance,
-                       const Csp &csp, LW1_State &state) const;
+                       Csp &csp, LW1_State &state) const;
         };
     }
 
