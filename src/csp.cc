@@ -47,8 +47,8 @@ Inference::CSP::Variable::Variable(const LW1_Instance::Variable &var):
 /**
   * Print info about a variable (debugging)
   */
-void Inference::CSP::Variable::print(std::ostream &os, const Instance *instance,
-                                     const LW1_State *state) const {
+void Inference::CSP::Variable::print(std::ostream& os, const Instance& instance,
+                                     const LW1_State& state) const {
     const std::set<int> &od = original_domain_;
     const std::set<int> &cd = current_domain_;
     std::set<int>::const_iterator od_end = od.cend(); --od_end;
@@ -57,7 +57,7 @@ void Inference::CSP::Variable::print(std::ostream &os, const Instance *instance,
     os << name_ << ": ";
     os << "od: {";
     for (SI::const_iterator it = od.cbegin(); it != od.cend(); it++) {
-        state->print_literal(os, *it, instance);
+        state.print_literal(os, *it, &instance);
         os << " [" << *it << "]";
         if (it != od_end) os << ", ";
     }
@@ -65,7 +65,7 @@ void Inference::CSP::Variable::print(std::ostream &os, const Instance *instance,
 
     os << "cd: {";
     for (auto it = cd.cbegin(); it != cd.cend(); it++) {
-        state->print_literal(os, *it, instance);
+        state.print_literal(os, *it, &instance);
         os << " [" << *it << "]";
         if (it != cd_end) os << ", ";
     }
@@ -151,8 +151,8 @@ void Inference::CSP::Csp::dump_into(LW1_State &state, const Instance &instance) 
 /**
   *  Print CSP  (debugging)
   */
-void Inference::CSP::Csp::print(std::ostream &os, const Instance *instance,
-                                const LW1_State *state) const {
+void Inference::CSP::Csp::print(std::ostream& os, const Instance& instance,
+                                const LW1_State& state) const {
     os << ">>>CSP" << std::endl;
     os << ">>>VARIABLES" << std::endl;
     for (int i = 0; i < variables_.size(); i++) {
@@ -162,7 +162,7 @@ void Inference::CSP::Csp::print(std::ostream &os, const Instance *instance,
     for (auto it = constraints_.cbegin(); it != constraints_.cend(); it++) {
 
         const std::vector<int> &cl = *it;
-        state->print_clause(os, cl, instance);
+        state.print_clause(os, cl, &instance);
         for (VI_CI it2 = cl.cbegin(); it2 != cl.cend(); it2++) {
             os << *it2 << ", ";
         }
@@ -228,6 +228,11 @@ void Inference::CSP::AC3::prepare_constraints(Csp &csp) {
         bool active = true;
         int counter = 0;
         std::vector<int> deter_indexes;
+
+        if (constraints.size() == 1) {
+            constraints.erase(constraints.begin() + i);
+            continue;
+        }
 
         for (size_t j = 0; j < constraints[i].size(); j++) {
             int var_index = csp.get_var_index(j);
@@ -302,12 +307,13 @@ void Inference::CSP::AC3::solve(Csp &csp, LW1_State &state,
                                 const Instance &instance) {
     apply_unary_constraints(csp, &instance, &state);
     prepare_constraints(csp);
+    csp.print(std::cout, instance, state);
     apply_binary_constraints(csp);
     csp.dump_into(state, instance);
 }
 
-void Inference::CSP::AC3::print(std::ostream &os, const Instance *instance,
-                                const Csp &csp, LW1_State *state) const {
+void Inference::CSP::AC3::print(std::ostream& os, const Instance& instance,
+                                const Csp& csp, LW1_State& state) const {
     os << "[AC3] Inverted index table" << std::endl;
     V_VAR variables = csp.get_variables_();
     auto constraints = csp.get_constraints_();
@@ -319,7 +325,7 @@ void Inference::CSP::AC3::print(std::ostream &os, const Instance *instance,
         os << "[AC3] Constraints: " << std::endl;
         VI constraint = it->second;
         for (VI_CI vit = constraint.cbegin(); vit != constraint.cend(); vit++) {
-            state->print_clause(os, constraints[*vit], instance);
+            state.print_clause(os, constraints[*vit], &instance);
             os << std::endl;
         }
     }

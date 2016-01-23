@@ -64,8 +64,8 @@ namespace Inference {
             void apply_unary_constraint(int k_atom);
 
             // Debugging
-            void print(std::ostream &os, const Instance *instance,
-                       const LW1_State *state) const;
+            void print(std::ostream &os, const Instance &instance,
+                       const LW1_State &state) const;
         };
 
         /**
@@ -166,8 +166,8 @@ namespace Inference {
             }
 
             // Debugging
-            void print(std::ostream &os, const Instance *instance,
-                       const LW1_State *state) const; // Print CSP
+            void print(std::ostream& os, const Instance& instance,
+                       const LW1_State& state) const; // Print CSP
         };
 
         /**
@@ -194,8 +194,8 @@ namespace Inference {
             bool arc_reduce(const Csp &csp, const VI &clause) const;
           public:
             void solve(Csp &csp, LW1_State &state, const Instance &instance);
-            void print(std::ostream &os, const Instance *instance,
-                       const Csp &csp, LW1_State *state) const;
+            void print(std::ostream &os, const Instance &instance,
+                       const Csp &csp, LW1_State &state) const;
         };
     }
 
