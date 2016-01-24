@@ -74,6 +74,21 @@ void Inference::CSP::Variable::print(std::ostream& os, const Instance& instance,
     os << "b? " << (is_binary() ? "yes" : "no") << std::endl;
 }
 
+void Inference::CSP::Variable::apply_unary_constraint(int h_atom) {
+    if (h_atom % 2 == 0) {
+        // If h_atom is a K_not_atom, remove the K_atom which is K_not_atom - 1
+        current_domain_.erase(h_atom - 1);
+    } else {
+        // if the atom is a K_atom, remove everything else from domain
+        current_domain_.clear();
+        current_domain_.insert(h_atom);
+    }
+}
+
+void Inference::CSP::Variable::clean_domain() {
+    current_domain_ = SI(original_domain_);
+}
+
 /************************ Arithmetic Class ************************/
 
 void Inference::CSP::Arithmetic::dump_into(std::vector<int> &info,
@@ -89,6 +104,8 @@ void Inference::CSP::Arithmetic::dump_into(std::vector<int> &info,
         info.push_back(*(current_domain_.cbegin()));
     }
 }
+
+
 
 /************************ Binary Class ************************/
 
@@ -170,9 +187,6 @@ void Inference::CSP::Csp::print(std::ostream& os, const Instance& instance,
     }
 }
 
-void Inference::CSP::Variable::clean_domain() {
-    current_domain_ = SI(original_domain_);
-}
 
 void Inference::CSP::Csp::clean_domains() {
     for (V_VAR_I it = variables_.begin(); it != variables_.end(); it++) {
@@ -180,16 +194,7 @@ void Inference::CSP::Csp::clean_domains() {
     }
 }
 
-void Inference::CSP::Variable::apply_unary_constraint(int h_atom) {
-    if (h_atom % 2 == 0) { 
-        // If h_atom is a K_not_atom, remove the K_atom which is K_not_atom - 1
-        current_domain_.erase(h_atom - 1);
-    } else {
-        // if the atom is a K_atom, remove everything else from domain
-        current_domain_.clear();
-        current_domain_.insert(h_atom);
-    }
-}
+
 
 int Inference::CSP::get_h_atom(int l_atom) { return l_atom * 2 + 1; }
 
@@ -199,6 +204,8 @@ int Inference::CSP::get_k_not(int h_atom) { return h_atom + 1; }
 int Inference::CSP::get_l_atom(int h_atom) {
     return h_atom > 0 ? (h_atom - 1) / 2 : (-h_atom - 1) / 2 + 1;
 }
+
+/************************ AC3 Class ************************/
 
 void Inference::CSP::AC3::apply_unary_constraints(Csp &csp,
                                                   const Instance *instance,

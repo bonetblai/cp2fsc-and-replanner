@@ -99,6 +99,9 @@ namespace Inference {
             bool is_binary() const { return false; }
         };
 
+        /**
+          *  Constraint Class
+          */
         class Constraint : public std::vector<int> {
           private:
             bool active_;
@@ -119,7 +122,7 @@ namespace Inference {
         };
 
         /**
-          * Class Csp (Constraint Satisfaction Problem)
+          * Csp class (Constraint Satisfaction Problem)
           */
         class Csp {
           private:
