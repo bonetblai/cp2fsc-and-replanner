@@ -230,56 +230,71 @@ void Inference::CSP::AC3::apply_unary_constraints(Csp &csp,
 void Inference::CSP::AC3::prepare_constraints(Csp &csp) {
     std::vector<Constraint>& constraints = csp.get_constraints_();
 
-    // Build inverted index table and fill activeness info for constraints
+    // The list of constraints must be reduced discarding satisfied and
+    // unnecessary variables.
     for (size_t i = 0; i < constraints.size(); i++) {
-        bool active = true;
-        int counter = 0;
-        std::vector<int> deter_indexes;
+        bool satisfied = false;
 
+        // We don't need the unary ones from this point on.
         if (constraints[i].size() == 1) {
             std::cout << "[AC3] Unary constraint removed." << std::endl;
             constraints.erase(constraints.begin() + i);
             continue;
         }
 
+        // Every atom of the constraint (clause) must be evaluated.
+        // If its domain is unary and if it satisfies the constraint, the whole
+        // constraint is eliminated.
+        //
+        // If its domain is unary and it doesn't satisfy the constraint, the
+        // atom must be eliminated.
         for (size_t j = 0; j < constraints[i].size(); j++) {
-            int var_index = csp.get_var_index(j);
+            int var_index = csp.get_var_index(constraints[i][j]);
             if (var_index == -1) continue;
+
+            Variable *var = csp.get_var(constraints[i][j]);
+
+            if (var->get_domain_size() == 1) {
+                int value = *(var->get_current_domain().begin());
+                // If the value does not satisfy, it's useless and the
+                // constraint is reduced
+                if (! var->evaluate(value, j)) {
+                    constraints[i].erase(constraints[i].begin() + j);
+                    continue;
+                }
+                satisfied = true;
+                break;
+            }
 
             // Fill info on inverted indexes
             MIVI_CI jt = inv_clauses_.find(var_index);
             if (jt == inv_clauses_.cend())
                 inv_clauses_[var_index] = std::vector<int>();
             inv_clauses_[var_index].push_back(i);
-
-            // Fill info of activeness
-            Variable *var = csp.get_var(j);
-            if (var->get_domain_size() > 1) {
-                counter++;
-            } else {
-                deter_indexes.push_back(j);
-            }
-            if (counter > 2) active = false;
         }
 
-        if (active) {
-            constraints[i].set_v1(deter_indexes[0]);
-            if (counter == 2) constraints[i].set_v2(deter_indexes[1]);
+        // A constraint can be already satisfied, in which case it's
+        // useless for the CSP.
+        if (satisfied) {
+            std::cout << "[AC3] N-ary constraint removed." << std::endl;
+            constraints.erase(constraints.begin() + i);
+            continue;
         }
-        constraints[i].set_active(active);
-        constraints[i].set_undeterm(counter);
+        constraints[i].set_active(constraints[i].size() == 2);
     }
 }
 
-void Inference::CSP::AC3::apply_binary_constraints(Csp &csp) const {
+void Inference::CSP::AC3::apply_binary_constraints(Csp& csp,
+                                                   const Instance& instance,
+                                                   const LW1_State& state) const {
     std::vector<Constraint>& constraints = csp.get_constraints_();
-    VVI watchlist;
-    fill_watchlist(constraints, watchlist, csp);
+    std::vector<Constraint> watchlist;
+    fill_watchlist(constraints, watchlist, csp, instance, state);
 
     while (! watchlist.empty()) {
         std::vector<int> clause = watchlist.back();
         watchlist.pop_back();
-        if (arc_reduce(csp, clause)) {
+        if (arc_reduce(csp, clause, instance, state)) {
             std::cout << "[DEBUG] REDUCED" << std::endl;
             // add constraints (clause[0], clause[1]') clause[0] when
             // clause'[1] != clause[1])
@@ -287,17 +302,38 @@ void Inference::CSP::AC3::apply_binary_constraints(Csp &csp) const {
     } 
 }
 
-bool Inference::CSP::AC3::arc_reduce(const Csp &csp, const VI &clause) const {
-    if (clause.size() != 2) return false;
-    const Variable *x = csp.get_var(clause[0]), *y = csp.get_var(clause[1]);
-    SI dx = x->get_current_domain(), dy = y->get_current_domain();    
+bool Inference::CSP::AC3::arc_reduce(const Csp& csp,
+                                     const Constraint& constraint,
+                                     const Instance& instance,
+                                     const LW1_State& state) const {
+
+    std::cout << "[DEBUG] Clause in arc-reduce: " << std::endl;
+    csp.print_constraint(std::cout, constraint, instance, state);
+    std::cout << std::endl;
+
+    Variable* x = csp.get_var(constraint[0]);
+
+    if (constraint.size() == 1) {
+        x->clean_domain();
+        int val = constraint[0];
+        x->add(val);
+        return true;
+    }
+
+    Variable* y = csp.get_var(constraint[1]);
+//
+    SI dx = x->get_current_domain(), dy = y->get_current_domain();
     bool change = false; // An element has been erase from dx ?
 
-    for (SI_I vx = dx.begin(); vx != dx.end(); vx++) {
-        if (x->evaluate(*vx, clause[0])) continue; // If constraint is already satisfied
+    for (SI_I vx = dx.begin(); vx != dx.end();) {
+        // If constraint is already satisfied (this check should be unnecessary)
+        if (x->evaluate(*vx, constraint[0])) {
+            vx++;
+            continue;
+        }
         bool found = false;
         for (SI_I vy = dy.begin(); vy != dy.end(); vy++) {
-            if (y->evaluate(*vy, clause[1])) { 
+            if (y->evaluate(*vy, constraint[1])) {
                 found = true;
                 break;
             }
@@ -305,7 +341,8 @@ bool Inference::CSP::AC3::arc_reduce(const Csp &csp, const VI &clause) const {
         // Erase from domain, and set iterator before next element
         if (!found) {
             vx = dx.erase(vx);
-            vx--;
+        } else {
+            vx++;
         }
     }
     return change;
@@ -315,8 +352,7 @@ void Inference::CSP::AC3::solve(Csp &csp, LW1_State &state,
                                 const Instance &instance) {
     apply_unary_constraints(csp, &instance, &state);
     prepare_constraints(csp);
-    csp.print(std::cout, instance, state);
-    apply_binary_constraints(csp);
+    apply_binary_constraints(csp, instance, state);
     csp.dump_into(state, instance);
 }
 
@@ -341,8 +377,40 @@ void Inference::CSP::AC3::print(std::ostream& os, const Instance& instance,
 }
 
 void Inference::CSP::AC3::fill_watchlist(
-        const std::vector<Constraint> constraints, VVI watchlist,
-        const Csp &csp) const {
-    for (auto ci = constraints.cbegin(); ci != constraints.cend(); ci++)
-        if ((*ci).size() > 1 && (*ci).is_active()) watchlist.push_back(*ci);
+        const std::vector<Constraint>& constraints,
+        std::vector<Constraint>& watchlist, const Csp& csp,
+        const Instance& instance, const LW1_State& state) const {
+
+    for (std::vector<Constraint>::const_iterator ci = constraints.cbegin();
+         ci != constraints.cend(); ci++) {
+        Constraint constraint = *ci;
+        if (constraint.size() > 1 && constraint.is_active()) {
+            csp.print_constraint(std::cout, constraint, instance, state);
+            std::cout << "[AC3] ADDED TO WATCHLIST" << std::endl;
+            watchlist.push_back(*ci);
+        }
+    }
+}
+
+void Inference::CSP::Csp::print_constraint(std::ostream& os,
+                                           const Inference::CSP::Constraint& constraint,
+                                           const Instance& instance,
+                                           const LW1_State& state) const {
+    state.print_clause(os, constraint, &instance);
+    os << std::endl;
+    for (auto cn = constraint.cbegin(); cn != constraint.cend(); cn++) {
+        Variable* var = get_var(*cn);
+        var->print(os, instance, state);
+    }
+
+//    os << "v1: ";
+//    if (constraint.get_v1() == -1) os << "undetermined" << std::endl;
+//        else os << constraint.get_v1() << std::endl;
+//    os << "v2: ";
+//    if (constraint.get_v2() == -1) os << "undetermined" << std::endl;
+//        else os << constraint.get_v2() << std::endl;
+
+    os << "active? ";
+    if (constraint.is_active()) os << "yes" << std::endl;
+        else os << "no" << std::endl;
 }
