@@ -60,7 +60,8 @@ namespace Inference {
                                    const Instance *instance,
                                    const LW1_State *state) const = 0;
 
-            void clean_domain();
+            void reset_domain();
+            void clear_domain();
             void apply_unary_constraint(int k_atom);
             void add(int i) { current_domain_.insert(i);  }
 
@@ -194,7 +195,9 @@ namespace Inference {
                                           const Instance& instance,
                                           const LW1_State& state) const;
 
-            void prepare_constraints(Csp &csp);
+            void prepare_constraints(Csp& csp,
+                                                 const Instance& instance,
+                                                 const LW1_State& state);
 
             void fill_watchlist(
                     const std::vector<Constraint>& constraints_,

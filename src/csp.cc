@@ -85,8 +85,12 @@ void Inference::CSP::Variable::apply_unary_constraint(int h_atom) {
     }
 }
 
-void Inference::CSP::Variable::clean_domain() {
+void Inference::CSP::Variable::reset_domain() {
     current_domain_ = SI(original_domain_);
+}
+
+void Inference::CSP::Variable::clear_domain() {
+    current_domain_ = SI();
 }
 
 /************************ Arithmetic Class ************************/
@@ -165,6 +169,12 @@ void Inference::CSP::Csp::dump_into(LW1_State &state, const Instance &instance) 
     }
 }
 
+void Inference::CSP::Csp::clean_domains() {
+    for (V_VAR_I it = variables_.begin(); it != variables_.end(); it++) {
+        (*it)->reset_domain();
+    }
+}
+
 /**
   *  Print CSP  (debugging)
   */
@@ -187,14 +197,21 @@ void Inference::CSP::Csp::print(std::ostream& os, const Instance& instance,
     }
 }
 
-
-void Inference::CSP::Csp::clean_domains() {
-    for (V_VAR_I it = variables_.begin(); it != variables_.end(); it++) {
-        (*it)->clean_domain();
+void Inference::CSP::Csp::print_constraint(std::ostream& os,
+                                           const Inference::CSP::Constraint& constraint,
+                                           const Instance& instance,
+                                           const LW1_State& state) const {
+    state.print_clause(os, constraint, &instance);
+    os << std::endl;
+    for (auto cn = constraint.cbegin(); cn != constraint.cend(); cn++) {
+        Variable* var = get_var(*cn);
+        var->print(os, instance, state);
     }
+
+    os << "active? ";
+    if (constraint.is_active()) os << "yes" << std::endl;
+    else os << "no" << std::endl;
 }
-
-
 
 int Inference::CSP::get_h_atom(int l_atom) { return l_atom * 2 + 1; }
 
@@ -227,7 +244,9 @@ void Inference::CSP::AC3::apply_unary_constraints(Csp &csp,
     }
 }
 
-void Inference::CSP::AC3::prepare_constraints(Csp &csp) {
+void Inference::CSP::AC3::prepare_constraints(Csp& csp,
+                                              const Instance& instance,
+                                              const LW1_State& state) {
     std::vector<Constraint>& constraints = csp.get_constraints_();
 
     // The list of constraints must be reduced discarding satisfied and
@@ -280,7 +299,12 @@ void Inference::CSP::AC3::prepare_constraints(Csp &csp) {
             constraints.erase(constraints.begin() + i);
             continue;
         }
-        constraints[i].set_active(constraints[i].size() == 2);
+        constraints[i].set_active(constraints[i].size() <= 2);
+
+        // DEBUG
+        std::cout << Utils::magenta() << "[DEBUG AC3] Constraint after prepare: " << std::endl;
+        csp.print_constraint(std::cout, constraints[i], instance, state);
+        std::cout << Utils::normal() << std::endl;
     }
 }
 
@@ -292,9 +316,9 @@ void Inference::CSP::AC3::apply_binary_constraints(Csp& csp,
     fill_watchlist(constraints, watchlist, csp, instance, state);
 
     while (! watchlist.empty()) {
-        std::vector<int> clause = watchlist.back();
+        Constraint constraint = watchlist.back();
         watchlist.pop_back();
-        if (arc_reduce(csp, clause, instance, state)) {
+        if (arc_reduce(csp, constraint, instance, state)) {
             std::cout << "[DEBUG] REDUCED" << std::endl;
             // add constraints (clause[0], clause[1]') clause[0] when
             // clause'[1] != clause[1])
@@ -307,40 +331,66 @@ bool Inference::CSP::AC3::arc_reduce(const Csp& csp,
                                      const Instance& instance,
                                      const LW1_State& state) const {
 
-    std::cout << "[DEBUG] Clause in arc-reduce: " << std::endl;
-    csp.print_constraint(std::cout, constraint, instance, state);
-    std::cout << std::endl;
-
     Variable* x = csp.get_var(constraint[0]);
 
     if (constraint.size() == 1) {
-        x->clean_domain();
+        x->reset_domain();
         int val = constraint[0];
         x->add(val);
         return true;
     }
 
     Variable* y = csp.get_var(constraint[1]);
-//
+
     SI dx = x->get_current_domain(), dy = y->get_current_domain();
+
+    // If one of the clauses has determined value, we could know the value
+    // of the other one.
+    // TODO: Make this a function to avoid repeated code.
+    if (dx.size() == 1) {
+        for (SI_I vy = dy.begin(); vy != dy.end(); vy++) {
+            int yval = *vy;
+            if (y->evaluate(yval, constraint[1])) {
+                y->reset_domain();
+                y->add(yval);
+                return true;
+            }
+        }
+    }
+
+    if (dy.size() == 1) {
+        for (SI_I vx = dx.begin(); vx != dx.end(); vx++) {
+            int yval = *vx;
+            if (y->evaluate(yval, constraint[1])) {
+                x->clear_domain();
+                x->add(yval);
+                return true;
+            }
+        }
+    }
+
     bool change = false; // An element has been erase from dx ?
 
     for (SI_I vx = dx.begin(); vx != dx.end();) {
         // If constraint is already satisfied (this check should be unnecessary)
-        if (x->evaluate(*vx, constraint[0])) {
+        int xval = *vx;
+        if (x->evaluate(xval, constraint[0])) {
             vx++;
             continue;
         }
         bool found = false;
         for (SI_I vy = dy.begin(); vy != dy.end(); vy++) {
-            if (y->evaluate(*vy, constraint[1])) {
+            int yval = *vy;
+            if (y->evaluate(yval, constraint[1])) {
                 found = true;
                 break;
             }
         }
         // Erase from domain, and set iterator before next element
         if (!found) {
+            // TODO: Fix this. Being done on a copy.
             vx = dx.erase(vx);
+            change = true;
         } else {
             vx++;
         }
@@ -351,7 +401,7 @@ bool Inference::CSP::AC3::arc_reduce(const Csp& csp,
 void Inference::CSP::AC3::solve(Csp &csp, LW1_State &state,
                                 const Instance &instance) {
     apply_unary_constraints(csp, &instance, &state);
-    prepare_constraints(csp);
+    prepare_constraints(csp, instance, state);
     apply_binary_constraints(csp, instance, state);
     csp.dump_into(state, instance);
 }
@@ -384,33 +434,13 @@ void Inference::CSP::AC3::fill_watchlist(
     for (std::vector<Constraint>::const_iterator ci = constraints.cbegin();
          ci != constraints.cend(); ci++) {
         Constraint constraint = *ci;
-        if (constraint.size() > 1 && constraint.is_active()) {
+        if (constraint.is_active() && constraint.size() > 1) {
+            std::cout << Utils:: magenta() << "[DEBUG AC3] Added to watchlist: " << std::endl;
             csp.print_constraint(std::cout, constraint, instance, state);
-            std::cout << "[AC3] ADDED TO WATCHLIST" << std::endl;
+            std::cout << Utils:: normal();
             watchlist.push_back(*ci);
         }
     }
 }
 
-void Inference::CSP::Csp::print_constraint(std::ostream& os,
-                                           const Inference::CSP::Constraint& constraint,
-                                           const Instance& instance,
-                                           const LW1_State& state) const {
-    state.print_clause(os, constraint, &instance);
-    os << std::endl;
-    for (auto cn = constraint.cbegin(); cn != constraint.cend(); cn++) {
-        Variable* var = get_var(*cn);
-        var->print(os, instance, state);
-    }
 
-//    os << "v1: ";
-//    if (constraint.get_v1() == -1) os << "undetermined" << std::endl;
-//        else os << constraint.get_v1() << std::endl;
-//    os << "v2: ";
-//    if (constraint.get_v2() == -1) os << "undetermined" << std::endl;
-//        else os << constraint.get_v2() << std::endl;
-
-    os << "active? ";
-    if (constraint.is_active()) os << "yes" << std::endl;
-        else os << "no" << std::endl;
-}
