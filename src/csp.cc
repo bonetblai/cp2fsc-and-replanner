@@ -1,7 +1,6 @@
 #include <algorithm>
 #undef NDEBUG // error: the output changes when compiling with -DNDEBUG
 #define DEBUG
-#include <cassert>
 #include <iostream>
 #include <queue>
 #include <set>
@@ -224,9 +223,7 @@ int Inference::CSP::get_l_atom(int h_atom) {
 
 /************************ AC3 Class ************************/
 
-void Inference::CSP::AC3::apply_unary_constraints(Csp &csp,
-                                                  const Instance *instance,
-                                                  const LW1_State *state) const {
+void Inference::CSP::AC3::apply_unary_constraints(Csp& csp) const {
     csp.clean_domains();
     std::vector<Constraint>& constraints_ = csp.get_constraints_();
     V_VAR variables_ = csp.get_variables_();
@@ -334,6 +331,7 @@ bool Inference::CSP::AC3::arc_reduce(const Csp& csp,
     Variable* x = csp.get_var(constraint[0]);
 
     if (constraint.size() == 1) {
+        if (x->get_domain_size() == 1) return false;
         x->reset_domain();
         int val = constraint[0];
         x->add(val);
@@ -351,23 +349,23 @@ bool Inference::CSP::AC3::arc_reduce(const Csp& csp,
         for (SI_I vy = dy.begin(); vy != dy.end(); vy++) {
             int yval = *vy;
             if (y->evaluate(yval, constraint[1])) {
-                y->reset_domain();
+                y->clear_domain();
                 y->add(yval);
                 return true;
             }
         }
     }
 
-    if (dy.size() == 1) {
-        for (SI_I vx = dx.begin(); vx != dx.end(); vx++) {
-            int yval = *vx;
-            if (y->evaluate(yval, constraint[1])) {
-                x->clear_domain();
-                x->add(yval);
-                return true;
-            }
-        }
-    }
+//    if (dy.size() == 1) {
+//        for (SI_I vx = dx.begin(); vx != dx.end(); vx++) {
+//            int yval = *vx;
+//            if (y->evaluate(yval, constraint[1])) {
+//                x->clear_domain();
+//                x->add(yval);
+//                return true;
+//            }
+//        }
+//    }
 
     bool change = false; // An element has been erase from dx ?
 
@@ -400,7 +398,7 @@ bool Inference::CSP::AC3::arc_reduce(const Csp& csp,
 
 void Inference::CSP::AC3::solve(Csp &csp, LW1_State &state,
                                 const Instance &instance) {
-    apply_unary_constraints(csp, &instance, &state);
+    apply_unary_constraints(csp);
     prepare_constraints(csp, instance, state);
     apply_binary_constraints(csp, instance, state);
     csp.dump_into(state, instance);
@@ -438,7 +436,19 @@ void Inference::CSP::AC3::fill_watchlist(
             std::cout << Utils:: magenta() << "[DEBUG AC3] Added to watchlist: " << std::endl;
             csp.print_constraint(std::cout, constraint, instance, state);
             std::cout << Utils:: normal();
-            watchlist.push_back(*ci);
+            watchlist.push_back(constraint);
+
+            // If (x,y) is being added, (y,x) needs to be added as well.
+            if (constraint.size() > 1) {
+                Constraint inverted(constraint);
+                std::iter_swap(inverted.begin(), inverted.begin() + 1);
+
+                std::cout << Utils:: magenta() << "[DEBUG AC3] Added to watchlist: " << std::endl;
+                csp.print_constraint(std::cout, inverted, instance, state);
+                std::cout << Utils:: normal();
+
+                watchlist.push_back(inverted);
+            }
         }
     }
 }

@@ -188,8 +188,7 @@ namespace Inference {
 
             // Reduce domains by applying constraints
             // CSP has to be consistent
-            void apply_unary_constraints(Csp &csp, const Instance *instance,
-                                         const LW1_State *state) const;
+            void apply_unary_constraints(Csp& csp) const;
             // Apply unary constrains
             void apply_binary_constraints(Csp& csp,
                                           const Instance& instance,
