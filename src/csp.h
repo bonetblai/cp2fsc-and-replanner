@@ -44,6 +44,18 @@ namespace Inference {
                 return current_domain_;
             }
 
+            std::set<int>::iterator get_current_begin() {
+                return current_domain_.begin();
+            }
+
+            std::set<int>::iterator get_current_end() {
+                return current_domain_.end();
+            }
+
+            std::set<int>::iterator erase(std::set<int>::iterator it) {
+                return current_domain_.erase(it);
+            }
+
             size_t get_domain_size() const {
                 return current_domain_.size();
             }

@@ -336,13 +336,11 @@ bool Inference::CSP::AC3::arc_reduce(const Csp& csp,
 
     Variable* y = csp.get_var(constraint[1]);
 
-    SI dx = x->get_current_domain(), dy = y->get_current_domain();
-
     // If one of the clauses has determined value, we could know the value
     // of the other one.
     // TODO: Make this a function to avoid repeated code.
-    if (dx.size() == 1) {
-        for (SI_I vy = dy.begin(); vy != dy.end(); vy++) {
+    if (x->get_domain_size() == 1) {
+        for (SI_I vy = y->get_current_begin(); vy != y->get_current_end(); vy++) {
             int yval = *vy;
             if (y->evaluate(yval, constraint[1])) {
                 y->clear_domain();
@@ -352,20 +350,9 @@ bool Inference::CSP::AC3::arc_reduce(const Csp& csp,
         }
     }
 
-//    if (dy.size() == 1) {
-//        for (SI_I vx = dx.begin(); vx != dx.end(); vx++) {
-//            int yval = *vx;
-//            if (y->evaluate(yval, constraint[1])) {
-//                x->clear_domain();
-//                x->add(yval);
-//                return true;
-//            }
-//        }
-//    }
-
     bool change = false; // An element has been erase from dx ?
 
-    for (SI_I vx = dx.begin(); vx != dx.end();) {
+    for (SI_I vx = x->get_current_begin(); vx != x->get_current_end();) {
         // If constraint is already satisfied (this check should be unnecessary)
         int xval = *vx;
         if (x->evaluate(xval, constraint[0])) {
@@ -373,7 +360,7 @@ bool Inference::CSP::AC3::arc_reduce(const Csp& csp,
             continue;
         }
         bool found = false;
-        for (SI_I vy = dy.begin(); vy != dy.end(); vy++) {
+        for (SI_I vy = y->get_current_begin(); vy != y->get_current_end(); vy++) {
             int yval = *vy;
             if (y->evaluate(yval, constraint[1])) {
                 found = true;
@@ -382,8 +369,7 @@ bool Inference::CSP::AC3::arc_reduce(const Csp& csp,
         }
         // Erase from domain, and set iterator before next element
         if (!found) {
-            // TODO: Fix this. Being done on a copy.
-            vx = dx.erase(vx);
+            vx = x->erase(vx);
             change = true;
         } else {
             vx++;
