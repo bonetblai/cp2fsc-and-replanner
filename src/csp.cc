@@ -94,9 +94,7 @@ void Inference::CSP::Variable::clear_domain() {
 
 /************************ Arithmetic Class ************************/
 
-void Inference::CSP::Arithmetic::dump_into(std::vector<int> &info,
-                                           const Instance *instance,
-                                           const LW1_State *state) const {
+void Inference::CSP::Arithmetic::dump_into(std::vector<int>& info) const {
     info.clear();
     for (SI_CI o = original_domain_.cbegin(); o != original_domain_.cend(); o++) {
         if (current_domain_.find(*o) == current_domain_.end()) {   // Not found
@@ -112,9 +110,7 @@ void Inference::CSP::Arithmetic::dump_into(std::vector<int> &info,
 
 /************************ Binary Class ************************/
 
-void Inference::CSP::Binary::dump_into(std::vector<int> &info,
-                                       const Instance *instance,
-                                       const LW1_State *state) const {
+void Inference::CSP::Binary::dump_into(std::vector<int>& info) const {
     info.clear();
     if (current_domain_.size() == 1) {
         info.push_back(*(current_domain_.cbegin()));
@@ -136,9 +132,9 @@ void Inference::CSP::Csp::initialize(
         Inference::CSP::Variable *variable;
 
         if (var->is_binary()) {
-            variable = new Inference::CSP::Binary(*var);
+            variable = new Binary(*var);
         } else {
-            variable = new Inference::CSP::Arithmetic(*var);
+            variable = new Arithmetic(*var);
         }
 
         variables_.push_back(variable);
@@ -155,7 +151,7 @@ void Inference::CSP::Csp::initialize(
 void Inference::CSP::Csp::dump_into(LW1_State &state, const Instance &instance) const {
     for (V_VAR_CI var = variables_.begin(); var != variables_.end(); var++) {
         std::vector<int> info;
-        (*var)->dump_into(info, &instance, &state);
+        (*var)->dump_into(info);
         for (VI_CI st = info.begin(); st != info.end(); st++) {
 #ifdef DEBUG
             std::cout << Utils::yellow() << "[CSP] Added literal into state: ";

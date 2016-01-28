@@ -13,7 +13,6 @@
 namespace Inference {
 
     typedef std::vector<int>VI;
-    typedef std::vector< VI > VVI;
 
     namespace CSP {
 
@@ -50,15 +49,11 @@ namespace Inference {
             }
 
             bool evaluate(int value, int h_atom) const {
-                if (value == h_atom) return true;
-                if (h_atom < 0 && h_atom + value != 0) return true;
-                return false;
+                return (value == h_atom || (h_atom < 0 && h_atom + value != 0));
             }
             //virtual void eval() = 0;  // Evaluation method
             virtual bool is_binary() const = 0;
-            virtual void dump_into(std::vector<int> &info,
-                                   const Instance *instance,
-                                   const LW1_State *state) const = 0;
+            virtual void dump_into(std::vector<int>& info) const = 0;
 
             void reset_domain();
             void clear_domain();
@@ -81,8 +76,7 @@ namespace Inference {
                 current_domain_.insert(get_k_not(*current_domain_.cbegin()));
             };
             // Implementation of pure virtual method
-            void dump_into(std::vector<int> &info, const Instance *instance,
-                           const LW1_State *state) const;
+            void dump_into(std::vector<int>& info) const;
             // It's a binary variable
             bool is_binary() const { return true; }
         };
@@ -95,8 +89,7 @@ namespace Inference {
             Arithmetic() { };
             Arithmetic(const LW1_Instance::Variable &var) : Variable(var) { };
             // Implementation of pure virtual method
-            void dump_into(std::vector<int> &info, const Instance *instance,
-                           const LW1_State *state) const;
+            void dump_into(std::vector<int>& info) const;
             // An arithmetic variables is not binary
             bool is_binary() const { return false; }
         };
@@ -107,16 +100,13 @@ namespace Inference {
         class Constraint : public std::vector<int> {
           private:
             bool active_;
-            bool eval_;
           public:
-            Constraint() : active_(false), eval_(false) { };
+            Constraint() : active_(false) { };
             Constraint(const VI& cl) : VI(cl.cbegin(), cl.cend()),
-                                       active_(false), eval_(false) { };
+                                       active_(false) { };
 
             bool is_active() const { return active_; }
             void set_active(bool b) { active_ = b; }
-            const bool get_eval() const { return eval_; }
-            void set_eval(bool e) { eval_ = e; }
         };
 
         /**
@@ -131,7 +121,6 @@ namespace Inference {
             // Map for finding var_index of l_atom
             static std::map<int, int> atoms_to_var_map_;
           public:
-            Csp() { };
             void initialize(
                     const std::vector<LW1_Instance::Variable *> &vars,
                     const std::map<int, int> map);
