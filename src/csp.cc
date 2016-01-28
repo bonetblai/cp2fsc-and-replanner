@@ -272,6 +272,7 @@ void Inference::CSP::AC3::prepare_constraints(Csp& csp,
                 // constraint is reduced
                 if (! var->evaluate(value, j)) {
                     constraints[i].erase(constraints[i].begin() + j);
+                    j--;
                     continue;
                 }
                 satisfied = true;
