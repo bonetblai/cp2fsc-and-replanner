@@ -204,11 +204,11 @@ namespace Inference {
                     std::vector<Constraint>& watchlist, const Csp& csp,
                     const Instance& instance, const LW1_State& state) const;
 
-            bool arc_reduce(const Csp& csp,
-                                        const Constraint& constraint,
-                                        const Instance& instance,
-                                        const LW1_State& state) const;
-          public:
+            bool arc_reduce(Csp& csp, const Constraint& constraint,
+                            const Instance& instance,
+                            const LW1_State& state) const;
+
+        public:
             void solve(Csp &csp, LW1_State &state, const Instance &instance);
             void print(std::ostream &os, const Instance &instance,
                        Csp &csp, LW1_State &state) const;

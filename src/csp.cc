@@ -314,24 +314,39 @@ void Inference::CSP::AC3::apply_binary_constraints(Csp& csp,
         watchlist.pop_back();
         if (arc_reduce(csp, constraint, instance, state)) {
             std::cout << "[DEBUG] REDUCED" << std::endl;
+            int var_index = csp.get_var_index(constraint[0]);
+            std::vector<int> related = inv_clauses_.at(var_index);
+
+            std::cout << "[DEBUG] Back into watchlist" << std::endl;
+            for (auto it = related.cbegin(); it != related.cend(); it++) {
+                csp.print_constraint(std::cout, constraints[*it], instance,
+                                     state);
+            }
             // add constraints (clause[0], clause[1]') clause[0] when
             // clause'[1] != clause[1])
         }
     } 
 }
 
-bool Inference::CSP::AC3::arc_reduce(const Csp& csp,
+bool Inference::CSP::AC3::arc_reduce(Csp& csp,
                                      const Constraint& constraint,
                                      const Instance& instance,
                                      const LW1_State& state) const {
-
     Variable* x = csp.get_var(constraint[0]);
 
     if (constraint.size() == 1) {
         if (x->get_domain_size() == 1) return false;
-        x->reset_domain();
-        int val = constraint[0];
+        int val = 0;
+        for (auto it = x->get_current_begin();
+             it != x->get_current_end(); it++) {
+            if (x->evaluate(*it, constraint[0])) {
+                val = *it;
+                break;
+            }
+        }
+        x->clear_domain();
         x->add(val);
+
         return true;
     }
 
@@ -341,7 +356,8 @@ bool Inference::CSP::AC3::arc_reduce(const Csp& csp,
     // of the other one.
     // TODO: Make this a function to avoid repeated code.
     if (x->get_domain_size() == 1) {
-        for (SI_I vy = y->get_current_begin(); vy != y->get_current_end(); vy++) {
+        for (SI_I vy = y->get_current_begin();
+             vy != y->get_current_end(); vy++) {
             int yval = *vy;
             if (y->evaluate(yval, constraint[1])) {
                 y->clear_domain();
@@ -361,7 +377,8 @@ bool Inference::CSP::AC3::arc_reduce(const Csp& csp,
             continue;
         }
         bool found = false;
-        for (SI_I vy = y->get_current_begin(); vy != y->get_current_end(); vy++) {
+        for (SI_I vy = y->get_current_begin();
+             vy != y->get_current_end(); vy++) {
             int yval = *vy;
             if (y->evaluate(yval, constraint[1])) {
                 found = true;
@@ -415,7 +432,7 @@ void Inference::CSP::AC3::fill_watchlist(
     for (std::vector<Constraint>::const_iterator ci = constraints.cbegin();
          ci != constraints.cend(); ci++) {
         Constraint constraint = *ci;
-        if (constraint.is_active() && constraint.size() > 1) {
+        if (constraint.is_active()) {
             std::cout << Utils:: magenta() << "[DEBUG AC3] Added to watchlist: " << std::endl;
             csp.print_constraint(std::cout, constraint, instance, state);
             std::cout << Utils:: normal();
