@@ -156,13 +156,14 @@ namespace Inference {
             void dump_into(LW1_State &state, const Instance &instance) const;
 
             int get_var_index(int h_atom) const {
-                if (atoms_to_var_map_.find(get_l_atom(h_atom)) != atoms_to_var_map_.end())
-                    return atoms_to_var_map_.at(get_l_atom(h_atom));
+                int atom = abs(h_atom);
+                if (atoms_to_var_map_.find(get_l_atom(atom)) != atoms_to_var_map_.end())
+                    return atoms_to_var_map_.at(get_l_atom(atom));
                 return -1;
             }
 
             Variable *get_var(int h_atom) const {
-                int var_index = get_var_index(abs(h_atom));
+                int var_index = get_var_index(h_atom);
                 if (var_index == -1) return NULL;
                 return variables_[var_index];
             }

@@ -203,9 +203,7 @@ void Inference::CSP::Csp::print_constraint(std::ostream& os,
         var->print(os, instance, state);
     }
 
-    os << "active? ";
-    if (constraint.is_active()) os << "yes" << std::endl;
-    else os << "no" << std::endl;
+    os << "active? " << (constraint.is_active() ? "yes" : "no");
 }
 
 int Inference::CSP::get_h_atom(int l_atom) { return l_atom * 2 + 1; }
@@ -288,12 +286,12 @@ void Inference::CSP::AC3::prepare_constraints(Csp& csp,
 
         // A constraint can be already satisfied, in which case it's
         // useless for the CSP.
-        if (satisfied) {
-            std::cout << "[AC3] N-ary constraint removed." << std::endl;
-            constraints.erase(constraints.begin() + i);
-            continue;
-        }
-        constraints[i].set_active(constraints[i].size() <= 2);
+//        if (satisfied) {
+//            std::cout << "[AC3] N-ary constraint removed." << std::endl;
+//            constraints.erase(constraints.begin() + i);
+//            continue;
+//        }
+        constraints[i].set_active(constraints[i].size() <= 2 && !satisfied);
 
         // DEBUG
         std::cout << Utils::magenta() << "[DEBUG AC3] Constraint after prepare: " << std::endl;
