@@ -211,8 +211,8 @@ namespace Inference {
 
         public:
             void solve(Csp &csp, LW1_State &state, const Instance &instance);
-            void print(std::ostream &os, const Instance &instance,
-                       Csp &csp, LW1_State &state) const;
+            void print(std::ostream& os, const Instance& instance,
+                       Csp& csp, const LW1_State& state) const;
         };
     }
 

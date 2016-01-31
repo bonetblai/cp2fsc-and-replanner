@@ -403,7 +403,7 @@ void Inference::CSP::AC3::solve(Csp &csp, LW1_State &state,
 }
 
 void Inference::CSP::AC3::print(std::ostream& os, const Instance& instance,
-                                Csp& csp, LW1_State& state) const {
+                                Csp& csp, const LW1_State& state) const {
     os << "[AC3] Inverted index table" << std::endl;
     V_VAR variables = csp.get_variables_();
     std::vector<Constraint>& constraints = csp.get_constraints_();
