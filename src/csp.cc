@@ -312,18 +312,28 @@ void Inference::CSP::AC3::apply_binary_constraints(Csp& csp,
         watchlist.pop_back();
         if (arc_reduce(csp, constraint, instance, state)) {
             std::cout << "[DEBUG] REDUCED" << std::endl;
-            int var_index = csp.get_var_index(constraint[0]);
-            std::vector<int> related = inv_clauses_.at(var_index);
+            int vix = csp.get_var_index(constraint[0]);
+            std::vector<int> related = inv_clauses_.at(vix);
 
-            std::cout << "[DEBUG] Back into watchlist" << std::endl;
             for (auto it = related.cbegin(); it != related.cend(); it++) {
+                if (! constraints[*it].is_active()) continue;
+
+                int virx = csp.get_var_index(constraints[*it][0]);
+                if (constraint.size() == 1) {
+                    if (constraints[*it].size() == 1 && vix == virx) continue;
+                } else {
+                    // If it's binary, add constraints (clause[0], clause[1]')
+                    // when
+                    int viy = csp.get_var_index(constraint[1]);
+                    if (virx == viy) continue;
+                }
+                std::cout << "[DEBUG] Back into watchlist" << std::endl;
                 csp.print_constraint(std::cout, constraints[*it], instance,
                                      state);
+                watchlist.push_back(constraints[*it]);
             }
-            // add constraints (clause[0], clause[1]') clause[0] when
-            // clause'[1] != clause[1])
         }
-    } 
+    }
 }
 
 bool Inference::CSP::AC3::arc_reduce(Csp& csp,
@@ -412,7 +422,7 @@ void Inference::CSP::AC3::print(std::ostream& os, const Instance& instance,
          it != inv_clauses_.cend(); it++) {
         os << "[AC3] Variable: " << std::endl;
         variables[it->first]->print(os, instance, state);
-        os << "[AC3] Constraints: " << std::endl;
+        os << "[AC3] Related constraints: " << std::endl;
         VI constraint = it->second;
         for (VI_CI vit = constraint.cbegin(); vit != constraint.cend(); vit++) {
             state.print_clause(os, constraints[*vit], &instance);
