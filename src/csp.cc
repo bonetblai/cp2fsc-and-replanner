@@ -246,11 +246,11 @@ void Inference::CSP::AC3::prepare_constraints(Csp& csp,
         bool satisfied = false;
 
         // We don't need the unary ones from this point on.
-        if (constraints[i].size() == 1) {
-            std::cout << "[AC3] Unary constraint removed." << std::endl;
-            constraints.erase(constraints.begin() + i);
-            continue;
-        }
+        if (constraints[i].size() == 1) continue;
+//            std::cout << "[AC3] Unary constraint removed." << std::endl;
+//            constraints.erase(constraints.begin() + i);
+//            continue;
+//        }
 
         // Every atom of the constraint (clause) must be evaluated.
         // If its domain is unary and if it satisfies the constraint, the whole
@@ -291,7 +291,7 @@ void Inference::CSP::AC3::prepare_constraints(Csp& csp,
 //            constraints.erase(constraints.begin() + i);
 //            continue;
 //        }
-        constraints[i].set_active(constraints[i].size() <= 2 && !satisfied);
+        constraints[i].set_active(constraints[i].size() == 2 && !satisfied);
 
         // DEBUG
         std::cout << Utils::magenta() << "[DEBUG AC3] Constraint after prepare: " << std::endl;
@@ -342,38 +342,39 @@ bool Inference::CSP::AC3::arc_reduce(Csp& csp,
                                      const LW1_State& state) const {
     Variable* x = csp.get_var(constraint[0]);
 
-    if (constraint.size() == 1) {
-        if (x->get_domain_size() == 1) return false;
-        int val = 0;
-        for (auto it = x->get_current_begin();
-             it != x->get_current_end(); it++) {
-            if (x->evaluate(*it, constraint[0])) {
-                val = *it;
-                break;
-            }
-        }
-        x->clear_domain();
-        x->add(val);
-
-        return true;
-    }
+//    if (constraint.size() == 1) {
+//        if (x->get_domain_size() == 1) return false;
+//        int val = 0;
+//        for (auto it = x->get_current_begin();
+//             it != x->get_current_end(); it++) {
+//            if (x->evaluate(*it, constraint[0])) {
+//                val = *it;
+//                break;
+//            }
+//        }
+//        // TODO: Re-check the resolution of x when found true value
+//        x->clear_domain();
+//        x->add(val);
+//
+//        return true;
+//    }
 
     Variable* y = csp.get_var(constraint[1]);
 
     // If one of the clauses has determined value, we could know the value
     // of the other one.
-    // TODO: Make this a function to avoid repeated code.
-    if (x->get_domain_size() == 1) {
-        for (SI_I vy = y->get_current_begin();
-             vy != y->get_current_end(); vy++) {
-            int yval = *vy;
-            if (y->evaluate(yval, constraint[1])) {
-                y->clear_domain();
-                y->add(yval);
-                return true;
-            }
-        }
-    }
+    // TODO: Re-check the resolution of x when domain is 1
+//    if (x->get_domain_size() == 1) {
+//        for (SI_I vy = y->get_current_begin();
+//             vy != y->get_current_end(); vy++) {
+//            int yval = *vy;
+//            if (y->evaluate(yval, constraint[1])) {
+//                y->clear_domain();
+//                y->add(yval);
+//                return true;
+//            }
+//        }
+//    }
 
     bool change = false; // An element has been erase from dx ?
 
@@ -406,8 +407,8 @@ bool Inference::CSP::AC3::arc_reduce(Csp& csp,
 
 void Inference::CSP::AC3::solve(Csp &csp, LW1_State &state,
                                 const Instance &instance) {
-    apply_unary_constraints(csp);
     prepare_constraints(csp, instance, state);
+    apply_unary_constraints(csp);
     apply_binary_constraints(csp, instance, state);
     csp.dump_into(state, instance);
 }
