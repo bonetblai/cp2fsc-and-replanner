@@ -221,16 +221,14 @@ void Inference::CSP::AC3::apply_unary_constraints(Csp& csp) const {
     std::vector<Constraint>& constraints_ = csp.get_constraints_();
     V_VAR variables_ = csp.get_variables_();
 
-    for (auto it = constraints_.begin(); it != constraints_.end();) {
+    for (auto it = constraints_.begin(); it != constraints_.end(); it++) {
         VI cl = *it;
         if (cl.size() == 1) {  // Unary constraint (vector<h_atom>)
             int index = csp.get_var_index(cl[0]);
             if (index != -1)
                 variables_[index]->apply_unary_constraint(cl[0]);
-            it = constraints_.erase(it);
-        } else {
-            it++;
-        }
+            it->set_active(false);
+        } 
     }
 }
 
@@ -267,7 +265,7 @@ void Inference::CSP::AC3::prepare_constraints(Csp& csp,
                 int value = *(var->get_current_domain().begin());
                 // If the value does not satisfy, it's useless and the
                 // constraint is reduced
-                if (! var->evaluate(value, j)) {
+                if (! var->evaluate(value, constraints[i][j])) {
                     constraints[i].erase(constraints[i].begin() + j);
                     j--;
                     continue;
