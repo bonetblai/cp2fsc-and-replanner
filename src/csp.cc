@@ -311,20 +311,52 @@ void Inference::CSP::AC3::apply_binary_constraints(Csp& csp,
 
             std::cout << "[DEBUG] REDUCED" << std::endl;
             int x = csp.get_var_index(constraint[0]);
+            int y = csp.get_var_index(constraint[1]);
+
+            assert(csp.get_var(constraint[0])->get_domain_size());
 
             std::vector<int> related = inv_clauses_.at(x);
+       
+
+            // This can be improved by considering only variable X
+            // since X is the only variable changed in this iteration.
+            // But to do this, a little refact is needed!
+            // TODO: refact and reduce this for complexity
             for (auto it = related.cbegin(); it != related.cend(); it++) {
-                if (! constraints[*it].is_active()) continue;
 
-                int rx = csp.get_var_index(constraints[*it][0]);
-                int y = csp.get_var_index(constraint[1]);
-                if (rx == y) continue;
+                bool satisfied = false;
+                for (int j = 0; j < constraints[*it].size(); j++) {
 
-                std::cout << "[DEBUG] Back into watchlist" << std::endl;
-                csp.print_constraint(std::cout, constraints[*it], instance,
-                                     state);
+                    Variable *var = csp.get_var(constraints[*it][j]);
+                    if (var->get_domain_size() == 1) {
+                        int value = *(var->get_current_domain().begin());
+                        if (! var->evaluate(value, constraints[*it][j])) {
+                            constraints[*it].erase(constraints[*it].begin() + j);
+                            j--;
+                            continue;
+                        }
+                        satisfied = true;
+                        break;
+                    }
+                }
+                
+                // TRICKY ONE 
+                if (constraints[*it].size() == 1) {
+                    Variable *var = csp.get_var(constraints[*it][0]);
+                    var->apply_unary_constraint(constraints[*it][0]);
+                    continue;
+                }
 
-                watchlist.push_back(constraints[*it]);
+                if (constraints[*it].size() == 2 && !satisfied) {
+                    int v1 = csp.get_var_index(constraints[*it][0]);
+                    int v2 = csp.get_var_index(constraints[*it][1]);
+                    if ((x == v1 && y != v2) || (x == v2 && y != v1)) {
+                        watchlist.push_back(constraints[*it]);
+                        // watchlist.push_back(inverse(constraints[*it]))
+                        std::cout << "[DEBUG] Back into watchlist" << std::endl;
+                        csp.print_constraint(std::cout, constraints[*it], instance, state);
+                    }
+                }
             }
         }
     }
