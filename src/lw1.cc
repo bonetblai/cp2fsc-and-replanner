@@ -155,6 +155,7 @@ int main(int argc, const char *argv[]) {
     if( !g_options.is_disabled("kp:merge-drules") )
         g_options.enable("kp:merge-drules");
 
+    // either lw1:aaai or lw1:strict: one of them but not both
     if( g_options.is_enabled("lw1:aaai") ) {
         g_options.disable("lw1:strict");
     }
@@ -166,6 +167,7 @@ int main(int argc, const char *argv[]) {
         exit(-1);
     }
 
+    // in each case, enable default options
     if( g_options.is_enabled("lw1:aaai") ) {
         assert(!g_options.is_enabled("lw1:strict"));
         g_options.disable("lw1:boost:enable-post-actions");
@@ -175,17 +177,15 @@ int main(int argc, const char *argv[]) {
         g_options.disable("lw1:boost:literals-for-observables:dynamic");
     } else {
         assert(g_options.is_enabled("lw1:strict"));
-        if( !g_options.is_disabled("lw1:inference:up") ) g_options.enable("lw1:inference:up");
-        if( !g_options.is_disabled("lw1:inference:watched-literals") ) g_options.enable("lw1:inference:watched-literals");
+        if( !g_options.is_disabled("lw1:inference:up") && !g_options.is_enabled("lw1:inference:forward-chaining") ) g_options.enable("lw1:inference:up");
+        if( !g_options.is_disabled("lw1:inference:watched-literals") && !g_options.is_enabled("lw1:inference:forward-chaining") ) g_options.enable("lw1:inference:watched-literals");
         if( !g_options.is_disabled("lw1:boost:enable-post-actions") ) g_options.enable("lw1:boost:enable-post-actions");
     }
 
+    // set other options
     if( g_options.is_enabled("lw1:boost:drule:sensing:type4:add") ) {
         g_options.enable("lw1:boost:drule:sensing:type4");
     }
-
-
-
 
     if( g_options.is_enabled("lw1:boost:literals-for-observables:dynamic") ) {
         g_options.enable("lw1:boost:literals-for-observables");
@@ -205,8 +205,8 @@ int main(int argc, const char *argv[]) {
         g_options.enable("lw1:inference:up");
     }
 
-    if( !g_options.is_enabled("lw1:inference:forward-chaining") &&
-        !g_options.is_enabled("lw1:inference:up") ) {
+    // set default inference algorithm is none is active so far
+    if( !g_options.is_enabled("lw1:inference:forward-chaining") && !g_options.is_enabled("lw1:inference:up") ) {
         g_options.enable("lw1:inference:forward-chaining"); // CHECK: default should be UP
     }
 
@@ -304,7 +304,7 @@ int main(int argc, const char *argv[]) {
     for( int k = 0; k < instance.num_hidden_states(); ++k ) {
         float instance_start_time = Utils::read_time_in_seconds();
         vector<set<int> > fired_sensors, sensed_literals;
-        STATE_CLASS hidden_initial_state; // STATE_CLASS is defined in lw1_solver.h (this is provisional)
+        STATE_CLASS hidden_initial_state; // CHECK: STATE_CLASS is defined in lw1_solver.h (this is provisional)
         Instance::Plan plan;
 
         // set hidden state

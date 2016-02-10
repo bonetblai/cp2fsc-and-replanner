@@ -555,7 +555,6 @@ LW1_Instance::LW1_Instance(const Instance &ins,
 #endif
                 }
             }
-            //assert(0); // CHECK
         }
 
         // create clauses for type3 sensing drules
@@ -1007,6 +1006,7 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                     assert(*it > 0);
                     sensing_enablers.push_back(index);
                 } else {
+                    // we should not reach this point
                     assert(0);
                 }
             }
@@ -1072,6 +1072,7 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                     }
                     nact->effect_.insert(1 + 2*index_for_observable_literal);
                 } else {
+                    // we should not reach this point
                     assert(0);
                 }
             }

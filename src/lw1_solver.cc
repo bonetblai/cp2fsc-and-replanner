@@ -5,7 +5,7 @@
 #include "utils.h"
 #include "Inference.h"
 
-#define DEBUG
+//#define DEBUG
 
 using namespace std;
 
@@ -13,25 +13,22 @@ using namespace std;
 void LW1_Solver::initialize(const KP_Instance &kp) {
     assert(dynamic_cast<const LW1_Instance*>(&kp) != 0);
     const LW1_Instance &lw1 = *static_cast<const LW1_Instance*>(&kp_instance_);
-    for (auto it = lw1.clauses_for_axioms_.begin(); it != lw1.clauses_for_axioms_.end(); it++) {
+    for( auto it = lw1.clauses_for_axioms_.begin(); it != lw1.clauses_for_axioms_.end(); ++it ) { // CHECK: remove auto
         const vector<int> &clause = *it;
-        
         Inference::Propositional::Clause cl;
-        for(auto k = 0; k < clause.size(); ++k)
+        for( auto k = 0; k < clause.size(); ++k ) // CHECK: remove auto
             cl.push_back(clause[k]);
         cnf.push_back(cl);
         base_theory_axioms.insert(cl);
     }
-
-    frontier = cnf.size()-1;
-
+    frontier = cnf.size() - 1;
     fill_atoms_to_var_map(lw1);
 }
 
 // Deletes all clauses preserving the axioms
 // TODO: Make this safe
 void LW1_Solver::clean_cnf() const {
-    cnf.erase(cnf.begin()+1+frontier, cnf.end());
+    cnf.erase(cnf.begin() + 1 + frontier, cnf.end());
 }
 
 void LW1_Solver::compute_and_add_observations(const Instance::Action *last_action,
@@ -150,7 +147,6 @@ void LW1_Solver::compute_and_add_observations(const Instance::Action *last_actio
 void LW1_Solver::apply_inference(const Instance::Action *last_action,
                                  const set<int> &sensed_at_step,
                                  STATE_CLASS &state) const {
-    std::cout << "Bookmark 2: Entered apply_inference method" << std::endl;
     float start_time = Utils::read_time_in_seconds();
 
 #ifdef DEBUG
@@ -314,7 +310,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                             // The clause holds the indexes for the atoms
                             // To find it in atoms_, 1 must be substracted.
 #ifdef DEBUG
-                            for (auto cl = clause.cbegin(); cl != clause.cend(); cl++) {
+                            for( auto cl = clause.cbegin(); cl != clause.cend(); ++cl ) { // CHECK: remove auto
                                 int cl_index = abs(*cl);
                                 int k_literal = cl_index > 0 ? (cl_index - 1) / 2 : (-cl_index - 1) / 2 + 1;
                                 cout << Utils::magenta() << "Related variable: ";
@@ -680,18 +676,18 @@ bool LW1_Solver::is_forbidden(const LW1_Solver::clause_t &clause) const {
 }
 
 void LW1_Solver::fill_atoms_to_var_map(const LW1_Instance &lw1) {
+    atoms_to_vars_.clear();
     const std::vector<LW1_Instance::Variable*> &vars = lw1.variables_;
-    for (int v = 0; v < vars.size(); v++) {
+    for( int v = 0; v < vars.size(); ++v ) {
         const LW1_Instance::Variable &var = *vars[v];
         // Iterating the domain of variables, inserting in atoms_to_vars the
-        for (std::set<int>::const_iterator dom = var.domain_.cbegin(); dom != var.domain_.cend(); dom++) {
+        for( std::set<int>::const_iterator dom = var.domain_.cbegin(); dom != var.domain_.cend(); ++dom ) {
             assert(atoms_to_vars_.find(*dom) == atoms_to_vars_.cend());
             atoms_to_vars_.insert(make_pair(*dom, v));
 
         }
     }
 }
-
 
 #undef DEBUG
 

@@ -126,8 +126,8 @@ void PDDL_Base::insert_atom(ptr_table &t, Atom *a) {
 }
 
 PDDL_Base::PredicateSymbol* PDDL_Base::find_type_predicate(Symbol *type_sym) {
-    for (size_t k = 0; k < dom_predicates_.size(); ++k) {
-        if (dom_predicates_[k]->print_name_ == type_sym->print_name_)
+    for( size_t k = 0; k < dom_predicates_.size(); ++k ) {
+        if( dom_predicates_[k]->print_name_ == type_sym->print_name_ )
             return dom_predicates_[k];
     }
     cout << Utils::error() << "no type predicate found for type " << type_sym->print_name_ << endl;
@@ -1002,7 +1002,7 @@ void PDDL_Base::lw1_translate_actions_strict() {
         lw1_complete_effect_for_actions();
 }
 
-void PDDL_Base::lw1_translate_strict(Action &action) {
+void PDDL_Base::lw1_translate_strict(Action &action) { // CHECK: replace this by NEW below
     assert(options_.is_enabled("lw1:strict"));
     assert(action.param_.empty()); // action must be instantiated
     assert(0); // CHECK
@@ -2075,7 +2075,7 @@ const PDDL_Base::Atom& PDDL_Base::lw1_fetch_last_action_atom(const Action &actio
 }
 
 // lw1:boost:single-sensing-literal-enablers
-void PDDL_Base::lw1_calculate_enablers_for_sensing() {
+void PDDL_Base::lw1_calculate_enablers_for_sensing() { // CHECK: this is not called now: lw1:boost:single-sensing-literal-enablers is NOT SUPPORTED (deprecated?)
     for( map<pair<const ObsVariable*, Atom>, map<string, set<const Action*> > >::const_iterator it = lw1_xxx_.begin(); it != lw1_xxx_.end(); ++it ) {
         const ObsVariable &variable = *it->first.first;
         const Atom &value = it->first.second;
@@ -2392,9 +2392,9 @@ void PDDL_Base::lw1_remove_subsumed_conditions(set<signed_atom_set> &conditions)
     conditions = non_dominated_conditions;
 }
 
-void PDDL_Base::lw1_compile_static_observable(const Atom &atom) {
+void PDDL_Base::lw1_compile_static_observable(const Atom &atom) { // CHECK: compile_static_observables is deprecated in this version
     cout << Utils::blue() << "(lw1) compiling static observable '" << atom << "'" << Utils::normal() << endl;
-    assert(0); // CHECK: compile_static_observables is deprecated in this version
+    assert(0);
 
     // iterate over all sensing models extracting those relevant to atom
     Atom negated_atom(atom, true);
@@ -3006,7 +3006,7 @@ string PDDL_Base::Atom::to_string(bool extra_neg, bool mangled) const {
     extra_neg = extra_neg ? !negated_ : negated_;
     if( extra_neg ) str += beg + "not" + sep;
     str += beg + pred_->print_name_;
-    for (size_t k = 0; k < param_.size(); ++k) {
+    for( size_t k = 0; k < param_.size(); ++k ) {
         if( (param_[k]->sym_class_ == sym_variable) && (static_cast<VariableSymbol*>(param_[k])->value_ != 0) )
             str += sep + static_cast<VariableSymbol*>(param_[k])->value_->to_string();
         else

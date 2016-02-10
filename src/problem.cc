@@ -1031,14 +1031,14 @@ void Instance::print_actions(ostream &os) const {
 }
 
 void Instance::print_sensors(ostream &os) const {
-    for (size_t k = 0; k < n_sensors(); k++) {
+    for( size_t k = 0; k < n_sensors(); ++k ) {
         os << k << ". ";
         sensors_[k]->print(os, *this);
     }
 }
 
 void Instance::print_axioms(ostream &os) const {
-    for (size_t k = 0; k < n_axioms(); k++) {
+    for( size_t k = 0; k < n_axioms(); ++k ) {
         os << k << ". ";
         axioms_[k]->print(os, *this);
     }
