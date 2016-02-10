@@ -351,8 +351,11 @@ void Inference::CSP::AC3::apply_binary_constraints(Csp& csp,
                     int v1 = csp.get_var_index(constraints[*it][0]);
                     int v2 = csp.get_var_index(constraints[*it][1]);
                     if ((x == v1 && y != v2) || (x == v2 && y != v1)) {
-                        watchlist.push_back(constraints[*it]);
-                        // watchlist.push_back(inverse(constraints[*it]))
+
+                        Constraint zx(constraints[*it]);
+                        std::iter_swap(zx.begin(), zx.begin() + 1);
+                        watchlist.push_back(zx);
+
                         std::cout << "[DEBUG] Back into watchlist" << std::endl;
                         csp.print_constraint(std::cout, constraints[*it], instance, state);
                     }
