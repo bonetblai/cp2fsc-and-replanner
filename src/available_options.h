@@ -131,7 +131,7 @@ const char *available_options[] = {
     "lw1:boost:complete-effects:type4:state",           "[LW1] complete effects for variables", // CHECK
 
     "lw1:boost:enable-post-actions",                    "[LW1] XXXX", // CHECK
-    "lw1:boost:single-sensing-literal-enablers",        "[LW1] XXXX", // CHECK
+    "lw1:boost:single-sensing-literal-enablers",        "[LW1] XXXX", // CHECK: don't use as it is deprecated and causes lw1 to blow
 
     "lw1:boost:drule:sensing:type3",                    "[LW1] generate type3 deductive rules for sensing", // CHECK (rename types)
     "lw1:boost:drule:sensing:type4",                    "[LW1] replace type4 deductive rule by boosted version when DNF has just one term",
