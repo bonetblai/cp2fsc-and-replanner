@@ -351,7 +351,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                 base_theory.insert(cl);
 #    endif
             }
-#endif
+#endif // BASE_SELECTOR == 1
         }
 
         // 5. Perform inference
@@ -454,7 +454,28 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         if( options_.is_enabled("lw1:inference:preload") )
             clean_cnf();
 #    endif // ifdef UP
-#endif // if BASE_SELECTOR == 1
+#endif // BASE_SELECTOR == 1
+    } else if( options_.is_enabled("lw1:inference:ac3") ) {
+        // 0. Build basic CSP from state: CSP variables come from state variables and variable groups.
+        // Domains are original domains with values pruned as indicated with the K-literals in state.
+        // Basic constraints relate variable groups to state variable and variable groups to variable
+        // groups.
+
+        // 1. Add observation. Pruned variable domains using observation. For each observation,
+        // (a) if observation refers to state variable (i.e. state variable is observable), prune domain
+        // of CSP variable corresponding to state variable, (b) if observation can be filtered in 
+        // variable group, prune domain of CSP variable corresponding to variable group, and else
+        // (c) observation is of type V=v, use the DNF sensing model to construct constraints among
+        // the state variables mentioned in DNF
+
+        // 2. Make the CSP arc consistent by running AC3. The resulting CSP should be consistent
+        // (i.e. the domain of each variable should be non empty). Otherwise, there is an error in
+        // the planning model
+
+        // 3. Update state using information in CSP. For each value x that is pruned in domain of
+        // CSP variable X corresponding to state variable X, add literal K_not_X=x. For each value
+        // z that is pruned in domain of CSP variable Z corresponding to variable group Z, add
+        // literal K_not_vg_Z_z
     } else {
         cout << Utils::error() << "unspecified inference method for lw1" << endl;
         exit(255);
