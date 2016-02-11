@@ -182,14 +182,11 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                 beams_for_observable_atoms_[make_pair(var_index, atom_index)] = beam;
                 beams[atom_index] = beam;
             }
-
-            // calculate filtering groups for observable (if variable groups is enabled)
-            if( var.is_observable_variable() ) {
-                assert(0);
-            }
         }
         variables_.push_back(new Variable(var.to_string(false, true), var.is_observable_variable(), var.is_state_variable(), domain, beams));
+#ifdef DEBUG
         variables_.back()->print(cout); cout << endl;
+#endif
     }
 
     // extract filtering info from variable groups
@@ -197,7 +194,21 @@ LW1_Instance::LW1_Instance(const Instance &ins,
         const PDDL_Base::VariableGroup &group = *variable_groups[k];
         for( int j = 0; j < int(group.filtered_observations_.size()); ++j ) {
             const PDDL_Base::Variable &var = *group.filtered_observations_[j].first;
+            map<string, int>::const_iterator it = varmap_.find(var.to_string(false, true));
+            assert(it != varmap_.end());
+            int var_index = it->second;
+
             const PDDL_Base::Atom &atom = *group.filtered_observations_[j].second;
+            string atom_name = atom.to_string(false, true);
+            int atom_index = get_atom_index(ins, atom_name);
+            if( atom_index == -1 ) {
+                cout << Utils::warning() << "no index for value '"
+                     << var.print_name_ << ":" << atom_name
+                     << "'. Continuing..." << endl;
+                continue;
+            } 
+
+            filtering_groups_.insert(make_pair(make_pair(var_index, atom_index), k));
         }
     }
 

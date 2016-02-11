@@ -168,7 +168,7 @@ int main(int argc, const char *argv[]) {
     }
 
     // set default inference algorithm is none is active so far
-    if( !g_options.is_enabled("lw1:inference:forward-chaining") && !g_options.is_enabled("lw1:inference:up") ) {
+    if( !g_options.is_enabled("lw1:inference:forward-chaining") && !g_options.is_enabled("lw1:inference:up") && !g_options.is_enabled("lw1:inference:ac3") ) {
         g_options.enable("lw1:inference:forward-chaining"); // CHECK: default should be UP
     }
 
@@ -182,9 +182,9 @@ int main(int argc, const char *argv[]) {
         g_options.disable("lw1:boost:literals-for-observables:dynamic");
     } else {
         assert(g_options.is_enabled("lw1:strict"));
-        if( !g_options.is_disabled("lw1:inference:up") && !g_options.is_enabled("lw1:inference:forward-chaining") )
+        if( !g_options.is_disabled("lw1:inference:up") && !g_options.is_enabled("lw1:inference:forward-chaining") && !g_options.is_enabled("lw1:inference:ac3") )
             g_options.enable("lw1:inference:up");
-        if( !g_options.is_disabled("lw1:inference:watched-literals") && !g_options.is_enabled("lw1:inference:forward-chaining") )
+        if( g_options.is_enabled("lw1:inference:up") && !g_options.is_disabled("lw1:inference:watched-literals") )
             g_options.enable("lw1:inference:watched-literals");
         if( !g_options.is_disabled("lw1:boost:enable-post-actions") )
             g_options.enable("lw1:boost:enable-post-actions");

@@ -96,7 +96,7 @@ void LW1_Solver::compute_and_add_observations(const Instance::Action *last_actio
     } else if( !options_.is_enabled("lw1:strict") ) {
         // fire observation rules
         index_set observations;
-        for( size_t k = 0; k < instance_.n_sensors(); ++k ) {
+        for( int k = 0; k < int(instance_.n_sensors()); ++k ) {
             const Instance::Sensor &r = *instance_.sensors_[k];
             if( hidden.satisfy(r.condition_) ) {
 #ifdef DEBUG
@@ -197,7 +197,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         bool fix_point_reached = false;
         while( !fix_point_reached ) {
             STATE_CLASS old_state(state);
-            for( size_t k = kp_instance_.first_deductive_action(); k < kp_instance_.last_deductive_action(); ++k ) {
+            for( int k = kp_instance_.first_deductive_action(); k < int(kp_instance_.last_deductive_action()); ++k ) {
                 const Instance::Action &act = *kp_instance_.actions_[k];
                 if( state.applicable(act) ) {
                     state.apply(act);
@@ -259,7 +259,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         }
 
         // 2. Axioms: D'
-        if( ! options_.is_enabled("lw1:inference:preload") ) {
+        if( !options_.is_enabled("lw1:inference:preload") ) {
             for( vector<vector<int> >::const_iterator it = lw1.clauses_for_axioms_.begin(); it != lw1.clauses_for_axioms_.end(); ++it ) {
                 const vector<int> &clause = *it;
 #ifdef DEBUG
@@ -269,7 +269,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
 #endif
 #ifdef UP
                 Inference::Propositional::Clause cl;
-                for( size_t k = 0; k < clause.size(); ++k )
+                for( int k = 0; k < int(clause.size()); ++k )
                     cl.push_back(clause[k]);
                 cnf.push_back(cl);
                 base_theory.insert(cl);
@@ -298,9 +298,9 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
 #endif
                 } else {
                     const sensing_models_as_cnf_t &sensing_models_as_cnf = jt->second;
-                    for( size_t k = 0; k < sensing_models_as_cnf.size(); ++k ) {
+                    for( int k = 0; k < int(sensing_models_as_cnf.size()); ++k ) {
                         const cnf_t &cnf_for_sensing_model = *sensing_models_as_cnf[k];
-                        for( size_t j = 0; j < cnf_for_sensing_model.size(); ++j ) {
+                        for( int j = 0; j < int(cnf_for_sensing_model.size()); ++j ) {
                             const clause_t &clause = cnf_for_sensing_model[j];
 #ifdef DEBUG
                             cout << Utils::red() << "[Theory] Add K_o clause: ";
@@ -322,7 +322,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
 #endif
 #ifdef UP
                             Inference::Propositional::Clause cl;
-                            for( size_t i = 0; i < clause.size(); ++i )
+                            for( int i = 0; i < int(clause.size()); ++i )
                                 cl.push_back(clause[i]);
                             cnf.push_back(cl);
 #endif
@@ -336,7 +336,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         if( options_.is_enabled("lw1:inference:up:enhanced") ) {
 #if BASE_SELECTOR == 1
             assert(dynamic_cast<LW1_State*>(&state) != 0);
-            for( size_t k = 0; k < state.cnf_.size(); ++k ) {
+            for( int k = 0; k < int(state.cnf_.size()); ++k ) {
                 const clause_t &clause = state.cnf_[k];
 #    ifdef DEBUG
                 cout << Utils::red() << "[Theory] Add extra clause: ";
@@ -345,7 +345,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
 #    endif
 #    ifdef UP
                 Inference::Propositional::Clause cl;
-                for( size_t i = 0; i < clause.size(); ++i )
+                for( int i = 0; i < int(clause.size()); ++i )
                     cl.push_back(clause[i]);
                 cnf.push_back(cl);
                 base_theory.insert(cl);
@@ -396,14 +396,14 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                 }
             }
         } else {
-            for( size_t k = 0; k < result.size(); ++k ) {
+            for( int k = 0; k < int(result.size()); ++k ) {
                 if( result[k].empty() ) {
                     cout << Utils::error() << "inconsistency derived during inference" << endl;
                     exit(255);
                 }
             }
 
-            for( size_t k = 0; k < result.size(); ++k ) {
+            for( int k = 0; k < int(result.size()); ++k ) {
                 const Inference::Propositional::Clause &cl = result[k];
                 if( base_theory.find(cl) != base_theory.end() ) continue;
                 if( base_theory_axioms.find(cl) != base_theory_axioms.end() ) continue; // CHECK
@@ -431,7 +431,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
 #if BASE_SELECTOR == 1
 #    ifdef UP
             state.cnf_.clear();
-            for( size_t k = 0; k < result.size(); ++k ) {
+            for( int k = 0; k < int(result.size()); ++k ) {
                 const Inference::Propositional::Clause &cl = result[k];
                 if( base_theory.find(cl) != base_theory.end() ) continue;
                 if( base_theory_axioms.find(cl) != base_theory_axioms.end() ) continue;
@@ -456,6 +456,15 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
 #    endif // ifdef UP
 #endif // BASE_SELECTOR == 1
     } else if( options_.is_enabled("lw1:inference:ac3") ) {
+#ifdef DEBUG
+        cout << Utils::cyan() << "Using inference: 'ac3'" << Utils::normal() << endl;
+#endif
+
+        // find sensing models for given action that are incompatible with observations
+        relevant_sensing_models_as_cnf_t relevant_sensing_models_as_cnf;
+        if( last_action != 0 )
+            fill_relevant_sensing_models(lw1, last_action, sensed_at_step, relevant_sensing_models_as_cnf, true);
+
         // 0. Build basic CSP from state: CSP variables come from state variables and variable groups.
         // Domains are original domains with values pruned as indicated with the K-literals in state.
         // Basic constraints relate variable groups to state variable and variable groups to variable
@@ -468,9 +477,56 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         // (c) observation is of type V=v, use the DNF sensing model to construct constraints among
         // the state variables mentioned in DNF
 
+
+        for( relevant_sensing_models_as_cnf_t::const_iterator it = relevant_sensing_models_as_cnf.begin(); it != relevant_sensing_models_as_cnf.end(); ++it ) {
+            int sensed_literal = it->first;
+            for( map<int, sensing_models_as_cnf_t>::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt ) {
+                int var_key = jt->first;
+                const LW1_Instance::Variable &variable = *lw1.variables_[var_key];
+                if( variable.is_state_variable_ ) {
+                    assert(jt->second.empty());
+                    int k_literal = sensed_literal > 0 ? 1 + 2*(sensed_literal - 1) : 1 + 2*(-sensed_literal - 1) + 1;
+#if 1//def DEBUG
+                    cout << Utils::red() << "[Theory] Add obs (state) literal: ";
+                    state.print_literal(cout, k_literal, &kp_instance_);
+                    cout << Utils::normal() << endl;
+#endif
+                    cout << "SOMETHING TO DO" << endl;
+                } else {
+                    const sensing_models_as_cnf_t &sensing_models_as_cnf = jt->second;
+                    for( int k = 0; k < int(sensing_models_as_cnf.size()); ++k ) {
+                        const cnf_t &cnf_for_sensing_model = *sensing_models_as_cnf[k];
+                        for( int j = 0; j < int(cnf_for_sensing_model.size()); ++j ) {
+                            const clause_t &clause = cnf_for_sensing_model[j];
+#if 1//def DEBUG
+                            cout << Utils::red() << "[Theory] Add K_o clause: ";
+                            state.print_clause(cout, clause, &kp_instance_);
+                            cout << Utils::normal() << endl;
+
+                            // The clause holds the indexes for the atoms
+                            // To find it in atoms_, 1 must be substracted.
+#if 1//def DEBUG
+                            for( auto cl = clause.cbegin(); cl != clause.cend(); ++cl ) { // CHECK: remove auto
+                                int cl_index = abs(*cl);
+                                int k_literal = cl_index > 0 ? (cl_index - 1) / 2 : (-cl_index - 1) / 2 + 1;
+                                cout << Utils::magenta() << "Related variable: ";
+                                cout << lw1.variables_[atoms_to_vars_.at(k_literal)]->name_;
+                                cout << Utils::normal() << endl;
+                            }
+#endif
+
+#endif
+                            cout << "SOMETHING TO DO" << endl;
+                        }
+                    }
+                }
+            }
+        }
+ 
         // 2. Make the CSP arc consistent by running AC3. The resulting CSP should be consistent
         // (i.e. the domain of each variable should be non empty). Otherwise, there is an error in
         // the planning model
+        assert(0);
 
         // 3. Update state using information in CSP. For each value x that is pruned in domain of
         // CSP variable X corresponding to state variable X, add literal K_not_X=x. For each value
@@ -546,11 +602,11 @@ bool LW1_Solver::value_observable_literal(const STATE_CLASS &hidden,
 
     // evaluate dnf at hidden state and return its value
     bool value = false;
-    for( size_t k = 0; k < dnf.size(); ++k ) {
+    for( int k = 0; k < int(dnf.size()); ++k ) {
         const vector<int> &term = dnf[k];
         bool valid_term = true;
         //cout << Utils::red() << "XXXXXX.5: #lits in term[" << k << "]=" << term.size() << ", validity=" << flush;
-        for( size_t j = 0; j < term.size(); ++j ) {
+        for( int j = 0; j < int(term.size()); ++j ) {
             int literal = term[j];
             if( (literal > 0) && !hidden.satisfy(literal - 1) )
                 valid_term = false;
@@ -601,7 +657,8 @@ void LW1_Solver::update_state_with_literals_for_observables(STATE_CLASS &state,
 void LW1_Solver::fill_relevant_sensing_models(const LW1_Instance &lw1,
                                               const Instance::Action *last_action,
                                               const set<int> &sensed_at_step,
-                                              LW1_Solver::relevant_sensing_models_as_cnf_t &sensing_models_as_cnf) const {
+                                              LW1_Solver::relevant_sensing_models_as_cnf_t &sensing_models_as_cnf,
+                                              bool consistent_models) const {
     assert(last_action != 0);
 
     // compute action-key for accessingn sensing models in lw1 instance
@@ -653,7 +710,7 @@ void LW1_Solver::fill_relevant_sensing_models(const LW1_Instance &lw1,
         // collect sensing models for values incompatible with obs.
         // For binary vars (i.e. w/ domain of size 1), need to
         // consider complemented value explicitly
-        for( size_t k = 0; k < jt->second.size(); ++k ) {
+        for( int k = 0; k < int(jt->second.size()); ++k ) {
             int var_key = jt->second[k];
             const LW1_Instance::Variable &variable = *lw1.variables_[var_key];
 
@@ -675,7 +732,7 @@ void LW1_Solver::fill_relevant_sensing_models(const LW1_Instance &lw1,
                 //cout << "SM: obs=";
                 //LW1_State::print_literal(cout, kt->first, &instance_);
                 //cout << ", trigger=" << (kt->first != value_key) << flush;
-                if( kt->first != value_key ) {
+                if( (consistent_models && (kt->first == value_key)) || (!consistent_models && (kt->first != value_key)) ) {
                     sensing_models_as_cnf[sensed_literal][var_key].push_back(&kt->second);
                     //cout << ", cnf=";
                     //LW1_State::print_cnf(cout, kt->second, &kp_instance_);

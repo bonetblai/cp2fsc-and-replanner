@@ -115,7 +115,8 @@ class LW1_Solver : public BASE_CLASS {
     void fill_relevant_sensing_models(const LW1_Instance &lw1,
                                       const Instance::Action *last_action,
                                       const std::set<int> &sensed_at_step,
-                                      relevant_sensing_models_as_cnf_t &sensing_models_as_cnf) const;
+                                      relevant_sensing_models_as_cnf_t &sensing_models_as_cnf,
+                                      bool consistent_models = false) const;
 
     bool is_forbidden(int literal) const;
     bool is_forbidden(const clause_t &clause) const;
