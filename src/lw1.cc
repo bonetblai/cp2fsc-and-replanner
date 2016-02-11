@@ -167,6 +167,11 @@ int main(int argc, const char *argv[]) {
         exit(-1);
     }
 
+    // set default inference algorithm is none is active so far
+    if( !g_options.is_enabled("lw1:inference:forward-chaining") && !g_options.is_enabled("lw1:inference:up") ) {
+        g_options.enable("lw1:inference:forward-chaining"); // CHECK: default should be UP
+    }
+
     // in each case, enable default options
     if( g_options.is_enabled("lw1:aaai") ) {
         assert(!g_options.is_enabled("lw1:strict"));
@@ -177,9 +182,12 @@ int main(int argc, const char *argv[]) {
         g_options.disable("lw1:boost:literals-for-observables:dynamic");
     } else {
         assert(g_options.is_enabled("lw1:strict"));
-        if( !g_options.is_disabled("lw1:inference:up") && !g_options.is_enabled("lw1:inference:forward-chaining") ) g_options.enable("lw1:inference:up");
-        if( !g_options.is_disabled("lw1:inference:watched-literals") && !g_options.is_enabled("lw1:inference:forward-chaining") ) g_options.enable("lw1:inference:watched-literals");
-        if( !g_options.is_disabled("lw1:boost:enable-post-actions") ) g_options.enable("lw1:boost:enable-post-actions");
+        if( !g_options.is_disabled("lw1:inference:up") && !g_options.is_enabled("lw1:inference:forward-chaining") )
+            g_options.enable("lw1:inference:up");
+        if( !g_options.is_disabled("lw1:inference:watched-literals") && !g_options.is_enabled("lw1:inference:forward-chaining") )
+            g_options.enable("lw1:inference:watched-literals");
+        if( !g_options.is_disabled("lw1:boost:enable-post-actions") )
+            g_options.enable("lw1:boost:enable-post-actions");
     }
 
     // set other options
@@ -205,11 +213,6 @@ int main(int argc, const char *argv[]) {
         g_options.enable("lw1:inference:up");
     }
 
-    // set default inference algorithm is none is active so far
-    if( !g_options.is_enabled("lw1:inference:forward-chaining") && !g_options.is_enabled("lw1:inference:up") ) {
-        g_options.enable("lw1:inference:forward-chaining"); // CHECK: default should be UP
-    }
-
     // print enabled options
     cout << "enabled options: " << g_options << endl;
 
@@ -226,10 +229,12 @@ int main(int argc, const char *argv[]) {
 
     // perform necessary translations
     const PDDL_Base::variable_vec *variables = 0;
+    const PDDL_Base::variable_group_vec *variable_groups = 0;
     const list<pair<const PDDL_Base::Action*, const PDDL_Base::Sensing*> > *sensing_models = 0;
     const map<string, set<string> > *accepted_literals_for_observables = 0;
-    reader->do_lw1_translation(variables, sensing_models, accepted_literals_for_observables);
+    reader->do_lw1_translation(variables, variable_groups, sensing_models, accepted_literals_for_observables);
     assert(variables != 0);
+    assert(variable_groups != 0);
     assert(sensing_models != 0);
 
     if( g_options.is_enabled("parser:print:translated") ) {
@@ -267,7 +272,7 @@ int main(int argc, const char *argv[]) {
     //instance.do_action_compilation(*variables);
 
     cout << "creating KP translation..." << endl;
-    KP_Instance *kp_instance = new LW1_Instance(instance, *variables, *sensing_models, *accepted_literals_for_observables);
+    KP_Instance *kp_instance = new LW1_Instance(instance, *variables, *variable_groups, *sensing_models, *accepted_literals_for_observables);
 
     if( g_options.is_enabled("kp:print:raw") ) {
         kp_instance->print(cout);

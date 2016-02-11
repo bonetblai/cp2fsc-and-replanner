@@ -51,6 +51,7 @@ void LW1_Instance::Variable::print(ostream &os) const {
 
 LW1_Instance::LW1_Instance(const Instance &ins,
                            const PDDL_Base::variable_vec &variables,
+                           const PDDL_Base::variable_group_vec &variable_groups,
                            const list<pair<const PDDL_Base::Action*, const PDDL_Base::Sensing*> > &sensing_models,
                            const map<string, set<string> > &accepted_literals_for_observables)
   : KP_Instance(ins.options_),
@@ -78,11 +79,11 @@ LW1_Instance::LW1_Instance(const Instance &ins,
 
     // create K0 atoms and special atoms
     normal_execution_atom_ = -1;
-    atoms_.reserve(2*ins.n_atoms());
+    atoms_.reserve(1 + 2*ins.n_atoms());
     for( size_t k = 0; k < ins.n_atoms(); ++k ) {
         string name = ins.atoms_[k]->name_->to_string();
 #ifdef DEBUG
-        cout << "NAME=" << name << ": " << flush;
+        cout << Utils::yellow() << "NAME=" << name << ": " << Utils::normal() << flush;
 #endif
         if( name.compare(0, 16, "normal-execution") == 0 ) {
             assert(options_.is_enabled("lw1:aaai") || options_.is_enabled("lw1:boost:enable-post-actions"));
@@ -114,6 +115,27 @@ LW1_Instance::LW1_Instance(const Instance &ins,
 #ifdef DEBUG
             cout << "type=regular, index=" << k << ", k-indices=" << 2*k << "," << 2*k+1 << endl;
 #endif
+        }
+    }
+
+    // create atoms for variable groups
+    if( !variable_groups.empty() ) {
+        int num_atoms = 0;
+        for( int k = 0; k < int(variable_groups.size()); ++k ) {
+            const PDDL_Base::VariableGroup &group = *variable_groups[k];
+            num_atoms += group.grounded_domain_.size();
+        }
+
+        atoms_.reserve(atoms_.size() + num_atoms);
+        atoms_for_variable_groups_ = vector<vector<int> >(variable_groups.size());
+        for( int k = 0; k < int(variable_groups.size()); ++k ) {
+            const PDDL_Base::VariableGroup &group = *variable_groups[k];
+            for( PDDL_Base::unsigned_atom_set::const_iterator it = group.grounded_domain_.begin(); it != group.grounded_domain_.end(); ++it ) {
+                string atom_name = it->to_string(false, true);
+                new_atom(new CopyName("K_" + atom_name + "_UNUSED"));      // even-numbered atoms
+                Atom &atom = new_atom(new CopyName("K_not_" + atom_name)); // odd-numbered atoms
+                atoms_for_variable_groups_[k].push_back(atom.index_);
+            }
         }
     }
 
@@ -160,9 +182,14 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                 beams_for_observable_atoms_[make_pair(var_index, atom_index)] = beam;
                 beams[atom_index] = beam;
             }
+
+            // calculate filtering groups for observable (if variable groups is enabled)
+            if( var.is_observable_variable() ) {
+                assert(0);
+            }
         }
         variables_.push_back(new Variable(var.to_string(false, true), var.is_observable_variable(), var.is_state_variable(), domain, beams));
-        //variables_.back()->print(cout); cout << endl;
+        variables_.back()->print(cout); cout << endl;
     }
 
     // store accepted literals for observables
@@ -509,7 +536,9 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                     }
                     clauses_for_axioms_.push_back(clause);
 #ifdef DEBUG
-                    cout << "CLAUSE0: "; LW1_State::print_clause(cout, clause, this); cout << endl;
+                    cout << Utils::yellow() << "CLAUSE0: " << Utils::normal();
+                    LW1_State::print_clause(cout, clause, this);
+                    cout << endl;
 #endif
                 }
 
@@ -523,7 +552,9 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                             clause.push_back(1 + 2**jt+1);
                             clauses_for_axioms_.push_back(clause);
 #ifdef DEBUG
-                            cout << "CLAUSE1: "; LW1_State::print_clause(cout, clause, this); cout << endl;
+                            cout << Utils::yellow() << "CLAUSE1: " << Utils::normal();
+                            LW1_State::print_clause(cout, clause, this);
+                            cout << endl;
 #endif
                         }
                     }
@@ -551,7 +582,9 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                     clause.push_back(*act.effect_.begin() > 0 ? 1 + 2*single_effect_index : 1 + 2*single_effect_index + 1);
                     clauses_for_axioms_.push_back(clause);
 #ifdef DEBUG
-                    cout << "CLAUSE2: "; LW1_State::print_clause(cout, clause, this); cout << endl;
+                    cout << Utils::yellow() << "CLAUSE2: " << Utils::normal();
+                    LW1_State::print_clause(cout, clause, this);
+                    cout << endl;
 #endif
                 }
             }
@@ -576,7 +609,9 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                         }
                         clauses_for_axioms_.push_back(clause);
 #ifdef DEBUG
-                        cout << "CLAUSE3: "; LW1_State::print_clause(cout, clause, this); cout << endl;
+                        cout << Utils::yellow() << "CLAUSE3: " << Utils::normal();
+                        LW1_State::print_clause(cout, clause, this);
+                        cout << endl;
                         act.print(cout, ins);
 #endif
                     }
@@ -603,7 +638,9 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                 clause.push_back(-(1 + 2*k + 1));
                 clauses_for_axioms_.push_back(clause);
 #ifdef DEBUG
-                cout << "CLAUSE4: " << flush; LW1_State::print_clause(cout, clause, this); cout << endl;
+                cout << Utils::yellow() << "CLAUSE4: " << Utils::normal();
+                LW1_State::print_clause(cout, clause, this);
+                cout << endl;
 #endif
             }
 

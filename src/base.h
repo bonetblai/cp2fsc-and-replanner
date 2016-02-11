@@ -763,6 +763,9 @@ class PDDL_Base {
         bool grounded_;
         state_variable_list_vec group_;
         state_variable_vec grounded_group_;
+        unsigned_atom_set grounded_domain_;
+        std::set<std::string> grounded_group_str_;
+        std::vector<std::pair<const Variable*, const Atom*> > filtered_observations_;
         VariableGroup(const char *name) : Symbol(name, sym_vargroup), grounded_(false) { }
         virtual ~VariableGroup() { }
         void instantiate(const PDDL_Base *base, variable_group_list &vglist) const;
@@ -815,6 +818,7 @@ class PDDL_Base {
     variable_vec                              lw1_variables_;
     unsigned_atom_set                         observable_atoms_;
     unsigned_atom_set                         atoms_for_state_variables_;
+    unsigned_atom_set                         atoms_for_variable_groups_;
     unsigned_atom_set                         static_observable_atoms_;
     unsigned_atom_set                         sensed_atoms_;
     std::set<std::string>                     simple_sensors_for_variables_;
@@ -857,6 +861,7 @@ class PDDL_Base {
 
     void do_translation();
     void do_lw1_translation(const variable_vec* &variables,
+                            const variable_group_vec* &variable_groups,
                             const std::list<std::pair<const Action*, const Sensing*> >* &sensing_models,
                             const std::map<std::string, std::set<std::string> >* &accepted_literals_for_observables);
     void emit_instance(Instance &ins) const;
@@ -881,6 +886,7 @@ class PDDL_Base {
     void declare_lw1_translation();
     bool lw1_translation() const { return lw1_translation_; }
     void lw1_calculate_atoms_for_state_variables();
+    void lw1_calculate_atoms_for_variable_groups();
     void lw1_calculate_beams_for_grounded_observable_variables();
     void lw1_calculate_beam_for_grounded_variable(Variable &var);
     void lw1_remove_variables_with_empty_grounded_domain();

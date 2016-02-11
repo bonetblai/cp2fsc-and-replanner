@@ -585,7 +585,7 @@ void PDDL_Base::declare_lw1_translation() {
 // atoms_for_state_variables_.
 void PDDL_Base::lw1_calculate_atoms_for_state_variables() {
     atoms_for_state_variables_.clear();
-    for( size_t k = 0; k < lw1_variables_.size(); ++k ) {
+    for( int k = 0; k < int(lw1_variables_.size()); ++k ) {
         const Variable &var = *lw1_variables_[k];
         if( var.is_state_variable() ) {
             atoms_for_state_variables_.insert(var.grounded_domain_.begin(), var.grounded_domain_.end());
@@ -597,6 +597,37 @@ void PDDL_Base::lw1_calculate_atoms_for_state_variables() {
         for( unsigned_atom_set::iterator it = atoms_for_state_variables_.begin(); it != atoms_for_state_variables_.end(); ++it )
             cout << " " << *it;
         cout << endl;
+    }
+}
+
+void PDDL_Base::lw1_calculate_atoms_for_variable_groups() {
+    atoms_for_variable_groups_.clear();
+    for( int k = 0; k < int(lw1_variable_groups_.size()); ++k ) {
+        VariableGroup &group = *lw1_variable_groups_[k];
+        int dsize = 1;
+        for( int j = 0; j < int(group.grounded_group_.size()); ++j ) {
+            const StateVariable &var = *group.grounded_group_[j];
+            dsize *= var.is_binary() ? 2 : var.grounded_domain_.size();
+        }
+
+#ifdef DEBUG
+        cout << Utils::magenta() << "variable group '" << group.print_name_ << "':" << Utils::normal() << endl
+             << "  values[dsize=" << dsize << "]:" << flush;
+#endif
+
+        for( int j = 0; j < dsize; ++j ) {
+            string name = string("vg_") + to_string(k) + "_" + to_string(j);
+            Atom *new_atom = create_atom(name);
+            group.grounded_domain_.insert(*new_atom);
+            atoms_for_variable_groups_.insert(*new_atom);
+#ifdef DEBUG
+            cout << " " << *new_atom;
+#endif
+            delete new_atom;
+        }
+#ifdef DEBUG
+        cout << endl;
+#endif
     }
 }
 
@@ -643,7 +674,7 @@ void PDDL_Base::lw1_calculate_beam_for_grounded_variable(Variable &var) {
             var.beam_[*it].insert(*it);
     } else {
         // fill up beams for values of variable
-        for( size_t k = 0; k < dom_actions_.size(); ++k ) {
+        for( int k = 0; k < int(dom_actions_.size()); ++k ) {
             const Action &action = *dom_actions_[k];
             if( action.sensing_ != 0 ) 
                 action.sensing_->extend_beam_for_variable(var);
@@ -655,6 +686,39 @@ void PDDL_Base::lw1_calculate_beam_for_grounded_variable(Variable &var) {
                 var.grounded_domain_.erase(*it++);
             else
                 ++it;
+        }
+
+        // calculate variable group where to filter this observable literal
+        for( unsigned_atom_set::const_iterator it = var.grounded_domain_.begin(); it != var.grounded_domain_.end(); ++it ) {
+            std::map<Atom, unsigned_atom_set, Atom::unsigned_less_comparator>::const_iterator jt = var.beam_.find(*it);
+            assert(jt != var.beam_.end());
+            const unsigned_atom_set &beam = jt->second;
+
+            VariableGroup *best_group = 0;
+            for( int k = 0; k < int(lw1_variable_groups_.size()); ++k ) {
+                VariableGroup &group = *lw1_variable_groups_[k];
+                bool good = true;
+                for( unsigned_atom_set::const_iterator kt = beam.begin(); good && (kt != beam.end()); ++kt ) {
+                    bool found_in_group = false;
+                    for( int j = 0; j < int(lw1_variables_.size()); ++j ) {
+                        const Variable &v = *lw1_variables_[j];
+                        if( v.is_state_variable() && (v.grounded_domain_.find(*kt) != v.grounded_domain_.end()) ) {
+                            if( group.grounded_group_str_.find(v.print_name_) != group.grounded_group_str_.end() ) {
+                                found_in_group = true;
+                                break;;
+                            }
+                        }
+                    }
+                    good = good && found_in_group;
+                }
+                if( good && ((best_group == 0) || (group.grounded_group_.size() < best_group->grounded_group_.size())) )
+                    best_group = &group;
+            }
+
+            if( best_group != 0 ) {
+                cout << "observation '" << *it << "' for " << var << " will be filtered in group " << best_group->print_name_ << endl;
+                best_group->filtered_observations_.push_back(make_pair(&var, &*it));
+            }
         }
     }
 }
@@ -2679,6 +2743,7 @@ void PDDL_Base::do_translation() {
 }
 
 void PDDL_Base::do_lw1_translation(const variable_vec* &variables,
+                                   const variable_group_vec* &variable_groups,
                                    const list<pair<const Action*, const Sensing*> >* &sensing_models,
                                    const map<string, set<string> >* &accepted_literals_for_observables) {
     instantiate_elements();
@@ -2687,6 +2752,7 @@ void PDDL_Base::do_lw1_translation(const variable_vec* &variables,
     // translate variable formulations
     if( lw1_translation_ ) {
         lw1_calculate_atoms_for_state_variables();
+        lw1_calculate_atoms_for_variable_groups();
         lw1_calculate_beams_for_grounded_observable_variables();
         lw1_remove_variables_with_empty_grounded_domain();
 
@@ -2704,6 +2770,7 @@ void PDDL_Base::do_lw1_translation(const variable_vec* &variables,
         }
 
         variables = &lw1_variables_;
+        variable_groups = &lw1_variable_groups_;
         sensing_models = &lw1_sensing_models_;
         accepted_literals_for_observables = &lw1_accepted_literals_for_observables_;
     }
@@ -5023,7 +5090,7 @@ void PDDL_Base::Variable::process_instance() const {
                 } else {
                     cout << *domain_[k] << endl;
                     Effect *e = domain_[k]->ground(true); // clone_variables=true
-                    cout << "gdd-ptr=" << e << endl;
+                    cout << "grounded-ptr=" << e << endl;
                     cout << Utils::error() << "unrecognized format in variable '" << print_name_ << "'" << endl;
                     exit(255);
                 }
@@ -5203,6 +5270,10 @@ void PDDL_Base::VariableGroup::process_instance() const {
             for( size_t k = 0; k < group_.size(); ++k ) {
                 state_variable_vec *grounded_group = group_[k]->ground(base_ptr_);
                 group->grounded_group_.insert(grounded_group_.end(), grounded_group->begin(), grounded_group->end());
+                for( int j = 0; j < int(grounded_group->size()); ++j ) {
+                    const StateVariable &var = *(*grounded_group)[j];
+                    group->grounded_group_str_.insert(string(var.print_name_));
+                }
                 delete grounded_group;
             }
         }
