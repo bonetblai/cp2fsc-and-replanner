@@ -716,7 +716,9 @@ void PDDL_Base::lw1_calculate_beam_for_grounded_variable(Variable &var) {
             }
 
             if( best_group != 0 ) {
+#ifdef DEBUG
                 cout << "observation '" << *it << "' for " << var << " will be filtered in group " << best_group->print_name_ << endl;
+#endif
                 best_group->filtered_observations_.push_back(make_pair(&var, &*it));
             }
         }

@@ -192,6 +192,15 @@ LW1_Instance::LW1_Instance(const Instance &ins,
         variables_.back()->print(cout); cout << endl;
     }
 
+    // extract filtering info from variable groups
+    for( int k = 0; k < int(variable_groups.size()); ++k ) {
+        const PDDL_Base::VariableGroup &group = *variable_groups[k];
+        for( int j = 0; j < int(group.filtered_observations_.size()); ++j ) {
+            const PDDL_Base::Variable &var = *group.filtered_observations_[j].first;
+            const PDDL_Base::Atom &atom = *group.filtered_observations_[j].second;
+        }
+    }
+
     // store accepted literals for observables
     if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
         for( map<string, set<string> >::const_iterator it = accepted_literals_for_observables.begin(); it != accepted_literals_for_observables.end(); ++it ) {
