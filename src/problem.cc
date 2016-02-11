@@ -12,9 +12,14 @@ bool Instance::always_write_precondition_ = false;
 bool Instance::always_write_conjunction_ = false;
 
 Instance::Instance(const Instance& ins)
-  : cross_referenced_(false), name_(ins.name_), atoms_(ins.atoms_),
-    actions_(ins.actions_), sensors_(ins.sensors_), axioms_(ins.axioms_),
-    init_(ins.init_), hidden_(ins.hidden_),
+  : cross_referenced_(false),
+    name_(ins.name_),
+    atoms_(ins.atoms_),
+    actions_(ins.actions_),
+    sensors_(ins.sensors_),
+    axioms_(ins.axioms_),
+    init_(ins.init_),
+    hidden_(ins.hidden_),
     goal_literals_(ins.goal_literals_),
     non_primitive_fluents_(ins.non_primitive_fluents_),
     observable_fluents_(ins.observable_fluents_),
