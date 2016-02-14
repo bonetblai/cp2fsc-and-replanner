@@ -643,8 +643,9 @@ void PDDL_Base::lw1_calculate_beams_for_grounded_observable_variables() {
                     cout << Utils::magenta()
                          << "beam for value '" << *it << "' of var '" << var.print_name_ << "' ('*' means static):"
                          << Utils::normal();
-                    assert(var.beam_.find(*it) != var.beam_.end());
-                    const unsigned_atom_set &beam = var.beam_.find(*it)->second;
+                    //assert(var.beam_.find(*it) != var.beam_.end()); // CHECK
+                    //const unsigned_atom_set &beam = var.beam_.find(*it)->second; // CHECK
+                    const unsigned_atom_set &beam = var.beam_.at(*it);
                     for( unsigned_atom_set::const_iterator jt = beam.begin(); jt != beam.end(); ++jt )
                         cout << " " << *jt << (is_static_atom(*jt) ? "*" : "");
                     cout << endl;
@@ -655,8 +656,8 @@ void PDDL_Base::lw1_calculate_beams_for_grounded_observable_variables() {
             for( unsigned_atom_set::const_iterator it = var.grounded_domain_.begin(); it != var.grounded_domain_.end(); ++it ) {
                 unsigned_atom_set reduced_beam;
                 if( var.beam_.find(*it) == var.beam_.end() ) continue;
-                assert(var.beam_.find(*it) != var.beam_.end());
-                const unsigned_atom_set &beam = var.beam_.find(*it)->second;
+                //const unsigned_atom_set &beam = var.beam_.find(*it)->second; // CHECK
+                const unsigned_atom_set &beam = var.beam_.at(*it);
                 for( unsigned_atom_set::const_iterator jt = beam.begin(); jt != beam.end(); ++jt ) {
                     if( !is_static_atom(*jt) ) reduced_beam.insert(*jt);
                 }
@@ -690,9 +691,10 @@ void PDDL_Base::lw1_calculate_beam_for_grounded_variable(Variable &var) {
 
         // calculate variable group where to filter this observable literal
         for( unsigned_atom_set::const_iterator it = var.grounded_domain_.begin(); it != var.grounded_domain_.end(); ++it ) {
-            std::map<Atom, unsigned_atom_set, Atom::unsigned_less_comparator>::const_iterator jt = var.beam_.find(*it);
-            assert(jt != var.beam_.end());
-            const unsigned_atom_set &beam = jt->second;
+            //std::map<Atom, unsigned_atom_set, Atom::unsigned_less_comparator>::const_iterator jt = var.beam_.find(*it); // CHECK
+            //assert(jt != var.beam_.end()); // CHECK
+            //const unsigned_atom_set &beam = jt->second; // CHECK
+            const unsigned_atom_set &beam = var.beam_.at(*it);
 
             VariableGroup *best_group = 0;
             for( int k = 0; k < int(lw1_variable_groups_.size()); ++k ) {
@@ -1542,8 +1544,9 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
                 const StateVariable &state_variable = *static_cast<const StateVariable*>(&variable);
                 const unsigned_atom_set &domain = state_variable.grounded_domain_;
 
-                assert(lw1_actions_for_observable_state_variables_.find(&state_variable) != lw1_actions_for_observable_state_variables_.end());
-                const vector<const Action*> &actions = lw1_actions_for_observable_state_variables_.find(&state_variable)->second;
+                //assert(lw1_actions_for_observable_state_variables_.find(&state_variable) != lw1_actions_for_observable_state_variables_.end()); // CHECK
+                //const vector<const Action*> &actions = lw1_actions_for_observable_state_variables_.find(&state_variable)->second; // CHECK
+                const vector<const Action*> &actions = lw1_actions_for_observable_state_variables_.at(&state_variable);
 
                 if( !options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
                     // generate type4 drules for each value and action
@@ -1871,7 +1874,7 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action,
     }
 
     assert(variable.beam_.find(value) != variable.beam_.end());
-    assert(!value.negated_ || variable.is_binary()); // || options_.is_enabled("lw1:boost:literals-for-observables"));
+    assert(!value.negated_ || variable.is_binary()); // || options_.is_enabled("lw1:boost:literals-for-observables")); // CHECK
 
     // find out whether something needs to be done
     if( options_.is_enabled("lw1:boost:drule:sensing:type4") ) {
@@ -1966,7 +1969,7 @@ void PDDL_Base::lw1_create_type4_boost_sensing_drule(const Action &action,
     }
 
     assert(variable.beam_.find(value) != variable.beam_.end());
-    assert(!value.negated_ || variable.is_binary()); // || options_.is_enabled("lw1:boost:literals-for-observables"));
+    assert(!value.negated_ || variable.is_binary()); // || options_.is_enabled("lw1:boost:literals-for-observables")); // CHECK
 
     // find out whether something needs to be done
     const And *term = 0;

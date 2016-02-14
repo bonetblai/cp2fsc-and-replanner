@@ -425,7 +425,6 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         }
 #endif // ifdef UP
 
-
         // 7. Insert non-forbidden clauses in result into state
         if( options_.is_enabled("lw1:inference:up:enhanced") ) {
 #if BASE_SELECTOR == 1
@@ -479,27 +478,40 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
 
         for( relevant_sensing_models_t::const_iterator it = relevant_sensing_models_as_k_dnf.begin(); it != relevant_sensing_models_as_k_dnf.end(); ++it ) {
             int sensed_literal = it->first;
+            //int atom_index = sensed_literal < 0 ? -sensed_literal - 1 : sensed_literal - 1;
+            //bool negated = sensed_literal < 0;
             for( map<int, sensing_models_as_cnf_or_dnf_t>::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt ) {
                 int var_key = jt->first;
                 const LW1_Instance::Variable &variable = *lw1.variables_[var_key];
+                pair<int, int> key(var_key, sensed_literal);
+
 #ifdef DEBUG
-                cout << "[AC3] sensed literal: var=[" << variable << "], value=" << sensed_literal << endl;
+                cout << "[AC3] sensed literal: var=" << variable.name_ << ", value=" << flush;
+                LW1_State::print_literal(cout, sensed_literal, &instance_);
+                cout << ", key=(" << var_key << "," << sensed_literal << ")" << endl;
 #endif
                 if( variable.is_state_variable_ ) {
+                    // observation is state variable, filter it directly in variable domain
                     assert(jt->second.empty());
                     int k_literal = sensed_literal > 0 ? 1 + 2*(sensed_literal - 1) : 1 + 2*(-sensed_literal - 1) + 1;
 #ifdef DEBUG
-                    cout << Utils::red() << "[AC3] [Theory] Add obs (state) literal: ";
+                    cout << Utils::red() << "[AC3] [Theory] Add obs (state) k-literal: ";
                     state.print_literal(cout, k_literal, &kp_instance_);
                     cout << Utils::normal() << endl;
 #endif
                     cout << "[AC3] SOMETHING TO DO #1" << endl;
+                } else if( lw1.filtering_groups_.find(key) != lw1.filtering_groups_.end() ) {
+                    // observation can be filtered in variable group. Prune all valuations that are
+                    // not consistent with k-dnf
+                    int vg = lw1.filtering_groups_.at(key);
+                    cout << "[AC3] SOMETHING TO DO #2: vgroup=" << vg << endl;
                 } else {
+                    // there is no variable group where to filter observation. Use k-dnf to generate constraints in CSP
                     const sensing_models_as_cnf_or_dnf_t &sensing_models_as_k_dnf = jt->second;
                     for( int k = 0; k < int(sensing_models_as_k_dnf.size()); ++k ) {
                         const cnf_or_dnf_t &k_dnf_for_sensing_model = *sensing_models_as_k_dnf[k];
 #ifdef DEBUG
-                        cout << "[AC3] k-dnf: index=" << k << ", ptr=" << &k_dnf_for_sensing_model << ", formula=";
+                        cout << "[AC3] k-dnf: index=" << k << ", formula=";
                         state.print_cnf_or_dnf(cout, k_dnf_for_sensing_model, &kp_instance_);
                         cout << endl;
 #endif
@@ -510,7 +522,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                             state.print_clause_or_term(cout, term, &kp_instance_);
                             cout << Utils::normal() << endl;
 #endif
-                            cout << "[AC3] SOMETHING TO DO #2" << endl;
+                            cout << "[AC3] SOMETHING TO DO #3" << endl;
                         }
                     }
                 }
@@ -576,7 +588,7 @@ bool LW1_Solver::value_observable_literal(const STATE_CLASS &hidden,
         cout << Utils::error() << "no sensing model for action '" << action_key << "'" << endl;
         return false;
     }
-    const map<int, map<int, vector<vector<int> > > > &sensing_models_for_action = lw1.sensing_models_as_dnf_.find(action_key)->second;
+    const map<int, map<int, vector<vector<int> > > > &sensing_models_for_action = lw1.sensing_models_as_dnf_.at(action_key);
     //cout << "XXXXXX.2" << endl;
 
     if( sensing_models_for_action.find(var_index) == sensing_models_for_action.end() ) {
@@ -585,14 +597,14 @@ bool LW1_Solver::value_observable_literal(const STATE_CLASS &hidden,
              << action_key << "'" << endl;
         return false;
     }
-    const map<int, vector<vector<int> > > &sensing_models_for_action_and_var = sensing_models_for_action.find(var_index)->second;
+    const map<int, vector<vector<int> > > &sensing_models_for_action_and_var = sensing_models_for_action.at(var_index);
     //cout << "XXXXXX.3" << endl;
 
     if( sensing_models_for_action_and_var.find(1 + index) == sensing_models_for_action_and_var.end() ) {
         // there is no sensing model for this value. Assuming it is false.
         return false;
     }
-    const vector<vector<int> > &dnf = sensing_models_for_action_and_var.find(1 + index)->second;
+    const vector<vector<int> > &dnf = sensing_models_for_action_and_var.at(1 + index);
     //cout << Utils::red() << "XXXXXX.4: #terms=" << dnf.size() << Utils::normal() << endl;
 
     // evaluate dnf at hidden state and return its value
@@ -686,21 +698,26 @@ void LW1_Solver::fill_relevant_sensing_models(const LW1_Instance &lw1,
     const map<int, map<int, vector<vector<int> > > > *sensing_models_for_action_as_k_dnf = 0;
     if( as_k_cnf ) {
         if( lw1.sensing_models_as_k_cnf_.find(action_key) != lw1.sensing_models_as_k_cnf_.end() )
-            sensing_models_for_action_as_k_cnf = &lw1.sensing_models_as_k_cnf_.find(action_key)->second;
+            sensing_models_for_action_as_k_cnf = &lw1.sensing_models_as_k_cnf_.at(action_key);
     } else {
         if( lw1.sensing_models_as_k_dnf_.find(action_key) != lw1.sensing_models_as_k_dnf_.end() )
-            sensing_models_for_action_as_k_dnf = &lw1.sensing_models_as_k_dnf_.find(action_key)->second;
+            sensing_models_for_action_as_k_dnf = &lw1.sensing_models_as_k_dnf_.at(action_key);
     }
 
     for( set<int>::const_iterator it = sensed_at_step.begin(); it != sensed_at_step.end(); ++it ) {
         int sensed_literal = *it;
         int atom_index = sensed_literal < 0 ? -sensed_literal - 1 : sensed_literal - 1;
         bool negated = sensed_literal < 0;
-        int value_key = !negated ? atom_index + 1 : -(atom_index + 1);
+
+#ifdef DEBUG
+        cout << "[fill] sensed: literal=";
+        LW1_State::print_literal(cout, sensed_literal, &instance_);
+        cout << ", index=" << atom_index << Utils::normal() << endl;
+#endif
 
         if( options_.is_enabled("solver:print:sensed-literals") ) {
             cout << Utils::yellow() << "sensed: literal=";
-            State::print_literal(cout, sensed_literal, &instance_);
+            LW1_State::print_literal(cout, sensed_literal, &instance_);
             cout << ", index=" << atom_index << Utils::normal() << endl;
         }
 
@@ -708,9 +725,9 @@ void LW1_Solver::fill_relevant_sensing_models(const LW1_Instance &lw1,
         assert(jt != lw1.variables_for_atom_.end());
         assert(!jt->second.empty());
 
-        // collect sensing models for values incompatible with obs.
-        // For binary vars (i.e. w/ domain of size 1), need to
-        // consider complemented value explicitly
+        // if as_k_cnf, collect sensing models as k-cnf for values incompatible with obs. Otherwise,
+        // collect sensing model as k-dnf for values compatible with obs. For binary vars (i.e. w/
+        // domain of size 1), need to consider complemented value explicitly
         for( int k = 0; k < int(jt->second.size()); ++k ) {
             int var_key = jt->second[k];
             const LW1_Instance::Variable &variable = *lw1.variables_[var_key];
@@ -727,15 +744,14 @@ void LW1_Solver::fill_relevant_sensing_models(const LW1_Instance &lw1,
 
             if( as_k_cnf ) {
                 assert(sensing_models_for_action_as_k_cnf != 0);
-                assert(sensing_models_for_action_as_k_cnf->find(var_key) != sensing_models_for_action_as_k_cnf->end());
-                const map<int, vector<vector<int> > > &sensing_models_for_var_as_k_cnf = sensing_models_for_action_as_k_cnf->find(var_key)->second;
+                const map<int, vector<vector<int> > > &sensing_models_for_var_as_k_cnf = sensing_models_for_action_as_k_cnf->at(var_key);
                 for( map<int, vector<vector<int> > >::const_iterator kt = sensing_models_for_var_as_k_cnf.begin(); kt != sensing_models_for_var_as_k_cnf.end(); ++kt ) {
 #ifdef DEBUG
                     cout << "[fill] sensing model: obs=";
                     LW1_State::print_literal(cout, kt->first, &instance_);
-                    cout << ", trigger=" << (kt->first != value_key) << flush;
+                    cout << ", trigger=" << (kt->first != sensed_literal) << flush;
 #endif
-                    if( kt->first != value_key ) {
+                    if( kt->first != sensed_literal ) {
                         relevant_sensing_models[sensed_literal][var_key].push_back(&kt->second);
 #ifdef DEBUG
                         cout << ", k-cnf=";
@@ -748,15 +764,14 @@ void LW1_Solver::fill_relevant_sensing_models(const LW1_Instance &lw1,
                 }
             } else {
                 assert(sensing_models_for_action_as_k_dnf != 0);
-                assert(sensing_models_for_action_as_k_dnf->find(var_key) != sensing_models_for_action_as_k_dnf->end());
-                const map<int, vector<vector<int> > > &sensing_models_for_var_as_k_dnf = sensing_models_for_action_as_k_dnf->find(var_key)->second;
+                const map<int, vector<vector<int> > > &sensing_models_for_var_as_k_dnf = sensing_models_for_action_as_k_dnf->at(var_key);
                 for( map<int, vector<vector<int> > >::const_iterator kt = sensing_models_for_var_as_k_dnf.begin(); kt != sensing_models_for_var_as_k_dnf.end(); ++kt ) {
 #ifdef DEBUG
                     cout << "[fill] sensing model: obs=";
                     LW1_State::print_literal(cout, kt->first, &instance_);
-                    cout << ", trigger=" << (kt->first != value_key) << flush;
+                    cout << ", trigger=" << (kt->first != sensed_literal) << flush;
 #endif
-                    if( kt->first == value_key ) {
+                    if( kt->first == sensed_literal ) {
                         relevant_sensing_models[sensed_literal][var_key].push_back(&kt->second);
 #ifdef DEBUG
                         cout << ", k-dnf=";

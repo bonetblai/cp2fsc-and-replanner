@@ -689,8 +689,9 @@ class PDDL_Base {
 
         void instantiate(variable_list &vlist) const;
         const unsigned_atom_set& beam_for_value(const Atom &value) const {
-            assert(beam_.find(value) != beam_.end());
-            return beam_.find(value)->second;
+            //assert(beam_.find(value) != beam_.end()); // CHECK
+            //return beam_.find(value)->second; // CHECK
+            return beam_.at(value);
         } 
         bool is_binary() const { return grounded_domain_.size() == 1; }
 

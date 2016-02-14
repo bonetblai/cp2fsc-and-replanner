@@ -173,7 +173,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                 observable_atoms_.insert(atom_index);
                 index_set beam;
                 if( var.beam_.find(*it) == var.beam_.end() ) continue;
-                const PDDL_Base::unsigned_atom_set &var_beam = var.beam_.find(*it)->second;
+                const PDDL_Base::unsigned_atom_set &var_beam = var.beam_.at(*it);
                 for( PDDL_Base::unsigned_atom_set::const_iterator jt = var_beam.begin(); jt != var_beam.end(); ++jt ) {
                     int index = get_atom_index(ins, jt->to_string(jt->negated_, true));
                     assert(index != -1);
@@ -191,14 +191,19 @@ LW1_Instance::LW1_Instance(const Instance &ins,
     }
 
     // extract filtering info from variable groups
+    vars_for_variable_groups_ = vector<vector<int> >(variable_groups.size());
     for( int k = 0; k < int(variable_groups.size()); ++k ) {
         const PDDL_Base::VariableGroup &group = *variable_groups[k];
+
+        for( int j = 0; j < int(group.grounded_group_.size()); ++j ) {
+            const PDDL_Base::StateVariable &var = *group.grounded_group_[j];
+            int var_index = varmap_.at(var.to_string(false, true));
+            vars_for_variable_groups_[k].push_back(var_index);
+        }
+
         for( int j = 0; j < int(group.filtered_observations_.size()); ++j ) {
             const PDDL_Base::Variable &var = *group.filtered_observations_[j].first;
-            map<string, int>::const_iterator it = varmap_.find(var.to_string(false, true));
-            assert(it != varmap_.end());
-            int var_index = it->second;
-
+            int var_index = varmap_.at(var.to_string(false, true));
             const PDDL_Base::Atom &atom = *group.filtered_observations_[j].second;
             string atom_name = atom.to_string(false, true);
             int atom_index = get_atom_index(ins, atom_name);
@@ -209,7 +214,10 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                 continue;
             } 
 
-            filtering_groups_.insert(make_pair(make_pair(var_index, atom_index), k));
+            filtering_groups_.insert(make_pair(make_pair(var_index, 1 + atom_index), k));
+#ifdef DEBUG
+            cout << "filtering: var=" << var.print_name_ << ", obs=" << atom << ", key=(" << var_index << "," << 1 + atom_index << "), group=" << group << endl;
+#endif
         }
     }
 
@@ -244,8 +252,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                 const PDDL_Base::SensingModelForObservableVariable &model = *static_cast<const PDDL_Base::SensingModelForObservableVariable*>(sensing[k]);
                 assert(model.variable_ != 0);
                 string var_name = model.variable_->to_string(false, true);
-                assert(varmap_.find(var_name) != varmap_.end());
-                int var_index = varmap_[var_name];
+                int var_index = varmap_.at(var_name);
                 string atom_name = model.literal_->to_string(model.literal_->negated_, true);
                 int atom_index = get_atom_index(ins, atom_name);
                 if( atom_index == -1 ) {
@@ -536,8 +543,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                 const PDDL_Base::SensingModelForStateVariable &model = *static_cast<const PDDL_Base::SensingModelForStateVariable*>(sensing[k]);
                 assert(model.variable_ != 0);
                 string var_name = model.variable_->to_string(false, true);
-                assert(varmap_.find(var_name) != varmap_.end());
-                vars_sensed_by_action_[action.print_name_].insert(varmap_[var_name]);
+                vars_sensed_by_action_[action.print_name_].insert(varmap_.at(var_name));
             }
         }
     }
@@ -750,8 +756,9 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                 if( var.is_state_variable_ ) continue;
                 for( set<int>::const_iterator it = var.domain_.begin(); it != var.domain_.end(); ++it ) {
                     int value = *it;
-                    assert(var.beams_.find(value) != var.beams_.end());
-                    const index_set &beam = var.beams_.find(value)->second;
+                    //assert(var.beams_.find(value) != var.beams_.end()); // CHECK
+                    //const index_set &beam = var.beams_.find(value)->second; // CHECK
+                    const index_set &beam = var.beams_.at(value);
                     if( !beam.empty() ) {
                         clause_forbidding_literals_.insert(1 + 2*value);
                         clause_forbidding_literals_.insert(1 + 2*value + 1);
@@ -958,8 +965,7 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             // variable
             assert(action.comment_ != "");
             string var_name = action.comment_;
-            assert(varmap_.find(var_name) != varmap_.end());
-            int var_index = varmap_[var_name];
+            int var_index = varmap_.at(var_name);
             const Variable &variable = *variables_[var_index];
             assert(variable.is_observable_);
             assert(variable.is_state_variable_);
@@ -1011,8 +1017,7 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             assert(action.comment_ != "");
             size_t blank_pos = action.comment_.find(" ");
             string var_name(action.comment_, 0, blank_pos);
-            assert(varmap_.find(var_name) != varmap_.end());
-            int var_index = varmap_[var_name];
+            int var_index = varmap_.at(var_name);
             const Variable &variable = *variables_[var_index];
             string value_name(action.comment_, 1 + blank_pos);
 
@@ -1109,8 +1114,7 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             assert(action.comment_ != "");
             size_t blank_pos = action.comment_.find(" ");
             string var_name(action.comment_, 0, blank_pos);
-            assert(varmap_.find(var_name) != varmap_.end());
-            int var_index = varmap_[var_name];
+            int var_index = varmap_.at(var_name);
             const Variable &variable = *variables_[var_index];
             string value_name(action.comment_, 1 + blank_pos);
 

@@ -70,6 +70,7 @@ class LW1_Instance : public KP_Instance {
 
     // variable groups
     std::vector<std::vector<int> > atoms_for_variable_groups_;
+    std::vector<std::vector<int> > vars_for_variable_groups_;
     std::map<std::pair<int, int>, int> filtering_groups_;
 
     LW1_Instance(const Instance &instance,

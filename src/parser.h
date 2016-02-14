@@ -30,7 +30,7 @@ class Parser : public PDDL_Parser {
 
     virtual int next_token() { return scanner.next_token(yylval); }
 
-    virtual void log_error(char *msg) {
+    virtual void log_error(const char *msg) {
         syntax_errors() << msg << std::endl;
         error_flag_ = true;
     }

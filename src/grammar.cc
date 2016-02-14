@@ -81,7 +81,7 @@ void *alloca ();
 #define YYBISON 1  
 
 /* #line 73 "/usr/local/lib/bison.cc" */
-#line 85 "grammar.cc"
+#line 85 "grammar_tmp.cc"
 #define YY_PDDL_Parser_ERROR  log_error
 #define YY_PDDL_Parser_ERROR_BODY  = 0
 #define YY_PDDL_Parser_ERROR_VERBOSE  1
@@ -191,7 +191,7 @@ typedef union {
 #ifndef YY_PDDL_Parser_PURE
 
 /* #line 117 "/usr/local/lib/bison.cc" */
-#line 195 "grammar.cc"
+#line 195 "grammar_tmp.cc"
 
 #line 117 "/usr/local/lib/bison.cc"
 /*  YY_PDDL_Parser_PURE */
@@ -200,14 +200,14 @@ typedef union {
 /* section apres lecture def, avant lecture grammaire S2 */
 
 /* #line 121 "/usr/local/lib/bison.cc" */
-#line 204 "grammar.cc"
+#line 204 "grammar_tmp.cc"
 
 #line 121 "/usr/local/lib/bison.cc"
 /* prefix */
 #ifndef YY_PDDL_Parser_DEBUG
 
 /* #line 123 "/usr/local/lib/bison.cc" */
-#line 211 "grammar.cc"
+#line 211 "grammar_tmp.cc"
 
 #line 123 "/usr/local/lib/bison.cc"
 /* YY_PDDL_Parser_DEBUG */
@@ -217,7 +217,7 @@ typedef union {
 #ifndef YY_PDDL_Parser_LSP_NEEDED
 
 /* #line 128 "/usr/local/lib/bison.cc" */
-#line 221 "grammar.cc"
+#line 221 "grammar_tmp.cc"
 
 #line 128 "/usr/local/lib/bison.cc"
  /* YY_PDDL_Parser_LSP_NEEDED*/
@@ -330,7 +330,7 @@ typedef
 /* TOKEN C */
 
 /* #line 236 "/usr/local/lib/bison.cc" */
-#line 334 "grammar.cc"
+#line 334 "grammar_tmp.cc"
 #define	TK_OPEN	258
 #define	TK_CLOSE	259
 #define	TK_OPEN_SQ	260
@@ -447,7 +447,7 @@ public:
 /* static const int token ... */
 
 /* #line 280 "/usr/local/lib/bison.cc" */
-#line 451 "grammar.cc"
+#line 451 "grammar_tmp.cc"
 static const int TK_OPEN;
 static const int TK_CLOSE;
 static const int TK_OPEN_SQ;
@@ -523,7 +523,7 @@ static const int KW_MODEL_FOR;
 enum YY_PDDL_Parser_ENUM_TOKEN { YY_PDDL_Parser_NULL_TOKEN=0
 
 /* #line 283 "/usr/local/lib/bison.cc" */
-#line 527 "grammar.cc"
+#line 527 "grammar_tmp.cc"
 	,TK_OPEN=258
 	,TK_CLOSE=259
 	,TK_OPEN_SQ=260
@@ -599,7 +599,7 @@ enum YY_PDDL_Parser_ENUM_TOKEN { YY_PDDL_Parser_NULL_TOKEN=0
 #endif
 public:
  int YY_PDDL_Parser_PARSE (YY_PDDL_Parser_PARSE_PARAM);
- virtual void YY_PDDL_Parser_ERROR(char *msg) YY_PDDL_Parser_ERROR_BODY;
+ virtual void YY_PDDL_Parser_ERROR(const char *msg) YY_PDDL_Parser_ERROR_BODY;
 #ifdef YY_PDDL_Parser_PURE
 #ifdef YY_PDDL_Parser_LSP_NEEDED
  virtual int  YY_PDDL_Parser_LEX (YY_PDDL_Parser_STYPE *YY_PDDL_Parser_LVAL,YY_PDDL_Parser_LTYPE *YY_PDDL_Parser_LLOC) YY_PDDL_Parser_LEX_BODY;
@@ -627,7 +627,7 @@ public:
 #if YY_PDDL_Parser_USE_CONST_TOKEN != 0
 
 /* #line 314 "/usr/local/lib/bison.cc" */
-#line 631 "grammar.cc"
+#line 631 "grammar_tmp.cc"
 const int YY_PDDL_Parser_CLASS::TK_OPEN=258;
 const int YY_PDDL_Parser_CLASS::TK_CLOSE=259;
 const int YY_PDDL_Parser_CLASS::TK_OPEN_SQ=260;
@@ -711,7 +711,7 @@ YY_PDDL_Parser_CONSTRUCTOR_CODE;
 #endif
 
 /* #line 325 "/usr/local/lib/bison.cc" */
-#line 715 "grammar.cc"
+#line 715 "grammar_tmp.cc"
 
 
 #define	YYFINAL		422
@@ -1390,9 +1390,9 @@ static void __yy_bcopy (from, to, count)
 #endif
 #endif
 {
-  register char *f = from;
-  register char *t = to;
-  register int i = count;
+  char *f = from;
+  char *t = to;
+  int i = count;
 
   while (i-- > 0)
     *t++ = *f++;
@@ -1413,10 +1413,10 @@ YY_PDDL_Parser_PARSE_PARAM_DEF
 #endif
 #endif
 {
-  register int yystate;
-  register int yyn;
-  register short *yyssp;
-  register YY_PDDL_Parser_STYPE *yyvsp;
+  int yystate;
+  int yyn;
+  short *yyssp;
+  YY_PDDL_Parser_STYPE *yyvsp;
   int yyerrstatus;      /*  number of tokens to shift before error messages enabled */
   int yychar1=0;          /*  lookahead token as an internal (translated) token number */
 
@@ -1695,7 +1695,7 @@ YYLABEL(yyreduce)
 
 
 /* #line 811 "/usr/local/lib/bison.cc" */
-#line 1699 "grammar.cc"
+#line 1699 "grammar_tmp.cc"
 
   switch (yyn) {
 
@@ -3124,7 +3124,7 @@ YYLABEL(yyerrhandle)
 /* END */
 
 /* #line 1010 "/usr/local/lib/bison.cc" */
-#line 3128 "grammar.cc"
+#line 3128 "grammar_tmp.cc"
 #line 1191 "ppddl.y"
 
 
