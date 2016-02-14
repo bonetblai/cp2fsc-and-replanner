@@ -62,10 +62,10 @@ class LW1_Solver : public BASE_CLASS {
     atoms_to_vars_map_t atoms_to_vars_;
 
   protected:
-    typedef std::vector<int> clause_t;
-    typedef std::vector<clause_t> cnf_t;
-    typedef std::vector<const cnf_t*> sensing_models_as_cnf_t;
-    typedef std::map<int, std::map<int, sensing_models_as_cnf_t> > relevant_sensing_models_as_cnf_t;
+    typedef std::vector<int> clause_or_term_t;
+    typedef std::vector<clause_or_term_t> cnf_or_dnf_t;
+    typedef std::vector<const cnf_or_dnf_t*> sensing_models_as_cnf_or_dnf_t;
+    typedef std::map<int, std::map<int, sensing_models_as_cnf_or_dnf_t> > relevant_sensing_models_t;
 
     // A CNF is kept internally by the solver.
     // It is filled in initialize and it is completed in every iteration of 
@@ -115,11 +115,11 @@ class LW1_Solver : public BASE_CLASS {
     void fill_relevant_sensing_models(const LW1_Instance &lw1,
                                       const Instance::Action *last_action,
                                       const std::set<int> &sensed_at_step,
-                                      relevant_sensing_models_as_cnf_t &sensing_models_as_cnf,
-                                      bool consistent_models = false) const;
+                                      relevant_sensing_models_t &relevant_sensing_models,
+                                      bool as_k_cnf = true) const;
 
     bool is_forbidden(int literal) const;
-    bool is_forbidden(const clause_t &clause) const;
+    bool is_forbidden(const clause_or_term_t &clause) const;
     void fill_atoms_to_var_map(const LW1_Instance &lw1);
 };
 

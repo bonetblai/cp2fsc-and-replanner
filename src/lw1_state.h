@@ -17,19 +17,19 @@ struct LW1_State : public State {
     LW1_State(const index_set &s) : State(s) { }
     virtual ~LW1_State() { }
 
-    static void print_clause(std::ostream &os, const clause_t &clause, const Instance *ins = 0) {
+    static void print_clause_or_term(std::ostream &os, const clause_t &clause_or_term, const Instance *ins = 0) {
         os << "{";
-        for( size_t k = 0; k < clause.size(); ++k ) {
-            State::print_literal(os, clause[k], ins);
-            os << (k + 1 < clause.size() ? "," : "");
+        for( size_t k = 0; k < clause_or_term.size(); ++k ) {
+            State::print_literal(os, clause_or_term[k], ins);
+            os << (k + 1 < clause_or_term.size() ? "," : "");
         }
         os << "}";
     }
-    static void print_cnf(std::ostream &os, const cnf_t &cnf, const Instance *ins = 0) {
+    static void print_cnf_or_dnf(std::ostream &os, const cnf_t &cnf_or_dnf, const Instance *ins = 0) {
         os << "{";
-        for( size_t k = 0; k < cnf.size(); ++k ) {
-            LW1_State::print_clause(os, cnf[k], ins);
-            os << (k + 1 < cnf.size() ? "," : "");
+        for( size_t k = 0; k < cnf_or_dnf.size(); ++k ) {
+            LW1_State::print_clause_or_term(os, cnf_or_dnf[k], ins);
+            os << (k + 1 < cnf_or_dnf.size() ? "," : "");
         }
         os << "}";
     }
@@ -39,7 +39,7 @@ struct LW1_State : public State {
         State::print(os, ins);
         if( !cnf_.empty() ) {
             os << ",cnf=";
-            LW1_State::print_cnf(os, cnf_, ins);
+            LW1_State::print_cnf_or_dnf(os, cnf_, ins);
         }
         os << "]";
     }

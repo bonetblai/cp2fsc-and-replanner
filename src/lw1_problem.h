@@ -55,6 +55,7 @@ class LW1_Instance : public KP_Instance {
     std::vector<Variable*> variables_;
     std::map<int, std::vector<int> > variables_for_atom_;
     std::map<std::string, std::map<int, std::map<int, std::vector<std::vector<int> > > > > sensing_models_as_k_cnf_;
+    std::map<std::string, std::map<int, std::map<int, std::vector<std::vector<int> > > > > sensing_models_as_k_dnf_;
     std::map<std::string, std::map<int, std::map<int, std::vector<std::vector<int> > > > > sensing_models_as_dnf_;
     std::map<std::string, std::set<int> > vars_sensed_by_action_;
 

@@ -185,7 +185,8 @@ LW1_Instance::LW1_Instance(const Instance &ins,
         }
         variables_.push_back(new Variable(var.to_string(false, true), var.is_observable_variable(), var.is_state_variable(), domain, beams));
 #ifdef DEBUG
-        variables_.back()->print(cout); cout << endl;
+        variables_.back()->print(cout);
+        cout << endl;
 #endif
     }
 
@@ -253,6 +254,9 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                          << "'. Continuing..." << endl;
                     continue;
                 }
+#ifdef DEBUG
+                cout << "  observable variable: var=" << var_name << ", atom=" << atom_name << endl;
+#endif
 
                 // setup keys for accessing data structures
                 string action_key = action.print_name_;
@@ -260,19 +264,22 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                 int value_key = (model.literal_->negated_ ? -1 : 1) * (atom_index + 1);
                 vars_sensed_by_action_[action_key].insert(var_key);
 
+#ifdef DEBUG
+                cout << "  key: action=" << action_key << ", var=" << var_key << ", value=" << value_key << endl;
+#endif
+
                 assert(model.dnf_ != 0);
                 if( dynamic_cast<const PDDL_Base::Or*>(model.dnf_) != 0 ) {
                     const PDDL_Base::Or &disjunction = *static_cast<const PDDL_Base::Or*>(model.dnf_);
 #ifdef DEBUG
-                    cout << "  dnf is disjunction=" << disjunction << ":" << endl;
+                    cout << "    dnf is disjunction=" << disjunction << ":" << endl;
 #endif
                     for( size_t j = 0; j < disjunction.size(); ++j ) {
                         assert(disjunction[j] != 0);
-
                         if( dynamic_cast<const PDDL_Base::And*>(disjunction[j]) != 0 ) {
                             const PDDL_Base::And &term = *static_cast<const PDDL_Base::And*>(disjunction[j]);
 #ifdef DEBUG
-                            cout << "    term is conjunction=" << term << ":" << endl;
+                            cout << "      term is conjunction=" << term << ":" << endl;
 #endif
 
                             // verify term
@@ -293,7 +300,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                             for( size_t i = 0; i < term.size(); ++i ) {
                                 const PDDL_Base::Literal &head = *static_cast<const PDDL_Base::Literal*>(term[i]);
 #ifdef DEBUG
-                                cout << "    rule for head " << *(const PDDL_Base::Atom*)&head << ": " << flush;
+                                cout << "        rule for head " << *(const PDDL_Base::Atom*)&head << ": " << flush;
 #endif
                                 string head_name = head.to_string(head.negated_, true);
                                 int head_index = get_atom_index(ins, head_name);
@@ -322,36 +329,72 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                                 cout << endl;
 #endif
 
-                                // insert clause
+                                // insert K-clause
                                 assert(k_clause.size() == term.size());
                                 sensing_models_as_k_cnf_[action_key][var_key][value_key].push_back(k_clause);
-                                //cout << "INSERT: k-clause="; LW1_State::print_clause(cout, k_clause, this); cout << endl;
-                                //cout << "INSERT: model for action-key=" << action_key << ", var-key=" << var_key << ", value-key=" << value_key << endl;
+#ifdef DEBUG
+                                cout << "        k-clause=";
+                                LW1_State::print_clause_or_term(cout, k_clause, this);
+                                cout << endl;
+#endif
                             }
                             sensing_models_as_dnf_[action_key][var_key][value_key].push_back(term_for_dnf);
+#ifdef DEBUG
+                            cout << "        term=";
+                            LW1_State::print_clause_or_term(cout, term_for_dnf, &ins);
+                            cout << endl;
+#endif
+
+                            // generate K-term
+                            vector<int> k_term;
+                            for( size_t j = 0; j < term.size(); ++j ) {
+                                const PDDL_Base::Literal &literal = *static_cast<const PDDL_Base::Literal*>(term[j]);
+                                string name = literal.to_string(literal.negated_, true);
+                                int index = get_atom_index(ins, name);
+                                assert(index != -1);
+                                int k_index = 2*index + (literal.negated_ ? 1 : 0);
+                                k_term.push_back(1 + k_index);
+                            }
+                            sensing_models_as_k_dnf_[action_key][var_key][value_key].push_back(k_term);
+#ifdef DEBUG
+                            cout << "        k-term=";
+                            LW1_State::print_clause_or_term(cout, k_term, this);
+                            cout << endl;
+#endif
                         } else if( dynamic_cast<const PDDL_Base::Literal*>(disjunction[j]) != 0 ) {
                             const PDDL_Base::Literal &literal = *static_cast<const PDDL_Base::Literal*>(disjunction[j]);
 #ifdef DEBUG
-                            cout << "    term is single literal=" << *(const PDDL_Base::Atom*)&literal << ": " << flush;
+                            cout << "    term is single literal=" << *(const PDDL_Base::Atom*)&literal << endl;
 #endif
                             string name = literal.to_string(literal.negated_, true);
                             int index = get_atom_index(ins, name);
                             assert(index != -1);
                             int k_index = 2*index + (literal.negated_ ? 0 : 1);
 #ifdef DEBUG
-                            cout << atoms_[k_index]->name_ << " <== true" << endl;
+                            cout << "      rule: " << atoms_[k_index]->name_ << " <== true" << endl;
 #endif
 
-                            // fill and insert unit-term
-                            vector<int> unit_term;
-                            unit_term.push_back(literal.negated_ ? -(1 + index) : 1 + index);
+                            // fill and insert unit term
+                            vector<int> unit_term(1, literal.negated_ ? -(1 + index) : 1 + index);
                             sensing_models_as_dnf_[action_key][var_key][value_key].push_back(unit_term);
 
                             // fill and insert unit K-clause
                             vector<int> unit_k_clause(1, 1 + k_index);
-                            assert(unit_k_clause.size() == 1);
                             sensing_models_as_k_cnf_[action_key][var_key][value_key].push_back(unit_k_clause);
-                            //cout << "INSERT: model for action-key=" << action_key << ", var-key=" << var_key << ", value-key=" << value_key << endl;
+
+                            // fill and insert unit K-term
+                            vector<int> unit_k_term(1, 1 + 2*index + (literal.negated_ ? 1 : 0));
+                            sensing_models_as_k_dnf_[action_key][var_key][value_key].push_back(unit_k_term);
+
+#ifdef DEBUG
+                            cout << "        term=";
+                            LW1_State::print_clause_or_term(cout, unit_term, &ins);
+                            cout << endl << "        k-clause=";
+                            LW1_State::print_clause_or_term(cout, unit_k_clause, this);
+                            cout << endl << "        k-term=";
+                            LW1_State::print_clause_or_term(cout, unit_k_term, this);
+                            cout << endl;
+#endif
                         } else {
                             cout << Utils::error() << "formula '" << *disjunction[j]
                                  << "' for model of '" << var_name << ":" << atom_name
@@ -362,7 +405,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                 } else if( dynamic_cast<const PDDL_Base::And*>(model.dnf_) != 0 ) {
                     const PDDL_Base::And &term = *static_cast<const PDDL_Base::And*>(model.dnf_);
 #ifdef DEBUG
-                    cout << "  dnf is single term=" << term << ":" << endl;
+                    cout << "    dnf is single term=" << term << ":" << endl;
 #endif
 
                     // verify term
@@ -378,12 +421,12 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                     }
                     if( !verified ) continue;
 
-                    // generate K-clauses
+                    // generate K-clauses and term for dnf
                     vector<int> term_for_dnf;
                     for( size_t j = 0; j < term.size(); ++j ) {
                         const PDDL_Base::Literal &head = *static_cast<const PDDL_Base::Literal*>(term[j]);
 #ifdef DEBUG
-                        cout << "    rule for head " << *(const PDDL_Base::Atom*)&head << ": " << flush;
+                        cout << "      rule for head " << *(const PDDL_Base::Atom*)&head << ": " << flush;
 #endif
                         string head_name = head.to_string(head.negated_, true);
                         int head_index = get_atom_index(ins, head_name);
@@ -394,7 +437,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                         cout << atoms_[k_head_index]->name_ << flush << " <==" << flush;
 #endif
 
-                        // fill clause
+                        // fill K-clause
                         vector<int> k_clause(1, 1 + k_head_index);
                         for( size_t i = 0; i < term.size(); ++i ) {
                             if( i == j ) continue;
@@ -415,36 +458,72 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                         // insert clause
                         assert(k_clause.size() == term.size());
                         sensing_models_as_k_cnf_[action_key][var_key][value_key].push_back(k_clause);
-                        //cout << "INSERT: k-clause="; LW1_State::print_clause(cout, k_clause, this); cout << endl;
-                        //cout << "INSERT: model for action-key=" << action_key << ", var-key=" << var_key << ", value-key=" << value_key << endl;
+#ifdef DEBUG
+                        cout << "      k-clause=";
+                        LW1_State::print_clause_or_term(cout, k_clause, this);
+                        cout << endl;
+#endif
                     }
                     sensing_models_as_dnf_[action_key][var_key][value_key].push_back(term_for_dnf);
+#ifdef DEBUG
+                    cout << "      term=";
+                    LW1_State::print_clause_or_term(cout, term_for_dnf, &ins);
+                    cout << endl;
+#endif
+
+                    // generate K-dnf
+                    vector<int> k_term;
+                    for( size_t j = 0; j < term.size(); ++j ) {
+                        const PDDL_Base::Literal &literal = *static_cast<const PDDL_Base::Literal*>(term[j]);
+                        string name = literal.to_string(literal.negated_, true);
+                        int index = get_atom_index(ins, name);
+                        assert(index != -1);
+                        int k_index = 2*index + (literal.negated_ ? 1 : 0);
+                        k_term.push_back(1 + k_index);
+                    }
+                    sensing_models_as_k_dnf_[action_key][var_key][value_key].push_back(k_term);
+#ifdef DEBUG
+                    cout << "      k-term=";
+                    LW1_State::print_clause_or_term(cout, k_term, this);
+                    cout << endl;
+#endif
                 } else if( dynamic_cast<const PDDL_Base::Literal*>(model.dnf_) != 0 ) {
                     const PDDL_Base::Literal &literal = *static_cast<const PDDL_Base::Literal*>(model.dnf_);
 #ifdef DEBUG
-                    cout << "  dnf is single literal=" << *(const PDDL_Base::Atom*)&literal << ": " << flush;
+                    cout << "    dnf is single literal=" << *(const PDDL_Base::Atom*)&literal << endl;
 #endif
                     string name = literal.to_string(literal.negated_, true);
                     int index = get_atom_index(ins, name);
                     assert(index != -1);
                     int k_index = 2*index + (literal.negated_ ? 0 : 1);
 #ifdef DEBUG
-                    cout << atoms_[k_index]->name_ << " <== true" << endl;
+                    cout << "      rule: " << atoms_[k_index]->name_ << " <== true" << endl;
 #endif
 
                     // fill and insert unit-term
-                    vector<int> unit_term;
-                    unit_term.push_back(literal.negated_ ? -(1 + index) : 1 + index);
+                    vector<int> unit_term(1, literal.negated_ ? -(1 + index) : 1 + index);
                     sensing_models_as_dnf_[action_key][var_key][value_key].push_back(unit_term);
 
                     // fill and insert unit K-clause
                     vector<int> unit_k_clause(1, 1 + k_index);
-                    assert(unit_k_clause.size() == 1);
                     sensing_models_as_k_cnf_[action_key][var_key][value_key].push_back(unit_k_clause);
-                    //cout << "INSERT: model for action-key=" << action_key << ", var-key=" << var_key << ", value-key=" << value_key << endl;
+
+                    // fill and insert unit K-term
+                    vector<int> unit_k_term(1, 1 + 2*index + (literal.negated_ ? 1 : 0));
+                    sensing_models_as_k_dnf_[action_key][var_key][value_key].push_back(unit_k_term);
+
+#ifdef DEBUG
+                    cout << "      k-clause=";
+                    LW1_State::print_clause_or_term(cout, unit_k_clause, this);
+                    cout << endl << "      term=";
+                    LW1_State::print_clause_or_term(cout, unit_term, &ins);
+                    cout << endl << "      k-term=";
+                    LW1_State::print_clause_or_term(cout, unit_k_term, this);
+                    cout << endl;
+#endif
                 } else if( dynamic_cast<const PDDL_Base::Constant*>(model.dnf_) != 0 ) {
 #ifdef DEBUG
-                    cout << "  dnf is constant: " << *model.dnf_ << endl;
+                    cout << "    dnf is constant: " << *model.dnf_ << endl;
 #endif
                     // nothing to do. Obviate formula
                 } else {
