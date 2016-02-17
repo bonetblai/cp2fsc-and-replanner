@@ -200,9 +200,10 @@ namespace Inference {
                                                  const Instance& instance,
                                                  const LW1_State& state);
 
-            void fill_watchlist(
+            void fill_worklist(
                     const std::vector<Constraint>& constraints_,
-                    std::vector<Constraint>& watchlist, const Csp& csp,
+                    std::vector<std::pair<int,int>>& worklist, 
+                    const Csp& csp,
                     const Instance& instance, const LW1_State& state) const;
 
             bool arc_reduce(Csp& csp, 

@@ -22,6 +22,8 @@ typedef std::vector<Inference::CSP::Variable *> V_VAR;
 typedef V_VAR::iterator V_VAR_I;
 typedef V_VAR::const_iterator V_VAR_CI;
 
+typedef std::pair<int,int> ARC_T;
+
 typedef std::map<int, int> MII;
 
 typedef std::map<int, std::vector<int>> MIVI;
@@ -301,19 +303,19 @@ void Inference::CSP::AC3::apply_binary_constraints(Csp& csp,
                                                    const Instance& instance,
                                                    const LW1_State& state) const {
     std::vector<Constraint>& constraints = csp.get_constraints_();
-    std::vector<Constraint> watchlist;
-    fill_watchlist(constraints, watchlist, csp, instance, state);
+    std::vector<ARC_T> worklist;
+    fill_worklist(constraints, worklist, csp, instance, state);
 
-    while (! watchlist.empty()) {
-        Constraint constraint = watchlist.back();
-        watchlist.pop_back();
-        if (arc_reduce(csp, std::make_pair(constraint[0], constraint[1]), instance, state)) {
+    while (! worklist.empty()) {
+        ARC_T arc = worklist.back();
+        worklist.pop_back();
+        if (arc_reduce(csp, arc, instance, state)) {
 
             std::cout << "[DEBUG] REDUCED" << std::endl;
-            int x = csp.get_var_index(constraint[0]);
-            int y = csp.get_var_index(constraint[1]);
+            int x = csp.get_var_index(arc.first);
+            int y = csp.get_var_index(arc.second);
 
-            assert(csp.get_var(constraint[0])->get_domain_size());
+            assert(csp.get_var(arc.first)->get_domain_size());
 
             std::vector<int> related = inv_clauses_.at(x);
        
@@ -347,18 +349,18 @@ void Inference::CSP::AC3::apply_binary_constraints(Csp& csp,
                     continue;
                 }
 
+                // Candidate arc
                 if (constraints[*it].size() == 2 && !satisfied) {
-                    int v1 = csp.get_var_index(constraints[*it][0]);
-                    int v2 = csp.get_var_index(constraints[*it][1]);
-                    if ((x == v1 && y != v2) || (x == v2 && y != v1)) {
+                    Constraint zx(constraints[*it]);
+                    int v1 = csp.get_var_index(zx[0]);
+                    int v2 = csp.get_var_index(zx[1]);
 
-                        Constraint zx(constraints[*it]);
-                        std::iter_swap(zx.begin(), zx.begin() + 1);
-                        watchlist.push_back(zx);
-
-                        std::cout << "[DEBUG] Back into watchlist" << std::endl;
-                        csp.print_constraint(std::cout, constraints[*it], instance, state);
-                    }
+                    if (x == v2 && y != v1)
+                        worklist.push_back(ARC_T(zx[0], zx[1]));
+                    else if (x == v1 && y != v2)
+                        worklist.push_back(ARC_T(zx[1], zx[0]));
+                    //std::cout << "[DEBUG] Back into worklist" << std::endl;
+                    //csp.print_constraint(std::cout, constraints[*it], instance, state);
                 }
             }
         }
@@ -428,29 +430,27 @@ void Inference::CSP::AC3::print(std::ostream& os, const Instance& instance,
     os << "END OF AC3" << std::endl;
 }
 
-void Inference::CSP::AC3::fill_watchlist(
+void Inference::CSP::AC3::fill_worklist(
         const std::vector<Constraint>& constraints,
-        std::vector<Constraint>& watchlist, const Csp& csp,
+        std::vector<ARC_T>& worklist, const Csp& csp,
         const Instance& instance, const LW1_State& state) const {
 
     for (std::vector<Constraint>::const_iterator ci = constraints.cbegin();
          ci != constraints.cend(); ci++) {
         Constraint constraint = *ci;
         if (constraint.is_active()) {
-            std::cout << Utils:: magenta() << "[DEBUG AC3] Added to watchlist: " << std::endl;
-            csp.print_constraint(std::cout, constraint, instance, state);
-            std::cout << Utils:: normal();
-            watchlist.push_back(constraint);
+            std::cout << Utils:: magenta() << "[DEBUG AC3] Added to worklist: " << std::endl;
+            //csp.print_constraint(std::cout, constraint, instance, state);
+            std::cout << Utils::normal();
+            worklist.push_back(ARC_T(constraint[0], constraint[1]));
+            worklist.push_back(ARC_T(constraint[1], constraint[0]));
 
             // If (x,y) is being added, (y,x) needs to be added as well.
-            Constraint inverted(constraint);
-            std::iter_swap(inverted.begin(), inverted.begin() + 1);
+            //std::cout << Utils:: magenta() << "[DEBUG AC3] Added to worklist: " << std::endl;
+            //csp.print_constraint(std::cout, inverted, instance, state);
+            //std::cout << Utils:: normal();
 
-            std::cout << Utils:: magenta() << "[DEBUG AC3] Added to watchlist: " << std::endl;
-            csp.print_constraint(std::cout, inverted, instance, state);
-            std::cout << Utils:: normal();
-
-            watchlist.push_back(inverted);
+            //worklist.push_back(inverted);
         }
     }
 }
