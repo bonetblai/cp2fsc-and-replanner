@@ -465,7 +465,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         // find sensing models for given action that are incompatible with observations
         relevant_sensing_models_t relevant_sensing_models_as_k_dnf;
         if( last_action != 0 )
-            fill_relevant_sensing_models(lw1, last_action, sensed_at_step, relevant_sensing_models_as_k_dnf, false);
+            fill_relevant_sensing_models(lw1, last_action, sensed_at_step, relevant_sensing_models_as_k_dnf, true);
 
         // 0. Build basic CSP from state: CSP variables come from state variables and variable groups.
         // Domains are original domains with values pruned as indicated with the K-literals in state.
