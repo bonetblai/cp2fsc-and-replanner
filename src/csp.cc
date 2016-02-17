@@ -22,6 +22,8 @@ typedef std::vector<Inference::CSP::Variable *> V_VAR;
 typedef V_VAR::iterator V_VAR_I;
 typedef V_VAR::const_iterator V_VAR_CI;
 
+typedef std::pair<int,int> ARC_T;
+
 typedef std::map<int, int> MII;
 
 typedef std::map<int, std::vector<int>> MIVI;
@@ -191,19 +193,19 @@ void Inference::CSP::Csp::print(std::ostream& os, const Instance& instance,
     }
 }
 
-void Inference::CSP::Csp::print_constraint(std::ostream& os,
-                                           const Inference::CSP::Constraint& constraint,
-                                           const Instance& instance,
-                                           const LW1_State& state) const {
-    state.print_clause_or_term(os, constraint, &instance);
-    os << std::endl;
-    for (auto cn = constraint.cbegin(); cn != constraint.cend(); cn++) {
-        Variable* var = get_var(*cn);
-        var->print(os, instance, state);
-    }
-
-    os << "active? " << (constraint.is_active() ? "yes" : "no");
-}
+//void Inference::CSP::Csp::print_constraint(std::ostream& os,
+//                                           const std::vector<int>& constraint,
+//                                           const Instance& instance,
+//                                           const LW1_State& state) const {
+//    state.print_clause(os, constraint, &instance);
+//    os << std::endl;
+//    for (auto cn = constraint.cbegin(); cn != constraint.cend(); cn++) {
+//        Variable* var = get_var(*cn);
+//        var->print(os, instance, state);
+//    }
+//
+//    os << "active? " << (constraint.is_active() ? "yes" : "no");
+//}
 
 int Inference::CSP::get_h_atom(int l_atom) { return l_atom * 2 + 1; }
 
@@ -218,7 +220,7 @@ int Inference::CSP::get_l_atom(int h_atom) {
 
 void Inference::CSP::AC3::apply_unary_constraints(Csp& csp) const {
     csp.clean_domains();
-    std::vector<Constraint>& constraints_ = csp.get_constraints_();
+    std::vector<std::vector<int>>& constraints_ = csp.get_constraints_();
     V_VAR variables_ = csp.get_variables_();
 
     for (auto it = constraints_.begin(); it != constraints_.end(); it++) {
@@ -227,27 +229,24 @@ void Inference::CSP::AC3::apply_unary_constraints(Csp& csp) const {
             int index = csp.get_var_index(cl[0]);
             if (index != -1)
                 variables_[index]->apply_unary_constraint(cl[0]);
-            it->set_active(false);
+            //it->set_active(false);
         } 
     }
 }
 
-void Inference::CSP::AC3::prepare_constraints(Csp& csp,
-                                              const Instance& instance,
-                                              const LW1_State& state) {
-    std::vector<Constraint>& constraints = csp.get_constraints_();
+void Inference::CSP::AC3::initialize(Csp& csp,
+                                     const Instance& instance,
+                                     const LW1_State& state) {
+
+    std::vector<std::vector<int>>& constraints = csp.get_constraints_();
+    inv_clauses_ = std::map<int, std::vector<int>>();
+    worklist_ = std::vector<ARC_T>();
 
     // The list of constraints must be reduced discarding satisfied and
     // unnecessary variables.
     for (int i = 0; i < constraints.size(); i++) {
-        bool satisfied = false;
-
-        // We don't need the unary ones from this point on.
         if (constraints[i].size() == 1) continue;
-//            std::cout << "[AC3] Unary constraint removed." << std::endl;
-//            constraints.erase(constraints.begin() + i);
-//            continue;
-//        }
+        bool satisfied = false;
 
         // Every atom of the constraint (clause) must be evaluated.
         // If its domain is unary and if it satisfies the constraint, the whole
@@ -283,40 +282,35 @@ void Inference::CSP::AC3::prepare_constraints(Csp& csp,
 
         // A constraint can be already satisfied, in which case it's
         // useless for the CSP.
-//        if (satisfied) {
-//            std::cout << "[AC3] N-ary constraint removed." << std::endl;
-//            constraints.erase(constraints.begin() + i);
-//            continue;
-//        }
-        constraints[i].set_active(constraints[i].size() == 2 && !satisfied);
+        if (constraints[i].size() == 2 && ! satisfied) {
+            worklist_.emplace_back(constraints[i][0], constraints[i][1]);
+            worklist_.emplace_back(constraints[i][1], constraints[i][0]);
+        }
 
         // DEBUG
-        std::cout << Utils::magenta() << "[DEBUG AC3] Constraint after prepare: " << std::endl;
-        csp.print_constraint(std::cout, constraints[i], instance, state);
-        std::cout << Utils::normal() << std::endl;
+        //std::cout << Utils::magenta() << "[DEBUG AC3] Constraint after prepare: " << std::endl;
+        //csp.print_constraint(std::cout, constraints[i], instance, state);
+        //std::cout << Utils::normal() << std::endl;
     }
 }
 
 void Inference::CSP::AC3::apply_binary_constraints(Csp& csp,
                                                    const Instance& instance,
-                                                   const LW1_State& state) const {
-    std::vector<Constraint>& constraints = csp.get_constraints_();
-    std::vector<Constraint> watchlist;
-    fill_watchlist(constraints, watchlist, csp, instance, state);
-
-    while (! watchlist.empty()) {
-        Constraint constraint = watchlist.back();
-        watchlist.pop_back();
-        if (arc_reduce(csp, constraint, instance, state)) {
+                                                   const LW1_State& state) {
+    std::vector<std::vector<int>>& constraints = csp.get_constraints_();
+    
+    while (! worklist_.empty()) {
+        ARC_T arc = worklist_.back();
+        worklist_.pop_back();
+        if (arc_reduce(csp, arc, instance, state)) {
 
             std::cout << "[DEBUG] REDUCED" << std::endl;
-            int x = csp.get_var_index(constraint[0]);
-            int y = csp.get_var_index(constraint[1]);
+            int x = csp.get_var_index(arc.first);
+            int y = csp.get_var_index(arc.second);
 
-            assert(csp.get_var(constraint[0])->get_domain_size());
+            assert(csp.get_var(arc.first)->get_domain_size());
 
             std::vector<int> related = inv_clauses_.at(x);
-       
 
             // This can be improved by considering only variable X
             // since X is the only variable changed in this iteration.
@@ -347,18 +341,18 @@ void Inference::CSP::AC3::apply_binary_constraints(Csp& csp,
                     continue;
                 }
 
+                // Candidate arc
                 if (constraints[*it].size() == 2 && !satisfied) {
-                    int v1 = csp.get_var_index(constraints[*it][0]);
-                    int v2 = csp.get_var_index(constraints[*it][1]);
-                    if ((x == v1 && y != v2) || (x == v2 && y != v1)) {
+                    std::vector<int> zx(constraints[*it]);
+                    int v1 = csp.get_var_index(zx[0]);
+                    int v2 = csp.get_var_index(zx[1]);
 
-                        Constraint zx(constraints[*it]);
-                        std::iter_swap(zx.begin(), zx.begin() + 1);
-                        watchlist.push_back(zx);
-
-                        std::cout << "[DEBUG] Back into watchlist" << std::endl;
-                        csp.print_constraint(std::cout, constraints[*it], instance, state);
-                    }
+                    if (x == v2 && y != v1)
+                        worklist_.emplace_back(zx[0], zx[1]);
+                    else if (x == v1 && y != v2)
+                        worklist_.emplace_back(zx[1], zx[0]);
+                    //std::cout << "[DEBUG] Back into worklist_" << std::endl;
+                    //csp.print_constraint(std::cout, constraints[*it], instance, state);
                 }
             }
         }
@@ -366,17 +360,17 @@ void Inference::CSP::AC3::apply_binary_constraints(Csp& csp,
 }
 
 bool Inference::CSP::AC3::arc_reduce(Csp& csp,
-                                     const Constraint& constraint,
+                                     const std::pair<int,int>& arc,
                                      const Instance& instance,
                                      const LW1_State& state) const {
-    Variable* x = csp.get_var(constraint[0]);
-    Variable* y = csp.get_var(constraint[1]);
+    Variable* x = csp.get_var(arc.first);
+    Variable* y = csp.get_var(arc.second);
 
     bool change = false; // An element has been erase from dx ?
     for (SI_I vx = x->get_current_begin(); vx != x->get_current_end();) {
-        // If constraint is already satisfied (this check should be unnecessary)
+        // If arc is already satisfied (this check should be unnecessary)
         int xval = *vx;
-        if (x->evaluate(xval, constraint[0])) {
+        if (x->evaluate(xval, arc.first)) {
             vx++;
             continue;
         }
@@ -384,7 +378,7 @@ bool Inference::CSP::AC3::arc_reduce(Csp& csp,
         for (SI_I vy = y->get_current_begin();
              vy != y->get_current_end(); vy++) {
             int yval = *vy;
-            if (y->evaluate(yval, constraint[1])) {
+            if (y->evaluate(yval, arc.second)) {
                 found = true;
                 break;
             }
@@ -402,7 +396,7 @@ bool Inference::CSP::AC3::arc_reduce(Csp& csp,
 
 void Inference::CSP::AC3::solve(Csp &csp, LW1_State &state,
                                 const Instance &instance) {
-    prepare_constraints(csp, instance, state);
+    initialize(csp, instance, state);
     apply_unary_constraints(csp);
     apply_binary_constraints(csp, instance, state);
     csp.dump_into(state, instance);
@@ -412,7 +406,7 @@ void Inference::CSP::AC3::print(std::ostream& os, const Instance& instance,
                                 Csp& csp, const LW1_State& state) const {
     os << "[AC3] Inverted index table" << std::endl;
     V_VAR variables = csp.get_variables_();
-    std::vector<Constraint>& constraints = csp.get_constraints_();
+    std::vector<std::vector<int>>& constraints = csp.get_constraints_();
 
     for (MIVI_CI it = inv_clauses_.cbegin();
          it != inv_clauses_.cend(); it++) {
@@ -427,32 +421,3 @@ void Inference::CSP::AC3::print(std::ostream& os, const Instance& instance,
     }
     os << "END OF AC3" << std::endl;
 }
-
-void Inference::CSP::AC3::fill_watchlist(
-        const std::vector<Constraint>& constraints,
-        std::vector<Constraint>& watchlist, const Csp& csp,
-        const Instance& instance, const LW1_State& state) const {
-
-    for (std::vector<Constraint>::const_iterator ci = constraints.cbegin();
-         ci != constraints.cend(); ci++) {
-        Constraint constraint = *ci;
-        if (constraint.is_active()) {
-            std::cout << Utils:: magenta() << "[DEBUG AC3] Added to watchlist: " << std::endl;
-            csp.print_constraint(std::cout, constraint, instance, state);
-            std::cout << Utils:: normal();
-            watchlist.push_back(constraint);
-
-            // If (x,y) is being added, (y,x) needs to be added as well.
-            Constraint inverted(constraint);
-            std::iter_swap(inverted.begin(), inverted.begin() + 1);
-
-            std::cout << Utils:: magenta() << "[DEBUG AC3] Added to watchlist: " << std::endl;
-            csp.print_constraint(std::cout, inverted, instance, state);
-            std::cout << Utils:: normal();
-
-            watchlist.push_back(inverted);
-        }
-    }
-}
-
-

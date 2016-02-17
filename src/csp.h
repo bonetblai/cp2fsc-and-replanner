@@ -107,21 +107,6 @@ namespace Inference {
         };
 
         /**
-          *  Constraint Class
-          */
-        class Constraint : public std::vector<int> {
-          private:
-            bool active_;
-          public:
-            Constraint() : active_(false) { };
-            Constraint(const VI& cl) : VI(cl.cbegin(), cl.cend()),
-                                       active_(false) { };
-
-            bool is_active() const { return active_; }
-            void set_active(bool b) { active_ = b; }
-        };
-
-        /**
           * Csp class (Constraint Satisfaction Problem)
           */
         class Csp {
@@ -129,7 +114,7 @@ namespace Inference {
             // State Variables
             static std::vector<Inference::CSP::Variable *> variables_;
             // Constraints of problem
-            std::vector<Inference::CSP::Constraint> constraints_;
+            std::vector<std::vector<int>> constraints_;
             // Map for finding var_index of l_atom
             static std::map<int, int> atoms_to_var_map_;
           public:
@@ -137,7 +122,7 @@ namespace Inference {
                     const std::vector<LW1_Instance::Variable *> &vars,
                     const std::map<int, int> map);
 
-            std::vector<Constraint>& get_constraints_()  {
+            std::vector<std::vector<int>>& get_constraints_()  {
                 return constraints_;
             }
 
@@ -172,10 +157,10 @@ namespace Inference {
             void print(std::ostream& os, const Instance& instance,
                        const LW1_State& state) const; // Print CSP
 
-            void print_constraint(std::ostream& os,
-                                  const Constraint& constraint,
-                                  const Instance& instance,
-                                  const LW1_State& state) const;
+            //void print_constraint(std::ostream& os,
+            //                      const Constraint& constraint,
+            //                      const Instance& instance,
+            //                      const LW1_State& state) const;
         };
 
 
@@ -187,6 +172,7 @@ namespace Inference {
             // map that associates variables indexes with clauses
             // that involve related atoms
             std::map<int, std::vector<int>> inv_clauses_;
+            std::vector<std::pair<int,int>> worklist_;
 
             // Reduce domains by applying constraints
             // CSP has to be consistent
@@ -194,18 +180,14 @@ namespace Inference {
             // Apply unary constrains
             void apply_binary_constraints(Csp& csp,
                                           const Instance& instance,
-                                          const LW1_State& state) const;
+                                          const LW1_State& state);
 
-            void prepare_constraints(Csp& csp,
-                                                 const Instance& instance,
-                                                 const LW1_State& state);
+            void initialize(Csp& csp,
+                            const Instance& instance,
+                            const LW1_State& state);
 
-            void fill_watchlist(
-                    const std::vector<Constraint>& constraints_,
-                    std::vector<Constraint>& watchlist, const Csp& csp,
-                    const Instance& instance, const LW1_State& state) const;
-
-            bool arc_reduce(Csp& csp, const Constraint& constraint,
+            bool arc_reduce(Csp& csp, 
+                            const std::pair<int,int>& arc,
                             const Instance& instance,
                             const LW1_State& state) const;
 
