@@ -229,27 +229,24 @@ void Inference::CSP::AC3::apply_unary_constraints(Csp& csp) const {
             int index = csp.get_var_index(cl[0]);
             if (index != -1)
                 variables_[index]->apply_unary_constraint(cl[0]);
-            it->set_active(false);
+            //it->set_active(false);
         } 
     }
 }
 
-void Inference::CSP::AC3::prepare_constraints(Csp& csp,
-                                              const Instance& instance,
-                                              const LW1_State& state) {
+void Inference::CSP::AC3::initialize(Csp& csp,
+                                     const Instance& instance,
+                                     const LW1_State& state) {
+
     std::vector<Constraint>& constraints = csp.get_constraints_();
+    inv_clauses_ = std::map<int, std::vector<int>>();
+    worklist = std::vector<ARC_T>();
 
     // The list of constraints must be reduced discarding satisfied and
     // unnecessary variables.
     for (int i = 0; i < constraints.size(); i++) {
-        bool satisfied = false;
-
-        // We don't need the unary ones from this point on.
         if (constraints[i].size() == 1) continue;
-//            std::cout << "[AC3] Unary constraint removed." << std::endl;
-//            constraints.erase(constraints.begin() + i);
-//            continue;
-//        }
+        bool satisfied = false;
 
         // Every atom of the constraint (clause) must be evaluated.
         // If its domain is unary and if it satisfies the constraint, the whole
@@ -285,27 +282,23 @@ void Inference::CSP::AC3::prepare_constraints(Csp& csp,
 
         // A constraint can be already satisfied, in which case it's
         // useless for the CSP.
-//        if (satisfied) {
-//            std::cout << "[AC3] N-ary constraint removed." << std::endl;
-//            constraints.erase(constraints.begin() + i);
-//            continue;
-//        }
-        constraints[i].set_active(constraints[i].size() == 2 && !satisfied);
+        if (constraints[i].size() == 2 && ! satisfied) {
+            worklist.emplace_back(constraints[i][0], constraints[i][1]);
+            worklist.emplace_back(constraints[i][1], constraints[i][0]);
+        }
 
         // DEBUG
-        std::cout << Utils::magenta() << "[DEBUG AC3] Constraint after prepare: " << std::endl;
-        csp.print_constraint(std::cout, constraints[i], instance, state);
-        std::cout << Utils::normal() << std::endl;
+        //std::cout << Utils::magenta() << "[DEBUG AC3] Constraint after prepare: " << std::endl;
+        //csp.print_constraint(std::cout, constraints[i], instance, state);
+        //std::cout << Utils::normal() << std::endl;
     }
 }
 
 void Inference::CSP::AC3::apply_binary_constraints(Csp& csp,
                                                    const Instance& instance,
-                                                   const LW1_State& state) const {
+                                                   const LW1_State& state) {
     std::vector<Constraint>& constraints = csp.get_constraints_();
-    std::vector<ARC_T> worklist;
-    fill_worklist(constraints, worklist, csp, instance, state);
-
+    
     while (! worklist.empty()) {
         ARC_T arc = worklist.back();
         worklist.pop_back();
@@ -318,7 +311,6 @@ void Inference::CSP::AC3::apply_binary_constraints(Csp& csp,
             assert(csp.get_var(arc.first)->get_domain_size());
 
             std::vector<int> related = inv_clauses_.at(x);
-       
 
             // This can be improved by considering only variable X
             // since X is the only variable changed in this iteration.
@@ -356,9 +348,9 @@ void Inference::CSP::AC3::apply_binary_constraints(Csp& csp,
                     int v2 = csp.get_var_index(zx[1]);
 
                     if (x == v2 && y != v1)
-                        worklist.push_back(ARC_T(zx[0], zx[1]));
+                        worklist.emplace_back(zx[0], zx[1]);
                     else if (x == v1 && y != v2)
-                        worklist.push_back(ARC_T(zx[1], zx[0]));
+                        worklist.emplace_back(zx[1], zx[0]);
                     //std::cout << "[DEBUG] Back into worklist" << std::endl;
                     //csp.print_constraint(std::cout, constraints[*it], instance, state);
                 }
@@ -404,7 +396,7 @@ bool Inference::CSP::AC3::arc_reduce(Csp& csp,
 
 void Inference::CSP::AC3::solve(Csp &csp, LW1_State &state,
                                 const Instance &instance) {
-    prepare_constraints(csp, instance, state);
+    initialize(csp, instance, state);
     apply_unary_constraints(csp);
     apply_binary_constraints(csp, instance, state);
     csp.dump_into(state, instance);
@@ -429,30 +421,3 @@ void Inference::CSP::AC3::print(std::ostream& os, const Instance& instance,
     }
     os << "END OF AC3" << std::endl;
 }
-
-void Inference::CSP::AC3::fill_worklist(
-        const std::vector<Constraint>& constraints,
-        std::vector<ARC_T>& worklist, const Csp& csp,
-        const Instance& instance, const LW1_State& state) const {
-
-    for (std::vector<Constraint>::const_iterator ci = constraints.cbegin();
-         ci != constraints.cend(); ci++) {
-        Constraint constraint = *ci;
-        if (constraint.is_active()) {
-            std::cout << Utils:: magenta() << "[DEBUG AC3] Added to worklist: " << std::endl;
-            //csp.print_constraint(std::cout, constraint, instance, state);
-            std::cout << Utils::normal();
-            worklist.push_back(ARC_T(constraint[0], constraint[1]));
-            worklist.push_back(ARC_T(constraint[1], constraint[0]));
-
-            // If (x,y) is being added, (y,x) needs to be added as well.
-            //std::cout << Utils:: magenta() << "[DEBUG AC3] Added to worklist: " << std::endl;
-            //csp.print_constraint(std::cout, inverted, instance, state);
-            //std::cout << Utils:: normal();
-
-            //worklist.push_back(inverted);
-        }
-    }
-}
-
-

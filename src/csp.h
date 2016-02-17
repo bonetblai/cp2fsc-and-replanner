@@ -187,6 +187,7 @@ namespace Inference {
             // map that associates variables indexes with clauses
             // that involve related atoms
             std::map<int, std::vector<int>> inv_clauses_;
+            std::vector<std::pair<int,int>> worklist;
 
             // Reduce domains by applying constraints
             // CSP has to be consistent
@@ -194,17 +195,11 @@ namespace Inference {
             // Apply unary constrains
             void apply_binary_constraints(Csp& csp,
                                           const Instance& instance,
-                                          const LW1_State& state) const;
+                                          const LW1_State& state);
 
-            void prepare_constraints(Csp& csp,
-                                                 const Instance& instance,
-                                                 const LW1_State& state);
-
-            void fill_worklist(
-                    const std::vector<Constraint>& constraints_,
-                    std::vector<std::pair<int,int>>& worklist, 
-                    const Csp& csp,
-                    const Instance& instance, const LW1_State& state) const;
+            void initialize(Csp& csp,
+                            const Instance& instance,
+                            const LW1_State& state);
 
             bool arc_reduce(Csp& csp, 
                             const std::pair<int,int>& arc,
