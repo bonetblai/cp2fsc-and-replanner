@@ -307,7 +307,7 @@ void Inference::CSP::AC3::apply_binary_constraints(Csp& csp,
     while (! watchlist.empty()) {
         Constraint constraint = watchlist.back();
         watchlist.pop_back();
-        if (arc_reduce(csp, constraint, instance, state)) {
+        if (arc_reduce(csp, std::make_pair(constraint[0], constraint[1]), instance, state)) {
 
             std::cout << "[DEBUG] REDUCED" << std::endl;
             int x = csp.get_var_index(constraint[0]);
@@ -366,17 +366,17 @@ void Inference::CSP::AC3::apply_binary_constraints(Csp& csp,
 }
 
 bool Inference::CSP::AC3::arc_reduce(Csp& csp,
-                                     const Constraint& constraint,
+                                     const std::pair<int,int>& arc,
                                      const Instance& instance,
                                      const LW1_State& state) const {
-    Variable* x = csp.get_var(constraint[0]);
-    Variable* y = csp.get_var(constraint[1]);
+    Variable* x = csp.get_var(arc.first);
+    Variable* y = csp.get_var(arc.second);
 
     bool change = false; // An element has been erase from dx ?
     for (SI_I vx = x->get_current_begin(); vx != x->get_current_end();) {
-        // If constraint is already satisfied (this check should be unnecessary)
+        // If arc is already satisfied (this check should be unnecessary)
         int xval = *vx;
-        if (x->evaluate(xval, constraint[0])) {
+        if (x->evaluate(xval, arc.first)) {
             vx++;
             continue;
         }
@@ -384,7 +384,7 @@ bool Inference::CSP::AC3::arc_reduce(Csp& csp,
         for (SI_I vy = y->get_current_begin();
              vy != y->get_current_end(); vy++) {
             int yval = *vy;
-            if (y->evaluate(yval, constraint[1])) {
+            if (y->evaluate(yval, arc.second)) {
                 found = true;
                 break;
             }

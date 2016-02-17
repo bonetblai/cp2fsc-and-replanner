@@ -205,7 +205,8 @@ namespace Inference {
                     std::vector<Constraint>& watchlist, const Csp& csp,
                     const Instance& instance, const LW1_State& state) const;
 
-            bool arc_reduce(Csp& csp, const Constraint& constraint,
+            bool arc_reduce(Csp& csp, 
+                            const std::pair<int,int>& arc,
                             const Instance& instance,
                             const LW1_State& state) const;
 
