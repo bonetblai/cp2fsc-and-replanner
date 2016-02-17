@@ -187,7 +187,7 @@ namespace Inference {
             // map that associates variables indexes with clauses
             // that involve related atoms
             std::map<int, std::vector<int>> inv_clauses_;
-            std::vector<std::pair<int,int>> worklist;
+            std::vector<std::pair<int,int>> worklist_;
 
             // Reduce domains by applying constraints
             // CSP has to be consistent

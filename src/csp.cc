@@ -240,7 +240,7 @@ void Inference::CSP::AC3::initialize(Csp& csp,
 
     std::vector<Constraint>& constraints = csp.get_constraints_();
     inv_clauses_ = std::map<int, std::vector<int>>();
-    worklist = std::vector<ARC_T>();
+    worklist_ = std::vector<ARC_T>();
 
     // The list of constraints must be reduced discarding satisfied and
     // unnecessary variables.
@@ -283,8 +283,8 @@ void Inference::CSP::AC3::initialize(Csp& csp,
         // A constraint can be already satisfied, in which case it's
         // useless for the CSP.
         if (constraints[i].size() == 2 && ! satisfied) {
-            worklist.emplace_back(constraints[i][0], constraints[i][1]);
-            worklist.emplace_back(constraints[i][1], constraints[i][0]);
+            worklist_.emplace_back(constraints[i][0], constraints[i][1]);
+            worklist_.emplace_back(constraints[i][1], constraints[i][0]);
         }
 
         // DEBUG
@@ -299,9 +299,9 @@ void Inference::CSP::AC3::apply_binary_constraints(Csp& csp,
                                                    const LW1_State& state) {
     std::vector<Constraint>& constraints = csp.get_constraints_();
     
-    while (! worklist.empty()) {
-        ARC_T arc = worklist.back();
-        worklist.pop_back();
+    while (! worklist_.empty()) {
+        ARC_T arc = worklist_.back();
+        worklist_.pop_back();
         if (arc_reduce(csp, arc, instance, state)) {
 
             std::cout << "[DEBUG] REDUCED" << std::endl;
@@ -348,10 +348,10 @@ void Inference::CSP::AC3::apply_binary_constraints(Csp& csp,
                     int v2 = csp.get_var_index(zx[1]);
 
                     if (x == v2 && y != v1)
-                        worklist.emplace_back(zx[0], zx[1]);
+                        worklist_.emplace_back(zx[0], zx[1]);
                     else if (x == v1 && y != v2)
-                        worklist.emplace_back(zx[1], zx[0]);
-                    //std::cout << "[DEBUG] Back into worklist" << std::endl;
+                        worklist_.emplace_back(zx[1], zx[0]);
+                    //std::cout << "[DEBUG] Back into worklist_" << std::endl;
                     //csp.print_constraint(std::cout, constraints[*it], instance, state);
                 }
             }
