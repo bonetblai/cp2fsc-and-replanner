@@ -183,7 +183,7 @@ void Inference::CSP::Csp::print(std::ostream& os, const Instance& instance,
     for (auto it = constraints_.cbegin(); it != constraints_.cend(); it++) {
 
         const std::vector<int> &cl = *it;
-        state.print_clause(os, cl, &instance);
+        state.print_clause_or_term(os, cl, &instance);
         for (VI_CI it2 = cl.cbegin(); it2 != cl.cend(); it2++) {
             os << *it2 << ", ";
         }
@@ -195,7 +195,7 @@ void Inference::CSP::Csp::print_constraint(std::ostream& os,
                                            const Inference::CSP::Constraint& constraint,
                                            const Instance& instance,
                                            const LW1_State& state) const {
-    state.print_clause(os, constraint, &instance);
+    state.print_clause_or_term(os, constraint, &instance);
     os << std::endl;
     for (auto cn = constraint.cbegin(); cn != constraint.cend(); cn++) {
         Variable* var = get_var(*cn);
@@ -421,7 +421,7 @@ void Inference::CSP::AC3::print(std::ostream& os, const Instance& instance,
         os << "[AC3] Related constraints: " << std::endl;
         VI constraint = it->second;
         for (VI_CI vit = constraint.cbegin(); vit != constraint.cend(); vit++) {
-            state.print_clause(os, constraints[*vit], &instance);
+            state.print_clause_or_term(os, constraints[*vit], &instance);
             os << std::endl;
         }
     }

@@ -156,6 +156,7 @@ int main(int argc, const char *argv[]) {
     if( !g_options.is_disabled("kp:merge-drules") )
         g_options.enable("kp:merge-drules");
 
+    // either lw1:aaai or lw1:strict: one of them but not both
     if( g_options.is_enabled("lw1:aaai") ) {
         g_options.disable("lw1:strict");
     }
@@ -167,6 +168,12 @@ int main(int argc, const char *argv[]) {
         exit(-1);
     }
 
+    // set default inference algorithm is none is active so far
+    if( !g_options.is_enabled("lw1:inference:forward-chaining") && !g_options.is_enabled("lw1:inference:up") && !g_options.is_enabled("lw1:inference:ac3") ) {
+        g_options.enable("lw1:inference:forward-chaining"); // CHECK: default should be UP
+    }
+
+    // in each case, enable default options
     if( g_options.is_enabled("lw1:aaai") ) {
         assert(!g_options.is_enabled("lw1:strict"));
         g_options.disable("lw1:boost:enable-post-actions");
@@ -176,26 +183,18 @@ int main(int argc, const char *argv[]) {
         g_options.disable("lw1:boost:literals-for-observables:dynamic");
     } else {
         assert(g_options.is_enabled("lw1:strict"));
-
-        if ( g_options.is_enabled("lw1:inference:arc-consistency") ) {
-            if( g_options.is_enabled("lw1:inference:up") ) {
-                cout << Utils::error() << "only one method of inference is allowed" << endl;
-                exit(-1);
-            }
-            if( !g_options.is_disabled("lw1:boost:enable-post-actions") ) g_options.enable("lw1:boost:enable-post-actions");
-        } else {
-            if( !g_options.is_disabled("lw1:inference:up") ) g_options.enable("lw1:inference:up");
-            if( !g_options.is_disabled("lw1:inference:watched-literals") ) g_options.enable("lw1:inference:watched-literals");
-            if( !g_options.is_disabled("lw1:boost:enable-post-actions") ) g_options.enable("lw1:boost:enable-post-actions");
-        }
+        if( !g_options.is_disabled("lw1:inference:up") && !g_options.is_enabled("lw1:inference:forward-chaining") && !g_options.is_enabled("lw1:inference:ac3") )
+            g_options.enable("lw1:inference:up");
+        if( g_options.is_enabled("lw1:inference:up") && !g_options.is_disabled("lw1:inference:watched-literals") )
+            g_options.enable("lw1:inference:watched-literals");
+        if( !g_options.is_disabled("lw1:boost:enable-post-actions") )
+            g_options.enable("lw1:boost:enable-post-actions");
     }
 
+    // set other options
     if( g_options.is_enabled("lw1:boost:drule:sensing:type4:add") ) {
         g_options.enable("lw1:boost:drule:sensing:type4");
     }
-
-
-
 
     if( g_options.is_enabled("lw1:boost:literals-for-observables:dynamic") ) {
         g_options.enable("lw1:boost:literals-for-observables");
@@ -215,12 +214,6 @@ int main(int argc, const char *argv[]) {
         g_options.enable("lw1:inference:up");
     }
 
-    if( !g_options.is_enabled("lw1:inference:forward-chaining") &&
-        !g_options.is_enabled("lw1:inference:up") &&
-        !g_options.is_enabled("lw1:inference:arc-consistency") ) {
-        g_options.enable("lw1:inference:forward-chaining"); // CHECK: default should be UP
-    }
-
     // print enabled options
     cout << "enabled options: " << g_options << endl;
 
@@ -237,10 +230,12 @@ int main(int argc, const char *argv[]) {
 
     // perform necessary translations
     const PDDL_Base::variable_vec *variables = 0;
+    const PDDL_Base::variable_group_vec *variable_groups = 0;
     const list<pair<const PDDL_Base::Action*, const PDDL_Base::Sensing*> > *sensing_models = 0;
     const map<string, set<string> > *accepted_literals_for_observables = 0;
-    reader->do_lw1_translation(variables, sensing_models, accepted_literals_for_observables);
+    reader->do_lw1_translation(variables, variable_groups, sensing_models, accepted_literals_for_observables);
     assert(variables != 0);
+    assert(variable_groups != 0);
     assert(sensing_models != 0);
 
     if( g_options.is_enabled("parser:print:translated") ) {
@@ -278,7 +273,7 @@ int main(int argc, const char *argv[]) {
     //instance.do_action_compilation(*variables);
 
     cout << "creating KP translation..." << endl;
-    LW1_Instance *kp_instance = new LW1_Instance(instance, *variables, *sensing_models, *accepted_literals_for_observables);
+    KP_Instance *kp_instance = new LW1_Instance(instance, *variables, *variable_groups, *sensing_models, *accepted_literals_for_observables);
 
     if( g_options.is_enabled("kp:print:raw") ) {
         kp_instance->print(cout);
@@ -315,7 +310,7 @@ int main(int argc, const char *argv[]) {
     for( int k = 0; k < instance.num_hidden_states(); ++k ) {
         float instance_start_time = Utils::read_time_in_seconds();
         vector<set<int> > fired_sensors, sensed_literals;
-        STATE_CLASS hidden_initial_state; // STATE_CLASS is defined in lw1_solver.h (this is provisional)
+        STATE_CLASS hidden_initial_state; // CHECK: STATE_CLASS is defined in lw1_solver.h (this is provisional)
         Instance::Plan plan;
 
         // set hidden state
@@ -332,16 +327,14 @@ int main(int argc, const char *argv[]) {
         LW1_Solver solver(instance, *kp_instance, *planner, opt_time_bound, opt_ncalls_bound);
         if( g_options.is_enabled("lw1:inference:preload") ) {
             solver.initialize(*kp_instance);
-            if (g_options.is_enabled("lw1:inference:watched-literals")) {
-                Inference::Propositional::WatchedLiterals wl;
-                wl.initialize_axioms(solver.getCNF());
-            }
+            Inference::Propositional::WatchedLiterals wl;
+            wl.initialize_axioms(solver.getCNF());
         }
 
-        if (g_options.is_enabled("lw1:inference:arc-consistency")) {
+       if (g_options.is_enabled("lw1:inference:ac3")) {
             solver.fill_atoms_to_var_map(*kp_instance);
             Inference::CSP::Csp csp;
-            csp.initialize(kp_instance->variables_, solver.atoms_to_vars_);
+            csp.initialize(((LW1_Instance*)kp_instance)->variables_, solver.atoms_to_vars_);
         }
 
         // solve
@@ -454,3 +447,4 @@ int main(int argc, const char *argv[]) {
     delete planner;
     return 0;
 }
+

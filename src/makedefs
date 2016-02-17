@@ -12,7 +12,7 @@ LINK   = clang++
 # ftp://ftp.th-darmstadt.de/pub/programming/languages/C++/tools/flex++bison++/
 
 BISON   = bison++
-FLEX    = flex++
+FLEX    = /usr/local/bin/flex++
 #BISON   = /home/bonet/software/bison++-1.21-8/bison++
 #FLEX    = /home/bonet/software/flex++-2.3.8-7/flex++
 
@@ -27,8 +27,9 @@ DEBUG = -g
 OPTIMIZE = #-O3 -DNDEBUG
 
 CFLAGS = $(DEBUG) $(OPTIMIZE) -I. -Wall -std=c++11
-LFLAGS = $(DEBUG) $(OPTIMIZE) -L. -Wall
+LFLAGS = $(DEBUG) $(OPTIMIZE) -L. -Wall -std=c++11
 
 # Libraries to be linked.
 # The malloc lib may be needed
 LLIBS  = # -lmalloc
+

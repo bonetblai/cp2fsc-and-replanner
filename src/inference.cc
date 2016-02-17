@@ -276,7 +276,7 @@ void Inference::Propositional::CSP::print(ostream &os,
     os << "Constraints: ";
     for (cl_t::const_iterator it = constraints_.cbegin(); it != constraints_.cend(); it++) {
         Clause cl = *it;
-        state->print_clause(os, cl, instance);
+        state->print_clause_or_term(os, cl, instance);
     }
     os << Utils::normal() << endl;
 }

@@ -126,8 +126,8 @@ void PDDL_Base::insert_atom(ptr_table &t, Atom *a) {
 }
 
 PDDL_Base::PredicateSymbol* PDDL_Base::find_type_predicate(Symbol *type_sym) {
-    for (size_t k = 0; k < dom_predicates_.size(); ++k) {
-        if (dom_predicates_[k]->print_name_ == type_sym->print_name_)
+    for( size_t k = 0; k < dom_predicates_.size(); ++k ) {
+        if( dom_predicates_[k]->print_name_ == type_sym->print_name_ )
             return dom_predicates_[k];
     }
     cout << Utils::error() << "no type predicate found for type " << type_sym->print_name_ << endl;
@@ -585,7 +585,7 @@ void PDDL_Base::declare_lw1_translation() {
 // atoms_for_state_variables_.
 void PDDL_Base::lw1_calculate_atoms_for_state_variables() {
     atoms_for_state_variables_.clear();
-    for( size_t k = 0; k < lw1_variables_.size(); ++k ) {
+    for( int k = 0; k < int(lw1_variables_.size()); ++k ) {
         const Variable &var = *lw1_variables_[k];
         if( var.is_state_variable() ) {
             atoms_for_state_variables_.insert(var.grounded_domain_.begin(), var.grounded_domain_.end());
@@ -597,6 +597,37 @@ void PDDL_Base::lw1_calculate_atoms_for_state_variables() {
         for( unsigned_atom_set::iterator it = atoms_for_state_variables_.begin(); it != atoms_for_state_variables_.end(); ++it )
             cout << " " << *it;
         cout << endl;
+    }
+}
+
+void PDDL_Base::lw1_calculate_atoms_for_variable_groups() {
+    atoms_for_variable_groups_.clear();
+    for( int k = 0; k < int(lw1_variable_groups_.size()); ++k ) {
+        VariableGroup &group = *lw1_variable_groups_[k];
+        int dsize = 1;
+        for( int j = 0; j < int(group.grounded_group_.size()); ++j ) {
+            const StateVariable &var = *group.grounded_group_[j];
+            dsize *= var.is_binary() ? 2 : var.grounded_domain_.size();
+        }
+
+#ifdef DEBUG
+        cout << Utils::magenta() << "variable group '" << group.print_name_ << "':" << Utils::normal() << endl
+             << "  values[dsize=" << dsize << "]:" << flush;
+#endif
+
+        for( int j = 0; j < dsize; ++j ) {
+            string name = string("vg_") + to_string(k) + "_" + to_string(j);
+            Atom *new_atom = create_atom(name);
+            group.grounded_domain_.insert(*new_atom);
+            atoms_for_variable_groups_.insert(*new_atom);
+#ifdef DEBUG
+            cout << " " << *new_atom;
+#endif
+            delete new_atom;
+        }
+#ifdef DEBUG
+        cout << endl;
+#endif
     }
 }
 
@@ -612,8 +643,9 @@ void PDDL_Base::lw1_calculate_beams_for_grounded_observable_variables() {
                     cout << Utils::magenta()
                          << "beam for value '" << *it << "' of var '" << var.print_name_ << "' ('*' means static):"
                          << Utils::normal();
-                    assert(var.beam_.find(*it) != var.beam_.end());
-                    const unsigned_atom_set &beam = var.beam_.find(*it)->second;
+                    //assert(var.beam_.find(*it) != var.beam_.end()); // CHECK
+                    //const unsigned_atom_set &beam = var.beam_.find(*it)->second; // CHECK
+                    const unsigned_atom_set &beam = var.beam_.at(*it);
                     for( unsigned_atom_set::const_iterator jt = beam.begin(); jt != beam.end(); ++jt )
                         cout << " " << *jt << (is_static_atom(*jt) ? "*" : "");
                     cout << endl;
@@ -624,8 +656,8 @@ void PDDL_Base::lw1_calculate_beams_for_grounded_observable_variables() {
             for( unsigned_atom_set::const_iterator it = var.grounded_domain_.begin(); it != var.grounded_domain_.end(); ++it ) {
                 unsigned_atom_set reduced_beam;
                 if( var.beam_.find(*it) == var.beam_.end() ) continue;
-                assert(var.beam_.find(*it) != var.beam_.end());
-                const unsigned_atom_set &beam = var.beam_.find(*it)->second;
+                //const unsigned_atom_set &beam = var.beam_.find(*it)->second; // CHECK
+                const unsigned_atom_set &beam = var.beam_.at(*it);
                 for( unsigned_atom_set::const_iterator jt = beam.begin(); jt != beam.end(); ++jt ) {
                     if( !is_static_atom(*jt) ) reduced_beam.insert(*jt);
                 }
@@ -643,7 +675,7 @@ void PDDL_Base::lw1_calculate_beam_for_grounded_variable(Variable &var) {
             var.beam_[*it].insert(*it);
     } else {
         // fill up beams for values of variable
-        for( size_t k = 0; k < dom_actions_.size(); ++k ) {
+        for( int k = 0; k < int(dom_actions_.size()); ++k ) {
             const Action &action = *dom_actions_[k];
             if( action.sensing_ != 0 ) 
                 action.sensing_->extend_beam_for_variable(var);
@@ -655,6 +687,42 @@ void PDDL_Base::lw1_calculate_beam_for_grounded_variable(Variable &var) {
                 var.grounded_domain_.erase(*it++);
             else
                 ++it;
+        }
+
+        // calculate variable group where to filter this observable literal
+        for( unsigned_atom_set::const_iterator it = var.grounded_domain_.begin(); it != var.grounded_domain_.end(); ++it ) {
+            //std::map<Atom, unsigned_atom_set, Atom::unsigned_less_comparator>::const_iterator jt = var.beam_.find(*it); // CHECK
+            //assert(jt != var.beam_.end()); // CHECK
+            //const unsigned_atom_set &beam = jt->second; // CHECK
+            const unsigned_atom_set &beam = var.beam_.at(*it);
+
+            VariableGroup *best_group = 0;
+            for( int k = 0; k < int(lw1_variable_groups_.size()); ++k ) {
+                VariableGroup &group = *lw1_variable_groups_[k];
+                bool good = true;
+                for( unsigned_atom_set::const_iterator kt = beam.begin(); good && (kt != beam.end()); ++kt ) {
+                    bool found_in_group = false;
+                    for( int j = 0; j < int(lw1_variables_.size()); ++j ) {
+                        const Variable &v = *lw1_variables_[j];
+                        if( v.is_state_variable() && (v.grounded_domain_.find(*kt) != v.grounded_domain_.end()) ) {
+                            if( group.grounded_group_str_.find(v.print_name_) != group.grounded_group_str_.end() ) {
+                                found_in_group = true;
+                                break;;
+                            }
+                        }
+                    }
+                    good = good && found_in_group;
+                }
+                if( good && ((best_group == 0) || (group.grounded_group_.size() < best_group->grounded_group_.size())) )
+                    best_group = &group;
+            }
+
+            if( best_group != 0 ) {
+#ifdef DEBUG
+                cout << "observation '" << *it << "' for " << var << " will be filtered in group " << best_group->print_name_ << endl;
+#endif
+                best_group->filtered_observations_.push_back(make_pair(&var, &*it));
+            }
         }
     }
 }
@@ -1002,7 +1070,7 @@ void PDDL_Base::lw1_translate_actions_strict() {
         lw1_complete_effect_for_actions();
 }
 
-void PDDL_Base::lw1_translate_strict(Action &action) {
+void PDDL_Base::lw1_translate_strict(Action &action) { // CHECK: replace this by NEW below
     assert(options_.is_enabled("lw1:strict"));
     assert(action.param_.empty()); // action must be instantiated
     assert(0); // CHECK
@@ -1476,8 +1544,9 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
                 const StateVariable &state_variable = *static_cast<const StateVariable*>(&variable);
                 const unsigned_atom_set &domain = state_variable.grounded_domain_;
 
-                assert(lw1_actions_for_observable_state_variables_.find(&state_variable) != lw1_actions_for_observable_state_variables_.end());
-                const vector<const Action*> &actions = lw1_actions_for_observable_state_variables_.find(&state_variable)->second;
+                //assert(lw1_actions_for_observable_state_variables_.find(&state_variable) != lw1_actions_for_observable_state_variables_.end()); // CHECK
+                //const vector<const Action*> &actions = lw1_actions_for_observable_state_variables_.find(&state_variable)->second; // CHECK
+                const vector<const Action*> &actions = lw1_actions_for_observable_state_variables_.at(&state_variable);
 
                 if( !options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
                     // generate type4 drules for each value and action
@@ -1805,7 +1874,7 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action,
     }
 
     assert(variable.beam_.find(value) != variable.beam_.end());
-    assert(!value.negated_ || variable.is_binary()); // || options_.is_enabled("lw1:boost:literals-for-observables"));
+    assert(!value.negated_ || variable.is_binary()); // || options_.is_enabled("lw1:boost:literals-for-observables")); // CHECK
 
     // find out whether something needs to be done
     if( options_.is_enabled("lw1:boost:drule:sensing:type4") ) {
@@ -1900,7 +1969,7 @@ void PDDL_Base::lw1_create_type4_boost_sensing_drule(const Action &action,
     }
 
     assert(variable.beam_.find(value) != variable.beam_.end());
-    assert(!value.negated_ || variable.is_binary()); // || options_.is_enabled("lw1:boost:literals-for-observables"));
+    assert(!value.negated_ || variable.is_binary()); // || options_.is_enabled("lw1:boost:literals-for-observables")); // CHECK
 
     // find out whether something needs to be done
     const And *term = 0;
@@ -2075,7 +2144,7 @@ const PDDL_Base::Atom& PDDL_Base::lw1_fetch_last_action_atom(const Action &actio
 }
 
 // lw1:boost:single-sensing-literal-enablers
-void PDDL_Base::lw1_calculate_enablers_for_sensing() {
+void PDDL_Base::lw1_calculate_enablers_for_sensing() { // CHECK: this is not called now: lw1:boost:single-sensing-literal-enablers is NOT SUPPORTED (deprecated?)
     for( map<pair<const ObsVariable*, Atom>, map<string, set<const Action*> > >::const_iterator it = lw1_xxx_.begin(); it != lw1_xxx_.end(); ++it ) {
         const ObsVariable &variable = *it->first.first;
         const Atom &value = it->first.second;
@@ -2392,9 +2461,9 @@ void PDDL_Base::lw1_remove_subsumed_conditions(set<signed_atom_set> &conditions)
     conditions = non_dominated_conditions;
 }
 
-void PDDL_Base::lw1_compile_static_observable(const Atom &atom) {
+void PDDL_Base::lw1_compile_static_observable(const Atom &atom) { // CHECK: compile_static_observables is deprecated in this version
     cout << Utils::blue() << "(lw1) compiling static observable '" << atom << "'" << Utils::normal() << endl;
-    assert(0); // CHECK: compile_static_observables is deprecated in this version
+    assert(0);
 
     // iterate over all sensing models extracting those relevant to atom
     Atom negated_atom(atom, true);
@@ -2679,6 +2748,7 @@ void PDDL_Base::do_translation() {
 }
 
 void PDDL_Base::do_lw1_translation(const variable_vec* &variables,
+                                   const variable_group_vec* &variable_groups,
                                    const list<pair<const Action*, const Sensing*> >* &sensing_models,
                                    const map<string, set<string> >* &accepted_literals_for_observables) {
     instantiate_elements();
@@ -2687,6 +2757,7 @@ void PDDL_Base::do_lw1_translation(const variable_vec* &variables,
     // translate variable formulations
     if( lw1_translation_ ) {
         lw1_calculate_atoms_for_state_variables();
+        lw1_calculate_atoms_for_variable_groups();
         lw1_calculate_beams_for_grounded_observable_variables();
         lw1_remove_variables_with_empty_grounded_domain();
 
@@ -2704,6 +2775,7 @@ void PDDL_Base::do_lw1_translation(const variable_vec* &variables,
         }
 
         variables = &lw1_variables_;
+        variable_groups = &lw1_variable_groups_;
         sensing_models = &lw1_sensing_models_;
         accepted_literals_for_observables = &lw1_accepted_literals_for_observables_;
     }
@@ -3006,7 +3078,7 @@ string PDDL_Base::Atom::to_string(bool extra_neg, bool mangled) const {
     extra_neg = extra_neg ? !negated_ : negated_;
     if( extra_neg ) str += beg + "not" + sep;
     str += beg + pred_->print_name_;
-    for (size_t k = 0; k < param_.size(); ++k) {
+    for( size_t k = 0; k < param_.size(); ++k ) {
         if( (param_[k]->sym_class_ == sym_variable) && (static_cast<VariableSymbol*>(param_[k])->value_ != 0) )
             str += sep + static_cast<VariableSymbol*>(param_[k])->value_->to_string();
         else
@@ -5023,7 +5095,7 @@ void PDDL_Base::Variable::process_instance() const {
                 } else {
                     cout << *domain_[k] << endl;
                     Effect *e = domain_[k]->ground(true); // clone_variables=true
-                    cout << "gdd-ptr=" << e << endl;
+                    cout << "grounded-ptr=" << e << endl;
                     cout << Utils::error() << "unrecognized format in variable '" << print_name_ << "'" << endl;
                     exit(255);
                 }
@@ -5203,6 +5275,10 @@ void PDDL_Base::VariableGroup::process_instance() const {
             for( size_t k = 0; k < group_.size(); ++k ) {
                 state_variable_vec *grounded_group = group_[k]->ground(base_ptr_);
                 group->grounded_group_.insert(grounded_group_.end(), grounded_group->begin(), grounded_group->end());
+                for( int j = 0; j < int(grounded_group->size()); ++j ) {
+                    const StateVariable &var = *(*grounded_group)[j];
+                    group->grounded_group_str_.insert(string(var.print_name_));
+                }
                 delete grounded_group;
             }
         }

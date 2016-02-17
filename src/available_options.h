@@ -123,8 +123,7 @@ const char *available_options[] = {
     "lw1:inference:watched-literals",          "[LW1] uses the watched literals method for unit resolution (to be used with lw1:inference:up)",
     "lw1:inference:up:lookahead",              "[LW1] uses unit resolution with 1-lookahead as inference mechanism",
     "lw1:inference:up:enhanced",               "[LW1] maintain inferred (non-forbidden) clauses",
-    "lw1:inference:arc-consistency",           "[LW1] uses arc consistency as inference method",
-
+    "lw1:inference:ac3",                       "[LW1] uses AC3 as inference algorithm",
 
     // lw1 boost
     "lw1:boost:complete-effects",                       "[LW1] complete effects for variables", // CHECK
@@ -133,7 +132,7 @@ const char *available_options[] = {
     "lw1:boost:complete-effects:type4:state",           "[LW1] complete effects for variables", // CHECK
 
     "lw1:boost:enable-post-actions",                    "[LW1] XXXX", // CHECK
-    "lw1:boost:single-sensing-literal-enablers",        "[LW1] XXXX", // CHECK
+    "lw1:boost:single-sensing-literal-enablers",        "[LW1] XXXX", // CHECK: don't use as it is deprecated and causes lw1 to blow
 
     "lw1:boost:drule:sensing:type3",                    "[LW1] generate type3 deductive rules for sensing", // CHECK (rename types)
     "lw1:boost:drule:sensing:type4",                    "[LW1] replace type4 deductive rule by boosted version when DNF has just one term",

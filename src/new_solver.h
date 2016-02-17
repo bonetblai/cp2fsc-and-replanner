@@ -9,8 +9,7 @@
 #include <iostream>
 #include <vector>
 
-template<typename T>
-class NewSolver {
+template<typename T> class NewSolver {
   public:
     enum { SOLVED = 0, NO_SOLUTION = 1, TIME = 2, NCALLS = 3, ERROR = 4 };
     enum { K_REPLANNER = 0, CLG = 1, LW1 = 2 };

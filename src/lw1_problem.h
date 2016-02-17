@@ -55,6 +55,7 @@ class LW1_Instance : public KP_Instance {
     std::vector<Variable*> variables_;
     std::map<int, std::vector<int> > variables_for_atom_;
     std::map<std::string, std::map<int, std::map<int, std::vector<std::vector<int> > > > > sensing_models_as_k_cnf_;
+    std::map<std::string, std::map<int, std::map<int, std::vector<std::vector<int> > > > > sensing_models_as_k_dnf_;
     std::map<std::string, std::map<int, std::map<int, std::vector<std::vector<int> > > > > sensing_models_as_dnf_;
     std::map<std::string, std::set<int> > vars_sensed_by_action_;
 
@@ -67,8 +68,14 @@ class LW1_Instance : public KP_Instance {
     std::map<std::pair<int, int>, index_set> beams_for_observable_atoms_;
     std::vector<std::vector<int> > clauses_for_axioms_;
 
+    // variable groups
+    std::vector<std::vector<int> > atoms_for_variable_groups_;
+    std::vector<std::vector<int> > vars_for_variable_groups_;
+    std::map<std::pair<int, int>, int> filtering_groups_;
+
     LW1_Instance(const Instance &instance,
                  const PDDL_Base::variable_vec &variables,
+                 const PDDL_Base::variable_group_vec &variable_groups,
                  const std::list<std::pair<const PDDL_Base::Action*, const PDDL_Base::Sensing*> > &sensing_models,
                  const std::map<std::string, std::set<std::string> > &accepted_literals_for_observables);
     ~LW1_Instance();
