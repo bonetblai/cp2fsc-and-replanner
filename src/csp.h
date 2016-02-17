@@ -107,21 +107,6 @@ namespace Inference {
         };
 
         /**
-          *  Constraint Class
-          */
-        class Constraint : public std::vector<int> {
-          private:
-            bool active_;
-          public:
-            Constraint() : active_(false) { };
-            Constraint(const VI& cl) : VI(cl.cbegin(), cl.cend()),
-                                       active_(false) { };
-
-            bool is_active() const { return active_; }
-            void set_active(bool b) { active_ = b; }
-        };
-
-        /**
           * Csp class (Constraint Satisfaction Problem)
           */
         class Csp {
@@ -129,7 +114,7 @@ namespace Inference {
             // State Variables
             static std::vector<Inference::CSP::Variable *> variables_;
             // Constraints of problem
-            std::vector<Inference::CSP::Constraint> constraints_;
+            std::vector<std::vector<int>> constraints_;
             // Map for finding var_index of l_atom
             static std::map<int, int> atoms_to_var_map_;
           public:
@@ -137,7 +122,7 @@ namespace Inference {
                     const std::vector<LW1_Instance::Variable *> &vars,
                     const std::map<int, int> map);
 
-            std::vector<Constraint>& get_constraints_()  {
+            std::vector<std::vector<int>>& get_constraints_()  {
                 return constraints_;
             }
 
@@ -172,10 +157,10 @@ namespace Inference {
             void print(std::ostream& os, const Instance& instance,
                        const LW1_State& state) const; // Print CSP
 
-            void print_constraint(std::ostream& os,
-                                  const Constraint& constraint,
-                                  const Instance& instance,
-                                  const LW1_State& state) const;
+            //void print_constraint(std::ostream& os,
+            //                      const Constraint& constraint,
+            //                      const Instance& instance,
+            //                      const LW1_State& state) const;
         };
 
 
