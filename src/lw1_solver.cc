@@ -471,6 +471,21 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         // Domains are original domains with values pruned as indicated with the K-literals in state.
         // Basic constraints relate variable groups to state variable and variable groups to variable
         // groups.
+        for (STATE_CLASS::const_iterator it = state.begin(); it != state.end(); ++it) {
+            if (state.is_special(*it + 1, &kp_instance_)) continue;
+#ifdef DEBUG
+            cout << Utils::red() << "[CSP] Added literal from state: ";
+            state.print_literal(cout, 1 + *it, &kp_instance_);
+            cout << Utils::normal() << endl;
+#endif
+#ifdef UP
+            Inference::Propositional::Clause cl;
+            cl.push_back(1 + *it); // CHECK: en implementacion de clause, 'push_back' es un 'insert'
+            csp.add_constraint(cl);
+#endif
+        }
+
+
 
         // 1. Add observation. Pruned variable domains using k-dnf for observation. For each observation,
         // (a) if observation refers to state variable (i.e. state variable is observable), prune domain
@@ -498,11 +513,13 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                     assert(jt->second.empty());
                     int k_literal = sensed_literal > 0 ? 1 + 2*(sensed_literal - 1) : 1 + 2*(-sensed_literal - 1) + 1;
 #ifdef DEBUG
-                    cout << Utils::red() << "[AC3] [Theory] Add obs (state) k-literal: ";
+                    cout << Utils::red() << "[AC3] Add obs (state) k-literal: ";
                     state.print_literal(cout, k_literal, &kp_instance_);
                     cout << Utils::normal() << endl;
 #endif
-                    cout << "[AC3] SOMETHING TO DO #1" << endl;
+                    Inference::Propositional::Clause cl;
+                    cl.push_back(k_literal); // CHECK: en implementacion de clause, 'push_back' es un 'insert'
+                    csp.add_constraint(cl);
                 } else if( lw1.filtering_groups_.find(key) != lw1.filtering_groups_.end() ) {
                     // observation can be filtered in variable group. Prune all valuations that are
                     // not consistent with k-dnf
@@ -521,7 +538,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                         for( int j = 0; j < int(k_dnf_for_sensing_model.size()); ++j ) {
                             const clause_or_term_t &term = k_dnf_for_sensing_model[j];
 #ifdef DEBUG
-                            cout << Utils::red() << "[AC3] [Theory] Add K_o term: ";
+                            cout << Utils::red() << "[AC3] Add K_o term: ";
                             state.print_clause_or_term(cout, term, &kp_instance_);
                             cout << Utils::normal() << endl;
 #endif
@@ -538,23 +555,6 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
             }
         }
 
-        // 1. Positive literals from state
-        for (STATE_CLASS::const_iterator it = state.begin(); it != state.end(); ++it) {
-            if (state.is_special(*it + 1, &kp_instance_)) continue;
-#ifdef DEBUG
-            cout << Utils::red() << "[CSP] Add literal from state: ";
-            state.print_literal(cout, 1 + *it, &kp_instance_);
-            cout << Utils::normal() << endl;
-#endif
-#ifdef UP
-            Inference::Propositional::Clause cl;
-            cl.push_back(1 + *it); // CHECK: en implementacion de clause, 'push_back' es un 'insert'
-            cnf.push_back(cl);
-            csp.add_constraint(cl);
-#endif
-        }
-
- 
         // 2. Make the CSP arc consistent by running AC3. The resulting CSP should be consistent
         // (i.e. the domain of each variable should be non empty). Otherwise, there is an error in
         // the planning model
