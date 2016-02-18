@@ -29,9 +29,14 @@ typedef std::map<int, int> MII;
 typedef std::map<int, std::vector<int>> MIVI;
 typedef std::map<int, std::vector<int>>::const_iterator MIVI_CI;
 
+typedef std::vector<Inference::CSP::VariableGroup*> VVG;
+typedef std::vector<Inference::CSP::Arc*> VA;
+
 // Static members definitions
 V_VAR Inference::CSP::Csp::variables_ = V_VAR();
 MII Inference::CSP::Csp::atoms_to_var_map_ = MII();
+VVG Inference::CSP::Csp::variable_groups_ = VVG();
+VA Inference::CSP::AC3::arcs_ = VA();
 
 /************************ Variable Abstract Class  ************************/
 
@@ -146,6 +151,15 @@ void Inference::CSP::Csp::initialize(
     atoms_to_var_map_ = map;
 }
 
+void Inference::CSP::Csp::initialize_groups(const KP_Instance& instance) {
+    const LW1_Instance& lw1 = ((const LW1_Instance&) instance);
+    for ( int i = 0; i < int(lw1.vars_for_variable_groups_.size()); i++ ) {
+        int size = int(lw1.vars_for_variable_groups_[i].size());
+        VariableGroup* group = new VariableGroup(size);
+        variable_groups_.push_back(group);
+    }
+}
+
 /**
   * Dump information into state
   * This function is idempotent over state
@@ -167,6 +181,11 @@ void Inference::CSP::Csp::dump_into(LW1_State &state, const Instance &instance) 
 
 void Inference::CSP::Csp::clean_domains() {
     for (V_VAR_I it = variables_.begin(); it != variables_.end(); it++) {
+        (*it)->reset_domain();
+    }
+
+    for (auto it = variable_groups_.begin();
+         it != variable_groups_.end(); it++) {
         (*it)->reset_domain();
     }
 }
@@ -240,7 +259,7 @@ void Inference::CSP::AC3::initialize(Csp& csp,
 
     std::vector<std::vector<int>>& constraints = csp.get_constraints_();
     inv_clauses_ = std::map<int, std::vector<int>>();
-    worklist_ = std::vector<ARC_T>();
+    worklist_ = std::vector<Arc*>();
 
     // The list of constraints must be reduced discarding satisfied and
     // unnecessary variables.
@@ -282,10 +301,10 @@ void Inference::CSP::AC3::initialize(Csp& csp,
 
         // A constraint can be already satisfied, in which case it's
         // useless for the CSP.
-        if (constraints[i].size() == 2 && ! satisfied) {
-            worklist_.emplace_back(constraints[i][0], constraints[i][1]);
-            worklist_.emplace_back(constraints[i][1], constraints[i][0]);
-        }
+//        if (constraints[i].size() == 2 && ! satisfied) {
+//            worklist_.emplace_back(constraints[i][0], constraints[i][1]);
+//            worklist_.emplace_back(constraints[i][1], constraints[i][0]);
+//        }
 
         // DEBUG
         //std::cout << Utils::magenta() << "[DEBUG AC3] Constraint after prepare: " << std::endl;
@@ -300,7 +319,8 @@ void Inference::CSP::AC3::apply_binary_constraints(Csp& csp,
     std::vector<std::vector<int>>& constraints = csp.get_constraints_();
     
     while (! worklist_.empty()) {
-        ARC_T arc = worklist_.back();
+        Arc* arc_new = worklist_.back();
+        ARC_T arc = ARC_T(arc_new->first, arc_new->second);
         worklist_.pop_back();
         if (arc_reduce(csp, arc, instance, state)) {
 
@@ -347,10 +367,10 @@ void Inference::CSP::AC3::apply_binary_constraints(Csp& csp,
                     int v1 = csp.get_var_index(zx[0]);
                     int v2 = csp.get_var_index(zx[1]);
 
-                    if (x == v2 && y != v1)
-                        worklist_.emplace_back(zx[0], zx[1]);
-                    else if (x == v1 && y != v2)
-                        worklist_.emplace_back(zx[1], zx[0]);
+//                    if (x == v2 && y != v1)
+//                        worklist_.emplace_back(zx[0], zx[1]);
+//                    else if (x == v1 && y != v2)
+//                        worklist_.emplace_back(zx[1], zx[0]);
                     //std::cout << "[DEBUG] Back into worklist_" << std::endl;
                     //csp.print_constraint(std::cout, constraints[*it], instance, state);
                 }
@@ -421,3 +441,114 @@ void Inference::CSP::AC3::print(std::ostream& os, const Instance& instance,
     }
     os << "END OF AC3" << std::endl;
 }
+
+void Inference::CSP::AC3::initialize_worklist() {
+    worklist_2_.clear();
+    for( auto it = arcs_.cbegin(); it != arcs_.cend(); it++ ) {
+        worklist_2_.insert(*it);
+    }
+}
+
+bool Inference::CSP::AC3::arc_reduce_2(Inference::CSP::Arc* arc,
+                                       Inference::CSP::Csp& csp) {
+    const GroupArc* group_arc = ((const GroupArc*) arc);
+    Variable*  x,* y;
+    if (group_arc->x_is_group()) {
+        x = csp.get_group_var(arc->first);
+        y = csp.get_var_from_vars(arc->second);
+    } else {
+        x = csp.get_var_from_vars(arc->second);
+        y = csp.get_group_var(arc->first);
+    }
+
+    bool change = false; // An element has been erase from dx ?
+    assert(x->get_domain_size() && y->get_domain_size());
+    for (SI_I vx = x->get_current_begin(); vx != x->get_current_end();) {
+        // If arc is already satisfied (this check should be unnecessary)
+        int xval = *vx;
+        bool found = false;
+        for (SI_I vy = y->get_current_begin();
+             vy != y->get_current_end(); vy++) {
+            int yval = *vy;
+            if (evaluate(arc, xval, yval)) {
+//                std::cout << "MMMMMMMMMMMMMMMMMMMMMMMMM" << std::endl;
+                found = true;
+                break;
+            }
+        }
+        // Erase from domain, and set iterator before next element
+        if (!found) {
+//            std::cout << "XXXXXXXXXXXXXXXXXXXX" << std::endl;
+            vx = x->erase(vx);
+            change = true;
+        } else {
+            vx++;
+        }
+    }
+    return change;
+}
+
+bool Inference::CSP::AC3::evaluate(Inference::CSP::Arc* arc, int x, int y) const {
+    assert(x >= 0 && y >= 0);
+    GroupArc* group_arc = ((GroupArc*)arc);
+    if (group_arc->x_is_group()) return x & (y % 2);
+    return y & (x % 2);
+}
+
+void Inference::CSP::AC3::apply_constraints(Inference::CSP::Csp& csp) {
+    while( ! worklist_2_.empty() ) {
+        Arc* arc = *worklist_2_.begin();
+        GroupArc* group_arc = ((GroupArc*)arc);
+        worklist_2_.erase(worklist_2_.begin());
+
+        if (arc_reduce_2(arc, csp)) {
+            if(group_arc->x_is_group()) {
+                // x is group, y is normal var
+                for( auto it = arcs_.cbegin(); it != arcs_.cend(); it++ ) {
+                    GroupArc* tmp_arc = ((GroupArc*)*it);
+                    if ( ! tmp_arc->x_is_group() && tmp_arc->second == group_arc->first) {
+                        worklist_2_.insert(tmp_arc);
+                    }
+                }
+            } else {
+                // y is group, x is normal var
+                for( auto it = arcs_.cbegin(); it != arcs_.cend(); it++ ) {
+                    GroupArc* tmp_arc = ((GroupArc*)*it);
+                    if ( tmp_arc->x_is_group() && tmp_arc->second == group_arc->first) {
+                        worklist_2_.insert(tmp_arc);
+                    }
+                }
+            }
+        }
+
+    }
+}
+
+void Inference::CSP::AC3::solve_groups(Inference::CSP::Csp& csp,
+                                       LW1_State& state,
+                                       const Instance& instance) {
+    initialize_worklist();
+    apply_unary_constraints(csp);
+    apply_constraints(csp);
+    csp.dump_into(state, instance);
+}
+
+
+
+void Inference::CSP::AC3::initialize_arcs(const KP_Instance& instance,
+                                          Inference::CSP::Csp& csp) {
+    arcs_.clear();
+    const LW1_Instance& lw1 = ((const LW1_Instance&) instance);
+    for (int i = 0; i < int(lw1.vars_for_variable_groups_.size()); i++) {
+        for (int j = 0; j < int(lw1.vars_for_variable_groups_[i].size()); j++) {
+            int var_index = lw1.vars_for_variable_groups_[i][j];
+            Arc* arc = new GroupArc(i, var_index, true);
+            arcs_.push_back(arc);
+
+            Arc* arc_reversed = new GroupArc(var_index, i, false);
+            arcs_.push_back(arc_reversed);
+        }
+    }
+}
+
+

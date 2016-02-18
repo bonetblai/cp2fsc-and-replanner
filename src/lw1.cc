@@ -335,7 +335,12 @@ int main(int argc, const char *argv[]) {
             solver.fill_atoms_to_var_map(*kp_instance);
             Inference::CSP::Csp csp;
             csp.initialize(((LW1_Instance*)kp_instance)->variables_, solver.atoms_to_vars_);
-        }
+            if (((LW1_Instance*)kp_instance)->has_groups()) {
+                csp.initialize_groups(*kp_instance);
+                Inference::CSP::AC3 ac3;
+                ac3.initialize_arcs(*kp_instance, csp);
+            }
+       }
 
         // solve
         int status = solver.solve(hidden_initial_state, plan, fired_sensors, sensed_literals);

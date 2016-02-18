@@ -125,6 +125,10 @@ class LW1_Instance : public KP_Instance {
         return (a >= lower) && (a < upper);
     }
 
+    virtual bool has_groups() const {
+        return atoms_for_variable_groups_.size() > 0;
+    };
+
     virtual void print_stats(std::ostream &os) const;
 };
 

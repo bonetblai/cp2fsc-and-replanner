@@ -460,7 +460,6 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         cout << Utils::cyan() << "Using inference: 'ac3' (AC3)" << Utils::normal() << endl;
 #endif
         Inference::CSP::Csp csp;
-        Inference::CSP::AC3 ac3;
 
         // find sensing models for given action that are incompatible with observations
         relevant_sensing_models_t relevant_sensing_models_as_k_dnf;
@@ -478,14 +477,12 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
             state.print_literal(cout, 1 + *it, &kp_instance_);
             cout << Utils::normal() << endl;
 #endif
-#ifdef UP
+//#ifdef UP
             Inference::Propositional::Clause cl;
             cl.push_back(1 + *it); // CHECK: en implementacion de clause, 'push_back' es un 'insert'
             csp.add_constraint(cl);
-#endif
+//#endif
         }
-
-
 
         // 1. Add observation. Pruned variable domains using k-dnf for observation. For each observation,
         // (a) if observation refers to state variable (i.e. state variable is observable), prune domain
@@ -559,8 +556,9 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         // (i.e. the domain of each variable should be non empty). Otherwise, there is an error in
         // the planning model
         //assert(0);
-        cout << "***** RUN AC3" << endl;
-        ac3.solve(csp, state, kp_instance_);
+        cout << "SOLVING AC3" << endl;
+        Inference::CSP::AC3 ac3;
+        ac3.solve_groups(csp, state, kp_instance_);
 
         // 3. Update state using information in CSP. For each value x that is pruned in domain of
         // CSP variable X corresponding to state variable X, add literal K_not_X=x. For each value
@@ -774,7 +772,7 @@ void LW1_Solver::fill_relevant_sensing_models(const LW1_Instance &lw1,
                 const map<int, vector<vector<int> > > &sensing_models_for_var_as_k_cnf = sensing_models_for_action_as_k_cnf->at(var_key);
                 for( map<int, vector<vector<int> > >::const_iterator kt = sensing_models_for_var_as_k_cnf.begin(); kt != sensing_models_for_var_as_k_cnf.end(); ++kt ) {
 #ifdef DEBUG
-                    cout << "[fill] sensing model: obs=";
+                    cout << "[fill]  sensing model: obs=";
                     LW1_State::print_literal(cout, kt->first, &instance_);
                     cout << ", trigger=" << (kt->first != sensed_literal) << flush;
 #endif
@@ -794,7 +792,7 @@ void LW1_Solver::fill_relevant_sensing_models(const LW1_Instance &lw1,
                 const map<int, vector<vector<int> > > &sensing_models_for_var_as_k_dnf = sensing_models_for_action_as_k_dnf->at(var_key);
                 for( map<int, vector<vector<int> > >::const_iterator kt = sensing_models_for_var_as_k_dnf.begin(); kt != sensing_models_for_var_as_k_dnf.end(); ++kt ) {
 #ifdef DEBUG
-                    cout << "[fill] sensing model: obs=";
+                    cout << "[fill]  sensing model: obs=";
                     LW1_State::print_literal(cout, kt->first, &instance_);
                     cout << ", trigger=" << (kt->first != sensed_literal) << flush;
 #endif
