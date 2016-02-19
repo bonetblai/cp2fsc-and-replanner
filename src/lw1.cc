@@ -332,6 +332,8 @@ int main(int argc, const char *argv[]) {
         }
 
        if (g_options.is_enabled("lw1:inference:ac3")) {
+            // Build basic CSP from state: CSP variables come from state variables and variable groups.
+            //
             solver.fill_atoms_to_var_map(*kp_instance);
             Inference::CSP::Csp csp;
             csp.initialize(((LW1_Instance*)kp_instance)->variables_, solver.atoms_to_vars_);

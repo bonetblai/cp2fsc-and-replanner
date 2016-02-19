@@ -73,7 +73,7 @@ namespace Inference {
             void add(int i) { current_domain_.insert(i);  }
 
             // Debugging
-            void print(std::ostream &os, const Instance &instance,
+            virtual void print(std::ostream &os, const Instance &instance,
                        const LW1_State &state) const;
         };
 
@@ -107,12 +107,27 @@ namespace Inference {
         };
 
         class VariableGroup : public Arithmetic {
+          private:
+            int index_;
+            std::map<int, int> var_index_to_pos;
           public:
-            VariableGroup(int size) {
-                for (int i = 0; i < size; i++) {
+            VariableGroup(const std::vector<int>& group, int index) : index_(index) {
+                for( int i = 0; i < int(group.size()); i++ ) {
+                    var_index_to_pos[group[i]] = i;
+                }
+                for( int i = 0; i < (1 << int(group.size())); i++ ) {
                     original_domain_.insert(i);
                     current_domain_.insert(i);
                 }
+                name_ = "vg_" + std::to_string(index_);
+            }
+
+            void print(std::ostream &os, const Instance &instance,
+                       const LW1_State &state) const;
+
+            int get_pos_from_var_index(int var_index) const {
+                assert(var_index_to_pos.find(var_index) != var_index_to_pos.end());
+                return var_index_to_pos.at(var_index);
             }
         };
 
@@ -171,7 +186,7 @@ namespace Inference {
                 return variables_[var_index];
             }
 
-            Variable *get_group_var(int index) const {
+            VariableGroup *get_group_var(int index) const {
                 return variable_groups_[index];
             }
 
@@ -205,6 +220,8 @@ namespace Inference {
             bool reduce(Csp& csp, const Instance& lw1,
                         const LW1_State& state) const { return true; };
             bool x_is_group() const { return x_is_group_; }
+            void print(std::ostream &os, const Instance &instance,
+                               const LW1_State &state, const Csp& csp) const;
         };
 
         /**
@@ -239,14 +256,14 @@ namespace Inference {
                             const Instance& instance,
                             const LW1_State& state);
             void initialize_worklist();
-            void apply_constraints(Csp& csp);
+            void apply_constraints(Inference::CSP::Csp& csp, const Instance& instance, const LW1_State& state);
             bool arc_reduce(Csp& csp,
                             const std::pair<int,int>& arc,
                             const Instance& instance,
                             const LW1_State& state) const;
-            bool arc_reduce_2(Inference::CSP::Arc* arc,
-                              Inference::CSP::Csp& csp);
-            bool evaluate(Arc* arc, int x, int y) const;
+            bool arc_reduce_2(Inference::CSP::Arc* arc, Inference::CSP::Csp& csp, const Instance& instance,
+                                          const LW1_State& state);
+            bool evaluate(Arc* arc, int x, int y, const Csp& csp) const;
         public:
             void initialize_arcs(const KP_Instance& instance, Csp& csp);
             void solve(Csp &csp, LW1_State &state, const Instance &instance);

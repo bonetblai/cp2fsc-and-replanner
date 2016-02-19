@@ -466,10 +466,10 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         if( last_action != 0 )
             fill_relevant_sensing_models(lw1, last_action, sensed_at_step, relevant_sensing_models_as_k_dnf, true);
 
-        // 0. Build basic CSP from state: CSP variables come from state variables and variable groups.
-        // Domains are original domains with values pruned as indicated with the K-literals in state.
-        // Basic constraints relate variable groups to state variable and variable groups to variable
-        // groups.
+
+//         0. Domains are original domains with values pruned as indicated with the K-literals in state.
+//         Basic constraints relate variable groups to state variable and variable groups to variable
+//         groups.
         for (STATE_CLASS::const_iterator it = state.begin(); it != state.end(); ++it) {
             if (state.is_special(*it + 1, &kp_instance_)) continue;
 #ifdef DEBUG
@@ -477,17 +477,15 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
             state.print_literal(cout, 1 + *it, &kp_instance_);
             cout << Utils::normal() << endl;
 #endif
-//#ifdef UP
             Inference::Propositional::Clause cl;
             cl.push_back(1 + *it); // CHECK: en implementacion de clause, 'push_back' es un 'insert'
             csp.add_constraint(cl);
-//#endif
         }
 
         // 1. Add observation. Pruned variable domains using k-dnf for observation. For each observation,
         // (a) if observation refers to state variable (i.e. state variable is observable), prune domain
         // of CSP variable corresponding to state variable, (b) if observation can be filtered in 
-        // variable group, prune fron domain of CSP variable corresponding to variable group all
+        // variable group, prune from domain of CSP variable corresponding to variable group all
         // valuations that do not satisfy k-dnf, and else (c) observation is of type V=v, use the k-dnf
         // to construct constraints among the state variables mentioned in DNF
 
@@ -524,23 +522,24 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                     cout << "[AC3] SOMETHING TO DO #2: vgroup=" << vg << endl;
                 } else {
                     // there is no variable group where to filter observation. Use k-dnf to generate constraints in CSP
-                    const sensing_models_as_cnf_or_dnf_t &sensing_models_as_k_dnf = jt->second;
+                    const sensing_models_as_cnf_or_dnf_t& sensing_models_as_k_dnf = jt->second;
                     for( int k = 0; k < int(sensing_models_as_k_dnf.size()); ++k ) {
-                        const cnf_or_dnf_t &k_dnf_for_sensing_model = *sensing_models_as_k_dnf[k];
+                        const cnf_or_dnf_t& k_dnf_for_sensing_model = *sensing_models_as_k_dnf[k];
 #ifdef DEBUG
                         cout << "[AC3] k-dnf: index=" << k << ", formula=";
-                        state.print_cnf_or_dnf(cout, k_dnf_for_sensing_model, &kp_instance_);
+                        state.print_cnf_or_dnf(cout, k_dnf_for_sensing_model,
+                                               &kp_instance_);
                         cout << endl;
 #endif
                         for( int j = 0; j < int(k_dnf_for_sensing_model.size()); ++j ) {
-                            const clause_or_term_t &term = k_dnf_for_sensing_model[j];
+                            const clause_or_term_t& term = k_dnf_for_sensing_model[j];
 #ifdef DEBUG
                             cout << Utils::red() << "[AC3] Add K_o term: ";
                             state.print_clause_or_term(cout, term, &kp_instance_);
                             cout << Utils::normal() << endl;
 #endif
                             Inference::Propositional::Clause cl;
-                            for (int i = 0; i < int(term.size()); ++i) {
+                            for( int i = 0; i < int(term.size()); ++i ) {
                                 cl.push_back(term[i]);
                             }
 

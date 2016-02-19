@@ -80,6 +80,32 @@ void Inference::CSP::Variable::print(std::ostream& os, const Instance& instance,
     os << "b? " << (is_binary() ? "yes" : "no") << std::endl;
 }
 
+void Inference::CSP::VariableGroup::print(std::ostream& os, const Instance& instance,
+                                          const LW1_State& state) const {
+    const std::set<int> &od = original_domain_;
+    const std::set<int> &cd = current_domain_;
+    std::set<int>::const_iterator od_end = od.cend(); --od_end;
+    std::set<int>::const_iterator cd_end = cd.cend(); --cd_end;
+
+    os << name_ << ": ";
+    os << "od: {";
+    for (SI::const_iterator it = od.cbegin(); it != od.cend(); it++) {
+//        state.print_literal(os, *it, &instance);
+        os << *it;
+        if (it != od_end) os << ", ";
+    }
+    os << "} ";
+
+    os << "cd: {";
+    for (auto it = cd.cbegin(); it != cd.cend(); it++) {
+//        state.print_literal(os, *it, &instance);
+        os << *it;
+        if (it != cd_end) os << ", ";
+    }
+    os << "} ";
+    os << std::endl;
+}
+
 void Inference::CSP::Variable::apply_unary_constraint(int h_atom) {
     if (h_atom % 2 == 0) {
         // If h_atom is a K_not_atom, remove the K_atom which is K_not_atom - 1
@@ -154,8 +180,7 @@ void Inference::CSP::Csp::initialize(
 void Inference::CSP::Csp::initialize_groups(const KP_Instance& instance) {
     const LW1_Instance& lw1 = ((const LW1_Instance&) instance);
     for ( int i = 0; i < int(lw1.vars_for_variable_groups_.size()); i++ ) {
-        int size = int(lw1.vars_for_variable_groups_[i].size());
-        VariableGroup* group = new VariableGroup(size);
+        VariableGroup* group = new VariableGroup(lw1.vars_for_variable_groups_[i], i);
         variable_groups_.push_back(group);
     }
 }
@@ -166,6 +191,11 @@ void Inference::CSP::Csp::initialize_groups(const KP_Instance& instance) {
   */
 void Inference::CSP::Csp::dump_into(LW1_State &state, const Instance &instance) const {
     for (V_VAR_CI var = variables_.begin(); var != variables_.end(); var++) {
+#ifdef DEBUG
+        std::cout << Utils::yellow() << "[CSP] Processing: ";
+        (*var)->print(std::cout, instance, state);
+        std::cout << Utils::normal();
+#endif
         std::vector<int> info;
         (*var)->dump_into(info);
         for (VI_CI st = info.begin(); st != info.end(); st++) {
@@ -449,16 +479,22 @@ void Inference::CSP::AC3::initialize_worklist() {
     }
 }
 
-bool Inference::CSP::AC3::arc_reduce_2(Inference::CSP::Arc* arc,
-                                       Inference::CSP::Csp& csp) {
+bool Inference::CSP::AC3::arc_reduce_2(Inference::CSP::Arc* arc, Inference::CSP::Csp& csp, const Instance& instance,
+                                       const LW1_State& state) {
     const GroupArc* group_arc = ((const GroupArc*) arc);
+
+#ifdef DEBUG
+//    std::cout << Utils::green() << "Arc to be examined: " << std::endl;
+//    group_arc->print(std::cout, instance, state, csp);
+//    std::cout << Utils::normal();
+#endif
     Variable*  x,* y;
     if (group_arc->x_is_group()) {
         x = csp.get_group_var(arc->first);
         y = csp.get_var_from_vars(arc->second);
     } else {
-        x = csp.get_var_from_vars(arc->second);
-        y = csp.get_group_var(arc->first);
+        x = csp.get_var_from_vars(arc->first);
+        y = csp.get_group_var(arc->second);
     }
 
     bool change = false; // An element has been erase from dx ?
@@ -470,15 +506,19 @@ bool Inference::CSP::AC3::arc_reduce_2(Inference::CSP::Arc* arc,
         for (SI_I vy = y->get_current_begin();
              vy != y->get_current_end(); vy++) {
             int yval = *vy;
-            if (evaluate(arc, xval, yval)) {
-//                std::cout << "MMMMMMMMMMMMMMMMMMMMMMMMM" << std::endl;
+#ifdef DEBUG
+//            std::cout << "Comparing: " << xval << " ~ " << yval << std::endl;
+#endif
+            if (evaluate(arc, xval, yval, csp)) {
                 found = true;
                 break;
             }
         }
         // Erase from domain, and set iterator before next element
-        if (!found) {
-//            std::cout << "XXXXXXXXXXXXXXXXXXXX" << std::endl;
+        if( ! found ) {
+#ifdef DEBUG
+//            std::cout << "REDUCING DOM" << std::endl;
+#endif
             vx = x->erase(vx);
             change = true;
         } else {
@@ -488,22 +528,45 @@ bool Inference::CSP::AC3::arc_reduce_2(Inference::CSP::Arc* arc,
     return change;
 }
 
-bool Inference::CSP::AC3::evaluate(Inference::CSP::Arc* arc, int x, int y) const {
+bool Inference::CSP::AC3::evaluate(Inference::CSP::Arc* arc, int x, int y, const Csp& csp) const {
     assert(x >= 0 && y >= 0);
     GroupArc* group_arc = ((GroupArc*)arc);
-    if (group_arc->x_is_group()) return x & (y % 2);
-    return y & (x % 2);
+
+    if (group_arc->x_is_group()) {
+        int var_index = csp.get_var_index(y);
+        VariableGroup* group = csp.get_group_var(group_arc->first);
+        int pos = group->get_pos_from_var_index(var_index);
+        int bit = (y % 2) << pos;
+        return (x & (1 << pos)) == bit;
+    }
+    VariableGroup* group = csp.get_group_var(group_arc->second);
+    int var_index = csp.get_var_index(x);
+    int pos = group->get_pos_from_var_index(var_index);
+    int bit = (x % 2) << pos;
+    return (y & (1 << pos)) == bit;
 }
 
-void Inference::CSP::AC3::apply_constraints(Inference::CSP::Csp& csp) {
+void Inference::CSP::AC3::apply_constraints(Inference::CSP::Csp& csp, const Instance& instance, const LW1_State& state) {
     while( ! worklist_2_.empty() ) {
         Arc* arc = *worklist_2_.begin();
         GroupArc* group_arc = ((GroupArc*)arc);
         worklist_2_.erase(worklist_2_.begin());
 
-        if (arc_reduce_2(arc, csp)) {
+#ifdef DEBUG
+        Variable* varx;
+        Variable* vary;
+#endif
+
+
+        if ( arc_reduce_2(arc, csp, instance, state)) {
             if(group_arc->x_is_group()) {
                 // x is group, y is normal var
+
+#ifdef DEBUG
+                varx = csp.get_group_var(group_arc->first);
+                vary = csp.get_var_from_vars(group_arc->second);
+#endif
+
                 for( auto it = arcs_.cbegin(); it != arcs_.cend(); it++ ) {
                     GroupArc* tmp_arc = ((GroupArc*)*it);
                     if ( ! tmp_arc->x_is_group() && tmp_arc->second == group_arc->first) {
@@ -512,6 +575,12 @@ void Inference::CSP::AC3::apply_constraints(Inference::CSP::Csp& csp) {
                 }
             } else {
                 // y is group, x is normal var
+
+#ifdef DEBUG
+                varx = csp.get_var_from_vars(group_arc->second);
+                vary = csp.get_group_var(group_arc->first);
+#endif
+
                 for( auto it = arcs_.cbegin(); it != arcs_.cend(); it++ ) {
                     GroupArc* tmp_arc = ((GroupArc*)*it);
                     if ( tmp_arc->x_is_group() && tmp_arc->second == group_arc->first) {
@@ -519,6 +588,11 @@ void Inference::CSP::AC3::apply_constraints(Inference::CSP::Csp& csp) {
                     }
                 }
             }
+#ifdef DEBUG
+//            std::cout << Utils::green() << "Vars reduced to: " << Utils::normal() << std::endl;
+//            varx->print(std::cout, instance, state);
+//            vary->print(std::cout, instance, state);
+#endif
         }
 
     }
@@ -529,7 +603,7 @@ void Inference::CSP::AC3::solve_groups(Inference::CSP::Csp& csp,
                                        const Instance& instance) {
     initialize_worklist();
     apply_unary_constraints(csp);
-    apply_constraints(csp);
+    apply_constraints(csp, instance, state);
     csp.dump_into(state, instance);
 }
 
@@ -552,3 +626,17 @@ void Inference::CSP::AC3::initialize_arcs(const KP_Instance& instance,
 }
 
 
+void Inference::CSP::GroupArc::print(std::ostream& os, const Instance& instance, const LW1_State& state,
+                                     const Csp& csp) const {
+    Variable* x;
+    Variable* y;
+    if( x_is_group() ) {
+        x = csp.get_group_var(first);
+        y = csp.get_var_from_vars(second);
+    } else {
+        x = csp.get_var_from_vars(second);
+        y = csp.get_group_var(first);
+    }
+    x->print(os, instance, state);
+    y->print(os, instance, state);
+}
