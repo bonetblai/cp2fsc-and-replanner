@@ -460,11 +460,12 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         cout << Utils::cyan() << "Using inference: 'ac3' (AC3)" << Utils::normal() << endl;
 #endif
         Inference::CSP::Csp csp;
+        csp.clean_domains();
 
         // find sensing models for given action that are incompatible with observations
         relevant_sensing_models_t relevant_sensing_models_as_k_dnf;
         if( last_action != 0 )
-            fill_relevant_sensing_models(lw1, last_action, sensed_at_step, relevant_sensing_models_as_k_dnf, true);
+            fill_relevant_sensing_models(lw1, last_action, sensed_at_step, relevant_sensing_models_as_k_dnf, false);
 
 
 //         0. Domains are original domains with values pruned as indicated with the K-literals in state.
@@ -477,9 +478,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
             state.print_literal(cout, 1 + *it, &kp_instance_);
             cout << Utils::normal() << endl;
 #endif
-            Inference::Propositional::Clause cl;
-            cl.push_back(1 + *it); // CHECK: en implementacion de clause, 'push_back' es un 'insert'
-            csp.add_constraint(cl);
+            csp.prune_domain_of_var(1 + *it);
         }
 
         // 1. Add observation. Pruned variable domains using k-dnf for observation. For each observation,
@@ -512,14 +511,41 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                     state.print_literal(cout, k_literal, &kp_instance_);
                     cout << Utils::normal() << endl;
 #endif
-                    Inference::Propositional::Clause cl;
-                    cl.push_back(k_literal); // CHECK: en implementacion de clause, 'push_back' es un 'insert'
-                    csp.add_constraint(cl);
+                    csp.prune_domain_of_var(k_literal);
+                    //Inference::Propositional::Clause cl;
+                    //cl.push_back(k_literal); // CHECK: en implementacion de clause, 'push_back' es un 'insert'
+                    //csp.add_constraint(cl);
                 } else if( lw1.filtering_groups_.find(key) != lw1.filtering_groups_.end() ) {
                     // observation can be filtered in variable group. Prune all valuations that are
                     // not consistent with k-dnf
                     int vg = lw1.filtering_groups_.at(key);
                     cout << "[AC3] SOMETHING TO DO #2: vgroup=" << vg << endl;
+
+                    const sensing_models_as_cnf_or_dnf_t& sensing_models_as_k_dnf = jt->second;
+                    for( int k = 0; k < int(sensing_models_as_k_dnf.size()); ++k ) {
+                        const cnf_or_dnf_t& k_dnf_for_sensing_model = *sensing_models_as_k_dnf[k];
+#ifdef DEBUG
+                        cout << Utils::blue() << "[AC3] k-dnf or k-cnf: index=" << k << ", formula=";
+                        state.print_cnf_or_dnf(cout, k_dnf_for_sensing_model, &kp_instance_);
+                        cout << Utils::normal() << endl;
+#endif
+                        for( int j = 0; j < int(k_dnf_for_sensing_model.size()); ++j ) {
+                            const clause_or_term_t& term = k_dnf_for_sensing_model[j];
+#ifdef DEBUG
+                            cout << Utils::cyan() << "[AC3] Printing clause or term: ";
+                            state.print_clause_or_term(cout, term, &kp_instance_);
+                            cout << Utils::normal() << endl;
+#endif
+                            //Inference::Propositional::Clause cl;
+                            //for( int i = 0; i < int(term.size()); ++i ) {
+                            //    cl.push_back(term[i]);
+                            //}
+
+                            //// Constraints are added to the CSP
+                            //csp.add_constraint(cl);
+                        }
+                    }
+  
                 } else {
                     // there is no variable group where to filter observation. Use k-dnf to generate constraints in CSP
                     const sensing_models_as_cnf_or_dnf_t& sensing_models_as_k_dnf = jt->second;
@@ -527,25 +553,29 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                         const cnf_or_dnf_t& k_dnf_for_sensing_model = *sensing_models_as_k_dnf[k];
 #ifdef DEBUG
                         cout << "[AC3] k-dnf: index=" << k << ", formula=";
-                        state.print_cnf_or_dnf(cout, k_dnf_for_sensing_model,
-                                               &kp_instance_);
+                        state.print_cnf_or_dnf(cout, k_dnf_for_sensing_model, &kp_instance_);
                         cout << endl;
 #endif
+                        set<int> possible_domain;
                         for( int j = 0; j < int(k_dnf_for_sensing_model.size()); ++j ) {
                             const clause_or_term_t& term = k_dnf_for_sensing_model[j];
+
+                            assert(term.size() == 1);
 #ifdef DEBUG
                             cout << Utils::red() << "[AC3] Add K_o term: ";
                             state.print_clause_or_term(cout, term, &kp_instance_);
                             cout << Utils::normal() << endl;
 #endif
-                            Inference::Propositional::Clause cl;
-                            for( int i = 0; i < int(term.size()); ++i ) {
-                                cl.push_back(term[i]);
-                            }
+                            possible_domain.insert(term[0]);
+                            //Inference::Propositional::Clause cl;
+                            //for( int i = 0; i < int(term.size()); ++i ) {
+                            //    cl.push_back(term[i]);
+                            //}
 
-                            // Constraints are added to the CSP
-                            csp.add_constraint(cl);
+                            //// Constraints are added to the CSP
+                            //csp.add_constraint(cl);
                         }
+                        csp.intersect_domain_of_var(possible_domain);
                     }
                 }
             }
@@ -555,7 +585,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         // (i.e. the domain of each variable should be non empty). Otherwise, there is an error in
         // the planning model
         //assert(0);
-        cout << "SOLVING AC3" << endl;
+        //cout << "SOLVING AC3" << endl;
         Inference::CSP::AC3 ac3;
         ac3.solve_groups(csp, state, kp_instance_);
 

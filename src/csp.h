@@ -56,6 +56,20 @@ namespace Inference {
                 return current_domain_.erase(it);
             }
 
+            void intersect_with(const std::set<int>& domain) {
+                std::set<int>::iterator cd = current_domain_.begin();
+                std::set<int>::const_iterator pd = domain.cbegin();
+                while (cd != current_domain_.end() && pd != domain.cend()) {
+                    if (*cd < *pd) {
+                        current_domain_.erase(cd++);
+                    } else {
+                        if (*cd == *pd) cd++;
+                        pd++;
+                    }
+                }
+                current_domain_.erase(cd, current_domain_.end());
+            }
+
             size_t get_domain_size() const {
                 return current_domain_.size();
             }
@@ -166,6 +180,9 @@ namespace Inference {
 
             void clean_domains();
 
+            void prune_domain_of_var(int h_atom); 
+            void intersect_domain_of_var(const std::set<int> &domain);
+
             // Change (Add to) state relevant information of current csp
             void dump_into(LW1_State &state, const Instance &instance) const;
 
@@ -189,6 +206,7 @@ namespace Inference {
             VariableGroup *get_group_var(int index) const {
                 return variable_groups_[index];
             }
+
 
 
                 // Debugging

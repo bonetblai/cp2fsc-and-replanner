@@ -185,6 +185,19 @@ void Inference::CSP::Csp::initialize_groups(const KP_Instance& instance) {
     }
 }
 
+void Inference::CSP::Csp::intersect_domain_of_var(const std::set<int> &domain) {
+    assert(domain.size());
+    int var_index = get_var_index(*domain.begin()); 
+    assert(var_index != -1);
+    variables_[var_index]->intersect_with(domain);
+}
+
+void Inference::CSP::Csp::prune_domain_of_var(int h_atom) {
+    int var_index = get_var_index(h_atom);
+    if (var_index != -1)
+        variables_[var_index]->apply_unary_constraint(h_atom);
+}
+
 /**
   * Dump information into state
   * This function is idempotent over state
@@ -484,9 +497,9 @@ bool Inference::CSP::AC3::arc_reduce_2(Inference::CSP::Arc* arc, Inference::CSP:
     const GroupArc* group_arc = ((const GroupArc*) arc);
 
 #ifdef DEBUG
-//    std::cout << Utils::green() << "Arc to be examined: " << std::endl;
-//    group_arc->print(std::cout, instance, state, csp);
-//    std::cout << Utils::normal();
+    std::cout << Utils::green() << "Arc to be examined: " << std::endl;
+    group_arc->print(std::cout, instance, state, csp);
+    std::cout << Utils::normal();
 #endif
     Variable*  x,* y;
     if (group_arc->x_is_group()) {
@@ -517,7 +530,8 @@ bool Inference::CSP::AC3::arc_reduce_2(Inference::CSP::Arc* arc, Inference::CSP:
         // Erase from domain, and set iterator before next element
         if( ! found ) {
 #ifdef DEBUG
-//            std::cout << "REDUCING DOM" << std::endl;
+            std::cout << Utils::magenta() << "REDUCING DOM" << std::endl;
+            std::cout << "vx = " << *vx << std::endl;
 #endif
             vx = x->erase(vx);
             change = true;
@@ -569,7 +583,7 @@ void Inference::CSP::AC3::apply_constraints(Inference::CSP::Csp& csp, const Inst
 
                 for( auto it = arcs_.cbegin(); it != arcs_.cend(); it++ ) {
                     GroupArc* tmp_arc = ((GroupArc*)*it);
-                    if ( ! tmp_arc->x_is_group() && tmp_arc->second == group_arc->first) {
+                    if( ! tmp_arc->x_is_group() && tmp_arc->second == group_arc->first) {
                         worklist_2_.insert(tmp_arc);
                     }
                 }
@@ -602,8 +616,7 @@ void Inference::CSP::AC3::solve_groups(Inference::CSP::Csp& csp,
                                        LW1_State& state,
                                        const Instance& instance) {
     initialize_worklist();
-    apply_unary_constraints(csp);
-    apply_constraints(csp, instance, state);
+    //apply_constraints(csp, instance, state);
     csp.dump_into(state, instance);
 }
 
