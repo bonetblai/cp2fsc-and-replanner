@@ -169,6 +169,10 @@ namespace Inference {
                 return variables_;
             }
 
+            const std::vector<std::vector<std::vector<int>>>& get_vars_in_common_groups() const {
+                return vars_in_common_groups_;
+            }
+
             // Add a constraint to constraints_
             void add_constraint(std::vector<int>& c) {
                 constraints_.push_back(c);
@@ -219,26 +223,28 @@ namespace Inference {
         };
 
         class Arc : public std::pair<int, int> {
-        public:
-            bool x_is_group_;
-            Arc(int x, int y, bool p) : std::pair<int, int>(x, y), x_is_group_(p) { };
-            virtual bool reduce(Csp& csp, const Instance& lw1,
-                                const LW1_State& state) const = 0;
-        };
-
-//        class SimpleArc : public Arc {
-//
-//        };
-
-        class GroupArc : public Arc {
-        public:
-            GroupArc(int x, int y, bool p) : Arc(x, y, p) { };
-            bool reduce(Csp& csp, const Instance& lw1,
-                        const LW1_State& state) const { return true; };
+          public:
+            bool x_is_group_, y_is_group_;
+            Arc(int x, int y, bool x_is_group, bool y_is_group)
+                    : std::pair<int, int>(x, y), x_is_group_(x_is_group), y_is_group_(y_is_group) { };
             bool x_is_group() const { return x_is_group_; }
+            bool y_is_group() const { return y_is_group_; }
+
+            bool is_simple() const { return ! x_is_group_ && ! y_is_group_; }
+            bool is_group() const { return x_is_group_ && y_is_group_; }
+            bool is_mixed() const { return ! is_simple() &&  ! is_group(); }
+
             void print(std::ostream &os, const Instance &instance,
-                               const LW1_State &state, const Csp& csp) const;
+                   const LW1_State &state, const Csp& csp) const;
         };
+
+//        class GroupArc : public Arc {
+//          public:
+//            GroupArc(int x, int y, bool p) : Arc(x, y, p) { };
+//            bool x_is_group() const { return x_is_group_; }
+//            void print(std::ostream &os, const Instance &instance,
+//                               const LW1_State &state, const Csp& csp) const;
+//        };
 
         /**
           * AC3 Algorithm for solvign CSP

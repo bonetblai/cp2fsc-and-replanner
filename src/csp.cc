@@ -591,21 +591,18 @@ void Inference::CSP::AC3::initialize_worklist() {
 
 bool Inference::CSP::AC3::arc_reduce_2(Inference::CSP::Arc* arc, Inference::CSP::Csp& csp, const Instance& instance,
                                        const LW1_State& state) {
-    const GroupArc* group_arc = ((const GroupArc*) arc);
-
 #ifdef DEBUG
     std::cout << Utils::green() << "Arc to be examined: " << std::endl;
-    group_arc->print(std::cout, instance, state, csp);
+    arc->print(std::cout, instance, state, csp);
     std::cout << Utils::normal();
 #endif
     Variable*  x,* y;
-    if (group_arc->x_is_group()) {
-        x = csp.get_group_var(arc->first);
-        y = csp.get_var_from_vars(arc->second);
-    } else {
-        x = csp.get_var_from_vars(arc->first);
-        y = csp.get_group_var(arc->second);
-    }
+
+    if( arc->x_is_group()) x = csp.get_group_var(arc->first);
+    else x = csp.get_var_from_vars(arc->first);
+
+    if( arc->y_is_group()) y = csp.get_group_var(arc->second);
+    else y = csp.get_var_from_vars(arc->second);
 
     bool change = false; // An element has been erase from dx ?
     assert(x->get_domain_size() && y->get_domain_size());
@@ -641,16 +638,14 @@ bool Inference::CSP::AC3::arc_reduce_2(Inference::CSP::Arc* arc, Inference::CSP:
 
 bool Inference::CSP::AC3::evaluate(Inference::CSP::Arc* arc, int x, int y, const Csp& csp) const {
     assert(x >= 0 && y >= 0);
-    GroupArc* group_arc = ((GroupArc*)arc);
-
-    if (group_arc->x_is_group()) {
+    if (arc->x_is_group()) {
         int var_index = csp.get_var_index(y);
-        VariableGroup* group = csp.get_group_var(group_arc->first);
+        VariableGroup* group = csp.get_group_var(arc->first);
         int pos = group->get_pos_from_var_index(var_index);
         int bit = (y % 2) << pos;
         return (x & (1 << pos)) == bit;
     }
-    VariableGroup* group = csp.get_group_var(group_arc->second);
+    VariableGroup* group = csp.get_group_var(arc->second);
     int var_index = csp.get_var_index(x);
     int pos = group->get_pos_from_var_index(var_index);
     int bit = (x % 2) << pos;
@@ -660,7 +655,7 @@ bool Inference::CSP::AC3::evaluate(Inference::CSP::Arc* arc, int x, int y, const
 void Inference::CSP::AC3::apply_constraints(Inference::CSP::Csp& csp, const Instance& instance, const LW1_State& state) {
     while( ! worklist_2_.empty() ) {
         Arc* arc = *worklist_2_.begin();
-        GroupArc* group_arc = ((GroupArc*)arc);
+//        GroupArc* group_arc = ((GroupArc*)arc);
         worklist_2_.erase(worklist_2_.begin());
 
 #ifdef DEBUG
@@ -670,17 +665,17 @@ void Inference::CSP::AC3::apply_constraints(Inference::CSP::Csp& csp, const Inst
 
 
         if ( arc_reduce_2(arc, csp, instance, state)) {
-            if(group_arc->x_is_group()) {
+            if(arc->x_is_group()) {
                 // x is group, y is normal var
 
 #ifdef DEBUG
-                varx = csp.get_group_var(group_arc->first);
-                vary = csp.get_var_from_vars(group_arc->second);
+                varx = csp.get_group_var(arc->first);
+                vary = csp.get_var_from_vars(arc->second);
 #endif
 
                 for( auto it = arcs_.cbegin(); it != arcs_.cend(); it++ ) {
-                    GroupArc* tmp_arc = ((GroupArc*)*it);
-                    if( ! tmp_arc->x_is_group() && tmp_arc->second == group_arc->first) {
+                    Arc* tmp_arc = *it;
+                    if( ! tmp_arc->x_is_group() && tmp_arc->second == arc->first) {
                         worklist_2_.insert(tmp_arc);
                     }
                 }
@@ -688,13 +683,13 @@ void Inference::CSP::AC3::apply_constraints(Inference::CSP::Csp& csp, const Inst
                 // y is group, x is normal var
 
 #ifdef DEBUG
-                varx = csp.get_var_from_vars(group_arc->first);
-                vary = csp.get_group_var(group_arc->second);
+                varx = csp.get_var_from_vars(arc->first);
+                vary = csp.get_group_var(arc->second);
 #endif
 
                 for( auto it = arcs_.cbegin(); it != arcs_.cend(); it++ ) {
-                    GroupArc* tmp_arc = ((GroupArc*)*it);
-                    if ( tmp_arc->x_is_group() && tmp_arc->second == group_arc->first) {
+                    Arc* tmp_arc = *it;
+                    if ( tmp_arc->x_is_group() && tmp_arc->second == arc->first) {
                         worklist_2_.insert(tmp_arc);
                     }
                 }
@@ -732,30 +727,39 @@ void Inference::CSP::AC3::initialize_arcs(const KP_Instance& instance,
                                           Inference::CSP::Csp& csp) {
     arcs_.clear();
     const LW1_Instance& lw1 = ((const LW1_Instance&) instance);
-    for (int i = 0; i < int(lw1.vars_for_variable_groups_.size()); i++) {
-        for (int j = 0; j < int(lw1.vars_for_variable_groups_[i].size()); j++) {
+    for( int i = 0; i < int(lw1.vars_for_variable_groups_.size()); i++ ) {
+        for( int j = 0; j < int(lw1.vars_for_variable_groups_[i].size()); j++ ) {
             int var_index = lw1.vars_for_variable_groups_[i][j];
-            Arc* arc = new GroupArc(i, var_index, true);
+            Arc* arc = new Arc(i, var_index, true, false);
             arcs_.push_back(arc);
 
-            Arc* arc_reversed = new GroupArc(var_index, i, false);
+            Arc* arc_reversed = new Arc(var_index, i, false, true);
             arcs_.push_back(arc_reversed);
+        }
+    }
+
+    const V3D& vars_in_common_groups = csp.get_vars_in_common_groups();
+    for( int i = 0; i < int(vars_in_common_groups.size()); i++ ) {
+        for( int j = 0; j < int(vars_in_common_groups[i].size()); j++ ) {
+            if( ! vars_in_common_groups[i][j].empty() ) {
+                // create arc between i and j
+            }
         }
     }
 }
 
 
-void Inference::CSP::GroupArc::print(std::ostream& os, const Instance& instance, const LW1_State& state,
+void Inference::CSP::Arc::print(std::ostream& os, const Instance& instance, const LW1_State& state,
                                      const Csp& csp) const {
     Variable* x;
     Variable* y;
-    if( x_is_group() ) {
-        x = csp.get_group_var(first);
-        y = csp.get_var_from_vars(second);
-    } else {
-        x = csp.get_var_from_vars(first);
-        y = csp.get_group_var(second);
-    }
+
+    if( x_is_group()) x = csp.get_group_var(first);
+    else x = csp.get_var_from_vars(first);
+
+    if( y_is_group()) y = csp.get_group_var(second);
+    else y = csp.get_var_from_vars(second);
+
     x->print(os, instance, state);
     y->print(os, instance, state);
 }
