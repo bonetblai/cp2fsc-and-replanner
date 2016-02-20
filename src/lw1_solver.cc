@@ -460,7 +460,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         cout << Utils::cyan() << "Using inference: 'ac3' (AC3)" << Utils::normal() << endl;
 #endif
         Inference::CSP::Csp csp;
-        csp.clean_domains();
+        //csp.clean_domains();
 
         // find sensing models for given action that are incompatible with observations
         relevant_sensing_models_t relevant_sensing_models_as_k_dnf;
@@ -512,9 +512,6 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                     cout << Utils::normal() << endl;
 #endif
                     csp.prune_domain_of_var(k_literal);
-                    //Inference::Propositional::Clause cl;
-                    //cl.push_back(k_literal); // CHECK: en implementacion de clause, 'push_back' es un 'insert'
-                    //csp.add_constraint(cl);
                 } else if( lw1.filtering_groups_.find(key) != lw1.filtering_groups_.end() ) {
                     // observation can be filtered in variable group. Prune all valuations that are
                     // not consistent with k-dnf
@@ -524,6 +521,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                     const sensing_models_as_cnf_or_dnf_t& sensing_models_as_k_dnf = jt->second;
                     for( int k = 0; k < int(sensing_models_as_k_dnf.size()); ++k ) {
                         const cnf_or_dnf_t& k_dnf_for_sensing_model = *sensing_models_as_k_dnf[k];
+                        csp.prune_valuations_of_groups(vg, k_dnf_for_sensing_model, kp_instance_);
 #ifdef DEBUG
                         cout << Utils::blue() << "[AC3] k-dnf or k-cnf: index=" << k << ", formula=";
                         state.print_cnf_or_dnf(cout, k_dnf_for_sensing_model, &kp_instance_);
@@ -536,13 +534,6 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                             state.print_clause_or_term(cout, term, &kp_instance_);
                             cout << Utils::normal() << endl;
 #endif
-                            //Inference::Propositional::Clause cl;
-                            //for( int i = 0; i < int(term.size()); ++i ) {
-                            //    cl.push_back(term[i]);
-                            //}
-
-                            //// Constraints are added to the CSP
-                            //csp.add_constraint(cl);
                         }
                     }
   
@@ -556,10 +547,15 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                         state.print_cnf_or_dnf(cout, k_dnf_for_sensing_model, &kp_instance_);
                         cout << endl;
 #endif
+                        bool possible = true;
                         set<int> possible_domain;
                         for( int j = 0; j < int(k_dnf_for_sensing_model.size()); ++j ) {
                             const clause_or_term_t& term = k_dnf_for_sensing_model[j];
 
+                            if (term.size() > 1) {
+                                possible = false;
+                                break;
+                            }
                             assert(term.size() == 1);
 #ifdef DEBUG
                             cout << Utils::red() << "[AC3] Add K_o term: ";
@@ -567,15 +563,9 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                             cout << Utils::normal() << endl;
 #endif
                             possible_domain.insert(term[0]);
-                            //Inference::Propositional::Clause cl;
-                            //for( int i = 0; i < int(term.size()); ++i ) {
-                            //    cl.push_back(term[i]);
-                            //}
-
-                            //// Constraints are added to the CSP
-                            //csp.add_constraint(cl);
                         }
-                        csp.intersect_domain_of_var(possible_domain);
+                        if (possible) 
+                            csp.intersect_domain_of_var(possible_domain);
                     }
                 }
             }

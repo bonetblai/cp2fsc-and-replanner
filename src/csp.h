@@ -181,6 +181,9 @@ namespace Inference {
             void clean_domains();
 
             void prune_domain_of_var(int h_atom); 
+            void prune_valuations_of_groups(int vg,
+                                            const std::vector<std::vector<int>> &valuations,
+                                            const Instance &kp_instance);
             void intersect_domain_of_var(const std::set<int> &domain);
 
             // Change (Add to) state relevant information of current csp
@@ -221,7 +224,8 @@ namespace Inference {
 
         class Arc : public std::pair<int, int> {
         public:
-            Arc(int x, int y) : std::pair<int, int>(x, y) { };
+            bool x_is_group_;
+            Arc(int x, int y, bool p) : std::pair<int, int>(x, y), x_is_group_(p) { };
             virtual bool reduce(Csp& csp, const Instance& lw1,
                                 const LW1_State& state) const = 0;
         };
@@ -231,10 +235,8 @@ namespace Inference {
 //        };
 
         class GroupArc : public Arc {
-        private:
-            bool x_is_group_;
         public:
-            GroupArc(int x, int y, bool p) : Arc(x, y), x_is_group_(p) { };
+            GroupArc(int x, int y, bool p) : Arc(x, y, p) { };
             bool reduce(Csp& csp, const Instance& lw1,
                         const LW1_State& state) const { return true; };
             bool x_is_group() const { return x_is_group_; }
@@ -251,7 +253,9 @@ namespace Inference {
                 bool operator()(const Arc* a, const Arc* b) const {
                     if (a->first < b->first) return true;
                     if (b->first < a->first) return false;
-                    return a->second < b->second;
+                    if (a->second < b->second) return true;
+                    if (b->second < a->second) return false;
+                    return (a->x_is_group_);
                 }
             };
             // Arcs
