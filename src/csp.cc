@@ -596,7 +596,7 @@ bool Inference::CSP::AC3::arc_reduce_2(Inference::CSP::Arc* arc, Inference::CSP:
     arc->print(std::cout, instance, state, csp);
     std::cout << Utils::normal();
 #endif
-    Variable*  x,* y;
+    Variable* x,* y;
 
     if( arc->x_is_group()) x = csp.get_group_var(arc->first);
     else x = csp.get_var_from_vars(arc->first);
@@ -636,20 +636,46 @@ bool Inference::CSP::AC3::arc_reduce_2(Inference::CSP::Arc* arc, Inference::CSP:
     return change;
 }
 
+int Inference::CSP::AC3::build_commons_valuation(int valuation, Arc* arc, const Csp& csp) const {
+    assert(arc->first != arc->second);
+    int x_index = std::min(arc->first, arc->second); 
+    int y_index = std::max(arc->first, arc->second);
+    VariableGroup* x_var = csp.get_group_var(x_index);
+    VariableGroup* y_var = csp.get_group_var(y_index);
+
+    const V3D& common_vars = csp.get_vars_in_common_groups();
+    int common_valuation = 0;
+    for (int t = 0; t < common_vars[x_index][y_index].size(); t++) {
+        int common_var = common_vars[x_index][y_index][t];
+        int pos_var = x_var->get_pos_from_var_index(common_var);
+        // value of common var in valuation
+        int value = valuation & (1 << pos_var); 
+        common_valuation |= (value << t);  
+    }
+    return common_valuation;
+}
+
 bool Inference::CSP::AC3::evaluate(Inference::CSP::Arc* arc, int x, int y, const Csp& csp) const {
     assert(x >= 0 && y >= 0);
-    if (arc->x_is_group()) {
-        int var_index = csp.get_var_index(y);
-        VariableGroup* group = csp.get_group_var(arc->first);
+    if (arc->is_mixed()) {
+        if (arc->x_is_group()) {
+            int var_index = csp.get_var_index(y);
+            VariableGroup* group = csp.get_group_var(arc->first);
+            int pos = group->get_pos_from_var_index(var_index);
+            int bit = (y % 2) << pos;
+            return (x & (1 << pos)) == bit;
+        }
+        VariableGroup* group = csp.get_group_var(arc->second);
+        int var_index = csp.get_var_index(x);
         int pos = group->get_pos_from_var_index(var_index);
-        int bit = (y % 2) << pos;
-        return (x & (1 << pos)) == bit;
+        int bit = (x % 2) << pos;
+        return (y & (1 << pos)) == bit;
     }
-    VariableGroup* group = csp.get_group_var(arc->second);
-    int var_index = csp.get_var_index(x);
-    int pos = group->get_pos_from_var_index(var_index);
-    int bit = (x % 2) << pos;
-    return (y & (1 << pos)) == bit;
+
+    // if group
+    return build_commons_valuation(x, arc, csp) == build_commons_valuation(y, arc, csp);
+
+   // if simple
 }
 
 void Inference::CSP::AC3::apply_constraints(Inference::CSP::Csp& csp, const Instance& instance, const LW1_State& state) {
@@ -662,37 +688,26 @@ void Inference::CSP::AC3::apply_constraints(Inference::CSP::Csp& csp, const Inst
         Variable* varx;
         Variable* vary;
 #endif
+ 
+        if( arc_reduce_2(arc, csp, instance, state) ) {
+            Variable* x,* y;
+            if( arc->x_is_group()) x = csp.get_group_var(arc->first);
+            else x = csp.get_var_from_vars(arc->first);
 
+            if( arc->y_is_group()) y = csp.get_group_var(arc->second);
+            else y = csp.get_var_from_vars(arc->second);
 
-        if ( arc_reduce_2(arc, csp, instance, state)) {
-            if(arc->x_is_group()) {
-                // x is group, y is normal var
+            for( auto it = arcs_.cbegin(); it != arcs_.cend(); it++ ) {
+                Arc* tmp = *it;
+                Variable* tmp_z,* tmp_x;
+                if( tmp->x_is_group()) tmp_z = csp.get_group_var(arc->first);
+                else tmp_z = csp.get_var_from_vars(arc->first);
 
-#ifdef DEBUG
-                varx = csp.get_group_var(arc->first);
-                vary = csp.get_var_from_vars(arc->second);
-#endif
+                if( tmp->y_is_group()) tmp_x = csp.get_group_var(arc->second);
+                else tmp_x = csp.get_var_from_vars(arc->second);
 
-                for( auto it = arcs_.cbegin(); it != arcs_.cend(); it++ ) {
-                    Arc* tmp_arc = *it;
-                    if( ! tmp_arc->x_is_group() && tmp_arc->second == arc->first) {
-                        worklist_2_.insert(tmp_arc);
-                    }
-                }
-            } else {
-                // y is group, x is normal var
-
-#ifdef DEBUG
-                varx = csp.get_var_from_vars(arc->first);
-                vary = csp.get_group_var(arc->second);
-#endif
-
-                for( auto it = arcs_.cbegin(); it != arcs_.cend(); it++ ) {
-                    Arc* tmp_arc = *it;
-                    if ( tmp_arc->x_is_group() && tmp_arc->second == arc->first) {
-                        worklist_2_.insert(tmp_arc);
-                    }
-                }
+                if( tmp_x ==  x && tmp_z != y)  
+                    worklist_2_.insert(tmp);
             }
 #ifdef DEBUG
             //std::cout << Utils::green() << "Vars reduced to: " << Utils::normal() << std::endl;
@@ -726,23 +741,23 @@ void Inference::CSP::AC3::solve_groups(Inference::CSP::Csp& csp,
 void Inference::CSP::AC3::initialize_arcs(const KP_Instance& instance,
                                           Inference::CSP::Csp& csp) {
     arcs_.clear();
+    // Building mixed arcs
     const LW1_Instance& lw1 = ((const LW1_Instance&) instance);
     for( int i = 0; i < int(lw1.vars_for_variable_groups_.size()); i++ ) {
         for( int j = 0; j < int(lw1.vars_for_variable_groups_[i].size()); j++ ) {
             int var_index = lw1.vars_for_variable_groups_[i][j];
-            Arc* arc = new Arc(i, var_index, true, false);
-            arcs_.push_back(arc);
-
-            Arc* arc_reversed = new Arc(var_index, i, false, true);
-            arcs_.push_back(arc_reversed);
+            arcs_.push_back(new Arc(i, var_index, true, false));
+            arcs_.push_back(new Arc(var_index, i, false, true));
         }
     }
 
+    // Build group to group arcs
     const V3D& vars_in_common_groups = csp.get_vars_in_common_groups();
     for( int i = 0; i < int(vars_in_common_groups.size()); i++ ) {
         for( int j = 0; j < int(vars_in_common_groups[i].size()); j++ ) {
             if( ! vars_in_common_groups[i][j].empty() ) {
-                // create arc between i and j
+                arcs_.push_back(new Arc(i, j, true, true));
+                arcs_.push_back(new Arc(j, i, true, true));
             }
         }
     }

@@ -224,6 +224,20 @@ namespace Inference {
 
         class Arc : public std::pair<int, int> {
           public:
+            bool operator<(const Arc &b) const {
+                const Arc& a = *this;
+                if (a.first < b.first) return true;
+                if (b.first < a.first) return false;
+                if (a.second < b.second) return true;
+                if (b.second < a.second) return false;
+
+                if (a.is_group()) return true;
+                if (a.is_simple()) return false;
+                if (a.is_mixed() && b.is_mixed() && a.x_is_group() && b.y_is_group()) 
+                    return true;
+                return false;
+            }
+
             bool x_is_group_, y_is_group_;
             Arc(int x, int y, bool x_is_group, bool y_is_group)
                     : std::pair<int, int>(x, y), x_is_group_(x_is_group), y_is_group_(y_is_group) { };
@@ -252,12 +266,8 @@ namespace Inference {
         class AC3 {
           private:
             struct arc_compare {
-                bool operator()(const Arc* a, const Arc* b) const {
-                    if (a->first < b->first) return true;
-                    if (b->first < a->first) return false;
-                    if (a->second < b->second) return true;
-                    if (b->second < a->second) return false;
-                    return (a->x_is_group_);
+                bool operator()(const Arc *a, const Arc *b) const {
+                    return *a < *b;
                 }
             };
             // Arcs
@@ -287,6 +297,7 @@ namespace Inference {
                             const LW1_State& state) const;
             bool arc_reduce_2(Inference::CSP::Arc* arc, Inference::CSP::Csp& csp, const Instance& instance,
                                           const LW1_State& state);
+            int build_commons_valuation(int val, Arc* arc, const Csp& csp) const;
             bool evaluate(Arc* arc, int x, int y, const Csp& csp) const;
         public:
             void initialize_arcs(const KP_Instance& instance, Csp& csp);
