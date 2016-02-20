@@ -56,19 +56,7 @@ namespace Inference {
                 return current_domain_.erase(it);
             }
 
-            void intersect_with(const std::set<int>& domain) {
-                std::set<int>::iterator cd = current_domain_.begin();
-                std::set<int>::const_iterator pd = domain.cbegin();
-                while (cd != current_domain_.end() && pd != domain.cend()) {
-                    if (*cd < *pd) {
-                        current_domain_.erase(cd++);
-                    } else {
-                        if (*cd == *pd) cd++;
-                        pd++;
-                    }
-                }
-                current_domain_.erase(cd, current_domain_.end());
-            }
+            void intersect_with(const std::set<int>& domain);
 
             size_t get_domain_size() const {
                 return current_domain_.size();
@@ -158,6 +146,11 @@ namespace Inference {
             std::vector<std::vector<int>> constraints_;
             // Map for finding var_index of l_atom
             static std::map<int, int> atoms_to_var_map_;
+
+            std::pair<int,int> get_masks(int vg, 
+                                         const std::vector<int> &constraint,
+                                         const LW1_Instance &kp_instance);
+
           public:
             void initialize(
                     const std::vector<LW1_Instance::Variable *> &vars,
