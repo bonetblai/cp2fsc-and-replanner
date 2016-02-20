@@ -298,10 +298,10 @@ void Inference::CSP::Csp::clean_domains() {
         (*it)->reset_domain();
     }
 
-    for (auto it = variable_groups_.begin();
-         it != variable_groups_.end(); it++) {
-        (*it)->reset_domain();
-    }
+//    for (auto it = variable_groups_.begin();
+//         it != variable_groups_.end(); it++) {
+//        (*it)->reset_domain();
+//    }
 }
 
 /**
@@ -359,7 +359,6 @@ int Inference::CSP::get_l_atom(int h_atom) {
 /************************ AC3 Class ************************/
 
 void Inference::CSP::AC3::apply_unary_constraints(Csp& csp) const {
-    csp.clean_domains();
     std::vector<std::vector<int>>& constraints_ = csp.get_constraints_();
     V_VAR variables_ = csp.get_variables_();
 

@@ -4,6 +4,7 @@
 #include "classical_planner.h"
 #include "problem.h"
 #include "kp_problem.h"
+#include "csp.h"
 #include "utils.h"
 #include <cassert>
 #include <iostream>
@@ -114,9 +115,13 @@ int NewSolver<T>::solve(const T &initial_hidden_state,
 
     int planner_calls = 0;
     while( !state.goal(kp_instance_) ) {
-
         plan.clear();
         assumptions.clear();
+
+        if( options_.is_enabled("lw1:inference:ac3")) {
+            Inference::CSP::Csp csp;
+            csp.clean_domains();
+        }
 
         // if there is only one applicable operator, there is no need
         // to call planner
