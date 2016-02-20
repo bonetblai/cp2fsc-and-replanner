@@ -128,8 +128,9 @@ namespace Inference {
                        const LW1_State &state) const;
 
             int get_pos_from_var_index(int var_index) const {
-                assert(var_index_to_pos.find(var_index) != var_index_to_pos.end());
-                return var_index_to_pos.at(var_index);
+                auto it = var_index_to_pos.find(var_index);
+                if( it == var_index_to_pos.cend()) return -1;
+                return it->second;
             }
         };
 
@@ -142,6 +143,8 @@ namespace Inference {
             static std::vector<Inference::CSP::Variable*> variables_;
             // Grouped Variables
             static std::vector<Inference::CSP::VariableGroup*> variable_groups_;
+            // Variables in common variable groups
+            static std::vector<std::vector<std::vector<int>>> vars_in_common_groups_;
             // Constraints of problem
             std::vector<std::vector<int>> constraints_;
             // Map for finding var_index of l_atom

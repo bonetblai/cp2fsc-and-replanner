@@ -31,12 +31,14 @@ typedef std::map<int, std::vector<int>>::const_iterator MIVI_CI;
 
 typedef std::vector<Inference::CSP::VariableGroup*> VVG;
 typedef std::vector<Inference::CSP::Arc*> VA;
+typedef std::vector<std::vector<std::vector<int>>> V3D;
 
 // Static members definitions
 V_VAR Inference::CSP::Csp::variables_ = V_VAR();
 MII Inference::CSP::Csp::atoms_to_var_map_ = MII();
 VVG Inference::CSP::Csp::variable_groups_ = VVG();
 VA Inference::CSP::AC3::arcs_ = VA();
+V3D Inference::CSP::Csp::vars_in_common_groups_  = V3D();
 
 /************************ Variable Abstract Class  ************************/
 
@@ -179,9 +181,27 @@ void Inference::CSP::Csp::initialize(
 
 void Inference::CSP::Csp::initialize_groups(const KP_Instance& instance) {
     const LW1_Instance& lw1 = ((const LW1_Instance&) instance);
-    for ( int i = 0; i < int(lw1.vars_for_variable_groups_.size()); i++ ) {
+    int number_of_groups = int(lw1.vars_for_variable_groups_.size());
+    for ( int i = 0; i < number_of_groups; i++ ) {
         VariableGroup* group = new VariableGroup(lw1.vars_for_variable_groups_[i], i);
         variable_groups_.push_back(group);
+    }
+
+    // Building vars in common groups matrix
+    vars_in_common_groups_.assign(number_of_groups, std::vector<std::vector<int>>());
+    for( int i = 0; i < number_of_groups; i++ ) {
+        vars_in_common_groups_[i].assign(number_of_groups, std::vector<int>());
+    }
+
+    for( int i = 0; i < int(variable_groups_.size()); i++ ) {
+        for( int j = i+1; j < int(variable_groups_.size()); j++ ) {
+            for( int k = 0; k < int(lw1.vars_for_variable_groups_[i].size()); k++ ) {
+                int var_index = lw1.vars_for_variable_groups_[i][k];
+                if( variable_groups_[j]->get_pos_from_var_index(var_index) != -1) {
+                    vars_in_common_groups_[i][j].push_back(var_index);
+                }
+            }
+        }
     }
 }
 
