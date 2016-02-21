@@ -636,20 +636,17 @@ bool Inference::CSP::AC3::arc_reduce_2(Inference::CSP::Arc* arc, Inference::CSP:
     return change;
 }
 
-int Inference::CSP::AC3::build_commons_valuation(int valuation, Arc* arc, const Csp& csp) const {
-    assert(arc->first != arc->second);
-    int x_index = std::min(arc->first, arc->second); 
-    int y_index = std::max(arc->first, arc->second);
-    VariableGroup* x_var = csp.get_group_var(x_index);
-    VariableGroup* y_var = csp.get_group_var(y_index);
+int Inference::CSP::AC3::build_commons_valuation(int valuation, VariableGroup* x_var, VariableGroup* y_var, const Csp& csp) const {
+    int i = std::min(x_var->get_index(), y_var->get_index()); 
+    int j = std::max(x_var->get_index(), y_var->get_index());
 
     const V3D& common_vars = csp.get_vars_in_common_groups();
     int common_valuation = 0;
-    for (int t = 0; t < common_vars[x_index][y_index].size(); t++) {
-        int common_var = common_vars[x_index][y_index][t];
+    for (int t = 0; t < common_vars[i][j].size(); t++) {
+        int common_var = common_vars[i][j][t];
         int pos_var = x_var->get_pos_from_var_index(common_var);
         // value of common var in valuation
-        int value = valuation & (1 << pos_var); 
+        int value = (valuation & (1 << pos_var)) >= 1; 
         common_valuation |= (value << t);  
     }
     return common_valuation;
@@ -673,7 +670,10 @@ bool Inference::CSP::AC3::evaluate(Inference::CSP::Arc* arc, int x, int y, const
     }
 
     // if group
-    return build_commons_valuation(x, arc, csp) == build_commons_valuation(y, arc, csp);
+    VariableGroup* x_var = csp.get_group_var(arc->first); 
+    VariableGroup* y_var = csp.get_group_var(arc->second);
+    return build_commons_valuation(x, x_var, y_var, csp) ==
+           build_commons_valuation(y, y_var, x_var, csp);
 
    // if simple
 }

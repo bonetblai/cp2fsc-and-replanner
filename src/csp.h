@@ -132,6 +132,7 @@ namespace Inference {
                 if( it == var_index_to_pos.cend()) return -1;
                 return it->second;
             }
+            int get_index() const { return index_; }
         };
 
         /**
@@ -297,7 +298,7 @@ namespace Inference {
                             const LW1_State& state) const;
             bool arc_reduce_2(Inference::CSP::Arc* arc, Inference::CSP::Csp& csp, const Instance& instance,
                                           const LW1_State& state);
-            int build_commons_valuation(int val, Arc* arc, const Csp& csp) const;
+            int build_commons_valuation(int val, VariableGroup* x_var, VariableGroup* y_var, const Csp& csp) const;
             bool evaluate(Arc* arc, int x, int y, const Csp& csp) const;
         public:
             void initialize_arcs(const KP_Instance& instance, Csp& csp);
