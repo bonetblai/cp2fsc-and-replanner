@@ -642,7 +642,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                     clauses_for_axioms_.push_back(clause);
 #ifdef DEBUG
                     cout << Utils::yellow() << "CLAUSE0: " << Utils::normal();
-                    LW1_State::print_clause(cout, clause, this);
+                    LW1_State::print_clause_or_term(cout, clause, this);
                     cout << endl;
 #endif
                 }
@@ -658,7 +658,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                             clauses_for_axioms_.push_back(clause);
 #ifdef DEBUG
                             cout << Utils::yellow() << "CLAUSE1: " << Utils::normal();
-                            LW1_State::print_clause(cout, clause, this);
+                            LW1_State::print_clause_or_term(cout, clause, this);
                             cout << endl;
 #endif
                         }
@@ -688,7 +688,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                     clauses_for_axioms_.push_back(clause);
 #ifdef DEBUG
                     cout << Utils::yellow() << "CLAUSE2: " << Utils::normal();
-                    LW1_State::print_clause(cout, clause, this);
+                    LW1_State::print_clause_or_term(cout, clause, this);
                     cout << endl;
 #endif
                 }
@@ -715,7 +715,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                         clauses_for_axioms_.push_back(clause);
 #ifdef DEBUG
                         cout << Utils::yellow() << "CLAUSE3: " << Utils::normal();
-                        LW1_State::print_clause(cout, clause, this);
+                        LW1_State::print_clause_or_term(cout, clause, this);
                         cout << endl;
                         act.print(cout, ins);
 #endif
@@ -744,7 +744,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                 clauses_for_axioms_.push_back(clause);
 #ifdef DEBUG
                 cout << Utils::yellow() << "CLAUSE4: " << Utils::normal();
-                LW1_State::print_clause(cout, clause, this);
+                LW1_State::print_clause_or_term(cout, clause, this);
                 cout << endl;
 #endif
             }
