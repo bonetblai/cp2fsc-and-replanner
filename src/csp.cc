@@ -162,6 +162,7 @@ void Inference::CSP::Csp::initialize(
         const std::map<int, int> map) {
 
     // Fill variables from Instance
+    variables_.clear();
     for (auto it = vars.cbegin(); it != vars.cend(); it++) {
         LW1_Instance::Variable *var = *it;
         Inference::CSP::Variable *variable;
@@ -176,10 +177,12 @@ void Inference::CSP::Csp::initialize(
     }
 
     // Copy atoms to vars
+    atoms_to_var_map_.clear();
     atoms_to_var_map_ = map;
 }
 
 void Inference::CSP::Csp::initialize_groups(const KP_Instance& instance) {
+    variable_groups_.clear();  // cleaning groups
     const LW1_Instance& lw1 = ((const LW1_Instance&) instance);
     int number_of_groups = int(lw1.vars_for_variable_groups_.size());
     for ( int i = 0; i < number_of_groups; i++ ) {
@@ -188,6 +191,7 @@ void Inference::CSP::Csp::initialize_groups(const KP_Instance& instance) {
     }
 
     // Building vars in common groups matrix
+    vars_in_common_groups_.clear();
     vars_in_common_groups_.assign(number_of_groups, std::vector<std::vector<int>>());
     for( int i = 0; i < number_of_groups; i++ ) {
         vars_in_common_groups_[i].assign(number_of_groups, std::vector<int>());
