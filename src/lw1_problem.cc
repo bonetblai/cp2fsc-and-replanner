@@ -1213,7 +1213,7 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                     nact->effect_.insert(1 + 2*index_for_observable_literal);
                 } else {
                     // we should not reach this point
-                    assert(0);
+                    //assert(0);
                 }
             }
 
