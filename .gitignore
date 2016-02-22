@@ -12,3 +12,4 @@ libp.a
 gen-*
 ff.*
 Debug/
+grammar_tmp.*

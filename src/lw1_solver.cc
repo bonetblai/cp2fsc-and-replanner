@@ -310,13 +310,17 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                             // The clause holds the indexes for the atoms
                             // To find it in atoms_, 1 must be substracted.
 #ifdef DEBUG
-                            for( auto cl = clause.cbegin(); cl != clause.cend(); ++cl ) { // CHECK: remove auto
-                                int cl_index = abs(*cl);
-                                int k_literal = cl_index > 0 ? (cl_index - 1) / 2 : (-cl_index - 1) / 2 + 1;
-                                cout << Utils::magenta() << "[UP] Related variable: ";
-                                cout << lw1.variables_[atoms_to_vars_.at(k_literal)]->name_;
-                                cout << Utils::normal() << endl;
-                            }
+//                            CHECK: In UP problems, K_atoms can be encountered which are not in atoms_to_var_map_
+//                            as some variables (for example, wumpus) can have reduced domains.
+//                            This print is commented out as a precaution. 
+//
+//                            for( auto cl = clause.cbegin(); cl != clause.cend(); ++cl ) { // CHECK: remove auto
+//                                int cl_index = abs(*cl);
+//                                int k_literal = cl_index > 0 ? (cl_index - 1) / 2 : (-cl_index - 1) / 2 + 1;
+//                                cout << Utils::magenta() << "[UP] Related variable: ";
+//                                cout << lw1.variables_[atoms_to_vars_.at(k_literal)]->name_;
+//                                cout << Utils::normal() << endl;
+//                            }
 #endif
 
 #endif
