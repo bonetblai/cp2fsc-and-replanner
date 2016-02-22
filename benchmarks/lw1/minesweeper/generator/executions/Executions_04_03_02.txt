@@ -1,4 +1,4 @@
-3 4 100
+4 3 100
 minefield: 0 1 * 1 1 2 1 1 * 1 0 0
 execution: open 0 0 obs 0 open 1 1 obs 2 open 1 0 obs 1 open 0 1 obs 1 open 2 2 obs 0 flag 2 0 obs -1 flag 0 2 obs -1 open 3 2 obs 0 open 3 1 obs 1 open 3 0 obs 1 open 2 1 obs 1 open 1 2 obs 1 
 minefield: 0 1 * 1 0 1 2 2 0 0 1 *
