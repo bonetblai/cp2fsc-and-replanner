@@ -700,13 +700,13 @@ void Inference::CSP::AC3::apply_constraints(Inference::CSP::Csp& csp, const Inst
             for( auto it = arcs_.cbegin(); it != arcs_.cend(); it++ ) {
                 Arc* tmp = *it;
                 Variable* tmp_z,* tmp_x;
-                if( tmp->x_is_group()) tmp_z = csp.get_group_var(arc->first);
-                else tmp_z = csp.get_var_from_vars(arc->first);
+                if( tmp->x_is_group()) tmp_z = csp.get_group_var(tmp->first);
+                else tmp_z = csp.get_var_from_vars(tmp->first);
 
-                if( tmp->y_is_group()) tmp_x = csp.get_group_var(arc->second);
-                else tmp_x = csp.get_var_from_vars(arc->second);
+                if( tmp->y_is_group()) tmp_x = csp.get_group_var(tmp->second);
+                else tmp_x = csp.get_var_from_vars(tmp->second);
 
-                if( tmp_x ==  x && tmp_z != y)  
+                if( tmp_x == x && tmp_z != y )
                     worklist_2_.insert(tmp);
             }
 #ifdef DEBUG
