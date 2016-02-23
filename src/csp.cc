@@ -6,6 +6,10 @@
 #include <set>
 #include "csp.h"
 
+#ifdef CLEAN
+    #undef DEBUG
+#endif
+
 typedef std::set<int> SI;
 typedef SI::iterator SI_I;
 typedef std::set<int>::const_iterator SI_CI;
@@ -282,9 +286,10 @@ void Inference::CSP::Csp::prune_valuations_of_groups(
     for (int i = 0; i < int(valuations.size()); i++) {
         std::pair<int, int> masks = get_masks(vg, valuations[i], (const LW1_Instance&) kp_instance);
         int impossibles = masks.first, possibles = masks.second;
-
+#ifdef DEBUG
         std::cout << "INTERSECTING vg = " << vg << std::endl;
-        const std::vector<int> &group = ((const LW1_Instance&) kp_instance).vars_for_variable_groups_[vg]; 
+#endif
+        const std::vector<int> &group = ((const LW1_Instance&) kp_instance).vars_for_variable_groups_[vg];
 
         for (int value = 0; value < (1 << int(group.size())); value++)
             possible_domain.insert((value & impossibles) | possibles);

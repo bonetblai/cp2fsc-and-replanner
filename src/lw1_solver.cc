@@ -7,6 +7,10 @@
 #include "csp.h"
 
 #define DEBUG
+#ifdef CLEAN
+  #undef DEBUG
+#endif
+
 
 using namespace std;
 
@@ -516,7 +520,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                     // observation can be filtered in variable group. Prune all valuations that are
                     // not consistent with k-dnf
                     int vg = lw1.filtering_groups_.at(key);
-                    cout << "[AC3] SOMETHING TO DO #2: vgroup=" << vg << endl;
+//                    cout << "[AC3] SOMETHING TO DO #2: vgroup=" << vg << endl;
 
                     const sensing_models_as_cnf_or_dnf_t& sensing_models_as_k_dnf = jt->second;
                     for( int k = 0; k < int(sensing_models_as_k_dnf.size()); ++k ) {
