@@ -206,7 +206,9 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                 const Instance::Action &act = *kp_instance_.actions_[k];
                 if( state.applicable(act) ) {
                     state.apply(act);
+#ifdef DEBUG
                     act.print(cout, kp_instance_);
+#endif
                 }
             }
             fix_point_reached = old_state == state;
