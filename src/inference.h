@@ -26,8 +26,8 @@ namespace Inference {
         class Clause : public vector<int> {
         public:
             // void push_back(int e) { insert(e); } // See comment at lw1_solver.cc
-            vector<int>::const_iterator find(int p) const {
-                vector<int>::const_iterator it = cbegin();
+            vector<int>::iterator find(int p) {
+                vector<int>::iterator it = begin();
                 for (; it != end(); it++)
                     if (*it == p) return it;
                 return it;

@@ -57,7 +57,7 @@ void Inference::Propositional::DPLL::solve(const CNF &a, CNF &b) {
                         clause--;
                         change = true;
                     } else if (clause->find(-L) != clause->end()) {
-                        //clause->erase(clause->find(-L));
+                        clause->erase(clause->find(-L));
                         change = true;
                     }
                 }
