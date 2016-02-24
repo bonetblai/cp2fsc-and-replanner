@@ -164,8 +164,7 @@ int main(int argc, const char *argv[]) {
         g_options.disable("lw1:aaai");
     }
     if( !g_options.is_enabled("lw1:aaai") && !g_options.is_enabled("lw1:strict") ) {
-        cout << Utils::error() << "lw1:aaai or lw1:strict must be enabled" << endl;
-        exit(-1);
+        g_options.enable("lw1:strict");
     }
 
     // set default inference algorithm is none is active so far
