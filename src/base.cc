@@ -5274,7 +5274,10 @@ void PDDL_Base::VariableGroup::process_instance() const {
 
             for( size_t k = 0; k < group_.size(); ++k ) {
                 state_variable_vec *grounded_group = group_[k]->ground(base_ptr_);
-                group->grounded_group_.insert(grounded_group_.end(), grounded_group->begin(), grounded_group->end());
+                for( state_variable_vec::iterator it = grounded_group->begin(); it != grounded_group->end(); it++) {
+                    group->grounded_group_.push_back(*it);
+                }
+//                grounded_group.insert(grounded_group_.end(), grounded_group->begin(), grounded_group->end());
                 for( int j = 0; j < int(grounded_group->size()); ++j ) {
                     const StateVariable &var = *(*grounded_group)[j];
                     group->grounded_group_str_.insert(string(var.print_name_));

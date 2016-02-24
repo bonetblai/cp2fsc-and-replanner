@@ -1,10 +1,10 @@
 # Define compiler/linker:
-#CC     = gcc
-#C++    = g++
-#LINK   = g++
-CC     = clang
-C++    = clang++
-LINK   = clang++
+CC     = gcc-4.8
+C++    = g++-4.8
+LINK   = g++-4.8
+#CC     = clang
+#C++    = clang++
+#LINK   = clang++
 
 
 # Define bison++ and flex++.
