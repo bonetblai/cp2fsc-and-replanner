@@ -8,7 +8,6 @@ scanner.*
 src/lw1
 cp2fsc
 k-replanner
-lw1
 libp.a
 gen-*
 ff.*

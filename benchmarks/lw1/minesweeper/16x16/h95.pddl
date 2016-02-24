@@ -1,0 +1,3 @@
+(define (problem h16x16)
+    (:hidden (first-move p7-10) (mine-at p1-1) (mine-at p9-2) (mine-at p14-2) (mine-at p13-3) (mine-at p16-3) (mine-at p4-4) (mine-at p5-4) (mine-at p6-4) (mine-at p11-4) (mine-at p16-4) (mine-at p8-5) (mine-at p13-5) (mine-at p15-5) (mine-at p16-5) (mine-at p13-6) (mine-at p16-6) (mine-at p3-7) (mine-at p4-7) (mine-at p9-7) (mine-at p10-7) (mine-at p12-7) (mine-at p2-8) (mine-at p14-8) (mine-at p16-8) (mine-at p4-9) (mine-at p13-9) (mine-at p9-10) (mine-at p15-11) (mine-at p1-12) (mine-at p4-12) (mine-at p1-13) (mine-at p7-13) (mine-at p13-14) (mine-at p16-14) (mine-at p1-15) (mine-at p8-15) (mine-at p9-15) (mine-at p2-16) (mine-at p11-16) (mine-at p15-16))
+)
