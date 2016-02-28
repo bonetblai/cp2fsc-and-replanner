@@ -370,10 +370,6 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         Inference::Propositional::CNF result;
         vector<int> assignment;
 #endif
-        //if( options_.is_enabled("lw1:inference:up:lookahead") ) {
-        //    cout << Utils::error() << "inference method 'lw1:inference:up:lookahead' not yet implemented" << endl;
-        //    exit(255);
-        //} else 
         if( options_.is_enabled("lw1:inference:watched-literals") ) {
 #ifdef UP
 #    ifdef DEBUG
@@ -382,6 +378,9 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
             Inference::Propositional::WatchedLiterals wl;
             wl.solve(cnf, assignment);
             if( options_.is_enabled("lw1:inference:up:lookahead") ) {
+#    ifdef DEBUG
+                cout << Utils::cyan() << "[U] Using one-lookahead for 'watched-literals'" << Utils::normal() << endl;
+#    endif
                 wl.lookahead(cnf, assignment);
             }
         } else {
@@ -399,8 +398,9 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
             for(unsigned i = 1; i < assignment.size(); ++i) {
                 int literal = assignment[i];
                 if( is_forbidden(i) ) continue;
-                assert(literal != 0); // CHECK
-                // assert((literal > 0) || options_.is_enabled("lw1:inference:up:enhanced"));
+                //assert(literal != 0); // CHECK
+                assert((literal != 0) || options_.is_enabled("lw1:inference:up:enhanced")
+                        || options_.is_enabled("lw1:inference:up:lookahead"));
                 if( literal == 1 ) {
                     state.add(i-1);
 #    ifdef DEBUG

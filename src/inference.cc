@@ -214,20 +214,16 @@ void Inference::Propositional::WatchedLiterals::lookahead(const CNF &cnf,
         if (assigned[i] != -1) continue; // already assigned
         copy = assigned;
         copy[i] = 1;
-        if (! propagate(cnf, copy, i)) { // we do this with copy
+        if (! propagate(cnf, copy, i)) { // propagating with copy
             // no other assignment is possible
             assigned[i] = 0;
             if (! propagate(cnf, assigned, i)) assert(0);
         } else {
+            vector<int> tmp = copy;
             copy = assigned;  // getting back original assigned
             copy[i] = 0;
-            if(! propagate(cnf, copy, i)) {
-                // no other assignment is possible
-                assigned[i] = 1;
-                if (! propagate(cnf, assigned, i)) assert(0);
-            } else {
-                assert(0);
-            }
+            // no other assignment is possible and assigned[i] = 1 !
+            if(! propagate(cnf, copy, i)) assigned = tmp;
         }
     }
 }
