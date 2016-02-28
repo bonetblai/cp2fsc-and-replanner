@@ -209,29 +209,24 @@ bool Inference::Propositional::WatchedLiterals::propagate(const CNF &cnf,
 void Inference::Propositional::WatchedLiterals::lookahead(const CNF &cnf,
                                                         vector<int> &assigned) {
 
-    vector<int> assigned_cp;
+    vector<int> copy;
     for (size_t i = 1; i < assigned.size(); ++i) {
-        assigned_cp = vector<int>(assigned);
-
-        if (assigned[i] == -1) {   //not assigned yet
-            assigned_cp[i] = 1;
-            if (! propagate(cnf, assigned_cp, i)) {
-                assigned[i] = 0;
-                /////////////////////
-                //Testing purposes //
-                /////////////////////
-                assigned_cp = vector<int>(assigned);
-                assigned_cp[i] = 0;
-                assert(propagate(cnf, assigned_cp, i));
-                /////////////////////
-                //Testing purposes //
-                /////////////////////
+        if (assigned[i] != -1) continue; // already assigned
+        copy = assigned;
+        copy[i] = 1;
+        if (! propagate(cnf, copy, i)) { // we do this with copy
+            // no other assignment is possible
+            assigned[i] = 0;
+            if (! propagate(cnf, assigned, i)) assert(0);
+        } else {
+            copy = assigned;  // getting back original assigned
+            copy[i] = 0;
+            if(! propagate(cnf, copy, i)) {
+                // no other assignment is possible
+                assigned[i] = 1;
+                if (! propagate(cnf, assigned, i)) assert(0);
             } else {
-                assigned_cp = vector<int>(assigned);
-                assigned_cp[i] = 0;
-                if(!propagate(cnf, assigned_cp, i)) {
-                    assigned[i] = 1;
-                }
+                assert(0);
             }
         }
     }

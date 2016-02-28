@@ -370,16 +370,20 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         Inference::Propositional::CNF result;
         vector<int> assignment;
 #endif
-        if( options_.is_enabled("lw1:inference:up:lookahead") ) {
-            cout << Utils::error() << "inference method 'lw1:inference:up:lookahead' not yet implemented" << endl;
-            exit(255);
-        } else if( options_.is_enabled("lw1:inference:watched-literals") ) {
+        //if( options_.is_enabled("lw1:inference:up:lookahead") ) {
+        //    cout << Utils::error() << "inference method 'lw1:inference:up:lookahead' not yet implemented" << endl;
+        //    exit(255);
+        //} else 
+        if( options_.is_enabled("lw1:inference:watched-literals") ) {
 #ifdef UP
 #    ifdef DEBUG
             cout << Utils::cyan() << "[UP] Using method: 'watched-literals'" << Utils::normal() << endl;
 #    endif
             Inference::Propositional::WatchedLiterals wl;
             wl.solve(cnf, assignment);
+            if( options_.is_enabled("lw1:inference:up:lookahead") ) {
+                wl.lookahead(cnf, assignment);
+            }
         } else {
 #    ifdef DEBUG
             cout << Utils::cyan() << "[UP] Using method: 'DPLL'" << Utils::normal() << endl;
