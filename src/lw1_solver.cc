@@ -555,9 +555,10 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                     // there is no variable group where to filter observation. Use k-dnf to generate constraints in CSP
                     const sensing_models_as_cnf_or_dnf_t& sensing_models_as_k_dnf = jt->second;
                     for( int k = 0; k < int(sensing_models_as_k_dnf.size()); ++k ) {
+                        std::cout << "[AC3] ELSE" << std::endl;
                         const cnf_or_dnf_t& k_dnf_for_sensing_model = *sensing_models_as_k_dnf[k];
 #ifdef DEBUG
-                        cout << "[AC3] k-dnf: index=" << k << ", formula=";
+                        cout << Utils::blue() << "[AC3] k-dnf: index =" << k << ", formula =" << Utils::normal();
                         state.print_cnf_or_dnf(cout, k_dnf_for_sensing_model, &kp_instance_);
                         cout << endl;
 #endif
@@ -572,7 +573,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                             }
                             assert(term.size() == 1);
 #ifdef DEBUG
-                            cout << Utils::red() << "[AC3] Add K_o term: ";
+                            cout << Utils::red() << "[AC3] Adding to possible domain_: ";
                             state.print_clause_or_term(cout, term, &kp_instance_);
                             cout << Utils::normal() << endl;
 #endif

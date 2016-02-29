@@ -650,6 +650,16 @@ void PDDL_Base::lw1_calculate_beams_for_grounded_observable_variables() {
                         cout << " " << *jt << (is_static_atom(*jt) ? "*" : "");
                     cout << endl;
                 }
+                if( var.is_binary() ) {
+                    Atom negated(*var.grounded_domain_.begin(), true);
+                    cout << Utils::magenta()
+                         << "beam for value '" << negated << "' of var '" << var.print_name_ << "' ('*' means static):"
+                         << Utils::normal();
+                    const unsigned_atom_set &beam = var.beam_.at(negated);
+                    for( unsigned_atom_set::const_iterator jt = beam.begin(); jt != beam.end(); ++jt )
+                        cout << " " << *jt << (is_static_atom(*jt) ? "*" : "");
+                    cout << endl;
+                }
             }
 
             // remove static atoms from beams
@@ -689,8 +699,13 @@ void PDDL_Base::lw1_calculate_beam_for_grounded_variable(Variable &var) {
                 ++it;
         }
 
+        signed_atom_set values;
+        values.insert(var.grounded_domain_.begin(), var.grounded_domain_.end());
+        if( var.is_binary() ) values.insert(Atom(*var.grounded_domain_.begin(), true));
+
         // calculate variable group where to filter this observable literal
-        for( unsigned_atom_set::const_iterator it = var.grounded_domain_.begin(); it != var.grounded_domain_.end(); ++it ) {
+        //for( unsigned_atom_set::const_iterator it = var.grounded_domain_.begin(); it != var.grounded_domain_.end(); ++it ) {
+        for( signed_atom_set::const_iterator it = values.begin(); it != values.end(); ++it ) {
             //std::map<Atom, unsigned_atom_set, Atom::unsigned_less_comparator>::const_iterator jt = var.beam_.find(*it); // CHECK
             //assert(jt != var.beam_.end()); // CHECK
             //const unsigned_atom_set &beam = jt->second; // CHECK
@@ -718,10 +733,10 @@ void PDDL_Base::lw1_calculate_beam_for_grounded_variable(Variable &var) {
             }
 
             if( best_group != 0 ) {
-#ifdef DEBUG
+#ifdef DEBUG 
                 cout << "observation '" << *it << "' for " << var << " will be filtered in group " << best_group->print_name_ << endl;
 #endif
-                best_group->filtered_observations_.push_back(make_pair(&var, &*it));
+                best_group->filtered_observations_.push_back(make_pair(&var, *it));
             }
         }
     }
@@ -4853,11 +4868,12 @@ void PDDL_Base::Action::process_instance() const {
         grounded_precondition = precondition_->ground();
         if( dynamic_cast<Constant*>(grounded_precondition) != 0 ) {
             Constant *precondition_value = static_cast<Constant*>(grounded_precondition);
-            delete grounded_precondition;
-            if( !precondition_value->value_ )
+            if( !precondition_value->value_ ) {
+                delete grounded_precondition;
                 return;
-            else
+            } else {
                 grounded_precondition = 0;
+            }
         }
     }
 

@@ -204,8 +204,8 @@ LW1_Instance::LW1_Instance(const Instance &ins,
         for( int j = 0; j < int(group.filtered_observations_.size()); ++j ) {
             const PDDL_Base::Variable &var = *group.filtered_observations_[j].first;
             int var_index = varmap_.at(var.to_string(false, true));
-            const PDDL_Base::Atom &atom = *group.filtered_observations_[j].second;
-            string atom_name = atom.to_string(false, true);
+            const PDDL_Base::Atom &atom = group.filtered_observations_[j].second;
+            string atom_name = atom.to_string(atom.negated_, true);
             int atom_index = get_atom_index(ins, atom_name);
             if( atom_index == -1 ) {
                 cout << Utils::warning() << "no index for value '"
@@ -214,9 +214,9 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                 continue;
             } 
 
-            filtering_groups_.insert(make_pair(make_pair(var_index, 1 + atom_index), k));
-#ifdef DEBUG
-            cout << "filtering: var=" << var.print_name_ << ", obs=" << atom << ", key=(" << var_index << "," << 1 + atom_index << "), group=" << group << endl;
+            filtering_groups_.insert(make_pair(make_pair(var_index, atom.negated_ ? -(1 + atom_index) : 1 + atom_index), k));
+#ifdef DEBUG 
+            cout << "filtering: var=" << var.print_name_ << ", obs=" << (atom.negated_ ? "NOT " : "") << atom << ", key=(" << var_index << "," << 1 + atom_index << "), group=" << group << endl;
 #endif
         }
     }

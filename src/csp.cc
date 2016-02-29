@@ -215,7 +215,7 @@ void Inference::CSP::Csp::initialize_groups(const KP_Instance& instance) {
 
 void Inference::CSP::Variable::intersect_with(const std::set<int>& domain) {
 #ifdef DEBUG
-    std::cout << "INTERSECTING A and B" << std::endl;
+    std::cout << "INTERSECTING A and B (possible domain)" << std::endl;
     std::cout << "nombre = " << name_ << std::endl;
     std::cout << "A = " << std::endl;
     for (auto i = current_domain_.cbegin(); i != current_domain_.cend(); i++) {

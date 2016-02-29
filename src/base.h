@@ -766,7 +766,7 @@ class PDDL_Base {
         state_variable_vec grounded_group_;
         unsigned_atom_set grounded_domain_;
         std::set<std::string> grounded_group_str_;
-        std::vector<std::pair<const Variable*, const Atom*> > filtered_observations_;
+        std::vector<std::pair<const Variable*, Atom> > filtered_observations_;
         VariableGroup(const char *name) : Symbol(name, sym_vargroup), grounded_(false) { }
         virtual ~VariableGroup() { }
         void instantiate(const PDDL_Base *base, variable_group_list &vglist) const;
