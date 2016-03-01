@@ -117,12 +117,19 @@ void Inference::Propositional::WatchedLiterals::solve(const CNF &cnf,
     watched.erase(watched.begin() + frontier_, watched.end());
 }
 
+bool Inference::Propositional::WatchedLiterals::is_true(int prop,
+                                                        const vector<int> &assigned) {
+
+    assert(assigned[abs(prop)] != -1);
+    return ((assigned[abs(prop)] ? 1 : -1) * prop) > 0;
+}
+
 int Inference::Propositional::WatchedLiterals::replace(const CNF &cnf,
                                                        vector<int> &assigned,
                                                        int clause) {
 
     for (int w1 = 0, w2 = watched[clause].second; w1 < cnf[clause].size(); w1++)
-        if (assigned[ abs( cnf[clause][w1] ) ] == -1 && w1 != w2)
+        if ((assigned[ abs( cnf[clause][w1] ) ] == -1 || is_true(cnf[clause][w1], assigned)) && w1 != w2)
             return w1;
 
     return -1;
@@ -187,6 +194,8 @@ bool Inference::Propositional::WatchedLiterals::propagate(const CNF &cnf,
         if ((cnf[clause][ watched[clause].first ]) != -1 * value)
             swap(watched[clause].first, watched[clause].second);
 
+        assert(cnf[clause][ watched[clause].first ] == -1 * value);
+
         int w1 = replace(cnf, assigned, clause), w2 = watched[clause].second;
         // If w1 cannot be replaced and w2 is unnassigned, recursive call
 
@@ -198,7 +207,8 @@ bool Inference::Propositional::WatchedLiterals::propagate(const CNF &cnf,
             if (!propagate(cnf, assigned, abs(new_prop)))
                 no_conflict = false;
             // propagated[ abs(p1) ] = true;
-        } else if ((assigned[ abs(new_prop) ] ? 1 : -1) * (new_prop) < 0) {
+        //} else if ((assigned[ abs(new_prop) ] ? 1 : -1) * (new_prop) < 0) {
+        } else if (! is_true(new_prop, assigned)) {
             // If w1 cannot be replaced and w2 is false there's conflict
             no_conflict = false;
         }

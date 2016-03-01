@@ -83,6 +83,7 @@ namespace Inference {
             vector< vector<int> > inverted_index;
 
             /* Private Methods */
+            bool is_true(int prop, const vector<int> &assigned);
             int replace(const CNF &cnf, vector<int> &assigned, int clause);
             void initialize(const CNF &cnf);
             void setInvertedIndex(const CNF &cnf, vector< vector<int> > &mapper);
