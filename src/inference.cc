@@ -233,7 +233,10 @@ void Inference::Propositional::WatchedLiterals::lookahead(const CNF &cnf,
             copy = assigned;  // getting back original assigned
             copy[i] = 0;
             // no other assignment is possible and assigned[i] = 1 !
-            if(! propagate(cnf, copy, i)) assigned = tmp;
+            if(! propagate(cnf, copy, i)) {
+                std::cout << "LOOKAHEAD POSITIVO" << std::endl;
+                assigned = tmp;
+            }
         }
     }
 }
