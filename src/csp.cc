@@ -397,6 +397,7 @@ void Inference::CSP::AC3::print(std::ostream& os, const Instance& instance,
     os << "END OF AC3" << std::endl;
 }
 
+// Inserts arcs into worklist
 void Inference::CSP::AC3::initialize_worklist() {
     worklist_.clear();
     for( auto it = arcs_.cbegin(); it != arcs_.cend(); it++ ) {
@@ -404,13 +405,9 @@ void Inference::CSP::AC3::initialize_worklist() {
     }
 }
 
+// Arc Reduce algorithm of AC3
 bool Inference::CSP::AC3::arc_reduce(Inference::CSP::Arc* arc, Inference::CSP::Csp& csp, const Instance& instance,
                                      const LW1_State& state) {
-#ifdef DEBUG
-    std::cout << Utils::green() << "Arc to be examined: " << std::endl;
-    arc->print(std::cout, instance, state, csp);
-    std::cout << Utils::normal();
-#endif
     Variable* x,* y;
 
     if( arc->x_is_group()) x = csp.get_group_var(arc->first);
@@ -486,6 +483,7 @@ bool Inference::CSP::AC3::evaluate(Inference::CSP::Arc* arc, int x, int y, const
    // if simple
 }
 
+// Applies arc consistency over binary arcs
 void Inference::CSP::AC3::apply_constraints(Inference::CSP::Csp& csp, const Instance& instance, const LW1_State& state) {
     while( ! worklist_.empty() ) {
         Arc* arc = *worklist_.begin();
@@ -514,6 +512,7 @@ void Inference::CSP::AC3::apply_constraints(Inference::CSP::Csp& csp, const Inst
     }
 }
 
+// Applies Arc Consistency over arcs
 void Inference::CSP::AC3::solve_groups(Inference::CSP::Csp& csp,
                                        LW1_State& state,
                                        const Instance& instance) {
@@ -523,8 +522,8 @@ void Inference::CSP::AC3::solve_groups(Inference::CSP::Csp& csp,
     csp.dump_into(state, instance);
 }
 
-
-
+// Creates arcs between state variables and meta-variables (groups)
+// and creates arcs between meta-variables
 void Inference::CSP::AC3::initialize_arcs(const KP_Instance& instance,
                                           Inference::CSP::Csp& csp) {
     arcs_.clear();
@@ -550,7 +549,7 @@ void Inference::CSP::AC3::initialize_arcs(const KP_Instance& instance,
     }
 }
 
-
+// Debugging
 void Inference::CSP::Arc::print(std::ostream& os, const Instance& instance, const LW1_State& state,
                                      const Csp& csp) const {
     Variable* x;

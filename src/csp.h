@@ -245,7 +245,7 @@ namespace Inference {
 
 
 
-                // Debugging
+            // Debugging
             void print(std::ostream& os, const Instance& instance,
                        const LW1_State& state) const; // Print CSP
 
@@ -300,24 +300,32 @@ namespace Inference {
                     return *a < *b;
                 }
             };
-            // Arcs
+            // Arcs: (V, MV), (MV,V), (MV, MV)
             static std::vector<Inference::CSP::Arc*> arcs_;
             // map that associates variables indexes with clauses
             // that involve related atoms
             std::map<int, std::vector<int>> inv_clauses_;
+            // Actives Arcs: (V, MV), (MV,V), (MV, MV)
             std::set<Inference::CSP::Arc*, arc_compare> worklist_;
 
+            // Inserts arcs into worklist
             void initialize_worklist();
+            // Applies arc consistency over binary arcs
             void apply_constraints(Inference::CSP::Csp& csp, const Instance& instance, const LW1_State& state);
+            // Arc Reduce algorithm of AC3
             bool arc_reduce(Inference::CSP::Arc* arc, Inference::CSP::Csp& csp, const Instance& instance,
                                           const LW1_State& state);
             int build_commons_valuation(int val, VariableGroup* x_var, VariableGroup* y_var, const Csp& csp) const;
             bool evaluate(Arc* arc, int x, int y, const Csp& csp) const;
         public:
+            // Creates arcs between state variables and meta-variables (groups)
+            // and creates arcs between meta-variables
             void initialize_arcs(const KP_Instance& instance, Csp& csp);
+            // Applies Arc Consistency over arcs
             void solve_groups(Inference::CSP::Csp& csp,
                               LW1_State& state,
                               const Instance& instance);
+            // Debugging
             void print(std::ostream& os, const Instance& instance,
                        Csp& csp, const LW1_State& state) const;
         };
