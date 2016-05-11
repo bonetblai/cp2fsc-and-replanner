@@ -731,17 +731,14 @@ void Inference::CSP::AC3::apply_constraints(Inference::CSP::Csp& csp, const Inst
 void Inference::CSP::AC3::solve_groups(Inference::CSP::Csp& csp,
                                        LW1_State& state,
                                        const Instance& instance) {
-
-    //std::cout << Utils::green() << "Arcs created!!! : " << std::endl;
-    //for (int i = 0; i < int(arcs_.size()); i++) {
-    //    ((GroupArc *) arcs_[i])->print(std::cout, instance, state, csp);
-    //    std::cout << Utils::blue() << "----------------------------" << std::endl; 
-    //}
-    //std::cout << Utils::normal() << std::endl;
-
     initialize_worklist();
     assert(worklist_2_.size() == arcs_.size());
     apply_constraints(csp, instance, state);
+
+    // Update state using information in CSP. For each value x that is pruned in domain of
+    // CSP variable X corresponding to state variable X, add literal K_not_X=x. For each value
+    // z that is pruned in domain of CSP variable Z corresponding to variable group Z, add
+    // literal K_not_vg_Z_z
     csp.dump_into(state, instance);
 }
 
