@@ -304,11 +304,6 @@ void Inference::CSP::Csp::prune_valuations_of_groups(
   */
 void Inference::CSP::Csp::dump_into(LW1_State &state, const Instance &instance) const {
     for (V_VAR_CI var = variables_.begin(); var != variables_.end(); var++) {
-#ifdef DEBUG
-//        std::cout << Utils::yellow() << "[CSP] Processing: ";
-//        (*var)->print(std::cout, instance, state);
-//        std::cout << Utils::normal();
-#endif
         std::vector<int> info;
         (*var)->dump_into(info);
         for (VI_CI st = info.begin(); st != info.end(); st++) {
@@ -326,11 +321,6 @@ void Inference::CSP::Csp::clean_domains() {
     for (V_VAR_I it = variables_.begin(); it != variables_.end(); it++) {
         (*it)->reset_domain();
     }
-
-//    for (auto it = variable_groups_.begin();
-//         it != variable_groups_.end(); it++) {
-//        (*it)->reset_domain();
-//    }
 }
 
 /**
@@ -387,190 +377,6 @@ int Inference::CSP::get_l_atom(int h_atom) {
 
 /************************ AC3 Class ************************/
 
-void Inference::CSP::AC3::apply_unary_constraints(Csp& csp) const {
-    std::vector<std::vector<int>>& constraints_ = csp.get_constraints_();
-    V_VAR variables_ = csp.get_variables_();
-
-    for (auto it = constraints_.begin(); it != constraints_.end(); it++) {
-        VI cl = *it;
-        if (cl.size() == 1) {  // Unary constraint (vector<h_atom>)
-            int index = csp.get_var_index(cl[0]);
-            if (index != -1)
-                variables_[index]->apply_unary_constraint(cl[0]);
-            //it->set_active(false);
-        } 
-    }
-}
-
-void Inference::CSP::AC3::initialize(Csp& csp,
-                                     const Instance& instance,
-                                     const LW1_State& state) {
-
-    std::vector<std::vector<int>>& constraints = csp.get_constraints_();
-    inv_clauses_ = std::map<int, std::vector<int>>();
-    worklist_ = std::vector<Arc*>();
-
-    // The list of constraints must be reduced discarding satisfied and
-    // unnecessary variables.
-    for (int i = 0; i < constraints.size(); i++) {
-        if (constraints[i].size() == 1) continue;
-        bool satisfied = false;
-
-        // Every atom of the constraint (clause) must be evaluated.
-        // If its domain is unary and if it satisfies the constraint, the whole
-        // constraint is eliminated.
-        //
-        // If its domain is unary and it doesn't satisfy the constraint, the
-        // atom must be eliminated.
-        for (int j = 0; j < constraints[i].size(); j++) {
-            int var_index = csp.get_var_index(constraints[i][j]);
-            if (var_index == -1) continue;
-
-            Variable *var = csp.get_var(constraints[i][j]);
-
-            if (var->get_domain_size() == 1) {
-                int value = *(var->get_current_domain().begin());
-                // If the value does not satisfy, it's useless and the
-                // constraint is reduced
-                if (! var->evaluate(value, constraints[i][j])) {
-                    constraints[i].erase(constraints[i].begin() + j);
-                    j--;
-                    continue;
-                }
-                satisfied = true;
-                break;
-            }
-
-            // Fill info on inverted indexes
-            MIVI_CI jt = inv_clauses_.find(var_index);
-            if (jt == inv_clauses_.cend())
-                inv_clauses_[var_index] = std::vector<int>();
-            inv_clauses_[var_index].push_back(i);
-        }
-
-        // A constraint can be already satisfied, in which case it's
-        // useless for the CSP.
-//        if (constraints[i].size() == 2 && ! satisfied) {
-//            worklist_.emplace_back(constraints[i][0], constraints[i][1]);
-//            worklist_.emplace_back(constraints[i][1], constraints[i][0]);
-//        }
-
-        // DEBUG
-        //std::cout << Utils::magenta() << "[DEBUG AC3] Constraint after prepare: " << std::endl;
-        //csp.print_constraint(std::cout, constraints[i], instance, state);
-        //std::cout << Utils::normal() << std::endl;
-    }
-}
-
-void Inference::CSP::AC3::apply_binary_constraints(Csp& csp,
-                                                   const Instance& instance,
-                                                   const LW1_State& state) {
-    std::vector<std::vector<int>>& constraints = csp.get_constraints_();
-    
-    while (! worklist_.empty()) {
-        Arc* arc_new = worklist_.back();
-        ARC_T arc = ARC_T(arc_new->first, arc_new->second);
-        worklist_.pop_back();
-        if (arc_reduce(csp, arc, instance, state)) {
-
-            std::cout << "[DEBUG] REDUCED" << std::endl;
-            int x = csp.get_var_index(arc.first);
-            int y = csp.get_var_index(arc.second);
-
-            assert(csp.get_var(arc.first)->get_domain_size());
-
-            std::vector<int> related = inv_clauses_.at(x);
-
-            // This can be improved by considering only variable X
-            // since X is the only variable changed in this iteration.
-            // But to do this, a little refact is needed!
-            // TODO: refact and reduce this for complexity
-            for (auto it = related.cbegin(); it != related.cend(); it++) {
-
-                bool satisfied = false;
-                for (int j = 0; j < constraints[*it].size(); j++) {
-
-                    Variable *var = csp.get_var(constraints[*it][j]);
-                    if (var->get_domain_size() == 1) {
-                        int value = *(var->get_current_domain().begin());
-                        if (! var->evaluate(value, constraints[*it][j])) {
-                            constraints[*it].erase(constraints[*it].begin() + j);
-                            j--;
-                            continue;
-                        }
-                        satisfied = true;
-                        break;
-                    }
-                }
-                
-                // TRICKY ONE 
-                if (constraints[*it].size() == 1) {
-                    Variable *var = csp.get_var(constraints[*it][0]);
-                    var->apply_unary_constraint(constraints[*it][0]);
-                    continue;
-                }
-
-                // Candidate arc
-                if (constraints[*it].size() == 2 && !satisfied) {
-                    std::vector<int> zx(constraints[*it]);
-                    int v1 = csp.get_var_index(zx[0]);
-                    int v2 = csp.get_var_index(zx[1]);
-
-//                    if (x == v2 && y != v1)
-//                        worklist_.emplace_back(zx[0], zx[1]);
-//                    else if (x == v1 && y != v2)
-//                        worklist_.emplace_back(zx[1], zx[0]);
-                    //std::cout << "[DEBUG] Back into worklist_" << std::endl;
-                    //csp.print_constraint(std::cout, constraints[*it], instance, state);
-                }
-            }
-        }
-    }
-}
-
-bool Inference::CSP::AC3::arc_reduce(Csp& csp,
-                                     const std::pair<int,int>& arc,
-                                     const Instance& instance,
-                                     const LW1_State& state) const {
-    Variable* x = csp.get_var(arc.first);
-    Variable* y = csp.get_var(arc.second);
-
-    bool change = false; // An element has been erase from dx ?
-    for (SI_I vx = x->get_current_begin(); vx != x->get_current_end();) {
-        // If arc is already satisfied (this check should be unnecessary)
-        int xval = *vx;
-        if (x->evaluate(xval, arc.first)) {
-            vx++;
-            continue;
-        }
-        bool found = false;
-        for (SI_I vy = y->get_current_begin();
-             vy != y->get_current_end(); vy++) {
-            int yval = *vy;
-            if (y->evaluate(yval, arc.second)) {
-                found = true;
-                break;
-            }
-        }
-        // Erase from domain, and set iterator before next element
-        if (!found) {
-            vx = x->erase(vx);
-            change = true;
-        } else {
-            vx++;
-        }
-    }
-    return change;
-}
-
-void Inference::CSP::AC3::solve(Csp &csp, LW1_State &state,
-                                const Instance &instance) {
-    initialize(csp, instance, state);
-    apply_unary_constraints(csp);
-    apply_binary_constraints(csp, instance, state);
-    csp.dump_into(state, instance);
-}
-
 void Inference::CSP::AC3::print(std::ostream& os, const Instance& instance,
                                 Csp& csp, const LW1_State& state) const {
     os << "[AC3] Inverted index table" << std::endl;
@@ -592,14 +398,14 @@ void Inference::CSP::AC3::print(std::ostream& os, const Instance& instance,
 }
 
 void Inference::CSP::AC3::initialize_worklist() {
-    worklist_2_.clear();
+    worklist_.clear();
     for( auto it = arcs_.cbegin(); it != arcs_.cend(); it++ ) {
-        worklist_2_.insert(*it);
+        worklist_.insert(*it);
     }
 }
 
-bool Inference::CSP::AC3::arc_reduce_2(Inference::CSP::Arc* arc, Inference::CSP::Csp& csp, const Instance& instance,
-                                       const LW1_State& state) {
+bool Inference::CSP::AC3::arc_reduce(Inference::CSP::Arc* arc, Inference::CSP::Csp& csp, const Instance& instance,
+                                     const LW1_State& state) {
 #ifdef DEBUG
     std::cout << Utils::green() << "Arc to be examined: " << std::endl;
     arc->print(std::cout, instance, state, csp);
@@ -622,9 +428,6 @@ bool Inference::CSP::AC3::arc_reduce_2(Inference::CSP::Arc* arc, Inference::CSP:
         for (SI_I vy = y->get_current_begin();
              vy != y->get_current_end(); vy++) {
             int yval = *vy;
-#ifdef DEBUG
-            //std::cout << "Comparing: " << xval << " ~ " << yval << std::endl;
-#endif
             if (evaluate(arc, xval, yval, csp)) {
                 found = true;
                 break;
@@ -632,10 +435,6 @@ bool Inference::CSP::AC3::arc_reduce_2(Inference::CSP::Arc* arc, Inference::CSP:
         }
         // Erase from domain, and set iterator before next element
         if( ! found ) {
-#ifdef DEBUG
-            std::cout << Utils::magenta() << "REDUCING DOM" << std::endl;
-            std::cout << "vx = " << *vx << std::endl;
-#endif
             vx = x->erase(vx);
             change = true;
         } else {
@@ -688,17 +487,10 @@ bool Inference::CSP::AC3::evaluate(Inference::CSP::Arc* arc, int x, int y, const
 }
 
 void Inference::CSP::AC3::apply_constraints(Inference::CSP::Csp& csp, const Instance& instance, const LW1_State& state) {
-    while( ! worklist_2_.empty() ) {
-        Arc* arc = *worklist_2_.begin();
-//        GroupArc* group_arc = ((GroupArc*)arc);
-        worklist_2_.erase(worklist_2_.begin());
-
-#ifdef DEBUG
-        Variable* varx;
-        Variable* vary;
-#endif
- 
-        if( arc_reduce_2(arc, csp, instance, state) ) {
+    while( ! worklist_.empty() ) {
+        Arc* arc = *worklist_.begin();
+        worklist_.erase(worklist_.begin());
+        if( arc_reduce(arc, csp, instance, state) ) {
             Variable* x,* y;
             if( arc->x_is_group()) x = csp.get_group_var(arc->first);
             else x = csp.get_var_from_vars(arc->first);
@@ -716,31 +508,17 @@ void Inference::CSP::AC3::apply_constraints(Inference::CSP::Csp& csp, const Inst
                 else tmp_x = csp.get_var_from_vars(tmp->second);
 
                 if( tmp_x == x && tmp_z != y )
-                    worklist_2_.insert(tmp);
+                    worklist_.insert(tmp);
             }
-#ifdef DEBUG
-            //std::cout << Utils::green() << "Vars reduced to: " << Utils::normal() << std::endl;
-            //varx->print(std::cout, instance, state);
-            //vary->print(std::cout, instance, state);
-#endif
         }
-
     }
 }
 
 void Inference::CSP::AC3::solve_groups(Inference::CSP::Csp& csp,
                                        LW1_State& state,
                                        const Instance& instance) {
-
-    //std::cout << Utils::green() << "Arcs created!!! : " << std::endl;
-    //for (int i = 0; i < int(arcs_.size()); i++) {
-    //    ((GroupArc *) arcs_[i])->print(std::cout, instance, state, csp);
-    //    std::cout << Utils::blue() << "----------------------------" << std::endl; 
-    //}
-    //std::cout << Utils::normal() << std::endl;
-
     initialize_worklist();
-    assert(worklist_2_.size() == arcs_.size());
+    assert(worklist_.size() == arcs_.size());
     apply_constraints(csp, instance, state);
     csp.dump_into(state, instance);
 }
