@@ -34,13 +34,6 @@ vvi Inference::Propositional::WatchedLiterals::inverted_index_axioms_ = vvi();
 int Inference::Propositional::WatchedLiterals::imax_ = 0;
 vii Inference::Propositional::WatchedLiterals::watched = vii();
 
-// CSP
-var_vec Inference::Propositional::CSP::variables_ = var_vec();
-av_map Inference::Propositional::CSP::atoms_to_var_map_ = av_map();
-map<int, set<int>> Inference::Propositional::CSP::domains_ = map<int, set<int>>();
-cl_t Inference::Propositional::CSP::constraints_ = cl_t();
-
-
 void Inference::Propositional::DPLL::solve(const CNF &a, CNF &b) {
     b = CNF(a);
     bool change = true;
@@ -241,139 +234,10 @@ void Inference::Propositional::WatchedLiterals::lookahead(const CNF &cnf,
     }
 }
 
-void Inference::Propositional::CSP::initialize(const vector<LW1_Instance::Variable *> &vars,
-                                                   const map<int, int> &map) {
-    variables_.assign(vars.cbegin(), vars.cend());
-    atoms_to_var_map_ = map;
-    constraints_ = vector<Clause>();
-    for (int i = 0; i < variables_.size(); i++) {
-        LW1_Instance::Variable *var = variables_[i];
-        domains_[i] = var->domain_;
-    }
-}
-
-void Inference::Propositional::CSP::add_constraint(Inference::Propositional::Clause &c) {
-    constraints_.push_back(c);
-}
-
-
-void Inference::Propositional::CSP::print(ostream &os,
-                                          const Instance *instance,
-                                          const LW1_State *state) {
-    os << "CSP:" << endl;
-
-    // Variables and domains
-    os << "Variables: " << endl;
-    for (int i = 0; i < variables_.size(); i++) {
-        os << variables_[i]->name_ << " -> ";
-        set<int> &domain = domains_.at(i);
-        for (auto it = domain.cbegin(); it != domain.cend(); it++) {
-            int k_literal = get_h_atom(*it);
-            state->print_literal(os, k_literal, instance);
-            os << ", ";
-        }
-        os << endl;
-    }
-
-    // Constraints
-    os << Utils::blue();
-    os << "Constraints: ";
-    for (cl_t::const_iterator it = constraints_.cbegin(); it != constraints_.cend(); it++) {
-        Clause cl = *it;
-        state->print_clause_or_term(os, cl, instance);
-    }
-    os << Utils::normal() << endl;
-}
-
 void Inference::Propositional::Clause::print(ostream &os) {
     os << "{ ";
     for (Clause::const_iterator it = cbegin(); it != cend(); it++) {
         os << *it << ", ";
     }
     os << " }";
-}
-
-void Inference::Propositional::CSP::remove_unary_constraints(LW1_State *state,
-                                                             const Instance *instance) {
-    for (vector<Clause>::const_iterator it = constraints_.cbegin(); it != constraints_.cend(); it++) {
-        Clause cl = *it;
-        if (cl.size() == 1) {
-            // Do trasformation of indexes and remove l-atom from domains
-            int cl_index = cl[0];
-            int l_atom = get_l_atom(cl_index);
-            int var_index = atoms_to_var_map_.at(l_atom);
-            set<int> &domain = domains_.at(var_index);
-
-            if (cl_index % 2 == 0) {
-                // if the atom is a K_not atom, remove the atom
-                int erased = domain.erase(l_atom);
-                state->add(cl_index -1);
-#ifdef DEBUG
-                if (erased > 0) {
-                    cout << Utils::magenta();
-                    cout << "[CSP] Removed from domain: ";
-                    cout << Utils::normal();
-                    state->print_literal(cout, cl_index - 1, instance);
-                    cout << endl;
-                }
-#endif
-            } else {
-                cout << "XXX: Esto esta pasando" << endl;
-                // if the atom is a K atom, remove everything else from domain
-                auto dit = domain.find(l_atom);
-                domain.erase(domain.cbegin(), dit);
-                domain.erase(dit, domain.cend());
-            }
-        }
-    }
-}
-
-int Inference::Propositional::CSP::get_l_atom(int k_literal) {
-    return k_literal > 0 ? (k_literal - 1) / 2 : (-k_literal - 1) / 2 + 1;
-}
-
-int Inference::Propositional::CSP::get_h_atom(int l_atom) {
-    return l_atom * 2 + 1;
-}
-
-void Inference::Propositional::CSP::solve(LW1_State *state,
-                                          const Instance *instance) {
-    remove_unary_constraints(state, instance);
-    // print CSP
-    print(cout, instance, state);
-
-    ///////////////////////////////
-    // Insert code for AC3 here ///
-    ///////////////////////////////
-
-    // The state must be updated with results
-    update_state(state);
-}
-
-void Inference::Propositional::CSP::update_state(LW1_State *state) {
-    for (map<int, set<int>>::const_iterator it = domains_.cbegin();
-         it != domains_.cend(); it++) {
-        const set<int> &domain = it->second;
-        int var_index = it->first;
-        LW1_Instance::Variable *var = variables_[var_index];
-
-        // Only the state variables whose domains are unary are inserted
-        // into the state
-        if (var->is_state_variable_) {
-            if (domain.size() == 1) {
-                int literal = *domain.cbegin();
-                int k_literal = literal * 2 + 1;
-                state->add(k_literal - 1);
-                for (auto it2 = variables_[var_index]->domain_.cbegin();
-                     it2 != variables_[var_index]->domain_.cend();
-                     it2++) {
-
-                    if (*it2 != literal) {
-                        k_literal = get_h_atom(*it2);
-                        state->add(k_literal);
-                    }
-                }
-            }
-        }
-    }
 }

@@ -10,104 +10,127 @@
 #ifndef CSP_H
 #define CSP_H
 
+// Namespaces for CSP construction and resolution via AC3 algorithm
 namespace Inference {
-
-    typedef std::vector<int>VI;
-
+    // typedef shortcut
+    typedef std::vector<int> VI;
+    typedef int L_ATOM;  // l_atoms are just low level literals
+    typedef int H_ATOM;  // h_atoms are k_literals
     namespace CSP {
+        // Returns the h_atom associated with l_atom
+        int get_h_atom(L_ATOM l_atom);
+        // Returns K_not_literal of h_atom
+        int get_k_not(H_ATOM h_atom);
+        // Returns l_atom associated with h_atom
+        int get_l_atom(H_ATOM h_atom);
 
-        int get_h_atom(int l_atom);
-
-        // Get K_not_literal of h_atom
-        int get_k_not(int h_atom);
-
-        int get_l_atom(int h_atom);
-
-        /**
-          *  Variable, Abstract Class used in CSP structure
-          */
+        // Variable abstract Class used in CSP structure
         class Variable {
           protected:
-            std::string name_;
-            std::set<int> original_domain_;  // High level atoms
-            std::set<int> current_domain_;   // High level atoms
+            std::string name_;  // Variable name (debugging)
+            // Original domain (full) of variable
+            // This original_domain_ will never change after initialization
+            std::set<H_ATOM> original_domain_;
+            // Current domain (after deductions) of variable
+            std::set<H_ATOM> current_domain_;
           public:
-            /* Constructors for Variable */
+            // Constructors for Variable
             Variable() { };
+            // Copy constructors
             Variable(const LW1_Instance::Variable &var);
-
+            // Returns original domain ref
             const std::set<int>& get_original_domain() const {
                 return original_domain_;
             }
-
+            // Returns current domain ref
             const std::set<int>& get_current_domain() const {
                 return current_domain_;
             }
-
+            // Returns begin of current domain
             std::set<int>::iterator get_current_begin() {
                 return current_domain_.begin();
             }
-
+            // Returns end of current domain
             std::set<int>::iterator get_current_end() {
                 return current_domain_.end();
             }
-
+            // Erase iterator of current domain
             std::set<int>::iterator erase(std::set<int>::iterator it) {
                 return current_domain_.erase(it);
             }
-
+            // Intersect current domain with domain
             void intersect_with(const std::set<int>& domain);
-
+            // Returns number of possible values for this variable
             size_t get_domain_size() const {
                 return current_domain_.size();
             }
-
+            // Returns true if the value of a propositions match the K_literal
             bool evaluate(int value, int h_atom) const {
                 return (value == h_atom || (h_atom < 0 && h_atom + value != 0));
             }
-            //virtual void eval() = 0;  // Evaluation method
+            // Returns true if it is a binary variable
             virtual bool is_binary() const = 0;
+            // Dump info of variable current_domain into info
+            // vector. This info corresponds to k_not's associated
+            // to erase elements of current domain (if arithmetic),
+            // and (if it is the case) the only value that this variable
+            // can be 
             virtual void dump_into(std::vector<int>& info) const = 0;
 
+            // Set current_domain_ as original_domain_
             void reset_domain();
+            // Erase current_domain 
             void clear_domain();
+            // Reduce current domain given a k_literal.
+            // This k_literal represents a unary constraint.
+            // If k_literal is possitive, then it is the only possible value
+            // for this variable. If it's negative, the this value must be erase from
+            // current domain.
             void apply_unary_constraint(int k_atom);
+            // Just insert value in current_domain
             void add(int i) { current_domain_.insert(i);  }
 
-            // Debugging
+            // Print variable info (debugging)
             virtual void print(std::ostream &os, const Instance &instance,
                        const LW1_State &state) const;
         };
 
-        /**
-          *  Binary Variable Class
-          */
+        // Binary variable class
+        // Implements dump_into method
         class Binary : public Variable {
           public:
+            // Constructor
             Binary() { };
+            // Copy Constructor
             Binary(const LW1_Instance::Variable &var) : Variable(var) {
                 original_domain_.insert(get_k_not(*original_domain_.cbegin()));
                 current_domain_.insert(get_k_not(*current_domain_.cbegin()));
             };
-            // Implementation of pure virtual method
+            // If variable size is 1, then binary variable has to be that
+            // value, so that value is added into info as a constraint.
+            // Info vector will have only theses constraints
             void dump_into(std::vector<int>& info) const;
             // It's a binary variable
             bool is_binary() const { return true; }
         };
 
-        /**
-          *  Arithmetic Variable Class
-          */
+        // Arithmetic variable class
+        // Implements dump_into method
         class Arithmetic: public Variable {
           public:
+            // Constructor
             Arithmetic() { };
+            // Copy Constructor
             Arithmetic(const LW1_Instance::Variable &var) : Variable(var) { };
-            // Implementation of pure virtual method
+            // Add erase elements for domain as k_not_literals to info.
+            // Info vector will have only theses constraints
             void dump_into(std::vector<int>& info) const;
             // An arithmetic variables is not binary
             bool is_binary() const { return false; }
         };
 
+        // Variable Group class
+        // Implements dump_into method
         class VariableGroup : public Arithmetic {
           private:
             int index_;
@@ -135,12 +158,21 @@ namespace Inference {
             int get_index() const { return index_; }
         };
 
-        /**
-          * Csp class (Constraint Satisfaction Problem)
-          */
+        // CSP (Constraint Satisfaction Problem)
+        // Class for initializing the CSP associated with the LW1 problem
+        // Example:
+        //  ...
+        //  Inference::CSP::Csp csp;
+        //  csp.initialize(((LW1_Instance*)kp_instance)->variables_, solver.atoms_to_vars_);
+        //  if (((LW1_Instance*)kp_instance)->has_groups()) {
+        //      csp.initialize_groups(*kp_instance);
+        //      Inference::CSP::AC3 ac3;
+        //      ac3.initialize_arcs(*kp_instance, csp);
+        //  }
         class Csp {
           private:
-            // State Variables
+            // Variable vectors of CSP.
+            // Theses variables are state variables
             static std::vector<Inference::CSP::Variable*> variables_;
             // Grouped Variables
             static std::vector<Inference::CSP::VariableGroup*> variable_groups_;
