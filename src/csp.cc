@@ -55,10 +55,7 @@ Inference::CSP::Variable::Variable(const LW1_Instance::Variable &var):
     current_domain_ = SI(domain.begin(), domain.end());
 }
 
-
-/**
-  * Print info about a variable (debugging)
-  */
+// Debugging
 void Inference::CSP::Variable::print(std::ostream& os, const Instance& instance,
                                      const LW1_State& state) const {
     const std::set<int> &od = original_domain_;
@@ -86,6 +83,7 @@ void Inference::CSP::Variable::print(std::ostream& os, const Instance& instance,
     os << "b? " << (is_binary() ? "yes" : "no") << std::endl;
 }
 
+// Debugging
 void Inference::CSP::VariableGroup::print(std::ostream& os, const Instance& instance,
                                           const LW1_State& state) const {
     const std::set<int> &od = original_domain_;
@@ -112,6 +110,11 @@ void Inference::CSP::VariableGroup::print(std::ostream& os, const Instance& inst
     os << std::endl;
 }
 
+// Reduce current domain given a k_literal.
+// This k_literal represents a unary constraint.
+// If k_literal is possitive, then it is the only possible value
+// for this variable. If it's negative, the this value must be erase from
+// current domain.
 void Inference::CSP::Variable::apply_unary_constraint(int h_atom) {
     if (h_atom % 2 == 0) {
         // If h_atom is a K_not_atom, remove the K_atom which is K_not_atom - 1
@@ -123,16 +126,20 @@ void Inference::CSP::Variable::apply_unary_constraint(int h_atom) {
     }
 }
 
+// Set current_domain_ as original_domain_
 void Inference::CSP::Variable::reset_domain() {
     current_domain_ = SI(original_domain_);
 }
 
+// Erase current_domain 
 void Inference::CSP::Variable::clear_domain() {
     current_domain_ = SI();
 }
 
 /************************ Arithmetic Class ************************/
 
+// Add erase elements for domain as k_not_literals to info.
+// Info vector will have only theses constraints
 void Inference::CSP::Arithmetic::dump_into(std::vector<int>& info) const {
     info.clear();
     for (SI_CI o = original_domain_.cbegin(); o != original_domain_.cend(); o++) {
@@ -145,10 +152,11 @@ void Inference::CSP::Arithmetic::dump_into(std::vector<int>& info) const {
     }
 }
 
-
-
 /************************ Binary Class ************************/
 
+// If variable size is 1, then binary variable has to be that
+// value, so that value is added into info as a constraint.
+// Info vector will have only theses constraints
 void Inference::CSP::Binary::dump_into(std::vector<int>& info) const {
     info.clear();
     if (current_domain_.size() == 1) {
@@ -158,9 +166,7 @@ void Inference::CSP::Binary::dump_into(std::vector<int>& info) const {
 
 /************************ Csp Class ************************/
 
-/**
-  *  Initialize the CSP object
-  */
+// Initialize CSP
 void Inference::CSP::Csp::initialize(
         const std::vector<LW1_Instance::Variable *> &vars,
         const std::map<int, int> map) {
@@ -250,8 +256,6 @@ void Inference::CSP::Variable::intersect_with(const std::set<int>& domain) {
 #endif 
 }
 
-
-
 void Inference::CSP::Csp::intersect_domain_of_var(const std::set<int>& domain) {
     assert(domain.size());
     int var_index = get_var_index(*domain.begin()); 
@@ -269,7 +273,6 @@ void Inference::CSP::Csp::prune_valuations_of_groups(
         int vg, 
         const std::vector<std::vector<int>> &valuations,
         const Instance &kp_instance) {
-
 
 #ifdef DEBUG
     for (int i = 0; i < valuations.size(); i++) {
@@ -298,10 +301,7 @@ void Inference::CSP::Csp::prune_valuations_of_groups(
     variable_groups_[vg]->intersect_with(possible_domain);
 }
 
-/**
-  * Dump information into state
-  * This function is idempotent over state
-  */
+// Change (Add to) state relevant information of current csp
 void Inference::CSP::Csp::dump_into(LW1_State &state, const Instance &instance) const {
     for (V_VAR_CI var = variables_.begin(); var != variables_.end(); var++) {
         std::vector<int> info;
@@ -317,15 +317,14 @@ void Inference::CSP::Csp::dump_into(LW1_State &state, const Instance &instance) 
     }
 }
 
+// Clear all variables domains
 void Inference::CSP::Csp::clean_domains() {
     for (V_VAR_I it = variables_.begin(); it != variables_.end(); it++) {
         (*it)->reset_domain();
     }
 }
 
-/**
-  *  Print CSP  (debugging)
-  */
+// Debugging
 void Inference::CSP::Csp::print(std::ostream& os, const Instance& instance,
                                 const LW1_State& state) const {
     os << ">>>CSP" << std::endl;

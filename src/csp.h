@@ -193,66 +193,60 @@ namespace Inference {
                             const std::map<int, int> map);
 
             void initialize_groups(const KP_Instance&);
-
+            // Returns contraints_
             std::vector<std::vector<int>>& get_constraints_()  {
                 return constraints_;
             }
-
+            // Returns variables_ 
             std::vector<Inference::CSP::Variable*>& get_variables_() {
                 return variables_;
             }
-
+            // Returns vars_in_common_groups_ 
             const std::vector<std::vector<std::vector<int>>>& get_vars_in_common_groups() const {
                 return vars_in_common_groups_;
             }
-
             // Add a constraint to constraints_
             void add_constraint(std::vector<int>& c) {
                 constraints_.push_back(c);
-            };
-
+            }
+            // Clear all variables domains
             void clean_domains();
 
             void prune_domain_of_var(int h_atom); 
+
             void prune_valuations_of_groups(int vg,
                                             const std::vector<std::vector<int>> &valuations,
                                             const Instance &kp_instance);
+            
             void intersect_domain_of_var(const std::set<int> &domain);
-
             // Change (Add to) state relevant information of current csp
             void dump_into(LW1_State &state, const Instance &instance) const;
-
+            // Returns index of the variable k_literal (h_atom) in variables_,
+            // if l_atom exists in atoms_to_var_map_
             int get_var_index(int h_atom) const {
                 int atom = abs(h_atom);
                 if (atoms_to_var_map_.find(get_l_atom(atom)) != atoms_to_var_map_.end())
                     return atoms_to_var_map_.at(get_l_atom(atom));
                 return -1;
             }
-
+            // Returns the variable k_literal (h_atom) associated with h_atom,
+            // if l_atom exists in atoms_to_var_map_
             Variable *get_var(int h_atom) const {
                 int var_index = get_var_index(h_atom);
                 if (var_index == -1) return NULL;
                 return variables_[var_index];
             }
-
+            // Returns variable indexed at var_index 
             Variable* get_var_from_vars(int var_index) const {
                 return variables_[var_index];
             }
-
+            // Returns meta-variable indexed at index
             VariableGroup *get_group_var(int index) const {
                 return variable_groups_[index];
             }
-
-
-
             // Debugging
             void print(std::ostream& os, const Instance& instance,
-                       const LW1_State& state) const; // Print CSP
-
-            //void print_constraint(std::ostream& os,
-            //                      const Constraint& constraint,
-            //                      const Instance& instance,
-            //                      const LW1_State& state) const;
+                       const LW1_State& state) const;
         };
 
         class Arc : public std::pair<int, int> {
