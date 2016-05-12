@@ -212,12 +212,17 @@ namespace Inference {
             // Clear all variables domains
             void clean_domains();
 
+            // Applies unary constraint represented as one (just one)
+            // possible value (h_atom) over every variable
             void prune_domain_of_var(int h_atom); 
 
+            // Deletes from group no longer possible valuations
             void prune_valuations_of_groups(int vg,
                                             const std::vector<std::vector<int>> &valuations,
                                             const Instance &kp_instance);
             
+            // Find variable associated with domain
+            // and then calls intersect_with
             void intersect_domain_of_var(const std::set<int> &domain);
             // Change (Add to) state relevant information of current csp
             void dump_into(LW1_State &state, const Instance &instance) const;
@@ -249,6 +254,7 @@ namespace Inference {
                        const LW1_State& state) const;
         };
 
+        // Arc class
         class Arc : public std::pair<int, int> {
           public:
             bool operator<(const Arc &b) const {
@@ -266,15 +272,21 @@ namespace Inference {
             }
 
             bool x_is_group_, y_is_group_;
+            // Constructor
             Arc(int x, int y, bool x_is_group, bool y_is_group)
                     : std::pair<int, int>(x, y), x_is_group_(x_is_group), y_is_group_(y_is_group) { };
+            // Returns true if x is a group
             bool x_is_group() const { return x_is_group_; }
+            // Returns true if y is a group
             bool y_is_group() const { return y_is_group_; }
 
+            // Returns true if arc is between two states variables
             bool is_simple() const { return ! x_is_group_ && ! y_is_group_; }
+            // Returns true if arc is between two meta-variables
             bool is_group() const { return x_is_group_ && y_is_group_; }
+            // Returns true if arc is between a state variable and meta-variable
             bool is_mixed() const { return ! is_simple() &&  ! is_group(); }
-
+            // Debugging
             void print(std::ostream &os, const Instance &instance,
                    const LW1_State &state, const Csp& csp) const;
         };
