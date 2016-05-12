@@ -59,6 +59,7 @@ void Inference::Propositional::DPLL::solve(const CNF &a, CNF &b) {
     }
 }
 
+// Construct a table of inverted indexes
 void Inference::Propositional::WatchedLiterals::setInvertedIndex(const CNF &cnf,
                                                    vector< vector<int> > &mapper) {
     imax_ = cnf.calculate_max();  // max literate number
@@ -85,6 +86,7 @@ void Inference::Propositional::WatchedLiterals::initialize_axioms(const CNF &axi
 
 };
 
+// Initialize attributes given a cnf
 void Inference::Propositional::WatchedLiterals::initialize(const CNF &cnf) {
     setInvertedIndex(cnf, inverted_index);
 
@@ -93,7 +95,8 @@ void Inference::Propositional::WatchedLiterals::initialize(const CNF &cnf) {
         watched.push_back(make_pair(0, cnf[i].size() -1 ));
 };
 
-
+// Set propositions assignment into assigned vector.
+// Every proposition id is mapped to assgined indexes.
 void Inference::Propositional::WatchedLiterals::solve(const CNF &cnf,
                                                       vector<int> &assigned) {
     initialize(cnf);
@@ -110,6 +113,7 @@ void Inference::Propositional::WatchedLiterals::solve(const CNF &cnf,
     watched.erase(watched.begin() + frontier_, watched.end());
 }
 
+// Returns true if a proposition is assigned and true
 bool Inference::Propositional::WatchedLiterals::is_true(int prop,
                                                         const vector<int> &assigned) {
 
@@ -117,6 +121,10 @@ bool Inference::Propositional::WatchedLiterals::is_true(int prop,
     return ((assigned[abs(prop)] ? 1 : -1) * prop) > 0;
 }
 
+// Returns new watched literal in given clause,
+// after one of the watched literals has changed and evaluates to a non-false
+// value. It is responsability of the client swapping the non-false watched literal
+// into the first watched literal (w1)
 int Inference::Propositional::WatchedLiterals::replace(const CNF &cnf,
                                                        vector<int> &assigned,
                                                        int clause) {
@@ -128,6 +136,7 @@ int Inference::Propositional::WatchedLiterals::replace(const CNF &cnf,
     return -1;
 }
 
+// Returns true if a value given is being watched in given clause
 inline bool Inference::Propositional::WatchedLiterals::isWatched(const CNF &cnf,
                                                           int clause,
                                                           int value) {
@@ -136,6 +145,10 @@ inline bool Inference::Propositional::WatchedLiterals::isWatched(const CNF &cnf,
            value == (cnf[clause][ watched[clause].second ]);
 }
 
+// Construct the vector of clauses indexes associated to the negative of 
+// a proposition prop. Since it is watched literals algorithm, 
+// those clauses must watch the value associated with prop.
+// This vector is constructed in cp
 void Inference::Propositional::WatchedLiterals::add_negative_propositions(
                                const CNF &cnf,
                                const vector< vector<int> > &inv_index,
@@ -151,6 +164,9 @@ void Inference::Propositional::WatchedLiterals::add_negative_propositions(
 
 }
 
+// Returns true if a prop can propagated with 
+// new value set in assigned vector.
+// It is client responsability give a proposition (prop > 0) 
 bool Inference::Propositional::WatchedLiterals::propagate(const CNF &cnf,
                                                           vector<int> &assigned,
                                                           int prop) {
@@ -209,6 +225,8 @@ bool Inference::Propositional::WatchedLiterals::propagate(const CNF &cnf,
     return no_conflict;
 }
 
+// Set new assigned values into assigned vector 
+// after apply lookahead algorithm
 void Inference::Propositional::WatchedLiterals::lookahead(const CNF &cnf,
                                                         vector<int> &assigned) {
 
@@ -234,6 +252,7 @@ void Inference::Propositional::WatchedLiterals::lookahead(const CNF &cnf,
     }
 }
 
+// Print clause data
 void Inference::Propositional::Clause::print(ostream &os) {
     os << "{ ";
     for (Clause::const_iterator it = cbegin(); it != cend(); it++) {

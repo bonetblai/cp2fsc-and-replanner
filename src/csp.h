@@ -285,17 +285,14 @@ namespace Inference {
                    const LW1_State &state, const Csp& csp) const;
         };
 
-//        class GroupArc : public Arc {
-//          public:
-//            GroupArc(int x, int y, bool p) : Arc(x, y, p) { };
-//            bool x_is_group() const { return x_is_group_; }
-//            void print(std::ostream &os, const Instance &instance,
-//                               const LW1_State &state, const Csp& csp) const;
-//        };
-
-        /**
-          * AC3 Algorithm for solvign CSP
-          */
+        // AC3 Algorithm for solvign CSP
+        // Class for AC3 algorithm
+        // Example:
+        //  ...
+        //  Inference::CSP::AC3 ac3;
+        //  ac3.initialize_arcs(*kp_instance, csp);
+        //  ...
+        //  ac3.solve_groups(csp, state, kp_instance_);
         class AC3 {
           private:
             struct arc_compare {
@@ -308,33 +305,16 @@ namespace Inference {
             // map that associates variables indexes with clauses
             // that involve related atoms
             std::map<int, std::vector<int>> inv_clauses_;
-            std::vector<Inference::CSP::Arc*> worklist_;
-            std::set<Inference::CSP::Arc*, arc_compare> worklist_2_;
+            std::set<Inference::CSP::Arc*, arc_compare> worklist_;
 
-            // Reduce domains by applying constraints
-            // CSP has to be consistent
-            void apply_unary_constraints(Csp& csp) const;
-            // Apply unary constrains
-            void apply_binary_constraints(Csp& csp,
-                                          const Instance& instance,
-                                          const LW1_State& state);
-
-            void initialize(Csp& csp,
-                            const Instance& instance,
-                            const LW1_State& state);
             void initialize_worklist();
             void apply_constraints(Inference::CSP::Csp& csp, const Instance& instance, const LW1_State& state);
-            bool arc_reduce(Csp& csp,
-                            const std::pair<int,int>& arc,
-                            const Instance& instance,
-                            const LW1_State& state) const;
-            bool arc_reduce_2(Inference::CSP::Arc* arc, Inference::CSP::Csp& csp, const Instance& instance,
+            bool arc_reduce(Inference::CSP::Arc* arc, Inference::CSP::Csp& csp, const Instance& instance,
                                           const LW1_State& state);
             int build_commons_valuation(int val, VariableGroup* x_var, VariableGroup* y_var, const Csp& csp) const;
             bool evaluate(Arc* arc, int x, int y, const Csp& csp) const;
         public:
             void initialize_arcs(const KP_Instance& instance, Csp& csp);
-            void solve(Csp &csp, LW1_State &state, const Instance &instance);
             void solve_groups(Inference::CSP::Csp& csp,
                               LW1_State& state,
                               const Instance& instance);
