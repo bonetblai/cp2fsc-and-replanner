@@ -474,7 +474,6 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         cout << Utils::cyan() << "Using inference: 'ac3' (AC3)" << Utils::normal() << endl;
 #endif
         Inference::CSP::Csp csp;
-//        csp.clean_domains();
 
         // find sensing models for given action that are incompatible with observations
         relevant_sensing_models_t relevant_sensing_models_as_k_dnf;
@@ -482,9 +481,9 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
             fill_relevant_sensing_models(lw1, last_action, sensed_at_step, relevant_sensing_models_as_k_dnf, false);
 
 
-//         0. Domains are original domains with values pruned as indicated with the K-literals in state.
-//         Basic constraints relate variable groups to state variable and variable groups to variable
-//         groups.
+        // 0. Domains are original domains with values pruned as indicated with the K-literals in state.
+        // Basic constraints relate variable groups to state variable and variable groups to variable
+        // groups.
         for (STATE_CLASS::const_iterator it = state.begin(); it != state.end(); ++it) {
             if (state.is_special(*it + 1, &kp_instance_)) continue;
 #ifdef DEBUG
@@ -504,13 +503,11 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
 
         for( relevant_sensing_models_t::const_iterator it = relevant_sensing_models_as_k_dnf.begin(); it != relevant_sensing_models_as_k_dnf.end(); ++it ) {
             int sensed_literal = it->first;
-            //int atom_index = sensed_literal < 0 ? -sensed_literal - 1 : sensed_literal - 1;
-            //bool negated = sensed_literal < 0;
+
             for( map<int, sensing_models_as_cnf_or_dnf_t>::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt ) {
                 int var_key = jt->first;
-                const LW1_Instance::Variable &variable = *lw1.variables_[var_key];
+                const LW1_Instance::Variable& variable = *lw1.variables_[var_key];
                 pair<int, int> key(var_key, sensed_literal);
-
 #ifdef DEBUG
                 cout << "[AC3] sensed literal: var=" << variable.name_ << ", value=" << flush;
                 LW1_State::print_literal(cout, sensed_literal, &instance_);
@@ -530,8 +527,6 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                     // observation can be filtered in variable group. Prune all valuations that are
                     // not consistent with k-dnf
                     int vg = lw1.filtering_groups_.at(key);
-//                    cout << "[AC3] SOMETHING TO DO #2: vgroup=" << vg << endl;
-
                     const sensing_models_as_cnf_or_dnf_t& sensing_models_as_k_dnf = jt->second;
                     for( int k = 0; k < int(sensing_models_as_k_dnf.size()); ++k ) {
                         const cnf_or_dnf_t& k_dnf_for_sensing_model = *sensing_models_as_k_dnf[k];
@@ -544,7 +539,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                         for( int j = 0; j < int(k_dnf_for_sensing_model.size()); ++j ) {
                             const clause_or_term_t& term = k_dnf_for_sensing_model[j];
 #ifdef DEBUG
-                            cout << Utils::cyan() << "[AC3] Printing clause or term: ";
+                            cout << Utils::cyan() << "[AC3] Clause or term: ";
                             state.print_clause_or_term(cout, term, &kp_instance_);
                             cout << Utils::normal() << endl;
 #endif
@@ -555,7 +550,6 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                     // there is no variable group where to filter observation. Use k-dnf to generate constraints in CSP
                     const sensing_models_as_cnf_or_dnf_t& sensing_models_as_k_dnf = jt->second;
                     for( int k = 0; k < int(sensing_models_as_k_dnf.size()); ++k ) {
-                        std::cout << "[AC3] ELSE" << std::endl;
                         const cnf_or_dnf_t& k_dnf_for_sensing_model = *sensing_models_as_k_dnf[k];
 #ifdef DEBUG
                         cout << Utils::blue() << "[AC3] k-dnf: index =" << k << ", formula =" << Utils::normal();
@@ -589,15 +583,8 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         // 2. Make the CSP arc consistent by running AC3. The resulting CSP should be consistent
         // (i.e. the domain of each variable should be non empty). Otherwise, there is an error in
         // the planning model
-        //assert(0);
-        //cout << "SOLVING AC3" << endl;
         Inference::CSP::AC3 ac3;
         ac3.solve_groups(csp, state, kp_instance_);
-
-        // 3. Update state using information in CSP. For each value x that is pruned in domain of
-        // CSP variable X corresponding to state variable X, add literal K_not_X=x. For each value
-        // z that is pruned in domain of CSP variable Z corresponding to variable group Z, add
-        // literal K_not_vg_Z_z
     } else {
         cout << Utils::error() << "unspecified inference method for lw1" << endl;
         exit(255);

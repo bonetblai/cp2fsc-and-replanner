@@ -518,6 +518,11 @@ void Inference::CSP::AC3::solve_groups(Inference::CSP::Csp& csp,
     initialize_worklist();
     assert(worklist_.size() == arcs_.size());
     apply_constraints(csp, instance, state);
+
+    // Update state using information in CSP. For each value x that is pruned in domain of
+    // CSP variable X corresponding to state variable X, add literal K_not_X=x. For each value
+    // z that is pruned in domain of CSP variable Z corresponding to variable group Z, add
+    // literal K_not_vg_Z_z
     csp.dump_into(state, instance);
 }
 
