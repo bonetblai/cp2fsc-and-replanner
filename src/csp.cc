@@ -178,7 +178,12 @@ void Inference::CSP::Csp::initialize(
     atoms_to_var_map_.clear();
     atoms_to_var_map_ = map;
 }
-
+// Creates meta-variables (groups)
+// Creates auxiliary structure vars_in_common_groups
+// vars_in_common_groups is a lower triangular matrix of vectors,
+// where vars_in_common_groups[i][j] (i < j) is a vector
+// of common variables (var indexes) for variables with indexes
+// i and j.
 void Inference::CSP::Csp::initialize_groups(const KP_Instance& instance) {
     variable_groups_.clear();  // cleaning groups
     const LW1_Instance& lw1 = ((const LW1_Instance&) instance);

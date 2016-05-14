@@ -201,6 +201,12 @@ namespace Inference {
                     const std::vector<LW1_Instance::Variable *> &vars,
                             const std::map<int, int> map);
 
+            // Creates meta-variables (groups)
+            // Creates auxiliary structure vars_in_common_groups
+            // vars_in_common_groups is a lower triangular matrix of vectors,
+            // where vars_in_common_groups[i][j] (i < j) is a vector
+            // of common variables (var indexes) for variables with indexes
+            // i and j.
             void initialize_groups(const KP_Instance&);
             // Returns contraints_
             std::vector<std::vector<int>>& get_constraints_()  {
