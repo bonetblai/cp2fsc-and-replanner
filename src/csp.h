@@ -330,7 +330,28 @@ namespace Inference {
             // Arc Reduce algorithm of AC3
             bool arc_reduce(Inference::CSP::Arc* arc, Inference::CSP::Csp& csp, const Instance& instance,
                                           const LW1_State& state);
+            // Returns an int that represents a valuation of common 
+            // variables x_var and y_var
+            // This is done by using an auxiliary structure (common_vars), where
+            // for each var_index 'i' and 'j', common_vars[i][j] is the vector 
+            // of var_index for common variables 
             int build_commons_valuation(int val, VariableGroup* x_var, VariableGroup* y_var, const Csp& csp) const;
+            // Retunrs true if arc is satisfiable with values x, y
+            // This is done by considering different cases for Arc.
+            // 
+            // If Arc is between to meta-vars (groups), then, it's enough
+            // to construct common valuations for both variables, and 
+            // check their equality
+            //
+            // If Arc is mixed, then, we have one meta-var (group) and one var.
+            // For example, let's suppose mixed arc (x_var, y_var)
+            // where x_var is a meta-var, and y_var is variable (binary)
+            // First we need to find the position of this y_var into the
+            // valuations in x_var. Then, we just need to check if the bit 
+            // corresponding to y_var is the same as the value that y_var
+            // is taking.
+            //
+            // Simple Arc is not considered (not using this in this AC3!)
             bool evaluate(Arc* arc, int x, int y, const Csp& csp) const;
         public:
             // Creates arcs between state variables and meta-variables (groups)

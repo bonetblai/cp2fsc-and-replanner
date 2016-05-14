@@ -45,7 +45,6 @@ VA Inference::CSP::AC3::arcs_ = VA();
 V3D Inference::CSP::Csp::vars_in_common_groups_  = V3D();
 
 /************************ Variable Abstract Class  ************************/
-
 Inference::CSP::Variable::Variable(const LW1_Instance::Variable &var): 
     name_(var.name_) {
 
@@ -54,7 +53,6 @@ Inference::CSP::Variable::Variable(const LW1_Instance::Variable &var):
     original_domain_ = SI(domain.begin(), domain.end());
     current_domain_ = SI(domain.begin(), domain.end());
 }
-
 // Debugging
 void Inference::CSP::Variable::print(std::ostream& os, const Instance& instance,
                                      const LW1_State& state) const {
@@ -82,7 +80,6 @@ void Inference::CSP::Variable::print(std::ostream& os, const Instance& instance,
 
     os << "b? " << (is_binary() ? "yes" : "no") << std::endl;
 }
-
 // Debugging
 void Inference::CSP::VariableGroup::print(std::ostream& os, const Instance& instance,
                                           const LW1_State& state) const {
@@ -109,7 +106,6 @@ void Inference::CSP::VariableGroup::print(std::ostream& os, const Instance& inst
     os << "} ";
     os << std::endl;
 }
-
 // Reduce current domain given a k_literal.
 // This k_literal represents a unary constraint.
 // If k_literal is possitive, then it is the only possible value
@@ -125,19 +121,15 @@ void Inference::CSP::Variable::apply_unary_constraint(int h_atom) {
         current_domain_.insert(h_atom);
     }
 }
-
 // Set current_domain_ as original_domain_
 void Inference::CSP::Variable::reset_domain() {
     current_domain_ = SI(original_domain_);
 }
-
 // Erase current_domain 
 void Inference::CSP::Variable::clear_domain() {
     current_domain_ = SI();
 }
-
 /************************ Arithmetic Class ************************/
-
 // Add erase elements for domain as k_not_literals to info.
 // Info vector will have only theses constraints
 void Inference::CSP::Arithmetic::dump_into(std::vector<int>& info) const {
@@ -151,9 +143,7 @@ void Inference::CSP::Arithmetic::dump_into(std::vector<int>& info) const {
         info.push_back(*(current_domain_.cbegin()));
     }
 }
-
 /************************ Binary Class ************************/
-
 // If variable size is 1, then binary variable has to be that
 // value, so that value is added into info as a constraint.
 // Info vector will have only theses constraints
@@ -163,9 +153,7 @@ void Inference::CSP::Binary::dump_into(std::vector<int>& info) const {
         info.push_back(*(current_domain_.cbegin()));
     }
 }
-
 /************************ Csp Class ************************/
-
 // Initialize CSP
 void Inference::CSP::Csp::initialize(
         const std::vector<LW1_Instance::Variable *> &vars,
@@ -218,7 +206,7 @@ void Inference::CSP::Csp::initialize_groups(const KP_Instance& instance) {
         }
     }
 }
-
+// Intersect current domain with domain
 void Inference::CSP::Variable::intersect_with(const std::set<int>& domain) {
 #ifdef DEBUG
     std::cout << "INTERSECTING A and B (possible domain)" << std::endl;
@@ -255,20 +243,22 @@ void Inference::CSP::Variable::intersect_with(const std::set<int>& domain) {
     std::cout << std::endl;
 #endif 
 }
-
+// Find variable associated with domain
+// and then calls intersect_with
 void Inference::CSP::Csp::intersect_domain_of_var(const std::set<int>& domain) {
     assert(domain.size());
     int var_index = get_var_index(*domain.begin()); 
     assert(var_index != -1);
     variables_[var_index]->intersect_with(domain);
 }
-
+// Applies unary constraint represented as one (just one)
+// possible value (h_atom) over every variable
 void Inference::CSP::Csp::prune_domain_of_var(int h_atom) {
     int var_index = get_var_index(h_atom);
     if (var_index != -1)
         variables_[var_index]->apply_unary_constraint(h_atom);
 }
-
+// Deletes from group no longer possible valuations
 void Inference::CSP::Csp::prune_valuations_of_groups(
         int vg, 
         const std::vector<std::vector<int>> &valuations,
@@ -300,7 +290,6 @@ void Inference::CSP::Csp::prune_valuations_of_groups(
     
     variable_groups_[vg]->intersect_with(possible_domain);
 }
-
 // Change (Add to) state relevant information of current csp
 void Inference::CSP::Csp::dump_into(LW1_State &state, const Instance &instance) const {
     for (V_VAR_CI var = variables_.begin(); var != variables_.end(); var++) {
@@ -316,14 +305,12 @@ void Inference::CSP::Csp::dump_into(LW1_State &state, const Instance &instance) 
         }
     }
 }
-
 // Clear all variables domains
 void Inference::CSP::Csp::clean_domains() {
     for (V_VAR_I it = variables_.begin(); it != variables_.end(); it++) {
         (*it)->reset_domain();
     }
 }
-
 // Debugging
 void Inference::CSP::Csp::print(std::ostream& os, const Instance& instance,
                                 const LW1_State& state) const {
@@ -343,7 +330,6 @@ void Inference::CSP::Csp::print(std::ostream& os, const Instance& instance,
         os << std::endl;
     }
 }
-
 // Returns a mask of impossible and possible values
 // Impossible mask 0010 says that variables in pos 0, 2, 3 are K_not
 // Possible mask 0010 says that only variable in pos 1 is K
@@ -369,20 +355,16 @@ std::pair<int,int> Inference::CSP::Csp::get_masks(
     }
     return std::make_pair(~impossibles, possibles);
 }
-
 // Get k_literal of a l_atom
 int Inference::CSP::get_h_atom(int l_atom) { return l_atom * 2 + 1; }
-
 // Get K_not_literal of h_atom
 int Inference::CSP::get_k_not(int h_atom) { return h_atom + 1; }
-
 // Get l_atom of K_literal
 int Inference::CSP::get_l_atom(int h_atom) {
     return h_atom > 0 ? (h_atom - 1) / 2 : (-h_atom - 1) / 2 + 1;
 }
-
 /************************ AC3 Class ************************/
-
+// Debugging
 void Inference::CSP::AC3::print(std::ostream& os, const Instance& instance,
                                 Csp& csp, const LW1_State& state) const {
     os << "[AC3] Inverted index table" << std::endl;
@@ -402,7 +384,6 @@ void Inference::CSP::AC3::print(std::ostream& os, const Instance& instance,
     }
     os << "END OF AC3" << std::endl;
 }
-
 // Inserts arcs into worklist
 void Inference::CSP::AC3::initialize_worklist() {
     worklist_.clear();
@@ -410,7 +391,6 @@ void Inference::CSP::AC3::initialize_worklist() {
         worklist_.insert(*it);
     }
 }
-
 // Arc Reduce algorithm of AC3
 bool Inference::CSP::AC3::arc_reduce(Inference::CSP::Arc* arc, Inference::CSP::Csp& csp, const Instance& instance,
                                      const LW1_State& state) {
@@ -446,8 +426,13 @@ bool Inference::CSP::AC3::arc_reduce(Inference::CSP::Arc* arc, Inference::CSP::C
     }
     return change;
 }
-
+// Returns an int that represents a valuation of common 
+// variables x_var and y_var
+// This is done by using an auxiliary structure (common_vars), where
+// for each var_index 'i' and 'j', common_vars[i][j] is the vector 
+// of var_index for common variables 
 int Inference::CSP::AC3::build_commons_valuation(int valuation, VariableGroup* x_var, VariableGroup* y_var, const Csp& csp) const {
+    // Because V3D is lower triangular matrix
     int i = std::min(x_var->get_index(), y_var->get_index()); 
     int j = std::max(x_var->get_index(), y_var->get_index());
 
@@ -462,7 +447,22 @@ int Inference::CSP::AC3::build_commons_valuation(int valuation, VariableGroup* x
     }
     return common_valuation;
 }
-
+// Retunrs true if arc is satisfiable with values x, y
+// This is done by considering different cases for Arc.
+// 
+// If Arc is between to meta-vars (groups), then, it's enough
+// to construct common valuations for both variables, and 
+// check their equality
+//
+// If Arc is mixed, then, we have one meta-var (group) and one var.
+// For example, let's suppose mixed arc (x_var, y_var)
+// where x_var is a meta-var, and y_var is variable (binary)
+// First we need to find the position of this y_var into the
+// valuations in x_var. Then, we just need to check if the bit 
+// corresponding to y_var is the same as the value that y_var
+// is taking.
+//
+// Simple Arc is not considered (not using this in this AC3!)
 bool Inference::CSP::AC3::evaluate(Inference::CSP::Arc* arc, int x, int y, const Csp& csp) const {
     assert(x >= 0 && y >= 0);
     if (arc->is_mixed()) {
@@ -485,10 +485,7 @@ bool Inference::CSP::AC3::evaluate(Inference::CSP::Arc* arc, int x, int y, const
     VariableGroup* y_var = csp.get_group_var(arc->second);
     return build_commons_valuation(x, x_var, y_var, csp) ==
            build_commons_valuation(y, y_var, x_var, csp);
-
-   // if simple
 }
-
 // Applies arc consistency over binary arcs
 void Inference::CSP::AC3::apply_constraints(Inference::CSP::Csp& csp, const Instance& instance, const LW1_State& state) {
     while( ! worklist_.empty() ) {
@@ -517,7 +514,6 @@ void Inference::CSP::AC3::apply_constraints(Inference::CSP::Csp& csp, const Inst
         }
     }
 }
-
 // Applies Arc Consistency over arcs
 void Inference::CSP::AC3::solve_groups(Inference::CSP::Csp& csp,
                                        LW1_State& state,
@@ -532,7 +528,6 @@ void Inference::CSP::AC3::solve_groups(Inference::CSP::Csp& csp,
     // literal K_not_vg_Z_z
     csp.dump_into(state, instance);
 }
-
 // Creates arcs between state variables and meta-variables (groups)
 // and creates arcs between meta-variables
 void Inference::CSP::AC3::initialize_arcs(const KP_Instance& instance,
@@ -559,7 +554,6 @@ void Inference::CSP::AC3::initialize_arcs(const KP_Instance& instance,
         }
     }
 }
-
 // Debugging
 void Inference::CSP::Arc::print(std::ostream& os, const Instance& instance, const LW1_State& state,
                                      const Csp& csp) const {
