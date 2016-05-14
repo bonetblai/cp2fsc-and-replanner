@@ -136,6 +136,7 @@ namespace Inference {
             int index_;
             std::map<int, int> var_index_to_pos;
           public:
+            // Constructor
             VariableGroup(const std::vector<int>& group, int index) : index_(index) {
                 for( int i = 0; i < int(group.size()); i++ ) {
                     var_index_to_pos[group[i]] = i;
@@ -147,14 +148,18 @@ namespace Inference {
                 name_ = "vg_" + std::to_string(index_);
             }
 
+            // Debugging
             void print(std::ostream &os, const Instance &instance,
                        const LW1_State &state) const;
 
+            // Returs fixed position in valuations for a variable 
+            // given its index var_index
             int get_pos_from_var_index(int var_index) const {
                 auto it = var_index_to_pos.find(var_index);
                 if( it == var_index_to_pos.cend()) return -1;
                 return it->second;
             }
+            // Retursn index_
             int get_index() const { return index_; }
         };
 
@@ -182,7 +187,11 @@ namespace Inference {
             std::vector<std::vector<int>> constraints_;
             // Map for finding var_index of l_atom
             static std::map<int, int> atoms_to_var_map_;
-
+            // Returns a mask of impossible and possible values
+            // Impossible mask 0010 says that variables in pos 0, 2, 3 are K_not
+            // Possible mask 0010 says that only variable in pos 1 is K
+            // Note that both masks will be the same when there is no information
+            // to be infered
             std::pair<int,int> get_masks(int vg, 
                                          const std::vector<int> &constraint,
                                          const LW1_Instance &kp_instance);

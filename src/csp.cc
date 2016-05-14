@@ -344,6 +344,11 @@ void Inference::CSP::Csp::print(std::ostream& os, const Instance& instance,
     }
 }
 
+// Returns a mask of impossible and possible values
+// Impossible mask 0010 says that variables in pos 0, 2, 3 are K_not
+// Possible mask 0010 says that only variable in pos 1 is K
+// Note that both masks will be the same when there is no information
+// to be infered
 std::pair<int,int> Inference::CSP::Csp::get_masks(
         int vg,
         const std::vector<int>& constraint,
@@ -365,11 +370,13 @@ std::pair<int,int> Inference::CSP::Csp::get_masks(
     return std::make_pair(~impossibles, possibles);
 }
 
+// Get k_literal of a l_atom
 int Inference::CSP::get_h_atom(int l_atom) { return l_atom * 2 + 1; }
 
 // Get K_not_literal of h_atom
 int Inference::CSP::get_k_not(int h_atom) { return h_atom + 1; }
 
+// Get l_atom of K_literal
 int Inference::CSP::get_l_atom(int h_atom) {
     return h_atom > 0 ? (h_atom - 1) / 2 : (-h_atom - 1) / 2 + 1;
 }
