@@ -1000,4 +1000,3 @@
     (:hidden (opened p2-8) (opened p4-7) (opened p6-16) (opened p8-11) (opened p10-12) (opened p12-16) (opened p14-3) (opened p16-12))
     (:hidden (opened p2-13) (opened p4-9) (opened p6-8) (opened p8-2) (opened p10-16) (opened p12-9) (opened p14-6) (opened p16-2))
 )
-
