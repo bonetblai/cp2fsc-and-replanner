@@ -1,1 +1,17 @@
-To be filled with description of problem.
+A logistics domain where objects (packages) are moved using
+trucks and airplanes. An object can be either at a location,
+at an airport, inside a truck, or inside an airplane. Trucks
+only move between locations belonging to the same city, while
+airplanes move between airports.
+
+Sensing reports information about the whether an object is at
+a certain location, and whether an object is at certain 
+airport.
+
+There are two formulations of the domain, both working with
+the same problem description. Formulation d1.pddl is more
+verbose and strictly adheres to the LW1 specification.
+Formulation d2.pddl is more efficient and relaxes the LW1
+specification. However, for this problem, d2.pddl is 
+sufficient.
+
