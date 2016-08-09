@@ -4,4 +4,3 @@
     (:hidden (good r1))
     (:hidden (good r0) (good r1))
 )
-

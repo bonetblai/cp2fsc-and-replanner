@@ -1,3 +1,0 @@
-(define (problem RockSample8-12)
-    (:hidden)
-)
