@@ -31,4 +31,3 @@
     (:hidden (ill i30))
     (:hidden (cured))
 )
-

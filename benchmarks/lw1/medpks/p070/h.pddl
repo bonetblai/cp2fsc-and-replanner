@@ -71,4 +71,3 @@
     (:hidden (ill i70))
     (:hidden (cured))
 )
-
