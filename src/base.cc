@@ -672,7 +672,7 @@ void PDDL_Base::lw1_calculate_beams_for_grounded_observable_variables() {
                     if( !is_static_atom(*jt) ) reduced_beam.insert(*jt);
                 }
                 var.beam_[*it] = reduced_beam;
-                if( reduced_beam.empty() && options_.is_enabled("lw1:compile-static-observables") )
+                if( reduced_beam.empty() && options_.is_enabled("lw1:boost:compile-static-observables") )
                     lw1_compile_static_observable(*it);
             }
         }

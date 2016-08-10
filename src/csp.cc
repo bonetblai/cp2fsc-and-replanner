@@ -1,14 +1,11 @@
 #include <algorithm>
 #undef NDEBUG // error: the output changes when compiling with -DNDEBUG
-#define DEBUG
 #include <iostream>
 #include <queue>
 #include <set>
 #include "csp.h"
 
-#ifdef CLEAN
-    #undef DEBUG
-#endif
+//#define DEBUG
 
 typedef std::set<int> SI;
 typedef SI::iterator SI_I;
@@ -574,3 +571,6 @@ void Inference::CSP::Arc::print(std::ostream& os, const Instance& instance, cons
     x->print(os, instance, state);
     y->print(os, instance, state);
 }
+
+#undef DEBUG
+

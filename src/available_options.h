@@ -113,30 +113,28 @@ const char *available_options[] = {
     "lw1:strict",                              "[LW1] strict compliance with lw1 specification",
     "lw1:sensing:make-dnf",                    "[LW1] when sensing model is not in DNF, do automatic translation (may be very inefficient)",
 
-    // lw1 (old extensions)
-    "lw1:compile-static-observables",          "[LW1] compile the value of static observable fluents at init", // CHECK
-
     // lw1 (inference)
     "lw1:inference:forward-chaining",          "[LW1] uses forward chaining of drules to make inference (old and sometimes incorrect method)",
-    "lw1:inference:preload",                   "[LW1] preload axioms before applying inference",
     "lw1:inference:up",                        "[LW1] uses unit resolution as inference mechanism",
-    "lw1:inference:watched-literals",          "[LW1] uses the watched literals method for unit resolution (to be used with lw1:inference:up)",
-    "lw1:inference:up:lookahead",              "[LW1] uses unit resolution with 1-lookahead as inference mechanism",
-    "lw1:inference:up:enhanced",               "[LW1] maintain inferred (non-forbidden) clauses",
+    "lw1:inference:up:preload",                "[LW1] preload axioms before applying inference",
+    "lw1:inference:up:watched-literals",       "[LW1] uses unit resolution with watched literals as inference mechanism",
+    "lw1:inference:up:lookahead",              "[LW1] uses unit resolution with 1-lookahead as inference mechanism (EXPERIMENTAL)",
+    "lw1:inference:up:enhanced",               "[LW1] maintain inferred (non-forbidden) clauses (EXPERIMENTAL)",
     "lw1:inference:ac3",                       "[LW1] uses AC3 as inference algorithm",
 
     // lw1 boost
+    "lw1:boost:single-sensing-literal-enablers",        "[LW1] DEPRECATED (don't use)",
+    "lw1:boost:compile-static-observables",             "[LW1] compile the value of static observable fluents at init", // CHECK
+    "lw1:boost:enable-post-actions",                    "[LW1] XXXX", // CHECK
+
     "lw1:boost:complete-effects",                       "[LW1] complete effects for variables", // CHECK
     "lw1:boost:complete-effects:type4",                 "[LW1] complete effects for variables", // CHECK
     "lw1:boost:complete-effects:type4:obs",             "[LW1] complete effects for variables", // CHECK
     "lw1:boost:complete-effects:type4:state",           "[LW1] complete effects for variables", // CHECK
 
-    "lw1:boost:enable-post-actions",                    "[LW1] XXXX", // CHECK
-    "lw1:boost:single-sensing-literal-enablers",        "[LW1] XXXX", // CHECK: don't use as it is deprecated and causes lw1 to blow
-
     "lw1:boost:drule:sensing:type3",                    "[LW1] generate type3 deductive rules for sensing", // CHECK (rename types)
     "lw1:boost:drule:sensing:type4",                    "[LW1] replace type4 deductive rule by boosted version when DNF has just one term",
-    "lw1:boost:drule:sensing:type4:add",                "[LW1] add bossted type4 deductive rules in addition to standard rules",
+    "lw1:boost:drule:sensing:type4:add",                "[LW1] add boosted type4 deductive rules in addition to standard rules",
 
     "lw1:boost:literals-for-observables",               "[LW1] add literals for static observables (useful in problem with width > 1)", // CHECK
     "lw1:boost:literals-for-observables:dynamic",       "[LW1] add literals for observables (useful in problem with width > 1)", // CHECK

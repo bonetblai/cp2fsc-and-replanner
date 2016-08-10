@@ -1,10 +1,10 @@
 # Define compiler/linker:
-CC     = gcc-4.8
-C++    = g++-4.8
-LINK   = g++-4.8
-#CC     = clang
-#C++    = clang++
-#LINK   = clang++
+#CC     = gcc-4.8
+#C++    = g++-4.8
+#LINK   = g++-4.8
+CC     = clang
+C++    = clang++
+LINK   = clang++
 
 
 # Define bison++ and flex++.
@@ -25,7 +25,7 @@ FLEX    = /usr/local/bin/flex++
 
 # Define compiler/linker flags:
 DEBUG = -g
-OPTIMIZE = #-O3 -DNDEBUG
+OPTIMIZE = -O3 -DNDEBUG
 
 override CFLAGS += $(DEBUG) $(OPTIMIZE) -I. -Wall -std=c++11
 override LFLAGS += $(DEBUG) $(OPTIMIZE) -L. -Wall -std=c++11

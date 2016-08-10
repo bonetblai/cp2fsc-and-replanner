@@ -53,7 +53,7 @@ class LW1_Solver : public BASE_CLASS {
                                  sensed_literals_during_execution);
     }
 
-    Inference::Propositional::CNF getCNF() const { return cnf; }
+    Inference::Propositional::CNF get_cnf() const { return cnf_; }
 
     // This is kept for the AC3 algorithm. It relates an atom index to its
     // corresponding variable. Public as of now
@@ -72,9 +72,9 @@ class LW1_Solver : public BASE_CLASS {
     // It is filled in initialize and it is completed in every iteration of 
     // apply_inference.
     // TODO: Make this safe. 
-    mutable Inference::Propositional::CNF cnf;
-    set<Inference::Propositional::Clause> base_theory_axioms;
-    size_t frontier = 0;
+    mutable Inference::Propositional::CNF cnf_;
+    set<Inference::Propositional::Clause> base_theory_axioms_;
+    size_t frontier_ = 0;
 
     virtual void compute_and_add_observations(const Instance::Action *last_action,
                                               const STATE_CLASS &hidden,

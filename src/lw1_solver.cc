@@ -6,11 +6,7 @@
 #include "inference.h"
 #include "csp.h"
 
-#define DEBUG
-#ifdef CLEAN
-  #undef DEBUG
-#endif
-
+//#define DEBUG
 
 using namespace std;
 
@@ -23,17 +19,17 @@ void LW1_Solver::initialize(const KP_Instance &kp) {
         Inference::Propositional::Clause cl;
         for( auto k = 0; k < clause.size(); ++k ) // CHECK: remove auto
             cl.push_back(clause[k]);
-        cnf.push_back(cl);
-        base_theory_axioms.insert(cl);
+        cnf_.push_back(cl);
+        base_theory_axioms_.insert(cl);
     }
-    frontier = cnf.size() - 1;
+    frontier_ = cnf_.size() - 1;
     fill_atoms_to_var_map(lw1);
 }
 
 // Deletes all clauses preserving the axioms
 // TODO: Make this safe
 void LW1_Solver::clean_cnf() const {
-    cnf.erase(cnf.begin() + 1 + frontier, cnf.end());
+    cnf_.erase(cnf_.begin() + 1 + frontier_, cnf_.end());
 }
 
 void LW1_Solver::compute_and_add_observations(const Instance::Action *last_action,
@@ -228,8 +224,8 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         Inference::Propositional::CNF cnf;
         set<Inference::Propositional::Clause> base_theory;
 
-        if( options_.is_enabled("lw1:inference:preload") )
-            cnf = this->cnf;
+        if( options_.is_enabled("lw1:inference:up:preload") )
+            cnf = cnf_;
 #endif
 
         // 0. Add observations as unit clauses
@@ -266,7 +262,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         }
 
         // 2. Axioms: D'
-        if( !options_.is_enabled("lw1:inference:preload") ) {
+        if( !options_.is_enabled("lw1:inference:up:preload") ) {
             for( vector<vector<int> >::const_iterator it = lw1.clauses_for_axioms_.begin(); it != lw1.clauses_for_axioms_.end(); ++it ) {
                 const vector<int> &clause = *it;
 #ifdef DEBUG
@@ -370,7 +366,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         Inference::Propositional::CNF result;
         vector<int> assignment;
 #endif
-        if( options_.is_enabled("lw1:inference:watched-literals") ) {
+        if( options_.is_enabled("lw1:inference:up:watched-literals") ) {
 #ifdef UP
 #    ifdef DEBUG
             cout << Utils::cyan() << "[UP] Using method: 'watched-literals'" << Utils::normal() << endl;
@@ -394,7 +390,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
 
         // 6. Insert positive literals from result into state
 #ifdef UP
-        if( options_.is_enabled("lw1:inference:watched-literals") ) {
+        if( options_.is_enabled("lw1:inference:up:watched-literals") ) {
             for(unsigned i = 1; i < assignment.size(); ++i) {
                 int literal = assignment[i];
                 if( is_forbidden(i) ) continue;
@@ -421,7 +417,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
             for( int k = 0; k < int(result.size()); ++k ) {
                 const Inference::Propositional::Clause &cl = result[k];
                 if( base_theory.find(cl) != base_theory.end() ) continue;
-                if( base_theory_axioms.find(cl) != base_theory_axioms.end() ) continue; // CHECK
+                if( base_theory_axioms_.find(cl) != base_theory_axioms_.end() ) continue; // CHECK
                 if( cl.size() == 1 ) {
                     int literal = *cl.begin();
                     if( is_forbidden(literal) ) continue;
@@ -448,7 +444,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
             for( int k = 0; k < int(result.size()); ++k ) {
                 const Inference::Propositional::Clause &cl = result[k];
                 if( base_theory.find(cl) != base_theory.end() ) continue;
-                if( base_theory_axioms.find(cl) != base_theory_axioms.end() ) continue;
+                if( base_theory_axioms_.find(cl) != base_theory_axioms_.end() ) continue;
                 if( cl.size() > 1 ) {
                     clause_or_term_t clause;
                     for( Inference::Propositional::Clause::const_iterator it = cl.begin(); it != cl.end(); ++it )
@@ -465,7 +461,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         }
 
         // Cleaning CNF 
-        if( options_.is_enabled("lw1:inference:preload") )
+        if( options_.is_enabled("lw1:inference:up:preload") )
             clean_cnf();
 #    endif // ifdef UP
 #endif // if BASE_SELECTOR == 1
@@ -535,15 +531,14 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                         cout << Utils::blue() << "[AC3] k-dnf or k-cnf: index=" << k << ", formula=";
                         state.print_cnf_or_dnf(cout, k_dnf_for_sensing_model, &kp_instance_);
                         cout << Utils::normal() << endl;
-#endif
+
                         for( int j = 0; j < int(k_dnf_for_sensing_model.size()); ++j ) {
                             const clause_or_term_t& term = k_dnf_for_sensing_model[j];
-#ifdef DEBUG
                             cout << Utils::cyan() << "[AC3] Clause or term: ";
                             state.print_clause_or_term(cout, term, &kp_instance_);
                             cout << Utils::normal() << endl;
-#endif
                         }
+#endif
                     }
   
                 } else {

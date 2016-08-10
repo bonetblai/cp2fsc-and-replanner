@@ -559,12 +559,14 @@ LW1_Instance::LW1_Instance(const Instance &ins,
         //const Atom &atom = *ins.atoms_[k];
         if( (init_.literals_.find(1 + 2*k) == init_.literals_.end()) &&
             (init_.literals_.find(1 + 2*k+1) == init_.literals_.end()) ) {
+#ifdef DEBUG
             cout << Utils::red()
                  << "XXXXXX COMPLETION OF INIT:"
                  << Utils::normal()
                  << " status=off, literal=";
             State::print_literal(cout, 1 + 2*k + 1, this);
             cout << endl; 
+#endif
             //init_.literals_.insert(1 + 2*k+1);
             if( options_.is_enabled("kp:print:atom:init") ) {
                 cout << "Atom " << atoms_[2*k+1]->name_ << " added to init" << endl;
