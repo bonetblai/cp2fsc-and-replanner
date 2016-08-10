@@ -13,5 +13,5 @@ for i in range(x, y + 1):
                 continue
             n1 = "p{0}-{1}".format(i, j)
             n2 = "p{0}-{1}".format(i + nx[k], j + ny[k])
-            print("(neighborhood {0} {1})".format(n1, n2))
+            print("        (neighborhood {0} {1})".format(n1, n2))
 
