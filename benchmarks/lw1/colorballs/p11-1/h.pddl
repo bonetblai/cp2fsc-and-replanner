@@ -468,4 +468,3 @@
     (:hidden (obj-at o1 p11-10) (color o1 green))
     (:hidden (obj-at o1 p11-10) (color o1 purple))
 )
-

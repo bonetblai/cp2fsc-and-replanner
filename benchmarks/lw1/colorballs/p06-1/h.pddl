@@ -128,4 +128,3 @@
     (:hidden (obj-at o1 p6-5) (color o1 green))
     (:hidden (obj-at o1 p6-5) (color o1 purple))
 )
-
