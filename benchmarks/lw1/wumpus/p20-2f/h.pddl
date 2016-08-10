@@ -100,4 +100,3 @@
     (:hidden (wumpus-at p7-1) (wumpus-at p15-1) (wumpus-at p19-1) (wumpus-at p3-2) (wumpus-at p10-2) (wumpus-at p15-2) (wumpus-at p17-2) (gold-at p6-3) (wumpus-at p8-3) (wumpus-at p10-3) (wumpus-at p12-4) (wumpus-at p17-9) (wumpus-at p15-11) (wumpus-at p20-14) (wumpus-at p11-19) (wumpus-at p4-20) (wumpus-at p5-20))
     (:hidden (wumpus-at p4-3) (wumpus-at p12-3) (wumpus-at p2-5) (wumpus-at p6-5) (wumpus-at p12-5) (gold-at p9-6) (wumpus-at p2-7) (wumpus-at p14-7) (wumpus-at p3-10) (wumpus-at p9-11) (wumpus-at p17-11) (wumpus-at p18-11) (wumpus-at p2-15) (wumpus-at p7-15) (wumpus-at p18-17) (wumpus-at p4-19) (wumpus-at p5-20))
 )
-

@@ -1,3 +1,0 @@
-(define (problem p25x25)
-    (:hidden (wumpus-at p7-3) (wumpus-at p5-4) (wumpus-at p23-4) (wumpus-at p25-4) (wumpus-at p14-6) (wumpus-at p22-6) (wumpus-at p8-7) (wumpus-at p9-8) (wumpus-at p17-10) (wumpus-at p23-10) (gold-at p4-11) (wumpus-at p10-12) (wumpus-at p13-12) (wumpus-at p15-13) (wumpus-at p19-13) (wumpus-at p22-14) (wumpus-at p20-15) (wumpus-at p11-19) (wumpus-at p13-19) (wumpus-at p3-20) (wumpus-at p16-20) (wumpus-at p2-21) (wumpus-at p3-21) (wumpus-at p11-21) (wumpus-at p22-21) (wumpus-at p15-22) (wumpus-at p16-22) (wumpus-at p23-22) (wumpus-at p2-23) (wumpus-at p9-24) (wumpus-at p23-24) (wumpus-at p8-25) (wumpus-at p15-25))
-)

@@ -100,4 +100,3 @@
     (:hidden (wumpus-at p4-2) (wumpus-at p8-3) (wumpus-at p2-5) (gold-at p1-12) (wumpus-at p10-12) (wumpus-at p14-12) (wumpus-at p2-14) (wumpus-at p13-14) (wumpus-at p14-14))
     (:hidden (wumpus-at p9-2) (wumpus-at p14-2) (wumpus-at p8-7) (wumpus-at p3-10) (wumpus-at p14-11) (gold-at p15-11) (wumpus-at p6-13) (wumpus-at p13-13) (wumpus-at p7-15))
 )
-

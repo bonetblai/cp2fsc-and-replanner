@@ -100,4 +100,3 @@
     (:hidden (wumpus-at p5-1) (wumpus-at p5-2) (pit-at p1-5) (gold-at p3-10) (pit-at p5-10))
     (:hidden (gold-at p8-2) (pit-at p4-3) (pit-at p7-9) (wumpus-at p9-9) (wumpus-at p10-10))
 )
-
