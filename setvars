@@ -1,7 +1,56 @@
-export KR=`(cd src;pwd)`/k-replanner
-export CP=`(cd src;pwd)`/cp2fsc
-export LW1=`(cd src;pwd)`/lw1
+export LW1_ROOT=`pwd`
+export CP=$LW1_ROOT/src/cp2fsc
+export KR=$LW1_ROOT/src/k-replanner
+export CLG=$LW1_ROOT/src/clg
+export LW1=$LW1_ROOT/src/lw1
+
 export FPATH=`(cd ../../../FF-v2.3-parse-patch;pwd)`
 export MPATH=`(cd ../../madagascar;pwd)`
 export LPATH=`(cd ../../downward/fast-downward;pwd)`
+
+#solver:forced-moves
+#kp:merge-drules
+
+export BASE=solver:forced-moves,kp:merge-drules
+
+#lw1:inference:forward-chaining
+#lw1:inference:up
+#lw1:inference:up:preload
+#lw1:inference:up:watched-literals
+#lw1:inference:up:enhanced
+#lw1:inference:up:lookahead
+#lw1:inference:ac3
+
+export FC=lw1:inference:forward-chaining
+export UP=lw1:inference:up,lw1:inference:up:preload
+export WL=$UP,lw1:inference:up:watched-literals
+export AC3=lw1:inference:ac3
+
+#lw1:boost:compile-static-observables
+#lw1:boost:drule:sensing:type3
+#lw1:boost:drule:sensing:type4
+#lw1:boost:drule:sensing:type4:add
+#lw1:boost:literals-for-observables
+#lw1:boost:literals-for-observables:dynamic
+#lw1:boost:complete-effects:type4
+#lw1:boost:complete-effects:type4:state
+#lw1:boost:complete-effects:type4:obs
+#lw1:boost:complete-effects
+#lw1:boost:complete-effects:state
+#lw1:boost:complete-effects:obs
+
+export BOOST1=lw1:boost:compile-static-observables
+export BOOST2=$BOOST1,lw1:boost:enable-post-actions
+export BOOST3=$BOOST2,lw1:boost:complete-effects,lw1:boost:complete-effects:type4:state,lw1:boost:complete-effects:type4:obs
+export BOOST4=$BOOST3,lw1:boost:drule:sensing:type3
+export BOOST5=$BOOST3,lw1:boost:drule:sensing:type4,lw1:boost:drule:sensing:type4:add
+export BOOST6=$BOOST3,lw1:boost:drule:sensing:type3,lw1:boost:drule:sensing:type4,lw1:boost:drule:sensing:type4:add
+export BOOST7=$BOOST6,lw1:boost:literals-for-observables
+export BOOST8=$BOOST7,lw1:boost:literals-for-observables:dynamic
+
+export XBOOST1=$BOOST2,lw1:boost:drule:sensing:type4,lw1:boost:drule:sensing:type4:add
+export XBOOST2=$XBOOST1,lw1:boost:drule:sensing:type3
+export XBOOST3=$XBOOST1,lw1:boost:literals-for-observables
+export XBOOST4=$XBOOST3,lw1:boost:drule:sensing:type3
+
 

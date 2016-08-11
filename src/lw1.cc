@@ -79,7 +79,7 @@ int main(int argc, const char *argv[]) {
     g_options.enable("problem:action-compilation");
     //g_options.enable("solver:forced-moves");
     //g_options.enable("kp:merge-drules");
-    //g_options.enable("lw1:compile-static-observables");
+    //g_options.enable("lw1:boost:compile-static-observables");
 
     // check correct number of parameters
     const char *exec_name = argv[0];
@@ -153,10 +153,10 @@ int main(int argc, const char *argv[]) {
     }
 
     // set implied options and default inference
-    if( !g_options.is_disabled("kp:merge-drules") )
-        g_options.enable("kp:merge-drules");
+    //if( !g_options.is_disabled("kp:merge-drules") )
+    //    g_options.enable("kp:merge-drules");
 
-    // either lw1:aaai or lw1:strict: one of them but not both
+    // either lw1:aaai or lw1:strict: one of them but not both. Default is lw1:strict.
     if( g_options.is_enabled("lw1:aaai") ) {
         g_options.disable("lw1:strict");
     }
@@ -167,9 +167,13 @@ int main(int argc, const char *argv[]) {
         g_options.enable("lw1:strict");
     }
 
+    // CHECK: set default inference in the right way...
     // set default inference algorithm is none is active so far
-    if( !g_options.is_enabled("lw1:inference:forward-chaining") && !g_options.is_enabled("lw1:inference:up") && !g_options.is_enabled("lw1:inference:ac3") ) {
-        g_options.enable("lw1:inference:forward-chaining"); // CHECK: default should be UP
+#if 0
+    if( !g_options.is_enabled("lw1:inference:forward-chaining") &&
+        !g_options.is_enabled("lw1:inference:up") &&
+        !g_options.is_enabled("lw1:inference:ac3") ) {
+        g_options.enable("lw1:inference:up");
     }
 
     // in each case, enable default options
@@ -184,12 +188,14 @@ int main(int argc, const char *argv[]) {
         assert(g_options.is_enabled("lw1:strict"));
         if( !g_options.is_disabled("lw1:inference:up") && !g_options.is_enabled("lw1:inference:forward-chaining") && !g_options.is_enabled("lw1:inference:ac3") )
             g_options.enable("lw1:inference:up");
-        if( g_options.is_enabled("lw1:inference:up") && !g_options.is_disabled("lw1:inference:watched-literals") )
-            g_options.enable("lw1:inference:watched-literals");
+        if( g_options.is_enabled("lw1:inference:up") && !g_options.is_disabled("lw1:inference:up:watched-literals") )
+            g_options.enable("lw1:inference:up:watched-literals");
         if( !g_options.is_disabled("lw1:boost:enable-post-actions") )
             g_options.enable("lw1:boost:enable-post-actions");
     }
+#endif
 
+#if 0
     // set other options
     if( g_options.is_enabled("lw1:boost:drule:sensing:type4:add") ) {
         g_options.enable("lw1:boost:drule:sensing:type4");
@@ -212,6 +218,7 @@ int main(int argc, const char *argv[]) {
         g_options.is_enabled("lw1:inference:up:lookahead") ) {
         g_options.enable("lw1:inference:up");
     }
+#endif
 
     // print enabled options
     cout << "enabled options: " << g_options << endl;
@@ -324,15 +331,16 @@ int main(int argc, const char *argv[]) {
 
         // create and initialize solver
         LW1_Solver solver(instance, *kp_instance, *planner, opt_time_bound, opt_ncalls_bound);
-        if( g_options.is_enabled("lw1:inference:preload") ) {
+        if( g_options.is_enabled("lw1:inference:up:preload") ) {
             solver.initialize(*kp_instance);
-            Inference::Propositional::WatchedLiterals wl;
-            wl.initialize_axioms(solver.getCNF());
+            if( g_options.is_enabled("lw1:inference:up:watched-literals") ) {
+                Inference::Propositional::WatchedLiterals wl;
+                wl.initialize_axioms(solver.get_cnf());
+            }
         }
 
-       if (g_options.is_enabled("lw1:inference:ac3")) {
+        if( g_options.is_enabled("lw1:inference:ac3") ) {
             // Build basic CSP from state: CSP variables come from state variables and variable groups.
-            //
             solver.fill_atoms_to_var_map(*kp_instance);
             Inference::CSP::Csp csp;
             csp.initialize(((LW1_Instance*)kp_instance)->variables_, solver.atoms_to_vars_);
@@ -341,7 +349,7 @@ int main(int argc, const char *argv[]) {
                 Inference::CSP::AC3 ac3;
                 ac3.initialize_arcs(*kp_instance, csp);
             }
-       }
+        }
 
         // solve
         int status = solver.solve(hidden_initial_state, plan, fired_sensors, sensed_literals);
