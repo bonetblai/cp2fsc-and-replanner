@@ -62,9 +62,7 @@
     
     (:action trash
         :parameters (?o - obj ?c - col ?t - gar ?p - pos)
-        ;:precondition (and (color ?o ?c) (holding ?o) (garbage-at ?t ?p) (at ?p) (not (need-start)))
-        ;:effect (when (garbage-color ?t ?c) (trashed ?o))
-        :precondition (and (not (trashed ?o)) (color ?o ?c) (garbage-color ?t ?c) (holding ?o) (garbage-at ?t ?p) (at ?p) (not (need-start)))
+        :precondition (and (not (trashed ?o)) (color ?o ?c) (holding ?o) (garbage-at ?t ?p) (at ?p) (garbage-color ?t ?c) (not (need-start)))
         :effect (trashed ?o)
     )
 )
