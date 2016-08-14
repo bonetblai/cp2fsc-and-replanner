@@ -129,7 +129,7 @@ int NewSolver<T>::solve(const T &initial_hidden_state,
             int action_index = -1;
             int num_applicable_actions = 0;
             for( size_t i = 0; i < kp_instance_.actions_.size(); ++i ) {
-                if( kp_instance_.remap_action(i) == -1 ) continue;
+                if( (kp_instance_.remap_action(i) == -1) && !kp_instance_.is_subgoaling_rule(i) ) continue;
                 if( state.applicable(*kp_instance_.actions_[i]) ) {
                     action_index = i;
                     if( ++num_applicable_actions == 2 )

@@ -127,20 +127,12 @@ void LW1_Solver::compute_and_add_observations(const Instance::Action *last_actio
         }
     }
 
-#ifndef DEBUG
-    if( options_.is_enabled("solver:print:sensed-literals") ) {
-#endif
-        for( set<int>::const_iterator it = sensed_at_step.begin(); it != sensed_at_step.end(); ++it ) {
-            int obs = *it > 0 ? *it - 1 : -*it - 1;
-            cout << Utils::yellow()
-                 << "sensed: literal="
-                 << (*it > 0 ? "" : "(not ")
-                 << instance_.atoms_[obs]->name_
-                 << (*it > 0 ? "" : ")")
-                 << ", index=" << obs
-                 << Utils::normal() << endl;
-        }
-#ifndef DEBUG
+#ifdef DEBUG
+    for( set<int>::const_iterator it = sensed_at_step.begin(); it != sensed_at_step.end(); ++it ) {
+        int obs = *it > 0 ? *it - 1 : -*it - 1;
+        cout << Utils::yellow() << "sensed: literal=";
+        LW1_State::print_literal(cout, *it, &instance_);
+        cout << ", index=" << obs << Utils::normal() << endl;
     }
 #endif
 }

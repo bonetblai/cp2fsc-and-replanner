@@ -1,5 +1,4 @@
 #include <algorithm>
-#undef NDEBUG // error: the output changes when compiling with -DNDEBUG
 #include <iostream>
 #include <queue>
 #include <set>

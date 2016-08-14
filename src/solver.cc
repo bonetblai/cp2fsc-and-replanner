@@ -17,6 +17,8 @@ int Solver::solve(const State &initial_hidden_state,
     set<int> fired_sensors_at_step, sensed_at_step;
     index_set goal_condition;
 
+    std::cout << "DEPRECATED!" << std::endl; exit(-1);
+
     // the initial hidden state is already closed with the axioms
     // (see set_initial_state in problem.cc).
     // Axioms appear in k-replanner only in translations of lw1
