@@ -1,1 +1,3 @@
-To be filled with description of problem.
+An agent needs to clear a minefield. The agent
+either opens a cell or flags it as containing
+a mine. The initial cell to open is given.

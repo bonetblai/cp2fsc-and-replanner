@@ -1,1 +1,8 @@
-To be filled with description of problem.
+A version of the bomb in the toilet problem. A bomb
+needs to be defused by throwing the package containing
+the bomb into a toilet.
+
+There are two formulations in d.pddl and d2.pddl. The
+first strictly adheres to the LW1 standard while the
+second is more efficient.
+

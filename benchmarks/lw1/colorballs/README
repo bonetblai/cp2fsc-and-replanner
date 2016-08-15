@@ -1,6 +1,12 @@
-To be filled with description of problem.
+An agent needs to pick up and dispose colored balls
+placed on a grid. The position and color of the balls
+are unknown to the agent. Depending on the color, 
+the balls are disposed in different bins.
 
-Domains:
-  - d.pddl : domain in (strict) required format with observation models in positive DNF
-  - d2.pddl : domain in which not all observation models are in nonpositive DNF
+There are different formulations of the problem. The
+most efficient, though not adhering to the strict 
+LW1 specification is d2.pddl (used together with 
+problem p1.pddl). The strict specification is in
+d.pddl. Problems p.pddl and p1.pddl can be used
+with both specifications, yet p1.pddl is preferred.
 

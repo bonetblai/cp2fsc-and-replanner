@@ -1,1 +1,4 @@
-To be filled with description of problem.
+An agent needs to go from the leftmost colunm to the rightmost
+colunm in a a grid, passing through a number of doors. The position
+of the doors are unknown.
+

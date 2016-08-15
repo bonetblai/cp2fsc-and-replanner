@@ -1,1 +1,3 @@
-To be filled with description of problem.
+An agent needs to find a given file in a unix filesystem.
+The agent needs to navigate through the folder structure
+to find the file.

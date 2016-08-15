@@ -12,6 +12,5 @@ There are two formulations of the domain, both working with
 the same problem description. Formulation d1.pddl is more
 verbose and strictly adheres to the LW1 specification.
 Formulation d2.pddl is more efficient and relaxes the LW1
-specification. However, for this problem, d2.pddl is 
-sufficient.
+specification. For this problem, d2.pddl is sufficient.
 

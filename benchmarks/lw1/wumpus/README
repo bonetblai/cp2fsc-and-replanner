@@ -1,1 +1,6 @@
-To be filled with description of problem.
+There are two versions of this domain. In the first
+version, named -1f and -2f, the agent navigates an
+environment with wumpuses and pits (only for -1f)
+looking for a piece of gold. In the second version,
+the agent needs to reach the upper right corner of
+the grid while avoiding the deadly wumpuses.
