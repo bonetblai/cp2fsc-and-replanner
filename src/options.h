@@ -42,6 +42,15 @@ namespace Options {
       void add(const std::string &opt) { add(Option(opt)); }
       void add(const std::string &opt, const std::string &desc) { add(Option(opt, desc)); }
 
+      void clear_enabled_and_disabled() {
+          enabled_.clear();
+          disabled_.clear();
+      }
+      void clear_options() {
+          options_.clear();
+          clear_enabled_and_disabled();
+      }
+
       bool is_option(const std::string &opt) const { return is_option(Option(opt)); }
       bool is_option(const Option &opt) const { return options_.find(opt) != options_.end(); }
       bool is_enabled(const std::string &opt) const { return is_enabled(Option(opt)); }
@@ -63,7 +72,10 @@ namespace Options {
 
       bool enable(const Option &opt) {
           bool good_option = is_option(opt);
-          if( good_option ) enabled_.insert(opt);
+          if( good_option ) {
+              enabled_.insert(opt);
+              disabled_.erase(opt);
+          }
           return good_option;
       }
       bool enable(const std::string &opt) { return enable(Option(opt)); }

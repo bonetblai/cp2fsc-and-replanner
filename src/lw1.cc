@@ -77,9 +77,20 @@ int main(int argc, const char *argv[]) {
     // set default options
     g_options.enable("planner:remove-intermediate-files");
     g_options.enable("problem:action-compilation");
-    //g_options.enable("solver:forced-moves");
-    //g_options.enable("kp:merge-drules");
-    //g_options.enable("lw1:boost:compile-static-observables");
+    g_options.enable("solver:forced-moves");
+    g_options.enable("kp:merge-drules");
+    g_options.enable("lw1:boost:compile-static-observables");
+
+    // default options for lw1:strict
+    g_options.enable("lw1:strict");
+    g_options.enable("lw1:inference:up");
+    g_options.enable("lw1:inference:up:preload");
+    g_options.enable("lw1:inference:up:watched-literals");
+    g_options.enable("lw1:boost:enable-post-actions");
+    g_options.enable("lw1:boost:drule:sensing:type4");
+    g_options.enable("lw1:boost:drule:sensing:type4:add");
+    g_options.enable("lw1:boost:drule:sensing:type3");
+    g_options.enable("lw1:boost:literals-for-observables");
 
     // check correct number of parameters
     const char *exec_name = argv[0];
@@ -130,6 +141,8 @@ int main(int argc, const char *argv[]) {
         } else if( !skip_options && !strncmp(argv[k], "--options=", 10) ) {
             const char *options = &argv[k][10];
             parse_options(g_options, options);
+        } else if( !skip_options && !strcmp(argv[k], "--override-defaults") ) {
+            g_options.clear_enabled_and_disabled();
 
         // if '--', stop parsing options. Remaining fields are file names.
         } else if( !skip_options && !strcmp(argv[k], "--") ) {
@@ -152,73 +165,46 @@ int main(int argc, const char *argv[]) {
         }
     }
 
-    // set implied options and default inference
-    //if( !g_options.is_disabled("kp:merge-drules") )
-    //    g_options.enable("kp:merge-drules");
-
     // either lw1:aaai or lw1:strict: one of them but not both. Default is lw1:strict.
-    if( g_options.is_enabled("lw1:aaai") ) {
+    assert(g_options.is_enabled("lw1:aaai") || g_options.is_enabled("lw1:strict"));
+    if( g_options.is_enabled("lw1:aaai") )
         g_options.disable("lw1:strict");
-    }
-    if( g_options.is_enabled("lw1:strict") ) {
+    if( g_options.is_enabled("lw1:strict") )
         g_options.disable("lw1:aaai");
-    }
-    if( !g_options.is_enabled("lw1:aaai") && !g_options.is_enabled("lw1:strict") ) {
-        g_options.enable("lw1:strict");
+    assert(g_options.is_enabled("lw1:aaai") || g_options.is_enabled("lw1:strict"));
+    assert(g_options.is_disabled("lw1:aaai") || g_options.is_disabled("lw1:strict"));
+
+    // if lw1:inference:ac3 is enabled, disable options for UP/FC
+    if( g_options.is_enabled("lw1:inference:ac3") ) {
+        g_options.disable("lw1:inference:up");
+        g_options.disable("lw1:inference:up:preload");
+        g_options.disable("lw1:inference:up:watched-literals");
+        g_options.disable("lw1:inference:up:watched-literals");
+        g_options.disable("lw1:inference:up:lookahead");
+        g_options.disable("lw1:inference:up:enhanced");
+        g_options.disable("lw1:inference:forward-chaining");
     }
 
-    // CHECK: set default inference in the right way...
-    // set default inference algorithm is none is active so far
-#if 0
-    if( !g_options.is_enabled("lw1:inference:forward-chaining") &&
-        !g_options.is_enabled("lw1:inference:up") &&
-        !g_options.is_enabled("lw1:inference:ac3") ) {
-        g_options.enable("lw1:inference:up");
+    // if lw1:inference:forward-chaining is enabled, disable options for UP/AC3
+    if( g_options.is_enabled("lw1:inference:forward-chaining") ) {
+        g_options.disable("lw1:inference:up");
+        g_options.disable("lw1:inference:up:preload");
+        g_options.disable("lw1:inference:up:watched-literals");
+        g_options.disable("lw1:inference:up:watched-literals");
+        g_options.disable("lw1:inference:up:lookahead");
+        g_options.disable("lw1:inference:up:enhanced");
+        g_options.disable("lw1:inference:ac3");
     }
 
-    // in each case, enable default options
-    if( g_options.is_enabled("lw1:aaai") ) {
-        assert(!g_options.is_enabled("lw1:strict"));
-        g_options.disable("lw1:boost:enable-post-actions");
-        g_options.disable("lw1:boost:drule:sensing:type4");
-        g_options.disable("lw1:boost:drule:sensing:type3");
-        g_options.disable("lw1:boost:literals-for-observables");
-        g_options.disable("lw1:boost:literals-for-observables:dynamic");
-    } else {
-        assert(g_options.is_enabled("lw1:strict"));
-        if( !g_options.is_disabled("lw1:inference:up") && !g_options.is_enabled("lw1:inference:forward-chaining") && !g_options.is_enabled("lw1:inference:ac3") )
-            g_options.enable("lw1:inference:up");
-        if( g_options.is_enabled("lw1:inference:up") && !g_options.is_disabled("lw1:inference:up:watched-literals") )
-            g_options.enable("lw1:inference:up:watched-literals");
-        if( !g_options.is_disabled("lw1:boost:enable-post-actions") )
-            g_options.enable("lw1:boost:enable-post-actions");
-    }
-#endif
-
-#if 0
-    // set other options
-    if( g_options.is_enabled("lw1:boost:drule:sensing:type4:add") ) {
-        g_options.enable("lw1:boost:drule:sensing:type4");
-    }
-
-    if( g_options.is_enabled("lw1:boost:literals-for-observables:dynamic") ) {
-        g_options.enable("lw1:boost:literals-for-observables");
-    }
-
-    if( g_options.is_enabled("lw1:boost:complete-effects:type4") ) {
-        g_options.enable("lw1:boost:complete-effects:type4:state");
-        g_options.enable("lw1:boost:complete-effects:type4:obs");
-    }
-    if( g_options.is_enabled("lw1:boost:complete-effects:type4:state") ||
-        g_options.is_enabled("lw1:boost:complete-effects:type4:obs") ) {
+    // set implied options
+    if( g_options.is_enabled("lw1:boost:complete-effects:type4:obs") || g_options.is_enabled("lw1:boost:complete-effects:type4:state") )
+        g_options.enable("lw1:boost:complete-effects:type4");
+    if( g_options.is_enabled("lw1:boost:complete-effects:type4") )
         g_options.enable("lw1:boost:complete-effects");
-    }
-
-    if( g_options.is_enabled("lw1:inference:up:enhanced") ||
-        g_options.is_enabled("lw1:inference:up:lookahead") ) {
-        g_options.enable("lw1:inference:up");
-    }
-#endif
+    if( g_options.is_enabled("lw1:boost:sensing:type4:add") )
+        g_options.enable("lw1:boost:sensing:type4");
+    if( g_options.is_enabled("lw1:boost:literals-for-observables:dynamic") )
+        g_options.enable("lw1:boost:literals-for-observables");
 
     // print enabled options
     cout << "enabled options: " << g_options << endl;
