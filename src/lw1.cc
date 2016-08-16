@@ -201,8 +201,8 @@ int main(int argc, const char *argv[]) {
         g_options.enable("lw1:boost:complete-effects:type4");
     if( g_options.is_enabled("lw1:boost:complete-effects:type4") )
         g_options.enable("lw1:boost:complete-effects");
-    if( g_options.is_enabled("lw1:boost:sensing:type4:add") )
-        g_options.enable("lw1:boost:sensing:type4");
+    if( g_options.is_enabled("lw1:boost:drule:sensing:type4:add") )
+        g_options.enable("lw1:boost:drule:sensing:type4");
     if( g_options.is_enabled("lw1:boost:literals-for-observables:dynamic") )
         g_options.enable("lw1:boost:literals-for-observables");
 
