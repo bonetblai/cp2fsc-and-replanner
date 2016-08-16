@@ -1,3 +1,5 @@
+**** THE NOTES BELOW NEED TO BE REVISED ****
+
 * Revision before action compilation and preprocessing is 233
 * test and fix all benchmark problems with respect naming of elements.
 * revise compute_static_atoms in preprocessing for cp2fsc.
