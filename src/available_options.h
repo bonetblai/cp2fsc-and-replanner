@@ -73,11 +73,14 @@ const char *available_options[] = {
     "solver:print:assumptions",                "[SOLVER] print assumptions made in classical plan",
     "solver:print:assumptions:raw",            "[SOLVER] print assumptions made in raw classical plan",
     "solver:print:steps",                      "[SOLVER] print the result of each action in the plan",
-    //"solver:print:inconsistency",              "[SOLVER] print when detecting an inconsistency",
-    //"solver:print:inconsistency:details",      "[SOLVER] print details of the inconsistency",
-    //"solver:print:consistency:check",          "[SOLVER] print each consistency check",
+    //"solver:print:inconsistency",              "[SOLVER] print when detecting an inconsistency", // DEAD CODE in new_solver.h
+    //"solver:print:inconsistency:details",      "[SOLVER] print details of the inconsistency",    // DEAD CODE in new_solver.h
+    //"solver:print:consistency:check",          "[SOLVER] print each consistency check",          // DEAD CODE in new_solver.h
     "solver:print:fired-sensors",              "[SOLVER] print the fired sensors at each step of the plan",
     "solver:print:sensed-literals",            "[SOLVER] print the sensed literals at each step of the plan",
+
+    // solver option for lw1
+    "solver:width-based-action-selection",     "[SOLVER] use width-based algorithm for action selection instead of classical planner",
 
     // clg
     "clg:print:effect",                        "[CLG] print effect actions",

@@ -153,20 +153,24 @@ int NewSolver<T>::solve(const T &initial_hidden_state,
 
         // call classical planner to obtain plan for state
         if( plan.empty() ) {
-            if( planner_calls >= ncalls_bound_ ) return NCALLS;
-            int status = planner_.get_plan(state, raw_plan, plan);
-            if( status != ClassicalPlanner::SOLVED ) {
-                if( status == ClassicalPlanner::NO_SOLUTION )
-                    return NO_SOLUTION;
-                else
-                    return ERROR;
-            } else if( planner_.get_time() > time_bound_ ) {
-                return TIME;
+            if( !options_.is_enabled("solver:width-based-action-selection") ) {
+                if( planner_calls >= ncalls_bound_ ) return NCALLS;
+                int status = planner_.get_plan(state, raw_plan, plan);
+                if( status != ClassicalPlanner::SOLVED ) {
+                    if( status == ClassicalPlanner::NO_SOLUTION )
+                        return NO_SOLUTION;
+                    else
+                        return ERROR;
+                } else if( planner_.get_time() > time_bound_ ) {
+                    return TIME;
+                }
+                assert(!plan.empty());
+                ++planner_calls;
+                calculate_relevant_assumptions(plan, raw_plan, state, goal_condition, assumptions);
+            } else {
+                std::cout << Utils::error() << "option 'solver:width-based-action-selection' not yet implemented!" << std::endl;
+                return ERROR;
             }
-            assert(!plan.empty());
-            ++planner_calls;
-
-            calculate_relevant_assumptions(plan, raw_plan, state, goal_condition, assumptions);
         }
 
         // first assumption for reduced plan should be satisfied by current state.

@@ -407,7 +407,7 @@ int main(int argc, const char *argv[]) {
             }
         } else {
             plan.clear();
-            cout << "unable to solve problem: ";
+            cout << Utils::red() << "unable to solve problem: " << Utils::normal();
             if( status == LW1_Solver::NO_SOLUTION ) {
                 cout << "problem has no solution!" << endl;
             } else if( status == LW1_Solver::TIME ) {
@@ -415,7 +415,7 @@ int main(int argc, const char *argv[]) {
             } else if( status == LW1_Solver::NCALLS ) {
                 cout << "reached limit of " << opt_ncalls_bound << " for #calls to classical planner" << endl;
             } else if( status == LW1_Solver::ERROR ) {
-                cout << "planner error" << endl;
+                cout << "error during action/plan computation" << endl;
             } else  {
                 cout << "unrecognized error" << endl;
             }
