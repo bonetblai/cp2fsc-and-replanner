@@ -3,6 +3,7 @@
 
 #include <cassert>
 #include <iostream>
+#include "action_selection.h"
 
 template<typename T>
 class WidthBasedPlanner : public ActionSelection<T> {
@@ -12,8 +13,7 @@ class WidthBasedPlanner : public ActionSelection<T> {
     mutable size_t n_calls_;
 
   public:
-    WidthBasedPlanner(const KP_Instance &kp_instance) : kp_instance_(kp_instance) {
-    }
+    WidthBasedPlanner(const KP_Instance &kp_instance) : kp_instance_(kp_instance) { }
     virtual ~WidthBasedPlanner() { }
 
     virtual const char* name() const { return "width-based-planner"; }

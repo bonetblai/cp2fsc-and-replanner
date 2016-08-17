@@ -10,9 +10,7 @@ template<typename T>
 class ClassicalPlannerWrapper : public ActionSelection<T> {
     const ClassicalPlanner &planner_;
   public:
-    ClassicalPlannerWrapper(const ClassicalPlanner &planner)
-      : ActionSelection<T>(), planner_(planner) {
-    }
+    ClassicalPlannerWrapper(const ClassicalPlanner &planner) : planner_(planner) { }
     virtual ~ClassicalPlannerWrapper() { }
 
     virtual const char* name() const {

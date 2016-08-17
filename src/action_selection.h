@@ -1,11 +1,11 @@
 #ifndef ACTION_SELECTION_H
 #define ACTION_SELECTION_H
 
+#include <cassert>
+#include <iostream>
 #include "problem.h"
 #include "kp_problem.h"
 #include "utils.h"
-#include <cassert>
-#include <iostream>
 
 template<typename T> class ActionSelection {
   public:
