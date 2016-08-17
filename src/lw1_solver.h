@@ -24,7 +24,7 @@
 #endif
 
 #include <vector>
-#include "classical_planner.h"
+#include "action_selection.h"
 #include "problem.h"
 #include "lw1_problem.h"
 #include "state.h"
@@ -33,10 +33,10 @@ class LW1_Solver : public BASE_CLASS {
   public:
     LW1_Solver(const Instance &instance,
                const KP_Instance &kp_instance,
-               const ClassicalPlanner &planner,
+               const ActionSelection<STATE_CLASS> &action_selection,
                int time_bound,
                int ncalls_bound)
-      : BASE_CLASS(LW1, instance, kp_instance, planner, time_bound, ncalls_bound) {
+      : BASE_CLASS(LW1, instance, kp_instance, action_selection, time_bound, ncalls_bound) {
     }
     ~LW1_Solver() { }
 

@@ -2,6 +2,8 @@
 #include <iostream>
 #include <iomanip>
 #include <libgen.h>
+#include "action_selection.h"
+#include "classical_planner_wrapper.h"
 #include "problem.h"
 #include "preprocess.h"
 #include "parser.h"
@@ -285,16 +287,21 @@ int main(int argc, const char *argv[]) {
 
     // construct classical planner
     const ClassicalPlanner *planner = 0;
-    if( opt_planner == "ff" ) {
-        planner = new FF_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
-    } else if( opt_planner == "lama" ) {
-        planner = new LAMA_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
-    } else if( opt_planner == "m" ) {
-        planner = new M_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
-    } else if( opt_planner == "mp" ) {
-        planner = new MP_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
-    } else if( opt_planner == "lama-server" ) {
-        planner = new LAMA_Server_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+    if( !g_options.is_enabled("solver:width-based-action-selection") ) {
+        if( opt_planner == "ff" ) {
+            planner = new FF_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+        } else if( opt_planner == "lama" ) {
+            planner = new LAMA_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+        } else if( opt_planner == "m" ) {
+            planner = new M_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+        } else if( opt_planner == "mp" ) {
+            planner = new MP_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+        } else if( opt_planner == "lama-server" ) {
+            planner = new LAMA_Server_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+        } else {
+            std::cout << Utils::error() << "unrecognized planner '" << opt_planner << "'" << std::endl;
+            exit(-1);
+        }
     }
 
     // solve problem
@@ -311,12 +318,18 @@ int main(int argc, const char *argv[]) {
         hidden_initial_state.print(cout, instance);
         cout << endl;
 
-        // reset stats
-        planner->reset_stats();
-        kp_instance->reset_inference_time();
-
         // create and initialize solver
-        LW1_Solver solver(instance, *kp_instance, *planner, opt_time_bound, opt_ncalls_bound);
+        ActionSelection<STATE_CLASS> *action_selection = 0; // CHECK: STATE_CLASS is defined in lw1_solver.h (this is provisional)
+        if( !g_options.is_enabled("solver:width-based-action-selection") ) {
+            assert(planner != 0);
+            action_selection = new ClassicalPlannerWrapper<STATE_CLASS>(*planner); // CHECK: STATE_CLASS is defined in lw1_solver.h (this is provisional)
+        } else {
+            std::cout << Utils::error() << "option 'solver:width-based-action-selection' not yet implemented!" << std::endl;
+            exit(-1);
+        }
+        LW1_Solver solver(instance, *kp_instance, *action_selection, opt_time_bound, opt_ncalls_bound);
+
+        // different initializations for inference (this should be moved elsewhere)
         if( g_options.is_enabled("lw1:inference:up:preload") ) {
             solver.initialize(*kp_instance);
             if( g_options.is_enabled("lw1:inference:up:watched-literals") ) {
@@ -324,7 +337,6 @@ int main(int argc, const char *argv[]) {
                 wl.initialize_axioms(solver.get_cnf());
             }
         }
-
         if( g_options.is_enabled("lw1:inference:ac3") ) {
             // Build basic CSP from state: CSP variables come from state variables and variable groups.
             solver.fill_atoms_to_var_map(*kp_instance);
@@ -336,6 +348,10 @@ int main(int argc, const char *argv[]) {
                 ac3.initialize_arcs(*kp_instance, csp);
             }
         }
+
+        // reset stats
+        action_selection->reset_stats();
+        kp_instance->reset_inference_time();
 
         // solve
         int status = solver.solve(hidden_initial_state, plan, fired_sensors, sensed_literals);
@@ -445,6 +461,9 @@ int main(int argc, const char *argv[]) {
     }
 
     delete planner;
+    delete kp_instance;
+    delete reader;
+
     return 0;
 }
 

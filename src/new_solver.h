@@ -1,7 +1,7 @@
 #ifndef NEW_SOLVER_H
 #define NEW_SOLVER_H
 
-#include "classical_planner.h"
+#include "action_selection.h"
 #include "problem.h"
 #include "kp_problem.h"
 #include "csp.h"
@@ -18,7 +18,7 @@ template<typename T> class NewSolver {
     const int translation_type_;
     const Instance &instance_;
     const KP_Instance &kp_instance_;
-    const ClassicalPlanner &planner_;
+    const ActionSelection<T> &action_selection_;
     const int time_bound_;
     const int ncalls_bound_;
     const Options::Mode &options_;
@@ -26,11 +26,11 @@ template<typename T> class NewSolver {
     NewSolver(int translation_type,
               const Instance &instance,
               const KP_Instance &kp_instance,
-              const ClassicalPlanner &planner,
+              const ActionSelection<T> &action_selection,
               int time_bound,
               int ncalls_bound)
       : translation_type_(translation_type),
-        instance_(instance), kp_instance_(kp_instance), planner_(planner),
+        instance_(instance), kp_instance_(kp_instance), action_selection_(action_selection),
         time_bound_(time_bound), ncalls_bound_(ncalls_bound),
         options_(instance.options_) {
     }
@@ -113,7 +113,6 @@ int NewSolver<T>::solve(const T &initial_hidden_state,
     Instance::Plan raw_plan, plan;
     final_plan.clear();
 
-    int planner_calls = 0;
     while( !state.goal(kp_instance_) ) {
         plan.clear();
         assumptions.clear();
@@ -124,7 +123,7 @@ int NewSolver<T>::solve(const T &initial_hidden_state,
         }
 
         // if there is only one applicable operator, there is no need
-        // to call planner
+        // to do action selection
         if( options_.is_enabled("solver:forced-moves") ) {
             int action_index = -1;
             int num_applicable_actions = 0;
@@ -151,26 +150,20 @@ int NewSolver<T>::solve(const T &initial_hidden_state,
             }
         }
 
-        // call classical planner to obtain plan for state
+        // call action selection method to obtain plan for state
         if( plan.empty() ) {
-            if( !options_.is_enabled("solver:width-based-action-selection") ) {
-                if( planner_calls >= ncalls_bound_ ) return NCALLS;
-                int status = planner_.get_plan(state, raw_plan, plan);
-                if( status != ClassicalPlanner::SOLVED ) {
-                    if( status == ClassicalPlanner::NO_SOLUTION )
-                        return NO_SOLUTION;
-                    else
-                        return ERROR;
-                } else if( planner_.get_time() > time_bound_ ) {
-                    return TIME;
-                }
-                assert(!plan.empty());
-                ++planner_calls;
-                calculate_relevant_assumptions(plan, raw_plan, state, goal_condition, assumptions);
-            } else {
-                std::cout << Utils::error() << "option 'solver:width-based-action-selection' not yet implemented!" << std::endl;
-                return ERROR;
+            if( action_selection_.n_calls() >= ncalls_bound_ ) return NCALLS;
+            int status = action_selection_.get_plan(state, raw_plan, plan);
+            if( status != ActionSelection<T>::SOLVED ) {
+                if( status == ActionSelection<T>::NO_SOLUTION )
+                    return NO_SOLUTION;
+                else
+                    return ERROR;
+            } else if( action_selection_.get_time() > time_bound_ ) {
+                return TIME;
             }
+            assert(!plan.empty());
+            calculate_relevant_assumptions(plan, raw_plan, state, goal_condition, assumptions);
         }
 
         // first assumption for reduced plan should be satisfied by current state.
