@@ -80,7 +80,7 @@ const char *available_options[] = {
     "solver:print:sensed-literals",            "[SOLVER] print the sensed literals at each step of the plan",
 
     // solver option for lw1
-    "solver:width-based-action-selection",     "[SOLVER] use width-based algorithm for action selection instead of classical planner",
+    "solver:width-based-planner",              "[SOLVER] use width-based algorithm for action selection instead of classical planner",
 
     // clg
     "clg:print:effect",                        "[CLG] print effect actions",

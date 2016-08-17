@@ -16,6 +16,7 @@
 #include "available_options.h"
 #include "utils.h"
 #include "csp.h"
+#include "width.h"
 
 using namespace std;
 
@@ -287,7 +288,7 @@ int main(int argc, const char *argv[]) {
 
     // construct classical planner
     const ClassicalPlanner *planner = 0;
-    if( !g_options.is_enabled("solver:width-based-action-selection") ) {
+    if( !g_options.is_enabled("solver:width-based-planner") ) {
         if( opt_planner == "ff" ) {
             planner = new FF_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
         } else if( opt_planner == "lama" ) {
@@ -304,6 +305,15 @@ int main(int argc, const char *argv[]) {
         }
     }
 
+    // construct action selection
+    ActionSelection<STATE_CLASS> *action_selection = 0; // CHECK: STATE_CLASS is defined in lw1_solver.h (this is provisional)
+    if( !g_options.is_enabled("solver:width-based-planner") ) {
+        assert(planner != 0);
+        action_selection = new ClassicalPlannerWrapper<STATE_CLASS>(*planner); // CHECK: STATE_CLASS is defined in lw1_solver.h (this is provisional)
+    } else {
+        action_selection = new WidthBasedPlanner<STATE_CLASS>(*kp_instance); // CHECK: STATE_CLASS is defined in lw1_solver.h (this is provisional)
+    }
+ 
     // solve problem
     cout << "solving problem for " << instance.num_hidden_states() << " hidden state(s)" << endl;
     for( int k = 0; k < instance.num_hidden_states(); ++k ) {
@@ -319,15 +329,11 @@ int main(int argc, const char *argv[]) {
         cout << endl;
 
         // create and initialize solver
-        ActionSelection<STATE_CLASS> *action_selection = 0; // CHECK: STATE_CLASS is defined in lw1_solver.h (this is provisional)
-        if( !g_options.is_enabled("solver:width-based-action-selection") ) {
-            assert(planner != 0);
-            action_selection = new ClassicalPlannerWrapper<STATE_CLASS>(*planner); // CHECK: STATE_CLASS is defined in lw1_solver.h (this is provisional)
-        } else {
-            std::cout << Utils::error() << "option 'solver:width-based-action-selection' not yet implemented!" << std::endl;
-            exit(-1);
-        }
         LW1_Solver solver(instance, *kp_instance, *action_selection, opt_time_bound, opt_ncalls_bound);
+
+        // reset stats
+        action_selection->reset_stats();
+        kp_instance->reset_inference_time();
 
         // different initializations for inference (this should be moved elsewhere)
         if( g_options.is_enabled("lw1:inference:up:preload") ) {
@@ -348,10 +354,6 @@ int main(int argc, const char *argv[]) {
                 ac3.initialize_arcs(*kp_instance, csp);
             }
         }
-
-        // reset stats
-        action_selection->reset_stats();
-        kp_instance->reset_inference_time();
 
         // solve
         int status = solver.solve(hidden_initial_state, plan, fired_sensors, sensed_literals);
@@ -460,6 +462,7 @@ int main(int argc, const char *argv[]) {
              << endl << endl;
     }
 
+    delete action_selection;
     delete planner;
     delete kp_instance;
     delete reader;
