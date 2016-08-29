@@ -155,7 +155,7 @@ namespace Inference {
             // Returs fixed position in valuations for a variable 
             // given its index var_index
             int get_pos_from_var_index(int var_index) const {
-                auto it = var_index_to_pos.find(var_index);
+                std::map<int, int>::const_iterator it = var_index_to_pos.find(var_index);
                 if( it == var_index_to_pos.cend()) return -1;
                 return it->second;
             }

@@ -14,10 +14,10 @@ using namespace std;
 void LW1_Solver::initialize(const KP_Instance &kp) {
     assert(dynamic_cast<const LW1_Instance*>(&kp) != 0);
     const LW1_Instance &lw1 = *static_cast<const LW1_Instance*>(&kp_instance_);
-    for( auto it = lw1.clauses_for_axioms_.begin(); it != lw1.clauses_for_axioms_.end(); ++it ) { // CHECK: remove auto
-        const vector<int> &clause = *it;
+    for( size_t j = 0; j < lw1.clauses_for_axioms_.size(); ++j ) {
+        const vector<int> &clause = lw1.clauses_for_axioms_[j];
         Inference::Propositional::Clause cl;
-        for( auto k = 0; k < clause.size(); ++k ) // CHECK: remove auto
+        for( size_t k = 0; k < clause.size(); ++k )
             cl.push_back(clause[k]);
         cnf_.push_back(cl);
         base_theory_axioms_.insert(cl);
@@ -333,6 +333,9 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
 
         // 4. Kept (extra) static clauses
         if( options_.is_enabled("lw1:inference:up:enhanced") ) {
+            std::cout << Utils::internal_error() << "lw1:inference:up:enhanced is EXPERIMENTAL!" << std::endl;
+            exit(-1);
+
 #if BASE_SELECTOR == 1
             assert(dynamic_cast<LW1_State*>(&state) != 0);
             for( int k = 0; k < int(state.cnf_.size()); ++k ) {
@@ -366,6 +369,9 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
             Inference::Propositional::WatchedLiterals wl;
             wl.solve(cnf, assignment);
             if( options_.is_enabled("lw1:inference:up:lookahead") ) {
+                std::cout << Utils::internal_error() << "lw1:inference:up:lookahead is EXPERIMENTAL!" << std::endl;
+                exit(-1);
+
 #    ifdef DEBUG
                 cout << Utils::cyan() << "[U] Using one-lookahead for 'watched-literals'" << Utils::normal() << endl;
 #    endif
@@ -386,9 +392,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
             for(unsigned i = 1; i < assignment.size(); ++i) {
                 int literal = assignment[i];
                 if( is_forbidden(i) ) continue;
-                //assert(literal != 0); // CHECK
-                assert((literal != 0) || options_.is_enabled("lw1:inference:up:enhanced")
-                        || options_.is_enabled("lw1:inference:up:lookahead"));
+                assert((literal != 0) || options_.is_enabled("lw1:inference:up:enhanced") || options_.is_enabled("lw1:inference:up:lookahead"));
                 if( literal == 1 ) {
                     state.add(i-1);
 #    ifdef DEBUG
@@ -430,6 +434,9 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
 
         // 7. Insert non-forbidden clauses in result into state
         if( options_.is_enabled("lw1:inference:up:enhanced") ) {
+            std::cout << Utils::internal_error() << "lw1:inference:up:enhanced is EXPERIMENTAL!" << std::endl;
+            exit(-1);
+
 #if BASE_SELECTOR == 1
 #    ifdef UP
             state.cnf_.clear();

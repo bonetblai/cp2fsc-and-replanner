@@ -35,8 +35,8 @@ namespace Inference {
             // was created has been deleted.
             vector<int>::iterator find(int p) {
                 vector<int>::iterator it = begin();
-                for (; it != end(); it++)
-                    if (*it == p) return it;
+                for( ; it != end(); it++ )
+                    if( *it == p ) return it;
                 return it;
             }
             // Print clause data
@@ -60,15 +60,15 @@ namespace Inference {
             CNF(const CNF& cnf) : vector<Clause>(cnf.begin(), cnf.end()) { };
             // Returns maximum proposition id over all literals
             int calculate_max() const {
-                int imax = 0;
-                for (auto it = cbegin(); it != cend(); it++) {
-                    Clause cl = *it;
-                    for (auto clit = cl.cbegin(); clit != cl.cend(); clit++) {
-                        int L1 = abs(*clit);
-                        imax = max(L1, imax);
+                int max_id = 0;
+                for( size_t i = 0; i < size(); ++i ) {
+                    const Clause cl = (*this)[i];
+                    for( size_t j = 0; j < cl.size(); ++j ) {
+                        int id = abs(cl[j]);
+                        max_id = max(id, max_id);
                     }
                 }
-                return imax;
+                return max_id;
             }
         };
 

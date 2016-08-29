@@ -729,7 +729,8 @@ LW1_Instance::LW1_Instance(const Instance &ins,
         // add K-tautological clauses Kp => -K-P and define set of
         // literals that forbid clauses to enter the augmented state
         if( options_.is_enabled("lw1:inference:up:enhanced") ) {
-            assert(0); // CHECK: NEED TO FiX THIS
+            std::cout << Utils::internal_error() << "lw1:inference:up:enhanced is EXPERIMENTAL!" << std::endl;
+            exit(-1);
 
             // Need to correctly identify literals/clauses that can be added to state after
             // inference. Every state literal should be ok. For observable literals, only
@@ -1306,7 +1307,6 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                 }
             }
 
-#if 0
             // When lw1:boost:literals-for-observables is enabled, add the literal -KY!=y
             // when the sensed literal is Y=y or -KY=y when the sensed literal is Y!=y
             if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
@@ -1334,7 +1334,6 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                 assert(0); // index_for_value must be calculate when decoding comment
                 //nact->effect_.insert(literal_for_value > 0 ? 1 + 2*index_for_value : 1 + 2*index_for_value + 1);
             }
-#endif
 #endif
 
             //nact->print(cout, *this);

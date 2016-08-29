@@ -689,8 +689,6 @@ class PDDL_Base {
 
         void instantiate(variable_list &vlist) const;
         const unsigned_atom_set& beam_for_value(const Atom &value) const {
-            //assert(beam_.find(value) != beam_.end()); // CHECK
-            //return beam_.find(value)->second; // CHECK
             return beam_.at(value);
         } 
         bool is_binary() const { return grounded_domain_.size() == 1; }
@@ -971,7 +969,7 @@ class PDDL_Base {
     const Atom* lw1_fetch_enabler_for_sensing(const unsigned_atom_set &atoms);
     const Atom* lw1_fetch_enabler_for_sensing(const Atom &atom);
 
-    // methods to perform action compilation // CHECK (action compilation outside preprocessing)
+    // methods to perform action compilation (this action compilation is outside preprocessing)
     void lw1_do_action_compilation();
     void lw1_do_action_compilation(Action &action);
 };

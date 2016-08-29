@@ -286,8 +286,6 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
                 assert(atom_index != -1);
                 observable_atoms.insert(atom_index);
                 set<int> beam;
-                //assert(var.beam_.find(*it) != var.beam_.end()); // CHECK
-                //const PDDL_Base::unsigned_atom_set &var_beam = var.beam_.find(*it)->second; // CHECK
                 const PDDL_Base::unsigned_atom_set &var_beam = var.beam_.at(*it);
                 for( PDDL_Base::unsigned_atom_set::const_iterator jt = var_beam.begin(); jt != var_beam.end(); ++jt ) {
                     int index = get_atom_index(ins, jt->to_string(false, true));
