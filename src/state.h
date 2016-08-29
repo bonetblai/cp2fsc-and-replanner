@@ -3,9 +3,11 @@
 
 #include "problem.h"
 #include "index.h"
+#include "utils.h"
+#include <cassert>
 #include <iostream>
 #include <list>
-#include <cassert>
+#include <string>
 
 #if __clang_major__ >= 5
 #include <unordered_map>
@@ -47,7 +49,7 @@ class State {
 
     void remap(State &state, index_vec &map) const {
         state.clear();
-        for( register unsigned *p = atoms_; *p; p++ ) {
+        for( unsigned *p = atoms_; *p; p++ ) {
             if( map[*p-1] != no_such_index )
                 state.add(map[*p-1]);
         }
@@ -57,9 +59,9 @@ class State {
     void clear() { atoms_[0] = 0; size_ = 0; }
     size_t hash() const { return 0; }
 
-    bool satisfy(register unsigned a, bool neg = false) const {
+    bool satisfy(unsigned a, bool neg = false) const {
         ++a;
-        for( register unsigned *p = atoms_; *p && (*p <= a); p++ )
+        for( unsigned *p = atoms_; *p && (*p <= a); p++ )
             if( *p == a ) return !neg;
         return neg;
     }
@@ -84,10 +86,10 @@ class State {
         return true;
     }
 
-    void add(register unsigned a) {
+    void add(unsigned a) {
         ++a;
         make_space(size_ + 1);
-        register unsigned *p = atoms_;
+        unsigned *p = atoms_;
         while( *p && (*p < a) ) ++p;
         if( !*p ) {
             ++size_;
@@ -95,7 +97,7 @@ class State {
             *p = 0;
         } else if( *p != a ) {
             atoms_[size_+1] = 0;
-            for( register unsigned *q = &atoms_[size_]; q > p; q-- ) *q = *(q-1);
+            for( unsigned *q = &atoms_[size_]; q > p; q-- ) *q = *(q-1);
             *p = a;
             ++size_;
         }
@@ -108,9 +110,9 @@ class State {
         for( const_iterator si = s.begin(); si != s.end(); ++si )
             add(*si);
     }
-    void remove(register size_t a) {
+    void remove(size_t a) {
         ++a;
-        register unsigned *p;
+        unsigned *p;
         for( p = atoms_; *p && (*p < a); ++p );
         if( *p == a ) {
             do {

@@ -1,5 +1,6 @@
-#include <stdlib.h>
+#include <cassert>
 #include <iomanip>
+#include <stdlib.h>
 #include "base.h"
 #include "utils.h"
 
@@ -132,13 +133,12 @@ PDDL_Base::PredicateSymbol* PDDL_Base::find_type_predicate(Symbol *type_sym) {
         if (dom_predicates_[k]->print_name_ == type_sym->print_name_)
             return dom_predicates_[k];
     }
-    cerr << Utils::error() << "no type predicate found for type "
-         << type_sym->print_name_ << endl;
+    cout << Utils::error() << "no type predicate found for type " << type_sym->print_name_ << endl;
     exit(255);
 }
 
 void PDDL_Base::calculate_strongly_static_predicates() const {
-    cout << "strongly-static predicates:";
+    cout << Utils::magenta() << "strongly-static predicates:" << Utils::normal();
     bool some_strongly_static = false;
     for( size_t p = 0; p < dom_predicates_.size(); ++p ) {
         PredicateSymbol &pred = *dom_predicates_[p];
@@ -223,10 +223,10 @@ void PDDL_Base::instantiate_elements() {
     if( options_.is_enabled("mvv:print:variables") ) {
         for( size_t k = 0; k < multivalued_variables_.size(); ++k ) {
             const Variable &var = *multivalued_variables_[k];
-            cout << Utils::red() << "variable '" << var.print_name_ << "':";
+            cout << Utils::magenta() << "variable '" << var.print_name_ << "':" << Utils::normal();
             for( unsigned_atom_set::const_iterator it = var.grounded_values_.begin(); it != var.grounded_values_.end(); ++it )
                 cout << " " << *it;
-            cout << Utils::normal() << endl;
+            cout << endl;
         }
     }
 
@@ -345,12 +345,12 @@ void PDDL_Base::calculate_static_atoms() {
         dom_static_atoms_.erase(*it);
 
     if( options_.is_enabled("problem:print:atom:static") ) {
-        cout << Utils::red() << "static atoms:";
+        cout << Utils::magenta() << "static atoms:" << Utils::normal();
         for( unsigned_atom_set::iterator it = dom_static_atoms_.begin(); it != dom_static_atoms_.end(); ++it ) {
             if( !it->pred_->strongly_static_ )
                 cout << " " << *it;
         }
-        cout << (dom_static_atoms_.empty() ? " <none>" : "") << Utils::normal() << endl;
+        cout << (dom_static_atoms_.empty() ? " <none>" : "") << endl;
     }
 }
 
@@ -360,7 +360,7 @@ bool PDDL_Base::is_static_atom(const Atom &atom) const {
 
 void PDDL_Base::declare_clg_translation() {
     if( !clg_translation_ )
-        cout << Utils::magenta() << "entering (pseudo) CLG-compatibility mode" << Utils::normal() << endl;
+        cout << Utils::blue() << "entering (pseudo) CLG-compatibility mode" << Utils::normal() << endl;
     clg_translation_ = true;
 }
 
@@ -440,7 +440,7 @@ void PDDL_Base::clg_translate_actions() {
 
         // extend preconditions of other actions with (normal-execution).
         if( !dom_actions_.empty() ) {
-            cout << Utils::magenta() << "(clg) extending preconditions with '(normal-execution)' for "
+            cout << Utils::blue() << "(clg) extending preconditions with '(normal-execution)' for "
                  << dom_actions_.size() << " action(s)" << Utils::normal() << endl;
             for( size_t k = 0; k < dom_actions_.size(); ++k ) {
                 Action &action = *dom_actions_[k];
@@ -502,7 +502,7 @@ void PDDL_Base::clg_translate(Action &action) {
 
     action.observe_ = 0;
     if( options_.is_enabled("clg:print:effect") || options_.is_enabled("clg:print:generated") )
-        cout << Utils::red() << action << Utils::normal();
+        cout << Utils::yellow() << action << Utils::normal();
 
     //
     // 2) create sensor sensor-<action> with same arguments, condition
@@ -519,8 +519,8 @@ void PDDL_Base::clg_translate(Action &action) {
     assert(!sensor->condition_->has_free_variables(sensor->param_));
     assert(!sensor->sense_->has_free_variables(sensor->param_));
     dom_sensors_.push_back(sensor);
-    if( options_.is_enabled("clg:print:sensor") || options_.is_enabled("clg:print:generated") )
-        cout << Utils::red() << *sensor << Utils::normal();
+    if( options_.is_enabled("clg:print:sensors") || options_.is_enabled("clg:print:generated") )
+        cout << Utils::yellow() << *sensor << Utils::normal();
 
     //
     // 3) create action (post-sense-<action> <args>) with precondition
@@ -544,7 +544,7 @@ void PDDL_Base::clg_translate(Action &action) {
     assert(!post_action->effect_->has_free_variables(post_action->param_));
     dom_actions_.push_back(post_action);
     if( options_.is_enabled("clg:print:post") || options_.is_enabled("clg:print:generated") )
-        cout << Utils::red() << *post_action << Utils::normal();
+        cout << Utils::yellow() << *post_action << Utils::normal();
 }
 
 #if 0
@@ -652,10 +652,10 @@ void PDDL_Base::mvv_calculate_atoms_for_state_variables() {
     }
 
     if( options_.is_enabled("mvv:print:atoms-for-state-variables") ) {
-        cout << Utils::red() << "atoms for state variables:";
+        cout << Utils::magenta() << "atoms for state variables:" << Utils::normal();
         for( unsigned_atom_set::iterator it = atoms_for_state_variables_.begin(); it != atoms_for_state_variables_.end(); ++it )
             cout << " " << *it;
-        cout << Utils::normal() << endl;
+        cout << endl;
     }
 }
 
@@ -676,10 +676,10 @@ void PDDL_Base::mvv_calculate_observable_atoms() {
     }
 
     if( options_.is_enabled("mvv:print:observable-atoms") ) {
-        cout << Utils::red() << "observable atoms:";
+        cout << Utils::magenta() << "observable atoms:" << Utils::normal();
         for( unsigned_atom_set::iterator it = observable_atoms_.begin(); it != observable_atoms_.end(); ++it )
             cout << " " << *it;
-        cout << Utils::normal() << endl;
+        cout << endl;
     }
 }
 
@@ -692,13 +692,14 @@ void PDDL_Base::mvv_calculate_beams_for_grounded_observable_variables() {
             // print beam (if requested)
             if( options_.is_enabled("mvv:print:beams") ) {
                 for( unsigned_atom_set::const_iterator it = var.grounded_values_.begin(); it != var.grounded_values_.end(); ++it ) {
-                    cout << Utils::red() << "beam for "
-                         << var.print_name_ << "::" << *it << ":";
+                    cout << Utils::magenta()
+                         << "beam for " << var.print_name_ << "::" << *it << ":"
+                         << Utils::normal();
                     assert(var.beam_.find(*it) != var.beam_.end());
                     const unsigned_atom_set &beam = var.beam_.find(*it)->second;
                     for( unsigned_atom_set::const_iterator jt = beam.begin(); jt != beam.end(); ++jt )
                         cout << " " << *jt << (is_static_atom(*jt) ? "*" : "");
-                    cout << Utils::normal() << endl;
+                    cout << endl;
                 }
             }
 

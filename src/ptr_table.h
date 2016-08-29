@@ -2,11 +2,12 @@
 #define PTR_TABLE_H
 
 #include <vector>
+#include <cstddef>
 
-//#pragma GCC diagnostic ignored "-Wpragmas"
 #pragma GCC diagnostic ignored "-Wunknown-pragmas"
-#pragma GCC diagnostic ignored "-Wunused-private-field"
+#pragma GCC diagnostic ignored "-Wpragmas"
 
+#pragma GCC diagnostic ignored "-Wunused-private-field"
 class ptr_table {
     void *_key;
     ptr_table *_left;
@@ -60,6 +61,7 @@ class ptr_table {
     void dump_values(value_vec& vec);
     value_vec* values();
 };
+#pragma GCC diagnostic warning "-Wunused-private-field"
 
 #endif
 

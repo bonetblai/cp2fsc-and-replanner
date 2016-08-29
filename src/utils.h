@@ -1,6 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <stdio.h>
 #include <sys/resource.h>
 #include <sys/time.h>
 
@@ -29,15 +30,33 @@ inline float read_time_in_seconds(bool add_stime = true) {
     return time;
 }
 
-inline const char *normal() { return "\x1B[0m"; }
-inline const char *red() { return "\x1B[31;1m"; }
-inline const char *green() { return "\x1B[32;1m"; }
-inline const char *yellow() { return "\x1B[33;1m"; }
-inline const char *blue() { return "\x1B[34;1m"; }
-inline const char *magenta() { return "\x1B[35;1m"; }
-inline const char *cyan() { return "\x1B[36;1m"; }
-inline const char *error() { return "\x1B[31;1merror: \x1B[0m"; }
-inline const char *warning() { return "\x1B[33;1mwarning: \x1B[0m"; }
+inline std::string normal() { return "\x1B[0m"; }
+inline std::string red() { return "\x1B[31;1m"; }
+inline std::string green() { return "\x1B[32;1m"; }
+inline std::string yellow() { return "\x1B[33;1m"; }
+inline std::string blue() { return "\x1B[34;1m"; }
+inline std::string magenta() { return "\x1B[35;1m"; }
+inline std::string cyan() { return "\x1B[36;1m"; }
+inline std::string error() { return "\x1B[31;1merror: \x1B[0m"; }
+inline std::string warning() { return "\x1B[35;1mwarning: \x1B[0m"; }
+inline std::string internal_error() { return "\x1B[31;1minternal error: \x1B[0m"; }
+
+inline std::string cmdline(int argc, const char *argv[]) {
+    std::string cmd = argv[0];
+    for( int j = 1; j < argc; ++j )
+        cmd += std::string(" ") + argv[j];
+    return cmd;
+}
+
+inline std::string to_string(int n) {
+#if 1
+    return std::to_string(n);
+#else
+    char buff[256];
+    sprintf(buff, "%d", n);
+    return std::string(buff);
+#endif
+}
 
 };
 

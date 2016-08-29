@@ -9,9 +9,7 @@ int Solver::solve(const State &initial_hidden_state,
                   Instance::Plan &final_plan,
                   vector<vector<int> > &fired_sensors,
                   vector<vector<int> > &sensed_literals) const {
-    vector<index_set> assumptions;
     State hidden(initial_hidden_state), state;
-    Instance::Plan raw_plan, plan;
     vector<int> sensors, sensed;
     index_set goal_condition;
 
@@ -46,12 +44,15 @@ int Solver::solve(const State &initial_hidden_state,
     }
 
     // set goal state with (new-goal). It is used to compute
-    // the relevant assumptions of a classical plan that are
+    // the relevant assumptions of a classical plan which are
     // then used to detect when replanning is necessary.
     kp_instance_.set_goal_condition(goal_condition);
 
-    // plan/replan loop
+    // replan loop
+    vector<index_set> assumptions;
+    Instance::Plan raw_plan, plan;
     final_plan.clear();
+
     size_t planner_calls = 0;
     while( !state.goal(kp_instance_) ) {
 
@@ -247,9 +248,8 @@ void Solver::compute_and_add_observations(const State &hidden,
         State old_state(state);
         for( size_t k = kp_instance_.first_deductive_action(); k < kp_instance_.last_deductive_action(); ++k ) {
             const Instance::Action &act = *kp_instance_.actions_[k];
-            if( state.applicable(act) ) {
+            if( state.applicable(act) )
                 state.apply(act);
-            }
         }
         fix_point_reached = old_state == state;
     }

@@ -17,7 +17,7 @@
 #include <stdio.h>
 
 /* #line 14 "/usr/local/lib/bison.h" */
-#line 21 "grammar.h"
+#line 21 "grammar_tmp.h"
 #define YY_PDDL_Parser_ERROR  log_error
 #define YY_PDDL_Parser_ERROR_BODY  = 0
 #define YY_PDDL_Parser_ERROR_VERBOSE  1
@@ -128,21 +128,21 @@ typedef union {
 #ifndef YY_PDDL_Parser_PURE
 
 /* #line 63 "/usr/local/lib/bison.h" */
-#line 132 "grammar.h"
+#line 132 "grammar_tmp.h"
 
 #line 63 "/usr/local/lib/bison.h"
 /* YY_PDDL_Parser_PURE */
 #endif
 
 /* #line 65 "/usr/local/lib/bison.h" */
-#line 139 "grammar.h"
+#line 139 "grammar_tmp.h"
 
 #line 65 "/usr/local/lib/bison.h"
 /* prefix */
 #ifndef YY_PDDL_Parser_DEBUG
 
 /* #line 67 "/usr/local/lib/bison.h" */
-#line 146 "grammar.h"
+#line 146 "grammar_tmp.h"
 
 #line 67 "/usr/local/lib/bison.h"
 /* YY_PDDL_Parser_DEBUG */
@@ -150,7 +150,7 @@ typedef union {
 #ifndef YY_PDDL_Parser_LSP_NEEDED
 
 /* #line 70 "/usr/local/lib/bison.h" */
-#line 154 "grammar.h"
+#line 154 "grammar_tmp.h"
 
 #line 70 "/usr/local/lib/bison.h"
  /* YY_PDDL_Parser_LSP_NEEDED*/
@@ -228,7 +228,7 @@ extern YY_PDDL_Parser_STYPE YY_PDDL_Parser_LVAL;
 
 
 /* #line 143 "/usr/local/lib/bison.h" */
-#line 232 "grammar.h"
+#line 232 "grammar_tmp.h"
 #define	TK_OPEN	258
 #define	TK_CLOSE	259
 #define	TK_OPEN_SQ	260
@@ -336,7 +336,7 @@ public:
 /* static const int token ... */
 
 /* #line 182 "/usr/local/lib/bison.h" */
-#line 340 "grammar.h"
+#line 340 "grammar_tmp.h"
 static const int TK_OPEN;
 static const int TK_CLOSE;
 static const int TK_OPEN_SQ;
@@ -408,7 +408,7 @@ static const int KW_DEFAULT_SENSING_MODEL;
 enum YY_PDDL_Parser_ENUM_TOKEN { YY_PDDL_Parser_NULL_TOKEN=0
 
 /* #line 185 "/usr/local/lib/bison.h" */
-#line 412 "grammar.h"
+#line 412 "grammar_tmp.h"
 	,TK_OPEN=258
 	,TK_CLOSE=259
 	,TK_OPEN_SQ=260
@@ -480,7 +480,7 @@ enum YY_PDDL_Parser_ENUM_TOKEN { YY_PDDL_Parser_NULL_TOKEN=0
 #endif
 public:
  int YY_PDDL_Parser_PARSE(YY_PDDL_Parser_PARSE_PARAM);
- virtual void YY_PDDL_Parser_ERROR(char *msg) YY_PDDL_Parser_ERROR_BODY;
+ virtual void YY_PDDL_Parser_ERROR(const char *msg) YY_PDDL_Parser_ERROR_BODY;
 #ifdef YY_PDDL_Parser_PURE
 #ifdef YY_PDDL_Parser_LSP_NEEDED
  virtual int  YY_PDDL_Parser_LEX(YY_PDDL_Parser_STYPE *YY_PDDL_Parser_LVAL,YY_PDDL_Parser_LTYPE *YY_PDDL_Parser_LLOC) YY_PDDL_Parser_LEX_BODY;
@@ -528,5 +528,5 @@ public:
 /* END */
 
 /* #line 236 "/usr/local/lib/bison.h" */
-#line 532 "grammar.h"
+#line 532 "grammar_tmp.h"
 #endif

@@ -15,18 +15,7 @@
 
 using namespace std;
 
-Options::Mode options;
-
-void parse_options(const char *options_str) {
-    char *opts = strdup(options_str);
-    char *opt = strtok(opts, ",");
-    while( opt != 0 ) {
-        if( !options.enable(opt) )
-            cout << Utils::warning() << "unrecognized option '" << opt << "' (ignored)." << endl;
-        opt = strtok(0, ",");
-    }
-    free(opts);
-}
+Options::Mode g_options;
 
 void print_usage(ostream &os, const char *exec_name, const char **cmdline_options) {
     char *tmp = strdup(exec_name);
@@ -51,8 +40,8 @@ void print_usage(ostream &os, const char *exec_name, const char **cmdline_option
        << "where <options> is a comma-separated list of options from:" << endl
        << endl;
 
-    for( int i = 0, isz = options.options_.size(); i < isz; ++i ) {
-        const Options::Option &opt = options.options_[i];
+    for( Options::Mode::const_iterator it = g_options.begin(); it != g_options.end(); ++it ) {
+        const Options::Option &opt = *it;
         os << "    " << left << setw(35) << opt.name() << "  " << opt.desc() << endl;
     }
     os << endl;
@@ -76,14 +65,14 @@ int main(int argc, char *argv[]) {
     for( const char **opt = &available_options[0]; *opt != 0; ++opt ) {
         const char *name = *opt++;
         const char *desc = *opt;
-        options.add(name, desc);
+        g_options.add(name, desc);
     }
 
     // set default options
-    options.enable("planner:remove-intermediate-files");
-    options.enable("problem:action-compilation");
-    options.enable("mvv:compile-static-observables");
-    options.enable("kp:merge-drules");
+    g_options.enable("planner:remove-intermediate-files");
+    g_options.enable("problem:action-compilation");
+    g_options.enable("mvv:compile-static-observables");
+    g_options.enable("kp:merge-drules");
 
     // check correct number of parameters
     const char *exec_name = argv[0];
@@ -93,7 +82,7 @@ int main(int argc, char *argv[]) {
     }
 
     int nfiles = 0;
-    Parser* reader = new Parser(Parser::replanner, symbols, options);
+    Parser* reader = new Parser(Parser::replanner, symbols, g_options);
 
     // parse options
     bool skip_options = false;
@@ -104,7 +93,7 @@ int main(int argc, char *argv[]) {
         } else if( !skip_options && !strcmp(argv[k], "--debug-parser") ) {
             opt_debug_parser = true;
         } else if( !skip_options && !strcmp(argv[k], "--max-time") ) {
-            if( k == argc-1 ) {
+            if( k == argc - 1 ) {
                 cout << Utils::error() << "not enough arguments for '" << argv[k] << "'." << endl;
                 exit(-1);
             }
@@ -118,7 +107,7 @@ int main(int argc, char *argv[]) {
             }
             opt_prefix = argv[++k];
         } else if( !skip_options && !strcmp(argv[k], "--keep-intermediate-files") ) {
-            options.clear("planner:remove-intermediate-files");
+            g_options.disable("planner:remove-intermediate-files");
         } else if( !skip_options && !strcmp(argv[k], "--planner") ) {
             opt_planner = argv[++k];
         } else if( !skip_options && !strcmp(argv[k], "--planner-path") ) {
@@ -127,7 +116,7 @@ int main(int argc, char *argv[]) {
             opt_tmpfile_path = argv[++k];
         } else if( !skip_options && !strncmp(argv[k], "--options=", 10) ) {
             const char *options = &argv[k][10];
-            parse_options(options);
+            parse_options(g_options, options);
 
         // if '--', stop parsing options. Remaining fields are file names.
         } else if( !skip_options && !strcmp(argv[k], "--") ) {
@@ -157,7 +146,7 @@ int main(int argc, char *argv[]) {
     }
 
     // print file read by parser
-    if( options.is_enabled("parser:print:raw") ) {
+    if( g_options.is_enabled("parser:print:raw") ) {
         reader->print(cout);
     }
 
@@ -167,7 +156,7 @@ int main(int argc, char *argv[]) {
     const map<PDDL_Base::Atom, PDDL_Base::Atom> *sensing_enablers = 0;
     const map<PDDL_Base::Atom, set<PDDL_Base::unsigned_atom_set> > *pasive_sensors = 0;
     reader->do_translations(multivalued_variables, sensing_models, sensing_enablers, pasive_sensors);
-    if( options.is_enabled("parser:print:translated") ) {
+    if( g_options.is_enabled("parser:print:translated") ) {
         reader->print(cout);
     }
 
@@ -175,12 +164,12 @@ int main(int argc, char *argv[]) {
     int translation_type = reader->get_translation_type();
 
     // create fresh instance
-    Instance instance(options);
+    Instance instance(g_options);
 
     cout << "instantiating p.o. problem..." << endl;
     reader->emit_instance(instance);
     //delete reader;
-    if( options.is_enabled("problem:print:raw") ) {
+    if( g_options.is_enabled("problem:print:raw") ) {
         instance.print(cout);
         instance.write_domain(cout);
         instance.write_problem(cout);
@@ -189,7 +178,7 @@ int main(int argc, char *argv[]) {
     cout << "preprocessing p.o. problem..." << endl;
     Preprocessor prep(instance);
     prep.preprocess(true);
-    if( options.is_enabled("problem:print:preprocessed") ) {
+    if( g_options.is_enabled("problem:print:preprocessed") ) {
         //instance.print(cout);
         instance.write_domain(cout);
         instance.write_problem(cout);
@@ -207,7 +196,7 @@ int main(int argc, char *argv[]) {
         //kp_instance = new MVV_Instance(instance, *multivalued_variables, *sensing_models, *sensing_enablers, *pasive_sensors);
     }
 
-    if( options.is_enabled("kp:print:raw") ) {
+    if( g_options.is_enabled("kp:print:raw") ) {
         kp_instance->print(cout);
         kp_instance->write_domain(cout);
         kp_instance->write_problem(cout);
@@ -216,7 +205,7 @@ int main(int argc, char *argv[]) {
     cout << "preprocessing KP translation..." << endl;
     Preprocessor kp_prep(*kp_instance);
     //kp_prep.preprocess(false);
-    if( options.is_enabled("kp:print:preprocessed") ) {
+    if( g_options.is_enabled("kp:print:preprocessed") ) {
         kp_instance->write_domain(cout);
         kp_instance->write_problem(cout);
     }
@@ -260,7 +249,7 @@ int main(int argc, char *argv[]) {
                 cout << "PLAN: ";
                 bool need_indent = false;
 
-                if( options.is_enabled("solver:print:fired-sensors") ) {
+                if( g_options.is_enabled("solver:print:fired-sensors") ) {
                     const vector<int> &sensors = fired_sensors[0];
                     if( sensors.size() > 0 ) {
                         cout << "init*:" << flush;
@@ -272,7 +261,7 @@ int main(int argc, char *argv[]) {
                     }
                 }
 
-                if( options.is_enabled("solver:print:sensed-literals") ) {
+                if( g_options.is_enabled("solver:print:sensed-literals") ) {
                     const vector<int> &sensed = sensed_literals[0];
                     if( sensed.size() > 0 ) {
                         if( need_indent ) cout << "      ";
@@ -291,7 +280,7 @@ int main(int argc, char *argv[]) {
                 for( size_t k = 0; k < plan.size(); ++k ) {
                     if( need_indent ) cout << "      ";
                     cout << setw(4) << k << " : " << instance.actions_[plan[k]]->name_ << endl;
-                    if( options.is_enabled("solver:print:fired-sensors") ) {
+                    if( g_options.is_enabled("solver:print:fired-sensors") ) {
                         const vector<int> &sensors = fired_sensors[1+k];
                         if( sensors.size() > 0 ) {
                             cout << "      " << setw(4) << k << "*:";
@@ -301,7 +290,7 @@ int main(int argc, char *argv[]) {
                             cout << endl;
                         }
                     }
-                    if( options.is_enabled("solver:print:sensed-literals") ) {
+                    if( g_options.is_enabled("solver:print:sensed-literals") ) {
                         const vector<int> &sensed = sensed_literals[1+k];
                         if( sensed.size() > 0 ) {
                             cout << "      " << setw(4) << k << "@:";

@@ -2,6 +2,7 @@
 #include <list>
 #include <stdlib.h>
 #include "preprocess.h"
+#include "utils.h"
 
 using namespace std;
 
@@ -51,7 +52,9 @@ void Preprocessor::mark_inconsistent_actions(bool_vec &actions_to_remove) {
         }
 
         if( actions_to_remove[k] && options_.is_enabled("problem:print:action:inconsistent") ) {
-            cout << "  action " << k << "." << act.name_ << " is inconsistent." << endl;
+            cout << Utils::yellow()
+                 << "  action " << k << "." << act.name_ << " is inconsistent."
+                 << Utils::normal() << endl;
         }
     }
 }
@@ -98,8 +101,11 @@ void Preprocessor::mark_useless_actions(bool_vec &actions_to_remove) {
 
         if( useless[k] ) {
             actions_to_remove[k] = true;
-            if( options_.is_enabled("problem:print:action:useless") )
-                cout << "action " << k << "." << act.name_ << " is useless." << endl;
+            if( options_.is_enabled("problem:print:action:useless") ) {
+                cout << Utils::yellow()
+                     << "action " << k << "." << act.name_ << " is useless."
+                     << Utils::normal() << endl;
+            }
         }
     }
 }
@@ -263,24 +269,34 @@ void Preprocessor::compute_reachability(bool_vec &reachable_atoms, bool_vec &rea
 
     // generate feedback
     if( options_.is_enabled("problem:print:atom:reachable") ) {
+        cout << Utils::yellow();
         for( size_t k = 0; k < instance_.n_atoms(); k++ )
             if( reachable_atoms[k] ) cout << "  reachable atom " << k << "." << instance_.atoms_[k]->name_ << endl;
+        cout << Utils::normal();
     }
     if( options_.is_enabled("problem:print:atom:unreachable") ) {
+        cout << Utils::yellow();
         for( size_t k = 0; k < instance_.n_atoms(); k++ )
             if( !reachable_atoms[k] ) cout << "  unreachable atom " << k << "." << instance_.atoms_[k]->name_ << endl;
+        cout << Utils::normal();
     }
     if( options_.is_enabled("problem:print:action:unreachable") ) {
+        cout << Utils::yellow();
         for( size_t k = 0; k < instance_.actions_.size(); k++ )
             if( !reachable_actions[k] ) cout << "  unreachable action " << k << "." << instance_.actions_[k]->name_ << endl;
+        cout << Utils::normal();
     }
     if( options_.is_enabled("problem:print:sensor:unreachable") ) {
+        cout << Utils::yellow();
         for( size_t k = 0; k < instance_.sensors_.size(); k++ )
             if( !reachable_sensors[k] ) cout << "  unreachable sensor " << k << "." << instance_.sensors_[k]->name_ << endl;
+        cout << Utils::normal();
     }
     if( options_.is_enabled("problem:print:axiom:unreachable") ) {
+        cout << Utils::yellow();
         for( size_t k = 0; k < instance_.axioms_.size(); k++ )
             if( !reachable_axioms[k] ) cout << "  unreachable axiom " << k << "." << instance_.axioms_[k]->name_ << endl;
+        cout << Utils::normal();
     }
 }
 
@@ -356,10 +372,12 @@ void Preprocessor::compute_static_atoms(const bool_vec &reachable_actions, bool_
     }
 
     if( options_.is_enabled("problem:print:atom:static") ) {
+        cout << Utils::yellow();
         for( size_t k = 0; k < instance_.n_atoms(); k++ ) {
             if( static_atoms[k] )
                 cout << "  static atom " << k << "." << instance_.atoms_[k]->name_ << endl;
         }
+        cout << Utils::normal();
     }
 }
 
@@ -419,14 +437,14 @@ void Preprocessor::compute_action_compilation(Instance::Action &action) {
         // If valid completion, add new conditional effect
         if( valid_completion ) {
             if( options_.is_enabled("problem:print:action-compilation") ) {
-                cout << "completion for action=" << action.name_ << " and literal=";
+                cout << Utils::yellow() << "completion for action=" << action.name_ << " and literal=";
                 if( lit > 0 )
                     cout << instance_.atoms_[lit-1]->name_;
                 else
                     cout << "(not " << instance_.atoms_[lit-1]->name_ << ")";
                 cout << " : ";
                 instance_.write_atom_set(cout, completion);
-                cout << endl;
+                cout << Utils::normal() << endl;
             }
 
             if( !completion.empty() ) {
@@ -486,27 +504,30 @@ void Preprocessor::remove_irrelevant_atoms() {
 #endif
 }
 
-
-
-
-
-
 void Preprocessor::preprocess(bool remove_atoms) {
-    if( options_.is_enabled("problem:print:preprocess:stage") )
-        cout << "Preprocessing..." << endl;
+    int nstage = 0;
 
-    // stage 1: Remove inconsistent and useless actions
-    bool_vec actions_to_remove(instance_.n_actions(), false);
     if( options_.is_enabled("problem:print:preprocess:stage") )
-        cout << "  Stage 1: removing inconsistent & useless actions..." << endl;
+        cout << Utils::yellow() << "Preprocessing..." << Utils::normal() << endl;
+
+    // stage: Remove inconsistent and useless actions
+    bool_vec actions_to_remove(instance_.n_actions(), false);
+    if( options_.is_enabled("problem:print:preprocess:stage") ) {
+        cout << Utils::yellow() << "  Stage " << ++nstage << ": "
+             << "removing inconsistent & useless actions..."
+             << Utils::normal() << endl;
+    }
     mark_inconsistent_actions(actions_to_remove);
     mark_useless_actions(actions_to_remove);
     instance_.remove_actions(actions_to_remove, action_map_);
 
 
-    // stage 2: Compute reachable atoms, actions, sensors and axioms
-    if( options_.is_enabled("problem:print:preprocess:stage") )
-        cout << "  Stage 2: computing reachability..." << endl;
+    // stage: Compute reachable atoms, actions, sensors and axioms
+    if( options_.is_enabled("problem:print:preprocess:stage") ) {
+        cout << Utils::yellow() << "  Stage " << ++nstage << ": "
+             << "computing reachability..."
+             << Utils::normal() << endl;
+    }
     bool_vec reachable_atoms(instance_.n_atoms(), false);
     bool_vec reachable_actions(instance_.n_actions(), false);
     bool_vec reachable_sensors(instance_.n_sensors(), false);
@@ -514,16 +535,19 @@ void Preprocessor::preprocess(bool remove_atoms) {
     compute_reachability(reachable_atoms, reachable_actions, reachable_sensors, reachable_axioms);
 
 
-    // stage 3: remove unreachable conditional effects, axioms and sensors, and
+    // stage: remove unreachable conditional effects, axioms and sensors, and
     // compute static atoms until fix point.
-    if( options_.is_enabled("problem:print:preprocess:stage") )
-        cout << "  Stage 3: removing unreachable conditional effects, axioms and sensors..." << endl;
+    if( options_.is_enabled("problem:print:preprocess:stage") ) {
+        cout << Utils::yellow() << "  Stage " << ++nstage << ": "
+             << "removing unreachable conditional effects, axioms and sensors..."
+             << Utils::normal() << endl;
+    }
     bool_vec static_atoms(instance_.n_atoms(), false);
     bool fix_point_reached = false;
     while( !fix_point_reached ) {
         fix_point_reached = true;
         if( options_.is_enabled("problem:print:preprocess:stage") )
-            cout << "           new iteration..." << endl;
+            cout << Utils::yellow() << "           new iteration..." << Utils::normal() << endl;
 
         instance_.remove_unreachable_conditional_effects(reachable_atoms, static_atoms);
         instance_.remove_unreachable_axioms(reachable_atoms, static_atoms);
@@ -569,40 +593,48 @@ void Preprocessor::preprocess(bool remove_atoms) {
     // If everything is correct, there should be no unreachable axioms or sensors.
     for( int k = 0; k < (int)instance_.n_axioms(); ++k ) {
         if( !reachable_axioms[k] ) {
-            cout << "error: unreachable axiom after fix-point calculation" << endl;
+            cout << Utils::error() << "unreachable axiom after fix-point calculation" << endl;
             exit(-1);
         }
     }
     for( int k = 0; k < (int)instance_.n_sensors(); ++k ) {
         if( !reachable_sensors[k] ) {
-            cout << "error: unreachable sensor after fix-point calculation" << endl;
+            cout << Utils::error() << "unreachable sensor after fix-point calculation" << endl;
             exit(-1);
         }
     }
 
 
-    // stage 4: Remove unreachable and useless actions
-    if( options_.is_enabled("problem:print:preprocess:stage") )
-        cout << "  Stage 4: removing unreachable actions..." << endl;
+    // stage: Remove unreachable and useless actions
+    if( options_.is_enabled("problem:print:preprocess:stage") ) {
+        cout << Utils::yellow() << "  Stage " << ++nstage << ": "
+             << "removing unreachable actions..."
+             << Utils::normal() << endl;
+    }
     reachable_actions.bitwise_complement();
     mark_useless_actions(reachable_actions);
     mark_unreachable_actions(reachable_atoms, static_atoms, reachable_actions);
     instance_.remove_actions(reachable_actions, action_map_);
 
 
-    // stage 5: Simplify conditions and invariants
-    if( options_.is_enabled("problem:print:preprocess:stage") )
-        cout << "  Stage 5: simplify conditions and invariants..." << endl;
+    // stage: Simplify conditions and invariants
+    if( options_.is_enabled("problem:print:preprocess:stage") ) {
+        cout << Utils::yellow() << "  Stage " << ++nstage << ": "
+             << "simplify conditions and invariants..."
+             << Utils::normal() << endl;
+    }
     instance_.simplify_conditions_and_invariants(reachable_atoms, static_atoms);
 
 
-    // stage 6: Remove unreachable and 'known' static atoms
-    if( options_.is_enabled("problem:print:preprocess:stage") )
-        cout << "  Stage 6: removing unreachable and static atoms..." << endl;
-    bool_vec atoms_to_remove(instance_.n_atoms(), false);
-    for( index_set::const_iterator it = instance_.init_.literals_.begin(); it != instance_.init_.literals_.end(); ++it ) {
-        atoms_to_remove[*it > 0 ? *it-1 : -*it-1] = true;
+    // stage: Remove unreachable and 'known' static atoms
+    if( options_.is_enabled("problem:print:preprocess:stage") ) {
+        cout << Utils::yellow() << "  Stage " << ++nstage << ": "
+             << "removing unreachable and static atoms..."
+             << Utils::normal() << endl;
     }
+    bool_vec atoms_to_remove(instance_.n_atoms(), false);
+    for( index_set::const_iterator it = instance_.init_.literals_.begin(); it != instance_.init_.literals_.end(); ++it )
+        atoms_to_remove[*it > 0 ? *it-1 : -*it-1] = true;
     atoms_to_remove.bitwise_and(static_atoms);
     reachable_atoms.bitwise_complement();
     atoms_to_remove.bitwise_or(reachable_atoms);
@@ -643,35 +675,38 @@ void Preprocessor::preprocess(bool remove_atoms) {
     }
 #endif
 
-    if( remove_atoms && !atoms_to_remove.empty() ) {
-        if( options_.is_enabled("problem:print:atom:removal") ) {
-            cout << "atoms to remove = ";
-            instance_.write_atom_set(cout, atoms_to_remove);
-            cout << endl;
-        }
+    if( remove_atoms && !atoms_to_remove.empty() )
         instance_.remove_atoms(atoms_to_remove, atom_map_);
-    }
 
     // recalculate non-primitive and observable atoms
     instance_.calculate_non_primitive_and_observable_fluents();
 
 #if 0 // This old stuff. It should not be necessary
-    // stage 7: Create deductive rules
-    if( options_.is_enabled("problem:print:preprocess:stage") )
-        cout << "  Stage 7: computing deductive rules..." << endl;
+    // stage: Create deductive rules
+    if( options_.is_enabled("problem:print:preprocess:stage") ) {
+        cout << Utils::yellow() << "  Stage " << ++nstage << ": "
+             << "computing deductive rules..." << endl;
+    }
     instance_.create_deductive_rules();
 #endif
 
-    // stage 7: Perform action compilation. This is only valid for k-replanner.
+    // stage: Perform action compilation. This is only valid for k-replanner.
     if( options_.is_enabled("problem:action-compilation") ) {
-        if( options_.is_enabled("problem:print:preprocess:stage") )
-            cout << "  Stage 7: performing action compilation for " << instance_.n_actions() << " action(s) ..." << endl;
-        for( size_t k = 0; k < instance_.n_actions(); ++k ) {
-            compute_action_compilation(*instance_.actions_[k]);
+        if( options_.is_enabled("problem:print:preprocess:stage") ) {
+            cout << Utils::yellow() << "  Stage " << ++nstage << ": "
+                 << "performing action compilation for " << instance_.n_actions() << " action(s) ..."
+                 << Utils::normal() << endl;
         }
+        for( size_t k = 0; k < instance_.n_actions(); ++k )
+            compute_action_compilation(*instance_.actions_[k]);
     }
 
-    // do cross referencing
+    // stage: cross reference
+    if( options_.is_enabled("problem:print:preprocess:stage") ) {
+        cout << Utils::yellow() << "  Stage " << ++nstage << ": "
+             << "computing cross references..."
+             << Utils::normal() << endl;
+    }
     instance_.cross_reference();
 }
 

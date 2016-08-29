@@ -1,12 +1,12 @@
 #include <algorithm>
-#include <iostream>
+#include <cassert>
 #include <fstream>
+#include <fcntl.h>
+#include <iostream>
 #include <stdlib.h>
+#include <unistd.h>
 #include "classical_planner.h"
 #include "utils.h"
-
-#include <fcntl.h>
-#include <unistd.h>
 
 using namespace std;
 
@@ -24,30 +24,30 @@ ClassicalPlanner::ClassicalPlanner(const char *name,
 
     int pid = getpid();
 
-    ostringstream sstr;
-    if( tmpfile_path_ != "" ) sstr << tmpfile_path_ << "/";
-    sstr << "gen-d." << pid << ".pddl";
-    domain_fn_ = strdup(sstr.str().c_str());
+    string domain_fname;
+    if( tmpfile_path_ != "" ) domain_fname += tmpfile_path_ + "/";
+    domain_fname += string("gen-d") + Utils::to_string(pid) + ".pddl";
+    domain_fn_ = strdup(domain_fname.c_str());
 
-    sstr.str("");
-    if( tmpfile_path_ != "" ) sstr << tmpfile_path_ << "/";
-    sstr << "gen-p." << pid << ".pddl";
-    problem_fn_ = strdup(sstr.str().c_str());
+    string problem_fname;
+    if( tmpfile_path_ != "" ) problem_fname += tmpfile_path_ + "/";
+    problem_fname += string("gen-p") + Utils::to_string(pid) + ".pddl";
+    problem_fn_ = strdup(problem_fname.c_str());
 
-    sstr.str("");
-    if( tmpfile_path_ != "" ) sstr << tmpfile_path_ << "/";
-    sstr << planner_name_ << ".output." << pid;
-    output_fn_ = strdup(sstr.str().c_str());
+    string output_fname;
+    if( tmpfile_path_ != "" ) output_fname += tmpfile_path_ + "/";
+    output_fname += planner_name_ + ".output." + Utils::to_string(pid);
+    output_fn_ = strdup(output_fname.c_str());
 
-    sstr.str("");
-    if( tmpfile_path_ != "" ) sstr << tmpfile_path_ << "/";
-    sstr << planner_name_ << ".tmp." << pid;
-    tmp_fn_ = strdup(sstr.str().c_str());
+    string tmp_fname;
+    if( tmpfile_path_ != "" ) tmp_fname += tmpfile_path_ + "/";
+    tmp_fname += planner_name_ + ".tmp." + Utils::to_string(pid);
+    tmp_fn_ = strdup(tmp_fname.c_str());
 
-    sstr.str("");
-    if( tmpfile_path_ != "" ) sstr << tmpfile_path_ << "/";
-    sstr << planner_name_ << ".plan." << pid;
-    plan_fn_ = strdup(sstr.str().c_str());
+    string plan_fname;
+    if( tmpfile_path_ != "" ) plan_fname += tmpfile_path_ + "/";
+    plan_fname += planner_name_ + ".plan." + Utils::to_string(pid);
+    plan_fn_ = strdup(plan_fname.c_str());
 }
 
 ClassicalPlanner::~ClassicalPlanner() {
@@ -128,10 +128,10 @@ int FF_Planner::get_raw_plan(const State &state, Instance::Plan &raw_plan) const
     generate_pddl_problem(state);
 
     // call FF planner
-    ostringstream cmd;
-    if( planner_path_ != "" ) cmd << planner_path_ << "/";
-    cmd << planner_name_ << " -o " << domain_fn_ << " -f " << problem_fn_ << " > " << output_fn_;
-    int rv = system(cmd.str().c_str());
+    string cmd;
+    if( planner_path_ != "" ) cmd += planner_path_ + "/";
+    cmd += planner_name_ + " -o " + domain_fn_ + " -f " + problem_fn_ + " > " + output_fn_;
+    int rv = system(cmd.c_str());
     remove_file(problem_fn_);
 
     if( rv != 0 ) {
@@ -141,9 +141,8 @@ int FF_Planner::get_raw_plan(const State &state, Instance::Plan &raw_plan) const
     }
 
     // update search time
-    cmd.str("");
-    cmd << "grep \"seconds searching\" " << output_fn_ << " | awk '{print $1;}' > " << tmp_fn_;
-    rv = system(cmd.str().c_str());
+    cmd = string("grep \"seconds searching\" ") + output_fn_ + " | awk '{print $1;}' > " + tmp_fn_;
+    rv = system(cmd.c_str());
     assert(rv == 0);
     ifstream ifs(tmp_fn_);
     float search_time;
@@ -152,9 +151,8 @@ int FF_Planner::get_raw_plan(const State &state, Instance::Plan &raw_plan) const
     ifs.close();
 
     // extract plan from output
-    cmd.str("");
-    cmd << "egrep -e [0-9]+: " << output_fn_ << " > " << tmp_fn_;
-    rv = system(cmd.str().c_str());
+    cmd = string("egrep -e [0-9]+: ") + output_fn_ + " > " + tmp_fn_;
+    rv = system(cmd.c_str());
     remove_file(output_fn_);
 
     if( rv != 0 ) {
@@ -163,9 +161,8 @@ int FF_Planner::get_raw_plan(const State &state, Instance::Plan &raw_plan) const
         return NO_SOLUTION;
     }
 
-    cmd.str("");
-    cmd << "cat " << tmp_fn_ << " | awk '{print $NF;}' | tr \"[:upper:]\" \"[:lower:]\"  > " << plan_fn_;
-    rv = system(cmd.str().c_str());
+    cmd = string("cat ") + tmp_fn_ + " | awk '{print $NF;}' | tr \"[:upper:]\" \"[:lower:]\"  > " + plan_fn_;
+    rv = system(cmd.c_str());
     remove_file(tmp_fn_);
     assert(rv == 0);
 
@@ -204,10 +201,10 @@ int M_Planner::get_raw_plan(const State &state, Instance::Plan &raw_plan) const 
     generate_pddl_problem(state);
 
     // call M/Mp planner. Flag '-W' sets the random seed using time.
-    ostringstream cmd;
-    if( planner_path_ != "" ) cmd << planner_path_ << "/";
-    cmd << planner_name_ << " -W " << domain_fn_ << " " << problem_fn_ << " > " << output_fn_;
-    int rv = system(cmd.str().c_str());
+    string cmd;
+    if( planner_path_ != "" ) cmd += planner_path_ + "/";
+    cmd += planner_name_ + " -W " + domain_fn_ + " " + problem_fn_ + " > " + output_fn_;
+    int rv = system(cmd.c_str());
     remove_file(problem_fn_);
 
     if( rv != 0 ) {
@@ -217,9 +214,8 @@ int M_Planner::get_raw_plan(const State &state, Instance::Plan &raw_plan) const 
     }
 
     // update search time
-    cmd.str("");
-    cmd << "grep \"total time\" " << output_fn_ << " | awk '{print $3, $5;}' > " << tmp_fn_;
-    rv = system(cmd.str().c_str());
+    cmd = string("grep \"total time\" ") + output_fn_ + " | awk '{print $3, $5;}' > " + tmp_fn_;
+    rv = system(cmd.c_str());
     assert(rv == 0);
     ifstream ifs(tmp_fn_);
     float total_time, preprocess_time;
@@ -229,11 +225,10 @@ int M_Planner::get_raw_plan(const State &state, Instance::Plan &raw_plan) const 
     remove_file(tmp_fn_);
 
     // extract plan from output
-    cmd.str("");
-    cmd << "cat " << output_fn_
-        << " | grep STEP | sed \"s/STEP .*: //\" | tr \" \" \"\\n\" | sed \"s/()//\" > "
-        << plan_fn_;
-    rv = system(cmd.str().c_str());
+    cmd = string("cat ") + output_fn_
+            + " | grep STEP | sed \"s/STEP .*: //\" | tr \" \" \"\\n\" | sed \"s/()//\" > "
+            + plan_fn_;
+    rv = system(cmd.c_str());
     remove_file(output_fn_);
 
     if( rv != 0 ) {
@@ -284,7 +279,6 @@ int LAMA_Planner::get_raw_plan(const State &state, Instance::Plan &raw_plan) con
     float start_time = Utils::read_time_in_seconds();
     ++n_calls_;
   
-    ostringstream fname; 
     if( first_call_ ) {
         generate_pddl_domain();
         generate_pddl_problem(state);
@@ -490,7 +484,10 @@ int LAMA_Server_Planner::get_raw_plan(const State &state, Instance::Plan &raw_pl
     float start_time = Utils::read_time_in_seconds();
     ++n_calls_;
   
-    ostringstream fname; 
+    string cmd;
+    if( planner_path_ != "" ) cmd += planner_path_ + "/src/search/";
+    cmd += string("lama simple-conversion ") + domain_fn_ + " " + problem_fn_ + " >/dev/null";
+
     if( first_call_ ) {
         generate_pddl_domain();
         generate_pddl_problem(state);
@@ -671,13 +668,13 @@ int LAMA_Server_Planner::create_server_process(const char *base) const {
 
     // create pipes for redirection of stdin and stderr
     if( pipe(stdin_pipe_) < 0 ) {
-        perror("error: allocating pipe for child input redirect stdin");
+        perror((Utils::error() + "allocating pipe for child input redirect stdin").c_str());
         return -1;
     }
     if( pipe(stderr_pipe_) < 0 ) {
         close(stdin_pipe_[PIPE_READ]);
         close(stdin_pipe_[PIPE_WRITE]);
-        perror("error: allocating pipe for child output redirect of stderr");
+        perror((Utils::error() + "allocating pipe for child output redirect of stderr").c_str());
         return -1;
     }
 
@@ -688,11 +685,11 @@ int LAMA_Server_Planner::create_server_process(const char *base) const {
 
         // redirect stdin and stderr
         if( dup2(stdin_pipe_[PIPE_READ], STDIN_FILENO) == -1 ) {
-            perror("error: redirecting stdin");
+            perror((Utils::error() + "redirecting stdin").c_str());
             return -1;
         }
         if( dup2(stderr_pipe_[PIPE_WRITE], STDERR_FILENO) == -1 ) {
-            perror("error: redirecting stderr");
+            perror((Utils::error() + "redirecting stderr").c_str());
             return -1;
         }
 
@@ -714,7 +711,7 @@ int LAMA_Server_Planner::create_server_process(const char *base) const {
 
         // if we get here at all, an error occurred, but we are in the child
         // process, so just exit
-        perror("error: exec of the child process");
+        perror((Utils::error() + "exec of the child process").c_str());
         exit(status);
     } else if( child_pid_ > 0 ) {
         // we are in father process

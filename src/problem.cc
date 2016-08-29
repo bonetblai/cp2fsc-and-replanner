@@ -2,6 +2,7 @@
 #include <deque>
 #include "problem.h"
 #include "state.h"
+#include "utils.h"
 
 using namespace std;
 
@@ -11,9 +12,14 @@ bool Instance::always_write_precondition_ = false;
 bool Instance::always_write_conjunction_ = false;
 
 Instance::Instance(const Instance& ins)
-  : cross_referenced_(false), name_(ins.name_), atoms_(ins.atoms_),
-    actions_(ins.actions_), sensors_(ins.sensors_), axioms_(ins.axioms_),
-    init_(ins.init_), hidden_(ins.hidden_),
+  : cross_referenced_(false),
+    name_(ins.name_),
+    atoms_(ins.atoms_),
+    actions_(ins.actions_),
+    sensors_(ins.sensors_),
+    axioms_(ins.axioms_),
+    init_(ins.init_),
+    hidden_(ins.hidden_),
     goal_literals_(ins.goal_literals_),
     non_primitive_fluents_(ins.non_primitive_fluents_),
     observable_fluents_(ins.observable_fluents_),
@@ -180,10 +186,11 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
     bool_vec pos_literal_in_init(n_atoms(), false);
     bool_vec neg_literal_in_init(n_atoms(), false);
     for( index_set::const_iterator it = init_.literals_.begin(); it != init_.literals_.end(); ++it ) {
+        int index = *it > 0 ? *it - 1 : -*it - 1;
         if( *it > 0 )
-            pos_literal_in_init[*it - 1] = true;
+            pos_literal_in_init[index] = true;
         else
-            neg_literal_in_init[-*it - 1] = true;
+            neg_literal_in_init[index] = true;
     }
 
     // iterate over actions
@@ -192,11 +199,12 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
 
         // precondition
         for( index_set::const_iterator p = act.precondition_.begin(); p != act.precondition_.end(); ) {
-            if( ((*p < 0) && !reachable_atoms[-*p-1]) ||
-                ((*p > 0) && static_atoms[*p-1] && pos_literal_in_init[*p-1]) ||
-                ((*p < 0) && static_atoms[-*p-1] && neg_literal_in_init[-*p-1]) ) {
+            int index = *p > 0 ? *p - 1 : -*p - 1;
+            if( ((*p < 0) && !reachable_atoms[index]) ||
+                ((*p > 0) && static_atoms[index] && pos_literal_in_init[index]) ||
+                ((*p < 0) && static_atoms[index] && neg_literal_in_init[index]) ) {
 #if 0
-                cout << "eliminating ";
+                cout << "Eliminating ";
                 if( *p > 0 )
                     cout << atoms_[*p-1]->name_;
                 else
@@ -213,9 +221,10 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
         for( int j = 0; j < (int)act.when_.size(); ++j ) {
             When &when = act.when_[j];
             for( index_set::const_iterator p = when.condition_.begin(); p != when.condition_.end(); ) {
-                if( ((*p < 0) && !reachable_atoms[-*p-1]) ||
-                    ((*p > 0) && static_atoms[*p-1] && pos_literal_in_init[*p-1]) ||
-                    ((*p < 0) && static_atoms[-*p-1] && neg_literal_in_init[-*p-1]) ) {
+                int index = *p > 0 ? *p - 1 : -*p - 1;
+                if( ((*p < 0) && !reachable_atoms[index]) ||
+                    ((*p > 0) && static_atoms[index] && pos_literal_in_init[index]) ||
+                    ((*p < 0) && static_atoms[index] && neg_literal_in_init[index]) ) {
 #if 0
                     cout << "Eliminating " << flush;
                     if( *p > 0 )
@@ -245,9 +254,10 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
     for( size_t k = 0; k < axioms_.size(); ++k ) {
         Axiom &axiom = *axioms_[k];
         for( index_set::const_iterator p = axiom.body_.begin(); p != axiom.body_.end(); ) {
-            if( ((*p < 0) && !reachable_atoms[-*p-1]) ||
-                ((*p > 0) && static_atoms[*p-1] && pos_literal_in_init[*p-1]) ||
-                ((*p < 0) && static_atoms[-*p-1] && neg_literal_in_init[-*p-1]) ) {
+            int index = *p > 0 ? *p - 1 : -*p - 1;
+            if( ((*p < 0) && !reachable_atoms[index]) ||
+                ((*p > 0) && static_atoms[index] && pos_literal_in_init[index]) ||
+                ((*p < 0) && static_atoms[index] && neg_literal_in_init[index]) ) {
                 axiom.body_.erase(p++);
             } else {
                 ++p;
@@ -259,9 +269,10 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
     for( size_t k = 0; k < sensors_.size(); ++k ) {
         Sensor &sensor = *sensors_[k];
         for( index_set::const_iterator p = sensor.condition_.begin(); p != sensor.condition_.end(); ) {
-            if( ((*p < 0) && !reachable_atoms[-*p-1]) ||
-                ((*p > 0) && static_atoms[*p-1] && pos_literal_in_init[*p-1]) ||
-                ((*p < 0) && static_atoms[-*p-1] && neg_literal_in_init[-*p-1]) ) {
+            int index = *p > 0 ? *p - 1 : -*p - 1;
+            if( ((*p < 0) && !reachable_atoms[index]) ||
+                ((*p > 0) && static_atoms[index] && pos_literal_in_init[index]) ||
+                ((*p < 0) && static_atoms[index] && neg_literal_in_init[index]) ) {
                 sensor.condition_.erase(p++);
             } else {
                 ++p;
@@ -281,9 +292,10 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
         // simplify invariant
         for( int i = 0; i < (int)invariant.size(); ++i ) {
             int lit = invariant[i];
-            if( ((lit > 0) && !reachable_atoms[lit-1]) ||
-                ((lit > 0) && static_atoms[lit-1] && neg_literal_in_init[lit-1]) ||
-                ((lit < 0) && static_atoms[-lit-1] && pos_literal_in_init[-lit-1]) ) {
+            int index = lit > 0 ? lit - 1 : -lit - 1;
+            if( ((lit > 0) && !reachable_atoms[index]) ||
+                ((lit > 0) && static_atoms[index] && neg_literal_in_init[index]) ||
+                ((lit < 0) && static_atoms[index] && pos_literal_in_init[index]) ) {
 #if 1
                 cout << "Dropping ";
                 if( lit > 0 )
@@ -297,9 +309,9 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
                 invariant.pop_back();
                 --i;
             }
-            if( ((lit < 0) && !reachable_atoms[-lit-1]) ||
-                ((lit > 0) && static_atoms[lit-1] && pos_literal_in_init[lit-1]) ||
-                ((lit < 0) && static_atoms[-lit-1] && neg_literal_in_init[-lit-1]) ) {
+            if( ((lit < 0) && !reachable_atoms[index]) ||
+                ((lit > 0) && static_atoms[index] && pos_literal_in_init[index]) ||
+                ((lit < 0) && static_atoms[index] && neg_literal_in_init[index]) ) {
                 remove_invariant = true;
                 invariant[i] = invariant.back();
                 invariant.pop_back();
@@ -322,7 +334,7 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
  
         // complete initial state
         for( index_set::const_iterator it = completion_for_initial_state.begin(); it != completion_for_initial_state.end(); ++it ) {
-            if( true || options_.is_enabled("problem:print:completion:initial-state") ) {
+            if( options_.is_enabled("problem:print:completion:initial-state") ) {
                 int lit = *it;
                 if( lit > 0 )
                     cout << atoms_[lit-1]->name_->to_string() << endl;
@@ -334,7 +346,7 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
 
         // Remove invariant and complete initial state
         if( remove_invariant ) {
-            if( true || options_.is_enabled("problem:print:invariant:removal") ) {
+            if( options_.is_enabled("problem:print:invariant:removal") ) {
                 cout << "removing invariant ";
                 init_.invariants_[k].write(cout, 0, *this);
             }
@@ -487,7 +499,7 @@ void Instance::calculate_non_primitive_and_observable_fluents() {
     for( index_set::const_iterator it = given_observables_.begin(); it != given_observables_.end(); ++it ) {
         assert(*it > 0);
         if( non_primitive_fluents_.find(*it-1) == non_primitive_fluents_.end() ) {
-            cout << "warning: observable fluent '"
+            cout << Utils::warning() << "observable fluent '"
                  << atoms_[*it-1]->name_
                  << "' isn't non-primitive. Removing..." << endl;
             continue;
@@ -630,8 +642,9 @@ void Instance::write_domain(ostream &os, int indent) const {
     // predicates
     if( n_atoms() > 0 ) {
         os << istr << "(:predicates" << endl;
-        for( size_t k = 0; k < n_atoms(); k++ )
+        for( size_t k = 0; k < n_atoms(); k++ ) {
             os << istr << istr << atoms_[k]->name_ << endl;
+        }
         os << istr << ")" << endl;
     }
 
@@ -724,8 +737,9 @@ void Instance::print(ostream &os) const {
 }
 
 void Instance::print_atoms(ostream &os) const {
-    for( size_t k = 0; k < n_atoms(); ++k )
+    for( size_t k = 0; k < n_atoms(); ++k ) {
         os << k << ". " << atoms_[k]->name_ << endl;
+    }
 }
 
 void Instance::Action::print(ostream &os, const Instance &i) const {
@@ -1047,14 +1061,14 @@ void Instance::print_actions(ostream &os) const {
 }
 
 void Instance::print_sensors(ostream &os) const {
-    for (size_t k = 0; k < n_sensors(); k++) {
+    for( size_t k = 0; k < n_sensors(); ++k ) {
         os << k << ". ";
         sensors_[k]->print(os, *this);
     }
 }
 
 void Instance::print_axioms(ostream &os) const {
-    for (size_t k = 0; k < n_axioms(); k++) {
+    for( size_t k = 0; k < n_axioms(); ++k ) {
         os << k << ". ";
         axioms_[k]->print(os, *this);
     }
@@ -1147,9 +1161,8 @@ void Instance::create_deductive_rules() {
         assert(invariant.type_ == Invariant::AT_LEAST_ONE);
 
         for( size_t k = 0; k < invariant.size(); ++k ) {
-            ostringstream s;
-            s << "deductive-rule-" << deductive_rules_.size();
-            Action *rule = new Action(new CopyName(s.str()), deductive_rules_.size());
+            string name = string("deductive-rule-") + Utils::to_string(deductive_rules_.size());
+            Action *rule = new Action(new CopyName(name), deductive_rules_.size());
 
             // conditional effects
             When c_eff;
@@ -1182,7 +1195,7 @@ void Instance::create_deductive_rules() {
             if( !c_eff.effect_.empty() ) {
                 rule->when_.push_back(c_eff);
                 deductive_rules_.push_back(rule);
-                if( true || options_.is_enabled("problem:print:deductive-rule:creation") ) {
+                if( options_.is_enabled("problem:print:deductive-rule:creation") ) {
                     rule->print(cout, *this);
                 }
             } else {

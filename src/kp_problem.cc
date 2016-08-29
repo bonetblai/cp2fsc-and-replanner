@@ -293,9 +293,8 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
             assert(*it > 0);
             int idx = *it-1;
             for( size_t n = 0; n < 2; ++n ) {
-                ostringstream s;
-                s << "sensor-" << r.name_->to_string() << "-obs" << obs << "-ver" << n;
-                Action &nact = new_action(new CopyName(s.str()));
+                string name = string("sensor-") + r.name_->to_string() + "-obs" + Utils::to_string(obs) + "-ver" + Utils::to_string(n);
+                Action &nact = new_action(new CopyName(name));
 
                 // conditional effect
                 When c_eff;
@@ -331,9 +330,8 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
 
         //cout << "Processing invariant "; invariant.write(cout, 0, ins);
         for( size_t k = 0; k < invariant.size(); ++k ) {
-            ostringstream s, comment_body, comment_head;
-            s << "invariant-" << (invariant.type_ == Invariant::AT_LEAST_ONE ? "at-least-one" : "at-most-one") << "-" << invariant_no++;
-            Action *nact = new Action(new CopyName(s.str()));
+            string name = string("invariant-") + (invariant.type_ == Invariant::AT_LEAST_ONE ? "at-least-one" : "at-most-one") + "-" + Utils::to_string(invariant_no++);
+            Action *nact = new Action(new CopyName(name));
             vector<int> completion;
 
             // setup precondition
@@ -348,6 +346,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
             }
 
             // effects
+            string comment_body, comment_head;
             if( invariant.type_ == Invariant::AT_LEAST_ONE ) {
                 for( size_t i = 0; i < invariant.size(); ++i ) {
                     int lit = invariant[i];
@@ -355,7 +354,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
                     if( lit > 0 ) {
                         if( i != k ) {
                             nact->precondition_.insert(1 + 2*idx+1);
-                            comment_body << atoms_[2*idx+1]->name_ << " ";
+                            comment_body += atoms_[2*idx+1]->name_->to_string() + " ";
                         } else {
                             nact->precondition_.insert(-(1 + 2*idx+1));
                             nact->effect_.insert(1 + 2*idx);
@@ -363,7 +362,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
                     } else {
                         if( i != k ) {
                             nact->precondition_.insert(1 + 2*idx);
-                            comment_body << atoms_[2*idx]->name_ << " ";
+                            comment_body += atoms_[2*idx]->name_->to_string() + " ";
                         } else {
                             nact->precondition_.insert(-(1 + 2*idx));
                             nact->effect_.insert(1 + 2*idx+1);
@@ -377,25 +376,25 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
                     if( lit > 0 ) {
                         if( i != k ) {
                             nact->effect_.insert(1 + 2*idx+1);
-                            comment_head << atoms_[2*idx+1]->name_ << " ";
+                            comment_head += atoms_[2*idx+1]->name_->to_string() + " ";
                         } else {
                             nact->precondition_.insert(1 + 2*idx);
-                            comment_body << atoms_[2*idx]->name_;
+                            comment_body += atoms_[2*idx]->name_->to_string();
                         }
                     } else {
                         if( i != k ) {
                             nact->effect_.insert(1 + 2*idx);
-                            comment_head << atoms_[2*idx]->name_ << " ";
+                            comment_head += atoms_[2*idx]->name_->to_string() + " ";
                         } else {
                             nact->precondition_.insert(1 + 2*idx+1);
-                            comment_body << atoms_[2*idx+1]->name_;
+                            comment_body += atoms_[2*idx+1]->name_->to_string();
                         }
                     }
                 }
             }
 
             // set comment
-            nact->comment_ = comment_body.str() + " ==> " + comment_head.str();
+            nact->comment_ = comment_body + " ==> " + comment_head;
 
             // store invariant action
             invariant_actions.insert(make_pair(nact->precondition_, nact));
@@ -453,9 +452,8 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
 
         //cout << "Processing invariant "; invariant.write(cout, 0, ins);
         for( size_t k = 0; k < invariant.size(); ++k ) {
-            ostringstream s, comment_body, comment_head;
-            s << "invariant-" << (invariant.type_ == Invariant::AT_LEAST_ONE ? "at-least-one" : "at-most-one") << "-" << invariant_no++;
-            Action &nact = new_action(new CopyName(s.str()));
+            string name = string("invariant-") + (invariant.type_ == Invariant::AT_LEAST_ONE ? "at-least-one" : "at-most-one") + "-" + Utils::to_string(invariant_no++);
+            Action &nact = new_action(new CopyName(name));
             vector<int> completion;
 
             // setup precondition
@@ -470,6 +468,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
             }
 
             // effects
+            string comment_body, comment_head;
             if( invariant.type_ == Invariant::AT_LEAST_ONE ) {
                 for( size_t i = 0; i < invariant.size(); ++i ) {
                     int lit = invariant[i];
@@ -477,20 +476,20 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
                     if( lit > 0 ) {
                         if( i != k ) {
                             nact.precondition_.insert(1 + 2*idx+1);
-                            comment_body << atoms_[2*idx+1]->name_ << " ";
+                            comment_body += atoms_[2*idx+1]->name_->to_string() + " ";
                         } else {
                             nact.precondition_.insert(-(1 + 2*idx+1));
                             nact.effect_.insert(1 + 2*idx);
-                            comment_head << atoms_[2*idx]->name_;
+                            comment_head += atoms_[2*idx]->name_->to_string();
                         }
                     } else {
                         if( i != k ) {
                             nact.precondition_.insert(1 + 2*idx);
-                            comment_body << atoms_[2*idx]->name_ << " ";
+                            comment_body += atoms_[2*idx]->name_->to_string() + " ";
                         } else {
                             nact.precondition_.insert(-(1 + 2*idx));
                             nact.effect_.insert(1 + 2*idx+1);
-                            comment_head << atoms_[2*idx+1]->name_;
+                            comment_head += atoms_[2*idx+1]->name_->to_string();
                         }
                     }
                 }
@@ -501,25 +500,25 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
                     if( lit > 0 ) {
                         if( i != k ) {
                             nact.effect_.insert(1 + 2*idx+1);
-                            comment_head << atoms_[2*idx+1]->name_ << " ";
+                            comment_head += atoms_[2*idx+1]->name_->to_string() + " ";
                         } else {
                             nact.precondition_.insert(1 + 2*idx);
-                            comment_body << atoms_[2*idx]->name_;
+                            comment_body += atoms_[2*idx]->name_->to_string();
                         }
                     } else {
                         if( i != k ) {
                             nact.effect_.insert(1 + 2*idx);
-                            comment_head << atoms_[2*idx]->name_ << " ";
+                            comment_head += atoms_[2*idx]->name_->to_string() + " ";
                         } else {
                             nact.precondition_.insert(1 + 2*idx+1);
-                            comment_body << atoms_[2*idx+1]->name_;
+                            comment_body += atoms_[2*idx+1]->name_->to_string();
                         }
                     }
                 }
             }
 
             // set comment
-            nact.comment_ = comment_body.str() + " ==> " + comment_head.str();
+            nact.comment_ = comment_body + " ==> " + comment_head;
 
             // perform effect completion (if enabled)
             if( do_effect_completion ) {
@@ -725,9 +724,8 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
             assert(*it > 0);
             int idx = *it-1;
             for( size_t n = 0; n < 2; ++n ) {
-                ostringstream s;
-                s << "sensor-" << r.name_->to_string() << "-obs" << obs << "-ver" << n;
-                Action &nact = new_action(new CopyName(s.str()));
+                string name = string("sensor-") + r.name_->to_string() + "-obs" + Utils::to_string(obs) + "-ver" + Utils::to_string(n);
+                Action &nact = new_action(new CopyName(name));
 
                 // conditional effect
                 When c_eff;
@@ -764,9 +762,8 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
 
         //cout << "Processing invariant "; invariant.write(cout, 0, ins);
         for( size_t k = 0; k < invariant.size(); ++k ) {
-            ostringstream s, comment_body, comment_head;
-            s << "invariant-" << (invariant.type_ == Invariant::AT_LEAST_ONE ? "at-least-one" : "at-most-one") << "-" << invariant_no++;
-            Action *nact = new Action(new CopyName(s.str()));
+            string name = string("invariant-") + (invariant.type_ == Invariant::AT_LEAST_ONE ? "at-least-one" : "at-most-one") + "-" + Utils::to_string(invariant_no++);
+            Action *nact = new Action(new CopyName(name));
             vector<int> completion;
 
             // setup precondition
@@ -781,6 +778,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
             }
 
             // effects
+            string comment_body, comment_head;
             if( invariant.type_ == Invariant::AT_LEAST_ONE ) {
                 for( size_t i = 0; i < invariant.size(); ++i ) {
                     int lit = invariant[i];
@@ -788,7 +786,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
                     if( lit > 0 ) {
                         if( i != k ) {
                             nact->precondition_.insert(1 + 2*idx+1);
-                            comment_body << atoms_[2*idx+1]->name_ << " ";
+                            comment_body += atoms_[2*idx+1]->name_->to_string() + " ";
                         } else {
                             nact->precondition_.insert(-(1 + 2*idx+1));
                             nact->effect_.insert(1 + 2*idx);
@@ -796,7 +794,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
                     } else {
                         if( i != k ) {
                             nact->precondition_.insert(1 + 2*idx);
-                            comment_body << atoms_[2*idx]->name_ << " ";
+                            comment_body += atoms_[2*idx]->name_->to_string() + " ";
                         } else {
                             nact->precondition_.insert(-(1 + 2*idx));
                             nact->effect_.insert(1 + 2*idx+1);
@@ -810,25 +808,25 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
                     if( lit > 0 ) {
                         if( i != k ) {
                             nact->effect_.insert(1 + 2*idx+1);
-                            comment_head << atoms_[2*idx+1]->name_ << " ";
+                            comment_head += atoms_[2*idx+1]->name_->to_string() + " ";
                         } else {
                             nact->precondition_.insert(1 + 2*idx);
-                            comment_body << atoms_[2*idx]->name_;
+                            comment_body += atoms_[2*idx]->name_->to_string();
                         }
                     } else {
                         if( i != k ) {
                             nact->effect_.insert(1 + 2*idx);
-                            comment_head << atoms_[2*idx]->name_ << " ";
+                            comment_head += atoms_[2*idx]->name_->to_string() + " ";
                         } else {
                             nact->precondition_.insert(1 + 2*idx+1);
-                            comment_body << atoms_[2*idx+1]->name_;
+                            comment_body += atoms_[2*idx+1]->name_->to_string();
                         }
                     }
                 }
             }
 
             // set comment
-            nact->comment_ = comment_body.str() + " ==> " + comment_head.str();
+            nact->comment_ = comment_body + " ==> " + comment_head;
 
             // store invariant action
             invariant_actions.insert(make_pair(nact->precondition_, nact));
@@ -886,9 +884,8 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
 
         //cout << "Processing invariant "; invariant.write(cout, 0, ins);
         for( size_t k = 0; k < invariant.size(); ++k ) {
-            ostringstream s, comment_body, comment_head;
-            s << "invariant-" << (invariant.type_ == Invariant::AT_LEAST_ONE ? "at-least-one" : "at-most-one") << "-" << invariant_no++;
-            Action &nact = new_action(new CopyName(s.str()));
+            string name = string("invariant-") + (invariant.type_ == Invariant::AT_LEAST_ONE ? "at-least-one" : "at-most-one") + "-" + Utils::to_string(invariant_no++);
+            Action &nact = new_action(new CopyName(name));
             vector<int> completion;
 
             // setup precondition
@@ -903,6 +900,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
             }
 
             // effects
+            string comment_body, comment_head;
             if( invariant.type_ == Invariant::AT_LEAST_ONE ) {
                 for( size_t i = 0; i < invariant.size(); ++i ) {
                     int lit = invariant[i];
@@ -910,7 +908,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
                     if( lit > 0 ) {
                         if( i != k ) {
                             nact.precondition_.insert(1 + 2*idx+1);
-                            comment_body << atoms_[2*idx+1]->name_ << " ";
+                            comment_body += atoms_[2*idx+1]->name_->to_string() + " ";
                         } else {
                             nact.precondition_.insert(-(1 + 2*idx+1));
                             nact.effect_.insert(1 + 2*idx);
@@ -931,25 +929,25 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
                     if( lit > 0 ) {
                         if( i != k ) {
                             nact.effect_.insert(1 + 2*idx+1);
-                            comment_head << atoms_[2*idx+1]->name_ << " ";
+                            comment_head += atoms_[2*idx+1]->name_->to_string() + " ";
                         } else {
                             nact.precondition_.insert(1 + 2*idx);
-                            comment_body << atoms_[2*idx]->name_;
+                            comment_body += atoms_[2*idx]->name_->to_string();
                         }
                     } else {
                         if( i != k ) {
                             nact.effect_.insert(1 + 2*idx);
-                            comment_head << atoms_[2*idx]->name_ << " ";
+                            comment_head += atoms_[2*idx]->name_->to_string() + " ";
                         } else {
                             nact.precondition_.insert(1 + 2*idx+1);
-                            comment_body << atoms_[2*idx+1]->name_;
+                            comment_body += atoms_[2*idx+1]->name_->to_string();
                         }
                     }
                 }
             }
 
             // set comment
-            nact.comment_ = comment_body.str() + " ==> " + comment_head.str();
+            nact.comment_ = comment_body + " ==> " + comment_head;
 
             if( options_.is_enabled("kp:print:action:invariant") ) {
                 nact.print(cout, *this);

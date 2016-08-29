@@ -1,5 +1,5 @@
-#include <stdlib.h>
 #include <cassert>
+#include <stdlib.h>
 #include "ks0_problem.h"
 
 using namespace std;
@@ -82,7 +82,7 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals) :
     // first generate untagged and tag0 literals
     for( size_t k = 0; k < ins_n_fluents; ++k ) {
         const Atom &atom = *instance.atoms_[k];
-        ostringstream lit_name;
+        string lit_name;
         char *dup = strdup(atom.name_->to_string().c_str()), *aux = 0;
         if( *dup == '(' ) {
             aux = dup;
@@ -90,19 +90,19 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals) :
             dup[strlen(dup)-1] = '\0';
         }
         char *t = strtok(dup, " ");
-        lit_name << "(K_" << t;
-        if( tagged_[k] && (n_tags_ > 1) ) lit_name << "__tag" << tag0_;
+        lit_name = string("(K_") + t;
+        if( tagged_[k] && (n_tags_ > 1) ) lit_name += string("__tag") + Utils::to_string(tag0_);
         while( (t = strtok(0, " ")) ) {
-            lit_name << " " << t;
+            lit_name += string(" ") + t;
         }
-        lit_name << ")";
+        lit_name += ")";
         free(aux == 0 ? dup : aux);
 
         tag_map_[tag0_*ins_n_fluents + k] = n_atoms();
-        new_atom(new CopyName(lit_name.str()));
+        new_atom(new CopyName(lit_name));
 
         if( options_.is_enabled("ks0:print:tag:atom:creation") )
-            cout << "atom " << n_atoms()-1 << "." << lit_name.str() << " created" << endl;
+            cout << "atom " << n_atoms()-1 << "." << lit_name << " created" << endl;
     }
 
     // now, generate tagged literals
@@ -111,7 +111,7 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals) :
             for( size_t k = 0; k < ins_n_fluents; ++k ) {
                 if( tagged_[k] ) {
                     const Atom &atom = *instance.atoms_[k];
-                    ostringstream lit_name;
+                    string lit_name;
                     char *dup = strdup(atom.name_->to_string().c_str()), *aux = 0;
                     if( *dup == '(' ) {
                         aux = dup;
@@ -119,18 +119,18 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals) :
                         dup[strlen(dup)-1] = '\0';
                     }
                     char *t = strtok(dup, " ");
-                    lit_name << "(K_" << t << "__tag" << tag;
+                    lit_name = string("(K_") + t + "__tag" + Utils::to_string(tag);
                     while( (t = strtok(0, " ")) ) {
-                        lit_name << " " << t;
+                        lit_name += string(" ") + t;
                     }
-                    lit_name << ")";
+                    lit_name += ")";
                     free(aux == 0 ? dup : aux);
 
                     tag_map_[tag*ins_n_fluents + k] = n_atoms();
-                    new_atom(new CopyName(lit_name.str()));
+                    new_atom(new CopyName(lit_name));
 
                     if( options_.is_enabled("ks0:print:tag:atom:creation") )
-                        cout << "atom " << n_atoms()-1 << "." << lit_name.str() << " created" << endl;
+                        cout << "atom " << n_atoms()-1 << "." << lit_name << " created" << endl;
                 }
             }
         }
@@ -141,7 +141,7 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals) :
                 assert(*it > 0);
                 const Atom &atom = *instance.atoms_[*it-1];
                 if( tagged_[*it-1] ) {
-                    ostringstream lit_name;
+                    string lit_name;
                     char *dup = strdup(atom.name_->to_string().c_str()), *aux = 0;
                     if( *dup == '(' ) {
                         aux = dup;
@@ -149,18 +149,18 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals) :
                         dup[strlen(dup)-1] = '\0';
                     }
                     char *t = strtok(dup, " ");
-                    lit_name << "(K_" << t << "__tag" << tag;
+                    lit_name = string("(K_") + t + "__tag" + Utils::to_string(tag);
                     while( (t = strtok(0, " ")) ) {
-                        lit_name << " " << t;
+                        lit_name += string(" ") + t;
                     }
-                    lit_name << ")";
+                    lit_name += ")";
                     free(aux == 0 ? dup : aux);
 
                     tag_map_[tag*ins_n_fluents + *it-1] = n_atoms();
-                    new_atom(new CopyName(lit_name.str()));
+                    new_atom(new CopyName(lit_name));
 
                     if( options_.is_enabled("ks0:print:tag:atom:creation") )
-                        cout << "atom " << n_atoms()-1 << "." << lit_name.str() << " created" << endl;
+                        cout << "atom " << n_atoms()-1 << "." << lit_name << " created" << endl;
                 }
             }
         }

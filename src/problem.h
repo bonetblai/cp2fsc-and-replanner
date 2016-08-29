@@ -42,6 +42,9 @@ class Instance {
             return (condition_ < when.condition_) ||
                    ((condition_ == when.condition_) && (effect_ < when.effect_));
         }
+        bool operator==(const When &when) const {
+            return (condition_ == when.condition_) && (effect_ == when.effect_);
+        }
     };
     struct when_vec : public std::vector<When> { };
 
@@ -181,7 +184,6 @@ class Instance {
     void remove_unreachable_sensors(const bool_vec &reachable_atoms, const bool_vec &static_atoms);
     void simplify_conditions_and_invariants(const bool_vec &reachable_atoms, const bool_vec &static_atoms);
     void remove_actions(const bool_vec &set, index_vec &map);
-    virtual void remove_atoms(const bool_vec &set, index_vec &map);
     void calculate_non_primitive_and_observable_fluents();
     void set_initial_state(State &state, bool apply_axioms = true) const;
     void set_hidden_state(int k, State &state) const;
@@ -189,6 +191,7 @@ class Instance {
 
     // NOTE: remove_atoms must be virtual because CP_Instance needs to 
     // remap atoms in the initial states, rechable space, etc.
+    virtual void remove_atoms(const bool_vec &set, index_vec &map);
 
     // compute/clear secondary instance info
     void clear_cross_reference();
