@@ -142,8 +142,6 @@ int FF_Planner::get_raw_plan(const State &state, Instance::Plan &raw_plan) const
 
     // update search time
     cmd = string("grep \"seconds searching\" ") + output_fn_ + " | awk '{print $1;}' > " + tmp_fn_;
-    //cmd.str("");
-    //cmd << "grep \"seconds searching\" " << output_fn_ << " | awk '{print $1;}' > " << tmp_fn_;
     rv = system(cmd.c_str());
     assert(rv == 0);
     ifstream ifs(tmp_fn_);
@@ -154,8 +152,6 @@ int FF_Planner::get_raw_plan(const State &state, Instance::Plan &raw_plan) const
 
     // extract plan from output
     cmd = string("egrep -e [0-9]+: ") + output_fn_ + " > " + tmp_fn_;
-    //cmd.str("");
-    //cmd << "egrep -e [0-9]+: " << output_fn_ << " > " << tmp_fn_;
     rv = system(cmd.c_str());
     remove_file(output_fn_);
 
@@ -165,8 +161,6 @@ int FF_Planner::get_raw_plan(const State &state, Instance::Plan &raw_plan) const
         return NO_SOLUTION;
     }
 
-    //cmd.str("");
-    //cmd << "cat " << tmp_fn_ << " | awk '{print $NF;}' | tr \"[:upper:]\" \"[:lower:]\"  > " << plan_fn_;
     cmd = string("cat ") + tmp_fn_ + " | awk '{print $NF;}' | tr \"[:upper:]\" \"[:lower:]\"  > " + plan_fn_;
     rv = system(cmd.c_str());
     remove_file(tmp_fn_);
@@ -490,9 +484,9 @@ int LAMA_Server_Planner::get_raw_plan(const State &state, Instance::Plan &raw_pl
     float start_time = Utils::read_time_in_seconds();
     ++n_calls_;
   
-        string cmd;
-        if( planner_path_ != "" ) cmd += planner_path_ + "/src/search/";
-        cmd += string("lama simple-conversion ") + domain_fn_ + " " + problem_fn_ + " >/dev/null";
+    string cmd;
+    if( planner_path_ != "" ) cmd += planner_path_ + "/src/search/";
+    cmd += string("lama simple-conversion ") + domain_fn_ + " " + problem_fn_ + " >/dev/null";
 
     if( first_call_ ) {
         generate_pddl_domain();

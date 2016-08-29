@@ -326,7 +326,7 @@ void Solver::apply_inference(const Instance::Action *last_action,
         fix_point_reached = old_state == state;
     }
 }
- 
+
 bool Solver::inconsistent(const State &state, const vector<State> &assumptions, size_t k) const {
     bool verbose = options_.is_enabled("solver:print:consistency:check");
     for( State::const_iterator it = state.begin(); it != state.end(); ++it ) {

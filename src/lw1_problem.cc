@@ -759,8 +759,6 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                 if( var.is_state_variable_ ) continue;
                 for( set<int>::const_iterator it = var.domain_.begin(); it != var.domain_.end(); ++it ) {
                     int value = *it;
-                    //assert(var.beams_.find(value) != var.beams_.end()); // CHECK
-                    //const index_set &beam = var.beams_.find(value)->second; // CHECK
                     const index_set &beam = var.beams_.at(value);
                     if( !beam.empty() ) {
                         clause_forbidding_literals_.insert(1 + 2*value);

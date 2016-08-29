@@ -643,8 +643,6 @@ void PDDL_Base::lw1_calculate_beams_for_grounded_observable_variables() {
                     cout << Utils::magenta()
                          << "beam for value '" << *it << "' of var '" << var.print_name_ << "' ('*' means static):"
                          << Utils::normal();
-                    //assert(var.beam_.find(*it) != var.beam_.end()); // CHECK
-                    //const unsigned_atom_set &beam = var.beam_.find(*it)->second; // CHECK
                     const unsigned_atom_set &beam = var.beam_.at(*it);
                     for( unsigned_atom_set::const_iterator jt = beam.begin(); jt != beam.end(); ++jt )
                         cout << " " << *jt << (is_static_atom(*jt) ? "*" : "");
@@ -666,7 +664,6 @@ void PDDL_Base::lw1_calculate_beams_for_grounded_observable_variables() {
             for( unsigned_atom_set::const_iterator it = var.grounded_domain_.begin(); it != var.grounded_domain_.end(); ++it ) {
                 unsigned_atom_set reduced_beam;
                 if( var.beam_.find(*it) == var.beam_.end() ) continue;
-                //const unsigned_atom_set &beam = var.beam_.find(*it)->second; // CHECK
                 const unsigned_atom_set &beam = var.beam_.at(*it);
                 for( unsigned_atom_set::const_iterator jt = beam.begin(); jt != beam.end(); ++jt ) {
                     if( !is_static_atom(*jt) ) reduced_beam.insert(*jt);
@@ -1008,7 +1005,7 @@ void PDDL_Base::lw1_protect_enablers_for_sensing(Instance &ins) const {
         index_set index;
         value.emit(ins, index);
         ins.protected_atoms_.insert(*index.begin() - 1);
-        //cout << "protecting enabler: " << *it->second << endl; // CHECK
+        //cout << "protecting enabler: " << *it->second << endl;
     }
 }
 
@@ -1559,12 +1556,10 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
                 const StateVariable &state_variable = *static_cast<const StateVariable*>(&variable);
                 const unsigned_atom_set &domain = state_variable.grounded_domain_;
 
-                //assert(lw1_actions_for_observable_state_variables_.find(&state_variable) != lw1_actions_for_observable_state_variables_.end()); // CHECK
-                //const vector<const Action*> &actions = lw1_actions_for_observable_state_variables_.find(&state_variable)->second; // CHECK
-                const vector<const Action*> &actions = lw1_actions_for_observable_state_variables_.at(&state_variable);
 
                 if( !options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
                     // generate type4 drules for each value and action
+                    const vector<const Action*> &actions = lw1_actions_for_observable_state_variables_.at(&state_variable);
                     for( size_t j = 0; j < actions.size(); ++j ) {
                         const Action *action = actions[j];
 
