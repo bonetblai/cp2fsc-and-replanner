@@ -268,37 +268,37 @@ int main(int argc, const char *argv[]) {
     //instance.do_action_compilation(*variables);
 
     cout << "creating KP translation..." << endl;
-    KP_Instance *kp_instance = new LW1_Instance(instance, *variables, *variable_groups, *sensing_models, *accepted_literals_for_observables);
+    LW1_Instance *lw1_instance = new LW1_Instance(instance, *variables, *variable_groups, *sensing_models, *accepted_literals_for_observables);
 
     if( g_options.is_enabled("kp:print:raw") ) {
-        kp_instance->print(cout);
-        kp_instance->write_domain(cout);
-        kp_instance->write_problem(cout);
+        lw1_instance->print(cout);
+        lw1_instance->write_domain(cout);
+        lw1_instance->write_problem(cout);
     }
 
     cout << "preprocessing KP translation..." << endl;
-    Preprocessor kp_prep(*kp_instance);
+    Preprocessor kp_prep(*lw1_instance);
     //kp_prep.preprocess(false); // CHECK
     if( g_options.is_enabled("kp:print:preprocessed") ) {
-        kp_instance->write_domain(cout);
-        kp_instance->write_problem(cout);
+        lw1_instance->write_domain(cout);
+        lw1_instance->write_problem(cout);
     }
-    kp_instance->print_stats(cout);
+    lw1_instance->print_stats(cout);
     float preprocessing_time = Utils::read_time_in_seconds() - start_time;
 
     // construct classical planner
     const ClassicalPlanner *planner = 0;
     if( !g_options.is_enabled("solver:width-based-planner") ) {
         if( opt_planner == "ff" ) {
-            planner = new FF_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+            planner = new FF_Planner(*lw1_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
         } else if( opt_planner == "lama" ) {
-            planner = new LAMA_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+            planner = new LAMA_Planner(*lw1_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
         } else if( opt_planner == "m" ) {
-            planner = new M_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+            planner = new M_Planner(*lw1_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
         } else if( opt_planner == "mp" ) {
-            planner = new MP_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+            planner = new MP_Planner(*lw1_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
         } else if( opt_planner == "lama-server" ) {
-            planner = new LAMA_Server_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+            planner = new LAMA_Server_Planner(*lw1_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
         } else {
             std::cout << Utils::error() << "unrecognized planner '" << opt_planner << "'" << std::endl;
             exit(-1);
@@ -311,7 +311,7 @@ int main(int argc, const char *argv[]) {
         assert(planner != 0);
         action_selection = new ClassicalPlannerWrapper<STATE_CLASS>(*planner); // CHECK: STATE_CLASS is defined in lw1_solver.h (this is provisional)
     } else {
-        action_selection = new WidthBasedPlanner<STATE_CLASS>(*kp_instance); // CHECK: STATE_CLASS is defined in lw1_solver.h (this is provisional)
+        action_selection = new WidthBasedPlanner<STATE_CLASS>(*lw1_instance); // CHECK: STATE_CLASS is defined in lw1_solver.h (this is provisional)
     }
  
     // solve problem
@@ -329,15 +329,15 @@ int main(int argc, const char *argv[]) {
         cout << endl;
 
         // create and initialize solver
-        LW1_Solver solver(instance, *kp_instance, *action_selection, opt_time_bound, opt_ncalls_bound);
+        LW1_Solver solver(instance, *lw1_instance, *action_selection, opt_time_bound, opt_ncalls_bound);
 
         // reset stats
         action_selection->reset_stats();
-        kp_instance->reset_inference_time();
+        lw1_instance->reset_inference_time();
 
         // different initializations for inference (this should be moved elsewhere)
         if( g_options.is_enabled("lw1:inference:up:preload") ) {
-            solver.initialize(*kp_instance);
+            solver.initialize(*lw1_instance);
             if( g_options.is_enabled("lw1:inference:up:watched-literals") ) {
                 Inference::Propositional::WatchedLiterals wl;
                 wl.initialize_axioms(solver.get_cnf());
@@ -345,13 +345,13 @@ int main(int argc, const char *argv[]) {
         }
         if( g_options.is_enabled("lw1:inference:ac3") ) {
             // Build basic CSP from state: CSP variables come from state variables and variable groups.
-            solver.fill_atoms_to_var_map(*kp_instance);
+            solver.fill_atoms_to_var_map(*lw1_instance);
             Inference::CSP::Csp csp;
-            csp.initialize(((LW1_Instance*)kp_instance)->variables_, solver.atoms_to_vars_);
-            if (((LW1_Instance*)kp_instance)->has_groups()) {
-                csp.initialize_groups(*kp_instance);
+            csp.initialize(lw1_instance->variables_, solver.atoms_to_vars_);
+            if( lw1_instance->has_groups() ) {
+                csp.initialize_groups(*lw1_instance);
                 Inference::CSP::AC3 ac3;
-                ac3.initialize_arcs(*kp_instance, csp);
+                ac3.initialize_arcs(*lw1_instance, csp);
             }
         }
 
@@ -456,7 +456,7 @@ int main(int argc, const char *argv[]) {
              << preprocessing_time << " (preprocessing-time) "
              << planner->get_time() << " (planner-time) "
              << planner->get_search_time() << " (planner-search-time) "
-             << kp_instance->get_inference_time() << " (inference-time) "
+             << lw1_instance->get_inference_time() << " (inference-time) "
              << current_time - instance_start_time << " (instance-time) "
              << current_time - start_time << " (total-acc-time)"
              << endl << endl;
@@ -464,7 +464,7 @@ int main(int argc, const char *argv[]) {
 
     delete action_selection;
     delete planner;
-    delete kp_instance;
+    delete lw1_instance;
     delete reader;
 
     return 0;
