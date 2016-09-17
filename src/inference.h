@@ -26,7 +26,7 @@ namespace Inference {
         // Example:
         //  Inference::Propositional::Clause cl;
         //  for( int i = 0; i < int(clause.size()); ++i )
-        //    cl.push_back(clause[i]);
+        //      cl.push_back(clause[i]);
         //  cnf.push_back(cl);
         class Clause : public vector<int> {
         public:
@@ -35,8 +35,9 @@ namespace Inference {
             // was created has been deleted.
             vector<int>::iterator find(int p) {
                 vector<int>::iterator it = begin();
-                for( ; it != end(); it++ )
+                for( ; it != end(); it++ ) {
                     if( *it == p ) return it;
+                }
                 return it;
             }
             // Print clause data
@@ -49,7 +50,7 @@ namespace Inference {
         //  ...
         //      Inference::Propositional::Clause cl;
         //      for( int i = 0; i < int(clause.size()); ++i )
-        //        cl.push_back(clause[i]);
+        //          cl.push_back(clause[i]);
         //      cnf.push_back(cl);
         class CNF : public vector<Clause> {
             typedef CNF::const_iterator const_vec_set_it;
@@ -62,7 +63,7 @@ namespace Inference {
             int calculate_max() const {
                 int max_id = 0;
                 for( size_t i = 0; i < size(); ++i ) {
-                    const Clause cl = (*this)[i];
+                    const Clause &cl = (*this)[i];
                     for( size_t j = 0; j < cl.size(); ++j ) {
                         int id = abs(cl[j]);
                         max_id = max(id, max_id);
@@ -157,3 +158,4 @@ namespace Inference {
 } // Inference namespace
 
 #endif
+

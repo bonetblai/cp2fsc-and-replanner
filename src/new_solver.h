@@ -411,3 +411,4 @@ bool NewSolver<T>::inconsistent(const T &state, const std::vector<T> &assumption
 }
 
 #endif
+

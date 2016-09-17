@@ -215,7 +215,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
             } 
 
             filtering_groups_.insert(make_pair(make_pair(var_index, atom.negated_ ? -(1 + atom_index) : 1 + atom_index), k));
-#ifdef DEBUG 
+#ifdef DEBUG
             cout << "filtering: var=" << var.print_name_ << ", obs=" << (atom.negated_ ? "NOT " : "") << atom << ", key=(" << var_index << "," << 1 + atom_index << "), group=" << group << endl;
 #endif
         }

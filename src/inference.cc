@@ -40,7 +40,7 @@ void Inference::Propositional::DPLL::solve(const CNF &a, CNF &b) {
         change = false;
         sort(b.begin(), b.end(), this->compare);
         for( CNF::iterator it = b.begin(); it != b.end(); it++ ) {
-            if (it->size() == 1) {
+            if( it->size() == 1 ) {
                 int L = *(it->begin());
                 for( CNF::iterator clause = it + 1; clause != b.end(); clause++ ) {
                     if( it == clause ) continue;
@@ -121,15 +121,16 @@ bool Inference::Propositional::WatchedLiterals::is_true(int prop, const vector<i
 // value. It is responsability of the client swapping the non-false watched literal
 // into the first watched literal (w1)
 int Inference::Propositional::WatchedLiterals::replace(const CNF &cnf, vector<int> &assigned, int clause) {
-    for( int w1 = 0, w2 = watched[clause].second; w1 < cnf[clause].size(); w1++ )
-        if( (assigned[abs(cnf[clause][w1])] == -1 || is_true(cnf[clause][w1], assigned)) && w1 != w2)
+    for( int w1 = 0, w2 = watched[clause].second; w1 < cnf[clause].size(); w1++ ) {
+        if( ((assigned[abs(cnf[clause][w1])] == -1) || is_true(cnf[clause][w1], assigned)) && (w1 != w2) )
             return w1;
+    }
     return -1;
 }
 
 // Returns true if a value given is being watched in given clause
 inline bool Inference::Propositional::WatchedLiterals::isWatched(const CNF &cnf, int clause, int value) {
-    return value == (cnf[clause][watched[clause].first]) || value == (cnf[clause][watched[clause].second]);
+    return (value == cnf[clause][watched[clause].first]) || (value == cnf[clause][watched[clause].second]);
 }
 
 // Construct the vector of clauses indexes associated to the negative of 
@@ -144,8 +145,7 @@ void Inference::Propositional::WatchedLiterals::add_negative_propositions(const 
     assert(prop > 0);
     for( int i = 0; i < inv_index[prop].size(); i++ ) {
         int clause = inv_index[prop][i];
-        if( isWatched(cnf, clause, -1 * value) )
-            cp.push_back(clause);
+        if( isWatched(cnf, clause, -1 * value) ) cp.push_back(clause);
     }
 }
 
@@ -163,20 +163,19 @@ bool Inference::Propositional::WatchedLiterals::propagate(const CNF &cnf, vector
     if( prop < inverted_index_axioms_.size() )
         add_negative_propositions(cnf, inverted_index_axioms_, prop, value, cp);
 
-    //for (size_t i = 0; i < inverted_index[prop].size(); i++) {
+    //for( size_t i = 0; i < inverted_index[prop].size(); i++ ) {
     //    int clause = inverted_index[prop][i];
     //    int w1 = watched[clause].first, w2 = watched[clause].second;
     //    bool is_watched = isWatched(cnf, clause, -1 * value);
-    //    if (isWatched(cnf, clause, value)) cp.push_back(clause);
+    //    if( isWatched(cnf, clause, value) ) cp.push_back(clause);
     //}
 
-    //if (prop < inverted_index_axioms_.size()) {
-    //    for (size_t i = 0; i < inverted_index_axioms_[prop].size(); i++) {
+    //if( prop < inverted_index_axioms_.size() ) {
+    //    for( size_t i = 0; i < inverted_index_axioms_[prop].size(); i++ ) {
     //        int clause = inverted_index_axioms_[prop][i];
     //        cvec_it w1 = watched[clause].first, w2 = watched[clause].second;
     //        bool is_watched = value == -1 * (* w1) || value == -1 * (* w2);
-
-    //        if (is_watched) cp.push_back(clause);
+    //        if( is_watched ) cp.push_back(clause);
     //    }
     //}
 
@@ -199,7 +198,7 @@ bool Inference::Propositional::WatchedLiterals::propagate(const CNF &cnf, vector
             if( !propagate(cnf, assigned, abs(new_prop)) )
                 no_conflict = false;
             // propagated[abs(p1)] = true;
-        //} else if ((assigned[abs(new_prop)] ? 1 : -1) * (new_prop) < 0) {
+        //} else if( (assigned[abs(new_prop)] ? 1 : -1) * (new_prop) < 0 ) {
         } else if( !is_true(new_prop, assigned) ) {
             // If w1 cannot be replaced and w2 is false there's conflict
             no_conflict = false;

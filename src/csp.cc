@@ -59,18 +59,18 @@ void Inference::CSP::Variable::print(std::ostream& os, const Instance& instance,
 
     os << name_ << ": ";
     os << "od: {";
-    for (SI::const_iterator it = od.cbegin(); it != od.cend(); it++) {
+    for( SI::const_iterator it = od.cbegin(); it != od.cend(); it++ ) {
         state.print_literal(os, *it, &instance);
         os << " [" << *it << "]";
-        if (it != od_end) os << ", ";
+        if( it != od_end ) os << ", ";
     }
     os << "} ";
 
     os << "cd: {";
-    for (auto it = cd.cbegin(); it != cd.cend(); it++) {
+    for( auto it = cd.cbegin(); it != cd.cend(); it++ ) {
         state.print_literal(os, *it, &instance);
         os << " [" << *it << "]";
-        if (it != cd_end) os << ", ";
+        if( it != cd_end ) os << ", ";
     }
     os << "} ";
 
@@ -86,18 +86,18 @@ void Inference::CSP::VariableGroup::print(std::ostream& os, const Instance& inst
 
     os << name_ << ": ";
     os << "od: {";
-    for (SI::const_iterator it = od.cbegin(); it != od.cend(); it++) {
+    for( SI::const_iterator it = od.cbegin(); it != od.cend(); it++ ) {
 //        state.print_literal(os, *it, &instance);
         os << *it;
-        if (it != od_end) os << ", ";
+        if( it != od_end ) os << ", ";
     }
     os << "} ";
 
     os << "cd: {";
-    for (auto it = cd.cbegin(); it != cd.cend(); it++) {
+    for( auto it = cd.cbegin(); it != cd.cend(); it++ ) {
 //        state.print_literal(os, *it, &instance);
         os << *it;
-        if (it != cd_end) os << ", ";
+        if( it != cd_end ) os << ", ";
     }
     os << "} ";
     os << std::endl;
@@ -108,7 +108,7 @@ void Inference::CSP::VariableGroup::print(std::ostream& os, const Instance& inst
 // for this variable. If it's negative, the this value must be erase from
 // current domain.
 void Inference::CSP::Variable::apply_unary_constraint(int h_atom) {
-    if (h_atom % 2 == 0) {
+    if( h_atom % 2 == 0 ) {
         // If h_atom is a K_not_atom, remove the K_atom which is K_not_atom - 1
         current_domain_.erase(h_atom - 1);
     } else {
@@ -130,12 +130,12 @@ void Inference::CSP::Variable::clear_domain() {
 // Info vector will have only theses constraints
 void Inference::CSP::Arithmetic::dump_into(std::vector<int>& info) const {
     info.clear();
-    for (SI_CI o = original_domain_.cbegin(); o != original_domain_.cend(); o++) {
-        if (current_domain_.find(*o) == current_domain_.end()) {   // Not found
+    for( SI_CI o = original_domain_.cbegin(); o != original_domain_.cend(); o++ ) {
+        if( current_domain_.find(*o) == current_domain_.end() ) {   // Not found
             info.push_back(get_k_not(*o));
         }
     }
-    if (current_domain_.size() == 1) {
+    if( current_domain_.size() == 1 ) {
         info.push_back(*(current_domain_.cbegin()));
     }
 }
@@ -145,7 +145,7 @@ void Inference::CSP::Arithmetic::dump_into(std::vector<int>& info) const {
 // Info vector will have only theses constraints
 void Inference::CSP::Binary::dump_into(std::vector<int>& info) const {
     info.clear();
-    if (current_domain_.size() == 1) {
+    if( current_domain_.size() == 1 ) {
         info.push_back(*(current_domain_.cbegin()));
     }
 }
@@ -157,11 +157,11 @@ void Inference::CSP::Csp::initialize(
 
     // Fill variables from Instance
     variables_.clear();
-    for (auto it = vars.cbegin(); it != vars.cend(); it++) {
+    for( auto it = vars.cbegin(); it != vars.cend(); it++ ) {
         LW1_Instance::Variable *var = *it;
         Inference::CSP::Variable *variable;
 
-        if (var->is_binary()) {
+        if( var->is_binary() ) {
             variable = new Binary(*var);
         } else {
             variable = new Arithmetic(*var);
@@ -184,7 +184,7 @@ void Inference::CSP::Csp::initialize_groups(const KP_Instance& instance) {
     variable_groups_.clear();  // cleaning groups
     const LW1_Instance& lw1 = ((const LW1_Instance&) instance);
     int number_of_groups = int(lw1.vars_for_variable_groups_.size());
-    for ( int i = 0; i < number_of_groups; i++ ) {
+    for( int i = 0; i < number_of_groups; i++ ) {
         VariableGroup* group = new VariableGroup(lw1.vars_for_variable_groups_[i], i);
         variable_groups_.push_back(group);
     }
@@ -213,24 +213,24 @@ void Inference::CSP::Variable::intersect_with(const std::set<int>& domain) {
     std::cout << "INTERSECTING A and B (possible domain)" << std::endl;
     std::cout << "nombre = " << name_ << std::endl;
     std::cout << "A = " << std::endl;
-    for (auto i = current_domain_.cbegin(); i != current_domain_.cend(); i++) {
+    for( auto i = current_domain_.cbegin(); i != current_domain_.cend(); i++ ) {
         std::cout << *i << " ";
     }
     std::cout << std::endl;
     std::cout << "B = " << std::endl;
-    for (auto i = domain.cbegin(); i != domain.cend(); i++) {
+    for( auto i = domain.cbegin(); i != domain.cend(); i++ ) {
         std::cout << *i << " ";
     }
     std::cout << std::endl;
     std::cout << "END OF INTERSECTING DOMAINS " << std::endl;
-#endif 
+#endif
     std::set<int>::iterator cd = current_domain_.begin();
     std::set<int>::const_iterator pd = domain.cbegin();
     while (cd != current_domain_.end() && pd != domain.cend()) {
-        if (*cd < *pd) {
+        if( *cd < *pd ) {
             current_domain_.erase(cd++);
         } else {
-            if (*cd == *pd) cd++;
+            if( *cd == *pd ) cd++;
             pd++;
         }
     }
@@ -238,11 +238,11 @@ void Inference::CSP::Variable::intersect_with(const std::set<int>& domain) {
 
 #ifdef DEBUG
     std::cout << "new A = " << std::endl;
-    for (auto i = current_domain_.cbegin(); i != current_domain_.cend(); i++) {
+    for( auto i = current_domain_.cbegin(); i != current_domain_.cend(); i++ ) {
         std::cout << *i << " ";
     }
     std::cout << std::endl;
-#endif 
+#endif
 }
 // Find variable associated with domain
 // and then calls intersect_with
@@ -256,7 +256,7 @@ void Inference::CSP::Csp::intersect_domain_of_var(const std::set<int>& domain) {
 // possible value (h_atom) over every variable
 void Inference::CSP::Csp::prune_domain_of_var(int h_atom) {
     int var_index = get_var_index(h_atom);
-    if (var_index != -1)
+    if( var_index != -1 )
         variables_[var_index]->apply_unary_constraint(h_atom);
 }
 // Deletes from group no longer possible valuations
@@ -266,9 +266,9 @@ void Inference::CSP::Csp::prune_valuations_of_groups(
         const Instance &kp_instance) {
 
 #ifdef DEBUG
-    for (int i = 0; i < valuations.size(); i++) {
+    for( int i = 0; i < valuations.size(); i++ ) {
         std::cout << "[ ";
-        for (int j = 0; j < valuations[i].size(); j++) {
+        for( int j = 0; j < valuations[i].size(); j++ ) {
             std::cout << valuations[i][j] << " ";
         }
         std::cout << " ]";
@@ -277,7 +277,7 @@ void Inference::CSP::Csp::prune_valuations_of_groups(
 #endif
     
     std::set<int> possible_domain;
-    for (int i = 0; i < int(valuations.size()); i++) {
+    for( int i = 0; i < int(valuations.size()); i++ ) {
         std::pair<int, int> masks = get_masks(vg, valuations[i], (const LW1_Instance&) kp_instance);
         int impossibles = masks.first, possibles = masks.second;
 #ifdef DEBUG
@@ -285,7 +285,7 @@ void Inference::CSP::Csp::prune_valuations_of_groups(
 #endif
         const std::vector<int> &group = ((const LW1_Instance&) kp_instance).vars_for_variable_groups_[vg];
 
-        for (int value = 0; value < (1 << int(group.size())); value++)
+        for( int value = 0; value < (1 << int(group.size())); value++ )
             possible_domain.insert((value & impossibles) | possibles);
     }
     
@@ -293,10 +293,10 @@ void Inference::CSP::Csp::prune_valuations_of_groups(
 }
 // Change (Add to) state relevant information of current csp
 void Inference::CSP::Csp::dump_into(LW1_State &state, const Instance &instance) const {
-    for (V_VAR_CI var = variables_.begin(); var != variables_.end(); var++) {
+    for( V_VAR_CI var = variables_.begin(); var != variables_.end(); var++ ) {
         std::vector<int> info;
         (*var)->dump_into(info);
-        for (VI_CI st = info.begin(); st != info.end(); st++) {
+        for( VI_CI st = info.begin(); st != info.end(); st++ ) {
 #ifdef DEBUG
             std::cout << Utils::yellow() << "[CSP] Added literal into state: ";
             state.print_literal(std::cout, *st, &instance);
@@ -308,7 +308,7 @@ void Inference::CSP::Csp::dump_into(LW1_State &state, const Instance &instance) 
 }
 // Clear all variables domains
 void Inference::CSP::Csp::clean_domains() {
-    for (V_VAR_I it = variables_.begin(); it != variables_.end(); it++) {
+    for( V_VAR_I it = variables_.begin(); it != variables_.end(); it++ ) {
         (*it)->reset_domain();
     }
 }
@@ -317,15 +317,15 @@ void Inference::CSP::Csp::print(std::ostream& os, const Instance& instance,
                                 const LW1_State& state) const {
     os << ">>>CSP" << std::endl;
     os << ">>>VARIABLES" << std::endl;
-    for (int i = 0; i < variables_.size(); i++) {
+    for( int i = 0; i < variables_.size(); i++ ) {
         variables_[i]->print(os, instance, state);
     }
     os << ">>>CONSTRAINTS" << std::endl;
-    for (auto it = constraints_.cbegin(); it != constraints_.cend(); it++) {
+    for( auto it = constraints_.cbegin(); it != constraints_.cend(); it++ ) {
 
         const std::vector<int> &cl = *it;
         state.print_clause_or_term(os, cl, &instance);
-        for (VI_CI it2 = cl.cbegin(); it2 != cl.cend(); it2++) {
+        for( VI_CI it2 = cl.cbegin(); it2 != cl.cend(); it2++ ) {
             os << *it2 << ", ";
         }
         os << std::endl;
@@ -342,14 +342,14 @@ std::pair<int,int> Inference::CSP::Csp::get_masks(
         const LW1_Instance& kp_instance) {
 
     int impossibles = 0, possibles = 0;
-    for (int i = 0; i < int(constraint.size()); i++) {
+    for( int i = 0; i < int(constraint.size()); i++ ) {
         int k_atom = constraint[i];
         int var_index = get_var_index(k_atom);
         const std::vector<int> &group = ((const LW1_Instance&) kp_instance).vars_for_variable_groups_[vg]; 
 
-        for (int k = 0; k < int(group.size()); k++) {  // finding var_index possition in valuation!
-            if (group[k] == var_index) {
-                if (k_atom % 2 == 0) impossibles |= (1 << k); // k_not !
+        for( int k = 0; k < int(group.size()); k++ ) {  // finding var_index possition in valuation!
+            if( group[k] == var_index ) {
+                if( k_atom % 2 == 0 ) impossibles |= (1 << k); // k_not !
                 else possibles |= (1 << k); //k !
             }
         }
@@ -372,13 +372,12 @@ void Inference::CSP::AC3::print(std::ostream& os, const Instance& instance,
     V_VAR variables = csp.get_variables_();
     std::vector<std::vector<int>>& constraints = csp.get_constraints_();
 
-    for (MIVI_CI it = inv_clauses_.cbegin();
-         it != inv_clauses_.cend(); it++) {
+    for( MIVI_CI it = inv_clauses_.cbegin(); it != inv_clauses_.cend(); it++ ) {
         os << "[AC3] Variable: " << std::endl;
         variables[it->first]->print(os, instance, state);
         os << "[AC3] Related constraints: " << std::endl;
         VI constraint = it->second;
-        for (VI_CI vit = constraint.cbegin(); vit != constraint.cend(); vit++) {
+        for( VI_CI vit = constraint.cbegin(); vit != constraint.cend(); vit++ ) {
             state.print_clause_or_term(os, constraints[*vit], &instance);
             os << std::endl;
         }
@@ -405,14 +404,13 @@ bool Inference::CSP::AC3::arc_reduce(Inference::CSP::Arc* arc, Inference::CSP::C
 
     bool change = false; // An element has been erase from dx ?
     assert(x->get_domain_size() && y->get_domain_size());
-    for (SI_I vx = x->get_current_begin(); vx != x->get_current_end();) {
+    for( SI_I vx = x->get_current_begin(); vx != x->get_current_end(); ) {
         // If arc is already satisfied (this check should be unnecessary)
         int xval = *vx;
         bool found = false;
-        for (SI_I vy = y->get_current_begin();
-             vy != y->get_current_end(); vy++) {
+        for( SI_I vy = y->get_current_begin(); vy != y->get_current_end(); vy++ ) {
             int yval = *vy;
-            if (evaluate(arc, xval, yval, csp)) {
+            if( evaluate(arc, xval, yval, csp) ) {
                 found = true;
                 break;
             }
@@ -439,7 +437,7 @@ int Inference::CSP::AC3::build_commons_valuation(int valuation, VariableGroup* x
 
     const V3D& common_vars = csp.get_vars_in_common_groups();
     int common_valuation = 0;
-    for (int t = 0; t < common_vars[i][j].size(); t++) {
+    for( int t = 0; t < common_vars[i][j].size(); t++ ) {
         int common_var = common_vars[i][j][t];
         int pos_var = x_var->get_pos_from_var_index(common_var);
         // value of common var in valuation
@@ -466,8 +464,8 @@ int Inference::CSP::AC3::build_commons_valuation(int valuation, VariableGroup* x
 // Simple Arc is not considered (not using this in this AC3!)
 bool Inference::CSP::AC3::evaluate(Inference::CSP::Arc* arc, int x, int y, const Csp& csp) const {
     assert(x >= 0 && y >= 0);
-    if (arc->is_mixed()) {
-        if (arc->x_is_group()) {
+    if( arc->is_mixed() ) {
+        if( arc->x_is_group() ) {
             int var_index = csp.get_var_index(y);
             VariableGroup* group = csp.get_group_var(arc->first);
             int pos = group->get_pos_from_var_index(var_index);

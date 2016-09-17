@@ -245,7 +245,7 @@ namespace Inference {
             // if l_atom exists in atoms_to_var_map_
             int get_var_index(int h_atom) const {
                 int atom = abs(h_atom);
-                if (atoms_to_var_map_.find(get_l_atom(atom)) != atoms_to_var_map_.end())
+                if( atoms_to_var_map_.find(get_l_atom(atom)) != atoms_to_var_map_.end() )
                     return atoms_to_var_map_.at(get_l_atom(atom));
                 return -1;
             }
@@ -253,7 +253,7 @@ namespace Inference {
             // if l_atom exists in atoms_to_var_map_
             Variable *get_var(int h_atom) const {
                 int var_index = get_var_index(h_atom);
-                if (var_index == -1) return NULL;
+                if( var_index == -1 ) return NULL;
                 return variables_[var_index];
             }
             // Returns variable indexed at var_index 
@@ -274,14 +274,14 @@ namespace Inference {
           public:
             bool operator<(const Arc &b) const {
                 const Arc& a = *this;
-                if (a.first < b.first) return true;
-                if (b.first < a.first) return false;
-                if (a.second < b.second) return true;
-                if (b.second < a.second) return false;
+                if( a.first < b.first ) return true;
+                if( b.first < a.first ) return false;
+                if( a.second < b.second ) return true;
+                if( b.second < a.second ) return false;
 
-                if (a.is_group()) return true;
-                if (a.is_simple()) return false;
-                if (a.is_mixed() && b.is_mixed() && a.x_is_group() && b.y_is_group()) 
+                if( a.is_group() ) return true;
+                if( a.is_simple() ) return false;
+                if( a.is_mixed() && b.is_mixed() && a.x_is_group() && b.y_is_group() )
                     return true;
                 return false;
             }
@@ -376,3 +376,4 @@ namespace Inference {
 }
 
 #endif
+

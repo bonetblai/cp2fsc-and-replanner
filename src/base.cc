@@ -730,7 +730,7 @@ void PDDL_Base::lw1_calculate_beam_for_grounded_variable(Variable &var) {
             }
 
             if( best_group != 0 ) {
-#ifdef DEBUG 
+#ifdef DEBUG
                 cout << "observation '" << *it << "' for " << var << " will be filtered in group " << best_group->print_name_ << endl;
 #endif
                 best_group->filtered_observations_.push_back(make_pair(&var, *it));
@@ -1005,7 +1005,7 @@ void PDDL_Base::lw1_protect_enablers_for_sensing(Instance &ins) const {
         index_set index;
         value.emit(ins, index);
         ins.protected_atoms_.insert(*index.begin() - 1);
-        //cout << "protecting enabler: " << *it->second << endl;
+        //cout << "protecting enabler: " << *it->second << endl; // CHECK
     }
 }
 
@@ -5288,7 +5288,7 @@ void PDDL_Base::VariableGroup::process_instance() const {
                 for( state_variable_vec::iterator it = grounded_group->begin(); it != grounded_group->end(); it++) {
                     group->grounded_group_.push_back(*it);
                 }
-//                grounded_group.insert(grounded_group_.end(), grounded_group->begin(), grounded_group->end());
+
                 for( int j = 0; j < int(grounded_group->size()); ++j ) {
                     const StateVariable &var = *(*grounded_group)[j];
                     group->grounded_group_str_.insert(string(var.print_name_));

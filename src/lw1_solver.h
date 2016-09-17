@@ -36,7 +36,8 @@ class LW1_Solver : public BASE_CLASS {
                const ActionSelection<STATE_CLASS> &action_selection,
                int time_bound,
                int ncalls_bound)
-      : BASE_CLASS(LW1, instance, kp_instance, action_selection, time_bound, ncalls_bound) {
+      : BASE_CLASS(LW1, instance, kp_instance, action_selection, time_bound, ncalls_bound),
+        frontier_(0) {
     }
     ~LW1_Solver() { }
 
@@ -74,7 +75,7 @@ class LW1_Solver : public BASE_CLASS {
     // TODO: Make this safe. 
     mutable Inference::Propositional::CNF cnf_;
     set<Inference::Propositional::Clause> base_theory_axioms_;
-    size_t frontier_ = 0;
+    size_t frontier_;
 
     virtual void compute_and_add_observations(const Instance::Action *last_action,
                                               const STATE_CLASS &hidden,
