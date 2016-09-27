@@ -1,0 +1,39 @@
+#!/bin/bash
+
+#$ -N lw1
+#$ -q default.q
+#$ -cwd
+#$ -o output/OUT
+#$ -e output/ERR
+#$ -t 1-XXX
+#$ -l h_cpu=06:00:00
+#$ -l h_rt=06:00:00
+#$ -l mem_free=8G
+#$ -l h_vmem=8G
+#$ -l hostname="node04|node06|node07|node08|node09|node10"
+# -l hostname="node01|node04|node06|node07|node08|node09|node10"
+
+export LW1_ROOT=$HOME/software/pure-lw1
+export benchmarks=$LW1_ROOT/benchmarks/lw1
+
+planner=$1
+problems=$2
+rdir=$3
+
+# Program parameters taken from the parameters file.
+record=`awk "NR==$SGE_TASK_ID" $problems`
+options=`echo $record | awk '{print $1;}'`
+domain_file=`echo $record | awk '{print $2;}'`
+problem_file=`echo $record | awk '{print $3;}'`
+hidden_file=`echo $record | awk '{print $4;}'`
+problem_set=`echo $record | awk '{print $5;}'`
+
+domain_str=${domain_file//\//_}
+problem_str=${problem_file//\//_}
+hidden_str=${hidden_file//\//_}
+
+output_path=$LW1_ROOT/sge-results/$rdir/$domain_str/$problem_str
+mkdir -p $output_path
+
+./experiment.sh $planner $options $domain_file $problem_file $hidden_file > $output_path/output.lw1.problem_set=${problem_set}.domain=${domain_str}.problem=${problem_str}.hidden=${hidden_str}.id=${SGE_TASK_ID}.txt
+
