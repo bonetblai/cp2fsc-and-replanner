@@ -33,7 +33,13 @@ problem_str=${problem_file//\//_}
 hidden_str=${hidden_file//\//_}
 
 output_path=$LW1_ROOT/sge-results/$rdir/$domain_str/$problem_str
+output_file=$output_path/output.lw1.problem_set=${problem_set}.domain=${domain_str}.problem=${problem_str}.hidden=${hidden_str}.id=${SGE_TASK_ID}.txt
+
 mkdir -p $output_path
 
-./experiment.sh $planner $options $domain_file $problem_file $hidden_file > $output_path/output.lw1.problem_set=${problem_set}.domain=${domain_str}.problem=${problem_str}.hidden=${hidden_str}.id=${SGE_TASK_ID}.txt
+if [ ! -f "$output_file" ]; then
+    ./experiment.sh $planner $options $domain_file $problem_file $hidden_file > $output_file
+else
+    echo "Doing nothing since file $output_file exists!"
+fi
 
