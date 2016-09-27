@@ -86,14 +86,16 @@ int main(int argc, const char *argv[]) {
 
     // default options for lw1:strict
     g_options.enable("lw1:strict");
-    g_options.enable("lw1:inference:up");
-    g_options.enable("lw1:inference:up:preload");
-    g_options.enable("lw1:inference:up:watched-literals");
     g_options.enable("lw1:boost:enable-post-actions");
     g_options.enable("lw1:boost:drule:sensing:type4");
     g_options.enable("lw1:boost:drule:sensing:type4:add");
-    g_options.enable("lw1:boost:drule:sensing:type3");
     g_options.enable("lw1:boost:literals-for-observables");
+    g_options.enable("lw1:boost:drule:sensing:type3");
+
+    // default inference engine
+    g_options.enable("lw1:inference:up");
+    g_options.enable("lw1:inference:up:preload");
+    g_options.enable("lw1:inference:up:watched-literals");
 
     // check correct number of parameters
     const char *exec_name = argv[0];
