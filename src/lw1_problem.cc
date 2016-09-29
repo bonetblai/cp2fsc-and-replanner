@@ -139,10 +139,6 @@ LW1_Instance::LW1_Instance(const Instance &ins,
         }
     }
 
-    // create (new-goal) atom
-    new_goal_ = &new_atom(new CopyName("new-goal"));
-    goal_literals_.insert(1 + new_goal_->index_);
-
     // extract variables
     variables_.reserve(variables.size());
     for( size_t k = 0; k < variables.size(); ++k ) {
@@ -610,20 +606,8 @@ LW1_Instance::LW1_Instance(const Instance &ins,
     for( size_t k = 0; k < ins.n_sensors(); ++k )
         create_sensor(*ins.sensors_[k]);
 
-    // create new goal-achieving actions
-    Action &goal_action = new_action(new CopyName("reach_new_goal_through_original_goal__"));
-    for( index_set::const_iterator it = ins.goal_literals_.begin(); it != ins.goal_literals_.end(); ++it ) {
-        int idx = *it > 0 ? *it-1 : -*it-1;
-        if( *it > 0 )
-            goal_action.precondition_.insert(1 + 2*idx);
-        else
-            goal_action.precondition_.insert(1 + 2*idx+1);
-    }
-    goal_action.effect_.insert(1 + new_goal_->index_);
-    index_for_goal_action_ = goal_action.index_;
-
     // do subgoaling
-    perform_subgoaling();
+    create_subgoaling_actions(ins);
 
     if( options_.is_enabled("lw1:inference:up") ) {
         // create fixed set of clauses (variable domain axioms) for UP inference
@@ -1455,7 +1439,7 @@ void LW1_Instance::cross_reference() {
         string aname = actions_[k]->name_->to_string();
         if( (aname.compare(0, 6, "drule-") == 0) ||
             (aname.compare(0, 7, "sensor-") == 0) ||
-            (aname == "reach_new_goal_through_original_goal__") ) {
+            (aname.compare(0, 22, "subgoaling_action_for_") == 0) ) {
             n_standard_actions_ = k;
             break;
         }
@@ -1466,7 +1450,7 @@ void LW1_Instance::cross_reference() {
         if( (aname.compare(0, 14, "drule-sensing-") == 0) ||
             (aname.compare(0, 11, "drule-atom-") == 0) ||
             (aname.compare(0, 7, "sensor-") == 0) ||
-            (aname == "reach_new_goal_through_original_goal__") ) {
+            (aname.compare(0, 22, "subgoaling_action_for_") == 0) ) {
             n_drules_for_vars_ = k - n_standard_actions_;
             break;
         }
@@ -1476,7 +1460,7 @@ void LW1_Instance::cross_reference() {
         string aname = actions_[k]->name_->to_string();
         if( (aname.compare(0, 11, "drule-atom-") == 0) ||
             (aname.compare(0, 7, "sensor-") == 0) ||
-            (aname == "reach_new_goal_through_original_goal__") ) {
+            (aname.compare(0, 22, "subgoaling_action_for_") == 0) ) {
             n_drules_for_sensing_ = k - n_standard_actions_ - n_drules_for_vars_;
             break;
         }
@@ -1485,7 +1469,7 @@ void LW1_Instance::cross_reference() {
     while( k < n_actions() ) {
         string aname = actions_[k]->name_->to_string();
         if( (aname.compare(0, 7, "sensor-") == 0) ||
-            (aname == "reach_new_goal_through_original_goal__") ) {
+            (aname.compare(0, 22, "subgoaling_action_for_") == 0) ) {
             n_drules_for_atoms_ = k - n_standard_actions_ - n_drules_for_vars_ - n_drules_for_sensing_;
             n_drule_actions_ = k - n_standard_actions_;
             assert(n_drule_actions_ == n_drules_for_vars_ + n_drules_for_sensing_ + n_drules_for_atoms_);
@@ -1495,9 +1479,8 @@ void LW1_Instance::cross_reference() {
     }
     while( k < n_actions() ) {
         string aname = actions_[k]->name_->to_string();
-        if( (aname == "reach_new_goal_through_original_goal__") ) {
+        if( aname.compare(0, 22, "subgoaling_action_for_") == 0 ) {
             n_sensor_actions_ = k - n_standard_actions_ - n_drule_actions_;
-            index_for_goal_action_ = k;
             break;
         }
         ++k;
@@ -1518,7 +1501,7 @@ void LW1_Instance::cross_reference() {
     Instance::cross_referenced_ = true;
 }
 
-void LW1_Instance::set_goal_condition(index_set &condition) const {
+void LW1_Instance::get_goal_condition(index_set &condition) const {
     condition.clear();
     condition.insert(1 + new_goal_->index_);
 }

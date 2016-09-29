@@ -59,8 +59,11 @@ const char *available_options[] = {
     "kp:print:action:drule",                            "[KP] print deductive KP actions (lw1 translation)",
     "kp:print:action:drule:var",                        "[KP] print deductive KP actions for variables (lw1 translation)",
     "kp:print:action:drule:sensing",                    "[KP] print deductive KP actions for sensing (lw1 translation)",
+    "kp:print:action:subgoaling",                       "[KP] print subgoaling actions",
     "kp:merge-drules",                                  "[KP] merge decision rules with common precondition",
-    "kp:subgoaling",                                    "[KP] goal of KP problem is either goal or unknown static fluents",
+    "kp:subgoaling",                                    "[KP] replace goal of KP problem (implied option)",
+    "kp:subgoaling:non-reversable-goal-atoms",          "[KP] add non-reversable goal atoms as subgoals [EXPERIMENTAL]",
+    "kp:subgoaling:static-unknowns",                    "[KP] add unknown static fluents as subgoals [EXPERIMENTAL]",
 
     // planner options (k_replanner, clg, lw1)
     "planner:print:plan",                               "[PLANNER] print classical plan (reduced)",
@@ -121,8 +124,8 @@ const char *available_options[] = {
     "lw1:inference:up",                                 "[LW1] uses unit resolution as inference mechanism",
     "lw1:inference:up:preload",                         "[LW1] preload axioms before applying inference",
     "lw1:inference:up:watched-literals",                "[LW1] uses unit resolution with watched literals as inference mechanism",
-    "lw1:inference:up:lookahead",                       "[LW1] uses unit resolution with 1-lookahead as inference mechanism (EXPERIMENTAL)",
-    "lw1:inference:up:enhanced",                        "[LW1] maintain inferred (non-forbidden) clauses (EXPERIMENTAL)",
+    "lw1:inference:up:lookahead",                       "[LW1] uses unit resolution with 1-lookahead as inference mechanism [EXPERIMENTAL]",
+    "lw1:inference:up:enhanced",                        "[LW1] maintain inferred (non-forbidden) clauses [EXPERIMENTAL]",
     "lw1:inference:ac3",                                "[LW1] uses AC3 as inference algorithm",
 
     // lw1 boost

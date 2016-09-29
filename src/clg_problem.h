@@ -29,7 +29,7 @@ class CLG_Instance : public KP_Instance {
         assert(action_id < remap_.size());
         return remap_[action_id];
     }
-    virtual void set_goal_condition(index_set &condition) const;
+    virtual void get_goal_condition(index_set &condition) const;
 
     virtual size_t first_deductive_action() const {
         return n_standard_actions_;

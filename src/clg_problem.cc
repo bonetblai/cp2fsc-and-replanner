@@ -69,10 +69,6 @@ CLG_Instance::CLG_Instance(const Instance &ins)
         }
     }
 
-    // create new goal
-    new_goal_ = &new_atom(new CopyName("(new-goal)"));
-    goal_literals_.insert(1 + new_goal_->index_);
-
     // create K-actions
     remap_ = vector<int>(ins.n_actions(),-1);
     for( size_t k = 0; k < ins.n_actions(); ++k ) {
@@ -92,24 +88,11 @@ CLG_Instance::CLG_Instance(const Instance &ins)
     for( size_t k = 0; k < ins.n_sensors(); ++k )
         create_sensor(*ins.sensors_[k]);
 
-    // create new goal-achieving actions
-    Action &goal_action = new_action(new CopyName("reach_new_goal_through_original_goal__"));
-    for( index_set::const_iterator it = ins.goal_literals_.begin(); it != ins.goal_literals_.end(); ++it ) {
-        int idx = *it > 0 ? *it-1 : -*it-1;
-        if( *it > 0 )
-            goal_action.precondition_.insert(1 + 2*idx);
-        else
-            goal_action.precondition_.insert(1 + 2*idx+1);
-    }
-    goal_action.effect_.insert(1 + new_goal_->index_);
-    index_for_goal_action_ = goal_action.index_;
-
     // do subgoaling
-    perform_subgoaling();
+    create_subgoaling_actions(ins);
 
     // cross reference instance to compute how rules of each type
     cross_reference();
-    //cout << index_for_goal_action_ << "."; goal_action.print(cout, *this);
 }
 
 CLG_Instance::~CLG_Instance() {
@@ -284,7 +267,7 @@ void CLG_Instance::cross_reference() {
         string aname = actions_[k]->name_->to_string();
         if( (aname.compare(0, 6, "drule-") == 0) ||
             (aname.compare(0, 7, "sensor-") == 0) ||
-            (aname == "reach_new_goal_through_original_goal__") ) {
+            (aname.compare(0, 22, "subgoaling_action_for_") == 0) ) {
             n_standard_actions_ = k;
             break;
         }
@@ -293,7 +276,7 @@ void CLG_Instance::cross_reference() {
     while( k < n_actions() ) {
         string aname = actions_[k]->name_->to_string();
         if( (aname.compare(0, 7, "sensor-") == 0) ||
-            (aname == "reach_new_goal_through_original_goal__") ) {
+            (aname.compare(0, 22, "subgoaling_action_for_") == 0) ) {
             n_drule_actions_ = k - n_standard_actions_;
             break;
         }
@@ -301,9 +284,8 @@ void CLG_Instance::cross_reference() {
     }
     while( k < n_actions() ) {
         string aname = actions_[k]->name_->to_string();
-        if( (aname == "reach_new_goal_through_original_goal__") ) {
+        if( aname.compare(0, 22, "subgoaling_action_for_") == 0 ) {
             n_sensor_actions_ = k - n_standard_actions_ - n_drule_actions_;
-            index_for_goal_action_ = k;
             break;
         }
         ++k;
@@ -324,7 +306,7 @@ void CLG_Instance::cross_reference() {
     Instance::cross_referenced_ = true;
 }
 
-void CLG_Instance::set_goal_condition(index_set &condition) const {
+void CLG_Instance::get_goal_condition(index_set &condition) const {
     condition.clear();
     condition.insert(1 + new_goal_->index_);
 }

@@ -34,8 +34,12 @@ class KP_Instance : public Instance {
 
     // for subgoaling
     Atom *new_goal_;
-    size_t index_for_goal_action_;
-    void perform_subgoaling();
+    std::vector<std::pair<int, int> > enablers_for_non_reversable_goal_atoms_;
+
+    void create_subgoaling_actions(const Instance &ins);
+    void enable_subgoaling_actions(State &state, index_vec &enablers) const;
+    void disable_subgoaling_actions(State &state, const index_vec &enablers) const;
+
 
     // for statistics
     mutable float inference_time_;
@@ -56,7 +60,7 @@ class KP_Instance : public Instance {
 
     virtual void cross_reference() = 0;
     virtual int remap_action(size_t action_id) const = 0;
-    virtual void set_goal_condition(index_set &condition) const = 0;
+    virtual void get_goal_condition(index_set &condition) const = 0;
 
     virtual size_t first_deductive_action() const = 0;
     virtual size_t last_deductive_action() const = 0;
@@ -64,9 +68,11 @@ class KP_Instance : public Instance {
     virtual bool is_obs_rule(size_t a) const = 0;
     virtual bool is_static_rule(size_t a) const = 0;
     virtual bool is_subgoaling_rule(size_t a) const = 0;
+#if 0
     virtual bool is_goal_action(size_t a) const {
         return a == index_for_goal_action_;
     }
+#endif
     virtual void print_stats(std::ostream &os) const = 0;
 
     virtual bool calculate_relevant_assumptions(const Plan &plan,
@@ -107,7 +113,7 @@ class Standard_KP_Instance : public KP_Instance {
         assert(action_id < remap_.size());
         return remap_[action_id];
     }
-    virtual void set_goal_condition(index_set &condtion) const;
+    virtual void get_goal_condition(index_set &condtion) const;
 
     virtual size_t first_deductive_action() const {
         return n_standard_actions_ + n_sensor_actions_;

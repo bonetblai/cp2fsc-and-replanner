@@ -100,7 +100,7 @@ class LW1_Instance : public KP_Instance {
     virtual int remap_action(size_t action_id) const {
         return action_id < remap_.size() ? remap_[action_id] : -1;
     }
-    virtual void set_goal_condition(index_set &condition) const;
+    virtual void get_goal_condition(index_set &condition) const;
 
     virtual size_t first_deductive_action() const {
         return n_standard_actions_;

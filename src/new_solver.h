@@ -106,7 +106,7 @@ int NewSolver<T>::solve(const T &initial_hidden_state,
     // set goal state with (new-goal). It is used to compute
     // the relevant assumptions of a classical plan which are
     // then used to detect when replanning is necessary.
-    kp_instance_.set_goal_condition(goal_condition);
+    kp_instance_.get_goal_condition(goal_condition);
 
     // replan loop
     std::vector<index_set> assumptions;

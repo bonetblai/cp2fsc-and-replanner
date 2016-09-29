@@ -15,16 +15,17 @@ static int get_atom_index(const Instance &ins, string atom_name) {
 }
 
 KP_Instance::KP_Instance(const Options::Mode &options)
-  : Instance(options), new_goal_(0), index_for_goal_action_(0), inference_time_(0)  {
+  : Instance(options), new_goal_(0), inference_time_(0)  {
 }
 
 void KP_Instance::write_problem(ostream &os, const State *state, int indent) const {
+    index_vec subgoaling_enablers;
     if( options_.is_enabled("kp:subgoaling") ) {
-        cout << "XXXXXXXXX" << endl;
+        enable_subgoaling_actions(*const_cast<State*>(state), subgoaling_enablers);
     }
     Instance::write_problem(os, state, indent);
     if( options_.is_enabled("kp:subgoaling") ) {
-        cout << "XXXXXXXXX" << endl;
+        disable_subgoaling_actions(*const_cast<State*>(state), subgoaling_enablers);
     }
 }
 
@@ -62,10 +63,87 @@ void KP_Instance::merge_drules() {
     drule_store_.clear();
 }
 
-void KP_Instance::perform_subgoaling() {
+void KP_Instance::create_subgoaling_actions(const Instance &ins) {
+    // create (new-goal) atom
+    new_goal_ = &new_atom(new CopyName("new-goal"));
+    goal_literals_.insert(1 + new_goal_->index_);
+
+    // create subgoaling action for original goal
+    Action &goal_action = new_action(new CopyName("subgoaling_action_for_original_goal__"));
+    for( index_set::const_iterator it = ins.goal_literals_.begin(); it != ins.goal_literals_.end(); ++it ) {
+        int idx = *it > 0 ? *it-1 : -*it-1;
+        if( *it > 0 )
+            goal_action.precondition_.insert(1 + 2*idx);
+        else
+            goal_action.precondition_.insert(1 + 2*idx+1);
+    }
+    goal_action.effect_.insert(1 + new_goal_->index_);
+    if( options_.is_enabled("kp:print:action:subgoaling") ) {
+        goal_action.print(cout, *this);
+    }
+
     if( options_.is_enabled("kp:subgoaling") ) {
-        cout << Utils::error() << "subgoaling feature not yet supported." << endl;
-        exit(255);
+        cout << Utils::magenta()
+             << "(kp) creating actions for subgoaling"
+             << Utils::normal()
+             << endl;
+    }
+
+    if( options_.is_enabled("kp:subgoaling:non-reversable-goal-atoms") ) {
+        cout << Utils::magenta()
+             << "(kp) creating actions for subgoaling:non-reversable-goal-atoms"
+             << Utils::normal()
+             << endl;
+        // Every positive goal atom that once achieved cannot be undone is a potential
+        // candidate for new goal. Question is whether such atoms can be serialized in
+        // any order. In subgoaling for non-reversable goal atoms, we assume it.
+        index_set non_reversable_goal_atoms;
+        for( index_set::const_iterator it = ins.goal_literals_.begin(); it != ins.goal_literals_.end(); ++it ) {
+            if( *it > 0 ) {
+                bool reversable = false;
+                for( size_t k = 0; k < ins.n_actions(); ++k ) {
+                    const Action &act = *ins.actions_[k];
+                    if( act.effect_.contains(-*it) ) {
+                        reversable = true;
+                        break;
+                    }
+                }
+                if( !reversable ) non_reversable_goal_atoms.insert(*it - 1);
+            }
+        }
+        cout << Utils::magenta()
+             << "(kp) non-reversable goal atoms: "
+             << Utils::normal();
+        ins.write_atom_set(cout, non_reversable_goal_atoms);
+        cout << endl;
+
+        if( !non_reversable_goal_atoms.empty() ) {
+            for( index_set::const_iterator it = non_reversable_goal_atoms.begin(); it != non_reversable_goal_atoms.end(); ++it ) {
+                //cout << "ATOM: index=" << *it << ", name="; State::print_literal(cout, 1 + *it, &ins); cout << endl;
+                string action_name = string("subgoaling_action_for_") + Utils::replace_all(Utils::replace_all(State::to_string(1 + *it, &ins), "(", ""), ")", "");
+                string enabler_name = string("enable_") + action_name;
+                Atom *enabler = &new_atom(new CopyName(enabler_name));
+                //cout << Utils::red() << "action-enabler=" << Utils::normal(); State::print_literal(cout, 1 + enabler->index_, this); cout << endl;
+                Action &goal_action = new_action(new CopyName(action_name));
+                goal_action.precondition_.insert(1 + enabler->index_);
+                goal_action.precondition_.insert(1 + 2 * (*it));
+                goal_action.effect_.insert(1 + new_goal_->index_);
+                enablers_for_non_reversable_goal_atoms_.push_back(make_pair(2 * (*it), enabler->index_));
+                if( options_.is_enabled("kp:print:action:subgoaling") ) {
+                    goal_action.print(cout, *this);
+                }
+            }
+        }
+    }
+
+    if( options_.is_enabled("kp:subgoaling:static-unknowns") ) {
+        cout << Utils::error() << "(kp) subgoaling for static unknowns is not yet supported." << endl;
+        exit(-1);
+
+        // With these subgoals we make sure that the computed plans achieve new knowledge.
+        // We can't guarantee that the knowledge is useful for achieving the goal, but
+        // there is monotone information gain
+
 #if 0
         // Other actions are for observable literals that are unknown at initial state
         atoms_for_unknown_observables_at_init_ = vector<Atom*>(ins.n_atoms());
@@ -79,6 +157,7 @@ void KP_Instance::perform_subgoaling() {
                 if( atoms_for_unknown_observables_at_init_[idx] == 0 ) {
                     string atom_name("(unknown_");
                     atom_name += ins.atoms_[idx]->name_->to_string() + ")";
+                    cout << "ATOM-NAME: " << atom_name << endl;
                     atoms_for_unknown_observables_at_init_[idx] = &new_atom(new CopyName(atom_name));
                     for( int n = 0; n < 2; ++n ) {
                         string action_name("reach_goal_through_knowledge_of_");
@@ -93,6 +172,37 @@ void KP_Instance::perform_subgoaling() {
             }
         }
 #endif
+    }
+}
+
+void KP_Instance::enable_subgoaling_actions(State &state, index_vec &enablers) const {
+    enablers.clear();
+    if( options_.is_enabled("kp:subgoaling:non-reversable-goal-atoms") ) {
+        for( size_t k = 0; k < enablers_for_non_reversable_goal_atoms_.size(); ++k ) {
+            const pair<int, int> &enabler = enablers_for_non_reversable_goal_atoms_[k];
+            if( !state.satisfy(enabler.first) ) {
+                assert(!state.satisfy(enabler.second));
+                enablers.push_back(enabler.second);
+                state.add(enabler.second);
+            }
+        }
+    }
+    if( options_.is_enabled("kp:subgoaling:static-unknowns") ) {
+        cout << Utils::error() << "(kp) subgoaling for static unknowns is not yet supported." << endl;
+        exit(-1);
+    }
+}
+
+void KP_Instance::disable_subgoaling_actions(State &state, const index_vec &enablers) const {
+    if( options_.is_enabled("kp:subgoaling:non-reversable-goal-atoms") ) {
+        for( size_t k = 0; k < enablers.size(); ++k ) {
+            assert(state.satisfy(enablers[k]));
+            state.remove(enablers[k]);
+        }
+    }
+    if( options_.is_enabled("kp:subgoaling:static-unknowns") ) {
+        cout << Utils::error() << "(kp) subgoaling for static unknowns is not yet supported." << endl;
+        exit(-1);
     }
 }
 
@@ -342,10 +452,6 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
             }
         }
     }
-
-    // create new goal
-    new_goal_ = &new_atom(new CopyName("(new-goal)"));
-    goal_literals_.insert(1 + new_goal_->index_);
 
     // create K-actions
     remap_ = vector<int>(ins.n_actions(),-1);
@@ -676,48 +782,8 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
 #endif
     n_invariant_actions_ = n_actions() - n_standard_actions_ - n_sensor_actions_;
 
-    // create new goal-achieving actions
-    Action &goal_action = new_action(new CopyName("reach_new_goal_through_original_goal__"));
-    for( index_set::const_iterator it = ins.goal_literals_.begin(); it != ins.goal_literals_.end(); ++it ) {
-        int idx = *it > 0 ? *it-1 : -*it-1;
-        if( *it > 0 )
-            goal_action.precondition_.insert(1 + 2*idx);
-        else
-            goal_action.precondition_.insert(1 + 2*idx+1);
-    }
-    goal_action.effect_.insert(1 + new_goal_->index_);
-    index_for_goal_action_ = goal_action.index_;
-    //cout << index_for_goal_action_ << "."; goal_action.print(cout, *this);
-
-    if( options_.is_enabled("kp:subgoaling") ) {
-        cout << Utils::error() << "subgoaling feature not yet supported." << endl;
-        exit(255);
-        // Other actions are for observable literals that are unknown at initial state
-        atoms_for_unknown_observables_at_init_ = vector<Atom*>(ins.n_atoms());
-        for( size_t k = 0; k < ins.n_sensors(); ++k ) {
-            const Sensor &r = *ins.sensors_[k];
-            assert(!r.sense_.empty());
-
-            for( index_set::const_iterator it = r.sense_.begin(); it != r.sense_.end(); ++it ) {
-                assert(*it > 0);
-                int idx = *it - 1;
-                if( atoms_for_unknown_observables_at_init_[idx] == 0 ) {
-                    string atom_name("(unknown_");
-                    atom_name += ins.atoms_[idx]->name_->to_string() + ")";
-                    atoms_for_unknown_observables_at_init_[idx] = &new_atom(new CopyName(atom_name));
-                    for( int n = 0; n < 2; ++n ) {
-                        string action_name("reach_goal_through_knowledge_of_");
-                        action_name += ins.atoms_[idx]->name_->to_string() + "_" + (n == 0 ? "0__" : "1__");
-                        Action &nact = new_action(new CopyName(action_name));
-                        nact.precondition_.insert(1 + atoms_for_unknown_observables_at_init_[idx]->index_);
-                        nact.precondition_.insert(1 + 2*idx+n);
-                        nact.effect_.insert(1 + new_goal_->index_);
-                        cout << nact.index_ << "."; nact.print(cout, *this);
-                    }
-                }
-            }
-        }
-    }
+    // do subgoaling
+    create_subgoaling_actions(ins);
     n_subgoaling_actions_ = n_actions() - n_standard_actions_ - n_sensor_actions_ - n_invariant_actions_;
 }
 
@@ -775,10 +841,6 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
             }
         }
     }
-
-    // create new goal
-    new_goal_ = &new_atom(new CopyName("(new-goal)"));
-    goal_literals_.insert(1 + new_goal_->index_);
 
     // create K-actions
     remap_ = vector<int>(ins.n_actions(),-1);
@@ -1096,48 +1158,8 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
 #endif
     n_invariant_actions_ = n_actions() - n_standard_actions_ - n_sensor_actions_;
 
-    // create new goal-achieving actions
-    Action &goal_action = new_action(new CopyName("reach_new_goal_through_original_goal__"));
-    for( index_set::const_iterator it = ins.goal_literals_.begin(); it != ins.goal_literals_.end(); ++it ) {
-        int idx = *it > 0 ? *it-1 : -*it-1;
-        if( *it > 0 )
-            goal_action.precondition_.insert(1 + 2*idx);
-        else
-            goal_action.precondition_.insert(1 + 2*idx+1);
-    }
-    goal_action.effect_.insert(1 + new_goal_->index_);
-    index_for_goal_action_ = goal_action.index_;
-    //cout << index_for_goal_action_ << "."; goal_action.print(cout, *this);
-
-    if( options_.is_enabled("kp:subgoaling") ) {
-        cout << Utils::error() << "subgoaling feature not yet supported." << endl;
-        exit(255);
-        // Other actions are for observable literals that are unknown at initial state
-        atoms_for_unknown_observables_at_init_ = vector<Atom*>(ins.n_atoms());
-        for( size_t k = 0; k < ins.n_sensors(); ++k ) {
-            const Sensor &r = *ins.sensors_[k];
-            assert(!r.sense_.empty());
-
-            for( index_set::const_iterator it = r.sense_.begin(); it != r.sense_.end(); ++it ) {
-                assert(*it > 0);
-                int idx = *it - 1;
-                if( atoms_for_unknown_observables_at_init_[idx] == 0 ) {
-                    string atom_name("(unknown_");
-                    atom_name += ins.atoms_[idx]->name_->to_string() + ")";
-                    atoms_for_unknown_observables_at_init_[idx] = &new_atom(new CopyName(atom_name));
-                    for( int n = 0; n < 2; ++n ) {
-                        string action_name("reach_goal_through_knowledge_of_");
-                        action_name += ins.atoms_[idx]->name_->to_string() + "_" + (n == 0 ? "0__" : "1__");
-                        Action &nact = new_action(new CopyName(action_name));
-                        nact.precondition_.insert(1 + atoms_for_unknown_observables_at_init_[idx]->index_);
-                        nact.precondition_.insert(1 + 2*idx+n);
-                        nact.effect_.insert(1 + new_goal_->index_);
-                        cout << nact.index_ << "."; nact.print(cout, *this);
-                    }
-                }
-            }
-        }
-    }
+    // do subgoaling
+    create_subgoaling_actions(ins);
     n_subgoaling_actions_ = n_actions() - n_standard_actions_ - n_sensor_actions_ - n_invariant_actions_;
 }
 
@@ -1155,7 +1177,7 @@ void Standard_KP_Instance::cross_reference() {
         string aname = actions_[k]->name_->to_string();
         if( (aname.compare(0, 7, "sensor-") == 0) ||
             (aname.compare(0, 10, "invariant-") == 0) ||
-            (aname == "reach_new_goal_through_original_goal__") ) {
+            (aname.compare(0, 22, "subgoaling_action_for_") == 0) ) {
             n_standard_actions_ = k;
             break;
         }
@@ -1164,7 +1186,7 @@ void Standard_KP_Instance::cross_reference() {
     while( k < n_actions() ) {
         string aname = actions_[k]->name_->to_string();
         if( (aname.compare(0, 10, "invariant-") == 0) ||
-            (aname == "reach_new_goal_through_original_goal__") ) {
+            (aname.compare(0, 22, "subgoaling_action_for_") == 0) ) {
             n_sensor_actions_ = k - n_standard_actions_;
             break;
         }
@@ -1172,9 +1194,8 @@ void Standard_KP_Instance::cross_reference() {
     }
     while( k < n_actions() ) {
         string aname = actions_[k]->name_->to_string();
-        if( (aname == "reach_new_goal_through_original_goal__") ) {
+        if( aname.compare(0, 22, "subgoaling_action_for_") == 0 ) {
             n_invariant_actions_ = k - n_standard_actions_ - n_sensor_actions_;
-            index_for_goal_action_ = k;
             break;
         }
         ++k;
@@ -1195,7 +1216,7 @@ void Standard_KP_Instance::cross_reference() {
     Instance::cross_referenced_ = true;
 }
 
-void Standard_KP_Instance::set_goal_condition(index_set &condition) const {
+void Standard_KP_Instance::get_goal_condition(index_set &condition) const {
     condition.clear();
     condition.insert(1 + new_goal_->index_);
 }

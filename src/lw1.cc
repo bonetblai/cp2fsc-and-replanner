@@ -202,6 +202,10 @@ int main(int argc, const char *argv[]) {
     }
 
     // set implied options
+    if( g_options.is_enabled("kp:subgoaling:non-reversable-goal-atoms") || g_options.is_enabled("kp:subgoaling:static-unknowns") ) {
+        cout << Utils::warning() << "subgoaling is an experimental option; use it at risk" << endl;
+        g_options.enable("kp:subgoaling");
+    }
     if( g_options.is_enabled("lw1:boost:complete-effects:type4:obs") || g_options.is_enabled("lw1:boost:complete-effects:type4:state") )
         g_options.enable("lw1:boost:complete-effects:type4");
     if( g_options.is_enabled("lw1:boost:complete-effects:type4") )
