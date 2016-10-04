@@ -1,0 +1,7 @@
+CSP code needs to be revised:
+  - AC3 looks inefficient in several aspects
+  - CSP/AC3 needs to be fully separated from LW1, perhaps creating a middle layer
+
+Check whether lw1:boost:compile-static-observables is really deprecated and
+whether something can be done about it
+
