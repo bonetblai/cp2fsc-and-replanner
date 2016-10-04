@@ -36,6 +36,9 @@ class LW1_Instance : public KP_Instance {
     // for subgoaling
     std::vector<Atom*> atoms_for_unknown_observables_at_init_;
 
+    // for KP/s translation
+    std::map<int, int> kps_atoms_;
+
     struct Variable {
         std::string name_;
         bool is_observable_;

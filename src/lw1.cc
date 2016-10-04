@@ -171,12 +171,12 @@ int main(int argc, const char *argv[]) {
     }
 
     // either lw1:aaai or lw1:strict: one of them but not both. Default is lw1:strict.
-    assert(g_options.is_enabled("lw1:aaai") || g_options.is_enabled("lw1:strict"));
+    if( !g_options.is_enabled("lw1:aaai") && !g_options.is_enabled("lw1:strict") )
+        g_options.enable("lw1:strict");
     if( g_options.is_enabled("lw1:aaai") )
         g_options.disable("lw1:strict");
     if( g_options.is_enabled("lw1:strict") )
         g_options.disable("lw1:aaai");
-    assert(g_options.is_enabled("lw1:aaai") || g_options.is_enabled("lw1:strict"));
     assert(g_options.is_disabled("lw1:aaai") || g_options.is_disabled("lw1:strict"));
 
     // if lw1:inference:ac3 is enabled, disable options for UP/FC

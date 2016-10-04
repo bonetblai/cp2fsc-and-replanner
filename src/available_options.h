@@ -118,6 +118,7 @@ const char *available_options[] = {
     "lw1:aaai",                                         "[LW1] translation used in AAAI-14 paper",
     "lw1:strict",                                       "[LW1] strict compliance with lw1 specification",
     "lw1:sensing:make-dnf",                             "[LW1] when sensing model is not in DNF, do automatic translation (may be very inefficient)",
+    "lw1:enable-kp/s",                                  "[LW1] generate KP/s problem for classical planner [EXPERIMENTAL]",
 
     // lw1 (inference)
     "lw1:inference:forward-chaining",                   "[LW1] uses forward chaining of drules to make inference (old and sometimes incorrect method)",

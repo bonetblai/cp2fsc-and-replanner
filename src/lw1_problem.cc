@@ -78,42 +78,58 @@ LW1_Instance::LW1_Instance(const Instance &ins,
     }
 
     // create K0 atoms and special atoms
+    vector<int> regular_atoms;
     normal_execution_atom_ = -1;
     atoms_.reserve(1 + 2*ins.n_atoms());
     for( size_t k = 0; k < ins.n_atoms(); ++k ) {
-        string name = ins.atoms_[k]->name_->to_string();
+        string atom_name = ins.atoms_[k]->name_->to_string();
 #ifdef DEBUG
-        cout << Utils::yellow() << "NAME=" << name << ": " << Utils::normal() << flush;
+        cout << Utils::yellow() << "ATOM-NAME=" << atom_name << ": " << Utils::normal() << flush;
 #endif
-        if( name.compare(0, 16, "normal-execution") == 0 ) {
+        if( atom_name.compare(0, 16, "normal-execution") == 0 ) {
             assert(options_.is_enabled("lw1:aaai") || options_.is_enabled("lw1:boost:enable-post-actions"));
-            new_atom(new CopyName(name));                  // even-numbered atoms
-            new_atom(new CopyName(name + "_UNUSED"));      // odd-numbered atoms
+            new_atom(new CopyName(atom_name));                  // even-numbered atoms
+            new_atom(new CopyName(atom_name + "_UNUSED"));      // odd-numbered atoms
             normal_execution_atom_ = k;
 #ifdef DEBUG
             cout << "type=normal-execution, index=" << k << ", k-indices=" << 2*k << "," << 2*k+1 << endl;
 #endif
-        } else if( name.compare(0, 16, "last-action-was-") == 0 ) {
+        } else if( atom_name.compare(0, 16, "last-action-was-") == 0 ) {
             assert(!options_.is_enabled("lw1:boost:enable-post-actions"));
-            new_atom(new CopyName(name));                  // even-numbered atoms
-            new_atom(new CopyName(name + "_UNUSED"));      // odd-numbered atoms
+            new_atom(new CopyName(atom_name));                  // even-numbered atoms
+            new_atom(new CopyName(atom_name + "_UNUSED"));      // odd-numbered atoms
             last_action_atoms_.insert(k);
 #ifdef DEBUG
             cout << "type=last-action, index=" << k << ", k-indices=" << 2*k << "," << 2*k+1 << endl;
 #endif
-        } else if( name.compare(0, 19, "enable-sensing-for-") == 0 ) {
+        } else if( atom_name.compare(0, 19, "enable-sensing-for-") == 0 ) {
             assert(options_.is_enabled("lw1:aaai") || options_.is_enabled("lw1:boost:enable-post-actions"));
-            new_atom(new CopyName(name));                  // even-numbered atoms
-            new_atom(new CopyName(name + "_UNUSED"));      // odd-numbered atoms
+            new_atom(new CopyName(atom_name));                  // even-numbered atoms
+            new_atom(new CopyName(atom_name + "_UNUSED"));      // odd-numbered atoms
             sensing_enabler_atoms_.insert(k);
 #ifdef DEBUG
             cout << "type=enabler, index=" << k << ", k-indices=" << 2*k << "," << 2*k+1 << endl;
 #endif
         } else {
-            new_atom(new CopyName("K_" + name));           // even-numbered atoms
-            new_atom(new CopyName("K_not_" + name));       // odd-numbered atoms
+            regular_atoms.push_back(k);
+            new_atom(new CopyName("K_" + atom_name));           // even-numbered atoms
+            new_atom(new CopyName("K_not_" + atom_name));       // odd-numbered atoms
 #ifdef DEBUG
             cout << "type=regular, index=" << k << ", k-indices=" << 2*k << "," << 2*k+1 << endl;
+#endif
+        }
+    }
+
+    // create state atoms for KP/s translation
+    if( options_.is_enabled("lw1:enable-kp/s") ) {
+        for( size_t k = 0; k < regular_atoms.size(); ++k ) {
+            string atom_name = ins.atoms_[regular_atoms[k]]->name_->to_string();
+            const Atom &atom = new_atom(new CopyName("KPS_" + atom_name));
+            kps_atoms_.insert(make_pair(regular_atoms[k], atom.index_));
+#ifdef DEBUG
+            cout << Utils::yellow() << "ATOM-NAME=" << atom_name << ": " << Utils::normal()
+                 << "type=KP/s, index=" << regular_atoms[k] << ", kps-index=" << atom.index_
+                 << endl;
 #endif
         }
     }
@@ -135,6 +151,11 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                 new_atom(new CopyName("K_" + atom_name + "_UNUSED"));      // even-numbered atoms
                 Atom &atom = new_atom(new CopyName("K_not_" + atom_name)); // odd-numbered atoms
                 atoms_for_variable_groups_[k].push_back(atom.index_);
+#ifdef DEBUG
+                cout << Utils::yellow() << "ATOM-NAME=" << atom_name << ": " << Utils::normal()
+                     << "type=variable-group, k-indices=" << atom.index_ - 1 << "," << atom.index_
+                     << endl;
+#endif
             }
         }
     }
@@ -815,6 +836,10 @@ void LW1_Instance::create_regular_action(const Action &action,
             (last_action_atoms_.find(idx) == last_action_atoms_.end()) &&
             (sensing_enabler_atoms_.find(idx) == sensing_enabler_atoms_.end()) ) {
             nact.precondition_.insert(*it > 0 ? 1 + 2*idx : 1 + 2*idx + 1);
+#if 0 // this should redundant because if KL is true, then L must be true and the same for -L
+            if( options_.is_enabled("lw1:enable-kp/s") )
+                nact.precondition_.insert(*it > 0 ? 1 + kps_atoms_.at(idx) : -(1 + kps_atoms_.at(idx)));
+#endif
         } else {
             nact.precondition_.insert(*it > 0 ? 1 + 2*idx : -(1 + 2*idx));
         }
@@ -829,9 +854,13 @@ void LW1_Instance::create_regular_action(const Action &action,
             if( *it > 0 ) {
                 nact.effect_.insert(1 + 2*idx);
                 nact.effect_.insert(-(1 + 2*idx+1));
+                if( options_.is_enabled("lw1:enable-kp/s") )
+                    nact.effect_.insert(1 + kps_atoms_.at(idx));
             } else {
                 nact.effect_.insert(1 + 2*idx+1);
                 nact.effect_.insert(-(1 + 2*idx));
+                if( options_.is_enabled("lw1:enable-kp/s") )
+                    nact.effect_.insert(-(1 + kps_atoms_.at(idx)));
             }
         } else {
             nact.effect_.insert(*it > 0 ? 1 + 2*idx : -(1 + 2*idx));
@@ -844,7 +873,7 @@ void LW1_Instance::create_regular_action(const Action &action,
     // support and cancellation rules for conditional effects
     for( size_t i = 0; i < action.when_.size(); ++i ) {
         const When &when = action.when_[i];
-        When sup_eff, can_eff;
+        When sup_eff, can_eff, kps_eff;
         for( index_set::const_iterator it = when.condition_.begin(); it != when.condition_.end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
             assert(normal_execution_atom_ != idx);
@@ -853,9 +882,13 @@ void LW1_Instance::create_regular_action(const Action &action,
             if( *it > 0 ) {
                 sup_eff.condition_.insert(1 + 2*idx);
                 can_eff.condition_.insert(-(1 + 2*idx+1));
+                if( options_.is_enabled("lw1:enable-kp/s") )
+                    kps_eff.condition_.insert(1 + kps_atoms_.at(idx));
             } else {
                 sup_eff.condition_.insert(1 + 2*idx+1);
                 can_eff.condition_.insert(-(1 + 2*idx));
+                if( options_.is_enabled("lw1:enable-kp/s") )
+                    kps_eff.condition_.insert(-(1 + kps_atoms_.at(idx)));
             }
         }
         for( index_set::const_iterator it = when.effect_.begin(); it != when.effect_.end(); ++it ) {
@@ -867,10 +900,14 @@ void LW1_Instance::create_regular_action(const Action &action,
                 sup_eff.effect_.insert(1 + 2*idx);
                 if( observable_atoms.find(idx) == observable_atoms.end() )
                     can_eff.effect_.insert(-(1 + 2*idx+1));
+                if( options_.is_enabled("lw1:enable-kp/s") )
+                    kps_eff.effect_.insert(1 + kps_atoms_.at(idx));
             } else {
                 sup_eff.effect_.insert(1 + 2*idx+1);
                 if( observable_atoms.find(idx) == observable_atoms.end() )
                     can_eff.effect_.insert(-(1 + 2*idx));
+                if( options_.is_enabled("lw1:enable-kp/s") )
+                    kps_eff.effect_.insert(-(1 + kps_atoms_.at(idx)));
             }
             if( !options_.is_enabled("lw1:strict") || options_.is_enabled("lw1:boost:literals-for-observables:dynamic") ) {
                 lw1_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, sup_eff.effect_);
@@ -879,6 +916,7 @@ void LW1_Instance::create_regular_action(const Action &action,
         }
         nact.when_.push_back(sup_eff);
         if( !can_eff.effect_.empty() ) nact.when_.push_back(can_eff);
+        if( options_.is_enabled("lw1:enable-kp/s") ) nact.when_.push_back(kps_eff);
     }
 
     if( options_.is_enabled("kp:print:action:regular") )
