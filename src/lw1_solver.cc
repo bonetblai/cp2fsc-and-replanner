@@ -469,6 +469,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
         cout << Utils::cyan() << "Using inference: 'ac3' (AC3)" << Utils::normal() << endl;
 #endif
         Inference::CSP::Csp csp;
+        csp.reset_current_domains();
 
         // find sensing models for given action that are incompatible with observations
         relevant_sensing_models_t relevant_sensing_models_as_k_dnf;

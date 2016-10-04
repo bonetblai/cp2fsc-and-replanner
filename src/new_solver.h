@@ -117,11 +117,6 @@ int NewSolver<T>::solve(const T &initial_hidden_state,
         plan.clear();
         assumptions.clear();
 
-        if( options_.is_enabled("lw1:inference:ac3")) {
-            Inference::CSP::Csp csp;
-            csp.clean_domains();
-        }
-
         // if there is only one applicable operator, there is no need
         // to do action selection
         if( options_.is_enabled("solver:forced-moves") ) {
