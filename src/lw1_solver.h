@@ -1,7 +1,7 @@
-#include "inference.h"
-
 #ifndef LW1_SOLVER_H
 #define LW1_SOLVER_H
+
+#include "inference.h"
 
 // We are currently using the Solver class as base class. In the near
 // future we'll change to the templatized NewSolver class to allow
@@ -74,7 +74,7 @@ class LW1_Solver : public BASE_CLASS {
     // apply_inference.
     // TODO: Make this safe. 
     mutable Inference::Propositional::CNF cnf_;
-    set<Inference::Propositional::Clause> base_theory_axioms_;
+    std::set<Inference::Propositional::Clause> base_theory_axioms_;
     size_t frontier_;
 
     virtual void compute_and_add_observations(const Instance::Action *last_action,

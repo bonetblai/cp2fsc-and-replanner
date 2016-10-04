@@ -226,7 +226,7 @@ void Inference::Propositional::WatchedLiterals::lookahead(const CNF &cnf, vector
             // no other assignment is possible and assigned[i] = 1 !
             if( !propagate(cnf, copy, i) ) {
 #ifdef DEBUG
-                std::cout << "LOOKAHEAD POSITIVO" << std::endl;
+                cout << "LOOKAHEAD POSITIVO" << endl;
 #endif
                 assigned = tmp;
             }
