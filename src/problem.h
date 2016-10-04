@@ -191,7 +191,7 @@ class Instance {
     void set_hidden_state(int k, State &state) const;
     int num_hidden_states() const { return hidden_.size(); }
 
-    // NOTE: remove_atoms must be virtual because CP_Instance needs to 
+    // NOTE: remove_atoms must be virtual because CP_Instance needs to
     // remap atoms in the initial states, rechable space, etc.
     virtual void remove_atoms(const bool_vec &set, index_vec &map);
 

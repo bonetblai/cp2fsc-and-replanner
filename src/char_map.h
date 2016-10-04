@@ -79,11 +79,11 @@ class char_map {
         *s1 = 0;
         return r;
     }
-    char* strdup(const char *s0) const { 
+    char* strdup(const char *s0) const {
         char* r = new char[strlen(s0)+1];
         return strcpy(s0, r);
     }
-    char* strdup(const char *s0, size_t len) const { 
+    char* strdup(const char *s0, size_t len) const {
         char *r = new char[len+1];
         return strcpy(s0, len, r);
     }

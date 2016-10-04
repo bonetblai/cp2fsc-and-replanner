@@ -319,7 +319,7 @@ int main(int argc, const char *argv[]) {
     } else {
         action_selection = new WidthBasedPlanner<STATE_CLASS>(*lw1_instance); // CHECK: STATE_CLASS is defined in lw1_solver.h (this is provisional)
     }
- 
+
     // solve problem
     cout << "solving problem for " << instance.num_hidden_states() << " hidden state(s)" << endl;
     for( int k = 0; k < instance.num_hidden_states(); ++k ) {

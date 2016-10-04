@@ -34,7 +34,7 @@ class StringTable {
         Cell(const char *s, char_map &map, size_t b, Cell *n)
           : bin(b), text(map.strdup(s)), val(0), next(n) {
         }
-        Cell(const char *s, size_t len, char_map &map, size_t b, Cell *n) 
+        Cell(const char *s, size_t len, char_map &map, size_t b, Cell *n)
           : bin(b), text(map.strdup(s, len)), val(0), next(n) {
         }
         Cell(const char *s, char_map &map, void *v, size_t b, Cell *n)

@@ -287,7 +287,7 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
         }
     }
 
-    // iterate over invariants: at this stage there should be only 
+    // iterate over invariants: at this stage there should be only
     // AT_LEAST_ONE and AT_MOST_ONE invariants
     for( int k = 0; k < (int)init_.invariants_.size(); ++k ) {
         Invariant &invariant = init_.invariants_[k];
@@ -336,7 +336,7 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
             for( int i = 0; i < (int)invariant.size(); ++i )
                 completion_for_initial_state.insert(-invariant[i]);
         }
- 
+
         // complete initial state
         for( index_set::const_iterator it = completion_for_initial_state.begin(); it != completion_for_initial_state.end(); ++it ) {
             if( options_.is_enabled("problem:print:completion:initial-state") ) {

@@ -311,7 +311,7 @@ void Solver::compute_and_add_observations(const Instance::Action *last_action,
 void Solver::apply_inference(const Instance::Action *last_action,
                              const set<int> &sensed_at_step,
                              State &state) const {
-    // translation_type is either K_REPLANNER or CLG. 
+    // translation_type is either K_REPLANNER or CLG.
     assert(translation_type_ != LW1);
 
     // compute deductive closure with respect to invariants (for K-replanner and clg)

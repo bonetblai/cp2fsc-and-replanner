@@ -121,7 +121,7 @@ int FF_Planner::get_raw_plan(const State &state, Instance::Plan &raw_plan) const
     float start_time = Utils::read_time_in_seconds();
     ++n_calls_;
 
-    if( first_call_ ) {    
+    if( first_call_ ) {
         generate_pddl_domain();
         first_call_ = false;
     }
@@ -194,7 +194,7 @@ int M_Planner::get_raw_plan(const State &state, Instance::Plan &raw_plan) const 
     float start_time = Utils::read_time_in_seconds();
     ++n_calls_;
 
-    if( first_call_ ) {    
+    if( first_call_ ) {
         generate_pddl_domain();
         first_call_ = false;
     }
@@ -278,7 +278,7 @@ int LAMA_Planner::get_raw_plan(const State &state, Instance::Plan &raw_plan) con
     cout << "calling " << name() << " (n=" << 1+n_calls() << ", acc-time=" << get_time() << ")..." << endl;
     float start_time = Utils::read_time_in_seconds();
     ++n_calls_;
-  
+
     if( first_call_ ) {
         generate_pddl_domain();
         generate_pddl_problem(state);
@@ -483,7 +483,7 @@ int LAMA_Server_Planner::get_raw_plan(const State &state, Instance::Plan &raw_pl
     cout << "calling " << name() << " (n=" << 1+n_calls() << ", acc-time=" << get_time() << ")..." << endl;
     float start_time = Utils::read_time_in_seconds();
     ++n_calls_;
-  
+
     string cmd;
     if( planner_path_ != "" ) cmd += planner_path_ + "/src/search/";
     cmd += string("lama simple-conversion ") + domain_fn_ + " " + problem_fn_ + " >/dev/null";
@@ -529,7 +529,7 @@ cout << "call" << cmd << endl;
     // solve SAS+ problem. If first call, it is enough to 'cat'
     // the 'output' file into the server process' stdin. Otherwise,
     // it's enough to 'cat' the current stae into the server process'
-    // stdin. The output always from the server process' stderr 
+    // stdin. The output always from the server process' stderr
     // and it is stored in XXXX.
     if( first_call_ )
         cat_file_to_server("output");
@@ -697,7 +697,7 @@ int LAMA_Server_Planner::create_server_process(const char *base) const {
         close(stdin_pipe_[PIPE_READ]);
         close(stdin_pipe_[PIPE_WRITE]);
         close(stderr_pipe_[PIPE_READ]);
-        close(stderr_pipe_[PIPE_WRITE]); 
+        close(stderr_pipe_[PIPE_WRITE]);
 
         // run child process image
         string cmd;
@@ -719,7 +719,7 @@ int LAMA_Server_Planner::create_server_process(const char *base) const {
 
         // close unused file descriptors, these are for child only
         close(stdin_pipe_[PIPE_READ]);
-        close(stderr_pipe_[PIPE_WRITE]); 
+        close(stderr_pipe_[PIPE_WRITE]);
 
         // successful creation of child process
         return 0;

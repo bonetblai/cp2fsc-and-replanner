@@ -144,7 +144,7 @@ void Preprocessor::mark_unreachable_actions(const bool_vec &reachable_atoms, con
     }
 }
 
-// Computes reachable atoms, actions, sensors and axioms. Assumes that all entries 
+// Computes reachable atoms, actions, sensors and axioms. Assumes that all entries
 // in the input vectors are false.
 
 void Preprocessor::compute_reachability(bool_vec &reachable_atoms, bool_vec &reachable_actions, bool_vec &reachable_sensors, bool_vec &reachable_axioms) const {

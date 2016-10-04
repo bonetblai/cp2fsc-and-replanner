@@ -213,7 +213,7 @@ void KP_Instance::disable_subgoaling_actions(State &state, const index_vec &enab
 //      R(pi, k) = progress(s0, pi[0:k])
 //      A(pi, k) = regress(pi[k], R(pi, k-1), R(pi, k))
 //
-// where s0 is initial state, progress(s, pi) is the state that results of 
+// where s0 is initial state, progress(s, pi) is the state that results of
 // applying the (applicable) plan pi on state s, and regress(a, s, s') is the
 // minimum set of assumptions needed for the action a, which is applicable
 // at state s, to produce state s'.

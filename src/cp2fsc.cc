@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
     // visual marker. This flag instruct the preprocessor to remove unreachable and
     // static atoms. This odd behaviour could be a bug somewhere...
     cp_prep.preprocess(false);
-  
+
     if( g_options.is_enabled("cp:print:preprocessed") ) {
         cp_instance.write_domain(cout);
         cp_instance.write_problem(cout);

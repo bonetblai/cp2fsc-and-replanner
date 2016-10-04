@@ -179,7 +179,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                      << var.print_name_ << ":" << atom_name
                      << "'. Continuing..." << endl;
                 continue;
-            } 
+            }
 
             // insert value into variable's domain
             domain.insert(atom_index);
@@ -229,7 +229,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                      << var.print_name_ << ":" << atom_name
                      << "'. Continuing..." << endl;
                 continue;
-            } 
+            }
 
             filtering_groups_.insert(make_pair(make_pair(var_index, atom.negated_ ? -(1 + atom_index) : 1 + atom_index), k));
 #ifdef DEBUG
@@ -582,7 +582,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                  << Utils::normal()
                  << " status=off, literal=";
             State::print_literal(cout, 1 + 2*k + 1, this);
-            cout << endl; 
+            cout << endl;
 #endif
             //init_.literals_.insert(1 + 2*k+1);
             if( options_.is_enabled("kp:print:atom:init") ) {

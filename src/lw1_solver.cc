@@ -10,7 +10,7 @@
 
 using namespace std;
 
-// Fills the CNF in the solver. 
+// Fills the CNF in the solver.
 void LW1_Solver::initialize(const KP_Instance &kp) {
     assert(dynamic_cast<const LW1_Instance*>(&kp) != 0);
     const LW1_Instance &lw1 = *static_cast<const LW1_Instance*>(&kp_instance_);
@@ -307,7 +307,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
 #ifdef DEBUG
 //                            CHECK: In UP problems, K_atoms can be encountered which are not in atoms_to_var_map_
 //                            as some variables (for example, wumpus) can have reduced domains.
-//                            This print is commented out as a precaution. 
+//                            This print is commented out as a precaution.
 //
 //                            for( auto cl = clause.cbegin(); cl != clause.cend(); ++cl ) { // CHECK: remove auto
 //                                int cl_index = abs(*cl);
@@ -459,7 +459,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
             }
         }
 
-        // Cleaning CNF 
+        // Cleaning CNF
         if( options_.is_enabled("lw1:inference:up:preload") )
             clean_cnf();
 #    endif // ifdef UP
@@ -492,7 +492,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
 
         // 1. Add observation. Pruned variable domains using k-dnf for observation. For each observation,
         // (a) if observation refers to state variable (i.e. state variable is observable), prune domain
-        // of CSP variable corresponding to state variable, (b) if observation can be filtered in 
+        // of CSP variable corresponding to state variable, (b) if observation can be filtered in
         // variable group, prune from domain of CSP variable corresponding to variable group all
         // valuations that do not satisfy k-dnf, and else (c) observation is of type V=v, use the k-dnf
         // to construct constraints among the state variables mentioned in DNF
@@ -540,7 +540,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                         }
 #endif
                     }
-  
+
                 } else {
                     // there is no variable group where to filter observation. Use k-dnf to generate constraints in CSP
                     const sensing_models_as_cnf_or_dnf_t &sensing_models_as_k_dnf = jt->second;

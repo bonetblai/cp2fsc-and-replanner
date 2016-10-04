@@ -217,7 +217,7 @@ class State {
             str += std::string("(") + ins->atoms_[literal < 0 ? -literal - 1 : literal - 1]->name_->to_string() + ")";
             if( literal < 0 ) str += ")";
             return str;
-        } 
+        }
     }
 
     static void print_literal(std::ostream &os, int literal, const Instance *ins = 0) {

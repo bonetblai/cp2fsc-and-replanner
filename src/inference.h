@@ -95,7 +95,7 @@ namespace Inference {
             } compare;
         };
 
-        // Watched Literals Algorithm. 
+        // Watched Literals Algorithm.
         // Class for solving a CNF with Unit Propagation algorithm
         // Example:
         //  vector<int> assignment;
@@ -103,14 +103,14 @@ namespace Inference {
         //  wl.solve(cnf, assignment);
         class WatchedLiterals : public UnitPropagation {
           private:
-            // Map a proposition to a vector the clauses this 
+            // Map a proposition to a vector the clauses this
             // proposition occurs in axioms
             static std::vector<std::vector<int> > inverted_index_axioms_;
             static int frontier_;
             static int imax_;
             // Watched literals (indexes) for every clause
             static std::vector<std::pair<int, int> > watched;
-            // Map a proposition to a vector the clauses this 
+            // Map a proposition to a vector the clauses this
             // proposition occurs
             std::vector<std::vector<int> > inverted_index;
 
@@ -127,12 +127,12 @@ namespace Inference {
             void setInvertedIndex(const CNF &cnf, std::vector<std::vector<int> > &mapper);
             // Returns true if a value given is being watched in given clause
             inline bool isWatched(const CNF &cnf, int clause, int value);
-            // Returns true if a prop can propagated with 
+            // Returns true if a prop can propagated with
             // new value set in assigned vector.
-            // It is client responsability give a proposition (prop > 0) 
+            // It is client responsability give a proposition (prop > 0)
             virtual bool propagate(const CNF &cnf, std::vector<int> &assigned, int p);
-            // Construct the vector of clauses indexes associated to the negative of 
-            // a proposition prop. Since it is watched literals algorithm, 
+            // Construct the vector of clauses indexes associated to the negative of
+            // a proposition prop. Since it is watched literals algorithm,
             // those clauses must watch the value associated with prop.
             // This vector is constructed in cp
             void add_negative_propositions(const CNF &cnf,
@@ -144,12 +144,12 @@ namespace Inference {
           public:
             // Constructor
             WatchedLiterals() { }
-            
+
             void initialize_axioms(const CNF &cnf);
             // Set propositions assignment into assigned vector.
             // Every proposition id is mapped to assgined indexes.
             void solve(const CNF &cnf, std::vector<int> &assigned);
-            // Set new assigned values into assigned vector 
+            // Set new assigned values into assigned vector
             // after apply lookahead algorithm
             void lookahead(const CNF &cnf, std::vector<int> &assigned);
         };

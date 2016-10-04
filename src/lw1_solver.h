@@ -70,9 +70,9 @@ class LW1_Solver : public BASE_CLASS {
     typedef std::map<int, std::map<int, sensing_models_as_cnf_or_dnf_t> > relevant_sensing_models_t;
 
     // A CNF is kept internally by the solver.
-    // It is filled in initialize and it is completed in every iteration of 
+    // It is filled in initialize and it is completed in every iteration of
     // apply_inference.
-    // TODO: Make this safe. 
+    // TODO: Make this safe.
     mutable Inference::Propositional::CNF cnf_;
     std::set<Inference::Propositional::Clause> base_theory_axioms_;
     size_t frontier_;

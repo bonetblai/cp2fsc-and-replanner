@@ -690,7 +690,7 @@ class PDDL_Base {
         void instantiate(variable_list &vlist) const;
         const unsigned_atom_set& beam_for_value(const Atom &value) const {
             return beam_.at(value);
-        } 
+        }
         bool is_binary() const { return grounded_domain_.size() == 1; }
 
         virtual void process_instance() const;

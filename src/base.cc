@@ -64,7 +64,7 @@ PDDL_Base::~PDDL_Base() {
     delete dom_goal_;
 
     // TODO: for being able to remove actions/sensors and other symbols, symbols
-    // cannot be shared between the parser and *-instances. Probably will need to 
+    // cannot be shared between the parser and *-instances. Probably will need to
     // a symbol tape to store the symbols for each instance.
     for( size_t k = 0; k < dom_init_.size(); ++k )
         delete dom_init_[k];
@@ -684,7 +684,7 @@ void PDDL_Base::lw1_calculate_beam_for_grounded_variable(Variable &var) {
         // fill up beams for values of variable
         for( int k = 0; k < int(dom_actions_.size()); ++k ) {
             const Action &action = *dom_actions_[k];
-            if( action.sensing_ != 0 ) 
+            if( action.sensing_ != 0 )
                 action.sensing_->extend_beam_for_variable(var);
         }
 
@@ -1480,7 +1480,7 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
     //
     // * type 4 deductive rules for (action a, variable Y, value y):
     //
-    //   if not lw1:boost:drule:type4 || lw1:boost:drule:type4:add || 
+    //   if not lw1:boost:drule:type4 || lw1:boost:drule:type4:add ||
     //      DNF for W_a(Y=y) has more than one term:
     //
     //       precondition = <enabler>
@@ -1510,7 +1510,7 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
     //       effect = negated-ti
     //
     //  * type 5 deductive rules for (action a, variable Y, value y):
-    //   
+    //
 
 
     // type 4 deductive rules: enabler & L^i_1 & L^i_2 & ... & L^i_{n_i} => S
@@ -2252,7 +2252,7 @@ void PDDL_Base::lw1_calculate_post_condition(const Condition *precondition, cons
     } else if( dynamic_cast<const Literal*>(precondition) != 0 ) {
         condition.insert(*static_cast<const Literal*>(precondition));
     }
-    
+
     // calculate post condition (this works because sets are unsigned)
     if( dynamic_cast<const AndEffect*>(effect) != 0 ) {
         const AndEffect &and_effect = *static_cast<const AndEffect*>(effect);
@@ -2336,7 +2336,7 @@ bool PDDL_Base::lw1_is_literal_implied(const Atom &literal, const vector<const A
         }
     }
 
-    // another possibility is that the condition contains a positive literal that is mutex with the (complemented) literal   
+    // another possibility is that the condition contains a positive literal that is mutex with the (complemented) literal
     if( (literal.negated_ && !complement_literal) || (!literal.negated_ && complement_literal) ) {
         for( size_t k = 0; k < lw1_variables_.size(); ++k ) {
             const Variable &var = *lw1_variables_[k];
@@ -2540,7 +2540,7 @@ void PDDL_Base::lw1_compile_static_observable(const Atom &atom) { // CHECK: comp
     //NEW_SENSING_SYNTAX: need fix // CHECK
 #if 0
     // calculate prime implicant for conditions on observable atom
-    cout << Utils::red() << "calculating prime implicant for conditions on observable atom: " << atom << Utils::normal() << endl; 
+    cout << Utils::red() << "calculating prime implicant for conditions on observable atom: " << atom << Utils::normal() << endl;
     set<signed_atom_set> candidate_post_conditions;
     unsigned_atom_set atoms_to_remove;
     atoms_to_remove.insert(atom);
@@ -2895,7 +2895,7 @@ PDDL_Base::Symbol* PDDL_Base::TypeSymbol::clone() const {
     copy_symbol_vec<Symbol*>(elements_, cl->elements_);
     return cl;
 }
- 
+
 PDDL_Base::Symbol* PDDL_Base::VariableSymbol::clone() const {
     VariableSymbol *cl = new VariableSymbol(strdup(print_name_));
     cl->sym_type_ = sym_type_;
@@ -2913,7 +2913,7 @@ string PDDL_Base::VariableSymbol::to_string() const {
     }
     return str;
 }
- 
+
 PDDL_Base::Symbol* PDDL_Base::PredicateSymbol::clone() const {
     PredicateSymbol *cl = new PredicateSymbol(strdup(print_name_));
     cl->sym_type_ = sym_type_;
@@ -3261,7 +3261,7 @@ string PDDL_Base::EQ::to_string() const {
     if( negated_ ) str += ")";
     return str;
 }
- 
+
 void PDDL_Base::And::remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param) {
     for( size_t k = 0; k < size(); ++k )
         const_cast<Condition*>((*this)[k])->remap_parameters(old_param, new_param);
@@ -3370,7 +3370,7 @@ PDDL_Base::Condition* PDDL_Base::And::as_dnf() const {
                     new_dnf = distribute_and(*static_cast<Or*>(dnf), *static_cast<And*>(sub));
                 else if( dynamic_cast<Or*>(sub) != 0 )
                     new_dnf = distribute_and(*static_cast<Or*>(dnf), *static_cast<Or*>(sub));
-            } 
+            }
             delete dnf;
             delete sub;
             dnf = new_dnf;
@@ -3492,7 +3492,7 @@ PDDL_Base::Condition* PDDL_Base::Or::as_dnf() const {
                     new_dnf = distribute_or(*static_cast<Or*>(dnf), *static_cast<And*>(sub));
                 else if( dynamic_cast<Or*>(sub) != 0 )
                     new_dnf = distribute_or(*static_cast<Or*>(dnf), *static_cast<Or*>(sub));
-            } 
+            }
             delete dnf;
             delete sub;
             dnf = new_dnf;
@@ -4234,7 +4234,7 @@ PDDL_Base::Effect* PDDL_Base::SensingModelForObservableVariable::as_effect() con
     AndEffect *effect = new AndEffect;
     for( size_t k = 0; k < conditions.size(); ++k ) {
         const Condition *condition = conditions[k];
-        AtomicEffect *head = new AtomicEffect(*literal_); 
+        AtomicEffect *head = new AtomicEffect(*literal_);
         effect->push_back(new ConditionalEffect(condition, head));
     }
     return effect;
@@ -4422,7 +4422,7 @@ bool PDDL_Base::Sensing::finish_grounding(PDDL_Base *base) {
         }
     }
 
-    // set result and return    
+    // set result and return
     *static_cast<vector<const SensingModel*>*>(this) = result;
     return verify;
 }

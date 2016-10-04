@@ -133,8 +133,8 @@ inline bool Inference::Propositional::WatchedLiterals::isWatched(const CNF &cnf,
     return (value == cnf[clause][watched[clause].first]) || (value == cnf[clause][watched[clause].second]);
 }
 
-// Construct the vector of clauses indexes associated to the negative of 
-// a proposition prop. Since it is watched literals algorithm, 
+// Construct the vector of clauses indexes associated to the negative of
+// a proposition prop. Since it is watched literals algorithm,
 // those clauses must watch the value associated with prop.
 // This vector is constructed in cp
 void Inference::Propositional::WatchedLiterals::add_negative_propositions(const CNF &cnf,
@@ -149,9 +149,9 @@ void Inference::Propositional::WatchedLiterals::add_negative_propositions(const 
     }
 }
 
-// Returns true if a prop can propagated with 
+// Returns true if a prop can propagated with
 // new value set in assigned vector.
-// It is client responsability give a proposition (prop > 0) 
+// It is client responsability give a proposition (prop > 0)
 bool Inference::Propositional::WatchedLiterals::propagate(const CNF &cnf, vector<int> &assigned, int prop) {
     assert(prop > 0);
     bool no_conflict = true;
@@ -207,7 +207,7 @@ bool Inference::Propositional::WatchedLiterals::propagate(const CNF &cnf, vector
     return no_conflict;
 }
 
-// Set new assigned values into assigned vector 
+// Set new assigned values into assigned vector
 // after apply lookahead algorithm
 void Inference::Propositional::WatchedLiterals::lookahead(const CNF &cnf, vector<int> &assigned) {
     vector<int> copy;
