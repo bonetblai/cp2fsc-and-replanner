@@ -1170,7 +1170,8 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                     sensing_enablers.push_back(index);
                 } else {
                     // we should not reach this point
-                    assert(0);
+                    cout << Utils::internal_error() << "control reached unexpected area" << endl;
+                    exit(-1);
                 }
             }
 

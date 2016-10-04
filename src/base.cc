@@ -669,8 +669,11 @@ void PDDL_Base::lw1_calculate_beams_for_grounded_observable_variables() {
                     if( !is_static_atom(*jt) ) reduced_beam.insert(*jt);
                 }
                 var.beam_[*it] = reduced_beam;
-                if( reduced_beam.empty() && options_.is_enabled("lw1:boost:compile-static-observables") )
+                if( reduced_beam.empty() && options_.is_enabled("lw1:boost:compile-static-observables") ) {
+                    cout << Utils::error() << "lw1:boost:compile-static-observables is deprecated" << endl;
+                    exit(-1);
                     lw1_compile_static_observable(*it);
+                }
             }
         }
     }
@@ -1085,7 +1088,8 @@ void PDDL_Base::lw1_translate_actions_strict() {
 void PDDL_Base::lw1_translate_strict(Action &action) { // CHECK: replace this by NEW below
     assert(options_.is_enabled("lw1:strict"));
     assert(action.param_.empty()); // action must be instantiated
-    assert(0); // CHECK
+    cout << Utils::error() << "lw1_translate_strict() is deprecated by new function" << endl;
+    exit(-1);
 
     // (normal-execution) must be inserted in precondition and it must
     // be deleted in effects. The effects should also assert the corresponding
@@ -1107,7 +1111,8 @@ void PDDL_Base::lw1_translate_strict(Action &action) { // CHECK: replace this by
 
     const Atom *last_action_atom = 0;
     if( options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
-        assert(0); // lw1:boost:single-sensing-literal-enablers
+        cout << Utils::error() << "lw1:boost:single-sensing-literal-enablers is deprecated" << endl;
+        exit(-1);
     } else {
         last_action_atom = &lw1_fetch_last_action_atom(action);
         const_cast<AndEffect*>(static_cast<const AndEffect*>(action.effect_))->push_back(AtomicEffect(*last_action_atom).copy());
@@ -1120,7 +1125,6 @@ void PDDL_Base::lw1_translate_strict(Action &action) { // CHECK: replace this by
     // create post-action that remove enablers for sensing and resumes normal-execution
     Action *post_action = new Action(strdup((string(action.print_name_) + "__post-action__").c_str()));
     And *precondition = new And;
-    assert(0); // FIXING THIS
     precondition->push_back(Literal(*normal_execution_).negate());
     precondition->push_back(Literal(*last_action_atom).copy());
     post_action->precondition_ = precondition;
@@ -1429,7 +1433,8 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
 
     // create single enablers
     if( options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
-        assert(0); // lw1:boost:single-sensing-literal-enablers
+        cout << Utils::error() << "lw1:boost:single-sensing-literal-enablers is deprecated" << endl;
+        exit(-1);
         lw1_calculate_enablers_for_sensing();
     }
 
@@ -1576,7 +1581,8 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
                     }
                 } else {
                     assert(options_.is_enabled("lw1:boost:single-sensing-literal-enablers"));
-                    assert(0); // lw1:boost:single-sensing-literal-enablers
+                    cout << Utils::error() << "lw1:boost:single-sensing-literal-enablers is deprecated" << endl;
+                    exit(-1);
 #if 0
                     // generate type4 drules for each value
                     for( unsigned_atom_set::const_iterator it = domain.begin(); it != domain.end(); ++it )
@@ -1630,7 +1636,8 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
             }
         } else {
             assert(options_.is_enabled("lw1:boost:single-sensing-literal-enablers"));
-            assert(0); // lw1:boost:single-sensing-literal-enablers
+            cout << Utils::error() << "lw1:boost:single-sensing-literal-enablers is deprecated" << endl;
+            exit(-1);
 #if 0
             for( map<pair<const ObsVariable*, Atom>, map<string, set<const Action*> > >::const_iterator it = lw1_xxx_.begin(); it != lw1_xxx_.end(); ++it ) {
                 const ObsVariable &variable = *it->first.first;
@@ -2218,7 +2225,8 @@ void PDDL_Base::lw1_patch_actions_with_enablers_for_sensing() {
                 }
             }
         } else {
-            assert(0); // lw1:boost:single-sensing-literal-enablers
+            cout << Utils::error() << "lw1:boost:single-sensing-literal-enablers is deprecated" << endl;
+            exit(-1);
             map<string, set<string> >::const_iterator it = lw1_enablers_for_actions_.find(action.print_name_);
             if( it != lw1_enablers_for_actions_.end() ) {
                 const set<string> &enablers_for_action = it->second;
@@ -2235,7 +2243,6 @@ void PDDL_Base::lw1_patch_actions_with_enablers_for_sensing() {
                 }
             }
         }
-        //assert(0);
     }
 }
 
@@ -2473,7 +2480,8 @@ void PDDL_Base::lw1_remove_subsumed_conditions(set<signed_atom_set> &conditions)
 
 void PDDL_Base::lw1_compile_static_observable(const Atom &atom) { // CHECK: compile_static_observables is deprecated in this version
     cout << Utils::blue() << "(lw1) compiling static observable '" << atom << "'" << Utils::normal() << endl;
-    assert(0);
+    cout << Utils::error() << "lw1:boost:compile-static-observables is deprecated" << endl;
+    exit(-1);
 
     // iterate over all sensing models extracting those relevant to atom
     Atom negated_atom(atom, true);
@@ -2852,7 +2860,8 @@ void PDDL_Base::emit_instance(Instance &ins) const {
     if( lw1_translation_ && options_.is_enabled("lw1:strict") ) {
         lw1_emit_and_protect_atoms_for_observable_variables(ins);
         if( options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
-            assert(0); // lw1:boost:single-sensing-literal-enablers
+            cout << Utils::error() << "lw1:boost:single-sensing-literal-enablers is deprecated" << endl;
+            exit(-1);
             lw1_protect_enablers_for_sensing(ins); // CHECK: can this be removed?
         }
     }

@@ -207,8 +207,7 @@ bool Inference::Propositional::WatchedLiterals::propagate(const CNF &cnf, vector
     return no_conflict;
 }
 
-// Set new assigned values into assigned vector
-// after apply lookahead algorithm
+// Set new assigned values into assigned vector after apply lookahead algorithm
 void Inference::Propositional::WatchedLiterals::lookahead(const CNF &cnf, vector<int> &assigned) {
     vector<int> copy;
     for( size_t i = 1; i < assigned.size(); ++i ) {
@@ -218,7 +217,10 @@ void Inference::Propositional::WatchedLiterals::lookahead(const CNF &cnf, vector
         if( !propagate(cnf, copy, i) ) { // propagating with copy
             // no other assignment is possible
             assigned[i] = 0;
-            if( !propagate(cnf, assigned, i) ) assert(0);
+            if( !propagate(cnf, assigned, i) ) {
+                cout << Utils::internal_error() << "fatal error in lw1:inference:up:lookahead" << endl;
+                exit(-1);
+            }
         } else {
             vector<int> tmp = copy;
             copy = assigned;  // getting back original assigned

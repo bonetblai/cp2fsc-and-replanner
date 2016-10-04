@@ -82,7 +82,7 @@ int main(int argc, const char *argv[]) {
     g_options.enable("problem:action-compilation");
     g_options.enable("solver:forced-moves");
     g_options.enable("kp:merge-drules");
-    g_options.enable("lw1:boost:compile-static-observables");
+    //g_options.enable("lw1:boost:compile-static-observables"); // DEPRECATED
 
     // default options for lw1:strict
     g_options.enable("lw1:strict");
