@@ -928,7 +928,7 @@ void LW1_Instance::create_drule_for_var(const Action &action) {
     assert(action_name.compare(0, 10, "drule-var-") == 0);
 
     Action &nact = new_action(new CopyName(action_name));
-    if( action_name.compare(0, 16, "drule-var-type1-") == 0 ) {
+    if( action_name.compare(0, 21, "drule-var-exhaustive-") == 0 ) {
         assert(action.effect_.size() == 1);
         int eff = *action.effect_.begin();
         assert(eff > 0);
@@ -940,7 +940,7 @@ void LW1_Instance::create_drule_for_var(const Action &action) {
         }
         nact.precondition_.insert(-(1 + 2*(eff - 1) + 1));
     } else {
-        assert(action_name.compare(0, 16, "drule-var-type2-") == 0);
+        assert(action_name.compare(0, 20, "drule-var-exclusive-") == 0);
         assert(action.precondition_.size() == 1);
         int pre = *action.precondition_.begin();
         assert(pre > 0);

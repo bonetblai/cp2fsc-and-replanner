@@ -1476,14 +1476,14 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
 
     // for observable state variables:
     //
-    // * type 4 deductive rules for (action a, variable Y, value y):
+    // * [REQUIRED] type4 deductive rules for (action a, variable Y, value y):
     //
     //       precondition = <enabler>
     //       effect = not <enabler> & Y=y
     //
     // for observable non-state variables:
     //
-    // * type 4 deductive rules for (action a, variable Y, value y):
+    // * [REQUIRED] type4 deductive rules for (action a, variable Y, value y):
     //
     //   if not lw1:boost:drule:type4 || lw1:boost:drule:type4:add ||
     //      DNF for W_a(Y=y) has more than one term:
@@ -1501,7 +1501,7 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
     //
     //   where <enabler> is either Last-Action=a or sensing enabler atom.
     //
-    // * type 3 deductive rules for (action a, variable Y, value y) with
+    // * [BOOST] type3 deductive rules for (action a, variable Y, value y) with
     //   model W_a(Y=y) = t1 v t2 v ... v tn:
     //
     //     for i = 1 to n:
@@ -1514,7 +1514,7 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
     //       precondition = <enabler>, -Lij
     //       effect = negated-ti
     //
-    //  * type 5 deductive rules for (action a, variable Y, value y):
+    //  * [BOOST,NOT CURRENT ACTIVE] type5 deductive rules for (action a, variable Y, value y):
     //
 
 
@@ -1537,8 +1537,6 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
 
     // there are O(n) type-1 drules for each model, O(nm) type-2 rules where m
     // m is the max size of a term, and O(m^n) type-3 drules.
-
-
 
     // create deductive rules for sensing
     if( options_.is_enabled("lw1:strict") ) {
@@ -1715,6 +1713,7 @@ void PDDL_Base::lw1_create_type1_sensing_drule(const Atom &obs, const And &term,
         cout << Utils::yellow() << *drule << Utils::normal();
 }
 
+// type2 sensing drules are only used in lw1:aaai option
 void PDDL_Base::lw1_create_type2_sensing_drule(const Atom &obs, const And &term, int index) {
     assert(options_.is_enabled("lw1:aaai"));
 
@@ -1837,6 +1836,7 @@ const PDDL_Base::Atom& PDDL_Base::lw1_fetch_atom_for_negated_term(const And &ter
     }
 }
 
+// this is a default drule for observable state variables
 void PDDL_Base::lw1_create_type4_sensing_drule(const Action *action, const StateVariable &variable, const Atom &value) {
     assert(options_.is_enabled("lw1:strict"));
 

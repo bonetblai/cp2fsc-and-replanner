@@ -5,3 +5,5 @@ CSP code needs to be revised:
 Check whether lw1:boost:compile-static-observables is really deprecated and
 whether something can be done about it
 
+type5 sensing drules are not currently generated. Check this.
+
