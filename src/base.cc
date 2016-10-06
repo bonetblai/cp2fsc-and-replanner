@@ -1318,16 +1318,16 @@ void PDDL_Base::lw1_create_deductive_rules_for_variables() {
         const Variable &var = *lw1_variables_[k];
         if( var.is_binary() ) continue;
         for( unsigned_atom_set::const_iterator it = var.grounded_domain_.begin(); it != var.grounded_domain_.end(); ++it ) {
-            lw1_create_type1_var_drule(var, *it);
-            lw1_create_type2_var_drule(var, *it);
+            lw1_create_drule_var_exhaustive(var, *it);
+            lw1_create_drule_var_exclusive(var, *it);
         }
     }
 }
 
 // exhaustivity of values for variable; i.e. AND_{x' != x} -x' => x for all values x of variable
-void PDDL_Base::lw1_create_type1_var_drule(const Variable &variable, const Atom &value) {
+void PDDL_Base::lw1_create_drule_var_exhaustive(const Variable &variable, const Atom &value) {
     assert(!value.negated_);
-    string name = string("drule-var-type1-") + variable.to_string(true, true) + "-" + value.to_string(false, true);
+    string name = string("drule-var-exhaustive-") + variable.to_string(true, true) + "-" + value.to_string(false, true);
     Action *drule = new Action(strdup(name.c_str()));
 
     And *precondition = new And;
@@ -1347,9 +1347,9 @@ void PDDL_Base::lw1_create_type1_var_drule(const Variable &variable, const Atom 
 }
 
 // mutual exclusivity of values for variable; i.e. x => -x' for all values x and x' of variable
-void PDDL_Base::lw1_create_type2_var_drule(const Variable &variable, const Atom &value) {
+void PDDL_Base::lw1_create_drule_var_exclusive(const Variable &variable, const Atom &value) {
     assert(!value.negated_);
-    string name = string("drule-var-type2-") + variable.to_string(true, true) + "-" + value.to_string(false, true);
+    string name = string("drule-var-exclusive-") + variable.to_string(true, true) + "-" + value.to_string(false, true);
     Action *drule = new Action(strdup(name.c_str()));
 
     AndEffect *effect = new AndEffect;

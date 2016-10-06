@@ -905,8 +905,8 @@ class PDDL_Base {
 
     // methods to create deductive rules for lw1
     void lw1_create_deductive_rules_for_variables();
-    void lw1_create_type1_var_drule(const Variable &variable, const Atom &value);
-    void lw1_create_type2_var_drule(const Variable &variable, const Atom &value);
+    void lw1_create_drule_var_exhaustive(const Variable &variable, const Atom &value);
+    void lw1_create_drule_var_exclusive(const Variable &variable, const Atom &value);
 
     // methods to create deductive rules for sensing
     void lw1_index_sensing_models();
