@@ -22,6 +22,13 @@
 #include <cassert>
 #include <iostream>
 #include "action_selection.h"
+#include "utils.h"
+
+// testing
+#include "and_or.h"
+#include "features.h"
+
+namespace Width {
 
 template<typename T>
 class WidthBasedPlanner : public ActionSelection<T> {
@@ -45,10 +52,15 @@ class WidthBasedPlanner : public ActionSelection<T> {
     }
 
     virtual int get_plan(const T &state, Instance::Plan &raw_plan, Instance::Plan &plan) const {
+        AndOr::OrNode<T> *root = AndOr::make_root_node(&state);
+        std::cout << Utils::magenta() << "THIS IS A TEST: " << Utils::normal() << *root << std::endl;
+        AndOr::Node<T>::deallocate(root);
         std::cout << Utils::error() << "width-based planner not yet implemented!" << std::endl;
         exit(-1);
     }
 };
+
+}
 
 #endif
 

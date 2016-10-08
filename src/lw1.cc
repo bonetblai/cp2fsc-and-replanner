@@ -335,7 +335,7 @@ int main(int argc, const char *argv[]) {
         assert(planner != 0);
         action_selection = new ClassicalPlannerWrapper<STATE_CLASS>(*planner); // CHECK: STATE_CLASS is defined in lw1_solver.h (this is provisional)
     } else {
-        action_selection = new WidthBasedPlanner<STATE_CLASS>(*lw1_instance); // CHECK: STATE_CLASS is defined in lw1_solver.h (this is provisional)
+        action_selection = new Width::WidthBasedPlanner<STATE_CLASS>(*lw1_instance); // CHECK: STATE_CLASS is defined in lw1_solver.h (this is provisional)
     }
 
     // solve problem
