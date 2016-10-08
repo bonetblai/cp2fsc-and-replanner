@@ -1,0 +1,7 @@
+The parser is based on a parser by Patrik Haslum.
+
+Some benchmarks for k_replanner use maps form the Hierarchical Open Graph
+(HOG) framework developed by Nathan Sturtevant from University of Alberta.
+
+Developed by Blai Bonet (c) 2011 - <date>, Universidad Simon Bolivar
+
