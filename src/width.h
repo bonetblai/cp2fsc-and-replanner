@@ -31,17 +31,17 @@
 namespace Width {
 
 template<typename T>
-class WidthBasedPlanner : public ActionSelection<T> {
+class ActionSelection : public ::ActionSelection<T> {
     const KP_Instance &kp_instance_;
     mutable float total_search_time_;
     mutable float total_time_;
     mutable size_t n_calls_;
 
   public:
-    WidthBasedPlanner(const KP_Instance &kp_instance) : kp_instance_(kp_instance) { }
-    virtual ~WidthBasedPlanner() { }
+    ActionSelection(const KP_Instance &kp_instance) : kp_instance_(kp_instance) { }
+    virtual ~ActionSelection() { }
 
-    virtual const char* name() const { return "width-based-planner"; }
+    virtual const char* name() const { return "width-based-action-selection"; }
     virtual float get_search_time() const { return total_search_time_; }
     virtual float get_time() const { return total_time_; }
     virtual size_t n_calls() const { return n_calls_; }
@@ -55,7 +55,7 @@ class WidthBasedPlanner : public ActionSelection<T> {
         AndOr::OrNode<T> *root = AndOr::make_root_node(&state);
         std::cout << Utils::magenta() << "THIS IS A TEST: " << Utils::normal() << *root << std::endl;
         AndOr::Node<T>::deallocate(root);
-        std::cout << Utils::error() << "width-based planner not yet implemented!" << std::endl;
+        std::cout << Utils::error() << "width-based action selection not yet implemented!" << std::endl;
         exit(-1);
     }
 };

@@ -312,7 +312,7 @@ int main(int argc, const char *argv[]) {
 
     // construct classical planner
     const ClassicalPlanner *planner = 0;
-    if( !g_options.is_enabled("solver:width-based-planner") ) {
+    if( !g_options.is_enabled("solver:width-based-action-selection") ) {
         if( opt_planner == "ff" ) {
             planner = new FF_Planner(*lw1_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
         } else if( opt_planner == "lama" ) {
@@ -331,11 +331,11 @@ int main(int argc, const char *argv[]) {
 
     // construct action selection
     ActionSelection<STATE_CLASS> *action_selection = 0; // CHECK: STATE_CLASS is defined in lw1_solver.h (this is provisional)
-    if( !g_options.is_enabled("solver:width-based-planner") ) {
+    if( !g_options.is_enabled("solver:width-based-action-selection") ) {
         assert(planner != 0);
         action_selection = new ClassicalPlannerWrapper<STATE_CLASS>(*planner); // CHECK: STATE_CLASS is defined in lw1_solver.h (this is provisional)
     } else {
-        action_selection = new Width::WidthBasedPlanner<STATE_CLASS>(*lw1_instance); // CHECK: STATE_CLASS is defined in lw1_solver.h (this is provisional)
+        action_selection = new Width::ActionSelection<STATE_CLASS>(*lw1_instance); // CHECK: STATE_CLASS is defined in lw1_solver.h (this is provisional)
     }
 
     // solve problem
