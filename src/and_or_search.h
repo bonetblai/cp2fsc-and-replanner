@@ -16,20 +16,15 @@
  *
  */
 
-#ifndef FEATURES_H
-#define FEATURES_H
+#ifndef AND_OR_SEARCH_H
+#define AND_OR_SEARCH_H
 
 #include <cassert>
 #include <iostream>
+#include "and_or.h"
+#include "utils.h"
 
-namespace Width {
-
-class Feature {
-  public:
-    Feature() { }
-    virtual ~Feature() { }
-    virtual void print(std::ostream &os) const = 0;
-};
+namespace AndOr {
 
 }
 

@@ -52,9 +52,12 @@ class WidthBasedPlanner : public ActionSelection<T> {
     }
 
     virtual int get_plan(const T &state, Instance::Plan &raw_plan, Instance::Plan &plan) const {
-        AndOr::OrNode<T> *root = AndOr::make_root_node(&state);
-        std::cout << Utils::magenta() << "THIS IS A TEST: " << Utils::normal() << *root << std::endl;
-        AndOr::Node<T>::deallocate(root);
+        AndOr::BeliefRepo<T> *belief_repo = new AndOr::BeliefRepo<T>;
+        AndOr::Policy<T> policy(*belief_repo);
+        policy.make_root(&state);
+        std::cout << Utils::magenta() << "THIS IS A TEST: " << Utils::normal() << policy.root() << std::endl;
+        policy.deallocate();
+        delete belief_repo;
         std::cout << Utils::error() << "width-based planner not yet implemented!" << std::endl;
         exit(-1);
     }
