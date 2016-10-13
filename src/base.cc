@@ -4656,7 +4656,7 @@ string PDDL_Base::Oneof::to_string() const {
 }
 
 void PDDL_Base::Unknown::process_instance() const {
-    cout << Utils::error() << "feature not yet supported" << endl;
+    cout << Utils::internal_error() << "call to PDDL_Base::Unknown::process_instance()" << endl;
     exit(255);
 }
 
@@ -4835,22 +4835,22 @@ void PDDL_Base::InitOneof::extract_atoms(unsigned_atom_set &atoms) const {
 }
 
 void PDDL_Base::InitUnknown::instantiate(init_element_list &ilist) const {
-    cout << Utils::error() << "feature not yet supported" << endl;
+    cout << Utils::internal_error() << "call to PDDL_Base::InitUnknown::instantiate()" << endl;
     exit(255);
 }
 
 void PDDL_Base::InitUnknown::emit(Instance &ins) const {
-    cout << Utils::error() << "feature not yet supported" << endl;
+    cout << Utils::internal_error() << "call to PDDL_Base::InitUnknown::emit()" << endl;
     exit(255);
 }
 
 bool PDDL_Base::InitUnknown::is_strongly_static(const PredicateSymbol &p) const {
-    cout << Utils::error() << "feature not yet supported" << endl;
+    cout << Utils::internal_error() << "call to PDDL_Base::InitUnknown::is_strongly_static()" << endl;
     exit(255);
 }
 
 void PDDL_Base::InitUnknown::extract_atoms(unsigned_atom_set &atoms) const {
-    cout << Utils::error() << "feature not yet supported" << endl;
+    cout << Utils::internal_error() << "call to PDDL_Base::InitUnknown::extract_atoms()" << endl;
     exit(255);
 }
 

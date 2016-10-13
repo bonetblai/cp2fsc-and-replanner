@@ -759,7 +759,7 @@ class PDDL_Base {
         SingleStateVariableList(const char *name) : Symbol(name, sym_varinst) { }
         virtual ~SingleStateVariableList() { }
         virtual state_variable_vec* ground(const PDDL_Base *base) const;
-        virtual std::string to_string() const { return "not yet implemented"; } // CHECK
+        virtual std::string to_string() const { return "<not yet implemented>"; } // CHECK
     };
 
     struct ForallStateVariableList : public StateVariableList, Schema {
@@ -768,7 +768,7 @@ class PDDL_Base {
         virtual ~ForallStateVariableList() { }
         virtual void process_instance() const;
         virtual state_variable_vec* ground(const PDDL_Base *base) const;
-        virtual std::string to_string() const { return "not yet implemented"; } // CHECK
+        virtual std::string to_string() const { return "<not yet implemented>"; } // CHECK
         mutable std::vector<state_variable_vec*> result_stack_;
         mutable std::vector<const PDDL_Base*> base_stack_;
     };
