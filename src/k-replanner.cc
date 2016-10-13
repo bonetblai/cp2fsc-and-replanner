@@ -16,6 +16,7 @@
  *
  */
 
+#include <cassert>
 #include <iostream>
 #include <iomanip>
 #include <libgen.h>
@@ -66,7 +67,7 @@ void print_usage(ostream &os, const char *exec_name, const char **cmdline_option
        << endl << endl;
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, const char *argv[]) {
     StringTable symbols(50, lowercase_map);
     bool        opt_debug_parser = false;
     bool        opt_print_plan = true;
@@ -77,6 +78,9 @@ int main(int argc, char *argv[]) {
     float       start_time = Utils::read_time_in_seconds();
     string      opt_planner_path = "";
     string      opt_tmpfile_path = "";
+
+    // print cmdline
+    cout << "cmdline: " << Utils::cmdline(argc, argv) << endl;
 
     // initialize options
     for( const char **opt = &available_options[0]; *opt != 0; ++opt ) {
@@ -140,6 +144,8 @@ int main(int argc, char *argv[]) {
         } else if( !skip_options && !strncmp(argv[k], "--options=", 10) ) {
             const char *options = &argv[k][10];
             parse_options(g_options, options);
+        } else if( !skip_options && !strcmp(argv[k], "--override-defaults") ) {
+            g_options.clear_enabled_and_disabled();
 
         // if '--', stop parsing options. Remaining fields are file names.
         } else if( !skip_options && !strcmp(argv[k], "--") ) {
@@ -155,10 +161,12 @@ int main(int argc, char *argv[]) {
             cout << "reading " << argv[k] << "..." << endl;
             reader->read(argv[k], opt_debug_parser);
             ++nfiles;
+            // after first file name, the rest of arguments are assumed to be file names
+            skip_options = true;
         } else {
-            cout << argv[k] << endl;
-            cout << Utils::error() << "reading from stdin not yet implemented." << endl;
-            exit(-1);
+            cout << "reading from <stdin>..." << endl;
+            reader->read("-", opt_debug_parser);
+            ++nfiles;
         }
     }
 

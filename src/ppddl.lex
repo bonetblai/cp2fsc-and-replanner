@@ -30,6 +30,7 @@
     bool  _trace_line; \
   public: \
     void  open_file(char *fname, bool trace); \
+    void  open_file(bool trace); \
     void  close_file(); \
     char* current_file() const { return _filename; } \
     int   current_line() const { return _line_no; }
@@ -179,6 +180,16 @@ void PDDL_Scanner::open_file(char* name, bool trace) {
         exit(255);
     }
     _filename = name;
+    if( _reset ) yy_init_buffer(YY_PDDL_Scanner_CURRENT_BUFFER, yyin);
+    _reset = true;
+    _line_no = 1;
+    _trace_line = trace;
+    yy_flex_debug = trace;
+}
+
+void PDDL_Scanner::open_file(bool trace) {
+    yyin = stdin;
+    _filename = strdup("<stdin>");
     if( _reset ) yy_init_buffer(YY_PDDL_Scanner_CURRENT_BUFFER, yyin);
     _reset = true;
     _line_no = 1;

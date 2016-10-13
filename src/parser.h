@@ -36,12 +36,18 @@ class Parser : public PDDL_Parser {
 
     void read(const char *name, bool trace) {
         yydebug = trace;
-        scanner.open_file(const_cast<char*>(name), trace);
+        if( strcmp(name, "-") == 0 )
+            scanner.open_file(trace);
+        else
+            scanner.open_file(const_cast<char*>(name), trace);
         error_flag_ = false;
         int rv = yyparse();
-        scanner.close_file();
+        if( strcmp(name, "-") != 0 )
+            scanner.close_file();
         if( error_flag_ || (rv > 0) ) {
-            //std::cout << Utils::error() << "rv = " << rv << std::endl;
+            std::cout << Utils::internal_error()
+                      << "parser error (rv = " << rv << "); terminating..."
+                      << std::endl;
             exit(255);
         }
     }

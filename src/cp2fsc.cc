@@ -16,6 +16,7 @@
  *
  */
 
+#include <cassert>
 #include <iostream>
 #include <iomanip>
 #include <libgen.h>
@@ -66,8 +67,9 @@ void print_usage(ostream &os, const char *exec_name, const char **cmdline_option
        << endl << endl;
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, const char *argv[]) {
     StringTable symbols(50, lowercase_map);
+    bool        opt_debug_parser = false;
     int         opt_fsc_states = 1;
     bool        opt_forbid_inconsistent_tuples = true;
     bool        opt_compound_obs_as_fluents = false;
@@ -75,6 +77,9 @@ int main(int argc, char *argv[]) {
     bool        opt_tag_all_literals = false;
     string      opt_metadata_filename = "";
     float       start_time = Utils::read_time_in_seconds();
+
+    // print cmdline
+    cout << "cmdline: " << Utils::cmdline(argc, argv) << endl;
 
     // initialize options
     for( const char **opt = &available_options[0]; *opt != 0; ++opt ) {
@@ -96,7 +101,12 @@ int main(int argc, char *argv[]) {
     // parse options
     bool skip_options = false;
     for( int k = 1; k < argc; ++k ) {
-        if( !skip_options && !strcmp(argv[k], "--compound-obs-as-fluents") ) {
+        if( !skip_options && !strcmp(argv[k], "--help") ) {
+            print_usage(cout, exec_name, cp2fsc_cmdline_options);
+            exit(0);
+        } else if( !skip_options && !strcmp(argv[k], "--debug-parser") ) {
+            opt_debug_parser = true;
+        } else if( !skip_options && !strcmp(argv[k], "--compound-obs-as-fluents") ) {
             opt_compound_obs_as_fluents = true;
             cout << Utils::error() << "'" << argv[k] << "' is currently not implemented." << endl;
             exit(-1);
@@ -106,9 +116,6 @@ int main(int argc, char *argv[]) {
                 exit(-1);
             }
             opt_fsc_states = atoi(argv[++k]);
-        } else if( !skip_options && !strcmp(argv[k], "--help") ) {
-            print_usage(cout, exec_name, cp2fsc_cmdline_options);
-            exit(0);
         } else if( !skip_options && !strcmp(argv[k], "--no-forbid-inconsistent-tuples") ) {
             opt_forbid_inconsistent_tuples = false;
         } else if( !skip_options && !strcmp(argv[k], "--output-metadata") ) {
@@ -128,6 +135,8 @@ int main(int argc, char *argv[]) {
         } else if( !skip_options && !strncmp(argv[k], "--options=", 10) ) {
             const char *options = &argv[k][10];
             parse_options(g_options, options);
+        } else if( !skip_options && !strcmp(argv[k], "--override-defaults") ) {
+            g_options.clear_enabled_and_disabled();
 
         // if '--', stop parsing options. Remaining fields are file names.
         } else if( !skip_options && !strcmp(argv[k], "--") ) {
@@ -141,12 +150,14 @@ int main(int argc, char *argv[]) {
         // read input file
         } else if( *argv[k] != '-' ) {
             cout << "reading " << argv[k] << "..." << endl;
-            reader->read(argv[k], false);
+            reader->read(argv[k], opt_debug_parser);
             ++nfiles;
+            // after first file name, the rest of arguments are assumed to be file names
+            skip_options = true;
         } else {
-            cout << argv[k] << endl;
-            cout << Utils::error() << "reading from stdin not yet implemented." << endl;
-            exit(-1);
+            cout << "reading from <stdin>..." << endl;
+            reader->read("-", opt_debug_parser);
+            ++nfiles;
         }
     }
 

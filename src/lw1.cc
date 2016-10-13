@@ -181,10 +181,12 @@ int main(int argc, const char *argv[]) {
             cout << "reading " << argv[k] << "..." << endl;
             reader->read(argv[k], opt_debug_parser);
             ++nfiles;
+            // after first file name, the rest of arguments are assumed to be file names
+            skip_options = true;
         } else {
-            cout << argv[k] << endl;
-            cout << Utils::error() << "reading from stdin not yet implemented." << endl;
-            exit(-1);
+            cout << "reading from <stdin>..." << endl;
+            reader->read("-", opt_debug_parser);
+            ++nfiles;
         }
     }
 
