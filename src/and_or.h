@@ -22,6 +22,7 @@
 #include <cassert>
 #include <iostream>
 #include <map>
+#include <string>
 #include <vector>
 #include "utils.h"
 
@@ -33,14 +34,22 @@ class Repository {
   public:
     // CHECK: replace this by hash table
     typedef typename std::map<const S*, const T*> repo_t;
-    typedef typename std::map<const S*, const T*>::const_iterator const_iterator_t;
+    typedef typename std::map<const S*, const T*>::const_iterator const_iterator;
+
+    const_iterator begin() const {
+        return repo_.begin();
+    }
+    const_iterator end() const {
+        return repo_.end();
+    }
 
   protected:
+    std::string name_;
     repo_t repo_;
 
     const T* fetch(const S *key) {
-        const_iterator_t it = repo_.find(key);
-        if( it != repo_.end() ) {
+        const_iterator it = repo_.find(key);
+        if( it != end() ) {
             return it->second;
         } else {
             T *wrapped = new T(key);
@@ -50,17 +59,29 @@ class Repository {
     }
  
   public:
-    Repository() { }
+    Repository(const std::string &name = "") : name_(name) {
+    }
     ~Repository() {
-        std::cout << "(dtor for Repository: size=" << repo_.size() << ")" << std::endl;
+        std::cout << "(dtor for Repository '" << name_ << "': size=" << repo_.size() << ")" << std::endl;
         int deleted_items = 0;
-        for( const_iterator_t it = repo_.begin(); it != repo_.end(); ++it )
+        for( const_iterator it = begin(); it != end(); ++it ) {
             deleted_items += T::deallocate(it->second) ? 1 : 0;
+            assert(it->second->ref_count() == 0);
+        }
         assert(deleted_items == int(repo_.size()));
     }
 
+    const std::string& name() const {
+        return name_;
+    }
+
     const T* get(const S *key) {
-        return fetch(key)->copy();
+        // use cast to permit copy() implemented at abstract class
+        return static_cast<const T*>(fetch(key)->copy());
+    }
+
+    size_t size() const {
+        return repo_.size();
     }
 };
 
@@ -75,8 +96,16 @@ class Belief {
     int ref_count() const {
         return ref_count_;
     }
+    int increase_ref_count() const {
+        return ++ref_count_;
+    }
+    const Belief* copy() const {
+        ++ref_count_;
+        return this;
+    }
     static bool deallocate(const Belief *belief) {
         if( belief != 0 ) {
+            if( belief->ref_count_ <= 0 ) std::cout << "REF-C=" << belief->ref_count_ << std::endl;
             assert(belief->ref_count_ > 0);
             if( --belief->ref_count_ == 0 ) {
                 std::cout << Utils::green() << "[Belief::deallocate::delete:" << Utils::normal() << std::flush;
@@ -92,11 +121,6 @@ class Belief {
     Belief(const T *belief = 0) : ref_count_(1), belief_(belief) { }
     ~Belief() { std::cout << "(dtor for Belief)" << std::flush; }
 
-    const Belief* copy() const {
-        ++ref_count_;
-        return this;
-    }
-
     void print(std::ostream &os) const {
         if( belief_ == 0 )
             os << "(null)";
@@ -107,6 +131,9 @@ class Belief {
 
 template<typename T>
 class BeliefRepo : public Repository<T, Belief<T> > {
+  public:
+    BeliefRepo() : Repository<T, Belief<T> >("BeliefRepo") {
+    }
 };
 
 // forward references
@@ -124,8 +151,12 @@ class Node {
     int ref_count() const {
         return ref_count_;
     }
-    void increase_ref_count() const {
+    int increase_ref_count() const {
+        return ++ref_count_;
+    }
+    const Node* copy() const {
         ++ref_count_;
+        return this;
     }
     static bool deallocate(const Node *node) {
         if( node != 0 ) {
@@ -156,11 +187,12 @@ class AndNode : public Node {
 
   protected:
     virtual int deallocate() const {
-        assert(Node::ref_count_ > 0);
-        Belief<T>::deallocate(belief_);
-        for( size_t i = 0; i < children_.size(); ++i )
-            Node::deallocate(children_[i]);
-        return --Node::ref_count_;
+        if( --Node::ref_count_ == 0 ) {
+            Belief<T>::deallocate(belief_);
+            for( size_t i = 0; i < children_.size(); ++i )
+                Node::deallocate(children_[i]);
+        }
+        return ref_count_;
     }
 
   public:
@@ -211,10 +243,11 @@ class OrNode : public Node {
 
   protected:
     virtual int deallocate() const {
-        assert(Node::ref_count_ > 0);
-        Belief<T>::deallocate(belief_);
-        Node::deallocate(child_);
-        return --Node::ref_count_;
+        if( --Node::ref_count_ == 0) {
+            Belief<T>::deallocate(belief_);
+            Node::deallocate(child_);
+        }
+        return ref_count_;
     }
 
   public:
@@ -251,20 +284,27 @@ class OrNode : public Node {
     }
 };
 
-#if 0
+#if 1
 template<typename T>
-class OrNodeRepo : public Repository<T, OrNode<T> > {
+class OrNodeRepo : public Repository<Belief<T>, OrNode<T> > {
+  public:
+    OrNodeRepo() : Repository<Belief<T>, OrNode<T> >("OrNodeRepo") {
+    }
 };
 
 template<typename T>
 class AndNodeRepo : public Repository<T, AndNode<T> > {
+  public:
+    AndNodeRepo() : Repository<Belief<T>, AndNode<T> >("AndNodeRepo") {
+    }
 };
 #endif
 
 template<typename T>
 class Policy {
     BeliefRepo<T> &repo_;
-    OrNode<T> *root_;
+    const OrNode<T> *root_;
+    OrNodeRepo<T> or_repo_;
 
   public:
     Policy(BeliefRepo<T> &repo)
@@ -278,7 +318,9 @@ class Policy {
     }
     void make_root(const T *belief) {
         Node::deallocate(root_);
-        root_ = new OrNode<T>(belief, repo_, 0); // not re-using nodes in policy (i.e. policy is tree not dag)
+        const Belief<T> *root_belief = repo_.get(belief);
+        root_ = or_repo_.get(root_belief);//new OrNode<T>(belief, repo_, 0); // not re-using nodes in policy (i.e. policy is tree not dag)
+        std::cout << "ROOT-RC=" << root_->ref_count() << std::endl;
     }
     void deallocate() {
         if( root_ != 0 ) {

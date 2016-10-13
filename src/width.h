@@ -26,6 +26,7 @@
 
 // testing
 #include "and_or.h"
+#include "and_or_search.h"
 #include "features.h"
 
 namespace Width {
@@ -53,13 +54,13 @@ class ActionSelection : public ::ActionSelection<T> {
 
     virtual int get_plan(const T &state, Instance::Plan &raw_plan, Instance::Plan &plan) const {
       {
-        AndOr::BeliefRepo<T> belief_repo;
+        AndOr::BeliefRepo<T> belief_repo;// = new AndOr::BeliefRepo<T>;
         AndOr::Policy<T> policy(belief_repo);
         policy.make_root(&state);
         std::cout << Utils::magenta() << "THIS IS A TEST: " << Utils::normal() << policy.root() << std::endl;
-        std::cout << "BEL=" << *policy.root()->belief() << std::endl;
-        policy.deallocate();
+        std::cout << "BEL=" << *policy.root()->belief() << ", RC=" << policy.root()->ref_count() << std::endl;
       }
+      //delete belief_repo;
 
         //AndOr::OrNode<T> *root = AndOr::make_root_node(&state);
         //std::cout << Utils::magenta() << "THIS IS A TEST: " << Utils::normal() << *root << std::endl;

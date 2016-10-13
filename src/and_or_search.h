@@ -21,10 +21,50 @@
 
 #include <cassert>
 #include <iostream>
-#include "and_or.h"
 #include "utils.h"
 
 namespace AndOr {
+
+template<typename API, typename NODE>
+class bfs {
+  protected:
+    struct compare_t {
+      bool operator()(const NODE *lhs, const NODE *rhs) const {
+          return lhs->f() < rhs->f();
+      }
+    };
+    typedef typename std::priority_queue<const NODE*, std::vector<const NODE*>, compare_t> priority_queue;
+
+  protected:
+    const API &api_;
+
+  public:
+    bfs(const API &api) : api_(api) { }
+    virtual ~bfs() { }
+
+    const NODE* search(const NODE &init) const {
+        priority_queue q;
+        q.insert(api_.make_root_node(init));
+        while( !q.empty() ) {
+            const NODE *n = q.top();
+            q.pop();
+
+            assert(n != 0);
+            if( api_.prune(*n) ) {
+                continue;
+            } else if( api_.is_goal(*n) ) {
+                return n; // CHECK: should clear memory in use
+            } else {
+                // expand node
+                std::vector<const NODE*> successors;
+                api_.expand(*n, successors);
+                for( size_t i = 0; i < successors.size(); ++i )
+                    q.insert(successors[i]);
+            }
+        }
+        return 0; // CHECK: should clear memory in use
+    }
+};
 
 }
 
