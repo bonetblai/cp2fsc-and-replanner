@@ -27,6 +27,43 @@
 
 namespace AndOr {
 
+// general repo class
+template<typename S, typename T>
+class Repository {
+  public:
+    // CHECK: replace this by hash table
+    typedef typename std::map<const S*, const T*> repo_t;
+    typedef typename std::map<const S*, const T*>::const_iterator const_iterator_t;
+
+  protected:
+    repo_t repo_;
+
+    const T* fetch(const S *key) {
+        const_iterator_t it = repo_.find(key);
+        if( it != repo_.end() ) {
+            return it->second;
+        } else {
+            T *wrapped = new T(key);
+            repo_.insert(std::make_pair(key, wrapped));
+            return wrapped;
+        }
+    }
+ 
+  public:
+    Repository() { }
+    ~Repository() {
+        std::cout << "(dtor for Repository: size=" << repo_.size() << ")" << std::endl;
+        int deleted_items = 0;
+        for( const_iterator_t it = repo_.begin(); it != repo_.end(); ++it )
+            deleted_items += T::deallocate(it->second) ? 1 : 0;
+        assert(deleted_items == int(repo_.size()));
+    }
+
+    const T* get(const S *key) {
+        return fetch(key)->copy();
+    }
+};
+
 // this is a wrapper that add ref-counts to instances of T
 template<typename T>
 class Belief {
@@ -68,37 +105,8 @@ class Belief {
     }
 };
 
-
 template<typename T>
-class BeliefRepo {
-  public:
-    // CHECK: replace this by hash table
-    typedef typename std::map<const T*, const Belief<T>*> repo_t;
-    typedef typename std::map<const T*, const Belief<T>*>::const_iterator const_iterator_t;
-
-  protected:
-    repo_t repo_;
-
-  public:
-    BeliefRepo() { }
-    ~BeliefRepo() {
-        std::cout << "(dtor for BeliefRepo: size=" << repo_.size() << ")" << std::endl;
-        int deleted_items = 0;
-        for( const_iterator_t it = repo_.begin(); it != repo_.end(); ++it )
-            deleted_items += Belief<T>::deallocate(it->second) ? 1 : 0;
-        assert(deleted_items == int(repo_.size()));
-    }
-
-    const Belief<T>* fetch(const T *belief) {
-        const_iterator_t it = repo_.find(belief);
-        if( it != repo_.end() ) {
-            return it->second->copy();
-        } else {
-            Belief<T> *wrapped = new Belief<T>(belief);
-            repo_.insert(std::make_pair(belief, wrapped));
-            return wrapped->copy();
-        }
-    }
+class BeliefRepo : public Repository<T, Belief<T> > {
 };
 
 // forward references
@@ -156,10 +164,21 @@ class AndNode : public Node {
     }
 
   public:
-    AndNode(const Belief<T> *belief, const Instance::Action *action = 0)
+    static bool deallocate(const AndNode *node) {
+        return Node::deallocate(node);
+    }
+
+  public:
+    AndNode(const Belief<T> *belief, const Instance::Action *action)
       : belief_(belief), action_(action) {
     }
-    virtual ~AndNode() { std::cout << "(dtor for AndNode)" << std::flush; }
+    AndNode(const T *belief, BeliefRepo<T> &repo, const Instance::Action *action)
+      : belief_(repo.get(belief)), action_(action) {
+    }
+    virtual ~AndNode() {
+        std::cout << "(dtor for AndNode)" << std::flush;
+    }
+
     virtual void print(std::ostream &os) const {
         os << "AND[ptr=" << this
            << ",ref=" << Node::ref_count_
@@ -199,10 +218,21 @@ class OrNode : public Node {
     }
 
   public:
+    static bool deallocate(const OrNode *node) {
+        return Node::deallocate(node);
+    }
+
+  public:
     OrNode(const Belief<T> *belief, const Instance::Action *action = 0)
       : belief_(belief), action_(action), child_(0) {
     }
-    virtual ~OrNode() { std::cout << "(dtor for OrNode)" << std::flush; }
+    OrNode(const T *belief, BeliefRepo<T> &repo, const Instance::Action *action)
+      : belief_(repo.get(belief)), action_(action), child_(0) {
+    }
+    virtual ~OrNode() {
+        std::cout << "(dtor for OrNode)" << std::flush;
+    }
+
     virtual void print(std::ostream &os) const {
         os << "OR[ptr=" << this
            << ",ref=" << Node::ref_count_
@@ -221,15 +251,25 @@ class OrNode : public Node {
     }
 };
 
+#if 0
+template<typename T>
+class OrNodeRepo : public Repository<T, OrNode<T> > {
+};
+
+template<typename T>
+class AndNodeRepo : public Repository<T, AndNode<T> > {
+};
+#endif
+
 template<typename T>
 class Policy {
     BeliefRepo<T> &repo_;
     OrNode<T> *root_;
-    // need repo of beliefs, beliefs may be needed to be wrapped within
-    // class with ref-counts to avoid making too many copies
 
   public:
-    Policy(BeliefRepo<T> &repo) : repo_(repo), root_(0) { }
+    Policy(BeliefRepo<T> &repo)
+      : repo_(repo), root_(0) {
+    }
     virtual ~Policy() {
         deallocate();
     }
@@ -238,8 +278,7 @@ class Policy {
     }
     void make_root(const T *belief) {
         Node::deallocate(root_);
-        const Belief<T> *root_belief = repo_.fetch(belief);
-        root_ = new OrNode<T>(root_belief, 0);
+        root_ = new OrNode<T>(belief, repo_, 0); // not re-using nodes in policy (i.e. policy is tree not dag)
     }
     void deallocate() {
         if( root_ != 0 ) {
