@@ -34,24 +34,37 @@ class Belief {
     mutable int ref_count_;
     const T *belief_;
 
-    // need static repo of beliefs, and methods to clean all beliefs in repo, fetch belief, etc.
-
   public:
-    static void deallocate(const Belief *belief) {
+    int ref_count() const {
+        return ref_count_;
+    }
+    static bool deallocate(const Belief *belief) {
         if( belief != 0 ) {
             assert(belief->ref_count_ > 0);
-            if( --belief->ref_count_ == 0 )
+            if( --belief->ref_count_ == 0 ) {
+                std::cout << Utils::green() << "[Belief::deallocate::delete:" << Utils::normal() << std::flush;
                 delete belief;
+                std::cout << Utils::green() << "]" << Utils::normal() << std::flush;
+                return true;
+            }
         }
+        return false;
     }
 
   public:
     Belief(const T *belief = 0) : ref_count_(1), belief_(belief) { }
-    ~Belief() { } 
+    ~Belief() { std::cout << "(dtor for Belief)" << std::flush; }
 
     const Belief* copy() const {
         ++ref_count_;
         return this;
+    }
+
+    void print(std::ostream &os) const {
+        if( belief_ == 0 )
+            os << "(null)";
+        else
+            belief_->print(os);
     }
 };
 
@@ -69,10 +82,11 @@ class BeliefRepo {
   public:
     BeliefRepo() { }
     ~BeliefRepo() {
-        for( const_iterator_t it = repo_.begin(); it != repo_.end(); ++it ) {
-            delete it->second;
-            //delete it->first; // BE SURE THIS WAS ALLOCATED!
-        }
+        std::cout << "(dtor for BeliefRepo: size=" << repo_.size() << ")" << std::endl;
+        int deleted_items = 0;
+        for( const_iterator_t it = repo_.begin(); it != repo_.end(); ++it )
+            deleted_items += Belief<T>::deallocate(it->second) ? 1 : 0;
+        assert(deleted_items == int(repo_.size()));
     }
 
     const Belief<T>* fetch(const T *belief) {
@@ -99,18 +113,23 @@ class Node {
     virtual int deallocate() const = 0;
 
   public:
+    int ref_count() const {
+        return ref_count_;
+    }
     void increase_ref_count() const {
         ++ref_count_;
     }
-    static void deallocate(const Node *node) {
+    static bool deallocate(const Node *node) {
         if( node != 0 ) {
             assert(node->ref_count_ > 0);
             if( node->deallocate() == 0 ) {
-                std::cout << Utils::green() << "[deallocate::delete:" << Utils::normal() << std::flush;
+                std::cout << Utils::green() << "[Node::deallocate::delete:" << Utils::normal() << std::flush;
                 delete node;
                 std::cout << Utils::green() << "]" << Utils::normal() << std::flush;
+                return true;
             }
         }
+        return false;
     }
 
   public:
@@ -129,6 +148,8 @@ class AndNode : public Node {
 
   protected:
     virtual int deallocate() const {
+        assert(Node::ref_count_ > 0);
+        Belief<T>::deallocate(belief_);
         for( size_t i = 0; i < children_.size(); ++i )
             Node::deallocate(children_[i]);
         return --Node::ref_count_;
@@ -152,6 +173,14 @@ class AndNode : public Node {
     }
     virtual void pretty_print(std::ostream &os, int indent) const {
     }
+
+    const Belief<T>* belief() const {
+        return belief_;
+    }
+    const OrNode<T>* child(int i) const {
+        assert((i >= 0) && (i < int(children_.size())));
+        return children_[i];
+    }
 };
 
 template<typename T>
@@ -163,7 +192,9 @@ class OrNode : public Node {
 
   protected:
     virtual int deallocate() const {
-        if( child_ != 0 ) Node::deallocate(child_);
+        assert(Node::ref_count_ > 0);
+        Belief<T>::deallocate(belief_);
+        Node::deallocate(child_);
         return --Node::ref_count_;
     }
 
@@ -181,6 +212,13 @@ class OrNode : public Node {
     }
     virtual void pretty_print(std::ostream &os, int indent) const {
     }
+
+    const Belief<T>* belief() const {
+        return belief_;
+    }
+    const AndNode<T>* child() const {
+        return child_;
+    }
 };
 
 template<typename T>
@@ -195,17 +233,29 @@ class Policy {
     virtual ~Policy() {
         deallocate();
     }
-    const OrNode<T>* root() const { return root_; }
+    const OrNode<T>* root() const {
+        return root_;
+    }
     void make_root(const T *belief) {
         Node::deallocate(root_);
         const Belief<T> *root_belief = repo_.fetch(belief);
         root_ = new OrNode<T>(root_belief, 0);
     }
     void deallocate() {
-        Node::deallocate(root_);
+        if( root_ != 0 ) {
+            assert(root_->ref_count() > 0);
+            Node::deallocate(root_);
+            root_ = 0;
+        }
     }
 };
 
+}
+
+template<typename T>
+inline std::ostream& operator<<(std::ostream &os, const AndOr::Belief<T> &belief) {
+    belief.print(os);
+    return os;
 }
 
 inline std::ostream& operator<<(std::ostream &os, const AndOr::Node &node) {
