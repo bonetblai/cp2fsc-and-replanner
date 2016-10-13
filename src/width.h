@@ -52,20 +52,17 @@ class ActionSelection : public ::ActionSelection<T> {
     }
 
     virtual int get_plan(const T &state, Instance::Plan &raw_plan, Instance::Plan &plan) const {
-<<<<<<< HEAD
         AndOr::BeliefRepo<T> *belief_repo = new AndOr::BeliefRepo<T>;
         AndOr::Policy<T> policy(*belief_repo);
         policy.make_root(&state);
         std::cout << Utils::magenta() << "THIS IS A TEST: " << Utils::normal() << policy.root() << std::endl;
         policy.deallocate();
         delete belief_repo;
-        std::cout << Utils::error() << "width-based planner not yet implemented!" << std::endl;
-=======
-        AndOr::OrNode<T> *root = AndOr::make_root_node(&state);
-        std::cout << Utils::magenta() << "THIS IS A TEST: " << Utils::normal() << *root << std::endl;
-        AndOr::Node<T>::deallocate(root);
         std::cout << Utils::error() << "width-based action selection not yet implemented!" << std::endl;
->>>>>>> 899aa376dc4535434fd4455fda82b8f835bdfdee
+//      AndOr::OrNode<T> *root = AndOr::make_root_node(&state);
+//      std::cout << Utils::magenta() << "THIS IS A TEST: " << Utils::normal() << *root << std::endl;
+//      AndOr::Node<T>::deallocate(root);
+//      std::cout << Utils::error() << "width-based action selection not yet implemented!" << std::endl;
         exit(-1);
     }
 };
