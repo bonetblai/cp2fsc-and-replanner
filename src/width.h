@@ -24,10 +24,9 @@
 #include "action_selection.h"
 #include "utils.h"
 
-// testing
-#include "and_or.h"
 #include "and_or_search.h"
 #include "features.h"
+#include "and_or.h"
 
 namespace Width {
 
@@ -52,24 +51,79 @@ class ActionSelection : public ::ActionSelection<T> {
         n_calls_ = 0;
     }
 
-    virtual int get_plan(const T &state, Instance::Plan &raw_plan, Instance::Plan &plan) const {
-      {
-        AndOr::BeliefRepo<T> belief_repo;// = new AndOr::BeliefRepo<T>;
-        AndOr::Policy<T> policy(belief_repo);
-        policy.make_root(&state);
-        std::cout << Utils::magenta() << "THIS IS A TEST: " << Utils::normal() << policy.root() << std::endl;
-        std::cout << "BEL=" << *policy.root()->belief() << ", RC=" << policy.root()->ref_count() << std::endl;
-      }
-      //delete belief_repo;
+    virtual int get_plan(const T &state, Instance::Plan &raw_plan, Instance::Plan &plan) const;
+};
 
-        //AndOr::OrNode<T> *root = AndOr::make_root_node(&state);
-        //std::cout << Utils::magenta() << "THIS IS A TEST: " << Utils::normal() << *root << std::endl;
-        //AndOr::Node<T>::deallocate(root);
+template<typename T>
+class Node : public AndOr::Search::Node<T> {
+  protected:
+    const T *state_;
+    const AndOr::Policy<T> *policy_;
+    const Feature *feature_;
+    int cost_;
 
-        std::cout << Utils::error() << "width-based action selection not yet implemented!" << std::endl;
-        exit(-1);
+  public:
+    Node(const T *state = 0, const AndOr::Policy<T> *policy = 0, const Feature *feature = 0, int cost = 0)
+      : state_(state), policy_(policy), feature_(feature), cost_(cost) {
+    }
+    virtual ~Node() { }
+    virtual int f() const {
+        std::cout << "Node::f()" << std::endl;
+        return cost_;
+    }
+    virtual void print(std::ostream &os) const {
+        os << "N[s=" << state_
+           << ",policy=" << policy_
+           << ",feature=" << feature_
+           << ",cost=" << cost_
+           << "]" << std::flush;
     }
 };
+
+template<typename T>
+class API : public AndOr::Search::API<T> {
+  public:
+    API() { }
+    virtual ~API() { }
+    virtual Node<T>* make_root_node(const T *state) const {
+        std::cout << "API::make_root_node()" << std::endl;
+        return new Node<T>(state);
+    }
+    virtual bool prune(const AndOr::Search::Node<T> &n) const {
+        const Node<T> &node = static_cast<const Node<T>&>(n);
+        std::cout << "API::prune(): node=" << node << std::endl;
+        return false;
+    }
+    virtual bool is_goal(const AndOr::Search::Node<T> &n) const {
+        const Node<T> &node = static_cast<const Node<T>&>(n);
+        std::cout << "API::is_goal(): node=" << node << std::endl;
+        return false;
+    }
+    virtual void expand(const AndOr::Search::Node<T> &n, std::vector<const AndOr::Search::Node<T>*> &successors) const {
+        const Node<T> &node = static_cast<const Node<T>&>(n);
+        std::cout << "API::expand(): node=" << node << std::endl;
+    }
+};
+
+template<typename T>
+inline int ActionSelection<T>::get_plan(const T &state, Instance::Plan &raw_plan, Instance::Plan &plan) const {
+    AndOr::BeliefRepo<T> belief_repo;
+    AndOr::Policy<T> policy(belief_repo);
+    policy.make_root(&state);
+    std::cout << Utils::magenta() << "THIS IS A TEST: " << Utils::normal() << policy.root() << std::endl;
+    std::cout << "BEL=" << *policy.root()->belief() << ", RC=" << policy.root()->ref_count() << std::endl;
+
+    //AndOr::OrNode<T> *root = AndOr::make_root_node(&state);
+    //std::cout << Utils::magenta() << "THIS IS A TEST: " << Utils::normal() << *root << std::endl;
+    //AndOr::Node<T>::deallocate(root);
+
+    API<T> api;
+    AndOr::Search::bfs<T> bfs(api);
+    bfs.search(state);
+
+    std::cout << Utils::error() << "width-based action selection not yet implemented!" << std::endl;
+    exit(-1);
+}
 
 }
 

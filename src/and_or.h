@@ -331,7 +331,7 @@ class Policy {
     }
 };
 
-}
+} // namespace AndOr
 
 template<typename T>
 inline std::ostream& operator<<(std::ostream &os, const AndOr::Belief<T> &belief) {

@@ -25,47 +25,79 @@
 
 namespace AndOr {
 
-template<typename API, typename NODE>
+namespace Search {
+
+template<typename STATE>
+class Node {
+  public:
+    Node() { }
+    virtual ~Node() { }
+    virtual int f() const = 0;
+    virtual void print(std::ostream &os) const = 0;
+};
+
+template<typename T>
+class API {
+  public:
+    API() { }
+    virtual ~API() { }
+    virtual const Node<T>* make_root_node(const T *state) const = 0;
+    virtual bool prune(const Node<T> &node) const = 0;
+    virtual bool is_goal(const Node<T> &node) const = 0;
+    virtual void expand(const Node<T> &node, std::vector<const Node<T>*> &successors) const = 0;
+};
+
+template<typename T>
 class bfs {
   protected:
     struct compare_t {
-      bool operator()(const NODE *lhs, const NODE *rhs) const {
-          return lhs->f() < rhs->f();
-      }
+        bool operator()(const Node<T> *lhs, const Node<T> *rhs) const {
+            return lhs->f() < rhs->f();
+        }
     };
-    typedef typename std::priority_queue<const NODE*, std::vector<const NODE*>, compare_t> priority_queue;
+    typedef typename std::priority_queue<const Node<T>*, std::vector<const Node<T>*>, compare_t> priority_queue;
 
   protected:
-    const API &api_;
+    const API<T> &api_;
 
   public:
-    bfs(const API &api) : api_(api) { }
+    bfs(const API<T> &api) : api_(api) { }
     virtual ~bfs() { }
 
-    const NODE* search(const NODE &init) const {
+    const Node<T>* search(const T &init) const {
+        std::cout << "BEGIN-OF-SEARCH: init=" << init << std::endl;
         priority_queue q;
-        q.insert(api_.make_root_node(init));
+        q.push(api_.make_root_node(&init));
         while( !q.empty() ) {
-            const NODE *n = q.top();
+            const Node<T> *n = q.top();
+            assert(n != 0);
             q.pop();
 
-            assert(n != 0);
             if( api_.prune(*n) ) {
                 continue;
             } else if( api_.is_goal(*n) ) {
                 return n; // CHECK: should clear memory in use
             } else {
                 // expand node
-                std::vector<const NODE*> successors;
+                std::vector<const Node<T>*> successors;
                 api_.expand(*n, successors);
                 for( size_t i = 0; i < successors.size(); ++i )
-                    q.insert(successors[i]);
+                    q.push(successors[i]);
             }
         }
+        std::cout << "END-OF-SEARCH: queue exhausted!" << std::endl;
         return 0; // CHECK: should clear memory in use
     }
 };
 
+} // namespace Search
+
+} // namespace AndOr
+
+template<typename T>
+inline std::ostream& operator<<(std::ostream &os, const AndOr::Search::Node<T> &node) {
+    node.print(os);
+    return os;
 }
 
 #endif
