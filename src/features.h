@@ -24,14 +24,14 @@
 
 namespace Width {
 
-class Feature {
-  public:
-    Feature() { }
-    virtual ~Feature() { }
-    virtual void print(std::ostream &os) const = 0;
-};
+  class Feature {
+    public:
+      Feature() { }
+      virtual ~Feature() { }
+      virtual void print(std::ostream &os) const = 0;
+  };
 
-}
+} // namespace Width
 
 #endif
 

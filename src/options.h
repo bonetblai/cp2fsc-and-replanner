@@ -142,7 +142,7 @@ namespace Options {
       free(opts);
   }
 
-};
+} // namespace Options
 
 inline std::ostream& operator<<(std::ostream &os, const Options::Mode &mode) {
     mode.print(os, true);
