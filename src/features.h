@@ -21,6 +21,8 @@
 
 #include <cassert>
 #include <iostream>
+#include <list>
+#include <set>
 
 namespace Width {
 
@@ -29,6 +31,17 @@ namespace Width {
       Feature() { }
       virtual ~Feature() { }
       virtual void print(std::ostream &os) const = 0;
+  };
+
+  class FeatureList : public std::list<const Feature*> {
+  };
+
+  class FeatureSet : public std::set<const Feature*> {
+    public:
+      FeatureSet() { }
+      FeatureSet(const std::set<const Feature*> &features)
+        : std::set<const Feature*>(features) {
+      }
   };
 
 } // namespace Width

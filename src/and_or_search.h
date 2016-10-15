@@ -40,6 +40,7 @@ namespace AndOr {
       public:
         API() { }
         virtual ~API() { }
+        virtual void reset() const = 0;
         virtual const Node* make_root_node(const T *state) const = 0;
         virtual bool prune(const Node &node) const = 0;
         virtual bool is_goal(const Node &node) const = 0;
@@ -64,7 +65,10 @@ namespace AndOr {
         virtual ~bfs() { }
 
         const Node* search(const T &init) const {
-            std::cout << "BEGIN-OF-SEARCH: init=" << init << std::endl;
+            std::cout << Utils::green() << "BEGIN-SEARCH:" << Utils::normal() << " init=" << init << std::endl;
+            // reset api for performing new search
+            api_.reset();
+            
             priority_queue q;
             q.push(api_.make_root_node(&init));
             while( !q.empty() ) {
@@ -75,6 +79,7 @@ namespace AndOr {
                 if( api_.prune(*n) ) {
                     continue;
                 } else if( api_.is_goal(*n) ) {
+                    std::cout << Utils::green() << "END-SEARCH:" << Utils::normal() << " goal found!" << std::endl;
                     return n; // CHECK: should clear memory in use
                 } else {
                     // expand node
@@ -84,7 +89,7 @@ namespace AndOr {
                         q.push(successors[i]);
                 }
             }
-            std::cout << "END-OF-SEARCH: queue exhausted!" << std::endl;
+            std::cout << Utils::green() << "END-SEARCH:" << Utils::normal() << " queue exhausted!" << std::endl;
             return 0; // CHECK: should clear memory in use
         }
     };

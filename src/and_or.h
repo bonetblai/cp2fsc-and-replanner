@@ -118,8 +118,15 @@ namespace AndOr {
       }
 
     public:
-      Belief(const T *belief = 0) : ref_count_(1), belief_(belief) { }
-      ~Belief() { std::cout << "(dtor for Belief)" << std::flush; }
+      Belief(const T *belief = 0) : ref_count_(1), belief_(belief) {
+      }
+      ~Belief() {
+          std::cout << "(dtor for Belief)" << std::flush;
+      }
+
+      const T* belief() const {
+          return belief_;
+      }
 
       void print(std::ostream &os) const {
           if( belief_ == 0 )
@@ -223,6 +230,7 @@ namespace AndOr {
           os << "}]";
       }
       virtual void pretty_print(std::ostream &os, int indent) const {
+          // CHECK: FILL MISSING CODE
       }
 
       const Belief<T>* belief() const {
@@ -274,6 +282,7 @@ namespace AndOr {
              << "]";
       }
       virtual void pretty_print(std::ostream &os, int indent) const {
+          // CHECK: FILL MISSING CODE
       }
 
       const Belief<T>* belief() const {
@@ -282,6 +291,10 @@ namespace AndOr {
       const AndNode<T>* child() const {
           return child_;
       }
+  };
+
+  template<typename T>
+  class OrNodeList : public std::vector<const OrNode<T>*> {
   };
 
 #if 1
@@ -302,9 +315,11 @@ namespace AndOr {
 
   template<typename T>
   class Policy {
+    protected:
       BeliefRepo<T> &repo_;
       const OrNode<T> *root_;
       OrNodeRepo<T> or_repo_;
+      OrNodeList<T> tips_;
 
     public:
       Policy(BeliefRepo<T> &repo)
@@ -320,7 +335,6 @@ namespace AndOr {
           Node::deallocate(root_);
           const Belief<T> *root_belief = repo_.get(belief);
           root_ = or_repo_.get(root_belief);//new OrNode<T>(belief, repo_, 0); // not re-using nodes in policy (i.e. policy is tree not dag)
-          std::cout << "ROOT-RC=" << root_->ref_count() << std::endl;
       }
       void deallocate() {
           if( root_ != 0 ) {
@@ -328,6 +342,14 @@ namespace AndOr {
               Node::deallocate(root_);
               root_ = 0;
           }
+      }
+      const OrNodeList<T>& tips() const {
+          return tips_;
+      }
+      int cost() const {
+          std::cout << Utils::magenta() << "Policy<T>::cost()" << Utils::normal() << std::endl;
+          // CHECK: FILL MISSING CODE
+          return 0;
       }
   };
 
