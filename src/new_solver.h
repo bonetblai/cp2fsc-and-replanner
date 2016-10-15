@@ -131,7 +131,7 @@ int NewSolver<T>::solve(const T &initial_hidden_state,
     Instance::Plan raw_plan, plan;
     final_plan.clear();
 
-    while( !state.goal(kp_instance_) ) {
+    while( !state.is_goal(kp_instance_) ) {
         plan.clear();
         assumptions.clear();
 
@@ -280,7 +280,7 @@ int NewSolver<T>::solve(const T &initial_hidden_state,
         }
     }
 
-    if( !hidden.goal(instance_) ) {
+    if( !hidden.is_goal(instance_) ) {
         std::cout << Utils::error() << "kp state is goal but hidden state isn't. Check specification."
                   << Utils::normal() << std::endl;
         return ERROR;

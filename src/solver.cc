@@ -81,7 +81,7 @@ int Solver::solve(const State &initial_hidden_state,
     final_plan.clear();
 
     int planner_calls = 0;
-    while( !state.goal(kp_instance_) ) {
+    while( !state.is_goal(kp_instance_) ) {
 
         plan.clear();
         assumptions.clear();
@@ -232,7 +232,7 @@ int Solver::solve(const State &initial_hidden_state,
         }
     }
 
-    if( !hidden.goal(instance_) ) {
+    if( !hidden.is_goal(instance_) ) {
         cout << Utils::error() << "kp state is goal but hidden state isn't. Check specification."
              << Utils::normal() << endl;
         return ERROR;

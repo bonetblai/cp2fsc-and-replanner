@@ -188,7 +188,7 @@ class State {
         apply_axioms(ins);
     }
 
-    bool goal(const Instance &ins) const {
+    bool is_goal(const Instance &ins) const {
         for( index_set::const_iterator p = ins.goal_literals_.begin(); p != ins.goal_literals_.end(); ++p ) {
             int idx = *p > 0 ? *p-1 : -*p-1;
             if( *p > 0 ) {
