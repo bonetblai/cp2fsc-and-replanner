@@ -58,7 +58,6 @@ class KP_Instance : public Instance {
     void enable_subgoaling_actions(State &state, index_vec &enablers) const;
     void disable_subgoaling_actions(State &state, const index_vec &enablers) const;
 
-
     // for statistics
     mutable float inference_time_;
 

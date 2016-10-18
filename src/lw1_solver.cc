@@ -296,7 +296,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
             for( map<int, sensing_models_as_cnf_or_dnf_t>::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt ) {
                 int var_key = jt->first;
                 const LW1_Instance::Variable &variable = *lw1.variables_[var_key];
-                if( variable.is_state_variable_ ) {
+                if( variable.is_state_variable() ) {
                     assert(jt->second.empty());
                     int k_literal = sensed_literal > 0 ? 1 + 2*(sensed_literal - 1) : 1 + 2*(-sensed_literal - 1) + 1;
 #ifdef DEBUG
@@ -527,7 +527,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                 LW1_State::print_literal(cout, sensed_literal, &instance_);
                 cout << ", key=(" << var_key << "," << sensed_literal << ")" << endl;
 #endif
-                if( variable.is_state_variable_ ) {
+                if( variable.is_state_variable() ) {
                     // observation is state variable, filter it directly in variable domain
                     assert(jt->second.empty());
                     int k_literal = sensed_literal > 0 ? 1 + 2*(sensed_literal - 1) : 1 + 2*(-sensed_literal - 1) + 1;
@@ -629,7 +629,7 @@ bool LW1_Solver::value_observable_literal(const STATE_CLASS &hidden,
     //cout << Utils::red() << "XXXXXX.0: index=" << index << ", name="; State::print_literal(cout, 1 + index, &instance_); cout << Utils::normal() << endl;
 
     // handle easy case when the variable is a state variable
-    if( variable.is_state_variable_ ) {
+    if( variable.is_state_variable() ) {
 #ifdef DEBUG
         cout << Utils::cyan()
              << "Evaluation: action=" << action_key
@@ -791,7 +791,7 @@ void LW1_Solver::fill_relevant_sensing_models(const LW1_Instance &lw1,
             int var_key = jt->second[k];
             const LW1_Instance::Variable &variable = *lw1.variables_[var_key];
 
-            if( variable.is_state_variable_ ) {
+            if( variable.is_state_variable() ) {
                 relevant_sensing_models[sensed_literal].insert(make_pair(var_key, sensing_models_as_cnf_or_dnf_t()));
                 continue;
             }

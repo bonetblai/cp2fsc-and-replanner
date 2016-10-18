@@ -66,6 +66,8 @@ class LW1_Instance : public KP_Instance {
         Variable(const std::string &name, bool is_observable, bool is_state_variable, const std::set<int> &domain, const std::map<int, index_set> &beams)
             : name_(name), is_observable_(is_observable), is_state_variable_(is_state_variable), domain_(domain), beams_(beams) {
         }
+        bool is_observable() const { return is_observable_; }
+        bool is_state_variable() const { return is_state_variable_; }
         bool is_binary() const { return domain_.size() == 1; }
         void print(std::ostream &os) const;
     };

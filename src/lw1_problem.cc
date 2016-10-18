@@ -652,7 +652,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
         // create fixed set of clauses (variable domain axioms) for UP inference
         for( size_t k = 0; k < variables_.size(); ++k ) {
             const Variable &var = *variables_[k];
-            if( var.is_state_variable_ && !var.is_binary() ) {
+            if( var.is_state_variable() && !var.is_binary() ) {
                 // for binary variables, nothing to add because all clauses are tautological
                 const set<int> &domain = var.domain_;
 
@@ -779,7 +779,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
             // non-state literals defined by non-static sensing models
             for( size_t k = 0; k < variables_.size(); ++k ) {
                 const Variable &var = *variables_[k];
-                if( var.is_state_variable_ ) continue;
+                if( var.is_state_variable() ) continue;
                 for( set<int>::const_iterator it = var.domain_.begin(); it != var.domain_.end(); ++it ) {
                     int value = *it;
                     const index_set &beam = var.beams_.at(value);
@@ -1008,8 +1008,8 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             string var_name = action.comment_;
             int var_index = varmap_.at(var_name);
             const Variable &variable = *variables_[var_index];
-            assert(variable.is_observable_);
-            assert(variable.is_state_variable_);
+            assert(variable.is_observable());
+            assert(variable.is_state_variable());
 
             // index for precondition and effect
             assert(*action.precondition_.begin() > 0);
@@ -1062,8 +1062,8 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             const Variable &variable = *variables_[var_index];
             string value_name(action.comment_, 1 + blank_pos);
 
-            assert(variable.is_observable_);
-            assert(!variable.is_state_variable_);
+            assert(variable.is_observable());
+            assert(!variable.is_state_variable());
 
             // obtain index for observable literal (if any)
             int index_for_observable_literal = -1;
@@ -1159,8 +1159,8 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             const Variable &variable = *variables_[var_index];
             string value_name(action.comment_, 1 + blank_pos);
 
-            assert(variable.is_observable_);
-            assert(!variable.is_state_variable_);
+            assert(variable.is_observable());
+            assert(!variable.is_state_variable());
 
             // obtain index for observable literal (if any)
             int index_for_observable_literal = -1;
@@ -1411,7 +1411,7 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
 }
 
 void LW1_Instance::complete_effect(index_set &effect, int literal, const Variable &variable) const {
-    assert(variable.is_state_variable_ && !variable.is_binary());
+    assert(variable.is_state_variable() && !variable.is_binary());
     int index = literal > 0 ? literal - 1 : -literal - 1;
     if( (literal > 0) && (variable.domain_.find(index) != variable.domain_.end()) ) {
         for( set<int>::const_iterator it = variable.domain_.begin(); it != variable.domain_.end(); ++it )
@@ -1422,7 +1422,7 @@ void LW1_Instance::complete_effect(index_set &effect, int literal, const Variabl
 void LW1_Instance::complete_effect(index_set &effect, int literal) const {
     for( size_t k = 0; k < variables_.size(); ++k ) {
         const Variable &variable = *variables_[k];
-        if( variable.is_state_variable_ && !variable.is_binary() ) complete_effect(effect, literal, variable);
+        if( variable.is_state_variable() && !variable.is_binary() ) complete_effect(effect, literal, variable);
     }
 }
 
