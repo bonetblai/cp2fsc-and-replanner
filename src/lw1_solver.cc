@@ -76,8 +76,8 @@ void LW1_Solver::compute_and_add_observations(const Instance::Action *last_actio
                 // each value corresponds to a different literal (from which one and only
                 // one must be true).
 
-                if( variable.domain_.size() == 1 ) {
-                    int index = *variable.domain_.begin();
+                if( variable.domain().size() == 1 ) {
+                    int index = *variable.domain().begin();
                     bool satisfy = value_observable_literal(hidden, *last_action, *jt, index);
                     sensed_at_step.insert(satisfy ? 1 + index : -(1 + index));
                     if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
@@ -85,7 +85,7 @@ void LW1_Solver::compute_and_add_observations(const Instance::Action *last_actio
                     }
                 } else {
                     bool some_value_sensed = false;
-                    for( set<int>::const_iterator kt = variable.domain_.begin(); kt != variable.domain_.end(); ++kt ) {
+                    for( set<int>::const_iterator kt = variable.domain().begin(); kt != variable.domain().end(); ++kt ) {
                         int index = *kt;
                         bool satisfy = value_observable_literal(hidden, *last_action, *jt, index);
                         if( satisfy ) {
@@ -97,7 +97,7 @@ void LW1_Solver::compute_and_add_observations(const Instance::Action *last_actio
                                 }
                             } else {
                                 cout << Utils::error() << "more than one value sensed for variable '"
-                                     << variable.name_ << "' with action '"
+                                     << variable.name() << "' with action '"
                                      << last_action->name_->to_string() << "'"
                                      << endl;
                             }
@@ -105,7 +105,7 @@ void LW1_Solver::compute_and_add_observations(const Instance::Action *last_actio
                     }
                     if( !some_value_sensed ) {
                         cout << Utils::error() << "no value sensed for variable '"
-                             << variable.name_ << "' with action '"
+                             << variable.name() << "' with action '"
                              << last_action->name_->to_string() << "'"
                              << endl;
                     }
@@ -523,7 +523,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                 const LW1_Instance::Variable &variable = *lw1.variables_[var_key];
                 pair<int, int> key(var_key, sensed_literal);
 #ifdef DEBUG
-                cout << "[AC3] sensed literal: var=" << variable.name_ << ", value=" << flush;
+                cout << "[AC3] sensed literal: var=" << variable.name() << ", value=" << flush;
                 LW1_State::print_literal(cout, sensed_literal, &instance_);
                 cout << ", key=(" << var_key << "," << sensed_literal << ")" << endl;
 #endif
@@ -633,7 +633,7 @@ bool LW1_Solver::value_observable_literal(const STATE_CLASS &hidden,
 #ifdef DEBUG
         cout << Utils::cyan()
              << "Evaluation: action=" << action_key
-             << ", variable=" << variable.name_
+             << ", variable=" << variable.name()
              << ", value=";
         State::print_literal(cout, 1 + index, &instance_);
         cout << " ==> " << (hidden.satisfy(index) ? "TRUE" : "FALSE")
@@ -652,7 +652,7 @@ bool LW1_Solver::value_observable_literal(const STATE_CLASS &hidden,
 
     if( sensing_models_for_action.find(var_index) == sensing_models_for_action.end() ) {
         cout << Utils::error() << "no sensing model for variable '"
-             << variable.name_ << "' for action '"
+             << variable.name() << "' for action '"
              << action_key << "'" << endl;
         return false;
     }
@@ -689,7 +689,7 @@ bool LW1_Solver::value_observable_literal(const STATE_CLASS &hidden,
 #ifdef DEBUG
     cout << Utils::cyan()
          << "Evaluation: action=" << action_key
-         << ", variable=" << variable.name_
+         << ", variable=" << variable.name()
          << ", value=";
     State::print_literal(cout, 1 + index, &instance_);
     cout << " ==> " << (value ? "TRUE" : "FALSE")
@@ -705,12 +705,12 @@ void LW1_Solver::update_state_with_literals_for_observables(STATE_CLASS &state,
                                                             int value) const {
     const LW1_Instance &lw1 = *static_cast<const LW1_Instance*>(&kp_instance_);
     int index = value > 0 ? value - 1 : -value - 1;
-    map<string, set<int> >::const_iterator it = lw1.atoms_for_observables_.find(variable.name_);
+    map<string, set<int> >::const_iterator it = lw1.atoms_for_observables_.find(variable.name());
     if( (it != lw1.atoms_for_observables_.end()) && (it->second.find(index) != it->second.end()) ) {
         state.add(value > 0 ? 2*index : 2*index + 1);
 #ifdef DEBUG
         cout << Utils::cyan()
-             << "Update state with literal for observable: variable=" << variable.name_
+             << "Update state with literal for observable: variable=" << variable.name()
              << ", value=" << value
              << ", value-index=" << index
              << ", atom=";
@@ -799,7 +799,7 @@ void LW1_Solver::fill_relevant_sensing_models(const LW1_Instance &lw1,
             // for non-binary variables, the values for observables are positive atoms
             // and these are used to access the sensing models. Hence, we can discard
             // negative observed literals.
-            if( (variable.domain_.size() > 1) && negated ) continue;
+            if( (variable.domain().size() > 1) && negated ) continue;
 
             if( as_k_cnf ) {
                 assert(sensing_models_for_action_as_k_cnf != 0);
@@ -862,7 +862,7 @@ void LW1_Solver::fill_atoms_to_var_map(const KP_Instance& lw1) {
     for( int v = 0; v < vars.size(); ++v ) {
         const LW1_Instance::Variable &var = *vars[v];
         // Iterating the domain of variables, inserting in atoms_to_vars the
-        for( std::set<int>::const_iterator dom = var.domain_.cbegin(); dom != var.domain_.cend(); ++dom ) {
+        for( std::set<int>::const_iterator dom = var.domain().cbegin(); dom != var.domain().cend(); ++dom ) {
             assert(atoms_to_vars_.find(*dom) == atoms_to_vars_.cend());
             atoms_to_vars_.insert(make_pair(*dom, v));
 

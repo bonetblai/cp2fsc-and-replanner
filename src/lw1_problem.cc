@@ -654,7 +654,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
             const Variable &var = *variables_[k];
             if( var.is_state_variable() && !var.is_binary() ) {
                 // for binary variables, nothing to add because all clauses are tautological
-                const set<int> &domain = var.domain_;
+                const set<int> &domain = var.domain();
 
                 // for each value x, Kx <= [K-x_i for all i with x_i != x]
                 for( set<int>::const_iterator it = domain.begin(); it != domain.end(); ++it ) {
@@ -780,9 +780,9 @@ LW1_Instance::LW1_Instance(const Instance &ins,
             for( size_t k = 0; k < variables_.size(); ++k ) {
                 const Variable &var = *variables_[k];
                 if( var.is_state_variable() ) continue;
-                for( set<int>::const_iterator it = var.domain_.begin(); it != var.domain_.end(); ++it ) {
+                for( set<int>::const_iterator it = var.domain().begin(); it != var.domain().end(); ++it ) {
                     int value = *it;
-                    const index_set &beam = var.beams_.at(value);
+                    const index_set &beam = var.beams().at(value);
                     if( !beam.empty() ) {
                         clause_forbidding_literals_.insert(1 + 2*value);
                         clause_forbidding_literals_.insert(1 + 2*value + 1);
@@ -1036,7 +1036,7 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                 nact->precondition_.insert(-(1 + 2*index_for_value + 1));
             } else {
                 nact->precondition_.insert(-(1 + 2*index_for_value + 1));
-                for( set<int>::const_iterator it = variable.domain_.begin(); it != variable.domain_.end(); ++it )
+                for( set<int>::const_iterator it = variable.domain().begin(); it != variable.domain().end(); ++it )
                     nact->precondition_.insert(-(1 + 2**it));
             }
 
@@ -1133,7 +1133,7 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                 if( !negative_value ) {
                     nact->precondition_.insert(-(1 + 2*index_for_observable_literal + 1));
                     if( !variable.is_binary() ) {
-                        for( set<int>::const_iterator jt = variable.domain_.begin(); jt != variable.domain_.end(); ++jt ) {
+                        for( set<int>::const_iterator jt = variable.domain().begin(); jt != variable.domain().end(); ++jt ) {
                             int index_for_value = *jt;
                             assert(index_for_value >= 0);
                             nact->precondition_.insert(-(1 + 2*index_for_value));
@@ -1246,7 +1246,7 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                 if( !negative_value ) {
                     nact->precondition_.insert(-(1 + 2*index_for_observable_literal + 1));
                     if( !variable.is_binary() ) {
-                        for( set<int>::const_iterator jt = variable.domain_.begin(); jt != variable.domain_.end(); ++jt ) {
+                        for( set<int>::const_iterator jt = variable.domain().begin(); jt != variable.domain().end(); ++jt ) {
                             int index_for_value = *jt;
                             assert(index_for_value >= 0);
                             nact->precondition_.insert(-(1 + 2*index_for_value));
@@ -1413,8 +1413,8 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
 void LW1_Instance::complete_effect(index_set &effect, int literal, const Variable &variable) const {
     assert(variable.is_state_variable() && !variable.is_binary());
     int index = literal > 0 ? literal - 1 : -literal - 1;
-    if( (literal > 0) && (variable.domain_.find(index) != variable.domain_.end()) ) {
-        for( set<int>::const_iterator it = variable.domain_.begin(); it != variable.domain_.end(); ++it )
+    if( (literal > 0) && (variable.domain().find(index) != variable.domain().end()) ) {
+        for( set<int>::const_iterator it = variable.domain().begin(); it != variable.domain().end(); ++it )
             if( index != *it ) effect.insert(1 + 2**it + 1);
     }
 }
@@ -1451,7 +1451,7 @@ void LW1_Instance::create_sensor(const Sensor &sensor) {
     int varid = -1;
     for( size_t k = 0; k < variables_.size(); ++k ) {
         const Variable &var = *variables_[k];
-        if( var.domain_.find(sensed_index) != var.domain_.end() ) {
+        if( var.domain().find(sensed_index) != var.domain().end() ) {
             varid = k;
             break;
         }
@@ -1473,7 +1473,7 @@ void LW1_Instance::create_sensor(const Sensor &sensor) {
     // complete condition with conditions on other values of the variable (if applicable)
     if( (sensed > 0) && (varid != -1) ) {
         const Variable &var = *variables_[varid];
-        for( set<int>::const_iterator it = var.domain_.begin(); it != var.domain_.end(); ++it ) {
+        for( set<int>::const_iterator it = var.domain().begin(); it != var.domain().end(); ++it ) {
             if( *it != sensed_index ) nact.precondition_.insert(-(1 + 2**it));
         }
     }

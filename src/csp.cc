@@ -47,8 +47,8 @@ vector<VariableGroup*> Csp::variable_groups_;
 vector<vector<vector<int> > > Csp::vars_in_common_groups_;
 vector<Arc*> AC3::arcs_;
 
-Variable::Variable(const LW1_Instance::Variable &var) : name_(var.name_) {
-    vector<int> domain(var.domain_.begin(), var.domain_.end());
+Variable::Variable(const LW1_Instance::Variable &var) : name_(var.name()) {
+    vector<int> domain(var.domain().begin(), var.domain().end());
     transform(domain.begin(), domain.end(), domain.begin(), k_literal);
     original_domain_ = set<int>(domain.begin(), domain.end());
     current_domain_ = set<int>(domain.begin(), domain.end());

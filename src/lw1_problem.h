@@ -57,18 +57,24 @@ class LW1_Instance : public KP_Instance {
     // for KP/s translation
     std::map<int, int> kps_atoms_;
 
-    struct Variable {
+    class Variable {
+      protected:
         std::string name_;
         bool is_observable_;
         bool is_state_variable_;
         std::set<int> domain_;
         std::map<int, index_set> beams_;  // non-empty only for observable variables
+
+      public:
         Variable(const std::string &name, bool is_observable, bool is_state_variable, const std::set<int> &domain, const std::map<int, index_set> &beams)
             : name_(name), is_observable_(is_observable), is_state_variable_(is_state_variable), domain_(domain), beams_(beams) {
         }
+        const std::string& name() const { return name_; }
         bool is_observable() const { return is_observable_; }
         bool is_state_variable() const { return is_state_variable_; }
         bool is_binary() const { return domain_.size() == 1; }
+        const std::set<int>& domain() const { return domain_; }
+        const std::map<int, index_set>& beams() const { return beams_; }
         void print(std::ostream &os) const;
     };
 
