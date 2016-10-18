@@ -35,14 +35,18 @@ namespace Width {
   template<typename T>
   class ActionSelection : public ::ActionSelection<T> {
       const KP_Instance &kp_instance_;
-      std::vector<const Feature*> feature_language_;
+      std::vector<const Feature<T>*> feature_language_;
 
       mutable float total_search_time_;
       mutable float total_time_;
       mutable size_t n_calls_;
 
     public:
-      ActionSelection(const KP_Instance &kp_instance) : kp_instance_(kp_instance) { }
+      ActionSelection(const KP_Instance &kp_instance)
+        : kp_instance_(kp_instance) {
+          // initialize language of features to be used
+          // CHECK: FILL MISSING CODE
+      }
       virtual ~ActionSelection() { }
 
       virtual const char* name() const { return "width-based-action-selection"; }
@@ -62,11 +66,11 @@ namespace Width {
   class Node : public AndOr::Search::Node {
     protected:
       const AndOr::Policy<T> *policy_;
-      const FeatureList *features_;
+      const FeatureList<T> *features_;
       int cost_;
 
     public:
-      Node(const AndOr::Policy<T> *policy = 0, const FeatureList *features = 0, int cost = 0)
+      Node(const AndOr::Policy<T> *policy = 0, const FeatureList<T> *features = 0, int cost = 0)
         : policy_(policy), features_(features), cost_(cost) {
       }
       virtual ~Node() { }
@@ -74,8 +78,11 @@ namespace Width {
       const AndOr::Policy<T>* policy() const {
           return policy_;
       }
-      const FeatureList* features() const {
+      const FeatureList<T>* features() const {
           return features_;
+      }
+      int cost() const {
+          return cost_;
       }
 
       virtual int f() const {
@@ -95,30 +102,31 @@ namespace Width {
   class API : public AndOr::Search::API<T> {
     protected:
       const KP_Instance &kp_instance_;
-      const std::vector<const Feature*> &feature_language_;
+      const std::vector<const Feature<T>*> &feature_language_;
       bool prune_nodes_;
 
       mutable AndOr::BeliefRepo<T> belief_repo_;
-      mutable FeatureSet available_features_;
+      mutable FeatureSet<T> available_features_;
 
     public:
-      API(const KP_Instance &kp_instance, const std::vector<const Feature*> &feature_language, bool prune_nodes = true)
+      API(const KP_Instance &kp_instance, const std::vector<const Feature<T>*> &feature_language, bool prune_nodes = true)
         : kp_instance_(kp_instance), feature_language_(feature_language), prune_nodes_(prune_nodes) {
       }
       virtual ~API() { }
 
-      bool is_feature_valid(const AndOr::OrNode<T> *node, const Feature *feature) const {
+      bool is_feature_valid(const AndOr::OrNode<T> *node, const Feature<T> *feature) const {
           std::cout << Utils::magenta() << "API::is_feature_valid()" << Utils::normal() << std::endl;
-          // CHECK: FILL MISSING CODE
-          return false;
+          assert(feature != 0);
+          return feature->holds(*node->belief()->belief());
       }
-      void extract_features(const AndOr::Policy<T> &policy, FeatureList &features) const {
-          std::cout << Utils::magenta() << "API::extract_features()" << Utils::normal() << std::endl;
+      void extract_features(const AndOr::Policy<T> &policy, FeatureList<T> &features) const {
+          std::cout << Utils::magenta() << "API::extract_features(): " << Utils::normal() << "#tips=" << policy.tip_nodes().size() << std::endl;
+          assert(!policy.tip_nodes().empty());
           features.clear();
-          for( FeatureSet::const_iterator it = available_features_.begin(); it != available_features_.end(); ++it ) {
-              const Feature *feature = *it;
+          for( typename FeatureSet<T>::const_iterator it = available_features_.begin(); it != available_features_.end(); ++it ) {
+              const Feature<T> *feature = *it;
               bool feature_is_achieved = true;
-              for( typename AndOr::OrNodeList<T>::const_iterator it = policy.tips().begin(); it != policy.tips().end(); ++it ) {
+              for( typename AndOr::OrNodeList<T>::const_iterator it = policy.tip_nodes().begin(); it != policy.tip_nodes().end(); ++it ) {
                   if( !is_feature_valid(*it, feature) ) {
                       feature_is_achieved = false;
                       break;
@@ -130,12 +138,13 @@ namespace Width {
       }
 
       bool is_goal(const AndOr::OrNode<T> *node) const {
-          std::cout << Utils::magenta() << "API::is_goal(): " << Utils::normal() << node->belief()->belief()->is_goal(kp_instance_) << std::endl;
+          std::cout << Utils::magenta() << "API::is_goal(<node>): " << Utils::normal() << node->belief()->belief()->is_goal(kp_instance_) << std::endl;
           return node->belief()->belief()->is_goal(kp_instance_);
       }
       bool is_goal(const AndOr::Policy<T> &policy) const {
-          std::cout << Utils::magenta() << "API::is_goal(): " << Utils::normal() << "#tips=" << policy.tips().size() << std::endl;
-          for( typename AndOr::OrNodeList<T>::const_iterator it = policy.tips().begin(); it != policy.tips().end(); ++it ) {
+          std::cout << Utils::magenta() << "API::is_goal(<policy>): " << Utils::normal() << "#tips=" << policy.tip_nodes().size() << std::endl;
+          assert(!policy.tip_nodes().empty());
+          for( typename AndOr::OrNodeList<T>::const_iterator it = policy.tip_nodes().begin(); it != policy.tip_nodes().end(); ++it ) {
               if( !is_goal(*it) )
                   return false;
           }
@@ -146,12 +155,11 @@ namespace Width {
       }
 
       virtual void reset() const {
-          available_features_ = std::set<const Feature*>(feature_language_.begin(), feature_language_.end());
+          available_features_ = std::set<const Feature<T>*>(feature_language_.begin(), feature_language_.end());
       }
       virtual Node<T>* make_root_node(const T *state) const {
-          AndOr::Policy<T> *policy = new AndOr::Policy<T>(belief_repo_);
-          policy->make_root(state);
-          FeatureList *features = new FeatureList;
+          AndOr::Policy<T> *policy = new AndOr::Policy<T>(belief_repo_, state);
+          FeatureList<T> *features = new FeatureList<T>;
           extract_features(*policy, *features);
           int policy_cost = cost(*policy);
           return new Node<T>(policy, features, policy_cost);
@@ -161,7 +169,7 @@ namespace Width {
               std::cout << Utils::magenta() << "API::prune():" << Utils::normal() << " node=" << n << ": " << std::flush;
               const Node<T> &node = static_cast<const Node<T>&>(n);
               if( node.features() != 0 ) {
-                  for( FeatureList::const_iterator it = node.features()->begin(); it != node.features()->end(); ++it ) {
+                  for( typename FeatureList<T>::const_iterator it = node.features()->begin(); it != node.features()->end(); ++it ) {
                       if( available_features_.find(*it) != available_features_.end() ) {
                           std::cout << Utils::red() << "don't prune node!" << Utils::normal() << std::endl;
                           return false;
@@ -182,36 +190,35 @@ namespace Width {
       virtual void expand(const AndOr::Search::Node &n, std::vector<const AndOr::Search::Node*> &successors) const {
           std::cout << Utils::magenta() << "API::expand():" << Utils::normal() << " node=" << n << std::endl;
           const Node<T> &node = static_cast<const Node<T>&>(n);
+          const AndOr::Policy<T> &policy = *node.policy();
+          int policy_cost = node.cost();
 
           // register node's features as reached features
           assert(node.features() != 0);
-          for( FeatureList::const_iterator it = node.features()->begin(); it != node.features()->end(); ++it )
+          for( typename FeatureList<T>::const_iterator it = node.features()->begin(); it != node.features()->end(); ++it )
               available_features_.erase(*it);
 
           // perform expansion geared towards available features
-          std::vector<std::pair<const AndOr::Policy<T>*, const FeatureList*> > extensions;
-          for( FeatureSet::const_iterator it = available_features_.begin(); it != available_features_.end(); ++it ) {
-              const Feature *feature = *it;
+          std::cout << "#available-features=" << available_features_.size() << std::endl;
+          for( typename FeatureSet<T>::const_iterator it = available_features_.begin(); it != available_features_.end(); ++it ) {
+              const Feature<T> *feature = *it;
               // if there is an extension across all branches of node's plan
-              // that achieves the given feature, store such extension
-              // CHECK: FILL MISSING CODE
-          }
-          std::cout << "#extensions=" << extensions.size() << std::endl;
-
-          // for each extension, create a successor node
-          successors.clear();
-          for( size_t i = 0; i < extensions.size(); ++i ) {
-              const AndOr::Policy<T> *policy = extensions[i].first;
-              const FeatureList *features = extensions[i].second;
-              int policy_cost = cost(*policy);
-              successors.push_back(new Node<T>(policy, features, policy_cost));
+              // that achieves the given feature, generate a successor for it
+              std::pair<const AndOr::Policy<T>*, int> p = policy.compute_extension_for(feature);
+              if( p.first != 0 ) {
+                  FeatureList<T> *ext_features = new FeatureList<T>;
+                  extract_features(*p.first, *ext_features);
+                  int ext_policy_cost = policy_cost + p.second;
+                  successors.push_back(new Node<T>(p.first, ext_features, ext_policy_cost));
+              }
           }
           std::cout << "#successors=" << successors.size() << std::endl;
+          assert(successors.size() <= available_features_.size());
       }
   };
 
   template<typename T>
-  inline int ActionSelection<T>::get_plan(const T &state, Instance::Plan &raw_plan, Instance::Plan &plan) const { // CHECK: incomplete
+  inline int ActionSelection<T>::get_plan(const T &state, Instance::Plan &raw_plan, Instance::Plan &plan) const { // CHECK: incomplete code
       //AndOr::BeliefRepo<T> belief_repo;
       //AndOr::Policy<T> policy(belief_repo);
       //policy.make_root(&state);

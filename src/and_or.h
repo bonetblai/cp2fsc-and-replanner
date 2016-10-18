@@ -24,6 +24,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include "features.h"
 #include "utils.h"
 
 namespace AndOr {
@@ -32,7 +33,7 @@ namespace AndOr {
   template<typename S, typename T>
   class Repository {
     public:
-      // CHECK: replace this by hash table
+      // CHECK: replace red-black tree by hash table
       typedef typename std::map<const S*, const T*> repo_t;
       typedef typename std::map<const S*, const T*>::const_iterator const_iterator;
 
@@ -319,22 +320,28 @@ namespace AndOr {
       BeliefRepo<T> &repo_;
       const OrNode<T> *root_;
       OrNodeRepo<T> or_repo_;
-      OrNodeList<T> tips_;
+      OrNodeList<T> tip_nodes_;
+
+      void make_empty_policy(const T *belief) {
+          assert(belief != 0);
+          tip_nodes_.clear();
+          Node::deallocate(root_);
+          const Belief<T> *root_belief = repo_.get(belief);
+          root_ = or_repo_.get(root_belief);//new OrNode<T>(belief, repo_, 0); // not re-using nodes in policy (i.e. policy is tree not dag)
+          tip_nodes_.push_back(root_);
+      }
 
     public:
-      Policy(BeliefRepo<T> &repo)
+      Policy(BeliefRepo<T> &repo, const T *belief)
         : repo_(repo), root_(0) {
+          make_empty_policy(belief);
       }
       virtual ~Policy() {
           deallocate();
       }
+
       const OrNode<T>* root() const {
           return root_;
-      }
-      void make_root(const T *belief) {
-          Node::deallocate(root_);
-          const Belief<T> *root_belief = repo_.get(belief);
-          root_ = or_repo_.get(root_belief);//new OrNode<T>(belief, repo_, 0); // not re-using nodes in policy (i.e. policy is tree not dag)
       }
       void deallocate() {
           if( root_ != 0 ) {
@@ -343,13 +350,20 @@ namespace AndOr {
               root_ = 0;
           }
       }
-      const OrNodeList<T>& tips() const {
-          return tips_;
+      const OrNodeList<T>& tip_nodes() const {
+          return tip_nodes_;
       }
+
       int cost() const {
           std::cout << Utils::magenta() << "Policy<T>::cost()" << Utils::normal() << std::endl;
           // CHECK: FILL MISSING CODE
           return 0;
+      }
+
+      std::pair<const Policy*, int> compute_extension_for(const Width::Feature<T> *feature) const {
+          std::cout << Utils::magenta() << "Policy<T>::compute_extension_for()" << Utils::normal() << std::endl;
+          // CHECK: FILL MISSING CODE
+          return std::make_pair(static_cast<const Policy*>(0), 0);
       }
   };
 

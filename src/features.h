@@ -26,21 +26,25 @@
 
 namespace Width {
 
+  template<typename T>
   class Feature {
     public:
       Feature() { }
       virtual ~Feature() { }
+      virtual bool holds(const T &state) const = 0;
       virtual void print(std::ostream &os) const = 0;
   };
 
-  class FeatureList : public std::list<const Feature*> {
+  template<typename T>
+  class FeatureList : public std::list<const Feature<T>*> {
   };
 
-  class FeatureSet : public std::set<const Feature*> {
+  template<typename T>
+  class FeatureSet : public std::set<const Feature<T>*> {
     public:
       FeatureSet() { }
-      FeatureSet(const std::set<const Feature*> &features)
-        : std::set<const Feature*>(features) {
+      FeatureSet(const std::set<const Feature<T>*> &features)
+        : std::set<const Feature<T>*>(features) {
       }
   };
 
