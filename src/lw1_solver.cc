@@ -67,6 +67,7 @@ void LW1_Solver::compute_and_add_observations(const Instance::Action *last_actio
         if( it != lw1.vars_sensed_by_action_.end() ) {
             for( set<int>::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt ) {
                 const LW1_Instance::Variable &variable = *lw1.variables_[*jt];
+                assert(variable.is_observable());
 
                 // if state variable, the value of observed literal (either true or false)
                 // is directly obtained from the hidden state. If non-state variable, need
@@ -76,7 +77,7 @@ void LW1_Solver::compute_and_add_observations(const Instance::Action *last_actio
                 // each value corresponds to a different literal (from which one and only
                 // one must be true).
 
-                if( variable.domain().size() == 1 ) {
+                if( variable.is_binary() ) {
                     int index = *variable.domain().begin();
                     bool satisfy = value_observable_literal(hidden, *last_action, *jt, index);
                     sensed_at_step.insert(satisfy ? 1 + index : -(1 + index));
