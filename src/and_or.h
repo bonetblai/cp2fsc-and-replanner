@@ -362,61 +362,6 @@ namespace AndOr {
           return 0;
       }
 
-      void compute_possible_observations(const Search::API<T> &api, const Instance::Action &action, const T &belief, std::vector<std::set<int> > &possible_observations) const {
-          std::cout << Utils::magenta() << "Policy<T>::compute_possible_observations()" << Utils::normal() << std::endl;
-
-          const LW1_Instance &lw1 = api.lw1_instance();
-          map<std::string, std::set<int> >::const_iterator it = lw1.vars_sensed_by_action_.find(action.name_->to_string());
-          if( it != lw1.vars_sensed_by_action_.end() ) {
-              for( std::set<int>::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt ) {
-                  const LW1_Instance::Variable &variable = *lw1.variables_[*jt];
-
-                  // if state variable, the value of observed literal (either true or false)
-                  // is directly obtained from the hidden state. If non-state variable, need
-                  // to use sensing model to determine the value. If the domain size is 1,
-                  // there are only two values for the variable, true or false corresponding
-                  // to the positive and negative literal respectively. If domain size > 1,
-
-#if 0
-                  if( variable.is_binary() ) {
-                      int index = *variable.domain().begin();
-                      bool satisfy = value_observable_literal(hidden, *last_action, *jt, index);
-                      sensed_at_step.insert(satisfy ? 1 + index : -(1 + index));
-                      if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
-                          update_state_with_literals_for_observables(state, *last_action, variable, satisfy ? 1 + index : -(1 + index));
-                      }
-                  } else {
-                      bool some_value_sensed = false;
-                      for( set<int>::const_iterator kt = variable.domain().begin(); kt != variable.domain().end(); ++kt ) {
-                          int index = *kt;
-                          bool satisfy = value_observable_literal(hidden, *last_action, *jt, index);
-                          if( satisfy ) {
-                              if( !some_value_sensed ) {
-                                  sensed_at_step.insert(1 + index);
-                                  some_value_sensed = true;
-                                  if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
-                                      update_state_with_literals_for_observables(state, *last_action, variable, 1 + index);
-                                  }
-                              } else {
-                                  cout << Utils::error() << "more than one value sensed for variable '"
-                                       << variable.name() << "' with action '"
-                                       << last_action->name_->to_string() << "'"
-                                       << endl;
-                              }
-                          }
-                      }
-                      if( !some_value_sensed ) {
-                          cout << Utils::error() << "no value sensed for variable '"
-                               << variable.name() << "' with action '"
-                               << last_action->name_->to_string() << "'"
-                               << endl;
-                      }
-                  }
-#endif
-              }
-          }
-      }
-
       std::pair<const Policy*, int> compute_extension_for(const Search::API<T> &api, const Width::Feature<T> *feature) const {
           std::cout << Utils::magenta() << "Policy<T>::compute_extension_for()" << Utils::normal() << std::endl;
           // CHECK: FILL MISSING CODE
@@ -450,7 +395,7 @@ namespace AndOr {
                       // Feature is achieved iff it is achieved in all successor beliefs
                       bool feature_is_achieved_in_tip = true;
                       std::vector<std::set<int> > possible_observations;
-                      compute_possible_observations(api, action, result_after_action, possible_observations);
+                      //compute_possible_observations(api, action, result_after_action, possible_observations);
                       std::cout << Utils::green() << "#possible-obs=" << possible_observations.size() << Utils::normal() << std::endl;
                       for( size_t j = 0; j < possible_observations.size(); ++j ) {
                           assert(!possible_observations[j].empty());

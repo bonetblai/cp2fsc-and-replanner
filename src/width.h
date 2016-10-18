@@ -263,7 +263,21 @@ namespace Width {
           for( typename FeatureList<T>::const_iterator it = node.features()->begin(); it != node.features()->end(); ++it )
               available_features_.erase(*it);
 
-          // perform expansion geared towards available features
+          // generate tip extensions for available features
+          std::cout << Utils::green() << "#available-features=" << available_features_.size() << Utils::normal() << std::endl;
+          for( typename AndOr::OrNodeList<T>::const_iterator it = policy.tip_nodes().begin(); it != policy.tip_nodes().end(); ++it ) {
+              const T &tip = *(*it)->belief()->belief();
+              std::cout << Utils::blue() << "TIP=" << Utils::normal();
+              tip.print(std::cout, &lw1_instance_);
+              std::cout << std::endl;
+              std::vector<std::pair<const Feature<T>*, std::pair<int, AndOr::AndNode<T>*> > > extensions;
+              compute_extensions_for(tip, available_features_, extensions);
+
+          }
+
+
+          std::cout << "HOLA" << std::endl;
+#if 0
           std::cout << Utils::green() << "#available-features=" << available_features_.size() << Utils::normal() << std::endl;
           for( typename FeatureSet<T>::const_iterator it = available_features_.begin(); it != available_features_.end(); ++it ) {
               const Feature<T> *feature = *it;
@@ -277,8 +291,112 @@ namespace Width {
                   successors.push_back(new Node<T>(p.first, ext_features, ext_policy_cost));
               }
           }
+#endif
           std::cout << "#successors=" << successors.size() << std::endl;
           assert(successors.size() <= available_features_.size());
+          exit(0);
+      }
+
+      void compute_extensions_for(const T &tip,
+                                  const FeatureSet<T> &features,
+                                  std::vector<std::pair<const Feature<T>*, std::pair<int, AndOr::AndNode<T>*> > > &extensions) const {
+          int num_applicable_actions = 0;
+          for( size_t k = 0; k < lw1_instance_.actions_.size(); ++k ) {
+              if( (lw1_instance_.remap_action(k) == -1) && !lw1_instance_.is_subgoaling_rule(k) ) continue;
+              const Instance::Action &action = *lw1_instance_.actions_[k];
+              assert(lw1_instance_.is_regular_action(k));
+              if( tip.applicable(action) ) {
+                  ++num_applicable_actions;
+                  std::cout << Utils::red() << "action=" << Utils::normal() << action.name_ << std::endl;
+
+                  // calculate result of action
+                  T result_after_action(tip);
+                  result_after_action.apply(action);
+
+                  std::cout << Utils::blue() << "RESULT=" << Utils::normal();
+                  result_after_action.print(std::cout, &lw1_instance_);
+                  std::cout << std::endl;
+
+                  // generate successor beliefs considering possible observations.
+                  // Feature is achieved iff it is achieved in all successor beliefs
+                  std::vector<std::set<int> > possible_observations;
+                  compute_possible_observations(action, result_after_action, possible_observations);
+                  std::cout << Utils::green() << "#possible-obs=" << possible_observations.size() << Utils::normal() << std::endl;
+                  for( size_t i = 0; i < possible_observations.size(); ++i ) {
+                      assert(!possible_observations[i].empty());
+                      const std::set<int> obs = possible_observations[i];
+                      T result_after_action_and_obs(result_after_action);
+
+                      // need to resolve dependency issue:
+                      //   -- apply_inference is defined in lw1_solver which is subclass of new_solver
+                      //   -- new_solver is instantiate with an action_selection mechanism
+                      //   -- so, we have circular dependency
+                      //apply_inference(&action, obs, result_after_action_and_obs);
+                  }
+              }
+          }
+          std::cout << Utils::green() << "#applicable actions=" << num_applicable_actions << Utils::normal() << std::endl;
+      }
+
+      void compute_possible_observations(const Instance::Action &action,
+                                         const T &tip, std::vector<std::set<int> > &possible_observations) const {
+          map<std::string, std::set<int> >::const_iterator it = lw1_instance_.vars_sensed_by_action_.find(action.name_->to_string());
+          std::cout << Utils::magenta() << "Policy<T>::compute_possible_observations():" << Utils::normal()
+                    << " action=" << action.name_
+                    << ", #vars-sensed-by-action=" << (it == lw1_instance_.vars_sensed_by_action_.end() ? 0 : it->second.size())
+                    << std::endl;
+
+          if( it != lw1_instance_.vars_sensed_by_action_.end() ) {
+              assert(it->first == action.name_->to_string());
+              for( std::set<int>::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt ) {
+                  const LW1_Instance::Variable &variable = *lw1_instance_.variables_[*jt];
+                  assert(variable.is_observable());
+                  std::cout << Utils::red() << variable << Utils::normal() << std::endl;
+
+                  // if state variable, the value of observed literal (either true or false)
+                  // is directly obtained from the hidden state. If non-state variable, need
+                  // to use sensing model to determine the value. If the domain size is 1,
+                  // there are only two values for the variable, true or false corresponding
+                  // to the positive and negative literal respectively. If domain size > 1,
+
+#if 0
+                  if( variable.is_binary() ) {
+                      int index = *variable.domain().begin();
+                      bool satisfy = value_observable_literal(hidden, *last_action, *jt, index);
+                      sensed_at_step.insert(satisfy ? 1 + index : -(1 + index));
+                      if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
+                          update_state_with_literals_for_observables(state, *last_action, variable, satisfy ? 1 + index : -(1 + index));
+                      }
+                  } else {
+                      bool some_value_sensed = false;
+                      for( set<int>::const_iterator kt = variable.domain().begin(); kt != variable.domain().end(); ++kt ) {
+                          int index = *kt;
+                          bool satisfy = value_observable_literal(hidden, *last_action, *jt, index);
+                          if( satisfy ) {
+                              if( !some_value_sensed ) {
+                                  sensed_at_step.insert(1 + index);
+                                  some_value_sensed = true;
+                                  if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
+                                      update_state_with_literals_for_observables(state, *last_action, variable, 1 + index);
+                                  }
+                              } else {
+                                  cout << Utils::error() << "more than one value sensed for variable '"
+                                       << variable.name() << "' with action '"
+                                       << last_action->name_->to_string() << "'"
+                                       << endl;
+                              }
+                          }
+                      }
+                      if( !some_value_sensed ) {
+                          cout << Utils::error() << "no value sensed for variable '"
+                               << variable.name() << "' with action '"
+                               << last_action->name_->to_string() << "'"
+                               << endl;
+                      }
+                  }
+#endif
+              }
+          }
       }
   };
 
