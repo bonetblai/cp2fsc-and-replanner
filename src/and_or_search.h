@@ -21,31 +21,15 @@
 
 #include <cassert>
 #include <iostream>
+
+#include "and_or_search_api.h"
 #include "utils.h"
+
+#define DEBUG
 
 namespace AndOr {
 
   namespace Search {
-
-    class Node {
-      public:
-        Node() { }
-        virtual ~Node() { }
-        virtual int f() const = 0;
-        virtual void print(std::ostream &os) const = 0;
-    };
-
-    template<typename T>
-    class API {
-      public:
-        API() { }
-        virtual ~API() { }
-        virtual void reset() const = 0;
-        virtual const Node* make_root_node(const T *state) const = 0;
-        virtual bool prune(const Node &node) const = 0;
-        virtual bool is_goal(const Node &node) const = 0;
-        virtual void expand(const Node &node, std::vector<const Node*> &successors) const = 0;
-    };
 
     template<typename T>
     class bfs {
@@ -58,15 +42,24 @@ namespace AndOr {
         typedef typename std::priority_queue<const Node*, std::vector<const Node*>, compare_t> priority_queue;
 
       protected:
+        const LW1_Instance &lw1_instance_;
         const API<T> &api_;
 
       public:
-        bfs(const API<T> &api) : api_(api) { }
+        bfs(const LW1_Instance &lw1_instance, const API<T> &api)
+          : lw1_instance_(lw1_instance), api_(api) {
+        }
         virtual ~bfs() { }
 
         const Node* search(const T &init) const {
-            std::cout << Utils::green() << "BEGIN-SEARCH:" << Utils::normal() << " init=" << init << std::endl;
-            // reset api for performing new search
+#ifdef DEBUG
+            std::cout << Utils::green() << "BEGIN-SEARCH:" << Utils::normal()
+                      << " init=";
+            init.print(std::cout, &lw1_instance_);
+            std::cout << std::endl;
+#endif
+
+            // reset api when performing new search
             api_.reset();
             
             priority_queue q;
@@ -79,7 +72,11 @@ namespace AndOr {
                 if( api_.prune(*n) ) {
                     continue;
                 } else if( api_.is_goal(*n) ) {
-                    std::cout << Utils::green() << "END-SEARCH:" << Utils::normal() << " goal found!" << std::endl;
+#ifdef DEBUG
+                    std::cout << Utils::green() << "END-SEARCH:" << Utils::normal()
+                              << " goal found!"
+                              << std::endl;
+#endif
                     return n; // CHECK: should clear memory in use
                 } else {
                     // expand node
@@ -89,7 +86,11 @@ namespace AndOr {
                         q.push(successors[i]);
                 }
             }
-            std::cout << Utils::green() << "END-SEARCH:" << Utils::normal() << " queue exhausted!" << std::endl;
+#ifdef DEBUG
+            std::cout << Utils::green() << "END-SEARCH:" << Utils::normal()
+                      << " queue exhausted!"
+                      << std::endl;
+#endif
             return 0; // CHECK: should clear memory in use
         }
     };
@@ -98,10 +99,7 @@ namespace AndOr {
 
 } // namespace AndOr
 
-inline std::ostream& operator<<(std::ostream &os, const AndOr::Search::Node &node) {
-    node.print(os);
-    return os;
-}
+#undef DEBUG
 
 #endif
 

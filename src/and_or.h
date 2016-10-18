@@ -24,6 +24,8 @@
 #include <map>
 #include <string>
 #include <vector>
+
+#include "and_or_search_api.h"
 #include "features.h"
 #include "utils.h"
 
@@ -360,10 +362,141 @@ namespace AndOr {
           return 0;
       }
 
-      std::pair<const Policy*, int> compute_extension_for(const Width::Feature<T> *feature) const {
+      void compute_possible_observations(const Search::API<T> &api, const Instance::Action &action, const T &belief, std::vector<std::set<int> > &possible_observations) const {
+          std::cout << Utils::magenta() << "Policy<T>::compute_possible_observations()" << Utils::normal() << std::endl;
+
+          const LW1_Instance &lw1 = api.lw1_instance();
+          map<std::string, std::set<int> >::const_iterator it = lw1.vars_sensed_by_action_.find(action.name_->to_string());
+          if( it != lw1.vars_sensed_by_action_.end() ) {
+              for( std::set<int>::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt ) {
+                  const LW1_Instance::Variable &variable = *lw1.variables_[*jt];
+
+                  // if state variable, the value of observed literal (either true or false)
+                  // is directly obtained from the hidden state. If non-state variable, need
+                  // to use sensing model to determine the value. If the domain size is 1,
+                  // there are only two values for the variable, true or false corresponding
+                  // to the positive and negative literal respectively. If domain size > 1,
+
+#if 0
+                  if( variable.is_binary() ) {
+                      int index = *variable.domain().begin();
+                      bool satisfy = value_observable_literal(hidden, *last_action, *jt, index);
+                      sensed_at_step.insert(satisfy ? 1 + index : -(1 + index));
+                      if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
+                          update_state_with_literals_for_observables(state, *last_action, variable, satisfy ? 1 + index : -(1 + index));
+                      }
+                  } else {
+                      bool some_value_sensed = false;
+                      for( set<int>::const_iterator kt = variable.domain().begin(); kt != variable.domain().end(); ++kt ) {
+                          int index = *kt;
+                          bool satisfy = value_observable_literal(hidden, *last_action, *jt, index);
+                          if( satisfy ) {
+                              if( !some_value_sensed ) {
+                                  sensed_at_step.insert(1 + index);
+                                  some_value_sensed = true;
+                                  if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
+                                      update_state_with_literals_for_observables(state, *last_action, variable, 1 + index);
+                                  }
+                              } else {
+                                  cout << Utils::error() << "more than one value sensed for variable '"
+                                       << variable.name() << "' with action '"
+                                       << last_action->name_->to_string() << "'"
+                                       << endl;
+                              }
+                          }
+                      }
+                      if( !some_value_sensed ) {
+                          cout << Utils::error() << "no value sensed for variable '"
+                               << variable.name() << "' with action '"
+                               << last_action->name_->to_string() << "'"
+                               << endl;
+                      }
+                  }
+#endif
+              }
+          }
+      }
+
+      std::pair<const Policy*, int> compute_extension_for(const Search::API<T> &api, const Width::Feature<T> *feature) const {
           std::cout << Utils::magenta() << "Policy<T>::compute_extension_for()" << Utils::normal() << std::endl;
           // CHECK: FILL MISSING CODE
-          return std::make_pair(static_cast<const Policy*>(0), 0);
+          // for each tip node, search for an action that once applied achieves the given feature
+          bool feature_is_achieved = true;
+          for( typename OrNodeList<T>::const_iterator it = tip_nodes_.begin(); it != tip_nodes_.end(); ++it ) {
+              const T &tip = *(*it)->belief()->belief();
+              std::cout << Utils::blue() << "TIP=" << Utils::normal();
+              tip.print(std::cout, &api.lw1_instance());
+              std::cout << std::endl;
+
+              // iterate over applicable actions at belief
+              int num_applicable_actions = 0;
+              for( size_t i = 0; i < api.lw1_instance().actions_.size(); ++i ) {
+                  if( (api.lw1_instance().remap_action(i) == -1) && !api.lw1_instance().is_subgoaling_rule(i) ) continue;
+                  const Instance::Action &action = *api.lw1_instance().actions_[i];
+                  assert(api.lw1_instance().is_regular_action(i));
+                  if( tip.applicable(action) ) {
+                      ++num_applicable_actions;
+                      std::cout << Utils::red() << "action=" << Utils::normal() << action.name_ << std::endl;
+
+                      // calculate result of action
+                      T result_after_action(tip);
+                      result_after_action.apply(action);
+
+                      std::cout << Utils::blue() << "RESULT=" << Utils::normal();
+                      result_after_action.print(std::cout, &api.lw1_instance());
+                      std::cout << std::endl;
+
+                      // generate successor beliefs considering possible observations.
+                      // Feature is achieved iff it is achieved in all successor beliefs
+                      bool feature_is_achieved_in_tip = true;
+                      std::vector<std::set<int> > possible_observations;
+                      compute_possible_observations(api, action, result_after_action, possible_observations);
+                      std::cout << Utils::green() << "#possible-obs=" << possible_observations.size() << Utils::normal() << std::endl;
+                      for( size_t j = 0; j < possible_observations.size(); ++j ) {
+                          assert(!possible_observations[j].empty());
+                          const std::set<int> obs = possible_observations[j];
+                          T result_after_action_and_obs(result_after_action);
+
+                          // need to resolve dependency issue:
+                          //   -- apply_inference is defined in lw1_solver which is subclass of new_solver
+                          //   -- new_solver is instantiate with an action_selection mechanism
+                          //   -- so, we have circular dependency
+                          //apply_inference(&action, obs, result_after_action_and_obs);
+
+                      }
+
+
+#if 0
+                      // if action is standard action, insert it into plan, apply it at
+                      // hidden state and gather observations (if any)
+                      if( !kp_instance_.is_subgoaling_rule(kp_act.index_) ) {
+                          size_t action_id = kp_instance_.remap_action(plan[k]);
+                          final_plan.push_back(action_id);
+                          const Instance::Action &act = *instance_.actions_[action_id];
+
+                          hidden.apply(act);
+                          //instance_.apply_deductive_rules(hidden); // CHECK
+                          compute_and_add_observations(&kp_act, hidden, state, fired_sensors_at_step, sensed_at_step);
+                          if( (translation_type_ != LW1) || !sensed_at_step.empty() )
+                              apply_inference(&kp_act, sensed_at_step, state);
+                          fired_sensors_during_execution.push_back(fired_sensors_at_step);
+                          sensed_literals_during_execution.push_back(sensed_at_step);
+                          fired_sensors_at_step.clear();
+                          sensed_at_step.clear();
+                      }
+#endif
+                  }
+              }
+              std::cout << Utils::green() << "#applicable actions=" << num_applicable_actions << Utils::normal() << std::endl;
+          }
+          exit(0);
+
+          if( !feature_is_achieved ) {
+              return std::make_pair(static_cast<const Policy*>(0), 0);
+          } else {
+              // return extension that achieves feature
+              return std::make_pair(static_cast<const Policy*>(0), 0);
+          }
       }
   };
 
