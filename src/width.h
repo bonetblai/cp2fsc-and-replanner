@@ -48,9 +48,8 @@ namespace Width {
     public:
       ActionSelection(const LW1_Instance &lw1_instance)
         : lw1_instance_(lw1_instance) {
-          // Initialize language of features to be used
-          //
-          // For each state variable X with domain { x1, ..., xn }, add
+          // Initialize language of features to be used. For each
+          // state variable X with domain { x1, ..., xn }, add
           // features for Kxi, K-xi, and DSZ(X)
           for( size_t var_index = 0; var_index < lw1_instance_.variables_.size(); ++var_index ) {
               const LW1_Instance::Variable &variable = *lw1_instance_.variables_[var_index];
@@ -326,9 +325,12 @@ namespace Width {
                   for( size_t i = 0; i < possible_observations.size(); ++i ) {
                       assert(!possible_observations[i].empty());
                       const std::set<int> obs = possible_observations[i];
+
+                      // possible observation is *valid* if once it is assimilated
+                      // (i.e. inference is done), it results in a consistent state
                       T result_after_action_and_obs(result_after_action);
 
-                      // need to resolve dependency issue:
+                      // CHECK: need to resolve dependency issue:
                       //   -- apply_inference is defined in lw1_solver which is subclass of new_solver
                       //   -- new_solver is instantiate with an action_selection mechanism
                       //   -- so, we have circular dependency
@@ -343,10 +345,13 @@ namespace Width {
                                          const Instance::Action &action,
                                          std::vector<std::set<int> > &possible_observations) const {
           map<std::string, std::set<int> >::const_iterator it = lw1_instance_.vars_sensed_by_action_.find(action.name_->to_string());
+
+#ifdef DEBUG
           std::cout << Utils::magenta() << "Policy<T>::compute_possible_observations():" << Utils::normal()
                     << " action=" << action.name_
                     << ", #vars-sensed-by-action=" << (it == lw1_instance_.vars_sensed_by_action_.end() ? 0 : it->second.size())
                     << std::endl;
+#endif
 
           if( it != lw1_instance_.vars_sensed_by_action_.end() ) {
               assert(it->first == action.name_->to_string());
@@ -360,33 +365,43 @@ namespace Width {
 
                   // for state variable, possible observations correspond to values not tule
                   // out by tip node; i.e. X=x is possible iff K-x doesn't hold in tip. For
-                  // observable variables, let's generate all possible combinations and then
-                  // filter provable impossible combinations.  Binary variables are handled
-                  // separately of multivalued variables as usual ...
+                  // observable variables, we generate all possible combinations. Pruning of
+                  // inconsistent observation (wrt tip) is performed later using inference
+                  // engine. Binary variables are handled separately as usual ...
                   if( variable.is_binary() ) {
-                      std::cout << Utils::green() << "variable is binary" << Utils::normal() << std::endl;
+#ifdef DEBUG
+                      std::cout << Utils::green() << "variable '" << variable.name() << "' is binary" << Utils::normal() << std::endl;
+#endif
                       int atom = *variable.domain().begin();
                       if( variable.is_state_variable() ) {
-                          std::cout << Utils::green() << "variable is state variable" << Utils::normal() << std::endl;
+#ifdef DEBUG
+                          std::cout << Utils::green() << "variable '" << variable.name() << "' is state variable" << Utils::normal() << std::endl;
+#endif
                           if( !tip.satisfy(1 + 2*atom + 1) )
                               observable_literals[var_index].push_back(1 + atom);
                           if( !tip.satisfy(1 + 2*atom) )
                               observable_literals[var_index].push_back(-(1 + atom));
                       } else {
-                          std::cout << Utils::green() << "variable is observable variable" << Utils::normal() << std::endl;
+#ifdef DEBUG
+                          std::cout << Utils::green() << "variable '" << variable.name() << "' is observable variable" << Utils::normal() << std::endl;
+#endif
                           observable_literals[var_index].push_back(1 + atom);
                           observable_literals[var_index].push_back(-(1 + atom));
                       }
                   } else {
-                      std::cout << Utils::green() << "variable is multivalued" << Utils::normal() << std::endl;
+#ifdef DEBUG
+                      std::cout << Utils::green() << "variable '" << variable.name() << "' is multivalued" << Utils::normal() << std::endl;
+                      if( variable.is_state_variable() )
+                          std::cout << Utils::green() << "variable '" << variable.name() << "' is state variable" << Utils::normal() << std::endl;
+                      else
+                          std::cout << Utils::green() << "variable '" << variable.name() << "' is observable variable" << Utils::normal() << std::endl;
+#endif
                       for( set<int>::const_iterator kt = variable.domain().begin(); kt != variable.domain().end(); ++kt ) {
                           int atom = *kt;
                           if( variable.is_state_variable() ) {
-                              std::cout << Utils::green() << "variable is state variable" << Utils::normal() << std::endl;
                               if( !tip.satisfy(1 + 2*atom + 1) )
                                   observable_literals[var_index].push_back(1 + atom);
                           } else {
-                              std::cout << Utils::green() << "variable is observable variable" << Utils::normal() << std::endl;
                               observable_literals[var_index].push_back(1 + atom);
                           }
                       }
@@ -396,18 +411,20 @@ namespace Width {
               // generate all combinations
               possible_observations.clear();
               std::vector<std::pair<int, int> > combination;
-              generate_combinations(tip, observable_literals.begin(), observable_literals.end(), combination, possible_observations);
+              generate_combinations_recursively(tip, observable_literals.begin(), observable_literals.end(), combination, possible_observations);
               assert(combination.empty());
               std::cout << Utils::green() << "#combinations=" << possible_observations.size() << std::endl;
           }
       }
 
-      void generate_combinations(const T &tip,
-                                 std::map<int, std::vector<int> >::const_iterator it,
-                                 const std::map<int, std::vector<int> >::const_iterator end,
-                                 std::vector<std::pair<int, int> > &combination,
-                                 std::vector<std::set<int> > &possible_observations) const {
-          std::cout << Utils::magenta() << "Policy<T>::generate_combinations():" << Utils::normal() << std::endl;
+      void generate_combinations_recursively(const T &tip, // currently not used
+                                             std::map<int, std::vector<int> >::const_iterator it,
+                                             const std::map<int, std::vector<int> >::const_iterator end,
+                                             std::vector<std::pair<int, int> > &combination,
+                                             std::vector<std::set<int> > &possible_observations) const {
+#ifdef DEBUG
+          std::cout << Utils::magenta() << "Policy<T>::generate_combinations_recursively()" << Utils::normal() << std::endl;
+#endif
           if( it != end ) {
               // extend combination with (variable,value) pair from available
               // option, and make recursive call to generate all possible combinations
@@ -417,30 +434,25 @@ namespace Width {
                   int literal = options[k];
                   combination.push_back(std::make_pair(var_index, literal));
                   ++it;
-                  generate_combinations(tip, it, end, combination, possible_observations);
+                  generate_combinations_recursively(tip, it, end, combination, possible_observations);
                   --it;
                   combination.pop_back();
               }
           } else {
-              // if combination is consistent with tip, insert new observations
-              // into set of possible observations
-              if( is_observation_possible(tip, combination) ) {
-                  std::set<int> observation;
-                  for( size_t i = 0; i < combination.size(); ++i )
-                      observation.insert(combination[i].second);
-                  possible_observations.push_back(observation);
-              }
+              // we don't perform any check on consitency of combination.
+              // Such a check is performed later using the inference engine.
+              std::set<int> observation;
+              for( size_t i = 0; i < combination.size(); ++i )
+                  observation.insert(combination[i].second);
+              possible_observations.push_back(observation);
           }
-      }
-
-      bool is_observation_possible(const T &tip, const std::vector<std::pair<int, int> > &combination) const {
-          std::cout << Utils::magenta() << "Policy<T>::is_observation_possible():" << Utils::normal() << std::endl;
-          return true;
       }
   };
 
   template<typename T>
   inline int ActionSelection<T>::get_plan(const T &state, Instance::Plan &raw_plan, Instance::Plan &plan) const { // CHECK: incomplete code
+      std::cout << Utils::magenta() << "Width::ActionSelection<T>::get_plan()" << Utils::normal() << std::endl;
+
       //AndOr::BeliefRepo<T> belief_repo;
       //AndOr::Policy<T> policy(belief_repo);
       //policy.make_root(&state);

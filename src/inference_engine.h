@@ -34,7 +34,7 @@
 #include "state.h"
 #include "utils.h"
 
-#define DEBUG
+//#define DEBUG
 
 namespace Inference {
 
@@ -472,6 +472,15 @@ namespace Inference {
           assert(dynamic_cast<const LW1_Instance*>(&kp_instance_) != 0);
           const LW1_Instance &lw1_instance = static_cast<const LW1_Instance&>(kp_instance_);
           fill_atoms_to_var_map(lw1_instance, atoms_to_vars_);
+#if 0
+          Inference::CSP::Csp csp;
+          csp.initialize(lw1_instance.variables_, atoms_to_vars_);
+          if( lw1_instance.has_groups() ) {
+              csp.initialize_groups(lw1_instance);
+              Inference::CSP::AC3 ac3;
+              ac3.initialize_arcs(lw1_instance, csp);
+          }
+#endif
       }
 
       virtual void internal_apply_inference(const Instance::Action *last_action,
@@ -491,7 +500,7 @@ namespace Inference {
           // find sensing models for given action that are incompatible with observations
           relevant_sensing_models_t relevant_sensing_models_as_k_dnf;
           if( last_action != 0 )
-              fill_relevant_sensing_models(options_, instance_, lw1_instance, last_action, sensed_at_step, relevant_sensing_models_as_k_dnf, true);
+              fill_relevant_sensing_models(options_, instance_, lw1_instance, last_action, sensed_at_step, relevant_sensing_models_as_k_dnf, false);
 
           // 0. Domains are original domains with values pruned as indicated with the K-literals in state.
           // Basic constraints relate variable groups to state variable and variable groups to variable

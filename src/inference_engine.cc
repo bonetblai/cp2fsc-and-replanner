@@ -27,7 +27,7 @@
 
 using namespace std;
 
-#define DEBUG
+//#define DEBUG
 
 namespace Inference {
 
