@@ -280,7 +280,6 @@ int main(int argc, const char *argv[]) {
 
     cout << "instantiating p.o. problem..." << endl;
     reader->emit_instance(instance);
-    //delete reader; // CHECK
     if( g_options.is_enabled("problem:print:raw") ) {
         //instance.print(cout);
         instance.write_domain(cout);
@@ -484,12 +483,12 @@ int main(int argc, const char *argv[]) {
         // print some stats
         float current_time = Utils::read_time_in_seconds();
         cout << "stats: " << flush
-             << opt_planner << " (planner) " << flush
+             << action_selection->name() << " (action-selection) " << flush
              << (int)(status != LW1_Solver::SOLVED ? -1 : plan_length) << " (plan-size) " << flush
-             << planner->n_calls() << " (planner-calls) " << flush
+             << action_selection->n_calls() << " (as-calls) " << flush
              << preprocessing_time << " (preprocessing-time) " << flush
-             << planner->get_time() << " (planner-time) " << flush
-             << planner->get_search_time() << " (planner-search-time) " << flush
+             << action_selection->get_time() << " (as-time) " << flush
+             << action_selection->get_search_time() << " (as-search-time) " << flush
              << lw1_instance->get_inference_time() << " (inference-time) " << flush
              << current_time - instance_start_time << " (instance-time) " << flush
              << current_time - start_time << " (total-acc-time)" << flush
