@@ -20,6 +20,7 @@
 #define LW1_SOLVER_H
 
 #include "inference.h"
+#include "inference_engine.h"
 
 // We are currently using the Solver class as base class. In the near
 // future we'll change to the templatized NewSolver class to allow
@@ -52,9 +53,11 @@ class LW1_Solver : public BASE_CLASS {
     LW1_Solver(const Instance &instance,
                const KP_Instance &kp_instance,
                const ActionSelection<STATE_CLASS> &action_selection,
+               const Inference::Engine<STATE_CLASS> &inference_engine,
                int time_bound,
                int ncalls_bound)
       : BASE_CLASS(LW1, instance, kp_instance, action_selection, time_bound, ncalls_bound),
+        inference_engine_(inference_engine),
         frontier_(0) {
     }
     ~LW1_Solver() { }
@@ -77,11 +80,12 @@ class LW1_Solver : public BASE_CLASS {
     // This is kept for the AC3 algorithm. It relates an atom index to its
     // corresponding variable. Public as of now
     // TODO: Make this protected
-    typedef std::map<int, int> atoms_to_vars_map_t;
-    atoms_to_vars_map_t atoms_to_vars_;
+    std::map<int, int> atoms_to_vars_;
     void fill_atoms_to_var_map(const KP_Instance&);
 
   protected:
+    const Inference::Engine<STATE_CLASS> &inference_engine_;
+
     typedef std::vector<int> clause_or_term_t;
     typedef std::vector<clause_or_term_t> cnf_or_dnf_t;
     typedef std::vector<const cnf_or_dnf_t*> sensing_models_as_cnf_or_dnf_t;

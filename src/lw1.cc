@@ -30,6 +30,7 @@
 #include "lw1_problem.h"
 #include "lw1_solver.h"
 #include "inference.h"
+#include "inference_engine.h"
 #include "options.h"
 #include "available_options.h"
 #include "utils.h"
@@ -336,15 +337,28 @@ int main(int argc, const char *argv[]) {
         }
     }
 
+    // construct inference engine
+    Inference::Engine<STATE_CLASS> *inference_engine = 0;
+    if( g_options.is_enabled("lw1:inference:forward-chaining") ) {
+        inference_engine = new Inference::ForwardChaining<STATE_CLASS>(instance, *lw1_instance, g_options);
+    } else if( g_options.is_enabled("lw1:inference:up") ) {
+        inference_engine = new Inference::UnitPropagation<STATE_CLASS>(instance, *lw1_instance, g_options);
+    } else if( g_options.is_enabled("lw1:inference:ac3") ) {
+        inference_engine = new Inference::AC3<STATE_CLASS>(instance, *lw1_instance, g_options);
+    } else {
+        cout << Utils::error() << "unspecified inference method for lw1" << endl;
+        exit(-1);
+    }
+
     // construct action selection
-    ActionSelection<STATE_CLASS> *action_selection = 0; // CHECK: STATE_CLASS is defined in lw1_solver.h (this is provisional)
+    ActionSelection<STATE_CLASS> *action_selection = 0;
     if( g_options.is_enabled("solver:random-action-selection") ) {
-        action_selection = new RandomActionSelection<STATE_CLASS>(*lw1_instance); // CHECK: STATE_CLASS is defined in lw1_solver.h (this is provisional)
+        action_selection = new RandomActionSelection<STATE_CLASS>(*lw1_instance);
     } else if( g_options.is_enabled("solver:width-based-action-selection") ) {
-        action_selection = new Width::ActionSelection<STATE_CLASS>(*lw1_instance); // CHECK: STATE_CLASS is defined in lw1_solver.h (this is provisional)
+        action_selection = new Width::ActionSelection<STATE_CLASS>(*lw1_instance);
     } else {
         assert(planner != 0);
-        action_selection = new ClassicalPlannerWrapper<STATE_CLASS>(*planner); // CHECK: STATE_CLASS is defined in lw1_solver.h (this is provisional)
+        action_selection = new ClassicalPlannerWrapper<STATE_CLASS>(*planner);
     }
 
     // solve problem
@@ -352,7 +366,7 @@ int main(int argc, const char *argv[]) {
     for( int k = 0; k < instance.num_hidden_states(); ++k ) {
         float instance_start_time = Utils::read_time_in_seconds();
         vector<set<int> > fired_sensors, sensed_literals;
-        STATE_CLASS hidden_initial_state; // CHECK: STATE_CLASS is defined in lw1_solver.h (this is provisional)
+        STATE_CLASS hidden_initial_state;
         Instance::Plan plan;
 
         // set hidden state
@@ -361,8 +375,9 @@ int main(int argc, const char *argv[]) {
         hidden_initial_state.print(cout, instance);
         cout << endl;
 
-        // create and initialize solver
-        LW1_Solver solver(instance, *lw1_instance, *action_selection, opt_time_bound, opt_ncalls_bound);
+        // CHECK: should we create inference engine inside or outside this loop?
+        // create and initialize inference engine and solver
+        LW1_Solver solver(instance, *lw1_instance, *action_selection, *inference_engine, opt_time_bound, opt_ncalls_bound);
 
         // reset stats
         action_selection->reset_stats();
@@ -496,6 +511,7 @@ int main(int argc, const char *argv[]) {
     }
 
     delete action_selection;
+    delete inference_engine;
     delete planner;
     delete lw1_instance;
     delete reader;

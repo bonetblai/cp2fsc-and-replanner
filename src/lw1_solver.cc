@@ -159,6 +159,9 @@ void LW1_Solver::compute_and_add_observations(const Instance::Action *last_actio
 void LW1_Solver::apply_inference(const Instance::Action *last_action,
                                  const set<int> &sensed_at_step,
                                  STATE_CLASS &state) const {
+#if 0
+    inference_engine_.apply_inference(last_action, sensed_at_step, state);
+#else
     float start_time = Utils::read_time_in_seconds();
 
 #ifdef DEBUG
@@ -612,6 +615,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
     cout << Utils::green() << ">>> state  after inference=";
     state.print(cout, kp_instance_);
     cout << Utils::normal() << endl;
+#endif
 #endif
 }
 

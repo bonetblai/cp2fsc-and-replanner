@@ -10,9 +10,9 @@ lw1.o: lw1.cc action_selection.h problem.h name.h index.h options.h \
   utils.h kp_problem.h base.h ptr_table.h string_table.h char_map.h \
   classical_planner_wrapper.h classical_planner.h state.h preprocess.h \
   parser.h scanner.h grammar.h clg_problem.h lw1_problem.h lw1_solver.h \
-  inference.h lw1_state.h new_solver.h csp.h available_options.h width.h \
-  and_or_search.h and_or_search_api.h features.h and_or.h \
-  random_action_selection.h
+  inference.h lw1_state.h inference_engine.h csp.h new_solver.h \
+  available_options.h width.h and_or_search.h and_or_search_api.h \
+  features.h and_or.h random_action_selection.h
 string_table.o: string_table.cc string_table.h char_map.h
 base.o: base.cc base.h ptr_table.h string_table.h char_map.h options.h \
   utils.h problem.h name.h index.h base_dnf.h
@@ -39,14 +39,19 @@ solver.o: solver.cc solver.h classical_planner.h kp_problem.h problem.h \
   char_map.h state.h
 lw1_solver.o: lw1_solver.cc lw1_solver.h inference.h lw1_problem.h \
   kp_problem.h problem.h name.h index.h options.h utils.h base.h \
-  ptr_table.h string_table.h char_map.h lw1_state.h state.h new_solver.h \
-  action_selection.h csp.h classical_planner.h
+  ptr_table.h string_table.h char_map.h lw1_state.h state.h \
+  inference_engine.h csp.h new_solver.h action_selection.h \
+  classical_planner.h
 classical_planner.o: classical_planner.cc classical_planner.h \
   kp_problem.h problem.h name.h index.h options.h utils.h base.h \
   ptr_table.h string_table.h char_map.h state.h
 inference.o: inference.cc inference.h lw1_problem.h kp_problem.h \
   problem.h name.h index.h options.h utils.h base.h ptr_table.h \
   string_table.h char_map.h lw1_state.h state.h
+inference_engine.o: inference_engine.cc inference_engine.h csp.h \
+  lw1_problem.h kp_problem.h problem.h name.h index.h options.h utils.h \
+  base.h ptr_table.h string_table.h char_map.h lw1_state.h state.h \
+  inference.h
 csp.o: csp.cc csp.h lw1_problem.h kp_problem.h problem.h name.h index.h \
   options.h utils.h base.h ptr_table.h string_table.h char_map.h \
   lw1_state.h state.h
