@@ -23,6 +23,7 @@
 #include <iostream>
 #include <list>
 #include <vector>
+
 #include "action_selection.h"
 #include "lw1_problem.h"
 #include "utils.h"
@@ -52,11 +53,11 @@ namespace Width {
           // For each state variable X with domain { x1, ..., xn }, add
           // features for Kxi, K-xi, and DSZ(X)
           for( size_t var_index = 0; var_index < lw1_instance_.variables_.size(); ++var_index ) {
-              const LW1_Instance::Variable &var = *lw1_instance_.variables_[var_index];
-              if( var.is_state_variable() ) {
+              const LW1_Instance::Variable &variable = *lw1_instance_.variables_[var_index];
+              if( variable.is_state_variable() ) {
                   // generate feature for domain values
-                  if( var.is_binary() ) {
-                      int atom = *var.domain().begin();
+                  if( variable.is_binary() ) {
+                      int atom = *variable.domain().begin();
                       feature_language_.push_back(new LiteralFeature<T>(lw1_instance_, var_index, 1 + 2*atom));
 #ifdef DEBUG
                       std::cout << "new " << *feature_language_.back() << std::endl;
@@ -66,7 +67,7 @@ namespace Width {
                       std::cout << "new " << *feature_language_.back() << std::endl;
 #endif
                   } else {
-                      for( set<int>::const_iterator it = var.domain().begin(); it != var.domain().end(); ++it ) {
+                      for( set<int>::const_iterator it = variable.domain().begin(); it != variable.domain().end(); ++it ) {
                           feature_language_.push_back(new LiteralFeature<T>(lw1_instance_, var_index, 1 + 2*(*it)));
 #ifdef DEBUG
                           std::cout << "new " << *feature_language_.back() << std::endl;
@@ -75,7 +76,7 @@ namespace Width {
                   }
 
                   // generate feature for domain size
-                  size_t dsize = var.is_binary() ? 2 : var.domain().size();
+                  size_t dsize = variable.is_binary() ? 2 : variable.domain().size();
                   for( size_t i = 0; i < dsize; ++i ) {
                       feature_language_.push_back(new DomainSizeLiteralFeature<T>(lw1_instance_, var_index, 1 + i));
 #ifdef DEBUG
@@ -307,7 +308,7 @@ namespace Width {
               assert(lw1_instance_.is_regular_action(k));
               if( tip.applicable(action) ) {
                   ++num_applicable_actions;
-                  std::cout << Utils::red() << "action=" << Utils::normal() << action.name_ << std::endl;
+                  std::cout << Utils::green() << "action=" << Utils::normal() << action.name_ << std::endl;
 
                   // calculate result of action
                   T result_after_action(tip);
@@ -320,7 +321,7 @@ namespace Width {
                   // generate successor beliefs considering possible observations.
                   // Feature is achieved iff it is achieved in all successor beliefs
                   std::vector<std::set<int> > possible_observations;
-                  compute_possible_observations(action, result_after_action, possible_observations);
+                  compute_possible_observations(result_after_action, action, possible_observations);
                   std::cout << Utils::green() << "#possible-obs=" << possible_observations.size() << Utils::normal() << std::endl;
                   for( size_t i = 0; i < possible_observations.size(); ++i ) {
                       assert(!possible_observations[i].empty());
@@ -338,8 +339,9 @@ namespace Width {
           std::cout << Utils::green() << "#applicable actions=" << num_applicable_actions << Utils::normal() << std::endl;
       }
 
-      void compute_possible_observations(const Instance::Action &action,
-                                         const T &tip, std::vector<std::set<int> > &possible_observations) const {
+      void compute_possible_observations(const T &tip,
+                                         const Instance::Action &action,
+                                         std::vector<std::set<int> > &possible_observations) const {
           map<std::string, std::set<int> >::const_iterator it = lw1_instance_.vars_sensed_by_action_.find(action.name_->to_string());
           std::cout << Utils::magenta() << "Policy<T>::compute_possible_observations():" << Utils::normal()
                     << " action=" << action.name_
@@ -348,55 +350,92 @@ namespace Width {
 
           if( it != lw1_instance_.vars_sensed_by_action_.end() ) {
               assert(it->first == action.name_->to_string());
+
+              std::map<int, std::vector<int> > observable_literals;
               for( std::set<int>::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt ) {
-                  const LW1_Instance::Variable &variable = *lw1_instance_.variables_[*jt];
+                  int var_index = *jt;
+                  const LW1_Instance::Variable &variable = *lw1_instance_.variables_[var_index];
                   assert(variable.is_observable());
-                  std::cout << Utils::red() << variable << Utils::normal() << std::endl;
+                  std::cout << Utils::green() << variable << Utils::normal() << std::endl;
 
-                  // if state variable, the value of observed literal (either true or false)
-                  // is directly obtained from the hidden state. If non-state variable, need
-                  // to use sensing model to determine the value. If the domain size is 1,
-                  // there are only two values for the variable, true or false corresponding
-                  // to the positive and negative literal respectively. If domain size > 1,
-
-#if 0
+                  // for state variable, possible observations correspond to values not tule
+                  // out by tip node; i.e. X=x is possible iff K-x doesn't hold in tip. For
+                  // observable variables, let's generate all possible combinations and then
+                  // filter provable impossible combinations.  Binary variables are handled
+                  // separately of multivalued variables as usual ...
                   if( variable.is_binary() ) {
-                      int index = *variable.domain().begin();
-                      bool satisfy = value_observable_literal(hidden, *last_action, *jt, index);
-                      sensed_at_step.insert(satisfy ? 1 + index : -(1 + index));
-                      if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
-                          update_state_with_literals_for_observables(state, *last_action, variable, satisfy ? 1 + index : -(1 + index));
+                      std::cout << Utils::green() << "variable is binary" << Utils::normal() << std::endl;
+                      int atom = *variable.domain().begin();
+                      if( variable.is_state_variable() ) {
+                          std::cout << Utils::green() << "variable is state variable" << Utils::normal() << std::endl;
+                          if( !tip.satisfy(1 + 2*atom + 1) )
+                              observable_literals[var_index].push_back(1 + atom);
+                          if( !tip.satisfy(1 + 2*atom) )
+                              observable_literals[var_index].push_back(-(1 + atom));
+                      } else {
+                          std::cout << Utils::green() << "variable is observable variable" << Utils::normal() << std::endl;
+                          observable_literals[var_index].push_back(1 + atom);
+                          observable_literals[var_index].push_back(-(1 + atom));
                       }
                   } else {
-                      bool some_value_sensed = false;
+                      std::cout << Utils::green() << "variable is multivalued" << Utils::normal() << std::endl;
                       for( set<int>::const_iterator kt = variable.domain().begin(); kt != variable.domain().end(); ++kt ) {
-                          int index = *kt;
-                          bool satisfy = value_observable_literal(hidden, *last_action, *jt, index);
-                          if( satisfy ) {
-                              if( !some_value_sensed ) {
-                                  sensed_at_step.insert(1 + index);
-                                  some_value_sensed = true;
-                                  if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
-                                      update_state_with_literals_for_observables(state, *last_action, variable, 1 + index);
-                                  }
-                              } else {
-                                  cout << Utils::error() << "more than one value sensed for variable '"
-                                       << variable.name() << "' with action '"
-                                       << last_action->name_->to_string() << "'"
-                                       << endl;
-                              }
+                          int atom = *kt;
+                          if( variable.is_state_variable() ) {
+                              std::cout << Utils::green() << "variable is state variable" << Utils::normal() << std::endl;
+                              if( !tip.satisfy(1 + 2*atom + 1) )
+                                  observable_literals[var_index].push_back(1 + atom);
+                          } else {
+                              std::cout << Utils::green() << "variable is observable variable" << Utils::normal() << std::endl;
+                              observable_literals[var_index].push_back(1 + atom);
                           }
                       }
-                      if( !some_value_sensed ) {
-                          cout << Utils::error() << "no value sensed for variable '"
-                               << variable.name() << "' with action '"
-                               << last_action->name_->to_string() << "'"
-                               << endl;
-                      }
                   }
-#endif
+              }
+
+              // generate all combinations
+              possible_observations.clear();
+              std::vector<std::pair<int, int> > combination;
+              generate_combinations(tip, observable_literals.begin(), observable_literals.end(), combination, possible_observations);
+              assert(combination.empty());
+              std::cout << Utils::green() << "#combinations=" << possible_observations.size() << std::endl;
+          }
+      }
+
+      void generate_combinations(const T &tip,
+                                 std::map<int, std::vector<int> >::const_iterator it,
+                                 const std::map<int, std::vector<int> >::const_iterator end,
+                                 std::vector<std::pair<int, int> > &combination,
+                                 std::vector<std::set<int> > &possible_observations) const {
+          std::cout << Utils::magenta() << "Policy<T>::generate_combinations():" << Utils::normal() << std::endl;
+          if( it != end ) {
+              // extend combination with (variable,value) pair from available
+              // option, and make recursive call to generate all possible combinations
+              int var_index = it->first;
+              const std::vector<int> &options = it->second;
+              for( size_t k = 0; k < options.size(); ++k ) {
+                  int literal = options[k];
+                  combination.push_back(std::make_pair(var_index, literal));
+                  ++it;
+                  generate_combinations(tip, it, end, combination, possible_observations);
+                  --it;
+                  combination.pop_back();
+              }
+          } else {
+              // if combination is consistent with tip, insert new observations
+              // into set of possible observations
+              if( is_observation_possible(tip, combination) ) {
+                  std::set<int> observation;
+                  for( size_t i = 0; i < combination.size(); ++i )
+                      observation.insert(combination[i].second);
+                  possible_observations.push_back(observation);
               }
           }
+      }
+
+      bool is_observation_possible(const T &tip, const std::vector<std::pair<int, int> > &combination) const {
+          std::cout << Utils::magenta() << "Policy<T>::is_observation_possible():" << Utils::normal() << std::endl;
+          return true;
       }
   };
 
