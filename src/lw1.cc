@@ -35,6 +35,7 @@
 #include "utils.h"
 #include "csp.h"
 #include "width.h"
+#include "random_action_selection.h"
 
 using namespace std;
 
@@ -235,6 +236,11 @@ int main(int argc, const char *argv[]) {
     if( g_options.is_enabled("lw1:boost:literals-for-observables:dynamic") )
         g_options.enable("lw1:boost:literals-for-observables");
 
+    if( g_options.is_enabled("solver:random-action-selection") )
+        g_options.disable("solver:width-based-action-selection");
+    if( g_options.is_enabled("solver:width-based-action-selection") )
+        g_options.disable("solver:random-action-selection");
+
     // print enabled options
     cout << "enabled options: " << g_options << endl;
 
@@ -314,7 +320,7 @@ int main(int argc, const char *argv[]) {
 
     // construct classical planner
     const ClassicalPlanner *planner = 0;
-    if( !g_options.is_enabled("solver:width-based-action-selection") ) {
+    if( !g_options.is_enabled("solver:width-based-action-selection") && !g_options.is_enabled("solver:random-action-selection") ) {
         if( opt_planner == "ff" ) {
             planner = new FF_Planner(*lw1_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
         } else if( opt_planner == "lama" ) {
@@ -333,11 +339,13 @@ int main(int argc, const char *argv[]) {
 
     // construct action selection
     ActionSelection<STATE_CLASS> *action_selection = 0; // CHECK: STATE_CLASS is defined in lw1_solver.h (this is provisional)
-    if( !g_options.is_enabled("solver:width-based-action-selection") ) {
+    if( g_options.is_enabled("solver:random-action-selection") ) {
+        action_selection = new RandomActionSelection<STATE_CLASS>(*lw1_instance); // CHECK: STATE_CLASS is defined in lw1_solver.h (this is provisional)
+    } else if( g_options.is_enabled("solver:width-based-action-selection") ) {
+        action_selection = new Width::ActionSelection<STATE_CLASS>(*lw1_instance); // CHECK: STATE_CLASS is defined in lw1_solver.h (this is provisional)
+    } else {
         assert(planner != 0);
         action_selection = new ClassicalPlannerWrapper<STATE_CLASS>(*planner); // CHECK: STATE_CLASS is defined in lw1_solver.h (this is provisional)
-    } else {
-        action_selection = new Width::ActionSelection<STATE_CLASS>(*lw1_instance); // CHECK: STATE_CLASS is defined in lw1_solver.h (this is provisional)
     }
 
     // solve problem
@@ -475,16 +483,16 @@ int main(int argc, const char *argv[]) {
 
         // print some stats
         float current_time = Utils::read_time_in_seconds();
-        cout << "stats: "
-             << opt_planner << " (planner) "
-             << (int)(status != LW1_Solver::SOLVED ? -1 : plan_length) << " (plan-size) "
-             << planner->n_calls() << " (planner-calls) "
-             << preprocessing_time << " (preprocessing-time) "
-             << planner->get_time() << " (planner-time) "
-             << planner->get_search_time() << " (planner-search-time) "
-             << lw1_instance->get_inference_time() << " (inference-time) "
-             << current_time - instance_start_time << " (instance-time) "
-             << current_time - start_time << " (total-acc-time)"
+        cout << "stats: " << flush
+             << opt_planner << " (planner) " << flush
+             << (int)(status != LW1_Solver::SOLVED ? -1 : plan_length) << " (plan-size) " << flush
+             << planner->n_calls() << " (planner-calls) " << flush
+             << preprocessing_time << " (preprocessing-time) " << flush
+             << planner->get_time() << " (planner-time) " << flush
+             << planner->get_search_time() << " (planner-search-time) " << flush
+             << lw1_instance->get_inference_time() << " (inference-time) " << flush
+             << current_time - instance_start_time << " (instance-time) " << flush
+             << current_time - start_time << " (total-acc-time)" << flush
              << endl << endl;
     }
 

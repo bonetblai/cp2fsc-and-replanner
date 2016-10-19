@@ -176,7 +176,10 @@ int NewSolver<T>::solve(const T &initial_hidden_state,
                 return TIME;
             }
             assert(!plan.empty());
-            calculate_relevant_assumptions(plan, raw_plan, state, goal_condition, assumptions);
+            if( options_.is_enabled("solver:random-action-selection") )
+                assumptions.push_back(index_set());
+            else
+                calculate_relevant_assumptions(plan, raw_plan, state, goal_condition, assumptions);
         }
 
         // first assumption for reduced plan should be satisfied by current state.

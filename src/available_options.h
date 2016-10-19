@@ -102,6 +102,7 @@ const char *available_options[] = {
 
     // solver option for lw1
     "solver:width-based-action-selection",              "[SOLVER] use width-based algorithm for action selection (LW1)",
+    "solver:random-action-selection",                   "[SOLVER] random action selection (LW1)",
 
     // clg
     "clg:print:effect",                                 "[CLG] print effect actions",

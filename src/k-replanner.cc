@@ -359,15 +359,15 @@ int main(int argc, const char *argv[]) {
 
         // print some stats
         float current_time = Utils::read_time_in_seconds();
-        cout << "stats: "
-             << opt_planner << " (planner) "
-             << (int)(status != Solver::SOLVED ? -1 : plan_length) << " (plan-size) "
-             << planner->n_calls() << " (planner-calls) "
-             << preprocessing_time << " (preprocessing-time) "
-             << planner->get_time() << " (planner-time) "
-             << planner->get_search_time() << " (planner-search-time) "
-             << current_time - instance_start_time << " (instance-time) "
-             << current_time - start_time << " (total-acc-time)"
+        cout << "stats: " << flush
+             << opt_planner << " (planner) " << flush
+             << (int)(status != Solver::SOLVED ? -1 : plan_length) << " (plan-size) " << flush
+             << planner->n_calls() << " (planner-calls) " << flush
+             << preprocessing_time << " (preprocessing-time) " << flush
+             << planner->get_time() << " (planner-time) " << flush
+             << planner->get_search_time() << " (planner-search-time) " << flush
+             << current_time - instance_start_time << " (instance-time) " << flush
+             << current_time - start_time << " (total-acc-time)" << flush
              << endl << endl;
     }
 
