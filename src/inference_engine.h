@@ -473,9 +473,8 @@ namespace Inference {
           std::cout << Utils::cyan() << "Using inference: 'ac3' (AC3)" << Utils::normal() << std::endl;
 #endif
 
-          //csp_.initialize_groups(); // CHECK
+          // reset current domains of simple variables
           csp_.reset_current_domains();
-          //csp_.reset_current_domains_for_variable_groups(); // CHECK
 
           // find sensing models for given action that are incompatible with observations
           relevant_sensing_models_t relevant_sensing_models_as_k_dnf;
@@ -598,6 +597,9 @@ namespace Inference {
       }
       virtual ~AC3() { }
       virtual void reset() {
+          // reset current domain for variable groups; done once
+          // per instance (hidden state) as variable groups should
+          // correspond to static variables
           csp_.reset_current_domains_for_variable_groups();
       }
   };
