@@ -1,6 +1,6 @@
 /*
  *  Copyright (C) 2011 - <date> Blai Bonet, Universidad Simon Bolivar
- * 
+ *
  *  Permission is hereby granted to distribute this software for
  *  non-commercial research purposes, provided that this copyright
  *  notice is included with any such distribution.
@@ -165,7 +165,7 @@ COMMENT ;.*$
 
 {INT}      { val.ival = atoi(yytext); return PDDL_Parser::TK_INT; }
 
-%% 
+%%
 
 /*{FLOAT}    { val.rval = A_TO_NN(yytext); return PDDL_Parser::TK_FLOAT; }*/
 

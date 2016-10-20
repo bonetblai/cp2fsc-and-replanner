@@ -1,6 +1,6 @@
 /*
  *  Copyright (C) 2011 - <date> Blai Bonet, Universidad Simon Bolivar
- * 
+ *
  *  Permission is hereby granted to distribute this software for
  *  non-commercial research purposes, provided that this copyright
  *  notice is included with any such distribution.
@@ -160,7 +160,7 @@ domain_elements:
     | domain_elements domain_default_sensing
     | /* empty */
     ;
- 
+
 domain_name:
       TK_OPEN KW_DOMAIN any_symbol TK_CLOSE { domain_name_ = $3->text; }
     ;
@@ -705,7 +705,7 @@ sensing_decl:
       sensing_model { $$ = new BasicSensingModel($1); }
     | forall_sensing
     ;
-   
+
 forall_sensing:
       TK_OPEN KW_FORALL TK_OPEN {
           schema_.push_back(new ForallSensing);
@@ -1076,7 +1076,7 @@ single_init_element:
       }
     | clause {
           if( type_ == replanner ) {
-              // We let oneofs pass in k-replanner as they are later mapped 
+              // We let oneofs pass in k-replanner as they are later mapped
               // into invariants of type at-least-one. This is to support
               // CLG compatibility mode.
               declare_clg_translation();
@@ -1087,7 +1087,7 @@ single_init_element:
       }
     | oneof {
           if( type_ == replanner ) {
-              // We let oneofs pass in k-replanner as they are later mapped 
+              // We let oneofs pass in k-replanner as they are later mapped
               // into invariants of type exactly-one. This is to support
               // CLG compatibility mode.
               declare_clg_translation();
@@ -1198,7 +1198,6 @@ goal_list:
           cond->push_back($1);
           $$ = cond;
       }
-    
     ;
 
 single_goal:

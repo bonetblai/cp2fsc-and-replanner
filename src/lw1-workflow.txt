@@ -13,7 +13,7 @@ Driver is do_translations(). It performs the following tasks:
      - remove static atoms for beams
      - if reduced beam is empty & lw1:boost:compile-static-observables is enabled then
        call compile_static_observable(fluent) wheren fluent is y value for var Y
-   - done 
+   - done
 
    2.1. calculate_beams_for_grounded_variable(var Y)
         - if Y is state variable, the beam for each value contains only the value
@@ -55,14 +55,14 @@ Driver is do_translations(). It performs the following tasks:
                  given by fetch_sensing_atom(atom) and that senses the atom
 
         3.1.2. create_post_action(sensed_atoms)
-               - create a post-action that disables the sensors for 
+               - create a post-action that disables the sensors for
                  the sensed atoms and re-establish normal execution
 
 4. create_invariants_for_multivalued_variables()
    - for each variable X (either state or observable), and value x,
      generate rules
 
-       a) And { X != x' : x' != x } => X = x 
+       a) And { X != x' : x' != x } => X = x
        a) X = x => And { X != x' : x' != x }
 
 5. create_invariants_for_sensing_models()

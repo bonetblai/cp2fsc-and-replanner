@@ -1,6 +1,6 @@
 /*
  *  Copyright (C) 2011 - <date> Blai Bonet, Universidad Simon Bolivar
- * 
+ *
  *  Permission is hereby granted to distribute this software for
  *  non-commercial research purposes, provided that this copyright
  *  notice is included with any such distribution.
@@ -61,7 +61,7 @@ namespace AndOr {
 
             // reset api when performing new search
             api_.reset();
-            
+
             priority_queue q;
             q.push(api_.make_root_node(&init));
             while( !q.empty() ) {

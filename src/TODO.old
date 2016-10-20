@@ -30,7 +30,7 @@ Syntax for propositional translation given by:
       Precondition
       Effects that include effects of the form C_i => Z(Y=y)
       Observables Z(Y=y)
- 
+
    where different formulas W_a(Y=y) = C_1 v ... v C_n in DNF
    make up the sensing model for all the observable literals Y=y,
    and Z(Y=y) are atoms that "propositionalise" the obsevables.
