@@ -1510,6 +1510,8 @@ void LW1_Instance::cross_reference() {
             (aname.compare(0, 22, "subgoaling_action_for_") == 0) ) {
             n_drules_for_vars_ = k - n_standard_actions_;
             break;
+        } else {
+            assert(aname.compare(0, 10, "drule-var-") == 0);
         }
         ++k;
     }
@@ -1520,6 +1522,8 @@ void LW1_Instance::cross_reference() {
             (aname.compare(0, 22, "subgoaling_action_for_") == 0) ) {
             n_drules_for_sensing_ = k - n_standard_actions_ - n_drules_for_vars_;
             break;
+        } else {
+            assert(aname.compare(0, 14, "drule-sensing-") == 0);
         }
         ++k;
     }
@@ -1531,6 +1535,8 @@ void LW1_Instance::cross_reference() {
             n_drule_actions_ = k - n_standard_actions_;
             assert(n_drule_actions_ == n_drules_for_vars_ + n_drules_for_sensing_ + n_drules_for_atoms_);
             break;
+        } else {
+            assert(aname.compare(0, 11, "drule-atom-") == 0);
         }
         ++k;
     }
@@ -1539,6 +1545,8 @@ void LW1_Instance::cross_reference() {
         if( aname.compare(0, 22, "subgoaling_action_for_") == 0 ) {
             n_sensor_actions_ = k - n_standard_actions_ - n_drule_actions_;
             break;
+        } else {
+            assert(aname.compare(0, 7, "sensor-") == 0);
         }
         ++k;
     }

@@ -1,0 +1,9 @@
+drule-var-exhaustive-
+drule-var-exclusive-
+drule-sensing-type1-
+drule-sensing-type2-
+drule-sensing-type3-
+drule-atom-
+drule-sensing-type4state-
+drule-sensing-type4obs-
+drule-sensing-type4obs-boost-

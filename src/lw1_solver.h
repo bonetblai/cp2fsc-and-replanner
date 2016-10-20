@@ -1,6 +1,6 @@
 /*
  *  Copyright (C) 2011 - <date> Blai Bonet, Universidad Simon Bolivar
- * 
+ *
  *  Permission is hereby granted to distribute this software for
  *  non-commercial research purposes, provided that this copyright
  *  notice is included with any such distribution.
@@ -19,10 +19,10 @@
 #ifndef LW1_SOLVER_H
 #define LW1_SOLVER_H
 
-#include "inference.h"
 #include "inference_engine.h"
+#include "unit_propagation.h"
 
-//#define USE_INFERENCE_ENGINE
+#define USE_INFERENCE_ENGINE
 
 // We are currently using the Solver class as base class. In the near
 // future we'll change to the templatized NewSolver class to allow

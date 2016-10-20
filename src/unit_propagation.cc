@@ -1,6 +1,6 @@
 /*
  *  Copyright (C) 2011 - <date> Blai Bonet, Universidad Simon Bolivar
- * 
+ *
  *  Permission is hereby granted to distribute this software for
  *  non-commercial research purposes, provided that this copyright
  *  notice is included with any such distribution.
@@ -21,60 +21,20 @@
 #include <iostream>
 #include <queue>
 #include <set>
-#include "inference.h"
-#include "utils.h"
-#include "lw1_state.h"
 
-#define DEBUG
+#include "unit_propagation.h"
+#include "lw1_state.h"
+#include "utils.h"
+
+//#define DEBUG
 
 using namespace std;
 
-typedef vector<LW1_Instance::Variable*> var_vec;
-typedef Inference::Propositional::CNF::const_iterator const_vec_set_it;
-typedef vector<Inference::Propositional::Clause> cl_t;
-typedef vector< vector<int> >::iterator vec_vec_it;
-typedef set<int>::iterator set_it;
-typedef vector<int>::iterator vec_it;
-typedef vector<int>::const_iterator cvec_it;
-typedef vector<int> vi;
-typedef vector<vi> vvi;
-typedef vector< pair< cvec_it, cvec_it> > vpit;
-typedef pair<int, int> ii;
-typedef vector<ii> vii;
-typedef map<int, int>  av_map;
-
-
-// Static members definitions
-// CNF and WL
+// static members definitions
 int Inference::Propositional::WatchedLiterals::frontier_ = 0;
-vvi Inference::Propositional::WatchedLiterals::inverted_index_axioms_ = vvi();
+vector<vector<int> > Inference::Propositional::WatchedLiterals::inverted_index_axioms_;
 int Inference::Propositional::WatchedLiterals::imax_ = 0;
-vii Inference::Propositional::WatchedLiterals::watched = vii();
-
-void Inference::Propositional::DPLL::solve(const CNF &a, CNF &b) {
-    b = CNF(a);
-    bool change = true;
-    while( change ) {
-        change = false;
-        sort(b.begin(), b.end(), this->compare);
-        for( CNF::iterator it = b.begin(); it != b.end(); it++ ) {
-            if( it->size() == 1 ) {
-                int L = *(it->begin());
-                for( CNF::iterator clause = it + 1; clause != b.end(); clause++ ) {
-                    if( it == clause ) continue;
-                    if( clause->find(L) != clause->end() ) {
-                        b.erase(clause);
-                        clause--;
-                        change = true;
-                    } else if( clause->find(-L) != clause->end() ) {
-                        clause->erase(clause->find(-L));
-                        change = true;
-                    }
-                }
-            }
-        }
-    }
-}
+vector<pair<int, int> > Inference::Propositional::WatchedLiterals::watched_;
 
 // Construct a table of inverted indexes
 void Inference::Propositional::WatchedLiterals::setInvertedIndex(const CNF &cnf, vector< vector<int> > &mapper) {
@@ -96,11 +56,10 @@ void Inference::Propositional::WatchedLiterals::initialize_axioms(const CNF &axi
     frontier_ = axioms.size();
 
     //watch first (0) and last (size - 1) element
-    watched = vii();
+    watched_ = vector<pair<int, int> >();
     for( int i = 0; i < axioms.size(); i++ )
-        watched.push_back(make_pair(0, axioms[i].size() -1 ));
-
-};
+        watched_.push_back(make_pair(0, axioms[i].size() -1 ));
+}
 
 // Initialize attributes given a cnf
 void Inference::Propositional::WatchedLiterals::initialize(const CNF &cnf) {
@@ -108,8 +67,8 @@ void Inference::Propositional::WatchedLiterals::initialize(const CNF &cnf) {
 
     //watch first (0) and last (size - 1) element
     for( int i = frontier_; i < cnf.size(); i++ )
-        watched.push_back(make_pair(0, cnf[i].size() -1 ));
-};
+        watched_.push_back(make_pair(0, cnf[i].size() -1 ));
+}
 
 // Set propositions assignment into assigned vector.
 // Every proposition id is mapped to assgined indexes.
@@ -125,7 +84,7 @@ void Inference::Propositional::WatchedLiterals::solve(const CNF &cnf, vector<int
     }
 
     // cleaning up clauses after axiom clauses
-    watched.erase(watched.begin() + frontier_, watched.end());
+    watched_.erase(watched_.begin() + frontier_, watched_.end());
 }
 
 // Returns true if a proposition is assigned and true
@@ -139,7 +98,7 @@ bool Inference::Propositional::WatchedLiterals::is_true(int prop, const vector<i
 // value. It is responsability of the client swapping the non-false watched literal
 // into the first watched literal (w1)
 int Inference::Propositional::WatchedLiterals::replace(const CNF &cnf, vector<int> &assigned, int clause) {
-    for( int w1 = 0, w2 = watched[clause].second; w1 < cnf[clause].size(); w1++ ) {
+    for( int w1 = 0, w2 = watched_[clause].second; w1 < cnf[clause].size(); w1++ ) {
         if( ((assigned[abs(cnf[clause][w1])] == -1) || is_true(cnf[clause][w1], assigned)) && (w1 != w2) )
             return w1;
     }
@@ -148,7 +107,7 @@ int Inference::Propositional::WatchedLiterals::replace(const CNF &cnf, vector<in
 
 // Returns true if a value given is being watched in given clause
 inline bool Inference::Propositional::WatchedLiterals::isWatched(const CNF &cnf, int clause, int value) {
-    return (value == cnf[clause][watched[clause].first]) || (value == cnf[clause][watched[clause].second]);
+    return (value == cnf[clause][watched_[clause].first]) || (value == cnf[clause][watched_[clause].second]);
 }
 
 // Construct the vector of clauses indexes associated to the negative of
@@ -199,18 +158,18 @@ bool Inference::Propositional::WatchedLiterals::propagate(const CNF &cnf, vector
 
     for( size_t i = 0; i < cp.size(); i++ ) {
         int clause = cp[i];
-        if( (cnf[clause][watched[clause].first]) != -1 * value )
-            swap(watched[clause].first, watched[clause].second);
+        if( (cnf[clause][watched_[clause].first]) != -1 * value )
+            swap(watched_[clause].first, watched_[clause].second);
 
-        assert(cnf[clause][watched[clause].first] == -1 * value);
+        assert(cnf[clause][watched_[clause].first] == -1 * value);
 
         int w1 = replace(cnf, assigned, clause);
-        int w2 = watched[clause].second;
+        int w2 = watched_[clause].second;
         // If w1 cannot be replaced and w2 is unnassigned, recursive call
 
         int new_prop = cnf[clause][w2];
         if( w1 != -1 ) {
-            watched[clause].first = w1;   // update new watched literal
+            watched_[clause].first = w1;   // update new watched literal
         } else if( assigned[abs(new_prop)] == -1 ) {
             assigned[abs(new_prop)] = new_prop > 0 ? 1 : 0;
             if( !propagate(cnf, assigned, abs(new_prop)) )
@@ -252,14 +211,6 @@ void Inference::Propositional::WatchedLiterals::lookahead(const CNF &cnf, vector
             }
         }
     }
-}
-
-// Print clause data
-void Inference::Propositional::Clause::print(ostream &os) {
-    os << "{ ";
-    for( Clause::const_iterator it = cbegin(); it != cend(); it++ )
-        os << *it << ", ";
-    os << " }";
 }
 
 #undef DEBUG

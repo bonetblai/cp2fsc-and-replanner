@@ -9,3 +9,8 @@
 
 - type5 sensing drules are not currently generated. Check this.
 
+- lw1:inference:forward-chaining is broken for lw1:strict. It appears to
+  be working for lw1:aaai
+
+- check k-replanner 
+

@@ -1,6 +1,6 @@
 /*
  *  Copyright (C) 2011 - <date> Blai Bonet, Universidad Simon Bolivar
- * 
+ *
  *  Permission is hereby granted to distribute this software for
  *  non-commercial research purposes, provided that this copyright
  *  notice is included with any such distribution.
@@ -29,13 +29,11 @@
 #include "clg_problem.h"
 #include "lw1_problem.h"
 #include "lw1_solver.h"
-#include "inference.h"
 #include "inference_engine.h"
 #include "options.h"
 #include "available_options.h"
 #include "utils.h"
-#include "csp.h"
-#include "new_csp.h"
+#include "csp.h" // CHECK: remove this when migration done
 #include "width.h"
 #include "random_action_selection.h"
 
@@ -385,6 +383,7 @@ int main(int argc, const char *argv[]) {
         lw1_instance->reset_inference_time();
 
         // different initializations for inference (this should be moved elsewhere)
+#ifndef USE_INFERENCE_ENGINE
         if( g_options.is_enabled("lw1:inference:up:preload") ) {
             solver.initialize(*lw1_instance);
             if( g_options.is_enabled("lw1:inference:up:watched-literals") ) {
@@ -393,7 +392,6 @@ int main(int argc, const char *argv[]) {
             }
         }
 
-#ifndef USE_INFERENCE_ENGINE
         if( g_options.is_enabled("lw1:inference:ac3") ) {
             // Build basic CSP from state: CSP variables come from state variables and variable groups
             solver.fill_atoms_to_var_map(*lw1_instance);
