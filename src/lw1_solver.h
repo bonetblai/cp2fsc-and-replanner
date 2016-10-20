@@ -20,9 +20,6 @@
 #define LW1_SOLVER_H
 
 #include "inference_engine.h"
-#include "unit_propagation.h"
-
-#define USE_INFERENCE_ENGINE
 
 // We are currently using the Solver class as base class. In the near
 // future we'll change to the templatized NewSolver class to allow
@@ -59,13 +56,11 @@ class LW1_Solver : public BASE_CLASS {
                int time_bound,
                int ncalls_bound)
       : BASE_CLASS(LW1, instance, kp_instance, action_selection, time_bound, ncalls_bound),
-        inference_engine_(inference_engine),
-        frontier_(0) {
+        inference_engine_(inference_engine) {
     }
     ~LW1_Solver() { }
 
-    virtual void initialize(const KP_Instance &kp);
-    virtual void clean_cnf() const;
+    virtual void initialize(const KP_Instance &kp) { }
 
     virtual int solve(const STATE_CLASS &initial_hidden_state,
                       Instance::Plan &final_plan,
@@ -77,14 +72,6 @@ class LW1_Solver : public BASE_CLASS {
                                  sensed_literals_during_execution);
     }
 
-    Inference::Propositional::CNF get_cnf() const { return cnf_; }
-
-    // This is kept for the AC3 algorithm. It relates an atom index to its
-    // corresponding variable. Public as of now
-    // TODO: Make this protected
-    std::map<int, int> atoms_to_vars_;
-    void fill_atoms_to_var_map(const KP_Instance&);
-
   protected:
     const Inference::Engine<STATE_CLASS> &inference_engine_;
 
@@ -92,14 +79,6 @@ class LW1_Solver : public BASE_CLASS {
     typedef std::vector<clause_or_term_t> cnf_or_dnf_t;
     typedef std::vector<const cnf_or_dnf_t*> sensing_models_as_cnf_or_dnf_t;
     typedef std::map<int, std::map<int, sensing_models_as_cnf_or_dnf_t> > relevant_sensing_models_t;
-
-    // A CNF is kept internally by the solver.
-    // It is filled in initialize and it is completed in every iteration of
-    // apply_inference.
-    // TODO: Make this safe.
-    mutable Inference::Propositional::CNF cnf_;
-    std::set<Inference::Propositional::Clause> base_theory_axioms_;
-    size_t frontier_;
 
     virtual void compute_and_add_observations(const Instance::Action *last_action,
                                               const STATE_CLASS &hidden,

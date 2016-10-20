@@ -33,7 +33,6 @@
 #include "options.h"
 #include "available_options.h"
 #include "utils.h"
-#include "csp.h" // CHECK: remove this when migration done
 #include "width.h"
 #include "random_action_selection.h"
 
@@ -381,29 +380,6 @@ int main(int argc, const char *argv[]) {
         // reset stats
         action_selection->reset_stats();
         lw1_instance->reset_inference_time();
-
-        // different initializations for inference (this should be moved elsewhere)
-#ifndef USE_INFERENCE_ENGINE
-        if( g_options.is_enabled("lw1:inference:up:preload") ) {
-            solver.initialize(*lw1_instance);
-            if( g_options.is_enabled("lw1:inference:up:watched-literals") ) {
-                Inference::Propositional::WatchedLiterals wl;
-                wl.initialize_axioms(solver.get_cnf());
-            }
-        }
-
-        if( g_options.is_enabled("lw1:inference:ac3") ) {
-            // Build basic CSP from state: CSP variables come from state variables and variable groups
-            solver.fill_atoms_to_var_map(*lw1_instance);
-            Inference::CSP::Csp csp;
-            csp.initialize(lw1_instance->variables_, solver.atoms_to_vars_);
-            if( lw1_instance->has_groups() ) {
-                csp.initialize_groups(*lw1_instance);
-                Inference::CSP::AC3 ac3;
-                ac3.initialize_arcs(*lw1_instance, csp);
-            }
-        }
-#endif
 
         // solve
         int status = solver.solve(hidden_initial_state, plan, fired_sensors, sensed_literals);

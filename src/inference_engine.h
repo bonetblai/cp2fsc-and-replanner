@@ -28,8 +28,8 @@
 
 #include "state.h"
 #include "lw1_problem.h"
-#include "new_csp.h"
-#include "new_unit_propagation.h"
+#include "csp.h"
+#include "unit_propagation.h"
 #include "options.h"
 #include "utils.h"
 
@@ -172,16 +172,16 @@ namespace Inference {
 
     protected:
       std::map<int, int> atoms_to_vars_;
-      std::set<Propositional2::Clause> base_theory_axioms_;
+      std::set<Propositional::Clause> base_theory_axioms_;
       size_t frontier_;
 
       // base theories are used to detect new clauses inferred by UP
-      mutable Propositional2::CNF cnf_;
-      mutable std::set<Propositional2::Clause> base_theory_;
+      mutable Propositional::CNF cnf_;
+      mutable std::set<Propositional::Clause> base_theory_;
 
       // implementations of UP
-      Propositional2::Standard standard_; // inefficient implementation
-      mutable Propositional2::WatchedLiterals watched_literals_; // efficient implementation (hopefully)
+      Propositional::Standard standard_; // inefficient implementation
+      mutable Propositional::WatchedLiterals watched_literals_; // efficient implementation (hopefully)
 
       void restore_cnf() const {
           cnf_.erase(cnf_.begin() + frontier_, cnf_.end());
@@ -220,7 +220,7 @@ namespace Inference {
           if( options_.is_enabled("lw1:inference:up:enhanced") || options_.is_enabled("lw1:boost:literals-for-observables") ) {
               for( std::set<int>::const_iterator it = sensed_at_step.begin(); it != sensed_at_step.end(); ++it ) {
                   int k_literal = *it > 0 ? 2 * (*it - 1) : 2 * (-*it - 1) + 1;
-                  Propositional2::Clause cl;
+                  Propositional::Clause cl;
                   cl.push_back(1 + k_literal);
                   cnf_.push_back(cl);
                   if( !options_.is_enabled("lw1:inference:up:watched-literals") )
@@ -236,7 +236,7 @@ namespace Inference {
           // 1. Add positive literals from state
           for( typename T::const_iterator it = state.begin(); it != state.end(); ++it ) {
               assert(*it >= 0);
-              Propositional2::Clause cl;
+              Propositional::Clause cl;
               cl.push_back(1 + *it); // CHECK: en implementacion de clause, 'push_back' es un 'insert'
               cnf_.push_back(cl);
               if( !options_.is_enabled("lw1:inference:up:watched-literals") )
@@ -252,7 +252,7 @@ namespace Inference {
           if( !options_.is_enabled("lw1:inference:up:preload") ) {
               for( std::vector<std::vector<int> >::const_iterator it = lw1_instance.clauses_for_axioms_.begin(); it != lw1_instance.clauses_for_axioms_.end(); ++it ) {
                   const std::vector<int> &clause = *it;
-                  Propositional2::Clause cl; // CHECK: we should do a direct insertion of clause and making this copy
+                  Propositional::Clause cl; // CHECK: we should do a direct insertion of clause and making this copy
                   for( size_t k = 0; k < clause.size(); ++k )
                       cl.push_back(clause[k]);
                   cnf_.push_back(cl);
@@ -275,7 +275,7 @@ namespace Inference {
                   if( variable.is_state_variable() ) {
                       assert(jt->second.empty());
                       int k_literal = sensed_literal > 0 ? 1 + 2*(sensed_literal - 1) : 1 + 2*(-sensed_literal - 1) + 1;
-                      Propositional2::Clause cl;
+                      Propositional::Clause cl;
                       cl.push_back(k_literal);
                       cnf_.push_back(cl);
 #ifdef DEBUG
@@ -289,7 +289,7 @@ namespace Inference {
                           const cnf_or_dnf_t &k_cnf_for_sensing_model = *sensing_models_as_k_cnf[k];
                           for( size_t j = 0; j < k_cnf_for_sensing_model.size(); ++j ) {
                               const clause_or_term_t &clause = k_cnf_for_sensing_model[j];
-                              Propositional2::Clause cl; // CHECK: we should make a direct insertion and not make a copy
+                              Propositional::Clause cl; // CHECK: we should make a direct insertion and not make a copy
                               for( size_t i = 0; i < clause.size(); ++i )
                                   cl.push_back(clause[i]);
                               cnf_.push_back(cl);
@@ -329,7 +329,7 @@ namespace Inference {
               assert(dynamic_cast<LW1_State*>(&state) != 0);
               for( size_t k = 0; k < state.cnf_.size(); ++k ) {
                   const clause_or_term_t &clause = state.cnf_[k];
-                  Propositional2::Clause cl; // CHECK: should make a direct insert and not this copy
+                  Propositional::Clause cl; // CHECK: should make a direct insert and not this copy
                   for( size_t i = 0; i < clause.size(); ++i )
                       cl.push_back(clause[i]);
                   cnf_.push_back(cl);
@@ -344,7 +344,7 @@ namespace Inference {
           }
 
           // 5. Do inference
-          Propositional2::CNF result; // CHECK: make this a class member
+          Propositional::CNF result; // CHECK: make this a class member
           std::vector<int> assignment; // CHECK: make this a class member
           if( options_.is_enabled("lw1:inference:up:watched-literals") ) {
 #ifdef DEBUG
@@ -394,7 +394,7 @@ namespace Inference {
 
               // extract new literals derived
               for( size_t k = 0; k < result.size(); ++k ) {
-                  const Propositional2::Clause &cl = result[k];
+                  const Propositional::Clause &cl = result[k];
 
                   // if this is not a new derived clause, skip it
                   if( base_theory_.find(cl) != base_theory_.end() ) continue;
@@ -428,7 +428,7 @@ namespace Inference {
 
               state.cnf_.clear();
               for( size_t k = 0; k < result.size(); ++k ) {
-                  const Propositional2::Clause &cl = result[k];
+                  const Propositional::Clause &cl = result[k];
 
                   // if this is not a new derived clause, skip it
                   if( base_theory_.find(cl) != base_theory_.end() ) continue;
@@ -437,7 +437,7 @@ namespace Inference {
                   // if this is a clause, process it
                   if( cl.size() > 1 ) {
                       clause_or_term_t clause; // CHECK: should insert directly and not make this copy
-                      for( Propositional2::Clause::const_iterator it = cl.begin(); it != cl.end(); ++it )
+                      for( Propositional::Clause::const_iterator it = cl.begin(); it != cl.end(); ++it )
                           clause.push_back(*it);
                       if( is_forbidden(clause) ) continue;
                       state.cnf_.push_back(clause);
@@ -460,7 +460,7 @@ namespace Inference {
           if( options_.is_enabled("lw1:inference:up:preload") ) {
               for( size_t j = 0; j < lw1_instance.clauses_for_axioms_.size(); ++j ) {
                   const std::vector<int> &clause = lw1_instance.clauses_for_axioms_[j];
-                  Propositional2::Clause cl; //CHECK: should insert directly and not make this copy
+                  Propositional::Clause cl; //CHECK: should insert directly and not make this copy
                   for( size_t k = 0; k < clause.size(); ++k )
                       cl.push_back(clause[k]);
                   cnf_.push_back(cl);
@@ -487,8 +487,8 @@ namespace Inference {
 
     protected:
       std::map<int, int> atoms_to_vars_;
-      CSP2::Csp csp_;
-      CSP2::AC3 ac3_;
+      CSP::Csp csp_;
+      CSP::AC3 ac3_;
 
       virtual void internal_apply_inference(const Instance::Action *last_action,
                                             const std::set<int> &sensed_at_step,

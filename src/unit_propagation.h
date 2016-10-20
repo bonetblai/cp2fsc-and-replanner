@@ -34,23 +34,14 @@
 namespace Inference {
   namespace Propositional {
 
-    // Clause of boolean problem. A clause is a disjunction of literals
-    // Example:
-    //  Inference::Propositional::Clause cl;
-    //  for( int i = 0; i < int(clause.size()); ++i )
-    //      cl.push_back(clause[i]);
-    //  cnf.push_back(cl);
     class Clause : public std::vector<int> {
       public:
-        // Returns an iterator of a element if it's found.
-        // Client must no use the iterator once the clause on which the iterator
-        // was created has been deleted.
         std::vector<int>::iterator find(int p) {
-            std::vector<int>::iterator it = begin();
-            for( ; it != end(); it++ ) {
-                if( *it == p ) return it;
+            for( std::vector<int>::iterator it = begin(); it != end(); ++it ) {
+                if( *it == p )
+                    return it;
             }
-            return it;
+            return end();
         }
 
         void print(std::ostream &os) const {
@@ -63,38 +54,30 @@ namespace Inference {
         }
     };
 
-    // Class CNF. A CNF is a conjunction of clauses
-    // Example:
-    //  Inference::Propositional::CNF cnf;
-    //  ...
-    //      Inference::Propositional::Clause cl;
-    //      for( int i = 0; i < int(clause.size()); ++i )
-    //          cl.push_back(clause[i]);
-    //      cnf.push_back(cl);
     class CNF : public std::vector<Clause> {
       public:
         CNF() : std::vector<Clause>() { }
         CNF(const CNF& cnf) : std::vector<Clause>(cnf.begin(), cnf.end()) { }
-        // Returns maximum proposition id over all literals
-        int calculate_max() const {
-            int max_id = 0;
-            for( size_t i = 0; i < size(); ++i ) {
+
+        int calculate_max_var_index(size_t start = 0) const {
+            int max_var_index = 0;
+            for( size_t i = start; i < size(); ++i ) {
                 const Clause &cl = (*this)[i];
                 for( size_t j = 0; j < cl.size(); ++j ) {
-                    int id = abs(cl[j]);
-                    max_id = std::max<int>(id, max_id);
+                    int index = abs(cl[j]);
+                    max_var_index = std::max<int>(index, max_var_index);
                 }
             }
-            return max_id;
+            return max_var_index;;
         }
     };
 
+    // PROVISIONAL: This method should make the class abstract,
+    // in order to use better and implementations of reduce under
+    // classic UP transparently.
+    // virtual void solve() = 0;
     class UnitPropagation {
       public:
-        // PROVISIONAL: This method should make the class abstract,
-        // in order to use better and implementations of reduce under
-        // classic UP transparently.
-        // virtual void solve() = 0;
     };
 
     // inefficient UP: time for each iteration inside main loop of solve is O(n^2 x m)
@@ -112,7 +95,9 @@ namespace Inference {
         virtual ~Standard() { }
 
         void solve(const CNF &cnf, CNF &reduced_cnf) const {
+#ifdef DEBUG
             std::cout << Utils::green() << "USING STANDARD METHOD" << Utils::normal() << std::endl;
+#endif
             reduced_cnf = CNF(cnf);
 
             bool change = true;
@@ -147,63 +132,218 @@ namespace Inference {
         }
     };
 
-    // Watched Literals Algorithm.
-    // Class for solving a CNF with Unit Propagation algorithm
-    // Example:
-    //  vector<int> assignment;
-    //  Inference::Propositional::WatchedLiterals wl;
-    //  wl.solve(cnf, assignment);
     class WatchedLiterals : public UnitPropagation {
       protected:
-        // Map a proposition to a vector the clauses this
-        // proposition occurs in axioms
-        static std::vector<std::vector<int> > inverted_index_axioms_;
-        static int frontier_;
-        static int imax_;
-        // Watched literals (indexes) for every clause
-        static std::vector<std::pair<int, int> > watched_;
-        // Map a proposition to a vector the clauses this
-        // proposition occurs
-        std::vector<std::vector<int> > inverted_index;
+        int max_var_index_;
+        std::vector<std::vector<int> > var_to_clauses_map_;
+        std::vector<std::pair<int, int> > watched_;
 
-        // Returns true if a proposition is assigned and true
-        bool is_true(int prop, const std::vector<int> &assigned);
+        // true if literal is assigned and true
+        bool is_true(int literal, const std::vector<int> &assigned) const {
+            assert(assigned[abs(literal)] != -1);
+            return ((assigned[abs(literal)] ? 1 : -1) * literal) > 0;
+        }
+
+        // true if given value is being watched in given clause
+        bool is_watched(const CNF &cnf, int clause, int value) const {
+            return (value == cnf[clause][watched_[clause].first]) || (value == cnf[clause][watched_[clause].second]);
+        }
+
         // Returns new watched literal in given clause,
         // after one of the watched literals has changed and evaluates to a non-false
         // value. It is responsability of the client swapping the non-false watched literal
         // into the first watched literal (w1)
-        int replace(const CNF &cnf, std::vector<int> &assigned, int clause);
-        // Initialize attributes given a cnf
-        void initialize(const CNF &cnf);
-        // Construct a table of inverted indexes
-        void setInvertedIndex(const CNF &cnf, std::vector<std::vector<int> > &mapper);
-        // Returns true if a value given is being watched in given clause
-        inline bool isWatched(const CNF &cnf, int clause, int value);
-        // Returns true if a prop can propagated with
-        // new value set in assigned vector.
-        // It is client responsability give a proposition (prop > 0)
-        virtual bool propagate(const CNF &cnf, std::vector<int> &assigned, int p);
+        int replace(const CNF &cnf, std::vector<int> &assigned, int clause) {
+            for( int w1 = 0, w2 = watched_[clause].second; w1 < cnf[clause].size(); w1++ ) {
+                if( ((assigned[abs(cnf[clause][w1])] == -1) || is_true(cnf[clause][w1], assigned)) && (w1 != w2) )
+                    return w1;
+            }
+            return -1;
+        }
+
         // Construct the vector of clauses indexes associated to the negative of
         // a proposition prop. Since it is watched literals algorithm,
         // those clauses must watch the value associated with prop.
         // This vector is constructed in cp
-        void add_negative_propositions(const CNF &cnf,
-                                       const std::vector<std::vector<int> > &inv_index,
-                                       int prop,
-                                       int value,
-                                       std::vector<int> &cp);
+        void add_negative_propositions(const CNF &cnf, int var, int value, std::vector<int> &cp) const {
+            assert(cp.empty());
+            assert((var > 0) && (var < var_to_clauses_map_.size()));
+            for( size_t k = 0; k < var_to_clauses_map_[var].size(); ++k ) {
+                int clause = var_to_clauses_map_[var][k];
+                if( is_watched(cnf, clause, -value) )
+                    cp.push_back(clause);
+            }
+        }
+
+        // Returns true if a prop can propagated with
+        // new value set in assigned vector.
+        // It is client responsability give a proposition (prop > 0)
+        virtual bool propagate(const CNF &cnf, std::vector<int> &assigned, int var) {
+            assert((var > 0) && (var < assigned.size()));
+            assert(assigned[var] != -1);
+            int value = assigned[var] ? var : -var;
+
+            // clauses where not var appears
+            std::vector<int> cp;
+            add_negative_propositions(cnf, var, value, cp);
+
+            //for( size_t i = 0; i < inverted_index[prop].size(); i++ ) {
+            //    int clause = inverted_index[prop][i];
+            //    int w1 = watched[clause].first, w2 = watched[clause].second;
+            //    bool is_watched = isWatched(cnf, clause, -1 * value);
+            //    if( isWatched(cnf, clause, value) ) cp.push_back(clause);
+            //}
+
+            //if( prop < inverted_index_axioms_.size() ) {
+            //    for( size_t i = 0; i < inverted_index_axioms_[prop].size(); i++ ) {
+            //        int clause = inverted_index_axioms_[prop][i];
+            //        cvec_it w1 = watched[clause].first, w2 = watched[clause].second;
+            //        bool is_watched = value == -1 * (* w1) || value == -1 * (* w2);
+            //        if( is_watched ) cp.push_back(clause);
+            //    }
+            //}
+
+            bool no_conflict = true;
+            for( size_t k = 0; k < cp.size(); ++k ) {
+                int clause = cp[k];
+                assert((clause >= 0) && (clause < cnf.size()));
+                assert((clause >= 0) && (clause < watched_.size()));
+                assert(watched_[clause].first < cnf[clause].size());
+
+                if( cnf[clause][watched_[clause].first] != -value )
+                    std::swap(watched_[clause].first, watched_[clause].second);
+                assert(cnf[clause][watched_[clause].first] == -value);
+
+                int w1 = replace(cnf, assigned, clause);
+                int w2 = watched_[clause].second;
+                // If w1 cannot be replaced and w2 is unnassigned, recursive call
+
+                int new_prop = cnf[clause][w2];
+                if( w1 != -1 ) {
+                    watched_[clause].first = w1;   // update new watched literal
+                } else if( assigned[abs(new_prop)] == -1 ) {
+                    assigned[abs(new_prop)] = new_prop > 0 ? 1 : 0;
+                    if( !propagate(cnf, assigned, abs(new_prop)) )
+                        no_conflict = false;
+                    // propagated[abs(p1)] = true;
+                //} else if( (assigned[abs(new_prop)] ? 1 : -1) * (new_prop) < 0 ) {
+                } else if( !is_true(new_prop, assigned) ) {
+                    // If w1 cannot be replaced and w2 is false there's conflict
+                    no_conflict = false;
+                }
+            }
+            return no_conflict;
+        }
 
       public:
-        WatchedLiterals() { }
+        WatchedLiterals() : max_var_index_(0) { }
         virtual ~WatchedLiterals() { }
 
-        void initialize_axioms(const CNF &cnf);
-        // Set propositions assignment into assigned vector.
-        // Every proposition id is mapped to assgined indexes.
-        void solve(const CNF &cnf, std::vector<int> &assigned);
-        // Set new assigned values into assigned vector
-        // after apply lookahead algorithm
-        void lookahead(const CNF &cnf, std::vector<int> &assigned);
+        bool empty() const {
+            return watched_.empty();
+        }
+        int size() const {
+            return watched_.size();
+        }
+
+        void extend_var_to_clauses_map(const CNF &cnf, size_t start) {
+            max_var_index_ = std::max<int>(max_var_index_, cnf.calculate_max_var_index(start));
+            var_to_clauses_map_.resize(1 + max_var_index_);
+            for( size_t k = start; k < cnf.size(); ++k ) {
+                const Clause &clause = cnf[k];
+                for( size_t j = 0; j < clause.size(); ++j ) {
+                    int literal = clause[j];
+                    assert(abs(literal) <= max_var_index_);
+                    var_to_clauses_map_[abs(literal)].push_back(k);
+                }
+            }
+        }
+
+        void print_var_to_clauses_map(std::ostream &os) const {
+            for( size_t k = 0; k < var_to_clauses_map_.size(); ++k ) {
+                os << k << " ->";
+                const std::vector<int> &map = var_to_clauses_map_[k];
+                for( size_t j = 0; j < map.size(); ++j )
+                    os << " " << map[j];
+                os << std::endl;
+            }
+        }
+
+        void restore(size_t start) {
+            watched_.erase(watched_.begin() + start, watched_.end());
+
+            // remove references to removed clauses
+            for( size_t k = 0; k < var_to_clauses_map_.size(); ++k ) {
+                std::vector<int> &map = var_to_clauses_map_[k];
+                for( size_t j = 0; j < map.size(); ++j ) {
+                    if( map[j] >= start ) {
+                        map[j] = map.back();
+                        map.pop_back();
+                        --j;
+                    }
+                }
+            }
+        }
+
+        void initialize(const CNF &cnf, size_t start) {
+            extend_var_to_clauses_map(cnf, start);
+            for( size_t k = start; k < cnf.size(); ++k ) {
+                assert(!cnf[k].empty());
+                watched_.push_back(std::make_pair(0, cnf[k].size() - 1));
+            }
+        }
+
+        void solve(const CNF &cnf, size_t start, std::vector<int> &assigned) {
+#ifdef DEBUG
+            std::cout << Utils::green() << "USING WATCHED LITERALS" << Utils::normal() << std::endl;
+#endif
+            initialize(cnf, start);
+
+            // mark every variable as unassigned
+            assigned.assign(1 + max_var_index_, -1);
+
+            for( size_t k = 0; k < cnf.size(); ++k ) {
+                const Clause &clause = cnf[k];
+                assert(!clause.empty());
+                int literal = clause[0];
+                int var = abs(literal);
+                if( (clause.size() == 1) && (assigned[var] == -1) ) {
+                    assigned[var] = literal > 0 ? 1 : 0;
+                    if( !propagate(cnf, assigned, var) ) {
+                        std::cout << Utils::internal_error() << " propagate() in watched-literals returned false" << std::endl;
+                        exit(-1);
+                    }
+                }
+            }
+
+            // CHECK: should we remove extra stuff here?
+            restore(start);
+        }
+
+        void lookahead(const CNF &cnf, std::vector<int> &assigned) {
+            std::vector<int> copy;
+            for( size_t i = 1; i < assigned.size(); ++i ) {
+                if( assigned[i] != -1 ) continue; // already assigned
+                copy = assigned;
+                copy[i] = 1;
+                if( !propagate(cnf, copy, i) ) { // propagating with copy
+                    // no other assignment is possible
+                    assigned[i] = 0;
+                    if( !propagate(cnf, assigned, i) ) {
+                        std::cout << Utils::internal_error() << "fatal error in lw1:inference:up:lookahead" << std::endl;
+                        exit(-1);
+                    }
+                } else {
+                    std::vector<int> tmp = copy;
+                    copy = assigned;  // getting back original assigned
+                    copy[i] = 0;
+                    // no other assignment is possible and assigned[i] = 1 !
+                    if( !propagate(cnf, copy, i) ) {
+                        assigned = tmp;
+                    }
+                }
+            }
+        }
     };
 
   } // namespace Propositional

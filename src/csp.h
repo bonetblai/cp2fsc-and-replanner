@@ -19,11 +19,13 @@
 #ifndef CSP_H
 #define CSP_H
 
+#include <cassert>
 #include <iostream>
 #include <vector>
-#include <queue>
 #include <map>
 #include <set>
+#include <vector>
+
 #include "lw1_problem.h"
 #include "lw1_state.h"
 
@@ -40,7 +42,7 @@ namespace Inference {
       protected:
         std::string name_; // Variable name (debugging)
         std::set<int> original_domain_; // Original (full) domain of variable (it will never change after initialization)
-        std::set<int> current_domain_; // Current domain (after deductions) of variable
+        mutable std::set<int> current_domain_; // Current domain (after deductions) of variable
 
       public:
         Variable() { }
@@ -50,26 +52,20 @@ namespace Inference {
         const std::string& name() const {
             return name_;
         }
-        std::set<int>& get_original_domain() {
-            return original_domain_;
-        }
-        const std::set<int>& current_domain() const {
-            return current_domain_;
-        }
-        std::set<int>& current_domain() {
+        std::set<int>& current_domain() const {
             return current_domain_;
         }
 
         // reset and clear current domain
-        void reset_current_domain() {
+        void reset_current_domain() const {
             current_domain_ = original_domain_;
         }
-        void clear_current_domain() {
+        void clear_current_domain() const {
             current_domain_.clear();
         }
 
         // intersect current domain with domain
-        void intersect_current_domain_with(const std::set<int> &domain) {
+        void intersect_current_domain_with(const std::set<int> &domain) const {
             std::set<int>::iterator cdt = current_domain_.begin();
             std::set<int>::const_iterator pdt = domain.begin();
             while( (cdt != current_domain_.end()) && (pdt != domain.end()) ) {
@@ -103,17 +99,9 @@ namespace Inference {
         // The k_literal represents a unary constraint. If it is possitive,
         // then it is the only possible value for this variable. If it's
         // negative, its value must be erase from current domain.
-        void apply_unary_constraint_implied_by_k_literal(int k_literal);
+        void apply_unary_constraint_implied_by_k_literal(int k_literal) const;
 
-#if 0
-        // Just insert value in current_domain
-        void add(int i) {
-            current_domain_.insert(i);
-        }
-#endif
-
-        // Print variable info
-        virtual void print(std::ostream &os, const Instance &instance, const LW1_State &state) const;
+        virtual void print(std::ostream &os, const LW1_Instance &lw1_instance, const LW1_State &state) const;
     };
 
     class BinaryVariable : public Variable {
@@ -165,7 +153,7 @@ namespace Inference {
             return it == var_index_to_pos_.cend() ? -1 : it->second;
         }
 
-        virtual void print(std::ostream &os, const Instance &instance, const LW1_State &state) const;
+        virtual void print(std::ostream &os, const LW1_Instance &lw1_instance, const LW1_State &state) const;
     };
 
     // CSP (Constraint Satisfaction Problem)
@@ -177,101 +165,114 @@ namespace Inference {
     //  if (((LW1_Instance*)kp_instance)->has_groups()) {
     //      csp.initialize_groups(*kp_instance);
     //      Inference::CSP::AC3 ac3;
-    //      ac3.initialize_arcs(*kp_instance, csp);
+    //      ac3.calculate_arcs(*kp_instance, csp);
     //  }
     class Csp {
-      // TODO: all these variables should be non-static...
-      private:
-        // Variable vectors of CSP.
-        // Theses variables are state variables
-        static std::vector<Inference::CSP::Variable*> variables_;
-        // Grouped Variables
-        static std::vector<Inference::CSP::VariableGroup*> variable_groups_;
-        // Variables in common variable groups
-        static std::vector<std::vector<std::vector<int> > > vars_in_common_groups_;
-        // Constraints of problem
-        std::vector<std::vector<int> > constraints_;
+      protected:
+        const LW1_Instance &lw1_instance_;
+
+        std::vector<const Variable*> variables_;
+        std::vector<const VariableGroup*> variable_groups_;
+        std::vector<std::vector<std::vector<int> > > common_variables_in_groups_;
+
         // Map for finding var_index of l_atom
-        static std::map<int, int> atoms_to_var_map_;
+        const std::map<int, int> *atoms_to_var_map_;
+
         // Returns a mask of impossible and possible values
         // Impossible mask 0010 says that variables in pos 0, 2, 3 are K_not
         // Possible mask 0010 says that only variable in pos 1 is K
         // Note that both masks will be the same when there is no information
         // to be infered
-        std::pair<int,int> get_masks(int vg, const std::vector<int> &constraint, const LW1_Instance &lw1_instance);
+        std::pair<int, int> get_masks(int vg, const std::vector<int> &constraint) const;
 
       public:
-        Csp() { }
-        ~Csp() { }
+        Csp(const LW1_Instance &lw1_instance)
+          : lw1_instance_(lw1_instance), atoms_to_var_map_(0) {
+            for( size_t k = 0; k < lw1_instance_.variables_.size(); ++k ) {
+                const LW1_Instance::Variable &lw1_variable = *lw1_instance_.variables_[k];
+                const Variable *variable = 0;
+                if( lw1_variable.is_binary() )
+                    variable = new BinaryVariable(lw1_variable);
+                else
+                    variable = new MultiValuedVariable(lw1_variable);
+                variables_.push_back(variable);
+            }
 
-        const std::vector<std::vector<int> >& constraints() {
-            return constraints_;
+            for( size_t k = 0; k < lw1_instance_.vars_for_variable_groups_.size(); ++k ) {
+                const VariableGroup *group = new VariableGroup(lw1_instance_.vars_for_variable_groups_[k], k);
+                variable_groups_.push_back(group);
+            }
         }
-        const std::vector<Inference::CSP::Variable*>& variables() {
+        virtual ~Csp() {
+            for( size_t k = 0; k < variable_groups_.size(); ++k )
+                delete variable_groups_[k];
+            for( size_t k = 0; k < variables_.size(); ++k )
+                delete variables_[k];
+        }
+
+        const std::vector<const Variable*>& variables() const {
             return variables_;
         }
-        const std::vector<std::vector<std::vector<int> > >& vars_in_common_groups() const {
-            return vars_in_common_groups_;
+        const std::vector<std::vector<std::vector<int> > >& common_variables_in_groups() const {
+            return common_variables_in_groups_;
         }
 
-        void add_constraint(std::vector<int> &constraint) {
-            constraints_.push_back(constraint);
-        }
-
-        // Clear current domains for all variables
-        void reset_current_domains() {
+        // Clear current domains of variables
+        void reset_current_domains() const {
             for( size_t k = 0; k < variables_.size(); ++k )
                 variables_[k]->reset_current_domain();
+        }
+        void reset_current_domains_for_variable_groups() const {
+            for( size_t k = 0; k < variable_groups_.size(); ++k )
+                variable_groups_[k]->reset_current_domain();
         }
 
         // Returns index of the variable k_literal (h_atom) in variables_,
         // if l_atom exists in atoms_to_var_map_
         int get_var_index(int h_atom) const {
+            assert(atoms_to_var_map_ != 0);
             int atom = abs(h_atom);
-            if( atoms_to_var_map_.find(get_l_atom(atom)) != atoms_to_var_map_.end() )
-                return atoms_to_var_map_.at(get_l_atom(atom));
-            return -1;
+            std::map<int, int>::const_iterator it = atoms_to_var_map_->find(get_l_atom(atom));
+            return it != atoms_to_var_map_->end() ? it->second : -1;
         }
         // Returns the variable k_literal (h_atom) associated with h_atom,
         // if l_atom exists in atoms_to_var_map_
-        Variable* get_var(int h_atom) const {
+        const Variable* get_var(int h_atom) const {
             int var_index = get_var_index(h_atom);
             return var_index == -1 ? 0 : variables_[var_index];
         }
         // Returns variable indexed at var_index
-        Variable* get_var_from_vars(int var_index) const {
+        const Variable* get_var_from_vars(int var_index) const {
             return variables_[var_index];
         }
         // Returns meta-variable indexed at index
-        VariableGroup* get_group_var(int index) const {
+        const VariableGroup* get_group_var(int index) const {
             return variable_groups_[index];
         }
 
-        void initialize(const std::vector<LW1_Instance::Variable*> &vars, const std::map<int, int> &map);
+        void set_atoms_to_var_map(const std::map<int, int> &map);
 
         // Creates meta-variables (groups)
-        // Creates auxiliary structure vars_in_common_groups. This is a lower
-        // triangular matrix of vectors, where vars_in_common_groups[i][j],
+        // Creates auxiliary structure common_variables_in_groups_. This is a lower
+        // triangular matrix of vectors, where common_variables_in_groups_[i][j],
         // with i < j, is a vector of common variables (var indexes) for
         // variables with indexes i and j.
-        void initialize_groups(const LW1_Instance &lw1_instance);
+        void calculate_common_variables_in_groups();
 
         // Applies unary constraint represented as one (just one)
         // possible value (h_atom) over every variable
-        void prune_domain_of_var(int h_atom);
+        void prune_domain_of_var(int h_atom) const;
 
         // Deletes from group no longer possible valuations
-        void prune_valuations_of_groups(int vg,
-                                        const std::vector<std::vector<int> > &valuations,
-                                        const Instance &kp_instance);
+        void prune_valuations_of_groups(int vg, const std::vector<std::vector<int> > &valuations) const;
 
         // Find variable associated with domain and then calls intersect_with
-        void intersect_domain_of_var(const std::set<int> &domain);
+        void intersect_domain_of_var(const std::set<int> &domain) const;
 
-        // Change (Add to) state relevant information of current csp
-        void dump_into(LW1_State &state, const Instance &instance) const;
+        // Change (add to) state relevant information of current csp
+        void update_state(LW1_State &state) const;
 
-        void print(std::ostream &os, const Instance &instance, const LW1_State &state) const;
+        void print(std::ostream &os, const LW1_State &state) const;
     };
 
     class Arc : public std::pair<int, int> {
@@ -284,79 +285,46 @@ namespace Inference {
           : std::pair<int, int>(x, y), x_is_group_(x_is_group), y_is_group_(y_is_group) {
         }
 
-        // Returns true if x is a group
         bool x_is_group() const { return x_is_group_; }
-        // Returns true if y is a group
         bool y_is_group() const { return y_is_group_; }
-
-        // Returns true if arc is between two states variables
         bool is_simple() const { return !x_is_group_ && !y_is_group_; }
-        // Returns true if arc is between two meta-variables
         bool is_group() const { return x_is_group_ && y_is_group_; }
-        // Returns true if arc is between a state variable and meta-variable
         bool is_mixed() const { return !is_simple() && !is_group(); }
-
-        bool operator<(const Arc &b) const {
-            const Arc &a = *this;
-            if( a.first < b.first ) return true;
-            if( b.first < a.first ) return false;
-            if( a.second < b.second ) return true;
-            if( b.second < a.second ) return false;
-            if( a.is_group() ) return true;
-            if( a.is_simple() ) return false;
-            if( a.is_mixed() && b.is_mixed() && a.x_is_group() && b.y_is_group() )
-                return true;
-            return false;
-        }
-
-        void print(std::ostream &os, const Instance &instance, const LW1_State &state, const Csp &csp) const;
+        void print(std::ostream &os, const LW1_Instance &lw1_instance, const LW1_State &state, const Csp &csp) const;
     };
 
     // AC3 Algorithm for solvign CSP
     // Class for AC3 algorithm
     // Example:
     //  ...
-    //  Inference::CSP::AC3 ac3;
-    //  ac3.initialize_arcs(*kp_instance, csp);
+    //  Inference::CSP::AC3 ac3(lw1_instance);
+    //  ac3.calculate_arcs(csp);
     //  ...
-    //  ac3.solve_groups(csp, state, kp_instance_);
+    //  ac3.solve(csp, state);
     class AC3 {
       protected:
-        struct arc_compare_t {
-            bool operator()(const Arc *a, const Arc *b) const {
-                return *a < *b;
-            }
-        };
+        const LW1_Instance &lw1_instance_;
+        std::vector<const Arc*> arcs_; // arcs are of types: (V, MV), (MV, V), and (MV, MV)
+        std::map<int, std::vector<int> > inv_clauses_; // associates variables indexes with clauses that involve related atoms
 
-      // TODO: all these variables should be non-static...
-      protected:
-        // Arcs: (V, MV), (MV,V), (MV, MV)
-        static std::vector<Inference::CSP::Arc*> arcs_;
+        mutable std::set<const Arc*> worklist_;
 
-        // map that associates variables indexes with clauses that involve related atoms
-        std::map<int, std::vector<int> > inv_clauses_;
-        // Actives Arcs: (V, MV), (MV,V), (MV, MV)
-        std::set<Inference::CSP::Arc*, arc_compare_t> worklist_;
-
-        // Inserts arcs into worklist
-        void initialize_worklist() {
+        void initialize_worklist() const {
             worklist_.clear();
             for( size_t k = 0; k < arcs_.size(); ++k )
                 worklist_.insert(arcs_[k]);
         }
 
         // Applies arc consistency over binary arcs
-        void apply_constraints(Inference::CSP::Csp &csp, const Instance &instance, const LW1_State &state);
-
-        // Arc Reduce algorithm of AC3
-        bool arc_reduce(Inference::CSP::Arc *arc, Inference::CSP::Csp &csp, const Instance &instance, const LW1_State &state);
+        void run_ac3(const Csp &csp) const;
+        bool arc_reduce(const Arc *arc, const Csp &csp) const;
 
         // Returns an int that represents a valuation of common
         // variables x_var and y_var
         // This is done by using an auxiliary structure (common_vars), where
         // for each var_index 'i' and 'j', common_vars[i][j] is the vector
         // of var_index for common variables
-        int build_commons_valuation(int val, VariableGroup *x_var, VariableGroup *y_var, const Csp &csp) const;
+        int build_common_valuation(int val, const VariableGroup *x_var, const VariableGroup *y_var, const Csp &csp) const;
 
         // Retunrs true if arc is satisfiable with values x, y
         // This is done by considering different cases for Arc.
@@ -374,19 +342,20 @@ namespace Inference {
         // is taking.
         //
         // Simple Arc is not considered (not using this in this AC3!)
-        bool evaluate(Arc *arc, int x, int y, const Csp &csp) const;
+        bool evaluate(const Arc *arc, int x, int y, const Csp &csp) const;
 
       public:
-        AC3() { }
-        ~AC3() { }
+        AC3(const LW1_Instance &lw1_instance)
+          : lw1_instance_(lw1_instance) {
+        }
+        virtual ~AC3() {
+            clear_arcs();
+        }
 
-        // Creates arcs between state variables and meta-variables (groups)
-        // and creates arcs between meta-variables
-        void initialize_arcs(const KP_Instance &instance, Csp &csp);
-        // Applies Arc Consistency over arcs
-        void solve_groups(Inference::CSP::Csp &csp, LW1_State &state, const Instance &instance);
-
-        void print(std::ostream &os, const Instance &instance, Csp &csp, const LW1_State &state) const;
+        void clear_arcs();
+        void calculate_arcs(const Csp &csp);
+        void solve(const Csp &csp, LW1_State &state) const;
+        void print(std::ostream &os, const Csp &csp, const LW1_State &state) const;
     };
   } // namespace CSP
 } // namespace Inference
