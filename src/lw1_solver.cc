@@ -24,7 +24,6 @@
 #include "inference.h"
 #include "csp.h"
 
-#define USE_INFERENCE_ENGINE
 //#define DEBUG
 
 using namespace std;
