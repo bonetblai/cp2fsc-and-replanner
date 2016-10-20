@@ -376,10 +376,9 @@ int main(int argc, const char *argv[]) {
         hidden_initial_state.print(cout, instance);
         cout << endl;
 
-        // CHECK: should we create inference engine inside or outside this loop?
-        // create and initialize inference engine and solver
+        // create solver and reset inference engine
         LW1_Solver solver(instance, *lw1_instance, *action_selection, *inference_engine, opt_time_bound, opt_ncalls_bound);
-        inference_engine->reset(); // CHECK
+        inference_engine->reset();
 
         // reset stats
         action_selection->reset_stats();
@@ -393,6 +392,8 @@ int main(int argc, const char *argv[]) {
                 wl.initialize_axioms(solver.get_cnf());
             }
         }
+
+#ifndef USE_INFERENCE_ENGINE
         if( g_options.is_enabled("lw1:inference:ac3") ) {
             // Build basic CSP from state: CSP variables come from state variables and variable groups
             solver.fill_atoms_to_var_map(*lw1_instance);
@@ -404,6 +405,7 @@ int main(int argc, const char *argv[]) {
                 ac3.initialize_arcs(*lw1_instance, csp);
             }
         }
+#endif
 
         // solve
         int status = solver.solve(hidden_initial_state, plan, fired_sensors, sensed_literals);

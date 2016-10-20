@@ -24,12 +24,14 @@
 #include "inference.h"
 #include "csp.h"
 
+#define USE_INFERENCE_ENGINE
 //#define DEBUG
 
 using namespace std;
 
 // Fills the CNF in the solver.
 void LW1_Solver::initialize(const KP_Instance &kp) {
+#ifndef USE_INFERENCE_ENGINE
     assert(dynamic_cast<const LW1_Instance*>(&kp) != 0);
     const LW1_Instance &lw1 = *static_cast<const LW1_Instance*>(&kp_instance_);
     for( size_t j = 0; j < lw1.clauses_for_axioms_.size(); ++j ) {
@@ -42,6 +44,7 @@ void LW1_Solver::initialize(const KP_Instance &kp) {
     }
     frontier_ = cnf_.size() - 1;
     fill_atoms_to_var_map(lw1);
+#endif
 }
 
 // Deletes all clauses preserving the axioms
@@ -159,7 +162,7 @@ void LW1_Solver::compute_and_add_observations(const Instance::Action *last_actio
 void LW1_Solver::apply_inference(const Instance::Action *last_action,
                                  const set<int> &sensed_at_step,
                                  STATE_CLASS &state) const {
-#if 1
+#ifdef USE_INFERENCE_ENGINE
     inference_engine_.apply_inference(last_action, sensed_at_step, state);
 #else
     float start_time = Utils::read_time_in_seconds();
