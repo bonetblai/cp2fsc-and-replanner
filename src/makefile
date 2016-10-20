@@ -5,7 +5,7 @@ include makedefs
 .cc.o:
 	$(C++) $(CFLAGS) -c $<
 
-LIBSRCS = string_table.cc base.cc ptr_table.cc char_map.cc problem.cc kp_problem.cc clg_problem.cc lw1_problem.cc cp_problem.cc ks0_problem.cc name.cc preprocess.cc solver.cc lw1_solver.cc classical_planner.cc inference.cc inference_engine.cc csp.cc
+LIBSRCS = string_table.cc base.cc ptr_table.cc char_map.cc problem.cc kp_problem.cc clg_problem.cc lw1_problem.cc cp_problem.cc ks0_problem.cc name.cc preprocess.cc solver.cc lw1_solver.cc classical_planner.cc inference.cc inference_engine.cc csp.cc new_csp.cc
 #LIBSRCS = string_table.cc base.cc ptr_table.cc char_map.cc problem.cc kp_problem.cc clg_problem.cc lw1_problem.cc ks0_problem.cc name.cc preprocess.cc solver.cc lw1_solver.cc classical_planner.cc
 LIBGENSRCS = grammar.cc scanner.cc
 GENSRCS = ppddl.y ppddl.lex

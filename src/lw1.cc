@@ -35,6 +35,7 @@
 #include "available_options.h"
 #include "utils.h"
 #include "csp.h"
+#include "new_csp.h"
 #include "width.h"
 #include "random_action_selection.h"
 
@@ -378,6 +379,7 @@ int main(int argc, const char *argv[]) {
         // CHECK: should we create inference engine inside or outside this loop?
         // create and initialize inference engine and solver
         LW1_Solver solver(instance, *lw1_instance, *action_selection, *inference_engine, opt_time_bound, opt_ncalls_bound);
+        inference_engine->reset(); // CHECK
 
         // reset stats
         action_selection->reset_stats();
@@ -393,7 +395,6 @@ int main(int argc, const char *argv[]) {
         }
         if( g_options.is_enabled("lw1:inference:ac3") ) {
             // Build basic CSP from state: CSP variables come from state variables and variable groups
-#if 1
             solver.fill_atoms_to_var_map(*lw1_instance);
             Inference::CSP::Csp csp;
             csp.initialize(lw1_instance->variables_, solver.atoms_to_vars_);
@@ -402,7 +403,6 @@ int main(int argc, const char *argv[]) {
                 Inference::CSP::AC3 ac3;
                 ac3.initialize_arcs(*lw1_instance, csp);
             }
-#endif
         }
 
         // solve

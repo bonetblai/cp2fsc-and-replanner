@@ -26,9 +26,8 @@
 #include <string>
 #include <vector>
 
-#include "csp.h"
+#include "new_csp.h"
 #include "inference.h"
-#include "kp_problem.h"
 #include "lw1_problem.h"
 #include "options.h"
 #include "state.h"
@@ -57,28 +56,28 @@ namespace Inference {
     protected:
       const std::string name_;
       const Instance &instance_;
-      const KP_Instance &kp_instance_;
+      const LW1_Instance &lw1_instance_;
       const Options::Mode &options_;
 
-      virtual void internal_initialize() = 0;
       virtual void internal_apply_inference(const Instance::Action *last_action,
                                             const std::set<int> &sensed_at_step,
                                             T &state) const = 0;
 
     public:
-      Engine(const std::string &name, const Instance &instance, const KP_Instance &kp_instance, const Options::Mode &options)
+      Engine(const std::string &name, const Instance &instance, const LW1_Instance &lw1_instance, const Options::Mode &options)
         : name_(name),
           instance_(instance),
-          kp_instance_(kp_instance),
+          lw1_instance_(lw1_instance),
           options_(options) {
       }
       virtual ~Engine() { }
+      virtual void reset() = 0;
       void apply_inference(const Instance::Action *last_action,
                            const std::set<int> &sensed_at_step,
                            T &state) const {
 #ifdef DEBUG
           std::cout << Utils::magenta() << ">>> state before inference=";
-          state.print(std::cout, kp_instance_);
+          state.print(std::cout, lw1_instance_);
           std::cout << Utils::normal() << std::endl;
 
           if( last_action != 0 )
@@ -90,11 +89,11 @@ namespace Inference {
           float start_time = Utils::read_time_in_seconds();
           internal_apply_inference(last_action, sensed_at_step, state);
           float end_time = Utils::read_time_in_seconds();
-          kp_instance_.increase_inference_time(end_time - start_time);
+          lw1_instance_.increase_inference_time(end_time - start_time);
 
 #ifdef DEBUG
           std::cout << Utils::green() << ">>> state  after inference=";
-          state.print(std::cout, kp_instance_);
+          state.print(std::cout, lw1_instance_);
           std::cout << Utils::normal() << std::endl;
 #endif
       }
@@ -103,11 +102,10 @@ namespace Inference {
   template<typename T>
   class ForwardChaining : public Engine<T> {
     using Engine<T>::instance_;
-    using Engine<T>::kp_instance_;
+    using Engine<T>::lw1_instance_;
     using Engine<T>::options_;
 
     protected:
-      virtual void internal_initialize() { }
       virtual void internal_apply_inference(const Instance::Action *last_action,
                                             const std::set<int> &sensed_at_step,
                                             T &state) const {
@@ -126,7 +124,7 @@ namespace Inference {
                   state.add(2*sensed_literal);
 #ifdef DEBUG
                   std::cout << Utils::yellow() << "[FC] Adding sensed: ";
-                  LW1_State::print_literal(std::cout, 1 + 2*sensed_literal, &kp_instance_);
+                  LW1_State::print_literal(std::cout, 1 + 2*sensed_literal, &lw1_instance_);
                   std::cout << Utils::normal() << std::endl;
 #endif
               } else {
@@ -135,7 +133,7 @@ namespace Inference {
                   state.add(2*sensed_literal + 1);
 #ifdef DEBUG
                   std::cout << Utils::yellow() << "[FC] Adding sensed: ";
-                  LW1_State::print_literal(std::cout, 1 + 2*sensed_literal + 1, &kp_instance_);
+                  LW1_State::print_literal(std::cout, 1 + 2*sensed_literal + 1, &lw1_instance_);
                   std::cout << Utils::normal() << std::endl;
 #endif
               }
@@ -145,12 +143,12 @@ namespace Inference {
           bool fix_point_reached = false;
           while( !fix_point_reached ) {
               T old_state(state);
-              for( size_t k = kp_instance_.first_deductive_action(); k < kp_instance_.last_deductive_action(); ++k ) {
-                  const Instance::Action &act = *kp_instance_.actions_[k];
+              for( size_t k = lw1_instance_.first_deductive_action(); k < lw1_instance_.last_deductive_action(); ++k ) {
+                  const Instance::Action &act = *lw1_instance_.actions_[k];
                   if( state.applicable(act) ) {
                       state.apply(act);
 #ifdef DEBUG
-                      act.print(std::cout, kp_instance_);
+                      act.print(std::cout, lw1_instance_);
 #endif
                   }
               }
@@ -159,17 +157,17 @@ namespace Inference {
       }
 
     public:
-      ForwardChaining(const Instance &instance, const KP_Instance &kp_instance, const Options::Mode &options)
-        : Engine<T>("forward-chaining", instance, kp_instance, options) {
-          internal_initialize();
+      ForwardChaining(const Instance &instance, const LW1_Instance &lw1_instance_, const Options::Mode &options)
+        : Engine<T>("forward-chaining", instance, lw1_instance_, options) {
       }
       virtual ~ForwardChaining() { }
+      virtual void reset() { }
   };
 
   template<typename T>
   class UnitPropagation : public Engine<T> {
     using Engine<T>::instance_;
-    using Engine<T>::kp_instance_;
+    using Engine<T>::lw1_instance_;
     using Engine<T>::options_;
 
     protected:
@@ -182,36 +180,20 @@ namespace Inference {
           cnf_.erase(cnf_.begin() + 1 + frontier_, cnf_.end());
       }
       bool is_forbidden(int literal) const {
-          assert(dynamic_cast<const LW1_Instance*>(&kp_instance_) != 0);
-          return static_cast<const LW1_Instance&>(kp_instance_).is_forbidden(literal);
+          assert(dynamic_cast<const LW1_Instance*>(&lw1_instance_) != 0);
+          return static_cast<const LW1_Instance&>(lw1_instance_).is_forbidden(literal);
       }
       bool is_forbidden(const std::vector<int> &clause) const {
-          assert(dynamic_cast<const LW1_Instance*>(&kp_instance_) != 0);
-          return static_cast<const LW1_Instance&>(kp_instance_).is_forbidden(clause);
+          assert(dynamic_cast<const LW1_Instance*>(&lw1_instance_) != 0);
+          return static_cast<const LW1_Instance&>(lw1_instance_).is_forbidden(clause);
       }
 
-      virtual void internal_initialize() {
-          assert(dynamic_cast<const LW1_Instance*>(&kp_instance_) != 0);
-          const LW1_Instance &lw1_instance = static_cast<const LW1_Instance&>(kp_instance_);
-          for( size_t j = 0; j < lw1_instance.clauses_for_axioms_.size(); ++j ) {
-              const std::vector<int> &clause = lw1_instance.clauses_for_axioms_[j];
-              Inference::Propositional::Clause cl;
-              for( size_t k = 0; k < clause.size(); ++k )
-                  cl.push_back(clause[k]);
-              cnf_.push_back(cl);
-              base_theory_axioms_.insert(cl);
-          }
-          frontier_ = cnf_.size() - 1;
-
-          // map atoms to vars 
-          fill_atoms_to_var_map(lw1_instance, atoms_to_vars_);
-      }
       virtual void internal_apply_inference(const Instance::Action *last_action,
                                             const std::set<int> &sensed_at_step,
                                             T &state) const {
           assert(options_.is_enabled("lw1:inference:up"));
-          assert(dynamic_cast<const LW1_Instance*>(&kp_instance_) != 0);
-          const LW1_Instance &lw1_instance = static_cast<const LW1_Instance&>(kp_instance_);
+          assert(dynamic_cast<const LW1_Instance*>(&lw1_instance_) != 0);
+          const LW1_Instance &lw1_instance = static_cast<const LW1_Instance&>(lw1_instance_);
 
 #ifdef DEBUG
           std::cout << Utils::cyan() << "Using inference: 'unit propagation'" << Utils::normal() << std::endl;
@@ -235,7 +217,7 @@ namespace Inference {
                   int k_literal = *it > 0 ? 2 * (*it - 1) : 2 * (-*it - 1) + 1;
 #ifdef DEBUG
                   std::cout << Utils::red() << "[UP: Theory] Add obs literal: ";
-                  state.print_literal(std::cout, 1 + k_literal, &kp_instance_);
+                  state.print_literal(std::cout, 1 + k_literal, &lw1_instance_);
                   std::cout << Utils::normal() << std::endl;
 #endif
                   Inference::Propositional::Clause cl;
@@ -249,7 +231,7 @@ namespace Inference {
           for( typename T::const_iterator it = state.begin(); it != state.end(); ++it ) {
 #ifdef DEBUG
               std::cout << Utils::red() << "[UP] [Theory] Add literal from state: ";
-              state.print_literal(std::cout, 1 + *it, &kp_instance_);
+              state.print_literal(std::cout, 1 + *it, &lw1_instance_);
               std::cout << Utils::normal() << std::endl;
 #endif
               Inference::Propositional::Clause cl;
@@ -264,7 +246,7 @@ namespace Inference {
                   const std::vector<int> &clause = *it;
 #ifdef DEBUG
                   std::cout << Utils::red() << "[UP] [Theory] Add axiom: ";
-                  state.print_clause_or_term(std::cout, clause, &kp_instance_);
+                  state.print_clause_or_term(std::cout, clause, &lw1_instance_);
                   std::cout << Utils::normal() << std::endl;
 #endif
                   Inference::Propositional::Clause cl;
@@ -286,7 +268,7 @@ namespace Inference {
                       int k_literal = sensed_literal > 0 ? 1 + 2*(sensed_literal - 1) : 1 + 2*(-sensed_literal - 1) + 1;
 #ifdef DEBUG
                       std::cout << Utils::red() << "[UP] [Theory] Add obs (state) literal: ";
-                      state.print_literal(std::cout, k_literal, &kp_instance_);
+                      state.print_literal(std::cout, k_literal, &lw1_instance_);
                       std::cout << Utils::normal() << std::endl;
 #endif
                       Inference::Propositional::Clause cl;
@@ -300,7 +282,7 @@ namespace Inference {
                               const clause_or_term_t &clause = k_cnf_for_sensing_model[j];
 #ifdef DEBUG
                               std::cout << Utils::red() << "[UP] [Theory] Add K_o clause: ";
-                              state.print_clause_or_term(std::cout, clause, &kp_instance_);
+                              state.print_clause_or_term(std::cout, clause, &lw1_instance_);
                               std::cout << Utils::normal() << std::endl;
 
                               // The clause holds the indexes for the atoms
@@ -340,7 +322,7 @@ namespace Inference {
                   const clause_or_term_t &clause = state.cnf_[k];
 #ifdef DEBUG
                   std::cout << Utils::red() << "[UP] [Theory] Add extra clause: ";
-                  state.print_clause_or_term(std::cout, clause, &kp_instance_);
+                  state.print_clause_or_term(std::cout, clause, &lw1_instance_);
                   std::cout << Utils::normal() << std::endl;
 #endif
                   Inference::Propositional::Clause cl;
@@ -387,7 +369,7 @@ namespace Inference {
                       state.add(i-1);
 #ifdef DEBUG
                       std::cout << Utils::yellow() << "[UP] [State] Add inferred literal: ";
-                      state.print_literal(std::cout, i, &kp_instance_);
+                      state.print_literal(std::cout, i, &lw1_instance_);
                       std::cout << Utils::normal() << std::endl;
 #endif
                   }
@@ -413,7 +395,7 @@ namespace Inference {
                           state.add(literal - 1);
 #ifdef DEBUG
                           std::cout << Utils::yellow() << "[UP] [State] Add inferred literal: ";
-                          state.print_literal(std::cout, literal, &kp_instance_);
+                          state.print_literal(std::cout, literal, &lw1_instance_);
                           std::cout << Utils::normal() << std::endl;
 #endif
                       }
@@ -438,7 +420,7 @@ namespace Inference {
                       if( is_forbidden(clause) ) continue;
 #ifdef DEBUG
                       std::cout << Utils::yellow() << "[UP] [State] Add clause: ";
-                      state.print_clause_or_term(std::cout, clause, &kp_instance_);
+                      state.print_clause_or_term(std::cout, clause, &lw1_instance_);
                       std::cout << Utils::normal() << std::endl;
 #endif
                       state.cnf_.push_back(clause);
@@ -452,67 +434,65 @@ namespace Inference {
       }
 
     public:
-      UnitPropagation(const Instance &instance, const KP_Instance &kp_instance, const Options::Mode &options)
-        : Engine<T>("unit-propagation", instance, kp_instance, options) {
-          internal_initialize();
+      UnitPropagation(const Instance &instance, const LW1_Instance &lw1_instance, const Options::Mode &options)
+        : Engine<T>("unit-propagation", instance, lw1_instance, options) {
+          for( size_t j = 0; j < lw1_instance.clauses_for_axioms_.size(); ++j ) {
+              const std::vector<int> &clause = lw1_instance.clauses_for_axioms_[j];
+              Inference::Propositional::Clause cl;
+              for( size_t k = 0; k < clause.size(); ++k )
+                  cl.push_back(clause[k]);
+              cnf_.push_back(cl);
+              base_theory_axioms_.insert(cl);
+          }
+          frontier_ = cnf_.size() - 1;
+
+          // map atoms to vars 
+          fill_atoms_to_var_map(lw1_instance, atoms_to_vars_);
       }
       virtual ~UnitPropagation() { }
+      virtual void reset() { }
   };
 
   template<typename T>
   class AC3 : public Engine<T> {
     using Engine<T>::instance_;
-    using Engine<T>::kp_instance_;
+    using Engine<T>::lw1_instance_;
     using Engine<T>::options_;
 
     protected:
       std::map<int, int> atoms_to_vars_;
-
-      virtual void internal_initialize() {
-          assert(dynamic_cast<const LW1_Instance*>(&kp_instance_) != 0);
-          const LW1_Instance &lw1_instance = static_cast<const LW1_Instance&>(kp_instance_);
-          fill_atoms_to_var_map(lw1_instance, atoms_to_vars_);
-#if 0
-          Inference::CSP::Csp csp;
-          csp.initialize(lw1_instance.variables_, atoms_to_vars_);
-          if( lw1_instance.has_groups() ) {
-              csp.initialize_groups(lw1_instance);
-              Inference::CSP::AC3 ac3;
-              ac3.initialize_arcs(lw1_instance, csp);
-          }
-#endif
-      }
+      Inference::CSP2::Csp csp_;
+      Inference::CSP2::AC3 ac3_;
 
       virtual void internal_apply_inference(const Instance::Action *last_action,
                                             const std::set<int> &sensed_at_step,
                                             T &state) const {
           assert(options_.is_enabled("lw1:inference:ac3"));
-          assert(dynamic_cast<const LW1_Instance*>(&kp_instance_) != 0);
-          const LW1_Instance &lw1_instance = static_cast<const LW1_Instance&>(kp_instance_);
 
 #ifdef DEBUG
           std::cout << Utils::cyan() << "Using inference: 'ac3' (AC3)" << Utils::normal() << std::endl;
 #endif
 
-          Inference::CSP::Csp csp;
-          csp.reset_current_domains();
+          //csp_.initialize_groups(); // CHECK
+          csp_.reset_current_domains();
+          //csp_.reset_current_domains_for_variable_groups(); // CHECK
 
           // find sensing models for given action that are incompatible with observations
           relevant_sensing_models_t relevant_sensing_models_as_k_dnf;
           if( last_action != 0 )
-              fill_relevant_sensing_models(options_, instance_, lw1_instance, last_action, sensed_at_step, relevant_sensing_models_as_k_dnf, false);
+              fill_relevant_sensing_models(options_, instance_, lw1_instance_, last_action, sensed_at_step, relevant_sensing_models_as_k_dnf, false);
 
           // 0. Domains are original domains with values pruned as indicated with the K-literals in state.
           // Basic constraints relate variable groups to state variable and variable groups to variable
           // groups.
           for( typename T::const_iterator it = state.begin(); it != state.end(); ++it ) {
-              if( state.is_special(*it + 1, &kp_instance_) ) continue;
+              if( state.is_special(*it + 1, &lw1_instance_) ) continue;
 #ifdef DEBUG
               std::cout << Utils::red() << "[CSP] Added literal from state: ";
-              state.print_literal(std::cout, 1 + *it, &kp_instance_);
+              state.print_literal(std::cout, 1 + *it, &lw1_instance_);
               std::cout << Utils::normal() << std::endl;
 #endif
-              csp.prune_domain_of_var(1 + *it);
+              csp_.prune_domain_of_var(1 + *it);
           }
 
           // 1. Add observation. Pruned variable domains using k-dnf for observation. For each observation,
@@ -527,7 +507,7 @@ namespace Inference {
 
               for( std::map<int, sensing_models_as_cnf_or_dnf_t>::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt ) {
                   int var_key = jt->first;
-                  const LW1_Instance::Variable &variable = *lw1_instance.variables_[var_key];
+                  const LW1_Instance::Variable &variable = *lw1_instance_.variables_[var_key];
                   std::pair<int, int> key(var_key, sensed_literal);
 #ifdef DEBUG
                   std::cout << "[AC3] sensed literal: var=" << variable.name() << ", value=" << std::flush;
@@ -540,27 +520,27 @@ namespace Inference {
                       int k_literal = sensed_literal > 0 ? 1 + 2*(sensed_literal - 1) : 1 + 2*(-sensed_literal - 1) + 1;
 #ifdef DEBUG
                       std::cout << Utils::red() << "[AC3] Add obs (state) k-literal: ";
-                      state.print_literal(std::cout, k_literal, &kp_instance_);
+                      state.print_literal(std::cout, k_literal, &lw1_instance_);
                       std::cout << Utils::normal() << std::endl;
 #endif
-                      csp.prune_domain_of_var(k_literal);
-                  } else if( lw1_instance.filtering_groups_.find(key) != lw1_instance.filtering_groups_.end() ) {
+                      csp_.prune_domain_of_var(k_literal);
+                  } else if( lw1_instance_.filtering_groups_.find(key) != lw1_instance_.filtering_groups_.end() ) {
                       // observation can be filtered in variable group. Prune all valuations that are
                       // not consistent with k-dnf
-                      int vg = lw1_instance.filtering_groups_.at(key);
+                      int vg = lw1_instance_.filtering_groups_.at(key);
                       const sensing_models_as_cnf_or_dnf_t& sensing_models_as_k_dnf = jt->second;
                       for( size_t k = 0; k < sensing_models_as_k_dnf.size(); ++k ) {
                           const cnf_or_dnf_t& k_dnf_for_sensing_model = *sensing_models_as_k_dnf[k];
-                          csp.prune_valuations_of_groups(vg, k_dnf_for_sensing_model, kp_instance_);
+                          csp_.prune_valuations_of_groups(vg, k_dnf_for_sensing_model);
 #ifdef DEBUG
                           std::cout << Utils::blue() << "[AC3] k-dnf or k-cnf: index=" << k << ", formula=";
-                          state.print_cnf_or_dnf(std::cout, k_dnf_for_sensing_model, &kp_instance_);
+                          state.print_cnf_or_dnf(std::cout, k_dnf_for_sensing_model, &lw1_instance_);
                           std::cout << Utils::normal() << std::endl;
 
                           for( size_t j = 0; j < k_dnf_for_sensing_model.size(); ++j ) {
                               const clause_or_term_t& term = k_dnf_for_sensing_model[j];
                               std::cout << Utils::cyan() << "[AC3] Clause or term: ";
-                              state.print_clause_or_term(std::cout, term, &kp_instance_);
+                              state.print_clause_or_term(std::cout, term, &lw1_instance_);
                               std::cout << Utils::normal() << std::endl;
                           }
 #endif
@@ -573,7 +553,7 @@ namespace Inference {
                           const cnf_or_dnf_t &k_dnf_for_sensing_model = *sensing_models_as_k_dnf[k];
 #ifdef DEBUG
                           std::cout << Utils::blue() << "[AC3] k-dnf: index =" << k << ", formula =" << Utils::normal();
-                          state.print_cnf_or_dnf(std::cout, k_dnf_for_sensing_model, &kp_instance_);
+                          state.print_cnf_or_dnf(std::cout, k_dnf_for_sensing_model, &lw1_instance_);
                           std::cout << std::endl;
 #endif
                           bool possible = true;
@@ -588,13 +568,13 @@ namespace Inference {
                               assert(term.size() == 1);
 #ifdef DEBUG
                               std::cout << Utils::red() << "[AC3] Adding to possible domain_: ";
-                              state.print_clause_or_term(std::cout, term, &kp_instance_);
+                              state.print_clause_or_term(std::cout, term, &lw1_instance_);
                               std::cout << Utils::normal() << std::endl;
 #endif
                               possible_domain.insert(term[0]);
                           }
                           if( possible )
-                              csp.intersect_domain_of_var(possible_domain);
+                              csp_.intersect_domain_of_var(possible_domain);
                       }
                   }
               }
@@ -603,16 +583,23 @@ namespace Inference {
           // 2. Make the CSP arc consistent by running AC3. The resulting CSP should be consistent
           // (i.e. the domain of each variable should be non empty). Otherwise, there is an error in
           // the planning model
-          Inference::CSP::AC3 ac3;
-          ac3.solve_groups(csp, state, kp_instance_);
+          ac3_.solve(csp_, state);
       }
 
     public:
-      AC3(const Instance &instance, const KP_Instance &kp_instance, const Options::Mode &options)
-        : Engine<T>("ac3", instance, kp_instance, options) {
-          internal_initialize();
+      AC3(const Instance &instance, const LW1_Instance &lw1_instance, const Options::Mode &options)
+        : Engine<T>("ac3", instance, lw1_instance, options),
+          csp_(lw1_instance),
+          ac3_(lw1_instance) {
+          fill_atoms_to_var_map(lw1_instance_, atoms_to_vars_);
+          csp_.set_atoms_to_var_map(atoms_to_vars_);
+          csp_.calculate_common_variables_in_groups();
+          ac3_.calculate_arcs(csp_);
       }
       virtual ~AC3() { }
+      virtual void reset() {
+          csp_.reset_current_domains_for_variable_groups();
+      }
   };
 } // namespace Inference
 
