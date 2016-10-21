@@ -59,7 +59,7 @@ namespace Inference {
       const LW1_Instance &lw1_instance_;
       const Options::Mode &options_;
 
-      virtual void internal_apply_inference(const Instance::Action *last_action,
+      virtual bool internal_apply_inference(const Instance::Action *last_action,
                                             const std::set<int> &sensed_at_step,
                                             T &state) const = 0;
 
@@ -72,7 +72,7 @@ namespace Inference {
       }
       virtual ~Engine() { }
       virtual void reset() = 0;
-      void apply_inference(const Instance::Action *last_action,
+      bool apply_inference(const Instance::Action *last_action,
                            const std::set<int> &sensed_at_step,
                            T &state) const {
 #ifdef DEBUG
@@ -87,7 +87,7 @@ namespace Inference {
 #endif
 
           float start_time = Utils::read_time_in_seconds();
-          internal_apply_inference(last_action, sensed_at_step, state);
+          bool status = internal_apply_inference(last_action, sensed_at_step, state);
           float end_time = Utils::read_time_in_seconds();
           lw1_instance_.increase_inference_time(end_time - start_time);
 
@@ -96,6 +96,8 @@ namespace Inference {
           state.print(std::cout, lw1_instance_);
           std::cout << Utils::normal() << std::endl;
 #endif
+
+          return status;
       }
   };
 
@@ -106,7 +108,7 @@ namespace Inference {
     using Engine<T>::options_;
 
     protected:
-      virtual void internal_apply_inference(const Instance::Action *last_action,
+      virtual bool internal_apply_inference(const Instance::Action *last_action,
                                             const std::set<int> &sensed_at_step,
                                             T &state) const {
           assert(options_.is_enabled("lw1:inference:forward-chaining"));
@@ -154,6 +156,7 @@ namespace Inference {
               }
               fix_point_reached = old_state == state;
           }
+          return true; // forward chaining cannot detect inconsistencies
       }
 
     public:
@@ -200,7 +203,7 @@ namespace Inference {
           return static_cast<const LW1_Instance&>(lw1_instance_).is_forbidden(clause);
       }
 
-      virtual void internal_apply_inference(const Instance::Action *last_action,
+      virtual bool internal_apply_inference(const Instance::Action *last_action,
                                             const std::set<int> &sensed_at_step,
                                             T &state) const {
           assert(options_.is_enabled("lw1:inference:up"));
@@ -346,10 +349,7 @@ namespace Inference {
           }
 
           // check consistency
-          if( !consistent ) {
-              std::cout << Utils::internal_error() << "inconsistency reached during UP inference" << std::endl;
-              exit(-1);
-          }
+          if( !consistent ) return false;
 
           // 6. Update state: insert positive literals from result into state
           if( options_.is_enabled("lw1:inference:up:watched-literals") ) {
@@ -421,8 +421,9 @@ namespace Inference {
               }
           }
 
-          // 8. Restore CNF
+          // 8. Restore CNF and return
           restore_cnf();
+          return true;
       }
 
     public:
@@ -455,7 +456,7 @@ namespace Inference {
       CSP::Csp csp_;
       CSP::AC3 ac3_;
 
-      virtual void internal_apply_inference(const Instance::Action *last_action,
+      virtual bool internal_apply_inference(const Instance::Action *last_action,
                                             const std::set<int> &sensed_at_step,
                                             T &state) const {
           assert(options_.is_enabled("lw1:inference:ac3"));
@@ -569,10 +570,11 @@ namespace Inference {
               }
           }
 
-          // 2. Make the CSP arc consistent by running AC3. The resulting CSP should be consistent
-          // (i.e. the domain of each variable should be non empty). Otherwise, there is an error in
-          // the planning model
-          ac3_.solve(csp_, state);
+          // 2. Make the CSP arc consistent by running AC3. Normally, the resulting CSP should be
+          // consistent // (i.e. the domain of each variable should be non empty). Otherwise,
+          // there is an error in // the planning model
+          bool status = ac3_.solve(csp_, state);
+          return status;
       }
 
     public:

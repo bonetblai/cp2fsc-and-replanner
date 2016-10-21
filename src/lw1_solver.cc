@@ -136,7 +136,11 @@ void LW1_Solver::compute_and_add_observations(const Instance::Action *last_actio
 void LW1_Solver::apply_inference(const Instance::Action *last_action,
                                  const set<int> &sensed_at_step,
                                  STATE_CLASS &state) const {
-    inference_engine_.apply_inference(last_action, sensed_at_step, state);
+    bool status = inference_engine_.apply_inference(last_action, sensed_at_step, state);
+    if( !status ) {
+        std::cout << Utils::internal_error() << "inconsistency reached during apply_inference() at state (lw1_solver.cc)" << std::endl;
+        exit(-1);
+    }
 }
 
 bool LW1_Solver::value_observable_literal(const STATE_CLASS &hidden,

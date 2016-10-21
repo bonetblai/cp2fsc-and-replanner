@@ -32,12 +32,13 @@
 // Namespaces for CSP construction and resolution via AC3 algorithm
 namespace Inference {
   namespace CSP {
+
     // Atoms: l-atoms are low level literals, h-atoms are k-literals
     inline int get_l_atom(int h_atom) { // returns l_atom associated with h_atom
         return h_atom > 0 ? (h_atom - 1) / 2 : (-h_atom - 1) / 2 + 1;
     }
 
-    // Variable abstract Class used in CSP structure
+    // abstract variable class
     class Variable {
       protected:
         std::string name_; // Variable name (debugging)
@@ -156,17 +157,6 @@ namespace Inference {
         virtual void print(std::ostream &os, const LW1_Instance &lw1_instance, const LW1_State &state) const;
     };
 
-    // CSP (Constraint Satisfaction Problem)
-    // Class for initializing the CSP associated with the LW1 problem
-    // Example:
-    //  ...
-    //  Inference::CSP::Csp csp;
-    //  csp.initialize(((LW1_Instance*)kp_instance)->variables_, solver.atoms_to_vars_);
-    //  if (((LW1_Instance*)kp_instance)->has_groups()) {
-    //      csp.initialize_groups(*kp_instance);
-    //      Inference::CSP::AC3 ac3;
-    //      ac3.calculate_arcs(*kp_instance, csp);
-    //  }
     class Csp {
       protected:
         const LW1_Instance &lw1_instance_;
@@ -293,14 +283,6 @@ namespace Inference {
         void print(std::ostream &os, const LW1_Instance &lw1_instance, const LW1_State &state, const Csp &csp) const;
     };
 
-    // AC3 Algorithm for solvign CSP
-    // Class for AC3 algorithm
-    // Example:
-    //  ...
-    //  Inference::CSP::AC3 ac3(lw1_instance);
-    //  ac3.calculate_arcs(csp);
-    //  ...
-    //  ac3.solve(csp, state);
     class AC3 {
       protected:
         const LW1_Instance &lw1_instance_;
@@ -316,8 +298,8 @@ namespace Inference {
         }
 
         // Applies arc consistency over binary arcs
-        void run_ac3(const Csp &csp) const;
-        bool arc_reduce(const Arc *arc, const Csp &csp) const;
+        bool run_ac3(const Csp &csp) const;
+        std::pair<bool, bool> arc_reduce(const Arc &arc, const Csp &csp) const;
 
         // Returns an int that represents a valuation of common
         // variables x_var and y_var
@@ -342,7 +324,7 @@ namespace Inference {
         // is taking.
         //
         // Simple Arc is not considered (not using this in this AC3!)
-        bool evaluate(const Arc *arc, int x, int y, const Csp &csp) const;
+        bool evaluate(const Arc &arc, int x, int y, const Csp &csp) const;
 
       public:
         AC3(const LW1_Instance &lw1_instance)
@@ -354,7 +336,7 @@ namespace Inference {
 
         void clear_arcs();
         void calculate_arcs(const Csp &csp);
-        void solve(const Csp &csp, LW1_State &state) const;
+        bool solve(const Csp &csp, LW1_State &state) const;
         void print(std::ostream &os, const Csp &csp, const LW1_State &state) const;
     };
   } // namespace CSP

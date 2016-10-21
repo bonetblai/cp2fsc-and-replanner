@@ -275,29 +275,38 @@ namespace Inference {
         var_y->print(os, lw1_instance, state);
     }
 
-    // Applies arc consistency over binary arcs
-    void AC3::run_ac3(const Csp &csp) const {
+    // run arc consistency
+    // CHECK: make this more efficient: need to maintain explicit graph with adjacency lists
+    // CHECK: it is also not clear why worklist is a set instead of a queue
+    bool AC3::run_ac3(const Csp &csp) const {
         while( !worklist_.empty() ) {
-            const Arc *arc = *worklist_.begin();
+            const Arc &arc = **worklist_.begin();
             worklist_.erase(worklist_.begin());
-            if( arc_reduce(arc, csp) ) {
-                const Variable *x = arc->x_is_group() ? csp.get_group_var(arc->first) : csp.get_var_from_vars(arc->first);
-                const Variable *y = arc->y_is_group() ? csp.get_group_var(arc->second) : csp.get_var_from_vars(arc->second);
-                for( auto it = arcs_.cbegin(); it != arcs_.cend(); it++ ) {
-                    const Arc *tmp = *it;
-                    const Variable *tmp_z = tmp->x_is_group() ? csp.get_group_var(tmp->first) : csp.get_var_from_vars(tmp->first);
-                    const Variable *tmp_x = tmp->y_is_group() ? csp.get_group_var(tmp->second) : csp.get_var_from_vars(tmp->second);
+            pair<bool, bool> p = arc_reduce(arc, csp);
+            if( !p.first ) {
+                // reached inconsistency
+                return false;
+            } else if( p.second ) {
+                // some value was deleted
+                const Variable *x = arc.x_is_group() ? csp.get_group_var(arc.first) : csp.get_var_from_vars(arc.first);
+                const Variable *y = arc.y_is_group() ? csp.get_group_var(arc.second) : csp.get_var_from_vars(arc.second);
+                for( size_t k = 0; k < arcs_.size(); ++k ) {
+                    assert(arcs_[k] != 0);
+                    const Arc &tmp = *arcs_[k];
+                    const Variable *tmp_z = tmp.x_is_group() ? csp.get_group_var(tmp.first) : csp.get_var_from_vars(tmp.first);
+                    const Variable *tmp_x = tmp.y_is_group() ? csp.get_group_var(tmp.second) : csp.get_var_from_vars(tmp.second);
                     if( (tmp_x == x) && (tmp_z != y) )
-                        worklist_.insert(tmp);
+                        worklist_.insert(&tmp);
                 }
             }
         }
+        return true;
     }
 
-    // Arc Reduce algorithm of AC3
-    bool AC3::arc_reduce(const Arc *arc, const Csp &csp) const {
-        const Variable *x = arc->x_is_group() ? csp.get_group_var(arc->first) : csp.get_var_from_vars(arc->first);
-        const Variable *y = arc->y_is_group() ? csp.get_group_var(arc->second) : csp.get_var_from_vars(arc->second);
+    // first in result tells whether incosistency is found, second whether some value was deleted
+    pair<bool, bool> AC3::arc_reduce(const Arc &arc, const Csp &csp) const {
+        const Variable *x = arc.x_is_group() ? csp.get_group_var(arc.first) : csp.get_var_from_vars(arc.first);
+        const Variable *y = arc.y_is_group() ? csp.get_group_var(arc.second) : csp.get_var_from_vars(arc.second);
 
         bool change = false; // An element has been erase from dx ?
         assert(!x->current_domain().empty() && !y->current_domain().empty());
@@ -316,11 +325,15 @@ namespace Inference {
             if( ! found ) {
                 vx = x->current_domain().erase(vx);
                 change = true;
+                if( x->current_domain().empty() ) {
+                    // reached an incosistency
+                    return make_pair(false, true);
+                }
             } else {
                 vx++;
             }
         }
-        return change;
+        return make_pair(true, change);
     }
 
     // Returns an int that represents a valuation of common variables x_var and y_var
@@ -360,25 +373,25 @@ namespace Inference {
     // is taking.
     //
     // Simple Arc is not considered (not using this in this AC3!)
-    bool AC3::evaluate(const Arc *arc, int x, int y, const Csp &csp) const {
-        assert(!arc->is_simple());
+    bool AC3::evaluate(const Arc &arc, int x, int y, const Csp &csp) const {
+        assert(!arc.is_simple());
         assert((x >= 0) && (y >= 0));
-        if( arc->is_mixed() ) {
-            if( arc->x_is_group() ) {
+        if( arc.is_mixed() ) {
+            if( arc.x_is_group() ) {
                 int var_index = csp.get_var_index(y);
-                const VariableGroup *group = csp.get_group_var(arc->first);
+                const VariableGroup *group = csp.get_group_var(arc.first);
                 int pos = group->get_pos_from_var_index(var_index);
                 int bit = (y % 2) << pos;
                 return (x & (1 << pos)) == bit;
             }
-            const VariableGroup *group = csp.get_group_var(arc->second);
+            const VariableGroup *group = csp.get_group_var(arc.second);
             int var_index = csp.get_var_index(x);
             int pos = group->get_pos_from_var_index(var_index);
             int bit = (x % 2) << pos;
             return (y & (1 << pos)) == bit;
         } else {
-            const VariableGroup *x_var = csp.get_group_var(arc->first);
-            const VariableGroup *y_var = csp.get_group_var(arc->second);
+            const VariableGroup *x_var = csp.get_group_var(arc.first);
+            const VariableGroup *y_var = csp.get_group_var(arc.second);
             return build_common_valuation(x, x_var, y_var, csp) == build_common_valuation(y, y_var, x_var, csp);
         }
     }
@@ -415,16 +428,18 @@ namespace Inference {
         }
     }
 
-    // Applies Arc Consistency over arcs
-    void AC3::solve(const Csp &csp, LW1_State &state) const {
+    bool AC3::solve(const Csp &csp, LW1_State &state) const {
         initialize_worklist();
-        run_ac3(csp);
+        bool status = run_ac3(csp);
+        if( !status )
+            return false; // indicates an incosistency is found
 
         // Update state using information in CSP. For each value x that is pruned in domain of
         // CSP variable X corresponding to state variable X, add literal K_not_X=x. For each value
         // z that is pruned in domain of CSP variable Z corresponding to variable group Z, add
         // literal K_not_vg_Z_z
         csp.update_state(state);
+        return true; // indicates no incosistency found
     }
 
     void AC3::print(ostream &os, const Csp &csp, const LW1_State &state) const {
