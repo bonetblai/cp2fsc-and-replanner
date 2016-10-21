@@ -48,9 +48,6 @@ inference_engine.o: inference_engine.cc inference_engine.h state.h \
   problem.h name.h index.h options.h utils.h lw1_problem.h kp_problem.h \
   base.h ptr_table.h string_table.h char_map.h csp.h lw1_state.h \
   unit_propagation.h
-csp.o: csp.cc csp.h lw1_problem.h kp_problem.h problem.h name.h index.h \
-  options.h utils.h base.h ptr_table.h string_table.h char_map.h \
-  lw1_state.h state.h
 grammar.o: grammar.cc base.h ptr_table.h string_table.h char_map.h \
   options.h utils.h problem.h name.h index.h
 scanner.o: scanner.cc scanner.h string_table.h char_map.h grammar.h \

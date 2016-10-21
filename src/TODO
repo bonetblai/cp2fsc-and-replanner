@@ -1,6 +1,6 @@
 - CSP code needs to be revised:
     - AC3 looks inefficient in several aspects
-    - CSP/AC3 needs to be fully separated from LW1, perhaps creating a middle layer
+    - CSP/AC3 needs to be fully separated from LW1, perhaps creating a middle layer [done]
 
 - Inference code needs to be revised
 
@@ -12,5 +12,5 @@
 - lw1:inference:forward-chaining is broken for lw1:strict. It appears to
   be working for lw1:aaai
 
-- check k-replanner 
+- check whether k-replanner is still working
 

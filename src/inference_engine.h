@@ -564,7 +564,7 @@ namespace Inference {
                               possible_domain.insert(term[0]);
                           }
                           if( possible )
-                              csp_.intersect_domain_of_var(possible_domain);
+                              csp_.intersect_domain_of_var(possible_domain); // CHECK this
                       }
                   }
               }
