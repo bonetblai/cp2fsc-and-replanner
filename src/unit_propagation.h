@@ -72,17 +72,9 @@ namespace Inference {
         }
     };
 
-    // PROVISIONAL: This method should make the class abstract,
-    // in order to use better and implementations of reduce under
-    // classic UP transparently.
-    // virtual void solve() = 0;
-    class UnitPropagation {
-      public:
-    };
-
     // inefficient UP: time for each iteration inside main loop of solve is O(n^2 x m)
     // where n is number of clauses and m is maximum size of clause
-    class Standard : public UnitPropagation {
+    class StandardUP {
       protected:
         struct compare_t { // compare clasues by size, smaller clauses are preferred
             bool operator() (const Clause &a, const Clause &b) const {
@@ -91,10 +83,10 @@ namespace Inference {
         };
 
       public:
-        Standard() { }
-        virtual ~Standard() { }
+        StandardUP() { }
+        virtual ~StandardUP() { }
 
-        void solve(const CNF &cnf, CNF &reduced_cnf) const {
+        bool solve(const CNF &cnf, CNF &reduced_cnf) const {
 #ifdef DEBUG
             std::cout << Utils::green() << "USING STANDARD METHOD" << Utils::normal() << std::endl;
 #endif
@@ -120,6 +112,8 @@ namespace Inference {
                                 if( kt != jt->end() ) {
                                     jt->erase(kt);
                                     change = true;
+                                    if( jt->empty() )
+                                        return false; // indicates that the CNF is inconsistent
                                 }
                                 ++jt;
                             }
@@ -129,10 +123,11 @@ namespace Inference {
                     }
                 }
             }
+            return true; // indicates no inconsistency found
         }
     };
 
-    class WatchedLiterals : public UnitPropagation {
+    class WatchedLiteralsUP {
       protected:
         int max_var_index_;
         std::vector<std::vector<int> > var_to_clauses_map_;
@@ -164,7 +159,6 @@ namespace Inference {
         // Construct the vector of clauses indexes associated to the negative of
         // a proposition prop. Since it is watched literals algorithm,
         // those clauses must watch the value associated with prop.
-        // This vector is constructed in cp
         void add_negative_propositions(const CNF &cnf, int var, int value, std::vector<int> &cp) const {
             assert(cp.empty());
             assert((var > 0) && (var < var_to_clauses_map_.size()));
@@ -186,22 +180,6 @@ namespace Inference {
             // clauses where not var appears
             std::vector<int> cp;
             add_negative_propositions(cnf, var, value, cp);
-
-            //for( size_t i = 0; i < inverted_index[prop].size(); i++ ) {
-            //    int clause = inverted_index[prop][i];
-            //    int w1 = watched[clause].first, w2 = watched[clause].second;
-            //    bool is_watched = isWatched(cnf, clause, -1 * value);
-            //    if( isWatched(cnf, clause, value) ) cp.push_back(clause);
-            //}
-
-            //if( prop < inverted_index_axioms_.size() ) {
-            //    for( size_t i = 0; i < inverted_index_axioms_[prop].size(); i++ ) {
-            //        int clause = inverted_index_axioms_[prop][i];
-            //        cvec_it w1 = watched[clause].first, w2 = watched[clause].second;
-            //        bool is_watched = value == -1 * (* w1) || value == -1 * (* w2);
-            //        if( is_watched ) cp.push_back(clause);
-            //    }
-            //}
 
             bool no_conflict = true;
             for( size_t k = 0; k < cp.size(); ++k ) {
@@ -236,8 +214,8 @@ namespace Inference {
         }
 
       public:
-        WatchedLiterals() : max_var_index_(0) { }
-        virtual ~WatchedLiterals() { }
+        WatchedLiteralsUP() : max_var_index_(0) { }
+        virtual ~WatchedLiteralsUP() { }
 
         bool empty() const {
             return watched_.empty();
@@ -293,7 +271,7 @@ namespace Inference {
             }
         }
 
-        void solve(const CNF &cnf, size_t start, std::vector<int> &assigned) {
+        bool solve(const CNF &cnf, size_t start, std::vector<int> &assigned) {
 #ifdef DEBUG
             std::cout << Utils::green() << "USING WATCHED LITERALS" << Utils::normal() << std::endl;
 #endif
@@ -309,40 +287,34 @@ namespace Inference {
                 int var = abs(literal);
                 if( (clause.size() == 1) && (assigned[var] == -1) ) {
                     assigned[var] = literal > 0 ? 1 : 0;
-                    if( !propagate(cnf, assigned, var) ) {
-                        std::cout << Utils::internal_error() << " propagate() in watched-literals returned false" << std::endl;
-                        exit(-1);
-                    }
+                    if( !propagate(cnf, assigned, var) )
+                        return false; // indicates that the CNF is inconsistent
                 }
             }
-
-            // CHECK: should we remove extra stuff here?
-            restore(start);
+            return true; // indicates no inconsistency found
         }
 
-        void lookahead(const CNF &cnf, std::vector<int> &assigned) {
+        bool lookahead(const CNF &cnf, std::vector<int> &assigned) {
             std::vector<int> copy;
-            for( size_t i = 1; i < assigned.size(); ++i ) {
-                if( assigned[i] != -1 ) continue; // already assigned
+            for( size_t var = 1; var < assigned.size(); ++var ) {
+                if( assigned[var] != -1 ) continue; // var is already assigned
                 copy = assigned;
-                copy[i] = 1;
-                if( !propagate(cnf, copy, i) ) { // propagating with copy
-                    // no other assignment is possible
-                    assigned[i] = 0;
-                    if( !propagate(cnf, assigned, i) ) {
-                        std::cout << Utils::internal_error() << "fatal error in lw1:inference:up:lookahead" << std::endl;
-                        exit(-1);
-                    }
+                copy[var] = 1; // try UP with var = true
+                if( !propagate(cnf, copy, var) ) { // propagating with copy
+                    assigned[var] = 0; // because var = true results in inconsistent theory
+                    if( !propagate(cnf, assigned, var) )
+                        return false; // indicates that the CNF is inconsistent
                 } else {
-                    std::vector<int> tmp = copy;
                     copy = assigned;  // getting back original assigned
-                    copy[i] = 0;
-                    // no other assignment is possible and assigned[i] = 1 !
-                    if( !propagate(cnf, copy, i) ) {
-                        assigned = tmp;
+                    copy[var] = 0; // try UP with var = false
+                    if( !propagate(cnf, copy, var) ) {
+                        assigned[var] = 1; // because var = false results in inconsistent theory
+                        if( !propagate(cnf, assigned, var) )
+                            return false; // indicates that the CNF is inconsistent
                     }
                 }
             }
+            return true; // indicates no inconsistency found
         }
     };
 
