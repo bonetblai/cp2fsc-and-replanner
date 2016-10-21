@@ -26,6 +26,7 @@
 
 #include "action_selection.h"
 #include "lw1_problem.h"
+#include "inference_engine.h"
 #include "utils.h"
 
 #include "and_or_search.h"
@@ -39,6 +40,7 @@ namespace Width {
   template<typename T>
   class ActionSelection : public ::ActionSelection<T> {
       const LW1_Instance &lw1_instance_;
+      const Inference::Engine<T> &inference_engine_;
       std::vector<const Feature<T>*> feature_language_;
 
       mutable float total_search_time_;
@@ -46,8 +48,8 @@ namespace Width {
       mutable size_t n_calls_;
 
     public:
-      ActionSelection(const LW1_Instance &lw1_instance)
-        : lw1_instance_(lw1_instance) {
+      ActionSelection(const LW1_Instance &lw1_instance, const Inference::Engine<T> &inference_engine)
+        : lw1_instance_(lw1_instance), inference_engine_(inference_engine) {
           // Initialize language of features to be used. For each
           // state variable X with domain { x1, ..., xn }, add
           // features for Kxi, K-xi, and DSZ(X)
@@ -145,6 +147,7 @@ namespace Width {
     using AndOr::Search::API<T>::lw1_instance_;
 
     protected:
+      const Inference::Engine<T> &inference_engine_;
       const std::vector<const Feature<T>*> &feature_language_;
       bool prune_nodes_;
 
@@ -152,8 +155,12 @@ namespace Width {
       mutable FeatureSet<T> available_features_;
 
     public:
-      API(const LW1_Instance &lw1_instance, const std::vector<const Feature<T>*> &feature_language, bool prune_nodes = true)
+      API(const LW1_Instance &lw1_instance,
+          const Inference::Engine<T> &inference_engine,
+          const std::vector<const Feature<T>*> &feature_language,
+          bool prune_nodes = true)
         : AndOr::Search::API<T>(lw1_instance),
+          inference_engine_(inference_engine),
           feature_language_(feature_language),
           prune_nodes_(prune_nodes) {
       }
@@ -313,7 +320,7 @@ namespace Width {
                   T result_after_action(tip);
                   result_after_action.apply(action);
 
-                  std::cout << Utils::blue() << "RESULT=" << Utils::normal();
+                  std::cout << Utils::blue() << "RESULT(" << action.name_ << ")=" << Utils::normal();
                   result_after_action.print(std::cout, &lw1_instance_);
                   std::cout << std::endl;
 
@@ -329,12 +336,13 @@ namespace Width {
                       // possible observation is *valid* if once it is assimilated
                       // (i.e. inference is done), it results in a consistent state
                       T result_after_action_and_obs(result_after_action);
-
-                      // CHECK: need to resolve dependency issue:
-                      //   -- apply_inference is defined in lw1_solver which is subclass of new_solver
-                      //   -- new_solver is instantiate with an action_selection mechanism
-                      //   -- so, we have circular dependency
-                      //apply_inference(&action, obs, result_after_action_and_obs);
+                      bool status = inference_engine_.apply_inference(&action, obs, result_after_action_and_obs);
+                      std::cout << "status=" << status << std::endl;
+                      if( status ) {
+                          std::cout << Utils::blue() << "RESULT(" << action.name_ << ",obs[" << i << "])=" << Utils::normal();
+                          result_after_action_and_obs.print(std::cout, &lw1_instance_);
+                          std::cout << std::endl;
+                      }
                   }
               }
           }
@@ -463,7 +471,7 @@ namespace Width {
       //std::cout << Utils::magenta() << "THIS IS A TEST: " << Utils::normal() << *root << std::endl;
       //AndOr::Node<T>::deallocate(root);
 
-      API<T> api(lw1_instance_, feature_language_, false); // CHECK: testing: turn off pruning
+      API<T> api(lw1_instance_, inference_engine_, feature_language_, false); // CHECK: testing: turn off pruning
       AndOr::Search::bfs<T> bfs(lw1_instance_, api);
       bfs.search(state);
 

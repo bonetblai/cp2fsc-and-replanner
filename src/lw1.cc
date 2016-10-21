@@ -353,7 +353,7 @@ int main(int argc, const char *argv[]) {
     if( g_options.is_enabled("solver:random-action-selection") ) {
         action_selection = new RandomActionSelection<STATE_CLASS>(*lw1_instance);
     } else if( g_options.is_enabled("solver:width-based-action-selection") ) {
-        action_selection = new Width::ActionSelection<STATE_CLASS>(*lw1_instance);
+        action_selection = new Width::ActionSelection<STATE_CLASS>(*lw1_instance, *inference_engine);
     } else {
         assert(planner != 0);
         action_selection = new ClassicalPlannerWrapper<STATE_CLASS>(*planner);
