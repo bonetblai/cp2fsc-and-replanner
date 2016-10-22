@@ -303,7 +303,7 @@ namespace Inference {
         }
 
         bool is_consistent_with(const std::vector<int> &joint_valuation, int k_literal) const {
-            assert(0);
+            assert(0); // CHECK: finish this!
         }
         bool is_consistent_with(const std::vector<int> &joint_valuation, const std::vector<int> &k_term) const {
             for( size_t k = 0; k < k_term.size(); ++k ) {
