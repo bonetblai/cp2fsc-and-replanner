@@ -127,7 +127,7 @@ namespace Inference {
 #ifdef DEBUG
                   std::cout << Utils::yellow() << "[FC] Adding sensed: ";
                   LW1_State::print_literal(std::cout, 1 + 2*sensed_literal, &lw1_instance_);
-                  std::cout << Utils::normal() << std::endl;
+                  std::cout << "[" << 2*sensed_literal << "]" << Utils::normal() << std::endl;
 #endif
               } else {
                   sensed_literal = -sensed_literal - 1;
@@ -136,7 +136,7 @@ namespace Inference {
 #ifdef DEBUG
                   std::cout << Utils::yellow() << "[FC] Adding sensed: ";
                   LW1_State::print_literal(std::cout, 1 + 2*sensed_literal + 1, &lw1_instance_);
-                  std::cout << Utils::normal() << std::endl;
+                  std::cout << "[" << 2*sensed_literal + 1 << "]" << Utils::normal() << std::endl;
 #endif
               }
           }
@@ -234,8 +234,8 @@ namespace Inference {
                       base_theory_.insert(cl);
 #ifdef DEBUG
                   std::cout << Utils::red() << "[UP] [Theory] Add obs literal: ";
-                  state.print_literal(std::cout, 1 + k_literal, &lw1_instance_);
-                  std::cout << Utils::normal() << std::endl;
+                  LW1_State::print_literal(std::cout, 1 + k_literal, &lw1_instance_);
+                  std::cout << "[" << k_literal << "]" << Utils::normal() << std::endl;
 #endif
               }
           }
@@ -250,8 +250,8 @@ namespace Inference {
                   base_theory_.insert(cl);
 #ifdef DEBUG
               std::cout << Utils::red() << "[UP] [Theory] Add literal from state: ";
-              state.print_literal(std::cout, 1 + *it, &lw1_instance_);
-              std::cout << Utils::normal() << std::endl;
+              LW1_State::print_literal(std::cout, 1 + *it, &lw1_instance_);
+              std::cout << "[" << *it << "]" << Utils::normal() << std::endl;
 #endif
           }
 
@@ -278,14 +278,14 @@ namespace Inference {
                   const LW1_Instance::Variable &variable = *lw1_instance.variables_[var_key];
                   if( variable.is_state_variable() ) {
                       assert(jt->second.empty());
-                      int k_literal = sensed_literal > 0 ? 1 + 2*(sensed_literal - 1) : 1 + 2*(-sensed_literal - 1) + 1;
+                      int k_literal = sensed_literal > 0 ? 2*(sensed_literal - 1) : 2*(-sensed_literal - 1) + 1;
                       Propositional::Clause cl;
-                      cl.push_back(k_literal);
+                      cl.push_back(1 + k_literal);
                       cnf_.push_back(cl);
 #ifdef DEBUG
                       std::cout << Utils::red() << "[UP] [Theory] Add obs (state) literal: ";
-                      state.print_literal(std::cout, k_literal, &lw1_instance_);
-                      std::cout << Utils::normal() << std::endl;
+                      LW1_State::print_literal(std::cout, 1 + k_literal, &lw1_instance_);
+                      std::cout << "[" << k_literal << "]" << Utils::normal() << std::endl;
 #endif
                   } else {
                       const sensing_models_as_cnf_or_dnf_t &sensing_models_as_k_cnf = jt->second;
@@ -361,8 +361,8 @@ namespace Inference {
                       state.add(i - 1);
 #ifdef DEBUG
                       std::cout << Utils::yellow() << "[UP] [State] Add inferred literal: ";
-                      state.print_literal(std::cout, i, &lw1_instance_);
-                      std::cout << Utils::normal() << std::endl;
+                      LW1_State::print_literal(std::cout, i, &lw1_instance_);
+                      std::cout << "[" << i - 1 << "]" << Utils::normal() << std::endl;
 #endif
                   }
               }
@@ -385,8 +385,8 @@ namespace Inference {
                           state.add(literal - 1);
 #ifdef DEBUG
                           std::cout << Utils::yellow() << "[UP] [State] Add inferred literal: ";
-                          state.print_literal(std::cout, literal, &lw1_instance_);
-                          std::cout << Utils::normal() << std::endl;
+                          LW1_State::print_literal(std::cout, literal, &lw1_instance_);
+                          std::cout << "[" << literal - 1 << "]" << Utils::normal() << std::endl;
 #endif
                       }
                   }
@@ -477,13 +477,13 @@ namespace Inference {
           // Basic constraints relate variable groups to state variable and variable groups to variable
           // groups.
           for( typename T::const_iterator it = state.begin(); it != state.end(); ++it ) {
-              if( state.is_special(*it + 1, &lw1_instance_) ) continue;
+              if( state.is_special(1 + *it, &lw1_instance_) ) continue;
 #ifdef DEBUG
               std::cout << Utils::red() << "[AC3] Added literal from state: ";
-              state.print_literal(std::cout, 1 + *it, &lw1_instance_);
-              std::cout << Utils::normal() << std::endl;
+              LW1_State::print_literal(std::cout, 1 + *it, &lw1_instance_);
+              std::cout << "[" << *it << "]" << Utils::normal() << std::endl;
 #endif
-              csp_.prune_domain_of_var(1 + *it);
+              csp_.filter_variable_with_k_literal(*it);
           }
 
           // 1. Add observation. Pruned variable domains using k-dnf for observation. For each observation,
@@ -499,30 +499,31 @@ namespace Inference {
                   int var_key = jt->first;
                   const LW1_Instance::Variable &variable = *lw1_instance_.variables_[var_key];
                   std::pair<int, int> key(var_key, sensed_literal);
-#ifdef DEBUG
+#if 1//def DEBUG
                   std::cout << "[AC3] sensed literal: var=" << variable.name() << ", value=" << std::flush;
                   LW1_State::print_literal(std::cout, sensed_literal, &instance_);
+                  std::cout << "[" << sensed_literal - 1 << "]";
                   std::cout << ", key=(" << var_key << "," << sensed_literal << ")" << std::endl;
 #endif
                   if( variable.is_state_variable() ) {
                       // observation is state variable, filter it directly in variable domain
                       assert(jt->second.empty());
-                      int k_literal = sensed_literal > 0 ? 1 + 2*(sensed_literal - 1) : 1 + 2*(-sensed_literal - 1) + 1;
+                      int k_literal = sensed_literal > 0 ? 2*(sensed_literal - 1) : 2*(-sensed_literal - 1) + 1;
 #ifdef DEBUG
                       std::cout << Utils::red() << "[AC3] Add obs (state) k-literal: ";
-                      state.print_literal(std::cout, k_literal, &lw1_instance_);
-                      std::cout << Utils::normal() << std::endl;
+                      LW1_State::print_literal(std::cout, 1 + k_literal, &lw1_instance_);
+                      std::cout << "[" << k_literal << "]" << Utils::normal() << std::endl;
 #endif
-                      csp_.prune_domain_of_var(k_literal);
+                      csp_.filter_variable_with_k_literal(k_literal);
                   } else if( lw1_instance_.filtering_groups_.find(key) != lw1_instance_.filtering_groups_.end() ) {
                       // observation can be filtered in variable group. Prune all valuations that are
-                      // not consistent with k-dnf
+                      // inconsistent with k-dnf
                       int vg = lw1_instance_.filtering_groups_.at(key);
                       const sensing_models_as_cnf_or_dnf_t& sensing_models_as_k_dnf = jt->second;
                       for( size_t k = 0; k < sensing_models_as_k_dnf.size(); ++k ) {
                           const cnf_or_dnf_t& k_dnf_for_sensing_model = *sensing_models_as_k_dnf[k];
-                          csp_.prune_valuations_of_groups(vg, k_dnf_for_sensing_model);
-#ifdef DEBUG
+                          csp_.filter_group_with_k_dnf(vg, k_dnf_for_sensing_model);
+#if 1//def DEBUG
                           std::cout << Utils::blue() << "[AC3] k-dnf or k-cnf: index=" << k << ", formula=";
                           state.print_cnf_or_dnf(std::cout, k_dnf_for_sensing_model, &lw1_instance_);
                           std::cout << Utils::normal() << std::endl;
@@ -564,7 +565,7 @@ namespace Inference {
                               possible_domain.insert(term[0]);
                           }
                           if( possible )
-                              csp_.intersect_domain_of_var(possible_domain); // CHECK this
+                              csp_.intersect_domain_of_variable(possible_domain); // CHECK this
                       }
                   }
               }

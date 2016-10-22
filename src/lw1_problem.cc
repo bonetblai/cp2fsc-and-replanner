@@ -49,13 +49,19 @@ static void lw1_extend_effect_with_ramifications_on_observables(int affected_ind
     }
 }
 
-void LW1_Instance::Variable::print(ostream &os) const {
+void LW1_Instance::Variable::print(ostream &os, const LW1_Instance *lw1_instance) const {
     os << "Variable: name=" << name_
        << ", is-state-var=" << is_state_variable_
        << ", is-observable=" << is_observable_
        << ", domain={";
-    for( set<int>::const_iterator it = domain_.begin(); it != domain_.end(); ++it )
-        os << *it << ",";
+    for( set<int>::const_iterator it = domain_.begin(); it != domain_.end(); ++it ) {
+        if( lw1_instance != 0 ) {
+            State::print_literal(os, *it + 1, &lw1_instance->po_instance_);
+            os << "[index=" << *it << " in po_instance_],";
+        } else {
+            os << *it << ",";
+        }
+    }
     os << "}"
        << ", beams={";
     for( map<int, index_set>::const_iterator it = beams_.begin(); it != beams_.end(); ++it ) {

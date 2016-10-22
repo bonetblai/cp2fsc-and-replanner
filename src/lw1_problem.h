@@ -75,7 +75,7 @@ class LW1_Instance : public KP_Instance {
         bool is_binary() const { return domain_.size() == 1; }
         const std::set<int>& domain() const { return domain_; }
         const std::map<int, index_set>& beams() const { return beams_; }
-        void print(std::ostream &os) const;
+        void print(std::ostream &os, const LW1_Instance *lw1_instance = 0) const;
     };
 
     // lw1 variables and sensing models.

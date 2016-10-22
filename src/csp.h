@@ -42,37 +42,61 @@ namespace Inference {
         return h_atom > 0 ? (h_atom - 1) / 2 : (-h_atom - 1) / 2 + 1;
     }
 
-    // returns K_not_literal of k_literal
-    inline int get_k_not(int k_literal) {
-        return 1 + k_literal;
+    // returns K_not_literal of k_literal (only used in dump_k_literals)
+    // CHECK: should reformulate this when making dump_k_literals general for binary variables
+    inline int get_k_not_literal_from_k_literal(int k_literal) {
+        //assert(k_literal % 2 == 0); // CHECK: see below about removing 1+. In such case, assertion should be valid!
+        return 1 + k_literal; // CHECK: s
     }
 
-    // return k-literal associated to given literal
-    inline int k_literal(int literal) {
-        return 1 + 2 * literal;
+    // k-literals associated with given literal (only used in ctors for variables)
+    inline int get_k_literal_from_literal(int literal) {
+        assert(literal > 0);
+        return 1 + 2 * literal; // CHECK: should we remove the 1+?
+    }
+    inline int get_k_not_literal_from_literal(int literal) {
+        assert(literal > 0);
+        return 1 + 2 * literal + 1; // CHECK: should we remove the 1+?
     }
 
-    // abstract variable class
+    // Abstract variable class. Domains store k-literals associated to values
+    // of the variable. Original domain refer to all possible values while
+    // current domain only the values that are deemed possible at some moment.
+    // The values in the domain of an LW1_Instance::Variable are indices into
+    // the po_instance_. Such values need to be mapped into k-literals when
+    // constructing a variable from an LW1_Instance::Variable. The mapping
+    // between literals and k-literals is done with the (inline) method
+    // get_k_literal_from_literal() and get_k_not_literal_from_literal().
+    // The latter is only used when constructing binary variables as for
+    // those variables the domain for the LW1_Instance::Variable only 
+    // contains one value (the positive value)
     class Variable {
       protected:
+        int var_index_;
         std::string name_;
         std::set<int> original_domain_; // original domain of variable (doesn't change after initialization)
         mutable std::set<int> current_domain_; // current domain (after deductions)
 
       public:
-        //Variable() : name_("<unnamed-var>") { }
-        Variable() { }
-        Variable(const LW1_Instance::Variable &variable)
-          : name_(variable.name()) {
+        Variable(int var_index)
+          : var_index_(var_index) {
+        }
+        Variable(const LW1_Instance::Variable &variable, int var_index)
+          : var_index_(var_index), name_(variable.name()) {
             std::vector<int> domain(variable.domain().begin(), variable.domain().end());
-            std::transform(domain.begin(), domain.end(), domain.begin(), k_literal);
+            std::transform(domain.begin(), domain.end(), domain.begin(), get_k_literal_from_literal);
             original_domain_ = std::set<int>(domain.begin(), domain.end());
-            current_domain_ = std::set<int>(domain.begin(), domain.end());
         }
         virtual ~Variable() { }
 
+        int var_index() const {
+            return var_index_;
+        }
         const std::string& name() const {
             return name_;
+        }
+        const std::set<int>& original_domain() const {
+            return original_domain_;
         }
         std::set<int>& current_domain() const {
             return current_domain_;
@@ -101,73 +125,88 @@ namespace Inference {
             current_domain_.erase(it, current_domain_.end());
         }
 
-        // returns true if the value of a propositions match the K_literal
-        bool evaluate(int value, int h_atom) const {
-            return (value == h_atom || (h_atom < 0 && h_atom + value != 0));
-        }
-
         // variable types
         virtual std::string type_as_string() const = 0;
         virtual bool is_binary() const = 0;
+        virtual bool is_group_variable() const = 0;
 
-        // Dump info of variable current_domain into info
-        // vector. This info corresponds to k_not's associated
-        // to erase elements of current domain (if arithmetic),
-        // and (if it is the case) the only value that this variable
-        // can be
-        virtual void dump_into(std::vector<int> &info) const = 0;
-
-        // Reduce current domain given a k_literal. The k_literal represents
-        // a unary constraint. If it is possitive, then it is the only possible
-        // value for this variable. If it's negative, its value must be erase
-        // from current domain.
-        void apply_unary_constraint_implied_by_k_literal(int k_literal) const {
-            if( k_literal % 2 == 0 ) {
-                // If h_atom is a K_not_atom, remove the K_atom which is K_not_atom - 1
-                // CHECK this as it looks wrong
-                current_domain_.erase(k_literal - 1);
-            } else {
-                // if the atom is a K_atom, remove everything else from domain
-                current_domain_.clear();
-                // CHECK this as it looks wrong
-                current_domain_.insert(k_literal);
+        // Dump current domains as k-literals. If there is just one *current*
+        // possible value (i.e. current_domain_.size() == 1), dump k-literal
+        // expressing that such value is known. For each *current* impossible
+        // value, dump k-literal expressing knowledge about impossibility of
+        // such value (i.e. dump K-not- literal)
+        void dump_as_k_literals(std::vector<int> &k_literals) const {
+            assert(!is_group_variable());
+            //std::cout << "Variable::dump_as_k_literals: ";
+            //print(std::cout);
+            k_literals.clear();
+            if( !is_binary() ) { // CHECK: once we remove the 1+ shift on indices, this can be adapted to work for binary variables as well!
+                for( std::set<int>::const_iterator it = original_domain_.begin(); it != original_domain_.end(); ++it ) {
+                    if( current_domain_.find(*it) == current_domain_.end() )
+                        k_literals.push_back(get_k_not_literal_from_k_literal(*it));
+                }
             }
+            if( current_domain_.size() == 1 )
+                k_literals.push_back(*current_domain_.begin());
+            //std::cout << ", k-literals=";
+            //print(std::cout, k_literals, 0, 0, false);
+            //std::cout << std::endl;
         }
 
-        virtual void print(std::ostream &os, const LW1_Instance &lw1_instance, const LW1_State &state) const {
-            const std::set<int> &od = original_domain_;
-            const std::set<int> &cd = current_domain_;
-            std::set<int>::const_iterator od_end = od.cend(); --od_end;
-            std::set<int>::const_iterator cd_end = cd.cend(); --cd_end;
-
-            os << name_ << "(type=" << type_as_string() << "): ";
-            os << "od: {";
-            for( std::set<int>::const_iterator it = od.begin(); it != od.end(); it++ ) {
-                state.print_literal(os, *it, &lw1_instance);
-                os << " [" << *it << "]";
-                if( it != od_end ) os << ", ";
+        // Reduce current domain given a k_literal. The k_literal represents a unary constraint.
+        // If it is possitive, then it is the only possible value for this variable. If it is
+        // negative, it must be erased from the current possible values
+        void filter_current_domain_with_k_literal(int k_literal) const {
+            //std::cout << "Filtering current domain of variable " << name_ << ": cd=";
+            //print(std::cout, current_domain_, 0);
+            //std::cout << std::endl;
+            assert(k_literal >= 0);
+            if( k_literal % 2 == 0 ) {
+                current_domain_.clear();
+                current_domain_.insert(1 + k_literal); // CHECK: fix this when dealing with 1+shit
+            } else {
+                current_domain_.erase(k_literal); // CHECK: fix this when dealing with 1+shift
             }
-            os << "} ";
+            //std::cout << "filtered cd=";
+            //print(std::cout, current_domain_, 0);
+            //std::cout << std::endl;
+        }
 
-            os << "cd: {";
-            for( auto it = cd.cbegin(); it != cd.cend(); it++ ) {
-                state.print_literal(os, *it, &lw1_instance);
-                os << " [" << *it << "]";
-                if( it != cd_end ) os << ", ";
+        static void print(std::ostream &os, const std::vector<int> &values, const LW1_Instance *lw1_instance) {
+            os << "{";
+            for( size_t k = 0; k < values.size(); ++k ) {
+                int literal = values[k];
+                if( lw1_instance != 0 ) State::print_literal(os, literal, lw1_instance); // CHECK: fix 1+shift
+                //os << "[" << literal - 1 << "*], "; // CHECK: fix 1+shift
+                os << "[" << literal << "], "; // CHECK: fix 1+shift (there is no shift for groups!)
             }
-            os << "} ";
+            os << "}";
+        }
+        static void print(std::ostream &os, const std::set<int> &values, const LW1_Instance *lw1_instance) {
+            Variable::print(os, std::vector<int>(values.begin(), values.end()), lw1_instance);
+        }
+
+        virtual void print(std::ostream &os, const LW1_Instance *lw1_instance = 0) const {
+            os << (name_ == "" ? std::string("<unnamed-var>") : name_)
+               << "(type=" << type_as_string() << "):"
+               << " od: ";
+            Variable::print(os, original_domain_, lw1_instance);
+            os << " cd: ";
+            Variable::print(os, current_domain_, lw1_instance);
         }
     };
 
     class BinaryVariable : public Variable {
       public:
-        BinaryVariable() { }
-        BinaryVariable(const LW1_Instance::Variable &variable)
-          : Variable(variable) {
+        BinaryVariable(int var_index)
+          : Variable(var_index) {
+        }
+        BinaryVariable(const LW1_Instance::Variable &variable, int var_index)
+          : Variable(variable, var_index) {
+            assert(variable.is_binary());
+            assert(variable.domain().size() == 1);
             assert(original_domain_.size() == 1);
-            assert((original_domain_.size() == 1) && (current_domain_.size() == 1)); // CHECK: remove this?
-            original_domain_.insert(get_k_not(*original_domain_.begin()));
-            current_domain_.insert(get_k_not(*current_domain_.begin())); // CHECK: remove this?
+            original_domain_.insert(get_k_not_literal_from_literal(*variable.domain().begin()));
         }
         virtual ~BinaryVariable() { }
 
@@ -177,21 +216,19 @@ namespace Inference {
         virtual bool is_binary() const {
             return true;
         }
-
-        // If variable size is 1, then binary variable has to be that
-        // value, so that value is added into info as a constraint.
-        // Info vector will have only theses constraints
-        virtual void dump_into(std::vector<int> &info) const {
-            info.clear();
-            if( current_domain_.size() == 1 )
-                info.push_back(*current_domain_.begin());
+        virtual bool is_group_variable() const {
+            return false;
         }
     };
 
     class MultiValuedVariable : public Variable {
       public:
-        MultiValuedVariable() { }
-        MultiValuedVariable(const LW1_Instance::Variable &variable) : Variable(variable) { }
+        MultiValuedVariable(int var_index)
+          : Variable(var_index) {
+        }
+        MultiValuedVariable(const LW1_Instance::Variable &variable, int var_index)
+          : Variable(variable, var_index) {
+        }
         virtual ~MultiValuedVariable() { }
 
         virtual std::string type_as_string() const {
@@ -200,45 +237,62 @@ namespace Inference {
         virtual bool is_binary() const {
             return false;
         }
-
-        // Add erase elements for domain as k_not_literals to info.
-        // Info vector will have only theses constraints
-        virtual void dump_into(std::vector<int> &info) const {
-            info.clear();
-            for( std::set<int>::const_iterator it = original_domain_.begin(); it != original_domain_.end(); ++it ) {
-                if( current_domain_.find(*it) == current_domain_.end() )
-                    info.push_back(get_k_not(*it));
-            }
-            if( current_domain_.size() == 1 )
-                info.push_back(*current_domain_.begin()); // CHECK this
+        virtual bool is_group_variable() const {
+            return false;
         }
     };
 
-    // Variable Group class
-    // Implements dump_into method
     class GroupVariable : public MultiValuedVariable {
-      private:
-        int index_;
+      protected:
         std::map<int, int> var_index_to_pos_;
         std::vector<int> pos_to_var_index_;
 
+        // a joint valuation is vector of dimension pos_to_var_index_.size()
+        // the entry at position k is a value for the variable pos_to_var_index_[k]
+        std::vector<std::vector<int> > joint_valuations_;
+
+        void create_joint_valuations(const std::vector<int> &group,
+                                     int group_index,
+                                     const std::vector<const Variable*> &variables,
+                                     std::vector<int> &joint_valuation) {
+            if( group_index == group.size() ) {
+                joint_valuations_.push_back(joint_valuation);
+            } else {
+                assert(group.size() == joint_valuation.size());
+                assert((group_index >= 0) && (group_index < group.size()));
+                int var_index = group[group_index];
+                assert((var_index >= 0) && (var_index < variables.size()));
+                const Variable &variable = *variables[var_index];
+                for( std::set<int>::const_iterator it = variable.original_domain().begin();  it != variable.original_domain().end(); ++it ) {
+                    joint_valuation[group_index] = *it;
+                    create_joint_valuations(group, 1 + group_index, variables, joint_valuation);
+                }
+            }
+        }
+
       public:
-        GroupVariable(const std::vector<int> &group, int index)
-          : index_(index) {
-            name_ = std::string("vg_") + std::to_string(index);
+        GroupVariable(const std::vector<int> &group, int var_index, const std::vector<const Variable*> &variables)
+          : MultiValuedVariable(var_index) {
+            name_ = std::string("vg_") + std::to_string(var_index_);
+
+            // create indexation cross references
             pos_to_var_index_ = std::vector<int>(group.size(), -1);
             for( size_t k = 0; k < group.size(); ++k ) {
                 var_index_to_pos_.insert(std::make_pair(group[k], k));
                 pos_to_var_index_[k] = group[k];
             }
-            for( size_t k = 0; k < (1 << group.size()); ++k )
+
+            // create joint valuations for group variable
+            std::vector<int> joint_valuation(group.size(), -1);
+            create_joint_valuations(group, 0, variables, joint_valuation);
+
+            // create original domain
+            assert(joint_valuations_.size() == (1 << group.size())); // CHECK: remove when restriction on binary variables is removed!
+            for( size_t k = 0; k < joint_valuations_.size(); ++k )
                 original_domain_.insert(k);
         }
         virtual ~GroupVariable() { }
 
-        int get_index() const {
-            return index_;
-        }
         int get_pos_from_var_index(int var_index) const {
             std::map<int, int>::const_iterator it = var_index_to_pos_.find(var_index);
             return it == var_index_to_pos_.end() ? -1 : it->second;
@@ -248,32 +302,47 @@ namespace Inference {
             return pos_to_var_index_[pos];
         }
 
+        bool is_consistent_with(const std::vector<int> &joint_valuation, int k_literal) const {
+            assert(0);
+        }
+        bool is_consistent_with(const std::vector<int> &joint_valuation, const std::vector<int> &k_term) const {
+            for( size_t k = 0; k < k_term.size(); ++k ) {
+                if( !is_consistent_with(joint_valuation, k_term[k]) )
+                    return false;
+            }
+            return true;
+        }
+        bool is_consistent_with(const std::vector<int> &joint_valuation, const std::vector<std::vector<int> > &k_dnf) const {
+            for( size_t k = 0; k < k_dnf.size(); ++k ) {
+                if( is_consistent_with(joint_valuation, k_dnf[k]) )
+                    return true;
+            }
+            return false;
+        }
+
+        void filter_current_domain_with_k_dnf(const std::vector<std::vector<int> > &k_dnf) const {
+            // iterate over current values and erase those inconsistent with k_dnf
+            for( std::set<int>::iterator it = current_domain_.begin(); it != current_domain_.end(); ) {
+                assert((*it >= 0) && (*it < joint_valuations_.size()));
+                const std::vector<int> &joint_valuation = joint_valuations_[*it];
+                if( !is_consistent_with(joint_valuation, k_dnf) )
+                    current_domain_.erase(it);
+                else
+                    ++it;
+            }
+        }
+
         virtual std::string type_as_string() const {
             return std::string("group");
         }
+        virtual bool is_group_variable() const {
+            return true;
+        }
 
-        virtual void print(std::ostream &os, const LW1_Instance &lw1_instance, const LW1_State &state) const {
-            const std::set<int> &od = original_domain_;
-            const std::set<int> &cd = current_domain_;
-            std::set<int>::const_iterator od_end = od.cend(); --od_end;
-            std::set<int>::const_iterator cd_end = cd.cend(); --cd_end;
-
-            os << name_ << ": ";
-            os << "od: {";
-            for( std::set<int>::const_iterator it = od.begin(); it != od.end(); it++ ) {
-                //state.print_literal(os, *it, &instance);
-                os << *it;
-                if( it != od_end ) os << ", ";
-            }
-            os << "} ";
-
-            os << "cd: {";
-            for( auto it = cd.cbegin(); it != cd.cend(); it++ ) {
-                //state.print_literal(os, *it, &instance);
-                os << *it;
-                if( it != cd_end ) os << ", ";
-            }
-            os << "} " << std::endl;
+        virtual void print(std::ostream &os, const LW1_Instance *lw1_instance = 0) const {
+            // force lw1_instance to null as there are no k-literals
+            // associated to the values of group variables
+            Variable::print(os, 0);
         }
     };
 
@@ -283,16 +352,16 @@ namespace Inference {
 
         std::vector<const Variable*> variables_;
         std::vector<const GroupVariable*> variable_groups_;
-        std::vector<std::vector<std::vector<int> > > common_variables_in_groups_;
+        std::vector<std::vector<std::vector<int> > > common_variables_in_groups_; // CHECK
 
         // Map for finding var_index of l_atom
-        const std::map<int, int> *atoms_to_var_map_;
+        const std::map<int, int> *atoms_to_var_map_; // CHECK
 
         // Returns a mask of impossible and possible values. Impossible mask 0010 says
         // that variables in pos 0, 2, 3 are K_not. Possible mask 0010 says that only
         // variable in pos 1 is K. Note that both masks will be the same when there is
         // no information to be inferred
-        std::pair<int, int> get_masks(int group_index, const std::vector<int> &constraint) const {
+        std::pair<int, int> get_masks(int group_index, const std::vector<int> &constraint) const { // CHECK
             int possibles = 0;
             int impossibles = 0;
             for( size_t i = 0; i < constraint.size(); ++i ) {
@@ -318,15 +387,16 @@ namespace Inference {
                 const LW1_Instance::Variable &lw1_variable = *lw1_instance_.variables_[k];
                 const Variable *variable = 0;
                 if( lw1_variable.is_binary() )
-                    variable = new BinaryVariable(lw1_variable);
+                    variable = new BinaryVariable(lw1_variable, k);
                 else
-                    variable = new MultiValuedVariable(lw1_variable);
+                    variable = new MultiValuedVariable(lw1_variable, k);
                 variables_.push_back(variable);
+                assert(variable->var_index() == k);
             }
-
             for( size_t k = 0; k < lw1_instance_.vars_for_variable_groups_.size(); ++k ) {
-                const GroupVariable *group = new GroupVariable(lw1_instance_.vars_for_variable_groups_[k], k);
+                const GroupVariable *group = new GroupVariable(lw1_instance_.vars_for_variable_groups_[k], k, variables_);
                 variable_groups_.push_back(group);
+                assert(group->var_index() == k);
             }
         }
         virtual ~Csp() {
@@ -339,11 +409,23 @@ namespace Inference {
         const std::vector<const Variable*>& variables() const {
             return variables_;
         }
-        const std::vector<std::vector<std::vector<int> > >& common_variables_in_groups() const {
+        const Variable& variable(int var_index) const {
+            assert((var_index >= 0) && (var_index < variables_.size()));
+            return *variables_[var_index];
+        }
+        const std::vector<const GroupVariable*>& variable_groups() const {
+            return variable_groups_;
+        }
+        const GroupVariable& variable_group(int var_index) const {
+            assert((var_index >= 0) && (var_index < variable_groups_.size()));
+            return *variable_groups_[var_index];
+        }
+
+        const std::vector<std::vector<std::vector<int> > >& common_variables_in_groups() const { // CHECK
             return common_variables_in_groups_;
         }
 
-        // Clear current domains of variables
+        // clear current domains of variables
         void reset_current_domains() const {
             for( size_t k = 0; k < variables_.size(); ++k )
                 variables_[k]->reset_current_domain();
@@ -355,28 +437,14 @@ namespace Inference {
 
         // Returns index of the variable k_literal (h_atom) in variables_,
         // if l_atom exists in atoms_to_var_map_
-        int get_var_index(int h_atom) const {
+        int get_var_index(int h_atom) const { // CHECK
             assert(atoms_to_var_map_ != 0);
             int atom = abs(h_atom);
             std::map<int, int>::const_iterator it = atoms_to_var_map_->find(get_l_atom(atom));
             return it != atoms_to_var_map_->end() ? it->second : -1;
         }
-        // Returns the variable k_literal (h_atom) associated with h_atom,
-        // if l_atom exists in atoms_to_var_map_
-        const Variable* get_var(int h_atom) const {
-            int var_index = get_var_index(h_atom);
-            return var_index == -1 ? 0 : variables_[var_index];
-        }
-        // Returns variable indexed at var_index
-        const Variable* get_var_from_vars(int var_index) const {
-            return variables_[var_index];
-        }
-        // Returns meta-variable indexed at index
-        const GroupVariable* get_group_var(int index) const {
-            return variable_groups_[index];
-        }
 
-        void set_atoms_to_var_map(const std::map<int, int> &atoms_to_var_map) {
+        void set_atoms_to_var_map(const std::map<int, int> &atoms_to_var_map) { // CHECK
             atoms_to_var_map_ = &atoms_to_var_map;
         }
 
@@ -384,7 +452,7 @@ namespace Inference {
         // is a lower triangular matrix of vectors where, for i < j,
         // common_variables_in_groups_[i][j] is a vector containing
         // the indices for the variables common to groups i and j.
-        void calculate_common_variables_in_groups() {
+        void calculate_common_variables_in_groups() { // CHECK
             common_variables_in_groups_.assign(variable_groups_.size(), std::vector<std::vector<int> >());
             for( size_t k = 0; k < variable_groups_.size(); ++k )
                 common_variables_in_groups_[k].assign(variable_groups_.size(), std::vector<int>());
@@ -400,41 +468,60 @@ namespace Inference {
             }
         }
 
-        // Applies unary constraint represented as one (just one)
-        // possible value (h_atom) over every variable
-        void prune_domain_of_var(int h_atom) const { // CHECK: change name
-            int var_index = get_var_index(h_atom);
+        void filter_variable_with_k_literal(int k_literal) const {
+            int var_index = get_var_index(1 + k_literal); // CHECK: fix this when dealing with 1+shift
             if( var_index != -1 )
-                variables_[var_index]->apply_unary_constraint_implied_by_k_literal(h_atom);
+                variables_[var_index]->filter_current_domain_with_k_literal(k_literal);
         }
 
         // Deletes from group no longer possible valuations
-        void prune_valuations_of_groups(int group_index, const std::vector<std::vector<int> > &valuations) const {
-#ifdef DEBUG
-            for( size_t k = 0; k < valuations.size(); ++k ) {
+        void filter_group_with_k_dnf(int group_index, const std::vector<std::vector<int> > &k_dnf) const { // CHECK
+            assert((group_index >= 0) && (group_index < variable_groups_.size()));
+            const GroupVariable &group = *variable_groups_[group_index];
+#if 0//def DEBUG // CHECK
+            std::cout << "vg=" << group_index << ", cd=";
+            Variable::print(std::cout, group.current_domain(), 0);
+            std::cout << std::endl;
+            for( size_t k = 0; k < k_dnf.size(); ++k ) {
                 std::cout << "[";
-                for( size_t j = 0; j < valuations[k].size(); ++j )
-                    std::cout << " " << valuations[k][j];
+                for( size_t j = 0; j < k_dnf[k].size(); ++j )
+                    std::cout << " " << k_dnf[k][j];
                 std::cout << " ]" << std::endl;
             }
 #endif
+
+
+#if 1
             std::set<int> possible_domain;
-            for( size_t k = 0; k < int(valuations.size()); ++k ) {
-                std::pair<int, int> masks = get_masks(group_index, valuations[k]);
+            for( size_t k = 0; k < k_dnf.size(); ++k ) {
+                const std::vector<int> &k_term = k_dnf[k];
+                std::pair<int, int> masks = get_masks(group_index, k_term);
                 int impossibles = masks.first;
                 int possibles = masks.second;
-#ifdef DEBUG
-                std::cout << "INTERSECTING group_index=" << group_index << std::endl;
-#endif
                 const std::vector<int> &group = lw1_instance_.vars_for_variable_groups_[group_index];
-                for( int value = 0; value < (1 << int(group.size())); ++value )
+                for( size_t value = 0; value < (1 << group.size()); ++value )
                     possible_domain.insert((value & impossibles) | possibles);
             }
-            variable_groups_[group_index]->intersect_current_domain_with(possible_domain);
+#if 1//def DEBUG
+                std::cout << "INTERSECTING vg=" << group_index << " with d=";
+                Variable::print(std::cout, possible_domain, 0);
+                std::cout << std::endl;
+#endif
+            group.intersect_current_domain_with(possible_domain);
+#else
+            group.filter_current_domain_with_k_dnf(k_dnf);
+#endif
+
+
+#if 0
+            std::cout << "after filter: vg=" << group_index << ", cd=";
+            Variable::print(std::cout, group.current_domain(), 0);
+            std::cout << std::endl;
+#endif
         }
 
         // Find variable associated with domain and then calls intersect_with
-        void intersect_domain_of_var(const std::set<int> &domain) const { // CHECK: change name
+        void intersect_domain_of_variable(const std::set<int> &domain) const { // CHECK: in the only call made to this method, domain.size() == 1
             assert(!domain.empty());
             int var_index = get_var_index(*domain.begin());
             assert(var_index != -1);
@@ -445,24 +532,21 @@ namespace Inference {
         void update_state(LW1_State &state) const {
             for( size_t k = 0; k < variables_.size(); ++k ) {
                 const Variable &variable = *variables_[k];
-                std::vector<int> info;
-                variable.dump_into(info);
-                for( size_t j = 0; j < info.size(); ++j ) {
+                std::vector<int> k_literals;
+                variable.dump_as_k_literals(k_literals); // CHECK: 1+shift
+                for( size_t j = 0; j < k_literals.size(); ++j ) {
 #ifdef DEBUG
                     std::cout << Utils::yellow() << "[CSP] Added literal into state: ";
-                    state.print_literal(std::cout, info[j], &lw1_instance_);
+                    State::print_literal(std::cout, k_literals[j], &lw1_instance_); // CHECK: 1+shift
                     std::cout << Utils::normal() << std::endl;
 #endif
-                    state.add(info[j] - 1);
+                    state.add(k_literals[j] - 1); // CHECK: 1+shift
                 }
             }
         }
 
         void print(std::ostream &os, const LW1_State &state) const {
-            os << ">>>CSP" << std::endl
-               << ">>>VARIABLES" << std::endl;
-            for( size_t i = 0; i < variables_.size(); i++ )
-                variables_[i]->print(os, lw1_instance_, state);
+            assert(0);
         }
     };
 
@@ -482,11 +566,18 @@ namespace Inference {
         bool is_group() const { return x_is_group_ && y_is_group_; }
         bool is_mixed() const { return !is_simple() && !is_group(); }
 
-        void print(std::ostream &os, const LW1_Instance &lw1_instance, const LW1_State &state, const Csp &csp) const {
-            const Variable &var_x = *(x_is_group() ? csp.get_group_var(first) : csp.get_var_from_vars(first));
-            const Variable &var_y = *(y_is_group() ? csp.get_group_var(second) : csp.get_var_from_vars(second));
-            var_x.print(os, lw1_instance, state);
-            var_y.print(os, lw1_instance, state);
+        const Variable& variable_x(const Csp &csp) const {
+            return x_is_group() ? csp.variable_group(first) : csp.variable(first);
+        }
+        const Variable& variable_y(const Csp &csp) const {
+            return y_is_group() ? csp.variable_group(second) : csp.variable(second);
+        }
+
+        void print(std::ostream &os, const LW1_Instance &lw1_instance, const Csp &csp) const { // CHECK
+            const Variable &var_x = variable_x(csp);
+            const Variable &var_y = variable_y(csp);
+            var_x.print(os, &lw1_instance);
+            var_y.print(os, &lw1_instance);
         }
     };
 
@@ -494,11 +585,9 @@ namespace Inference {
       protected:
         const LW1_Instance &lw1_instance_;
         std::vector<const Arc*> arcs_; // arcs are of types: (V, MV), (MV, V), and (MV, MV)
-        std::map<int, std::vector<int> > inv_clauses_; // associates variables indexes with clauses that involve related atoms
+        mutable std::set<const Arc*> worklist_; // CHECK: should it be a set?
 
-        mutable std::set<const Arc*> worklist_;
-
-        void initialize_worklist() const {
+        void initialize_worklist() const { // CHECK
             worklist_.clear();
             for( size_t k = 0; k < arcs_.size(); ++k )
                 worklist_.insert(arcs_[k]);
@@ -512,18 +601,17 @@ namespace Inference {
                 worklist_.erase(worklist_.begin());
                 std::pair<bool, bool> p = arc_reduce(arc, csp);
                 if( !p.first ) {
-                    // reached inconsistency
-                    return false;
+                    return false; // reached inconsistency
                 } else if( p.second ) {
-                    // some value was deleted
-                    const Variable *x = arc.x_is_group() ? csp.get_group_var(arc.first) : csp.get_var_from_vars(arc.first);
-                    const Variable *y = arc.y_is_group() ? csp.get_group_var(arc.second) : csp.get_var_from_vars(arc.second);
+                    // some value_x was deleted
+                    const Variable *var_x = &arc.variable_x(csp);
+                    const Variable *var_y = &arc.variable_y(csp);
                     for( size_t k = 0; k < arcs_.size(); ++k ) {
                         assert(arcs_[k] != 0);
                         const Arc &tmp = *arcs_[k];
-                        const Variable *tmp_z = tmp.x_is_group() ? csp.get_group_var(tmp.first) : csp.get_var_from_vars(tmp.first);
-                        const Variable *tmp_x = tmp.y_is_group() ? csp.get_group_var(tmp.second) : csp.get_var_from_vars(tmp.second);
-                        if( (tmp_x == x) && (tmp_z != y) )
+                        const Variable *tmp_z = &tmp.variable_x(csp);
+                        const Variable *tmp_x = &tmp.variable_y(csp);
+                        if( (tmp_x == var_x) && (tmp_z != var_y) )
                             worklist_.insert(&tmp);
                     }
                 }
@@ -531,60 +619,38 @@ namespace Inference {
             return true;
         }
 
+        // first tells whether inconsistency detected while second whether
+        // some value in domain of var_x is erased
         std::pair<bool, bool> arc_reduce(const Arc &arc, const Csp &csp) const {
-            const Variable *x = arc.x_is_group() ? csp.get_group_var(arc.first) : csp.get_var_from_vars(arc.first);
-            const Variable *y = arc.y_is_group() ? csp.get_group_var(arc.second) : csp.get_var_from_vars(arc.second);
+            const Variable &var_x = arc.variable_x(csp);
+            const Variable &var_y = arc.variable_y(csp);
+            assert(!var_x.current_domain().empty() && !var_y.current_domain().empty());
 
-            bool change = false; // An element has been erase from dx ?
-            assert(!x->current_domain().empty() && !y->current_domain().empty());
-            for( std::set<int>::iterator vx = x->current_domain().begin(); vx != x->current_domain().end(); ) {
-                // If arc is already satisfied (this check should be unnecessary)
-                int xval = *vx;
+            bool change = false;
+            for( std::set<int>::iterator it = var_x.current_domain().begin(); it != var_x.current_domain().end(); ) {
+                int value_x = *it;
                 bool found = false;
-                for( std::set<int>::iterator vy = y->current_domain().begin(); vy != y->current_domain().end(); vy++ ) {
-                    int yval = *vy;
-                    if( evaluate(arc, xval, yval, csp) ) {
+                for( std::set<int>::const_iterator jt = var_y.current_domain().begin(); jt != var_y.current_domain().end(); ++jt ) {
+                    int value_y = *jt;
+                    if( consistent(var_x, value_x, var_y, value_y, csp) ) {
                         found = true;
                         break;
                     }
                 }
-                // Erase from domain, and set iterator before next element
                 if( !found ) {
-                    vx = x->current_domain().erase(vx);
+                    // no value_y consistent with value_x found, erase value_x
+                    it = var_x.current_domain().erase(it);
                     change = true;
-                    if( x->current_domain().empty() ) {
-                        // reached an incosistency
-                        return std::make_pair(false, true);
-                    }
+                    if( var_x.current_domain().empty() )
+                        return std::make_pair(false, true); // reached incosistency
                 } else {
-                    vx++;
+                    it++;
                 }
             }
             return std::make_pair(true, change);
         }
 
-        // Returns an int that represents a valuation of common
-        // variables x_var and y_var
-        // This is done by using an auxiliary structure (common_vars), where
-        // for each var_index 'i' and 'j', common_vars[i][j] is the vector
-        // of var_index for common variables
-        int build_common_valuation(int valuation, const GroupVariable *x_var, const GroupVariable *y_var, const Csp &csp) const {
-            // Because vector<vector<vector<int> > > is lower triangular matrix
-            int i = std::min<int>(x_var->get_index(), y_var->get_index());
-            int j = std::max<int>(x_var->get_index(), y_var->get_index());
-
-            const std::vector<std::vector<std::vector<int> > > &common_vars = csp.common_variables_in_groups();
-            int common_valuation = 0;
-            for( int t = 0; t < common_vars[i][j].size(); t++ ) {
-                int common_var = common_vars[i][j][t];
-                int pos_var = x_var->get_pos_from_var_index(common_var);
-                // value of common var in valuation
-                int value = (valuation & (1 << pos_var)) >= 1;
-                common_valuation |= (value << t);
-            }
-            return common_valuation;
-        }
-
+        // CHECK: simplify comment
         // Retunrs true if arc is satisfiable with values x, y
         // This is done by considering different cases for Arc.
         //
@@ -601,27 +667,54 @@ namespace Inference {
         // is taking.
         //
         // Simple Arc is not considered (not using this in this AC3!)
-        bool evaluate(const Arc &arc, int x, int y, const Csp &csp) const {
-            assert(!arc.is_simple());
-            assert((x >= 0) && (y >= 0));
-            if( arc.is_mixed() ) {
-                if( arc.x_is_group() ) {
-                    int var_index = csp.get_var_index(y);
-                    const GroupVariable *group = csp.get_group_var(arc.first);
-                    int pos = group->get_pos_from_var_index(var_index);
-                    int bit = (y % 2) << pos;
-                    return (x & (1 << pos)) == bit;
-                }
-                const GroupVariable *group = csp.get_group_var(arc.second);
-                int var_index = csp.get_var_index(x);
-                int pos = group->get_pos_from_var_index(var_index);
-                int bit = (x % 2) << pos;
-                return (y & (1 << pos)) == bit;
+        bool consistent(const Variable &var_x, int value_x, const Variable &var_y, int value_y, const Csp &csp) const {
+            assert(var_x.is_group_variable() || var_y.is_group_variable());
+            if( var_x.is_group_variable() && var_y.is_group_variable() ) {
+                const GroupVariable &group_x = static_cast<const GroupVariable&>(var_x);
+                const GroupVariable &group_y = static_cast<const GroupVariable&>(var_y);
+                // CHECK: we are assuming that all variables in group are binary!
+                // CHECK: we are assuming that a joint valuation of common variables fits an integer
+                return build_common_valuation(value_x, group_x, group_y, csp) == build_common_valuation(value_y, group_y, group_x, csp); // CHECK
+            } else if( var_x.is_group_variable() ) {
+                const GroupVariable &group_x = static_cast<const GroupVariable&>(var_x);
+                int var_y_index = var_y.var_index();
+                int pos_in_group_x_for_var_y = group_x.get_pos_from_var_index(var_y_index);
+                int bit = (value_y % 2) << pos_in_group_x_for_var_y; // CHECK
+                return (value_x & (1 << pos_in_group_x_for_var_y)) == bit; // CHECK
             } else {
-                const GroupVariable *x_var = csp.get_group_var(arc.first);
-                const GroupVariable *y_var = csp.get_group_var(arc.second);
-                return build_common_valuation(x, x_var, y_var, csp) == build_common_valuation(y, y_var, x_var, csp);
+                assert(var_y.is_group_variable());
+                const GroupVariable &group_y = static_cast<const GroupVariable&>(var_y);
+                int var_x_index = var_x.var_index();
+                int pos_in_group_y_for_var_x = group_y.get_pos_from_var_index(var_x_index);
+                int bit = (value_x % 2) << pos_in_group_y_for_var_x; // CHECK
+                return (value_y & (1 << pos_in_group_y_for_var_x)) == bit; // CHECK
             }
+        }
+
+        // CHECK: simplify comment
+        // Returns an int that represents a valuation of common
+        // variables x_var and y_var
+        // This is done by using an auxiliary structure (common_vars), where
+        // for each var_index 'i' and 'j', common_vars[i][j] is the vector
+        // of var_index for common variables
+        int build_common_valuation(int value_x, const GroupVariable &group_x, const GroupVariable &group_y, const Csp &csp) const { // CHECK
+            int min_index = std::min<int>(group_x.var_index(), group_y.var_index());
+            int max_index = std::max<int>(group_x.var_index(), group_y.var_index());
+
+            // since ector<vector<vector<int> > > is lower triangular matrix, we need to
+            // index first with min and then max
+            const std::vector<int> &common_vars = csp.common_variables_in_groups()[min_index][max_index];
+
+            int common_valuation = 0;
+            for( size_t k = 0; k < common_vars.size(); ++k ) {
+                int var_index_for_common_var = common_vars[k];
+                int pos = group_x.get_pos_from_var_index(var_index_for_common_var);
+                assert(pos != -1);
+                // value of common var in value_x
+                int value = (value_x & (1 << pos)) >= 1;
+                common_valuation |= (value << k);
+            }
+            return common_valuation;
         }
 
       public:
@@ -632,12 +725,12 @@ namespace Inference {
             clear_arcs();
         }
 
-        void clear_arcs() {
+        void clear_arcs() { // CHECK: see below
             for( size_t k = 0; k < arcs_.size(); ++k )
                 delete arcs_[k];
             arcs_.clear();
         }
-        void calculate_arcs(const Csp &csp) {
+        void calculate_arcs(const Csp &csp) { // CHECK: arcs should be stored in adjacency lists
             clear_arcs();
 
             // build mixed arcs
@@ -675,7 +768,8 @@ namespace Inference {
             return true; // indicates no incosistency found
         }
 
-        void print(std::ostream &os, const Csp &csp, const LW1_State &state) const {
+        void print(std::ostream &os, const Csp &csp) const { // CHECK
+            assert(0);
 #if 0
             os << "[AC3] Inverted index table" << endl;
             const vector<Variable*> &variables = csp.variables();
