@@ -473,17 +473,18 @@ namespace Inference {
           if( last_action != 0 )
               fill_relevant_sensing_models(options_, instance_, lw1_instance_, last_action, sensed_at_step, relevant_sensing_models_as_k_dnf, false);
 
-          // 0. Domains are original domains with values pruned as indicated with the K-literals in state.
+          // 0. Domains are original domains with values pruned as indicated with the k-atoms in state.
           // Basic constraints relate variable groups to state variable and variable groups to variable
           // groups.
           for( typename T::const_iterator it = state.begin(); it != state.end(); ++it ) {
-              if( state.is_special(1 + *it, &lw1_instance_) ) continue;
+              int k_atom = *it;
+              if( state.is_special(1 + k_atom, &lw1_instance_) ) continue;
 #ifdef DEBUG
               std::cout << Utils::red() << "[AC3] Added literal from state: ";
-              LW1_State::print_literal(std::cout, 1 + *it, &lw1_instance_);
+              LW1_State::print_literal(std::cout, 1 + k_atom, &lw1_instance_);
               std::cout << "[" << *it << "]" << Utils::normal() << std::endl;
 #endif
-              csp_.filter_variable_with_k_literal(*it);
+              csp_.filter_variable_with_k_atom(k_atom);
           }
 
           // 1. Add observation. Pruned variable domains using k-dnf for observation. For each observation,
@@ -499,7 +500,7 @@ namespace Inference {
                   int var_key = jt->first;
                   const LW1_Instance::Variable &variable = *lw1_instance_.variables_[var_key];
                   std::pair<int, int> key(var_key, sensed_literal);
-#if 1//def DEBUG
+#ifdef DEBUG
                   std::cout << "[AC3] sensed literal: var=" << variable.name() << ", value=" << std::flush;
                   LW1_State::print_literal(std::cout, sensed_literal, &instance_);
                   std::cout << "[" << sensed_literal - 1 << "]";
@@ -508,13 +509,13 @@ namespace Inference {
                   if( variable.is_state_variable() ) {
                       // observation is state variable, filter it directly in variable domain
                       assert(jt->second.empty());
-                      int k_literal = sensed_literal > 0 ? 2*(sensed_literal - 1) : 2*(-sensed_literal - 1) + 1;
+                      int k_atom = sensed_literal > 0 ? 2*(sensed_literal - 1) : 2*(-sensed_literal - 1) + 1;
 #ifdef DEBUG
                       std::cout << Utils::red() << "[AC3] Add obs (state) k-literal: ";
-                      LW1_State::print_literal(std::cout, 1 + k_literal, &lw1_instance_);
-                      std::cout << "[" << k_literal << "]" << Utils::normal() << std::endl;
+                      LW1_State::print_literal(std::cout, 1 + k_atom, &lw1_instance_);
+                      std::cout << "[" << k_atom << "]" << Utils::normal() << std::endl;
 #endif
-                      csp_.filter_variable_with_k_literal(k_literal);
+                      csp_.filter_variable_with_k_atom(k_atom);
                   } else if( lw1_instance_.filtering_groups_.find(key) != lw1_instance_.filtering_groups_.end() ) {
                       // observation can be filtered in variable group. Prune all valuations that are
                       // inconsistent with k-dnf
@@ -522,8 +523,7 @@ namespace Inference {
                       const sensing_models_as_cnf_or_dnf_t& sensing_models_as_k_dnf = jt->second;
                       for( size_t k = 0; k < sensing_models_as_k_dnf.size(); ++k ) {
                           const cnf_or_dnf_t& k_dnf_for_sensing_model = *sensing_models_as_k_dnf[k];
-                          csp_.filter_group_with_k_dnf(vg, k_dnf_for_sensing_model);
-#if 1//def DEBUG
+#ifdef DEBUG
                           std::cout << Utils::blue() << "[AC3] k-dnf or k-cnf: index=" << k << ", formula=";
                           state.print_cnf_or_dnf(std::cout, k_dnf_for_sensing_model, &lw1_instance_);
                           std::cout << Utils::normal() << std::endl;
@@ -535,6 +535,7 @@ namespace Inference {
                               std::cout << Utils::normal() << std::endl;
                           }
 #endif
+                          csp_.filter_group_with_k_dnf(vg, k_dnf_for_sensing_model);
                       }
 
                   } else {
@@ -547,25 +548,18 @@ namespace Inference {
                           state.print_cnf_or_dnf(std::cout, k_dnf_for_sensing_model, &lw1_instance_);
                           std::cout << std::endl;
 #endif
-                          bool possible = true;
                           std::set<int> possible_domain;
                           for( size_t j = 0; j < k_dnf_for_sensing_model.size(); ++j ) {
-                              const clause_or_term_t &term = k_dnf_for_sensing_model[j];
-
-                              if( term.size() > 1 ) {
-                                  possible = false;
-                                  break;
-                              }
-                              assert(term.size() == 1);
+                              const clause_or_term_t &k_term = k_dnf_for_sensing_model[j];
+                              if( k_term.size() > 1 ) continue;
+                              assert(k_term[0] > 0);
 #ifdef DEBUG
-                              std::cout << Utils::red() << "[AC3] Adding to possible domain_: ";
-                              state.print_clause_or_term(std::cout, term, &lw1_instance_);
+                              std::cout << Utils::blue() << "[AC3] filtering with k-atom: ";
+                              State::print_literal(std::cout, k_term[0], &lw1_instance_);
                               std::cout << Utils::normal() << std::endl;
 #endif
-                              possible_domain.insert(term[0]);
+                              csp_.filter_variable_with_k_atom(k_term[0] - 1);
                           }
-                          if( possible )
-                              csp_.intersect_domain_of_variable(possible_domain); // CHECK this
                       }
                   }
               }
@@ -574,7 +568,7 @@ namespace Inference {
           // 2. Make the CSP arc consistent by running AC3. Normally, the resulting CSP should be
           // consistent // (i.e. the domain of each variable should be non empty). Otherwise,
           // there is an error in // the planning model
-          bool status = ac3_.solve(csp_, state);
+          bool status = ac3_.solve(state);
           return status;
       }
 
@@ -582,11 +576,11 @@ namespace Inference {
       AC3(const Instance &instance, const LW1_Instance &lw1_instance, const Options::Mode &options)
         : Engine<T>("ac3", instance, lw1_instance, options),
           csp_(lw1_instance),
-          ac3_(lw1_instance) {
+          ac3_(csp_) {
           fill_atoms_to_var_map(lw1_instance_, atoms_to_vars_);
           csp_.set_atoms_to_var_map(atoms_to_vars_);
           csp_.calculate_common_variables_in_groups();
-          ac3_.calculate_arcs(csp_);
+          ac3_.calculate_arcs();
       }
       virtual ~AC3() { }
       virtual void reset() {

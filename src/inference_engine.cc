@@ -37,10 +37,15 @@ namespace Inference {
       for( size_t var_index = 0; var_index < vars.size(); ++var_index ) {
           const LW1_Instance::Variable &variable = *vars[var_index];
 
-          // iteraete over domain of variable to insert atoms into map
+          // iterate over domain of variable to insert atoms into map
           for( set<int>::const_iterator it = variable.domain().begin(); it != variable.domain().end(); ++it ) {
               assert(atoms_to_vars.find(*it) == atoms_to_vars.end());
               atoms_to_vars.insert(make_pair(*it, var_index));
+#ifdef DEBUG
+              cout << "insert pair (";
+              State::print_literal(cout, 1 + *it, &lw1_instance.po_instance_);
+              cout << "[" << *it << "]," << variable.name() << ") into atom_to_vars map" << endl;
+#endif
           }
       }
   }

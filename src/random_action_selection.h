@@ -28,7 +28,7 @@
 #include "lw1_problem.h"
 #include "utils.h"
 
-#define DEBUG
+//#define DEBUG
 
 template<typename T>
 class RandomActionSelection : public ::ActionSelection<T> {
@@ -66,14 +66,18 @@ class RandomActionSelection : public ::ActionSelection<T> {
         }
 
         // select one random applicable action
+#ifdef DEBUG
         std::cout << Utils::magenta() << "#indices=" << indices_for_applicable_actions.size() << Utils::normal() << std::endl;
+#endif
         if( !indices_for_applicable_actions.empty() ) {
             int random_action = indices_for_applicable_actions[lrand48() % indices_for_applicable_actions.size()];
-            std::cout << Utils::magenta() << "random-action=" << lw1_instance_.actions_[random_action]->name_ << Utils::normal() << std::endl;
             raw_plan.clear();
             plan.clear();
             plan.push_back(random_action);
             raw_plan.push_back(random_action);
+#ifdef DEBUG
+            std::cout << Utils::magenta() << "random-action=" << lw1_instance_.actions_[random_action]->name_ << Utils::normal() << std::endl;
+#endif
             return ActionSelection<T>::SOLVED;
         } else {
             return ActionSelection<T>::NO_SOLUTION;
