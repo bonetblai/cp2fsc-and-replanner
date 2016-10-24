@@ -242,6 +242,7 @@ namespace Inference {
         }
     };
 
+    class Csp;
     class GroupVariable : public MultiValuedVariable {
       protected:
         std::map<int, int> var_index_to_pos_;
@@ -302,30 +303,28 @@ namespace Inference {
             return pos_to_var_index_[pos];
         }
 
-        bool is_consistent_with(const std::vector<int> &joint_valuation, int k_literal) const {
-            assert(0); // CHECK: finish this!
-        }
-        bool is_consistent_with(const std::vector<int> &joint_valuation, const std::vector<int> &k_term) const {
+        bool is_consistent_with(const std::vector<int> &joint_valuation, int k_literal, const Csp &csp) const;
+        bool is_consistent_with(const std::vector<int> &joint_valuation, const std::vector<int> &k_term, const Csp &csp) const {
             for( size_t k = 0; k < k_term.size(); ++k ) {
-                if( !is_consistent_with(joint_valuation, k_term[k]) )
+                if( !is_consistent_with(joint_valuation, k_term[k], csp) )
                     return false;
             }
             return true;
         }
-        bool is_consistent_with(const std::vector<int> &joint_valuation, const std::vector<std::vector<int> > &k_dnf) const {
+        bool is_consistent_with(const std::vector<int> &joint_valuation, const std::vector<std::vector<int> > &k_dnf, const Csp &csp) const {
             for( size_t k = 0; k < k_dnf.size(); ++k ) {
-                if( is_consistent_with(joint_valuation, k_dnf[k]) )
+                if( is_consistent_with(joint_valuation, k_dnf[k], csp) )
                     return true;
             }
             return false;
         }
 
-        void filter_current_domain_with_k_dnf(const std::vector<std::vector<int> > &k_dnf) const {
+        void filter_current_domain_with_k_dnf(const std::vector<std::vector<int> > &k_dnf, const Csp &csp) const {
             // iterate over current values and erase those inconsistent with k_dnf
             for( std::set<int>::iterator it = current_domain_.begin(); it != current_domain_.end(); ) {
                 assert((*it >= 0) && (*it < joint_valuations_.size()));
                 const std::vector<int> &joint_valuation = joint_valuations_[*it];
-                if( !is_consistent_with(joint_valuation, k_dnf) )
+                if( !is_consistent_with(joint_valuation, k_dnf, csp) )
                     current_domain_.erase(it);
                 else
                     ++it;
@@ -509,7 +508,7 @@ namespace Inference {
 #endif
             group.intersect_current_domain_with(possible_domain);
 #else
-            group.filter_current_domain_with_k_dnf(k_dnf);
+            group.filter_current_domain_with_k_dnf(k_dnf, *this);
 #endif
 
 
@@ -549,6 +548,14 @@ namespace Inference {
             assert(0);
         }
     };
+
+    inline bool GroupVariable::is_consistent_with(const std::vector<int> &joint_valuation, int k_literal, const Csp &csp) const {
+        int var_index = csp.get_var_index(1 + k_literal); // CHECK; change after fixing 1+shit
+        assert(var_index != -1);
+        int pos = get_pos_from_var_index(var_index);
+        assert(pos != -1);
+        return joint_valuation[pos] == k_literal; // CHECK: finish this!
+    }
 
     class Arc : public std::pair<int, int> {
       protected:
