@@ -191,8 +191,8 @@ namespace AndOr {
   template<typename T>
   class AndNode : public Node {
     protected:
-      const Belief<T> *belief_;                // belief after action is applied
       const Instance::Action *action_;         // action leading to this node
+      const Belief<T> *belief_;                // belief after action is applied
       std::vector<const OrNode<T>*> children_; // children nodes, one per possible observation after action
 
     protected:
@@ -211,10 +211,10 @@ namespace AndOr {
       }
 
     public:
-      AndNode(const Belief<T> *belief, const Instance::Action *action)
-        : belief_(belief), action_(action) {
+      AndNode(const Instance::Action *action, const Belief<T> *belief)
+        : action_(action), belief_(belief) {
       }
-      AndNode(const T *belief, BeliefRepo<T> &repo, const Instance::Action *action)
+      AndNode(const Instance::Action *action, const T *belief, BeliefRepo<T> &repo)
         : belief_(repo.get(belief)), action_(action) {
       }
       virtual ~AndNode() {
@@ -242,6 +242,9 @@ namespace AndOr {
       const OrNode<T>* child(int i) const {
           assert((i >= 0) && (i < int(children_.size())));
           return children_[i];
+      }
+      void add_child(const OrNode<T> *child) {
+          children_.push_back(child);
       }
   };
 
@@ -362,6 +365,7 @@ namespace AndOr {
           return 0;
       }
 
+#if 0
       std::pair<const Policy*, int> compute_extension_for(const Search::API<T> &api, const Width::Feature<T> *feature) const {
           std::cout << Utils::magenta() << "Policy<T>::compute_extension_for()" << Utils::normal() << std::endl;
           // CHECK: FILL MISSING CODE
@@ -443,7 +447,20 @@ namespace AndOr {
               return std::make_pair(static_cast<const Policy*>(0), 0);
           }
       }
+#endif
   };
+
+  template<typename T>
+  inline AndNode<T>* create_and_node(const Instance::Action *action, const T *bel_a, std::vector<const T*> &successors) {
+      const Belief<T> *belief_a = new Belief<T>(bel_a);
+      AndNode<T> *node = new AndNode<T>(action, belief_a);
+      for( size_t k = 0; k < successors.size(); ++k ) {
+          const Belief<T> *belief_ao = new Belief<T>(successors[k]);
+          OrNode<T> *child = new OrNode<T>(belief_ao);
+          node->add_child(child);
+      }
+      return node;
+  }
 
 } // namespace AndOr
 
