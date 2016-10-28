@@ -35,6 +35,7 @@ namespace Width {
       Feature() { }
       virtual ~Feature() { }
       virtual bool holds(const T &state) const = 0;
+      virtual bool subsumes(const Feature<T> &feature) const = 0;
       virtual std::string to_string() const = 0;
       void print(std::ostream &os) const {
           os << to_string() << std::flush;
@@ -65,10 +66,28 @@ namespace Width {
           for( size_t k = 0; k < disjuncts_.size(); ++k )
               delete disjuncts_[k];
       }
+      const std::vector<const Feature<T>*>& disjuncts() const {
+          return disjuncts_;
+      }
       virtual bool holds(const T &state) const {
           for( size_t k = 0; k < disjuncts_.size(); ++k ) {
               if( disjuncts_[k]->holds(state) )
                   return true;
+          }
+          return false;
+      }
+      virtual bool subsumes(const Feature<T> &feature) const {
+          assert(disjuncts_.size() > 1);
+          if( dynamic_cast<const OrFeature<T>*>(&feature) != 0 ) {
+              const OrFeature<T> &or_feature = static_cast<const OrFeature<T>&>(feature);
+              if( disjuncts_.size() <= or_feature.disjuncts_.size() ) {
+                  std::set<const Feature<T>*> fset(or_feature.disjuncts_.begin(), or_feature.disjuncts_.end());
+                  for( size_t k = 0; k < disjuncts_.size(); ++k ) {
+                      if( fset.find(disjuncts_[k]) == fset.end() )
+                          return false;
+                  }
+                  return true;
+              }
           }
           return false;
       }
@@ -95,12 +114,31 @@ namespace Width {
           for( size_t k = 0; k < conjuncts_.size(); ++k )
               delete conjuncts_[k];
       }
+      const std::vector<const Feature<T>*>& conjuncts() const {
+          return conjuncts_;
+      }
       virtual bool holds(const T &state) const {
           for( size_t k = 0; k < conjuncts_.size(); ++k ) {
               if( !conjuncts_[k]->holds(state) )
                   return false;
           }
           return true;
+      }
+      virtual bool subsumes(const Feature<T> &feature) const {
+          FeatureSet<T> fset(conjuncts_.begin(), conjuncts_.end());
+          if( dynamic_cast<const AndFeature<T>*>(&feature) != 0 ) {
+              const AndFeature<T> &and_feature = static_cast<const AndFeature<T>&>(feature);
+              if( conjuncts_.size() >= and_feature.conjuncts_.size() ) {
+                  for( size_t k = 0; k < and_feature.conjuncts_.size(); ++k ) {
+                      if( fset.find(and_feature.conjuncts_[k]) == fset.end() )
+                          return false;
+                  }
+                  return true;
+              }
+              return false;
+          } else {
+              return fset.find(&feature) != fset.end();
+          }
       }
       virtual std::string to_string() const {
           std::string str("Feature[type=and");
@@ -128,6 +166,15 @@ namespace Width {
       virtual ~LiteralFeature() { }
       virtual bool holds(const T &state) const {
           return state.satisfy(literal_ > 0 ? literal_ - 1 : -literal_ - 1, literal_ < 0);
+      }
+      virtual bool subsumes(const Feature<T> &feature) const {
+          if( dynamic_cast<const OrFeature<T>*>(&feature) != 0 ) {
+              const OrFeature<T> &or_feature = static_cast<const OrFeature<T>&>(feature);
+              assert(or_feature.disjuncts().size() > 1);
+              std::set<const Feature<T>*> fset(or_feature.disjuncts().begin(), or_feature.disjuncts().end());
+              return fset.find(&feature) != fset.end();
+          }
+          return false;
       }
       virtual std::string to_string() const {
           std::string str("Feature[type=literal");
@@ -172,6 +219,15 @@ namespace Width {
 #endif
           }
           return size_ == values;
+      }
+      virtual bool subsumes(const Feature<T> &feature) const {
+          if( dynamic_cast<const OrFeature<T>*>(&feature) != 0 ) {
+              const OrFeature<T> &or_feature = static_cast<const OrFeature<T>&>(feature);
+              assert(or_feature.disjuncts().size() > 1);
+              std::set<const Feature<T>*> fset(or_feature.disjuncts().begin(), or_feature.disjuncts().end());
+              return fset.find(&feature) != fset.end();
+          }
+          return false;
       }
       virtual std::string to_string() const {
           std::string str("Feature[type=dsz");
