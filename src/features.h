@@ -153,16 +153,23 @@ namespace Width {
           int values = var.is_binary() ? 2 : var.domain().size();
           if( var.is_binary() ) {
               int atom_index = *var.domain().begin();
-              if( state.satisfy(1 + 2*atom_index, false) )
+              if( state.satisfy(2*atom_index, false) )
                   --values;
-              if( state.satisfy(1 + 2*atom_index + 1, false) )
+              if( state.satisfy(2*atom_index + 1, false) )
                   --values;
           } else {
               for( set<int>::const_iterator it = var.domain().begin(); it != var.domain().end(); ++it ) {
                   int literal = 1 + 2*(*it) + 1;
-                  if( state.satisfy(literal, false) )
+                  if( state.satisfy(literal - 1, false) )
                       --values;
+#ifdef DEBUG
+                  std::cout << "checking "; State::print_literal(std::cout, literal, &lw1_instance_);
+                  std::cout << " --> " << state.satisfy(literal - 1, false) << std::endl;
+#endif
               }
+#ifdef DEBUG
+              std::cout << "status for " << *this << " = " << (size_ == values) << std::endl;
+#endif
           }
           return size_ == values;
       }
