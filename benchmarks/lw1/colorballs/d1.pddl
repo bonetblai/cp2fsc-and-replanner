@@ -14,7 +14,7 @@
     )
 
     (:variable agent-pos (forall (?p - pos) (at ?p)))
-    (:variable (obj-pos ?o - obj) (holding ?o) (forall (?p - pos) (obj-at ?o ?p)))
+    (:variable (obj-pos ?o - obj) (holding ?o) (trashed ?o) (forall (?p - pos) (obj-at ?o ?p)))
     (:variable (obj-col ?o - obj) (forall (?c - col) (color ?o ?c)))
     (:obs-variable (var-obj-at ?o - obj ?p - pos) (obs-obj-at ?o ?p)) ; binary
 
@@ -62,7 +62,7 @@
     
     (:action trash
         :parameters (?o - obj ?c - col ?t - gar ?p - pos)
-        :precondition (and (not (trashed ?o)) (color ?o ?c) (holding ?o) (garbage-at ?t ?p) (at ?p) (garbage-color ?t ?c) (not (need-start)))
+        :precondition (and (color ?o ?c) (holding ?o) (garbage-at ?t ?p) (at ?p) (garbage-color ?t ?c) (not (need-start)))
         :effect (trashed ?o)
     )
 )
