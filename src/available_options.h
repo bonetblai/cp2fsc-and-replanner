@@ -101,6 +101,7 @@ const char *available_options[] = {
     "solver:print:sensed-literals",                     "[SOLVER] print the sensed literals at each step of the plan",
 
     // solver option for lw1
+    "solver:classical-planner",                         "[SOLVER] use classical planner (LW1)",
     "solver:width-based-action-selection",              "[SOLVER] use width-based algorithm for action selection (LW1)",
     "solver:random-action-selection",                   "[SOLVER] random action selection (LW1)",
 

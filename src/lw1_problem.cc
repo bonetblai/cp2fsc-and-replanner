@@ -696,6 +696,30 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                     }
                 }
             }
+
+            // if solver is not classical planner, insert mutual
+            // exclusivity clauses for state variable values
+            if( !options_.is_enabled("solver:classical-planner") ) {
+                if( var.is_state_variable() ) {
+                    const set<int> &domain = var.domain();
+                    for( set<int>::const_iterator it = domain.begin(); it != domain.end(); ++it ) {
+                        for( set<int>::const_iterator jt = domain.begin(); jt != domain.end(); ++jt ) {
+                            if( it != jt ) {
+                                vector<int> clause;
+                                clause.reserve(2);
+                                clause.push_back(-(1 + 2**it));
+                                clause.push_back(-(1 + 2**jt));
+                                clauses_for_axioms_.push_back(clause);
+#ifdef DEBUG
+                                cout << Utils::yellow() << "EXTRA-CLAUSE1: " << Utils::normal();
+                                LW1_State::print_clause_or_term(cout, clause, this);
+                                cout << endl;
+#endif
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // create clauses for type5 sensing drules

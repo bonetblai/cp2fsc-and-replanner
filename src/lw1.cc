@@ -98,8 +98,9 @@ int main(int argc, const char *argv[]) {
     // set default options
     g_options.enable("planner:remove-intermediate-files");
     g_options.enable("problem:action-compilation");
-    g_options.enable("solver:forced-moves");
     g_options.enable("kp:merge-drules");
+    g_options.enable("solver:forced-moves");
+    g_options.enable("solver:classical-planner");
     //g_options.enable("lw1:boost:compile-static-observables"); // DEPRECATED?
 
     // default options for lw1:strict
@@ -235,10 +236,14 @@ int main(int argc, const char *argv[]) {
     if( g_options.is_enabled("lw1:boost:literals-for-observables:dynamic") )
         g_options.enable("lw1:boost:literals-for-observables");
 
-    if( g_options.is_enabled("solver:random-action-selection") )
+    if( g_options.is_enabled("solver:random-action-selection") ) {
+        g_options.disable("solver:classical-planner");
         g_options.disable("solver:width-based-action-selection");
-    if( g_options.is_enabled("solver:width-based-action-selection") )
+    }
+    if( g_options.is_enabled("solver:width-based-action-selection") ) {
+        g_options.disable("solver:classical-planner");
         g_options.disable("solver:random-action-selection");
+    }
 
     // print enabled options
     cout << "enabled options: " << g_options << endl;
@@ -318,7 +323,7 @@ int main(int argc, const char *argv[]) {
 
     // construct classical planner
     const ClassicalPlanner *planner = 0;
-    if( !g_options.is_enabled("solver:width-based-action-selection") && !g_options.is_enabled("solver:random-action-selection") ) {
+    if( g_options.is_enabled("solver:classical-planner") ) {
         if( opt_planner == "ff" ) {
             planner = new FF_Planner(*lw1_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
         } else if( opt_planner == "lama" ) {

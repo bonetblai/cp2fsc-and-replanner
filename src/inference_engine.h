@@ -349,7 +349,10 @@ namespace Inference {
           }
 
           // check consistency
-          if( !consistent ) return false;
+          if( !consistent ) {
+              restore_cnf();
+              return false;
+          }
 
           // 6. Update state: insert positive literals from result into state
           if( options_.is_enabled("lw1:inference:up:watched-literals") ) {
@@ -380,7 +383,7 @@ namespace Inference {
                   int literal = clause[0];
                   if( !is_forbidden(literal) ) {
                       assert(literal != 0);
-                      assert((literal > 0) || options_.is_enabled("lw1:inference:up:enhanced"));
+                      assert((literal > 0) || options_.is_enabled("lw1:inference:up:enhanced") || !options_.is_enabled("solver:classical-planner"));
                       if( literal > 0 ) {
                           state.add(literal - 1);
 #ifdef DEBUG
