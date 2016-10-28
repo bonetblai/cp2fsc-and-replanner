@@ -27,6 +27,8 @@
 
         (not (trashed o1))
         (not (trashed o2))
+        (not (holding o1))
+        (not (holding o2))
     )
     ;(:goal (forall (?o - obj) (trashed ?o)))
     (:goal (and (trashed o1) (trashed o2)))

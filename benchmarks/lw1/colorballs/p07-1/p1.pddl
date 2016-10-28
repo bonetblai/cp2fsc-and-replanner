@@ -117,6 +117,7 @@
         (need-start)
 
         (not (trashed o1))
+        (not (holding o1))
 
         (not (obj-at o1 p1-1))
         (not (obj-at o1 p1-7))

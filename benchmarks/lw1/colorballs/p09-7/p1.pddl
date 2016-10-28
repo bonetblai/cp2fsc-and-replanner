@@ -187,6 +187,13 @@
         (not (trashed o5))
         (not (trashed o6))
         (not (trashed o7))
+        (not (holding o1))
+        (not (holding o2))
+        (not (holding o3))
+        (not (holding o4))
+        (not (holding o5))
+        (not (holding o6))
+        (not (holding o7))
 
         (not (obj-at o1 p1-1))
         (not (obj-at o1 p1-9))

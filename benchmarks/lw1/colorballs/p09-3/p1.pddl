@@ -183,6 +183,9 @@
         (not (trashed o1))
         (not (trashed o2))
         (not (trashed o3))
+        (not (holding o1))
+        (not (holding o2))
+        (not (holding o3))
 
         (not (obj-at o1 p1-1))
         (not (obj-at o1 p1-9))
