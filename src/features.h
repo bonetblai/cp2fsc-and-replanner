@@ -66,9 +66,14 @@ namespace Width {
           for( size_t k = 0; k < disjuncts_.size(); ++k )
               delete disjuncts_[k];
       }
+
       const std::vector<const Feature<T>*>& disjuncts() const {
           return disjuncts_;
       }
+      void add_disjunct(const Feature<T> &feature) {
+          disjuncts_.push_back(&feature);
+      }
+
       virtual bool holds(const T &state) const {
           for( size_t k = 0; k < disjuncts_.size(); ++k ) {
               if( disjuncts_[k]->holds(state) )
@@ -114,9 +119,14 @@ namespace Width {
           for( size_t k = 0; k < conjuncts_.size(); ++k )
               delete conjuncts_[k];
       }
+
       const std::vector<const Feature<T>*>& conjuncts() const {
           return conjuncts_;
       }
+      void add_conjunct(const Feature<T> &feature) {
+          conjuncts_.push_back(&feature);
+      }
+
       virtual bool holds(const T &state) const {
           for( size_t k = 0; k < conjuncts_.size(); ++k ) {
               if( !conjuncts_[k]->holds(state) )
@@ -163,6 +173,14 @@ namespace Width {
       LiteralFeature(const LW1_Instance &lw1_instance, int var_index, int literal)
         : lw1_instance_(lw1_instance), var_index_(var_index), literal_(literal) {
       }
+
+      int var_index() const {
+          return var_index_;
+      }
+      int literal() const {
+          return literal_;
+      }
+
       virtual ~LiteralFeature() { }
       virtual bool holds(const T &state) const {
           return state.satisfy(literal_ > 0 ? literal_ - 1 : -literal_ - 1, literal_ < 0);
@@ -172,7 +190,7 @@ namespace Width {
               const OrFeature<T> &or_feature = static_cast<const OrFeature<T>&>(feature);
               assert(or_feature.disjuncts().size() > 1);
               std::set<const Feature<T>*> fset(or_feature.disjuncts().begin(), or_feature.disjuncts().end());
-              return fset.find(&feature) != fset.end();
+              return fset.find(this) != fset.end();
           }
           return false;
       }
@@ -195,6 +213,14 @@ namespace Width {
         : lw1_instance_(lw1_instance), var_index_(var_index), size_(size) {
       }
       virtual ~DomainSizeLiteralFeature() { }
+
+      int var_index() const {
+          return var_index_;
+      }
+      int size() const {
+          return size_;
+      }
+
       virtual bool holds(const T &state) const {
           const LW1_Instance::Variable &var = *lw1_instance_.variables_[var_index_];
           int values = var.is_binary() ? 2 : var.domain().size();
@@ -225,7 +251,7 @@ namespace Width {
               const OrFeature<T> &or_feature = static_cast<const OrFeature<T>&>(feature);
               assert(or_feature.disjuncts().size() > 1);
               std::set<const Feature<T>*> fset(or_feature.disjuncts().begin(), or_feature.disjuncts().end());
-              return fset.find(&feature) != fset.end();
+              return fset.find(this) != fset.end();
           }
           return false;
       }
@@ -234,6 +260,50 @@ namespace Width {
           str += ",var=" + lw1_instance_.variables_[var_index_]->name();
           str += ",size=" + std::to_string(size_);
           return str + "]";
+      }
+  };
+
+  template<typename T>
+  class GoalFeature : public Feature<T> {
+    protected:
+      const LW1_Instance &lw1_instance_;
+      std::vector<int> goal_literals_;
+
+    public:
+      GoalFeature(const LW1_Instance &lw1_instance)
+        : lw1_instance_(lw1_instance) {
+          for( index_set::const_iterator it = lw1_instance_.po_instance_.goal_literals_.begin(); it != lw1_instance_.po_instance_.goal_literals_.end(); ++it ) {
+              int atom = *it > 0 ? *it - 1 : -*it - 1;
+              int literal = *it > 0 ? 1 + 2*atom : 1 + 2*atom + 1;
+              goal_literals_.push_back(literal);
+          }
+      }
+      virtual ~GoalFeature() { }
+
+      const std::vector<int>& goal_literals() const {
+          return goal_literals_;
+      }
+
+      virtual bool holds(const T &state) const {
+          for( size_t k = 0; k < goal_literals_.size(); ++k ) {
+              int literal = goal_literals_[k];
+              if( !state.satisfy(literal > 0 ? literal - 1 : -literal - 1, literal < 0) )
+                  return false;
+          }
+          return true;
+      }
+      virtual bool subsumes(const Feature<T> &feature) const {
+          return true;
+      }
+      virtual std::string to_string() const {
+          std::string str("Feature[type=goal,literals={");
+          for( size_t k = 0; k < goal_literals_.size(); ++k ) {
+              int literal = goal_literals_[k];
+              str += State::to_string(literal, &lw1_instance_);
+              if( 1 + k < goal_literals_.size() )
+                  str += ",";
+          }
+          return str + "}]";
       }
   };
 
