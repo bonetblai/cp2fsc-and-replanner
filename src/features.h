@@ -40,6 +40,13 @@ namespace Width {
       void print(std::ostream &os) const {
           os << to_string() << std::flush;
       }
+
+      // comparison for feature pointers
+      struct ptr_compare_t {
+          bool operator()(const Feature<T> *f1, const Feature<T> *f2) const {
+              return f1->to_string() < f2->to_string();
+          }
+      };
   };
 
   template<typename T>
@@ -47,11 +54,11 @@ namespace Width {
   };
 
   template<typename T>
-  class FeatureSet : public std::set<const Feature<T>*> {
+  class FeatureSet : public std::set<const Feature<T>*, typename Feature<T>::ptr_compare_t> {
     public:
       FeatureSet() { }
-      FeatureSet(const std::set<const Feature<T>*> &features)
-        : std::set<const Feature<T>*>(features) {
+      FeatureSet(const std::set<const Feature<T>*, typename Feature<T>::ptr_compare_t> &features)
+        : std::set<const Feature<T>*, typename Feature<T>::ptr_compare_t>(features) {
       }
   };
 
