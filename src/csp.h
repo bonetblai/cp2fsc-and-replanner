@@ -60,7 +60,7 @@ namespace Inference {
     // between atom and k-atom is done with the (inline) method
     // get_k_atom_from_atom() and get_k_not_atom_from_atom().
     // The latter is only used when constructing binary variables as for
-    // those variables the domain for the LW1_Instance::Variable only 
+    // those variables the domain for the LW1_Instance::Variable only
     // contains one value (the positive value)
     class Variable {
       protected:
