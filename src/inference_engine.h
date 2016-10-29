@@ -359,7 +359,7 @@ namespace Inference {
               for( unsigned i = 1; i < up_assignment_.size(); ++i ) {
                   int literal_sign = up_assignment_[i];
                   if( is_forbidden(i) ) continue;
-                  assert((literal_sign != 0) || options_.is_enabled("lw1:inference:up:enhanced") || options_.is_enabled("lw1:inference:up:lookahead"));
+                  assert((literal_sign != 0) || options_.is_enabled("lw1:inference:up:enhanced") || options_.is_enabled("lw1:inference:up:lookahead") || !options_.is_enabled("solver:classical-planner"));
                   if( literal_sign == 1 ) { // positive literal
                       state.add(i - 1);
 #ifdef DEBUG
