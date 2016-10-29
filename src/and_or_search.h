@@ -36,7 +36,7 @@ namespace AndOr {
       protected:
         struct compare_t {
             bool operator()(const Node *lhs, const Node *rhs) const {
-                    return lhs->f() < rhs->f();
+                    return lhs->f() > rhs->f();
             }
         };
         typedef typename std::priority_queue<const Node*, std::vector<const Node*>, compare_t> priority_queue;
