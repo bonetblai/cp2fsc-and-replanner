@@ -111,7 +111,7 @@ namespace Width {
               if( k + 1 < disjuncts_.size() )
                   str += ",";
           }
-          return str + "]";
+          return str + "}]";
       }
   };
 
@@ -165,7 +165,7 @@ namespace Width {
               if( k + 1 < conjuncts_.size() )
                   str += ",";
           }
-          return str + "]";
+          return str + "}]";
       }
   };
 
