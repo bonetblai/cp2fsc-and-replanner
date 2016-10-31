@@ -31,12 +31,17 @@ namespace Width {
 
   template<typename T>
   class Feature {
+      int index_;
+
     public:
-      Feature() { }
+      Feature(int index) : index_(index) { }
       virtual ~Feature() { }
       virtual bool holds(const T &state) const = 0;
       virtual bool subsumes(const Feature<T> &feature) const = 0;
       virtual std::string to_string() const = 0;
+      int index() const {
+          return index_;
+      }
       void print(std::ostream &os) const {
           os << to_string() << std::flush;
       }
@@ -47,10 +52,6 @@ namespace Width {
               return f1->to_string() < f2->to_string();
           }
       };
-  };
-
-  template<typename T>
-  class FeatureList : public std::list<const Feature<T>*> {
   };
 
   template<typename T>
@@ -68,7 +69,7 @@ namespace Width {
       std::vector<const Feature<T>*> disjuncts_;
 
     public:
-      OrFeature() { }
+      OrFeature(int index) : Feature<T>(index) { }
       virtual ~OrFeature() {
           for( size_t k = 0; k < disjuncts_.size(); ++k )
               delete disjuncts_[k];
@@ -104,8 +105,9 @@ namespace Width {
           return false;
       }
       virtual std::string to_string() const {
-          std::string str("Feature[type=or");
-          str += ",disjuncts={";
+          std::string str("Feature[index=");
+          str += std::to_string(this->index());
+          str += ",type=or,disjuncts={";
           for( size_t k = 0; k < disjuncts_.size(); ++k ) {
               str += disjuncts_[k]->to_string();
               if( k + 1 < disjuncts_.size() )
@@ -121,7 +123,7 @@ namespace Width {
       std::vector<const Feature<T>*> conjuncts_;
 
     public:
-      AndFeature() { }
+      AndFeature(int index) : Feature<T>(index) { }
       virtual ~AndFeature() {
           for( size_t k = 0; k < conjuncts_.size(); ++k )
               delete conjuncts_[k];
@@ -142,7 +144,7 @@ namespace Width {
           return true;
       }
       virtual bool subsumes(const Feature<T> &feature) const {
-          FeatureSet<T> fset(conjuncts_.begin(), conjuncts_.end());
+          std::set<const Feature<T>*> fset(conjuncts_.begin(), conjuncts_.end());
           if( dynamic_cast<const AndFeature<T>*>(&feature) != 0 ) {
               const AndFeature<T> &and_feature = static_cast<const AndFeature<T>&>(feature);
               if( conjuncts_.size() >= and_feature.conjuncts_.size() ) {
@@ -158,8 +160,9 @@ namespace Width {
           }
       }
       virtual std::string to_string() const {
-          std::string str("Feature[type=and");
-          str += ",conjuncts={";
+          std::string str("Feature[index=");
+          str += std::to_string(this->index());
+          str += ",type=and,conjuncts={";
           for( size_t k = 0; k < conjuncts_.size(); ++k ) {
               str += conjuncts_[k]->to_string();
               if( k + 1 < conjuncts_.size() )
@@ -177,9 +180,13 @@ namespace Width {
       const int literal_;
 
     public:
-      LiteralFeature(const LW1_Instance &lw1_instance, int var_index, int literal)
-        : lw1_instance_(lw1_instance), var_index_(var_index), literal_(literal) {
+      LiteralFeature(int index, const LW1_Instance &lw1_instance, int var_index, int literal)
+        : Feature<T>(index),
+          lw1_instance_(lw1_instance),
+          var_index_(var_index),
+          literal_(literal) {
       }
+      virtual ~LiteralFeature() { }
 
       int var_index() const {
           return var_index_;
@@ -188,7 +195,6 @@ namespace Width {
           return literal_;
       }
 
-      virtual ~LiteralFeature() { }
       virtual bool holds(const T &state) const {
           return state.satisfy(literal_ > 0 ? literal_ - 1 : -literal_ - 1, literal_ < 0);
       }
@@ -196,14 +202,19 @@ namespace Width {
           if( dynamic_cast<const OrFeature<T>*>(&feature) != 0 ) {
               const OrFeature<T> &or_feature = static_cast<const OrFeature<T>&>(feature);
               assert(or_feature.disjuncts().size() > 1);
-              std::set<const Feature<T>*> fset(or_feature.disjuncts().begin(), or_feature.disjuncts().end());
-              return fset.find(this) != fset.end();
+              for( size_t k = 0; k < or_feature.disjuncts().size(); ++k ) {
+                  if( this == or_feature.disjuncts()[k] )
+                      return true;
+              }
+              return false;
           }
           return false;
       }
       virtual std::string to_string() const {
-          std::string str("Feature[type=literal");
-          str += ",name=" + State::to_string(literal_, &lw1_instance_);
+          std::string str("Feature[index=");
+          str += std::to_string(this->index());
+          str += ",type=literal,name=";
+          str += State::to_string(literal_, &lw1_instance_);
           return str + "]";
       }
   };
@@ -216,8 +227,11 @@ namespace Width {
       const int size_;
 
     public:
-      DomainSizeLiteralFeature(const LW1_Instance &lw1_instance, int var_index, int size)
-        : lw1_instance_(lw1_instance), var_index_(var_index), size_(size) {
+      DomainSizeLiteralFeature(int index, const LW1_Instance &lw1_instance, int var_index, int size)
+        : Feature<T>(index),
+          lw1_instance_(lw1_instance),
+          var_index_(var_index),
+          size_(size) {
       }
       virtual ~DomainSizeLiteralFeature() { }
 
@@ -257,14 +271,18 @@ namespace Width {
           if( dynamic_cast<const OrFeature<T>*>(&feature) != 0 ) {
               const OrFeature<T> &or_feature = static_cast<const OrFeature<T>&>(feature);
               assert(or_feature.disjuncts().size() > 1);
-              std::set<const Feature<T>*> fset(or_feature.disjuncts().begin(), or_feature.disjuncts().end());
-              return fset.find(this) != fset.end();
+              for( size_t k = 0; k < or_feature.disjuncts().size(); ++k ) {
+                  if( this == or_feature.disjuncts()[k] )
+                      return true;
+              }
+              return false;
           }
           return false;
       }
       virtual std::string to_string() const {
-          std::string str("Feature[type=dsz");
-          str += ",var=" + lw1_instance_.variables_[var_index_]->name();
+          std::string str("Feature[index=");
+          str += std::to_string(this->index());
+          str += ",type=dsz,var=" + lw1_instance_.variables_[var_index_]->name();
           str += ",size=" + std::to_string(size_);
           return str + "]";
       }
@@ -277,8 +295,8 @@ namespace Width {
       std::vector<int> goal_literals_;
 
     public:
-      GoalFeature(const LW1_Instance &lw1_instance)
-        : lw1_instance_(lw1_instance) {
+      GoalFeature(int index, const LW1_Instance &lw1_instance)
+        : Feature<T>(index), lw1_instance_(lw1_instance) {
           for( index_set::const_iterator it = lw1_instance_.po_instance_.goal_literals_.begin(); it != lw1_instance_.po_instance_.goal_literals_.end(); ++it ) {
               int atom = *it > 0 ? *it - 1 : -*it - 1;
               int literal = *it > 0 ? 1 + 2*atom : 1 + 2*atom + 1;
@@ -300,10 +318,12 @@ namespace Width {
           return true;
       }
       virtual bool subsumes(const Feature<T> &feature) const {
-          return true;
+          return false;
       }
       virtual std::string to_string() const {
-          std::string str("Feature[type=goal,literals={");
+          std::string str("Feature[index=");
+          str += std::to_string(this->index());
+          str += ",type=goal,literals={";
           for( size_t k = 0; k < goal_literals_.size(); ++k ) {
               int literal = goal_literals_[k];
               str += State::to_string(literal, &lw1_instance_);
