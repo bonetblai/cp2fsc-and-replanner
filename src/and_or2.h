@@ -25,8 +25,6 @@
 #include <string>
 #include <vector>
 
-#include "and_or_search_api.h"
-#include "features.h"
 #include "utils.h"
 
 namespace AndOr {
@@ -193,7 +191,7 @@ namespace AndOr {
   template<typename T>
   class AndNode : public Node {
     protected:
-      const Instance::Action *action_;         // action leading to this node
+      int action_;                             // action leading to this node
       const Belief<T> *belief_;                // belief after action is applied (belief for this node)
       const OrNode<T> *parent_;                // parent node
       std::vector<const OrNode<T>*> children_; // children
@@ -213,11 +211,11 @@ namespace AndOr {
       }
 
     public:
-      AndNode(const Instance::Action *action, const Belief<T> *belief, const OrNode<T> *parent)
+      AndNode(int action, const Belief<T> *belief, const OrNode<T> *parent)
         : action_(action), belief_(belief), parent_(parent) {
       }
 #if 0
-      AndNode(const Instance::Action *action, const T *belief, BeliefRepo<T> &repo)
+      AndNode(int action, const T *belief, BeliefRepo<T> &repo)
         : belief_(repo.get(belief)), action_(action) {
       }
 #endif
@@ -235,7 +233,7 @@ namespace AndOr {
       virtual void pretty_print(std::ostream &os, int indent) const { // CHECK: FILL MISSING CODE
       }
 
-      const Instance::Action* action() const {
+      const int action() const {
           return action_;
       }
       const Belief<T>* belief() const {
@@ -286,7 +284,7 @@ namespace AndOr {
         : belief_(belief), parent_(parent) {
       }
 #if 0
-      OrNode(const T *belief, BeliefRepo<T> &repo, const Instance::Action *action)
+      OrNode(const T *belief, BeliefRepo<T> &repo, int action)
         : belief_(repo.get(belief)), action_(action), child_(0) {
       }
 #endif
@@ -396,7 +394,7 @@ namespace AndOr {
   };
 
   template<typename T>
-  inline AndNode<T>* create_and_node(const Instance::Action *action, const T *bel_a, std::vector<const T*> &successors) {
+  inline AndNode<T>* create_and_node(int action, const T *bel_a, std::vector<const T*> &successors) {
       const Belief<T> *belief_a = new Belief<T>(bel_a);
       AndNode<T> *and_node = new AndNode<T>(action, belief_a, 0);
       for( size_t k = 0; k < successors.size(); ++k ) {
