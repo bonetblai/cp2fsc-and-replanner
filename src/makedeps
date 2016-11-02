@@ -12,7 +12,7 @@ lw1.o: lw1.cc action_selection.h problem.h name.h index.h options.h \
   parser.h scanner.h grammar.h clg_problem.h lw1_problem.h lw1_solver.h \
   inference_engine.h csp.h lw1_state.h unit_propagation.h new_solver.h \
   available_options.h width.h and_or_search.h and_or_search_api.h \
-  features.h and_or.h random_action_selection.h
+  features.h and_or2.h random_action_selection.h
 string_table.o: string_table.cc string_table.h char_map.h
 base.o: base.cc base.h ptr_table.h string_table.h char_map.h options.h \
   utils.h problem.h name.h index.h base_dnf.h

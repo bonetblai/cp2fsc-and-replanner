@@ -45,10 +45,11 @@ namespace Width {
       int goal_feature_index_;
       const Feature<T> *goal_feature_;
       std::vector<const Feature<T>*> feature_language_;
+      std::vector<const Feature<T>*> feature_language_ext_;
       std::vector<const Feature<T>*> atomic_features_;
-      std::vector<const Feature<T>*> term_features_;
-      std::vector<const Feature<T>*> disjunctive_features_;
-      std::vector<const Feature<T>*> disjunctive_features_involving_goal_feature_;
+      std::vector<const AndFeature<T>*> term_features_;
+      std::vector<const OrFeature<T>*> disjunctive_features_;
+      std::vector<const OrFeature<T>*> disjunctive_features_involving_goal_feature_;
 
       mutable float total_search_time_;
       mutable float total_time_;
@@ -66,6 +67,8 @@ namespace Width {
           for( size_t var_index = 0; var_index < lw1_instance_.variables_.size(); ++var_index ) {
               const LW1_Instance::Variable &variable = *lw1_instance_.variables_[var_index];
               if( variable.is_state_variable() ) {
+                  //if( variable.name() == "obj-col_o1" ) continue; // CHECK: REMOVE
+                  std::cout << variable << std::endl;
                   // generate feature for domain values
                   if( variable.is_binary() ) {
                       int atom = *variable.domain().begin();
@@ -92,10 +95,11 @@ namespace Width {
                   }
 
                   // generate feature for domain size
+                  //if( variable.name() == "agent-pos" ) continue; // CHECK: REMOVE
                   size_t dsize = variable.is_binary() ? 2 : variable.domain().size();
                   for( size_t i = 0; i < dsize; ++i ) {
                       int feature_index = feature_language_.size();
-                      atomic_features_.push_back(new DomainSizeLiteralFeature<T>(feature_index, lw1_instance_, var_index, 1 + i));
+                      atomic_features_.push_back(new DomainSizeFeature<T>(feature_index, lw1_instance_, var_index, 1 + i));
                       feature_language_.push_back(atomic_features_.back());
 #ifdef DEBUG
                       //std::cout << "new " << *feature_language_.back() << std::endl;
@@ -110,6 +114,7 @@ namespace Width {
               const Feature<T> &f1 = *feature_language_[k];
               for( size_t j = 1 + k; j < feature_language_.size(); ++j ) {
                   const Feature<T> &f2 = *feature_language_[j];
+                  if( f1.subsumes(f2) || f2.subsumes(f1) ) continue;
                   int feature_index = feature_language_.size() + term_features_.size();
                   AndFeature<T> *feature = new AndFeature<T>(feature_index);
                   feature->add_conjunct(f1);
@@ -131,8 +136,20 @@ namespace Width {
 #ifdef DEBUG
           //std::cout << "new " << *goal_feature_ << std::endl;
 #endif
+          std::cout << Utils::green() << "#goal-features=1" << Utils::normal() << std::endl;
 
           // create disjunctive features
+#if 1 // CHECK: REMOVE
+          for( size_t k = 0; k < term_features_.size(); ++k ) {
+              const Feature<T> &f1 = *term_features_[k];
+              int feature_index = feature_language_.size() + disjunctive_features_.size();
+              OrFeature<T> *feature = new OrFeature<T>(feature_index);
+              feature->add_disjunct(*goal_feature_);
+              feature->add_disjunct(f1);
+              disjunctive_features_.push_back(feature);
+              disjunctive_features_involving_goal_feature_.push_back(feature);
+          }
+#else
           for( size_t k = 0; k < feature_language_.size(); ++k ) {
               const Feature<T> &f1 = *feature_language_[k];
               for( size_t j = 1 + k; j < feature_language_.size(); ++j ) {
@@ -150,10 +167,71 @@ namespace Width {
 #endif
               }
           }
+#endif
           for( size_t k = 0; k < disjunctive_features_.size(); ++k )
               feature_language_.push_back(disjunctive_features_[k]);
           std::cout << Utils::green() << "#disjunctive-features=" << disjunctive_features_.size() << Utils::normal() << std::endl;
           std::cout << Utils::green() << "#features=" << feature_language_.size() << Utils::normal() << std::endl;
+
+          feature_language_ext_ = feature_language_;
+          std::map<const Feature<T>*, const BoxFeature<T>*> box_map;
+          std::map<const Feature<T>*, const NotFeature<T>*> not_box_map;
+          for( size_t k = 0; k < disjunctive_features_.size(); ++k ) {
+              const OrFeature<T> &or_feature = *disjunctive_features_[k];
+              assert(or_feature.size() == 2);
+              const Feature<T> &f1 = or_feature.disjunct(0);
+              const Feature<T> &f2 = or_feature.disjunct(1);
+
+              int feature_index = feature_language_ext_.size();
+              BoxFeature<T> *box_feature = new BoxFeature<T>(feature_index + 0, or_feature);
+              feature_language_ext_.push_back(box_feature);
+
+              const BoxFeature<T> *box_f1 = 0;
+              if( box_map.find(&f1) != box_map.end() ) {
+                  box_f1 = box_map.at(&f1);
+              } else {
+                  int feature_index = feature_language_ext_.size();
+                  box_f1 = new BoxFeature<T>(feature_index, f1);
+                  feature_language_ext_.push_back(box_f1);
+                  box_map.insert(std::make_pair(&f1, box_f1));
+              }
+              const NotFeature<T> *not_box_f1 = 0;
+              if( not_box_map.find(box_f1) != not_box_map.end() ) {
+                  not_box_f1 = not_box_map.at(box_f1);
+              } else {
+                  int feature_index = feature_language_ext_.size();
+                  not_box_f1 = new NotFeature<T>(feature_index, *box_f1);
+                  feature_language_ext_.push_back(not_box_f1);
+                  not_box_map.insert(std::make_pair(box_f1, not_box_f1));
+              }
+
+              const BoxFeature<T> *box_f2 = 0;
+              if( box_map.find(&f2) != box_map.end() ) {
+                  box_f2 = box_map.at(&f2);
+              } else {
+                  int feature_index = feature_language_ext_.size();
+                  box_f2 = new BoxFeature<T>(feature_index, f2);
+                  feature_language_ext_.push_back(box_f2);
+                  box_map.insert(std::make_pair(&f2, box_f2));
+              }
+              const NotFeature<T> *not_box_f2 = 0;
+              if( not_box_map.find(box_f2) != not_box_map.end() ) {
+                  not_box_f2 = not_box_map.at(box_f2);
+              } else {
+                  int feature_index = feature_language_ext_.size();
+                  not_box_f2 = new NotFeature<T>(feature_index, *box_f2);
+                  feature_language_ext_.push_back(not_box_f2);
+                  not_box_map.insert(std::make_pair(box_f2, not_box_f2));
+              }
+
+              feature_index = feature_language_ext_.size();
+              AndFeature<T> *and_feature = new AndFeature<T>(feature_index);
+              and_feature->add_conjunct(*box_feature);
+              and_feature->add_conjunct(*not_box_f1);
+              and_feature->add_conjunct(*not_box_f2);
+              feature_language_ext_.push_back(and_feature);
+          }
+          std::cout << Utils::green() << "#features-ext=" << feature_language_ext_.size() << Utils::normal() << std::endl;
       }
       virtual ~ActionSelection() {
           for( size_t k = 0; k < feature_language_.size(); ++k )
@@ -221,13 +299,20 @@ namespace Width {
       const Inference::Engine<T> &inference_engine_;
       const Feature<T> *goal_feature_;
       const std::vector<const Feature<T>*> &feature_language_;
-      const std::vector<const Feature<T>*> disjunctive_features_involving_goal_feature_;
+      const std::vector<const Feature<T>*> &feature_language_ext_;
+      const std::vector<const OrFeature<T>*> disjunctive_features_involving_goal_feature_;
       bool prune_nodes_;
 
       mutable AndOr::BeliefRepo<T> belief_repo_;
       mutable unsigned *available_features_bitmap_;
       mutable unsigned num_available_features_;
       size_t size_available_features_bitmap_;
+
+      mutable unsigned *available_features_ext_bitmap_;
+      mutable unsigned num_available_features_ext_;
+      size_t size_available_features_ext_bitmap_;
+
+      std::set<int> noop_singleton_;
 
       typedef typename std::map<const AndOr::OrNode<T>*, std::pair<std::map<int, AndOr::AndNode<T>*>, std::map<const Feature<T>*, std::set<int> > > > t_map_t;
       typedef typename t_map_t::mapped_type t_map_mapped_type_t;
@@ -237,20 +322,28 @@ namespace Width {
           const Inference::Engine<T> &inference_engine,
           const Feature<T> *goal_feature,
           const std::vector<const Feature<T>*> &feature_language,
-          const std::vector<const Feature<T>*> disjunctive_features_involving_goal_feature,
+          const std::vector<const Feature<T>*> &feature_language_ext,
+          const std::vector<const OrFeature<T>*> disjunctive_features_involving_goal_feature,
           bool prune_nodes = true)
         : AndOr::Search::API<T>(lw1_instance),
           inference_engine_(inference_engine),
           goal_feature_(goal_feature),
           feature_language_(feature_language),
+          feature_language_ext_(feature_language_ext),
           disjunctive_features_involving_goal_feature_(disjunctive_features_involving_goal_feature),
           prune_nodes_(prune_nodes) {
           size_available_features_bitmap_ = feature_language_.size() >> 5;
           size_available_features_bitmap_ += (feature_language_.size() % 32) == 0 ? 0 : 1;
           available_features_bitmap_ = new unsigned[size_available_features_bitmap_];
+          size_available_features_ext_bitmap_ = feature_language_ext_.size() >> 5;
+          size_available_features_ext_bitmap_ += (feature_language_ext_.size() % 32) == 0 ? 0 : 1;
+          available_features_ext_bitmap_ = new unsigned[size_available_features_ext_bitmap_];
+          noop_singleton_ = std::set<int>();
+          noop_singleton_.insert(-1);
       }
       virtual ~API() {
           delete[] available_features_bitmap_;
+          delete[] available_features_ext_bitmap_;
       }
 
       void reset_bitmap_for_available_features() const {
@@ -278,17 +371,47 @@ namespace Width {
           register_feature(index, offset);
       }
 
-      bool is_feature_valid(const AndOr::OrNode<T> *node, const Feature<T> &feature) const {
-          assert(node != 0);
-#ifdef DEBUG
-          //std::cout << Utils::magenta() << "API::is_feature_valid():" << Utils::normal()
-          //          << " feature=" << feature
-          //          << ", res=" << feature.holds(*node->belief()->belief())
-          //          << std::endl;
-#endif
-          return feature.holds(*node->belief()->belief());
+
+      void reset_bitmap_for_available_features_ext() const {
+          memset(available_features_ext_bitmap_, 255, size_available_features_ext_bitmap_ * sizeof(unsigned));
+          num_available_features_ext_ = feature_language_ext_.size();
       }
-      void compute_achieved_features(const AndOr::Policy<T> &policy, FeatureSet<T> &achieved) const {
+      bool is_feature_available_ext(int index, int offset) const {
+          assert((index >= 0) && (index < feature_language_.size()));
+          assert((offset >= 0) && (offset < 32));
+          return (available_features_ext_bitmap_[index] & (1 << offset)) != 0;
+      }
+      bool is_feature_available_ext(const Feature<T> &feature) const {
+          int index = feature.index() >> 5, offset = feature.index() % 32;
+          return is_feature_available_ext(index, offset);
+      }
+      void register_feature_ext(int index, int offset) const {
+          assert((index >= 0) && (index < feature_language_.size()));
+          assert((offset >= 0) && (offset < 32));
+          if( is_feature_available_ext(index, offset) )
+              --num_available_features_ext_;
+          available_features_ext_bitmap_[index] = available_features_ext_bitmap_[index] & ~(1 << offset);
+      }
+      void register_feature_ext(const Feature<T> &feature) const {
+          int index = feature.index() >> 5, offset = feature.index() % 32;
+          register_feature_ext(index, offset);
+      }
+
+
+
+      bool is_feature_valid(const T &tip, const Feature<T> &feature, bool verbose = false) const {
+          return feature.holds(tip, verbose);
+      }
+      bool is_feature_valid(const AndOr::Policy<T> &policy, const T &tip, const Feature<T> &feature, bool verbose = false) const {
+          return feature.holds(policy, tip, verbose);
+      }
+      bool is_feature_valid(const AndOr::Policy<T> &policy, const Feature<T> &feature, bool verbose = false) const {
+          return feature.holds(policy, verbose);
+      }
+      void compute_achieved_features(const AndOr::Policy<T> &policy,
+                                     const std::vector<const Feature<T>*> &feature_language,
+                                     FeatureSet<T> &achieved,
+                                     bool verbose = false) const {
 #ifdef DEBUG
           std::cout << Utils::magenta() << "API::compute_achieved_features(): " << Utils::normal()
                     << "#tips=" << policy.tip_nodes().size()
@@ -296,17 +419,10 @@ namespace Width {
 #endif
           assert(!policy.tip_nodes().empty());
           achieved.clear();
-          for( size_t k = 0; k < feature_language_.size(); ++k ) {
-              const Feature<T> &feature = *feature_language_[k];
+          for( size_t k = 0; k < feature_language.size(); ++k ) {
+              const Feature<T> &feature = *feature_language[k];
               if( !is_feature_available(feature) ) continue;
-              bool feature_is_achieved = true;
-              for( typename AndOr::OrNodeList<T>::const_iterator it = policy.tip_nodes().begin(); it != policy.tip_nodes().end(); ++it ) {
-                  if( !is_feature_valid(*it, feature) ) {
-                      feature_is_achieved = false;
-                      break;
-                  }
-              }
-              if( feature_is_achieved ) {
+              if( is_feature_valid(policy, feature, verbose) ) {
 #ifdef DEBUG
                   //std::cout << Utils::green() << "valid feature '" << feature << "'" << Utils::normal() << std::endl;
 #endif
@@ -314,33 +430,9 @@ namespace Width {
               }
           }
 #ifdef DEBUG
-          std::cout << Utils::green() << "#achieved-features=" << achieved.size() << Utils::normal() << std::endl;
+          //std::cout << Utils::green() << "#achieved-features=" << achieved.size() << Utils::normal() << std::endl;
 #endif
       }
-
-#if 0 // CHECK
-      bool is_goal(const AndOr::OrNode<T> *node) const {
-#ifdef DEBUG
-          std::cout << Utils::magenta() << "API::is_goal(<node>): " << Utils::normal()
-                    << "res=" << node->belief()->belief()->is_goal(lw1_instance_)
-                    << std::endl;
-#endif
-          return node->belief()->belief()->is_goal(lw1_instance_);
-      }
-      bool is_goal(const AndOr::Policy<T> &policy) const {
-#ifdef DEBUG
-          std::cout << Utils::magenta() << "API::is_goal(<policy>): " << Utils::normal()
-                    << "#tips=" << policy.tip_nodes().size()
-                    << std::endl;
-#endif
-          assert(!policy.tip_nodes().empty());
-          for( typename AndOr::OrNodeList<T>::const_iterator it = policy.tip_nodes().begin(); it != policy.tip_nodes().end(); ++it ) {
-              if( !is_goal(*it) )
-                  return false;
-          }
-          return true;
-      }
-#endif
 
       int cost(const AndOr::Policy<T> &policy) const {
           return policy.cost();
@@ -352,7 +444,7 @@ namespace Width {
       virtual Node<T>* make_root_node(const T *state) const {
           AndOr::Policy<T> *policy = new AndOr::Policy<T>(belief_repo_, state);
           FeatureSet<T> *features = new FeatureSet<T>;
-          compute_achieved_features(*policy, *features);
+          compute_achieved_features(*policy, feature_language_, *features);
           int policy_cost = cost(*policy);
           bool is_goal = features->find(goal_feature_) != features->end();
           return new Node<T>(policy, features, policy_cost, is_goal);
@@ -412,37 +504,23 @@ namespace Width {
           // generate tip extensions for available features
           t_map_t tip_map;
           for( typename AndOr::OrNodeList<T>::const_iterator it = policy.tip_nodes().begin(); it != policy.tip_nodes().end(); ++it ) {
-              const T &tip = *(*it)->belief()->belief();
 #ifdef DEBUG
+              const T &tip = *(*it)->belief()->belief();
               std::cout << Utils::blue() << "TIP=" << Utils::normal();
               tip.print(std::cout, &lw1_instance_);
               std::cout << std::endl;
 #endif
-              std::pair<typename t_map_t::iterator, bool> p = tip_map.emplace(*it, t_map_mapped_type_t());
-              assert(p.second);
-              if( !goal_feature_->holds(tip) ) {
-                  // CHECK: not sure which feature set to use here.
-                  //compute_extensions_for_features(tip, feature_language_, p.first->second);
-                  compute_extensions_for_features(tip, p.first->second);
-              } else {
-                  // tip node is goal. Use noop and mark all features involving goal
-                  std::cout << "*******************************" << std::endl;
-                  p.first->second.second.insert(std::make_pair(goal_feature_, std::set<int>()));
-                  for( size_t k = 0; k < disjunctive_features_involving_goal_feature_.size(); ++k ) {
-                      const Feature<T> &feature = *disjunctive_features_involving_goal_feature_[k];
-                      p.first->second.second.insert(std::make_pair(&feature, std::set<int>()));
-                  }
-              }
+              compute_extensions_for_tip(*it, tip_map);
           }
 
           // calculate features reached along every branch (tip node)
-          std::cout << "XXX.0: #=" << tip_map.size() << std::endl;
+          //std::cout << "XXX.0: #=" << tip_map.size() << std::endl;
           std::set<const Feature<T>*> features_reached_by_all_branches;
           for( typename std::map<const Feature<T>*, std::set<int> >::const_iterator jt = tip_map.begin()->second.second.begin(); jt != tip_map.begin()->second.second.end(); ++jt ) {
               assert(is_feature_available(*jt->first));
               features_reached_by_all_branches.insert(jt->first);
           }
-          std::cout << "XXX.1: #features-reached-by-all-branches=" << features_reached_by_all_branches.size() << std::endl;
+          //std::cout << "XXX.1: #features-reached-by-all-branches=" << features_reached_by_all_branches.size() << std::endl;
 
           for( typename std::set<const Feature<T>*>::iterator jt = features_reached_by_all_branches.begin(); jt != features_reached_by_all_branches.end(); ) {
               const Feature<T> &feature = **jt;
@@ -467,7 +545,9 @@ namespace Width {
 
               std::vector<int> fp;
               const AndOr::Policy<T> *new_policy = extend_policy_for_feature(policy, feature, tip_map, fp);
-              if( true ) { // CHECK footprints.find(fp) == footprints.end() ) {
+              assert(is_feature_valid(*new_policy, feature));
+
+              if( true ) { // CHECK footprints.find(fp) == footprints.end() )
 #ifdef DEBUG
                   std::cout << "new fp=[";
                   for( size_t k = 0; k < fp.size(); ++k ) {
@@ -486,7 +566,7 @@ namespace Width {
 #endif
   
                   FeatureSet<T> *new_features = new FeatureSet<T>;
-                  compute_achieved_features(*new_policy, *new_features); // CHECK: feature set
+                  compute_achieved_features(*new_policy, feature_language_, *new_features); // CHECK: feature set
                   int new_policy_cost = 1 + policy_cost; // CHECK
                   bool is_goal = new_features->find(goal_feature_) != new_features->end();
                   Node<T> *new_node = new Node<T>(new_policy, new_features, new_policy_cost, is_goal);
@@ -503,96 +583,63 @@ namespace Width {
                             << ", #features=" << new_features->size()
                             << ", cost=" << new_policy_cost
                             << Utils::normal() << std::endl;
+                  //std::cout << *new_features << std::endl;
 #endif
               } else {
                       // CHECK: need to free new_policy
               }
           }
-
-
-#if 0
-          std::set<std::vector<int> > footprints;
-          for( size_t k = 0; k < feature_language_.size(); ++k ) {
-              const Feature<T> &feature = *feature_language_[k];
-              if( !is_feature_available(feature) ) continue;
-              if( achieved_features.find(&feature) != achieved_features.end() ) continue;
-              std::cout << "trying feature " << k << " of " << feature_language_.size() << ": " << feature << std::endl;
-
-              // check whether there is an extension for this feature
-              bool is_feature_valid = true;
-              for( typename t_map_t::const_iterator jt = tip_map.begin(); jt != tip_map.end(); ++jt ) {
-                  if( jt->second.second.find(&feature) == jt->second.second.end() ) {
-                      is_feature_valid = false;
-                      break;
-                  }
-              }
-
-              // create a successor policy for this feature
-              if( is_feature_valid ) {
-                  std::vector<int> fp;
-                  const AndOr::Policy<T> *new_policy = extend_policy_for_feature(policy, feature, tip_map, fp);
-                  if( footprints.find(fp) == footprints.end() ) {
-#ifdef DEBUG
-                      std::cout << "new fp=[";
-                      for( size_t k = 0; k < fp.size(); ++k ) {
-                          int action_index = fp[k];
-                          std::cout << action_index << ".";
-                          if( action_index != -1 ) {
-                              assert(action_index >= 0);
-                              const Instance::Action &action = *lw1_instance_.actions_[action_index];
-                              std::cout << action.name_;
-                          } else {
-                              std::cout << "NOOP";
-                          }
-                          if( 1 + k < fp.size() ) std::cout << " ";
-                      }
-                      std::cout << "]" << std::endl;
-#endif
-  
-                      footprints.insert(fp);
-                      FeatureSet<T> *new_features = new FeatureSet<T>;
-                      compute_achieved_features(*new_policy, *new_features); // CHECK: feature set
-                      //int new_policy_cost = cost(*new_policy); // CHECK
-                      int new_policy_cost = 1 + policy_cost; // CHECK
-                      bool is_goal = new_features->find(goal_feature_) != new_features->end();
-                      Node<T> *new_node = new Node<T>(new_policy, new_features, new_policy_cost, is_goal);
-                      successors.push_back(new_node);
-
-                      // register new achieved features
-                      achieved_features.insert(new_features->begin(), new_features->end());
-
-#ifdef DEBUG
-                      std::cout << Utils::red()
-                                << "SUCCESSOR: n=" << new_node
-                                << ", feature=" << feature
-                                << ", #tips=" << new_policy->tip_nodes().size()
-                                << ", #features=" << new_features->size()
-                                << ", cost=" << new_policy_cost
-                                << Utils::normal() << std::endl;
-#endif
-                  } else {
-                      // CHECK: need to free new_policy
-                  }
-              }
-          }
-#endif
           std::cout << "#achieved-features=" << achieved_features.size() << std::endl;
           std::cout << "#successors=" << successors.size() << std::endl;
       }
 
-      void compute_extensions_for_features(const T &tip,
-                                           //const FeatureSet<T> &features,
-                                           t_map_mapped_type_t &maps) const {
+      void compute_extensions_for_tip(const AndOr::OrNode<T> *tip_ptr, t_map_t &tip_map) const {
+          const T &tip = *tip_ptr->belief()->belief();
+          std::pair<typename t_map_t::iterator, bool> p = tip_map.emplace(tip_ptr, t_map_mapped_type_t());
+          assert(p.second);
+          if( !is_feature_valid(tip, *goal_feature_) ) {
+              compute_extensions_for_tip(tip, p.first->second);
+          } else {
+              // tip node is goal. Use noop and mark all features involving goal
+              std::cout << "*******************************" << std::endl;
+              assert(is_feature_available(*goal_feature_));
+              p.first->second.second.insert(std::make_pair(goal_feature_, noop_singleton_));
+              for( size_t k = 0; k < disjunctive_features_involving_goal_feature_.size(); ++k ) {
+                  const Feature<T> &feature = *disjunctive_features_involving_goal_feature_[k];
+                  if( is_feature_available(feature) )
+                      p.first->second.second.insert(std::make_pair(&feature, noop_singleton_));
+              }
+          }
+      }
+
+      void compute_extensions_for_tip(const T &tip, t_map_mapped_type_t &maps) const {
 #ifdef DEBUG
-          std::cout << Utils::magenta() << "API::compute_extensions_for_features():" << Utils::normal()
+          std::cout << Utils::magenta() << "API::compute_extensions_for_tip():" << Utils::normal()
                                         << " tip=" << &tip
                                         << std::endl;
 #endif
-          assert(!goal_feature_->holds(tip));
-          for( size_t k = 0; k < lw1_instance_.actions_.size(); ++k ) {
-              if( (lw1_instance_.remap_action(k) == -1) && !lw1_instance_.is_subgoaling_rule(k) ) continue;
-              const Instance::Action &action = *lw1_instance_.actions_[k];
-              assert(lw1_instance_.is_regular_action(k));
+          assert(!is_feature_valid(tip, *goal_feature_));
+
+          // compute available features reached with noop action (index = -1)
+          for( typename std::vector<const Feature<T>*>::const_iterator it = feature_language_.begin(); it != feature_language_.end(); ++it ) {
+              const Feature<T> &feature = **it;
+              if( !is_feature_available(feature) ) continue;
+              if( is_feature_valid(tip, feature) ) {
+                  maps.second.emplace(&feature, noop_singleton_);
+#ifdef DEBUG
+                  //std::cout << Utils::red()
+                  //          << "feature '" << feature << "'"
+                  //          << " holds after action NOOP"
+                  //          << Utils::normal() << std::endl;
+#endif
+              }
+          }
+
+          // for each action, compute available features reached with action
+          for( size_t action_index = 0; action_index < lw1_instance_.actions_.size(); ++action_index ) {
+              if( (lw1_instance_.remap_action(action_index) == -1) && !lw1_instance_.is_subgoaling_rule(action_index) ) continue;
+              const Instance::Action &action = *lw1_instance_.actions_[action_index];
+              assert(lw1_instance_.is_regular_action(action_index));
               if( tip.applicable(action) ) {
                   std::cout << Utils::green() << "action=" << Utils::normal() << action.name_ << std::endl;
 
@@ -632,12 +679,18 @@ namespace Width {
                           if( status ) {
                               valid_successors.push_back(result_after_action_and_obs);
 #ifdef DEBUG
-                              //std::cout << Utils::blue() << "RESULT(a=" << action.name_
-                              //          << ",o=obs[" << j << "])=" << Utils::normal();
-                              //result_after_action_and_obs->print(std::cout, &lw1_instance_);
-                              //std::cout << std::endl;
+                              std::cout << Utils::blue() << "RESULT(a=" << action.name_
+                                        << ",o=obs[" << j << "])=" << Utils::normal();
+                              result_after_action_and_obs->print(std::cout, &lw1_instance_);
+                              std::cout << std::endl;
 #endif
                           } else {
+#ifdef DEBUG
+                              std::cout << Utils::blue() << "INCONSISTENT(a=" << action.name_
+                                        << ",o=obs[" << j << "])=" << Utils::normal();
+                              result_after_action_and_obs->print(std::cout, &lw1_instance_);
+                              std::cout << std::endl;
+#endif
                               delete result_after_action_and_obs;
                           }
                       }
@@ -648,7 +701,7 @@ namespace Width {
                       valid_successors.push_back(new T(*result_after_action));
                   }
 #ifdef DEBUG
-                  //std::cout << Utils::green() << "#valid-successors=" << valid_successors.size() << Utils::normal() << std::endl;
+                  std::cout << Utils::green() << "#valid-successors=" << valid_successors.size() << Utils::normal() << std::endl;
 #endif
                   assert(!valid_successors.empty());
 
@@ -658,18 +711,18 @@ namespace Width {
                       const Feature<T> &feature = **it;
                       if( !is_feature_available(feature) ) continue;
 
-                      bool is_feature_valid = true;
+                      bool is_valid = true;
                       for( size_t j = 0; j < valid_successors.size(); ++j ) {
                           const T &successor = *valid_successors[j];
-                          if( !feature.holds(successor) ) {
-                              is_feature_valid = false;
+                          if( !is_feature_valid(successor, feature) ) {
+                              is_valid = false;
                               break;
                           }
                       }
-                      if( is_feature_valid ) {
+                      if( is_valid ) {
                           action_achieves_some_feature = true;
                           maps.second.emplace(&feature, std::set<int>());
-                          maps.second[&feature].insert(k);
+                          maps.second[&feature].insert(action_index);
 #ifdef DEBUG
                           //std::cout << Utils::red()
                           //          << "feature '" << feature << "'"
@@ -681,8 +734,8 @@ namespace Width {
 
                   if( action_achieves_some_feature ) {
                       // update and_node_map
-                      AndOr::AndNode<T> *and_node = AndOr::create_and_node(&action, result_after_action, valid_successors);
-                      maps.first.insert(std::make_pair(k, and_node));
+                      AndOr::AndNode<T> *and_node = AndOr::create_and_node(action_index, result_after_action, valid_successors);
+                      maps.first.insert(std::make_pair(action_index, and_node));
                   } else {
                       // delete result after action and all valid successors
                       delete result_after_action;
@@ -812,29 +865,27 @@ namespace Width {
               const AndOr::OrNode<T> *tip = *it;
               const t_map_mapped_type_t &maps = tip_map.at(tip);
               const std::set<int> &actions_for_feature = maps.second.at(&feature);
-              if( actions_for_feature.empty() ) {
-                  assert(goal_feature_->holds(*tip->belief()->belief()));
+              assert(!actions_for_feature.empty());
+              int action = *actions_for_feature.begin();
+              fp.push_back(action);
+              if( action == -1 ) {
+                  // this is the noop action, keep this tip in new policy
                   new_policy->add_tip(tip);
-                  fp.push_back(-1);
               } else {
-                  assert(!actions_for_feature.empty());
-                  int action = *actions_for_feature.begin();
                   AndOr::AndNode<T> *and_node = maps.first.at(action);
                   assert(and_node != 0);
-                  fp.push_back(action);
 
                   // link and-node to (old) policy and create tips for new policy
                   and_node->set_parent(tip);
-                  for( size_t j = 0; j < and_node->children().size(); ++j )
-                      new_policy->add_tip(and_node->children()[j]);
-#if 0 // CHECK
                   for( size_t j = 0; j < and_node->children().size(); ++j ) {
                       const AndOr::OrNode<T> *new_tip = and_node->child(j);
+                      new_policy->add_tip(new_tip);
+#if 0 // CHECK
                       std::cout << "NEW-TIP=";
                       new_tip->belief()->belief()->print(std::cout, &lw1_instance_);
                       std::cout << std::endl;
-                  }
 #endif
+                  }
               }
           }
           return new_policy;
@@ -856,7 +907,7 @@ namespace Width {
       //std::cout << Utils::magenta() << "THIS IS A TEST: " << Utils::normal() << *root << std::endl;
       //AndOr::Node<T>::deallocate(root);
 
-      API<T> api(lw1_instance_, inference_engine_, goal_feature_, feature_language_, disjunctive_features_involving_goal_feature_, true); // CHECK: testing: turn off pruning
+      API<T> api(lw1_instance_, inference_engine_, goal_feature_, feature_language_, feature_language_ext_, disjunctive_features_involving_goal_feature_, true); // CHECK: testing: turn off pruning
       AndOr::Search::bfs<T> bfs(lw1_instance_, api);
       bfs.search(state);
 
