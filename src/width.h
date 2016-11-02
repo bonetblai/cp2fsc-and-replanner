@@ -234,8 +234,12 @@ namespace Width {
           std::cout << Utils::green() << "#features-ext=" << feature_language_ext_.size() << Utils::normal() << std::endl;
       }
       virtual ~ActionSelection() {
+          for( size_t k = feature_language_.size(); k < feature_language_ext_.size(); ++k )
+              delete feature_language_ext_[k];
+          feature_language_ext_.clear();
           for( size_t k = 0; k < feature_language_.size(); ++k )
               delete feature_language_[k];
+          feature_language_.clear();
       }
 
       virtual const char* name() const { return "width-based-action-selection"; }
@@ -338,8 +342,10 @@ namespace Width {
           size_available_features_ext_bitmap_ = feature_language_ext_.size() >> 5;
           size_available_features_ext_bitmap_ += (feature_language_ext_.size() % 32) == 0 ? 0 : 1;
           available_features_ext_bitmap_ = new unsigned[size_available_features_ext_bitmap_];
+          assert(size_available_features_ext_bitmap_ >= size_available_features_bitmap_);
           noop_singleton_ = std::set<int>();
           noop_singleton_.insert(-1);
+          std::cout << "**********************API: size=" << size_available_features_ext_bitmap_ << std::endl;
       }
       virtual ~API() {
           delete[] available_features_bitmap_;
@@ -368,16 +374,18 @@ namespace Width {
       }
       void register_feature(const Feature<T> &feature) const {
           int index = feature.index() >> 5, offset = feature.index() % 32;
-          register_feature(index, offset);
+          if( index < feature_language_.size() )
+              register_feature(index, offset);
       }
 
 
       void reset_bitmap_for_available_features_ext() const {
+          std::cout << "RESET: sz=" << size_available_features_ext_bitmap_ << std::endl;
           memset(available_features_ext_bitmap_, 255, size_available_features_ext_bitmap_ * sizeof(unsigned));
           num_available_features_ext_ = feature_language_ext_.size();
       }
       bool is_feature_available_ext(int index, int offset) const {
-          assert((index >= 0) && (index < feature_language_.size()));
+          assert((index >= 0) && (index < feature_language_ext_.size()));
           assert((offset >= 0) && (offset < 32));
           return (available_features_ext_bitmap_[index] & (1 << offset)) != 0;
       }
@@ -386,7 +394,7 @@ namespace Width {
           return is_feature_available_ext(index, offset);
       }
       void register_feature_ext(int index, int offset) const {
-          assert((index >= 0) && (index < feature_language_.size()));
+          assert((index >= 0) && (index < feature_language_ext_.size()));
           assert((offset >= 0) && (offset < 32));
           if( is_feature_available_ext(index, offset) )
               --num_available_features_ext_;
@@ -410,6 +418,7 @@ namespace Width {
       }
       void compute_achieved_features(const AndOr::Policy<T> &policy,
                                      const std::vector<const Feature<T>*> &feature_language,
+                                     bool (API::*is_feature_available)(const Feature<T> &feature) const,
                                      FeatureSet<T> &achieved,
                                      bool verbose = false) const {
 #ifdef DEBUG
@@ -421,7 +430,7 @@ namespace Width {
           achieved.clear();
           for( size_t k = 0; k < feature_language.size(); ++k ) {
               const Feature<T> &feature = *feature_language[k];
-              if( !is_feature_available(feature) ) continue;
+              if( !(this->*is_feature_available)(feature) ) continue;
               if( is_feature_valid(policy, feature, verbose) ) {
 #ifdef DEBUG
                   //std::cout << Utils::green() << "valid feature '" << feature << "'" << Utils::normal() << std::endl;
@@ -439,12 +448,14 @@ namespace Width {
       }
 
       virtual void reset() const {
-          reset_bitmap_for_available_features();
+          reset_bitmap_for_available_features(); // CHECK: ext
+          //reset_bitmap_for_available_features_ext(); // CHECK: ext
       }
       virtual Node<T>* make_root_node(const T *state) const {
           AndOr::Policy<T> *policy = new AndOr::Policy<T>(belief_repo_, state);
           FeatureSet<T> *features = new FeatureSet<T>;
-          compute_achieved_features(*policy, feature_language_, *features);
+          compute_achieved_features(*policy, feature_language_, &API::is_feature_available, *features); // CHECK: ext
+          //compute_achieved_features(*policy, feature_language_ext_, &API::is_feature_available_ext, *features); // CHECK: ext
           int policy_cost = cost(*policy);
           bool is_goal = features->find(goal_feature_) != features->end();
           return new Node<T>(policy, features, policy_cost, is_goal);
@@ -454,7 +465,7 @@ namespace Width {
               const Node<T> &node = static_cast<const Node<T>&>(n);
               if( node.features() != 0 ) {
                   for( typename FeatureSet<T>::const_iterator it = node.features()->begin(); it != node.features()->end(); ++it ) {
-                      if( is_feature_available(**it) )
+                      if( is_feature_available(**it) ) // CHECK: ext
                           return false;
                   }
               }
@@ -471,11 +482,6 @@ namespace Width {
       virtual bool is_goal(const AndOr::Search::Node &n) const {
           const Node<T> &node = static_cast<const Node<T>&>(n);
           return node.is_goal();
-          //return (node.features()->size() == 1) && (*node.features()->begin() == goal_feature_);
-#if 0
-          assert(node.policy() != 0);
-          return is_goal(*node.policy());
-#endif
       }
       virtual void expand(const AndOr::Search::Node &n, std::vector<const AndOr::Search::Node*> &successors) const {
           const Node<T> &node = static_cast<const Node<T>&>(n);
@@ -488,7 +494,7 @@ namespace Width {
                     << " node=" << n
                     << ", #tips=" << policy.tip_nodes().size()
                     << ", cost=" << policy_cost;
-#if 0
+#if 0 // CHECK
                     << ", features={";
           for( typename FeatureSet<T>::const_iterator it = features.begin(); it != features.end(); ++it )
               std::cout << **it << ",";
@@ -497,9 +503,12 @@ namespace Width {
           std::cout << std::endl;
 
           // register node's features as reached features
-          for( typename FeatureSet<T>::const_iterator it = features.begin(); it != features.end(); ++it )
-              register_feature(**it);
+          for( typename FeatureSet<T>::const_iterator it = features.begin(); it != features.end(); ++it ) {
+              register_feature(**it); // CHECK: ext
+              //register_feature_ext(**it); // CHECK: ext
+          }
           std::cout << Utils::green() << "#available-features=" << num_available_features_ << Utils::normal() << std::endl;
+          std::cout << Utils::green() << "#available-features-ext=" << num_available_features_ext_ << Utils::normal() << std::endl;
 
           // generate tip extensions for available features
           t_map_t tip_map;
@@ -566,7 +575,8 @@ namespace Width {
 #endif
   
                   FeatureSet<T> *new_features = new FeatureSet<T>;
-                  compute_achieved_features(*new_policy, feature_language_, *new_features); // CHECK: feature set
+                  compute_achieved_features(*new_policy, feature_language_ext_, &API::is_feature_available_ext, *new_features); // CHECK: ext
+                  //compute_achieved_features(*new_policy, feature_language_, &API::is_feature_available, *new_features); // CHECK: ext
                   int new_policy_cost = 1 + policy_cost; // CHECK
                   bool is_goal = new_features->find(goal_feature_) != new_features->end();
                   Node<T> *new_node = new Node<T>(new_policy, new_features, new_policy_cost, is_goal);
@@ -907,7 +917,8 @@ namespace Width {
       //std::cout << Utils::magenta() << "THIS IS A TEST: " << Utils::normal() << *root << std::endl;
       //AndOr::Node<T>::deallocate(root);
 
-      API<T> api(lw1_instance_, inference_engine_, goal_feature_, feature_language_, feature_language_ext_, disjunctive_features_involving_goal_feature_, true); // CHECK: testing: turn off pruning
+      // CHECK: testing: turn off pruning
+      API<T> api(lw1_instance_, inference_engine_, goal_feature_, feature_language_, feature_language_ext_, disjunctive_features_involving_goal_feature_, true);
       AndOr::Search::bfs<T> bfs(lw1_instance_, api);
       bfs.search(state);
 
