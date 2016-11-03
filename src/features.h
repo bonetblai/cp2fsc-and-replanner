@@ -306,16 +306,19 @@ namespace Width {
   class DomainSizeFeature : public Feature<T> {
     protected:
       const LW1_Instance &lw1_instance_;
+      const int test_type_;
       const int var_index_;
       const int size_;
 
-    public:
-      DomainSizeFeature(int index, const LW1_Instance &lw1_instance, int var_index, int size)
+      DomainSizeFeature(int index, const LW1_Instance &lw1_instance, int test_type, int var_index, int size)
         : Feature<T>(index),
           lw1_instance_(lw1_instance),
+          test_type_(test_type),
           var_index_(var_index),
           size_(size) {
       }
+
+    public:
       virtual ~DomainSizeFeature() { }
 
       const LW1_Instance& lw1_instance() const {
@@ -328,32 +331,43 @@ namespace Width {
           return size_;
       }
 
-      virtual bool holds(const T &state, bool verbose = false) const {
+      int num_possible_values(const T &state, bool verbose = false) const {
           const LW1_Instance::Variable &var = *lw1_instance_.variables_[var_index_];
-          int values = var.is_binary() ? 2 : var.domain().size();
+          int num_values = var.is_binary() ? 2 : var.domain().size();
           if( var.is_binary() ) {
               int atom_index = *var.domain().begin();
               if( state.satisfy(2*atom_index, false) )
-                  --values;
+                  --num_values;
               if( state.satisfy(2*atom_index + 1, false) )
-                  --values;
+                  --num_values;
           } else {
               for( set<int>::const_iterator it = var.domain().begin(); it != var.domain().end(); ++it ) {
                   int literal = 1 + 2*(*it) + 1;
                   if( state.satisfy(literal - 1, false) )
-                      --values;
+                      --num_values;
 #ifdef DEBUG
                   std::cout << "checking "; State::print_literal(std::cout, literal, &lw1_instance_);
                   std::cout << " --> " << state.satisfy(literal - 1, false) << std::endl;
 #endif
               }
 #ifdef DEBUG
-              std::cout << "status for " << *this << " = " << (size_ == values) << std::endl;
+              std::cout << "value for " << var << " = " << num_values << std::endl;
 #endif
           }
-          if( verbose )
-              std::cout << *this << " --> " << (size_ == values) << std::endl;
-          return size_ == values;
+          return num_values;
+      }
+      virtual bool holds(const T &state, bool verbose = false) const {
+          int num_values = num_possible_values(state, verbose);
+          if( test_type_ == 0 ) { // equality
+              return num_values == size_;
+          } else if( test_type_ == 1 ) { // less than or equal
+              return num_values <= size_;
+          } else if( test_type_ == 2 ) { // greater than or equal
+              return num_values >= size_;
+          } else {
+              std::cout << Utils::internal_error() << "unexpected test type in DomainSizeLiteral" << std::endl;
+              exit(255);
+          }
       }
       virtual bool holds(const AndOr::Policy<T> &policy, const T &tip, bool verbose = false) const {
           // feature can't decompose into simpler features
@@ -379,8 +393,36 @@ namespace Width {
           str += std::to_string(this->index());
           str += ",type=dsz,var=" + lw1_instance_.variables_[var_index_]->name();
           str += ",size=" + std::to_string(size_);
+          str += ",test=" + std::to_string(test_type_);
           return str + "]";
       }
+  };
+
+  template<typename T>
+  class DomainSizeFeatureEQ : public DomainSizeFeature<T> {
+    public:
+      DomainSizeFeatureEQ(int index, const LW1_Instance &lw1_instance, int var_index, int size)
+        : DomainSizeFeature<T>(index, lw1_instance, 0, var_index, size) {
+      }
+      virtual ~DomainSizeFeatureEQ() { }
+  };
+
+  template<typename T>
+  class DomainSizeFeatureLE : public DomainSizeFeature<T> {
+    public:
+      DomainSizeFeatureLE(int index, const LW1_Instance &lw1_instance, int var_index, int size)
+        : DomainSizeFeature<T>(index, lw1_instance, 1, var_index, size) {
+      }
+      virtual ~DomainSizeFeatureLE() { }
+  };
+
+  template<typename T>
+  class DomainSizeFeatureGE : public DomainSizeFeature<T> {
+    public:
+      DomainSizeFeatureGE(int index, const LW1_Instance &lw1_instance, int var_index, int size)
+        : DomainSizeFeature<T>(index, lw1_instance, 2, var_index, size) {
+      }
+      virtual ~DomainSizeFeatureGE() { }
   };
 
   template<typename T>
