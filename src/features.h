@@ -62,7 +62,7 @@ namespace Width {
       // comparison for feature pointers
       struct ptr_compare_t {
           bool operator()(const Feature<T> *f1, const Feature<T> *f2) const {
-              return f1->to_string() < f2->to_string();
+              return f1->index_ < f2->index_;
           }
       };
   };
@@ -77,6 +77,7 @@ namespace Width {
       FeatureSet(const std::set<const Feature<T>*, typename Feature<T>::ptr_compare_t> &features)
         : std::set<const Feature<T>*, typename Feature<T>::ptr_compare_t>(features) {
       }
+      ~FeatureSet() { }
       void print(std::ostream &os) const {
           for( typename base_class_t::const_iterator it = base_class_t::begin(); it != base_class_t::end(); ++it )
               os << **it << std::endl;
@@ -99,6 +100,7 @@ namespace Width {
       }
 
       virtual bool holds(const T &state, bool verbose = false) const {
+          std::cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << std::endl;
           assert(0);
       }
       virtual bool holds(const AndOr::Policy<T> &policy, const T &tip, bool verbose = false) const {
@@ -172,6 +174,7 @@ namespace Width {
           return disjuncts_.size();
       }
       const Feature<T>& disjunct(int i) const {
+          assert((i >= 0) && (i < disjuncts_.size()));
           return *disjuncts_[i];
       }
       const std::vector<const Feature<T>*>& disjuncts() const {
@@ -239,6 +242,7 @@ namespace Width {
           return conjuncts_.size();
       }
       const Feature<T>& conjunct(int i) const {
+          assert((i >= 0) && (i < conjuncts_.size()));
           return *conjuncts_[i];
       }
       const std::vector<const Feature<T>*>& conjuncts() const {
@@ -314,6 +318,9 @@ namespace Width {
       }
       virtual ~DomainSizeFeature() { }
 
+      const LW1_Instance& lw1_instance() const {
+          return lw1_instance_;
+      }
       int var_index() const {
           return var_index_;
       }
@@ -392,6 +399,9 @@ namespace Width {
       }
       virtual ~LiteralFeature() { }
 
+      const LW1_Instance& lw1_instance() const {
+          return lw1_instance_;
+      }
       int var_index() const {
           return var_index_;
       }
@@ -452,6 +462,9 @@ namespace Width {
       }
       virtual ~GoalFeature() { }
 
+      const LW1_Instance& lw1_instance() const {
+          return lw1_instance_;
+      }
       const std::vector<int>& goal_literals() const {
           return goal_literals_;
       }
