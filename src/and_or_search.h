@@ -64,6 +64,7 @@ namespace AndOr {
 
             priority_queue q;
             q.push(api_.make_root_node(&init));
+            size_t num_expansions = 0;
             while( !q.empty() ) {
                 const Node *n = q.top();
                 assert(n != 0);
@@ -74,7 +75,8 @@ namespace AndOr {
                 } else if( api_.is_goal(*n) ) {
 #ifdef DEBUG
                     std::cout << Utils::green() << "END-SEARCH:" << Utils::normal()
-                              << " goal found!"
+                              << " goal found after " << std::to_string(num_expansions)
+                              << " expansion(s)!"
                               << std::endl;
 #endif
                     return n; // CHECK: should clear memory in use
@@ -82,13 +84,15 @@ namespace AndOr {
                     // expand node
                     std::vector<const Node*> successors;
                     api_.expand(*n, successors);
+                    ++num_expansions;
                     for( size_t i = 0; i < successors.size(); ++i )
                         q.push(successors[i]);
                 }
             }
 #ifdef DEBUG
             std::cout << Utils::green() << "END-SEARCH:" << Utils::normal()
-                      << " queue exhausted!"
+                      << " queue exhausted after " << std::to_string(num_expansions)
+                      << " expansion(s)!"
                       << std::endl;
 #endif
             return 0; // CHECK: should clear memory in use
