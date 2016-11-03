@@ -174,6 +174,7 @@ namespace Width {
           std::cout << Utils::green() << "#features=" << feature_language_.size() << Utils::normal() << std::endl;
 
           feature_language_ext_ = feature_language_;
+#if 0
           std::map<const Feature<T>*, const BoxFeature<T>*> box_map;
           std::map<const Feature<T>*, const NotFeature<T>*> not_box_map;
           for( size_t k = 0; k < disjunctive_features_.size(); ++k ) {
@@ -183,7 +184,7 @@ namespace Width {
               const Feature<T> &f2 = or_feature.disjunct(1);
 
               int feature_index = feature_language_ext_.size();
-              BoxFeature<T> *box_feature = new BoxFeature<T>(feature_index + 0, or_feature);
+              BoxFeature<T> *box_feature = new BoxFeature<T>(feature_index, or_feature);
               feature_language_ext_.push_back(box_feature);
 
               const BoxFeature<T> *box_f1 = 0;
@@ -195,6 +196,7 @@ namespace Width {
                   feature_language_ext_.push_back(box_f1);
                   box_map.insert(std::make_pair(&f1, box_f1));
               }
+
               const NotFeature<T> *not_box_f1 = 0;
               if( not_box_map.find(box_f1) != not_box_map.end() ) {
                   not_box_f1 = not_box_map.at(box_f1);
@@ -214,6 +216,7 @@ namespace Width {
                   feature_language_ext_.push_back(box_f2);
                   box_map.insert(std::make_pair(&f2, box_f2));
               }
+
               const NotFeature<T> *not_box_f2 = 0;
               if( not_box_map.find(box_f2) != not_box_map.end() ) {
                   not_box_f2 = not_box_map.at(box_f2);
@@ -232,6 +235,7 @@ namespace Width {
               feature_language_ext_.push_back(and_feature);
           }
           std::cout << Utils::green() << "#features-ext=" << feature_language_ext_.size() << Utils::normal() << std::endl;
+#endif
       }
       virtual ~ActionSelection() {
           for( size_t k = feature_language_.size(); k < feature_language_ext_.size(); ++k )
@@ -345,7 +349,6 @@ namespace Width {
           assert(size_available_features_ext_bitmap_ >= size_available_features_bitmap_);
           noop_singleton_ = std::set<int>();
           noop_singleton_.insert(-1);
-          std::cout << "**********************API: size=" << size_available_features_ext_bitmap_ << std::endl;
       }
       virtual ~API() {
           delete[] available_features_bitmap_;
@@ -357,7 +360,7 @@ namespace Width {
           num_available_features_ = feature_language_.size();
       }
       bool is_feature_available(int index, int offset) const {
-          assert((index >= 0) && (index < feature_language_.size()));
+          assert((index >= 0) && (index < size_available_features_bitmap_));
           assert((offset >= 0) && (offset < 32));
           return (available_features_bitmap_[index] & (1 << offset)) != 0;
       }
@@ -366,26 +369,26 @@ namespace Width {
           return is_feature_available(index, offset);
       }
       void register_feature(int index, int offset) const {
-          assert((index >= 0) && (index < feature_language_.size()));
+          assert((index >= 0) && (index < size_available_features_bitmap_));
           assert((offset >= 0) && (offset < 32));
           if( is_feature_available(index, offset) )
               --num_available_features_;
           available_features_bitmap_[index] = available_features_bitmap_[index] & ~(1 << offset);
       }
       void register_feature(const Feature<T> &feature) const {
-          int index = feature.index() >> 5, offset = feature.index() % 32;
-          if( index < feature_language_.size() )
+          if( feature.index() < feature_language_.size() ) {
+              int index = feature.index() >> 5, offset = feature.index() % 32;
               register_feature(index, offset);
+          }
       }
 
 
       void reset_bitmap_for_available_features_ext() const {
-          std::cout << "RESET: sz=" << size_available_features_ext_bitmap_ << std::endl;
           memset(available_features_ext_bitmap_, 255, size_available_features_ext_bitmap_ * sizeof(unsigned));
           num_available_features_ext_ = feature_language_ext_.size();
       }
       bool is_feature_available_ext(int index, int offset) const {
-          assert((index >= 0) && (index < feature_language_ext_.size()));
+          assert((index >= 0) && (index < size_available_features_ext_bitmap_));
           assert((offset >= 0) && (offset < 32));
           return (available_features_ext_bitmap_[index] & (1 << offset)) != 0;
       }
@@ -394,7 +397,7 @@ namespace Width {
           return is_feature_available_ext(index, offset);
       }
       void register_feature_ext(int index, int offset) const {
-          assert((index >= 0) && (index < feature_language_ext_.size()));
+          assert((index >= 0) && (index < size_available_features_ext_bitmap_));
           assert((offset >= 0) && (offset < 32));
           if( is_feature_available_ext(index, offset) )
               --num_available_features_ext_;
@@ -449,13 +452,13 @@ namespace Width {
 
       virtual void reset() const {
           reset_bitmap_for_available_features(); // CHECK: ext
-          //reset_bitmap_for_available_features_ext(); // CHECK: ext
+          reset_bitmap_for_available_features_ext(); // CHECK: ext
       }
       virtual Node<T>* make_root_node(const T *state) const {
           AndOr::Policy<T> *policy = new AndOr::Policy<T>(belief_repo_, state);
           FeatureSet<T> *features = new FeatureSet<T>;
-          compute_achieved_features(*policy, feature_language_, &API::is_feature_available, *features); // CHECK: ext
-          //compute_achieved_features(*policy, feature_language_ext_, &API::is_feature_available_ext, *features); // CHECK: ext
+          //compute_achieved_features(*policy, feature_language_, &API::is_feature_available, *features); // CHECK: ext
+          compute_achieved_features(*policy, feature_language_ext_, &API::is_feature_available_ext, *features); // CHECK: ext
           int policy_cost = cost(*policy);
           bool is_goal = features->find(goal_feature_) != features->end();
           return new Node<T>(policy, features, policy_cost, is_goal);
@@ -465,7 +468,7 @@ namespace Width {
               const Node<T> &node = static_cast<const Node<T>&>(n);
               if( node.features() != 0 ) {
                   for( typename FeatureSet<T>::const_iterator it = node.features()->begin(); it != node.features()->end(); ++it ) {
-                      if( is_feature_available(**it) ) // CHECK: ext
+                      if( is_feature_available_ext(**it) ) // CHECK: ext
                           return false;
                   }
               }
@@ -504,8 +507,9 @@ namespace Width {
 
           // register node's features as reached features
           for( typename FeatureSet<T>::const_iterator it = features.begin(); it != features.end(); ++it ) {
+              assert(*it != 0);
               register_feature(**it); // CHECK: ext
-              //register_feature_ext(**it); // CHECK: ext
+              register_feature_ext(**it); // CHECK: ext
           }
           std::cout << Utils::green() << "#available-features=" << num_available_features_ << Utils::normal() << std::endl;
           std::cout << Utils::green() << "#available-features-ext=" << num_available_features_ext_ << Utils::normal() << std::endl;
@@ -523,13 +527,11 @@ namespace Width {
           }
 
           // calculate features reached along every branch (tip node)
-          //std::cout << "XXX.0: #=" << tip_map.size() << std::endl;
           std::set<const Feature<T>*> features_reached_by_all_branches;
           for( typename std::map<const Feature<T>*, std::set<int> >::const_iterator jt = tip_map.begin()->second.second.begin(); jt != tip_map.begin()->second.second.end(); ++jt ) {
               assert(is_feature_available(*jt->first));
               features_reached_by_all_branches.insert(jt->first);
           }
-          //std::cout << "XXX.1: #features-reached-by-all-branches=" << features_reached_by_all_branches.size() << std::endl;
 
           for( typename std::set<const Feature<T>*>::iterator jt = features_reached_by_all_branches.begin(); jt != features_reached_by_all_branches.end(); ) {
               const Feature<T> &feature = **jt;
@@ -616,8 +618,9 @@ namespace Width {
               p.first->second.second.insert(std::make_pair(goal_feature_, noop_singleton_));
               for( size_t k = 0; k < disjunctive_features_involving_goal_feature_.size(); ++k ) {
                   const Feature<T> &feature = *disjunctive_features_involving_goal_feature_[k];
-                  if( is_feature_available(feature) )
+                  if( is_feature_available(feature) ) {
                       p.first->second.second.insert(std::make_pair(&feature, noop_singleton_));
+                  }
               }
           }
       }
