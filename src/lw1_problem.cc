@@ -570,10 +570,16 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                     cout << endl;
 #endif
                 } else if( dynamic_cast<const PDDL_Base::Constant*>(model.dnf_) != 0 ) {
+                    const PDDL_Base::Constant &constant = *static_cast<const PDDL_Base::Constant*>(model.dnf_);
 #ifdef DEBUG
-                    cout << "    dnf is constant: " << *model.dnf_ << endl;
+                    cout << "    dnf is constant: " << constant << endl;
 #endif
-                    // nothing to do. Obviate formula
+                    assert(constant.value_);
+
+                    // add trivial dnf/cnf formulas for true value
+                    vector<int> empty_k_term_or_k_clause;
+                    sensing_models_as_k_dnf_[action_key][var_key][value_key].push_back(empty_k_term_or_k_clause);
+                    sensing_models_as_k_cnf_[action_key][var_key][value_key].push_back(empty_k_term_or_k_clause);
                 } else {
                     cout << Utils::error() << "formula '" << *model.dnf_
                          << "' for model of '" << var_name << ":" << atom_name

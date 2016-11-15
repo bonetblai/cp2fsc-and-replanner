@@ -173,7 +173,9 @@ bool LW1_Solver::value_observable_literal(const STATE_CLASS &hidden,
     //cout << "XXXXXX.1" << endl;
 
     if( lw1.sensing_models_as_dnf_.find(action_key) == lw1.sensing_models_as_dnf_.end() ) {
-        cout << Utils::error() << "no sensing model for action '" << action_key << "'" << endl;
+        cout << Utils::warning() << "no sensing model for action '" << action_key << "'"
+             << ": assuming model is constant false!"
+             << endl;
         return false;
     }
     const map<int, map<int, vector<vector<int> > > > &sensing_models_for_action = lw1.sensing_models_as_dnf_.at(action_key);
