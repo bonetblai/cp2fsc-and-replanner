@@ -84,6 +84,7 @@ int main(int argc, const char *argv[]) {
     float       start_time = Utils::read_time_in_seconds();
     string      opt_planner_path = "";
     string      opt_tmpfile_path = "";
+    bool        need_classical_planner = true;
 
     // print cmdline
     cout << "cmdline: " << Utils::cmdline(argc, argv) << endl;
@@ -236,12 +237,21 @@ int main(int argc, const char *argv[]) {
     if( g_options.is_enabled("lw1:boost:literals-for-observables:dynamic") )
         g_options.enable("lw1:boost:literals-for-observables");
 
-    if( g_options.is_enabled("solver:random-action-selection") ) {
+    if( g_options.is_enabled("solver:naive-random-action-selection") ) {
+        need_classical_planner = false;
         g_options.disable("solver:classical-planner");
+        g_options.disable("solver:random-action-selection");
+        g_options.disable("solver:width-based-action-selection");
+    }
+    if( g_options.is_enabled("solver:random-action-selection") ) {
+        need_classical_planner = true;
+        g_options.disable("solver:naive-random-action-selection");
         g_options.disable("solver:width-based-action-selection");
     }
     if( g_options.is_enabled("solver:width-based-action-selection") ) {
+        need_classical_planner = false;
         g_options.disable("solver:classical-planner");
+        g_options.disable("solver:naive-random-action-selection");
         g_options.disable("solver:random-action-selection");
     }
 
@@ -323,7 +333,7 @@ int main(int argc, const char *argv[]) {
 
     // construct classical planner
     const ClassicalPlanner *planner = 0;
-    if( g_options.is_enabled("solver:classical-planner") ) {
+    if( need_classical_planner || g_options.is_enabled("solver:classical-planner") ) {
         if( opt_planner == "ff" ) {
             planner = new FF_Planner(*lw1_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
         } else if( opt_planner == "lama" ) {
@@ -355,8 +365,12 @@ int main(int argc, const char *argv[]) {
 
     // construct action selection
     ActionSelection<STATE_CLASS> *action_selection = 0;
-    if( g_options.is_enabled("solver:random-action-selection") ) {
-        action_selection = new RandomActionSelection<STATE_CLASS>(*lw1_instance);
+    if( g_options.is_enabled("solver:naive-random-action-selection") ) {
+        action_selection = new NaiveRandomActionSelection<STATE_CLASS>(*lw1_instance);
+    } else if( g_options.is_enabled("solver:random-action-selection") ) {
+        assert(planner != 0);
+        ActionSelection<STATE_CLASS> *alternate_action_selection = new ClassicalPlannerWrapper<STATE_CLASS>(*planner);
+        action_selection = new RandomActionSelection<STATE_CLASS>(*lw1_instance, alternate_action_selection);
     } else if( g_options.is_enabled("solver:width-based-action-selection") ) {
         action_selection = new Width::ActionSelection<STATE_CLASS>(*lw1_instance, *inference_engine);
     } else {

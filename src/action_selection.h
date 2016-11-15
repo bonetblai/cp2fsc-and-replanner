@@ -21,6 +21,7 @@
 
 #include <cassert>
 #include <iostream>
+#include <string>
 #include "problem.h"
 #include "kp_problem.h"
 #include "utils.h"
@@ -32,7 +33,7 @@ template<typename T> class ActionSelection {
 
     enum { SOLVED = 0, NO_SOLUTION = 1, ERROR = 2 };
 
-    virtual const char* name() const = 0;
+    virtual std::string name() const = 0;
     virtual float get_search_time() const = 0;
     virtual float get_time() const = 0;
     virtual size_t n_calls() const = 0;

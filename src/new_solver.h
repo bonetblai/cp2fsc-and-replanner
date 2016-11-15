@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "action_selection.h"
+#include "random_action_selection.h"
 #include "problem.h"
 #include "kp_problem.h"
 #include "utils.h"
@@ -176,10 +177,22 @@ int NewSolver<T>::solve(const T &initial_hidden_state,
                 return TIME;
             }
             assert(!plan.empty());
-            if( options_.is_enabled("solver:random-action-selection") )
-                assumptions.push_back(index_set());
-            else
+            if( options_.is_enabled("solver:naive-random-action-selection") || options_.is_enabled("solver:random-action-selection") ) {
+                // we need to diferentiate because calculate_relevant_assumptions()
+                // assumes the plan reaches the goal
+                if( options_.is_enabled("solver:naive-random-action-selection") ) {
+                    assumptions.push_back(index_set());
+                } else {
+                    assert(dynamic_cast<const RandomActionSelection<T>*>(&action_selection_) != 0);
+                    const RandomActionSelection<T> &random_action_selection = static_cast<const RandomActionSelection<T>&>(action_selection_);
+                    if( random_action_selection.used_alternate_selection() )
+                        calculate_relevant_assumptions(plan, raw_plan, state, goal_condition, assumptions);
+                    else
+                        assumptions.push_back(index_set());
+                }
+            } else {
                 calculate_relevant_assumptions(plan, raw_plan, state, goal_condition, assumptions);
+            }
         }
 
         // first assumption for reduced plan should be satisfied by current state.

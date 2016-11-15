@@ -326,7 +326,7 @@ namespace Width {
               delete feature_universe_[k];
       }
 
-      virtual const char* name() const { return "width-based-action-selection"; }
+      virtual std::string name() const { return std::string("width-based-action-selection"); }
       virtual float get_search_time() const { return total_search_time_; }
       virtual float get_time() const { return total_time_; }
       virtual size_t n_calls() const { return n_calls_; }

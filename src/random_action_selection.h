@@ -31,7 +31,8 @@
 //#define DEBUG
 
 template<typename T>
-class RandomActionSelection : public ::ActionSelection<T> {
+class NaiveRandomActionSelection : public ::ActionSelection<T> {
+  protected:
     const LW1_Instance &lw1_instance_;
 
     mutable float total_search_time_;
@@ -39,12 +40,12 @@ class RandomActionSelection : public ::ActionSelection<T> {
     mutable size_t n_calls_;
 
   public:
-    RandomActionSelection(const LW1_Instance &lw1_instance)
+    NaiveRandomActionSelection(const LW1_Instance &lw1_instance)
       : lw1_instance_(lw1_instance) {
     }
-    virtual ~RandomActionSelection() { }
+    virtual ~NaiveRandomActionSelection() { }
 
-    virtual const char* name() const { return "random-action-selection"; }
+    virtual std::string name() const { return std::string("naive-random-action-selection"); }
     virtual float get_search_time() const { return total_search_time_; }
     virtual float get_time() const { return total_time_; }
     virtual size_t n_calls() const { return n_calls_; }
@@ -81,6 +82,81 @@ class RandomActionSelection : public ::ActionSelection<T> {
             return ActionSelection<T>::SOLVED;
         } else {
             return ActionSelection<T>::NO_SOLUTION;
+        }
+    }
+};
+
+template<typename T>
+class RandomActionSelection : public NaiveRandomActionSelection<T> {
+  using NaiveRandomActionSelection<T>::lw1_instance_;
+
+  protected:
+    const ::ActionSelection<T> *alternate_selection_;
+    mutable bool used_alternate_selection_;
+
+  public:
+    RandomActionSelection(const LW1_Instance &lw1_instance, const ::ActionSelection<T> *alternate_selection)
+      : NaiveRandomActionSelection<T>(lw1_instance),
+        alternate_selection_(alternate_selection) {
+    }
+    virtual ~RandomActionSelection() {
+        delete alternate_selection_;
+    }
+
+    const ::ActionSelection<T>* alternate_selection() const {
+        return alternate_selection_;
+    }
+    bool used_alternate_selection() const {
+        return used_alternate_selection_;
+    }
+
+    bool is_singleton_belief(const T &state) const {
+        // need to check that each LW1 state variable is instantiated
+        const vector<LW1_Instance::Variable*> &vars = lw1_instance_.variables_;
+        for( size_t var_index = 0; var_index < vars.size(); ++var_index ) {
+            const LW1_Instance::Variable &variable = *vars[var_index];
+            if( variable.is_state_variable() ) {
+                // iterate over domain of variable to check whether is instantiated
+                bool is_instantiated = false;
+                for( set<int>::const_iterator it = variable.domain().begin(); it != variable.domain().end(); ++it ) {
+                    int k_literal = 2 * *it;
+                    if( state.satisfy(k_literal) ) {
+                        is_instantiated = true;
+                        break;
+                    }
+                }
+                if( !is_instantiated ) return false;
+            }
+        }
+        return true;
+    }
+
+    virtual std::string name() const {
+        std::string str = std::string("random-action-selection(");
+        if( alternate_selection_ != 0 )
+            str += alternate_selection_->name();
+        return str + ")";
+    }
+    virtual float get_search_time() const {
+        return alternate_selection_ != 0 ? alternate_selection_->get_search_time() : 0;
+    }
+    virtual float get_time() const {
+        return alternate_selection_ != 0 ? alternate_selection_->get_time() : 0;
+    }
+    virtual size_t n_calls() const {
+        return alternate_selection_ != 0 ? alternate_selection_->n_calls() : 0;
+    }
+    virtual void reset_stats() const {
+        if( alternate_selection_ != 0 )
+            alternate_selection_->reset_stats();
+    }
+
+    virtual int get_plan(const T &state, Instance::Plan &raw_plan, Instance::Plan &plan) const {
+        used_alternate_selection_ = (alternate_selection_ != 0) && is_singleton_belief(state);
+        if( used_alternate_selection_ ) {
+            return alternate_selection_->get_plan(state, raw_plan, plan);
+        } else {
+            return NaiveRandomActionSelection<T>::get_plan(state, raw_plan, plan);
         }
     }
 };

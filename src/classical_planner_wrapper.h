@@ -31,8 +31,8 @@ class ClassicalPlannerWrapper : public ActionSelection<T> {
     ClassicalPlannerWrapper(const ClassicalPlanner &planner) : planner_(planner) { }
     virtual ~ClassicalPlannerWrapper() { }
 
-    virtual const char* name() const {
-        return planner_.name();
+    virtual std::string name() const {
+        return std::string(planner_.name());
     }
     virtual float get_search_time() const {
         return planner_.get_search_time();
