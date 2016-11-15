@@ -112,13 +112,13 @@ class RandomActionSelection : public NaiveRandomActionSelection<T> {
 
     bool is_singleton_belief(const T &state) const {
         // need to check that each LW1 state variable is instantiated
-        const vector<LW1_Instance::Variable*> &vars = lw1_instance_.variables_;
+        const std::vector<LW1_Instance::Variable*> &vars = lw1_instance_.variables_;
         for( size_t var_index = 0; var_index < vars.size(); ++var_index ) {
             const LW1_Instance::Variable &variable = *vars[var_index];
             if( variable.is_state_variable() ) {
                 // iterate over domain of variable to check whether is instantiated
                 bool is_instantiated = false;
-                for( set<int>::const_iterator it = variable.domain().begin(); it != variable.domain().end(); ++it ) {
+                for( std::set<int>::const_iterator it = variable.domain().begin(); it != variable.domain().end(); ++it ) {
                     int k_literal = 2 * *it;
                     if( state.satisfy(k_literal) ) {
                         is_instantiated = true;
