@@ -724,28 +724,39 @@ void PDDL_Base::lw1_calculate_beam_for_grounded_variable(Variable &var) {
         // calculate variable group where to filter this observable literal
         //for( unsigned_atom_set::const_iterator it = var.grounded_domain_.begin(); it != var.grounded_domain_.end(); ++it ) {
         for( signed_atom_set::const_iterator it = values.begin(); it != values.end(); ++it ) {
-            //std::map<Atom, unsigned_atom_set, Atom::unsigned_less_comparator>::const_iterator jt = var.beam_.find(*it); // CHECK
+            //map<Atom, unsigned_atom_set, Atom::unsigned_less_comparator>::const_iterator jt = var.beam_.find(*it); // CHECK
             //assert(jt != var.beam_.end()); // CHECK
             //const unsigned_atom_set &beam = jt->second; // CHECK
             const unsigned_atom_set &beam = var.beam_.at(*it);
 
+            //cout << "PROCESSING: " << *it << " for " << var << endl;
+
             VariableGroup *best_group = 0;
             for( int k = 0; k < int(lw1_variable_groups_.size()); ++k ) {
                 VariableGroup &group = *lw1_variable_groups_[k];
-                bool good = true;
+                //cout << "  GROUP=" << group << endl;
+                bool good = !beam.empty();
                 for( unsigned_atom_set::const_iterator kt = beam.begin(); good && (kt != beam.end()); ++kt ) {
+                    //cout << "    beam-literal=" << *kt << endl;
                     bool found_in_group = false;
                     for( int j = 0; j < int(lw1_variables_.size()); ++j ) {
                         const Variable &v = *lw1_variables_[j];
                         if( v.is_state_variable() && (v.grounded_domain_.find(*kt) != v.grounded_domain_.end()) ) {
+                            //cout << "    literal " << *kt << " found in " << v << ": pn=" << v.print_name_ << ", str={";
+                            //for( auto zt = group.grounded_group_str_.cbegin(); zt != group.grounded_group_str_.cend(); ++zt )
+                            //    cout << *zt << ",";
+                            //cout << "}" << endl;
                             if( group.grounded_group_str_.find(v.print_name_) != group.grounded_group_str_.end() ) {
                                 found_in_group = true;
                                 break;;
                             }
                         }
                     }
+                    //cout << "    found-in-group=" << found_in_group << endl;
                     good = good && found_in_group;
                 }
+                //if( !good ) cout << "  GROUP " << group << " DOESN'T WORK" << endl;
+                //if( good ) cout << "  GROUP " << group << " WORKS" << endl;
                 if( good && ((best_group == 0) || (group.grounded_group_.size() < best_group->grounded_group_.size())) )
                     best_group = &group;
             }
@@ -755,6 +766,10 @@ void PDDL_Base::lw1_calculate_beam_for_grounded_variable(Variable &var) {
                 cout << "observation '" << *it << "' for " << var << " will be filtered in group " << best_group->print_name_ << endl;
 #endif
                 best_group->filtered_observations_.push_back(make_pair(&var, *it));
+            } else {
+#ifdef DEBUG
+                cout << "there is no group to filter observation '" << *it << "' for " << var << endl;
+#endif
             }
         }
     }
@@ -2248,7 +2263,7 @@ void PDDL_Base::lw1_patch_actions_with_enablers_for_sensing() {
             map<string, set<string> >::const_iterator it = lw1_enablers_for_actions_.find(action.print_name_);
             if( it != lw1_enablers_for_actions_.end() ) {
                 const set<string> &enablers_for_action = it->second;
-                for( map<std::string, const Atom*>::const_iterator jt = lw1_sensing_enabler_atoms_.begin(); jt != lw1_sensing_enabler_atoms_.end(); ++jt ) {
+                for( map<string, const Atom*>::const_iterator jt = lw1_sensing_enabler_atoms_.begin(); jt != lw1_sensing_enabler_atoms_.end(); ++jt ) {
                     if( enablers_for_action.find(jt->first) != enablers_for_action.end() ) {
                         effect.push_back(AtomicEffect(*jt->second).copy());
                     } else {
@@ -2256,7 +2271,7 @@ void PDDL_Base::lw1_patch_actions_with_enablers_for_sensing() {
                     }
                 }
             } else if( !action.is_special_action() ) {
-                for( map<std::string, const Atom*>::const_iterator jt = lw1_sensing_enabler_atoms_.begin(); jt != lw1_sensing_enabler_atoms_.end(); ++jt ) {
+                for( map<string, const Atom*>::const_iterator jt = lw1_sensing_enabler_atoms_.begin(); jt != lw1_sensing_enabler_atoms_.end(); ++jt ) {
                     effect.push_back(AtomicEffect(*jt->second).negate());
                 }
             }
