@@ -93,6 +93,9 @@ namespace Inference {
         std::set<int>& current_domain() const {
             return current_domain_;
         }
+        bool is_current_domain_empty() const {
+            return current_domain_.empty();
+        }
 
         // reset and clear current domain
         void reset_current_domain() const {
@@ -219,6 +222,17 @@ namespace Inference {
             return false;
         }
     };
+
+  } // namespace CSP
+} // namespace Inference
+
+inline std::ostream& operator<<(std::ostream &os, const Inference::CSP::Variable &var) {
+    var.print(os);
+    return os;
+}
+
+namespace Inference {
+  namespace CSP {
 
     class Csp;
     class GroupVariable : public MultiValuedVariable {
@@ -350,7 +364,8 @@ namespace Inference {
                 os << variable->name();
                 if( 1 + k < pos_to_var_index_.size() ) os << ",";
             }
-            os << "} od-size=" << original_domain_.size() << std::flush;
+            os << "}" << " od-size=" << original_domain_.size()
+               << " cd-size=" << current_domain_.size() << std::flush;
         }
     };
 
@@ -491,12 +506,35 @@ namespace Inference {
             }
         }
 
+        bool is_1consistent() const {
+            for( size_t k = 0; k < variables_.size(); ++k ) {
+                if( variables_[k]->is_current_domain_empty() )
+                    return false;
+            }
+            for( size_t k = 0; k < variable_groups_.size(); ++k ) {
+                if( variable_groups_[k]->is_current_domain_empty() )
+                    return false;
+            }
+            return true;
+        }
+
         void print(std::ostream &os, const LW1_State &state) const {
             assert(0);
         }
     };
 
     inline bool GroupVariable::is_consistent_with(const std::vector<int> &joint_valuation, int k_literal, const Csp &csp) const {
+#if 1
+        assert(k_literal > 0);
+        int k_atom = k_literal - 1;
+        bool k_not = k_atom % 2 == 1;
+        int var_index = csp.get_var_index(k_atom >> 1);
+        assert(var_index != -1);
+        const Variable &var = csp.variable(var_index);
+        int pos = get_pos_from_var_index(var_index);
+        assert((pos >= 0) && (pos < joint_valuation.size()));
+        return var.is_binary() || !k_not ? joint_valuation[pos] == k_atom : joint_valuation[pos] != k_atom;
+#else // DEPRECATED
         assert(k_literal != 0);
         int atom = k_literal > 0 ? (k_literal - 1) >> 1 : (-k_literal - 1) >> 1;
         int var_index = csp.get_var_index(atom);
@@ -504,6 +542,7 @@ namespace Inference {
         int pos = get_pos_from_var_index(var_index);
         assert((pos >= 0) && (pos < joint_valuation.size()));
         return joint_valuation[pos] == k_literal - 1;
+#endif
     }
 
     inline void GroupVariable::print(std::ostream &os, const std::vector<int> &joint_valuation, const Csp &csp) const {
@@ -737,6 +776,9 @@ namespace Inference {
         }
 
         bool solve(LW1_State &state) const {
+            if( !csp_.is_1consistent() )
+                return false;
+
             initialize_worklist();
             bool status = run_ac3();
             if( !status )
