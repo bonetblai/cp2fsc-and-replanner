@@ -33,7 +33,7 @@
 #include "options.h"
 #include "utils.h"
 
-//#define DEBUG
+#define DEBUG
 
 namespace Inference {
 
@@ -547,14 +547,14 @@ namespace Inference {
                       for( size_t k = 0; k < sensing_models_as_k_dnf.size(); ++k ) {
                           const cnf_or_dnf_t &k_dnf_for_sensing_model = *sensing_models_as_k_dnf[k];
 #ifdef DEBUG
-                          std::cout << Utils::blue() << "[AC3] k-dnf: index =" << k << ", formula =" << Utils::normal();
+                          std::cout << Utils::blue() << "[AC3] k-dnf: index=" << k << ", formula=" << Utils::normal();
                           state.print_cnf_or_dnf(std::cout, k_dnf_for_sensing_model, &lw1_instance_);
                           std::cout << std::endl;
 #endif
                           std::set<int> possible_domain;
                           for( size_t j = 0; j < k_dnf_for_sensing_model.size(); ++j ) {
                               const clause_or_term_t &k_term = k_dnf_for_sensing_model[j];
-                              if( k_term.size() > 1 ) continue;
+                              if( k_term.size() != 1 ) continue;
                               assert(k_term[0] > 0);
 #ifdef DEBUG
                               std::cout << Utils::blue() << "[AC3] filtering with k-atom: ";
