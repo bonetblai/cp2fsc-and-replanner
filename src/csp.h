@@ -718,7 +718,7 @@ namespace Inference {
                     int src = num_simple_variables + k;
                     int dst = var_index;
                     digraph_.add_edge(src, dst, Arc(k, var_index, true, false));
-                    digraph_.add_edge(dst, src, Arc(k, var_index, false, true));
+                    digraph_.add_edge(dst, src, Arc(var_index, k, false, true));
                 }
             }
 
