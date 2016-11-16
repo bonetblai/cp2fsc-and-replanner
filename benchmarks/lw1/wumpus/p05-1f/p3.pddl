@@ -49,12 +49,6 @@
         (adj p5-3 p5-4) (adj p5-4 p5-3)
         (adj p5-4 p5-5) (adj p5-5 p5-4)
 
-        (need-start)
-        (not (wumpus-at p1-1))
-        (not (pit-at p1-1))
-        (at p1-1)
-        (alive)
-
         (neighborhood p1-1 p2-1)
         (neighborhood p1-1 p1-2)
         (neighborhood p1-2 p2-2)
@@ -136,7 +130,11 @@
         (neighborhood p5-5 p4-5)
         (neighborhood p5-5 p5-4)
 
-
+        (need-start)
+        (not (wumpus-at p1-1))
+        (not (pit-at p1-1))
+        (at p1-1)
+        (alive)
     )
     (:goal (got-the-treasure))
 )

@@ -488,6 +488,7 @@ namespace Inference {
               std::cout << "[" << *it << "]" << Utils::normal() << std::endl;
 #endif
               csp_.filter_variable_with_k_atom(k_atom);
+              assert(csp_.is_1consistent());
           }
 
           // 1. Add observation. Pruned variable domains using k-dnf for observation. For each observation,
@@ -519,6 +520,7 @@ namespace Inference {
                       std::cout << "[" << k_atom << "]" << Utils::normal() << std::endl;
 #endif
                       csp_.filter_variable_with_k_atom(k_atom);
+                      assert(csp_.is_1consistent());
                   } else if( lw1_instance_.filtering_groups_.find(key) != lw1_instance_.filtering_groups_.end() ) {
                       // observation can be filtered in variable group. Prune all valuations that are
                       // inconsistent with k-dnf
@@ -527,18 +529,19 @@ namespace Inference {
                       for( size_t k = 0; k < sensing_models_as_k_dnf.size(); ++k ) {
                           const cnf_or_dnf_t& k_dnf_for_sensing_model = *sensing_models_as_k_dnf[k];
 #ifdef DEBUG
-                          std::cout << Utils::blue() << "[AC3] k-dnf or k-cnf: index=" << k << ", formula=";
+                          std::cout << Utils::blue() << "[AC3] k-dnf: index=" << k << ", formula=";
                           state.print_cnf_or_dnf(std::cout, k_dnf_for_sensing_model, &lw1_instance_);
                           std::cout << Utils::normal() << std::endl;
 
                           for( size_t j = 0; j < k_dnf_for_sensing_model.size(); ++j ) {
                               const clause_or_term_t& term = k_dnf_for_sensing_model[j];
-                              std::cout << Utils::cyan() << "[AC3] Clause or term: ";
+                              std::cout << Utils::cyan() << "[AC3] term: ";
                               state.print_clause_or_term(std::cout, term, &lw1_instance_);
                               std::cout << Utils::normal() << std::endl;
                           }
 #endif
                           csp_.filter_group_with_k_dnf(vg, k_dnf_for_sensing_model);
+                          assert(csp_.is_1consistent());
                       }
 
                   } else {
@@ -547,14 +550,14 @@ namespace Inference {
                       for( size_t k = 0; k < sensing_models_as_k_dnf.size(); ++k ) {
                           const cnf_or_dnf_t &k_dnf_for_sensing_model = *sensing_models_as_k_dnf[k];
 #ifdef DEBUG
-                          std::cout << Utils::blue() << "[AC3] k-dnf: index =" << k << ", formula =" << Utils::normal();
+                          std::cout << Utils::blue() << "[AC3] k-dnf: index=" << k << ", formula=" << Utils::normal();
                           state.print_cnf_or_dnf(std::cout, k_dnf_for_sensing_model, &lw1_instance_);
                           std::cout << std::endl;
 #endif
                           std::set<int> possible_domain;
                           for( size_t j = 0; j < k_dnf_for_sensing_model.size(); ++j ) {
                               const clause_or_term_t &k_term = k_dnf_for_sensing_model[j];
-                              if( k_term.size() > 1 ) continue;
+                              if( k_term.size() != 1 ) continue;
                               assert(k_term[0] > 0);
 #ifdef DEBUG
                               std::cout << Utils::blue() << "[AC3] filtering with k-atom: ";
@@ -562,6 +565,7 @@ namespace Inference {
                               std::cout << Utils::normal() << std::endl;
 #endif
                               csp_.filter_variable_with_k_atom(k_term[0] - 1);
+                              assert(csp_.is_1consistent());
                           }
                       }
                   }
