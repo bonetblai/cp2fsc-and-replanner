@@ -1,0 +1,35 @@
+Variable groups are not working in this case:
+
+1. First tried to add variable groups only to domain 
+but then, since there are sensing models for all the
+cells, the relevant sensing literals could not be
+assigned to groups. For example, (stench p7-5) that
+should be mapped to vgroup-5, containing wumpus-4
+and wumpus-5, is not done because (stench p7-5)
+also depends on the literal (wumpus p7-4) which
+is assigned to no group/variable.
+
+2. To fix above issue, a new problem was created
+where the (adj ?p ?q) relation is only restricted
+to pairs involving potential locations for wumpus.
+However, then we got that sensing litearls with
+empty beam were mapped to arbitrary groups.
+
+3. Fix above by requiring non empty beam for 
+sensing literals when doing the map
+
+commit 2d0347cb3b45b79cfe7902a22cd686eb1dc18046
+
+4. Once the fix was in place, got a new error.
+A segmentation fault without assertion violation.
+Problem was in inference_engine.h when processing
+an empty dnf (comming from last issue). Remove
+segfault with fix
+
+commit 56fa0145455ec7fd92cbfa89f5d4bd245b441f1a
+
+5. The problem remains unsolvable with messages:
+
+error: no action is applicable at current state:
+unable to solve problem: error during action/plan computation
+

@@ -23,6 +23,8 @@
     (:obs-variable (stench-var ?p - pos) (stench ?p))                          ; binary variable
     (:obs-variable (breeze-var ?p - pos) (breeze ?p))                          ; binary variable
     (:obs-variable (glitter-var ?p - pos) (glitter ?p))                        ; binary variable
+
+    (:var-group gold-group (gold-pos))
     (:var-group (wgroup ?p - pos) (forall (?q - pos) such-that (neighborhood ?p ?q) (wumpus-at-cell ?q)))
     (:var-group (pgroup ?p - pos) (forall (?q - pos) such-that (neighborhood ?p ?q) (pit-at-cell ?q)))
 

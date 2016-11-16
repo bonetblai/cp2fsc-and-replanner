@@ -38,10 +38,11 @@
             (model-for (breeze-var ?j) (breeze ?j) (exists (?p - pos) (and (adj ?j ?p) (pit-at ?p))))
             (model-for (breeze-var ?j) (not (breeze ?j)) (forall (?p - pos) (or (not (adj ?j ?p)) (not (pit-at ?p)))))
             (model-for (glitter-var ?j) (glitter ?j) (gold-at ?j))
-            (model-for (glitter-var ?j)
-                       (not (glitter ?j))
-                       (or (got-the-treasure) (exists (?p - pos) (and (not (= ?p ?j)) (gold-at ?p))))
-            )
+            ;(model-for (glitter-var ?j)
+            ;           (not (glitter ?j))
+            ;           (or (got-the-treasure) (exists (?p - pos) (and (not (= ?p ?j)) (gold-at ?p))))
+            ;)
+            (model-for (glitter-var ?j) (not (glitter ?j)) (not (gold-at ?j)))
     )
 
     (:action move
@@ -54,10 +55,11 @@
             (model-for (breeze-var ?j) (breeze ?j) (exists (?p - pos) (and (adj ?j ?p) (pit-at ?p))))
             (model-for (breeze-var ?j) (not (breeze ?j)) (forall (?p - pos) (or (not (adj ?j ?p)) (not (pit-at ?p)))))
             (model-for (glitter-var ?j) (glitter ?j) (gold-at ?j))
-            (model-for (glitter-var ?j)
-                       (not (glitter ?j))
-                       (or (got-the-treasure) (exists (?p - pos) (and (not (= ?p ?j)) (gold-at ?p))))
-            )
+            ;(model-for (glitter-var ?j)
+            ;           (not (glitter ?j))
+            ;           (or (got-the-treasure) (exists (?p - pos) (and (not (= ?p ?j)) (gold-at ?p))))
+            ;)
+            (model-for (glitter-var ?j) (not (glitter ?j)) (not (gold-at ?j)))
     )
 
     (:action grab
