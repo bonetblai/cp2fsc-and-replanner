@@ -854,6 +854,7 @@ class PDDL_Base {
     const sensing_proxy_vec                   *lw1_default_sensing_proxy_;
 
     variable_group_vec                        lw1_variable_groups_;
+    std::map<std::string, const VariableGroup*> lw1_ad_hoc_groups_;
 
     std::map<const Action*, std::map<const ObsVariable*, std::map<Atom, std::list<const And*> > > > lw1_sensing_models_index_;
     std::map<const StateVariable*, std::vector<const Action*> > lw1_actions_for_observable_state_variables_;
@@ -903,6 +904,7 @@ class PDDL_Base {
     void declare_lw1_translation();
     bool lw1_translation() const { return lw1_translation_; }
     void lw1_calculate_atoms_for_state_variables();
+    void lw1_calculate_atoms_for_variable_group(VariableGroup &group, int index);
     void lw1_calculate_atoms_for_variable_groups();
     void lw1_calculate_beams_for_grounded_observable_variables();
     void lw1_calculate_beam_for_grounded_variable(Variable &var);

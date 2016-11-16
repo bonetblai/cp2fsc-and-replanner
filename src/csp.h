@@ -146,7 +146,8 @@ namespace Inference {
         // negative, it must be erased from the current possible values
         void filter_current_domain_with_k_atom(int k_atom) const {
             assert(k_atom >= 0);
-            if( k_atom % 2 == 0 ) {
+            bool k_not = k_atom % 2 == 1;
+            if( is_binary() || !k_not ) {
                 current_domain_.clear();
                 current_domain_.insert(k_atom);
             } else {
@@ -478,8 +479,11 @@ namespace Inference {
         void filter_variable_with_k_atom(int k_atom) const {
             assert(k_atom >= 0);
             int var_index = get_var_index(k_atom >> 1);
-            if( var_index != -1 )
+            if( var_index != -1 ) {
+                //std::cout << "BEFORE: " << *variables_[var_index] << std::endl;
                 variables_[var_index]->filter_current_domain_with_k_atom(k_atom);
+                //std::cout << " AFTER: " << *variables_[var_index] << std::endl;
+            }
         }
 
         // Deletes from group no longer possible valuations

@@ -618,34 +618,38 @@ void PDDL_Base::lw1_calculate_atoms_for_state_variables() {
     }
 }
 
+void PDDL_Base::lw1_calculate_atoms_for_variable_group(VariableGroup &group, int index) {
+    int dsize = 1;
+    for( int j = 0; j < int(group.grounded_group_.size()); ++j ) {
+        const StateVariable &var = *group.grounded_group_[j];
+        dsize *= var.is_binary() ? 2 : var.grounded_domain_.size();
+    }
+
+#ifdef DEBUG
+    cout << Utils::magenta() << "variable group '" << group.print_name_ << "':" << Utils::normal() << endl
+         << "  values[dsize=" << dsize << "]:" << flush;
+#endif
+
+    for( int j = 0; j < dsize; ++j ) {
+        string name = string("vg_") + to_string(index) + "_" + to_string(j);
+        Atom *new_atom = create_atom(name);
+        group.grounded_domain_.insert(*new_atom);
+        atoms_for_variable_groups_.insert(*new_atom);
+#ifdef DEBUG
+        cout << " " << *new_atom;
+#endif
+        delete new_atom;
+    }
+#ifdef DEBUG
+    cout << endl;
+#endif
+}
+
 void PDDL_Base::lw1_calculate_atoms_for_variable_groups() {
     atoms_for_variable_groups_.clear();
     for( int k = 0; k < int(lw1_variable_groups_.size()); ++k ) {
         VariableGroup &group = *lw1_variable_groups_[k];
-        int dsize = 1;
-        for( int j = 0; j < int(group.grounded_group_.size()); ++j ) {
-            const StateVariable &var = *group.grounded_group_[j];
-            dsize *= var.is_binary() ? 2 : var.grounded_domain_.size();
-        }
-
-#ifdef DEBUG
-        cout << Utils::magenta() << "variable group '" << group.print_name_ << "':" << Utils::normal() << endl
-             << "  values[dsize=" << dsize << "]:" << flush;
-#endif
-
-        for( int j = 0; j < dsize; ++j ) {
-            string name = string("vg_") + to_string(k) + "_" + to_string(j);
-            Atom *new_atom = create_atom(name);
-            group.grounded_domain_.insert(*new_atom);
-            atoms_for_variable_groups_.insert(*new_atom);
-#ifdef DEBUG
-            cout << " " << *new_atom;
-#endif
-            delete new_atom;
-        }
-#ifdef DEBUG
-        cout << endl;
-#endif
+        lw1_calculate_atoms_for_variable_group(group, k);
     }
 }
 
@@ -721,15 +725,10 @@ void PDDL_Base::lw1_calculate_beam_for_grounded_variable(Variable &var) {
         values.insert(var.grounded_domain_.begin(), var.grounded_domain_.end());
         if( var.is_binary() ) values.insert(Atom(*var.grounded_domain_.begin(), true));
 
-        // calculate variable group where to filter this observable literal
-        //for( unsigned_atom_set::const_iterator it = var.grounded_domain_.begin(); it != var.grounded_domain_.end(); ++it ) {
+        // calculate group where to filter this observable literal
         for( signed_atom_set::const_iterator it = values.begin(); it != values.end(); ++it ) {
-            //map<Atom, unsigned_atom_set, Atom::unsigned_less_comparator>::const_iterator jt = var.beam_.find(*it); // CHECK
-            //assert(jt != var.beam_.end()); // CHECK
-            //const unsigned_atom_set &beam = jt->second; // CHECK
             const unsigned_atom_set &beam = var.beam_.at(*it);
-
-            //cout << "PROCESSING: " << *it << " for " << var << endl;
+            //cout << "PROCESSING: " << *it << " for " << var << ": beam.sz=" << beam.size() << endl;
 
             VariableGroup *best_group = 0;
             for( int k = 0; k < int(lw1_variable_groups_.size()); ++k ) {
@@ -766,9 +765,66 @@ void PDDL_Base::lw1_calculate_beam_for_grounded_variable(Variable &var) {
                 cout << "observation '" << *it << "' for " << var << " will be filtered in group " << best_group->print_name_ << endl;
 #endif
                 best_group->filtered_observations_.push_back(make_pair(&var, *it));
+                continue;
             } else {
 #ifdef DEBUG
                 cout << "there is no group to filter observation '" << *it << "' for " << var << endl;
+#endif
+            }
+
+            // there is no group where to filter observation, check if it can be filtered in variable
+            const StateVariable *candidate = 0;
+            bool found_in_variable = true;
+            for( unsigned_atom_set::const_iterator kt = beam.begin(); kt != beam.end(); ++kt ) {
+                if( candidate != 0 ) {
+                    if( candidate->grounded_domain_.find(*kt) == candidate->grounded_domain_.end() ) {
+                        found_in_variable = false;
+                        break;
+                    }
+                } else {
+                    for( int k = 0; k < int(lw1_variables_.size()); ++k ) {
+                        const Variable &v = *lw1_variables_[k];
+                        if( v.is_state_variable() && (v.grounded_domain_.find(*kt) != v.grounded_domain_.end()) ) {
+                            assert(dynamic_cast<const StateVariable*>(&v) != 0);
+                            candidate = static_cast<const StateVariable*>(&v);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if( found_in_variable && (candidate != 0) ) {
+                if( options_.is_enabled("lw1:inference:ac3:create-ad-hoc-groups" ) ) {
+                    map<string, const VariableGroup*>::iterator gt = lw1_ad_hoc_groups_.find(candidate->print_name_);
+                    if( gt == lw1_ad_hoc_groups_.end() ) {
+                        // check whether variable is made of static atoms as groups
+                        // must be made of such variables
+                        bool static_atoms_in_domain = true;
+                        for( unsigned_atom_set::const_iterator zt = candidate->grounded_domain_.begin(); zt != candidate->grounded_domain_.end(); ++zt ) {
+                            if( !is_static_atom(*zt) ) {
+                                static_atoms_in_domain = false;
+                                break;
+                            }
+                        }
+
+                        if( static_atoms_in_domain ) {
+                            cout << Utils::warning() << "creating ad-hoc group for filtering "
+                                 << *it << " for " << var << ": group={" << *candidate << "}" << endl;
+                            string group_name = string("ad-hoc-group-") + to_string(lw1_ad_hoc_groups_.size());
+                            VariableGroup *ad_hoc_group = new VariableGroup(strdup(group_name.c_str()));
+                            ad_hoc_group->grounded_group_.push_back(const_cast<StateVariable*>(candidate));
+                            ad_hoc_group->grounded_group_str_.insert(string(candidate->print_name_));
+                            lw1_ad_hoc_groups_.insert(make_pair(candidate->print_name_, ad_hoc_group));
+                            lw1_calculate_atoms_for_variable_group(*ad_hoc_group, lw1_variable_groups_.size());
+                            lw1_variable_groups_.push_back(ad_hoc_group);
+                            ad_hoc_group->filtered_observations_.push_back(make_pair(&var, *it));
+                        }
+                    }
+                }
+
+            } else {
+#ifdef DEBUG
+                cout << "there is no variable to filter observation '" << *it << "' for " << var << endl;
 #endif
             }
         }
@@ -5328,7 +5384,8 @@ void PDDL_Base::VariableGroup::process_instance() const {
             for( size_t k = 0; k < group_.size(); ++k ) {
                 state_variable_vec *grounded_group = group_[k]->ground(base_ptr_);
                 for( state_variable_vec::iterator it = grounded_group->begin(); it != grounded_group->end(); it++) {
-                    group->grounded_group_.push_back(*it);
+                    StateVariable &var = **it;
+                    group->grounded_group_.push_back(&var);
                 }
 
                 for( int j = 0; j < int(grounded_group->size()); ++j ) {

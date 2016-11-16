@@ -505,10 +505,11 @@ namespace Inference {
                   const LW1_Instance::Variable &variable = *lw1_instance_.variables_[var_key];
                   std::pair<int, int> key(var_key, sensed_literal);
 #ifdef DEBUG
-                  std::cout << "[AC3] sensed literal: var=" << variable.name() << ", value=" << std::flush;
+                  std::cout << Utils::red() << "[AC3] sensed literal: var=" << variable.name() << ", value=" << std::flush;
                   LW1_State::print_literal(std::cout, sensed_literal, &instance_);
                   std::cout << "[" << sensed_literal - 1 << "]";
-                  std::cout << ", key=(" << var_key << "," << sensed_literal << ")" << std::endl;
+                  std::cout << ", key=(" << var_key << "," << sensed_literal << ")"
+                            << Utils::normal() << std::endl;
 #endif
                   if( variable.is_state_variable() ) {
                       // observation is state variable, filter it directly in variable domain
@@ -543,8 +544,11 @@ namespace Inference {
                           csp_.filter_group_with_k_dnf(vg, k_dnf_for_sensing_model);
                           assert(csp_.is_1consistent());
                       }
-
                   } else {
+                      std::cout << Utils::error() << "there is no group to filter observation" << std::endl;
+                      exit(-1);
+
+                      assert(0); // the stuff below is wrong!
                       // there is no variable group where to filter observation. Use k-dnf to generate constraints in CSP
                       const sensing_models_as_cnf_or_dnf_t &sensing_models_as_k_dnf = jt->second;
                       for( size_t k = 0; k < sensing_models_as_k_dnf.size(); ++k ) {

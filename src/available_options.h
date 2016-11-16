@@ -149,6 +149,7 @@ const char *available_options[] = {
     "lw1:inference:up:lookahead",                       "[LW1] uses unit resolution with 1-lookahead as inference mechanism [EXPERIMENTAL]",
     "lw1:inference:up:enhanced",                        "[LW1] maintain inferred (non-forbidden) clauses [EXPERIMENTAL]",
     "lw1:inference:ac3",                                "[LW1] uses AC3 as inference algorithm",
+    "lw1:inference:ac3:create-ad-hoc-groups",           "[LW1] create ad-hoc groups to filter observations that don't fall in specified groups",
 
     // lw1 boost
     "lw1:boost:single-sensing-literal-enablers",        "[LW1] DEPRECATED (don't use)",
