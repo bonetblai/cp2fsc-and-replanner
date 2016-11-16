@@ -533,7 +533,7 @@ namespace Inference {
         const Variable &var = csp.variable(var_index);
         int pos = get_pos_from_var_index(var_index);
         assert((pos >= 0) && (pos < joint_valuation.size()));
-        return var.is_binary() || !k_not ? joint_valuation[pos] == k_atom : joint_valuation[pos] != k_atom;
+        return var.is_binary() || !k_not ? joint_valuation[pos] == k_atom : joint_valuation[pos] != k_atom - 1;
 #else // DEPRECATED
         assert(k_literal != 0);
         int atom = k_literal > 0 ? (k_literal - 1) >> 1 : (-k_literal - 1) >> 1;
