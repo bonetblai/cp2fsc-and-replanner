@@ -56,6 +56,8 @@ class NaiveRandomActionSelection : public ::ActionSelection<T> {
     }
 
     virtual int get_plan(const T &state, Instance::Plan &raw_plan, Instance::Plan &plan) const {
+        float start_time = Utils::read_time_in_seconds();
+
         // compute applicable actions at state
         std::vector<int> indices_for_applicable_actions;
         for( size_t k = 0; k < lw1_instance_.actions_.size(); ++k ) {
@@ -70,6 +72,7 @@ class NaiveRandomActionSelection : public ::ActionSelection<T> {
 #ifdef DEBUG
         std::cout << Utils::magenta() << "#indices=" << indices_for_applicable_actions.size() << Utils::normal() << std::endl;
 #endif
+        int status = 0;
         if( !indices_for_applicable_actions.empty() ) {
             int random_action = indices_for_applicable_actions[lrand48() % indices_for_applicable_actions.size()];
             raw_plan.clear();
@@ -79,16 +82,23 @@ class NaiveRandomActionSelection : public ::ActionSelection<T> {
 #ifdef DEBUG
             std::cout << Utils::magenta() << "random-action=" << lw1_instance_.actions_[random_action]->name_ << Utils::normal() << std::endl;
 #endif
-            return ActionSelection<T>::SOLVED;
+            status = ActionSelection<T>::SOLVED;
         } else {
-            return ActionSelection<T>::NO_SOLUTION;
+            status = ActionSelection<T>::NO_SOLUTION;
         }
+        float elapsed_time = Utils::read_time_in_seconds() - start_time;
+        total_search_time_ += elapsed_time;
+        total_time_ += elapsed_time;
+        return status;
     }
 };
 
 template<typename T>
 class RandomActionSelection : public NaiveRandomActionSelection<T> {
   using NaiveRandomActionSelection<T>::lw1_instance_;
+  using NaiveRandomActionSelection<T>::total_search_time_;
+  using NaiveRandomActionSelection<T>::total_time_;
+  using NaiveRandomActionSelection<T>::n_calls_;
 
   protected:
     const ::ActionSelection<T> *alternate_selection_;
@@ -111,6 +121,8 @@ class RandomActionSelection : public NaiveRandomActionSelection<T> {
     }
 
     bool is_singleton_belief(const T &state) const {
+        float start_time = Utils::read_time_in_seconds();
+
         // need to check that each LW1 state variable is instantiated
         const std::vector<LW1_Instance::Variable*> &vars = lw1_instance_.variables_;
         for( size_t var_index = 0; var_index < vars.size(); ++var_index ) {
@@ -125,9 +137,17 @@ class RandomActionSelection : public NaiveRandomActionSelection<T> {
                         break;
                     }
                 }
-                if( !is_instantiated ) return false;
+                if( !is_instantiated ) {
+                    float elapsed_time = Utils::read_time_in_seconds() - start_time;
+                    total_search_time_ += elapsed_time;
+                    total_time_ += elapsed_time;
+                    return false;
+                }
             }
         }
+        float elapsed_time = Utils::read_time_in_seconds() - start_time;
+        total_search_time_ += elapsed_time;
+        total_time_ += elapsed_time;
         return true;
     }
 
@@ -138,17 +158,20 @@ class RandomActionSelection : public NaiveRandomActionSelection<T> {
         return str + ")";
     }
     virtual float get_search_time() const {
-        return alternate_selection_ != 0 ? alternate_selection_->get_search_time() : 0;
+        return total_search_time_ + (alternate_selection_ != 0 ? alternate_selection_->get_search_time() : 0);
     }
     virtual float get_time() const {
-        return alternate_selection_ != 0 ? alternate_selection_->get_time() : 0;
+        return total_time_ + (alternate_selection_ != 0 ? alternate_selection_->get_time() : 0);
     }
     virtual size_t n_calls() const {
-        return alternate_selection_ != 0 ? alternate_selection_->n_calls() : 0;
+        return n_calls_ + (alternate_selection_ != 0 ? alternate_selection_->n_calls() : 0);
     }
     virtual void reset_stats() const {
         if( alternate_selection_ != 0 )
             alternate_selection_->reset_stats();
+        total_search_time_ = 0;
+        total_time_ = 0;
+        n_calls_ = 0;
     }
 
     virtual int get_plan(const T &state, Instance::Plan &raw_plan, Instance::Plan &plan) const {
