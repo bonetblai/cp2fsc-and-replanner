@@ -109,9 +109,7 @@ class RandomActionSelection : public NaiveRandomActionSelection<T> {
       : NaiveRandomActionSelection<T>(lw1_instance),
         alternate_selection_(alternate_selection) {
     }
-    virtual ~RandomActionSelection() {
-        delete alternate_selection_;
-    }
+    virtual ~RandomActionSelection() { }
 
     const ::ActionSelection<T>* alternate_selection() const {
         return alternate_selection_;
