@@ -17,13 +17,15 @@
     )
 
     (:variable agent-pos (forall (?p - pos) (at ?p)))
-    (:variable gold-pos (got-the-treasure) (forall (?p - pos) (gold-at ?p)))
+    (:variable gold-pos (forall (?p - pos) (gold-at ?p)))                      ; (got-treasure) cannot be added to variable for AC3 because then gold-pos isn't static
     (:variable (wumpus-at-cell ?p - pos) (wumpus-at ?p))                       ; binary variable
     ;;(:variable (pit-at-cell ?p - pos) (pit-at ?p))                             ; binary variable
     (:obs-variable (stench-var ?p - pos) (stench ?p))                          ; binary variable
     ;;(:obs-variable (breeze-var ?p - pos) (breeze ?p))                          ; binary variable
     (:obs-variable (glitter-var ?p - pos) (glitter ?p))                        ; binary variable
+
     (:var-group (wgroup ?p - pos) (forall (?q - pos) such-that (neighborhood ?p ?q) (wumpus-at-cell ?q)))
+    ;;(:var-group (pgroup ?p - pos) (forall (?q - pos) such-that (neighborhood ?p ?q) (pit-at-cell ?q)))
 
     (:action start
         :parameters (?j - pos)
@@ -37,7 +39,7 @@
             (model-for (glitter-var ?j) (glitter ?j) (gold-at ?j))
             (model-for (glitter-var ?j)
                        (not (glitter ?j))
-                       (or (got-the-treasure) (exists (?p - pos) (and (not (= ?p ?j)) (gold-at ?p))))
+                       (or (exists (?p - pos) (and (not (= ?p ?j)) (gold-at ?p))))
             )
     )
 
@@ -53,14 +55,14 @@
             (model-for (glitter-var ?j) (glitter ?j) (gold-at ?j))
             (model-for (glitter-var ?j)
                        (not (glitter ?j))
-                       (or (got-the-treasure) (exists (?p - pos) (and (not (= ?p ?j)) (gold-at ?p))))
+                       (or (exists (?p - pos) (and (not (= ?p ?j)) (gold-at ?p))))
             )
     )
 
     (:action grab
         :parameters (?i - pos)
         :precondition (and (at ?i) (alive) (gold-at ?i) (not (need-start)))
-        :effect (and (got-the-treasure) (not (gold-at ?i)))
+        :effect (got-the-treasure)
     )
 )
 
