@@ -168,7 +168,7 @@ namespace Inference {
             Variable::print(os, std::vector<int>(values.begin(), values.end()), lw1_instance);
         }
 
-        virtual void print(std::ostream &os, const LW1_Instance *lw1_instance = 0) const {
+        virtual void print(std::ostream &os, const LW1_Instance *lw1_instance = 0, bool extra_output = false) const {
             os << (name_ == "" ? std::string("<unnamed-var>") : name_)
                << "(type=" << type_as_string() << "):"
                << " od: ";
@@ -354,7 +354,7 @@ namespace Inference {
             return true;
         }
 
-        virtual void print(std::ostream &os, const LW1_Instance *lw1_instance = 0) const {
+        virtual void print(std::ostream &os, const LW1_Instance *lw1_instance = 0, bool extra_output = false) const {
             // force lw1_instance to null as there are no k-literals
             // associated to the values of group variables
             os << (name_ == "" ? std::string("<unnamed-group>") : name_)
@@ -365,8 +365,16 @@ namespace Inference {
                 os << variable->name();
                 if( 1 + k < pos_to_var_index_.size() ) os << ",";
             }
-            os << "}" << " od-size=" << original_domain_.size()
-               << " cd-size=" << current_domain_.size() << std::flush;
+            os << "}";
+
+            if( extra_output ) {
+                os << " od: ";
+                Variable::print(os, original_domain_, lw1_instance);
+                os << " cd: ";
+                Variable::print(os, current_domain_, lw1_instance);
+            } else {
+                os << " od-size=" << original_domain_.size() << " cd-size=" << current_domain_.size() << std::flush;
+            }
         }
     };
 
@@ -522,6 +530,20 @@ namespace Inference {
             return true;
         }
 
+        void print_variables_with_empty_domain(std::ostream &os) const {
+            for( size_t var_index = 0; var_index < variables_.size(); ++var_index ) {
+                const Variable &variable = *variables_[var_index];
+                if( variable.is_current_domain_empty() )
+                    os << variable << std::endl;
+            }
+
+            for( size_t group_index = 0; group_index < variables_.size(); ++group_index ) {
+                const GroupVariable &group = *variable_groups_[group_index];
+                if( group.is_current_domain_empty() )
+                    os << group << std::endl;
+            }
+        }
+
         void print(std::ostream &os, const LW1_State &state) const {
             assert(0);
         }
@@ -585,11 +607,14 @@ namespace Inference {
             return y_is_group() ? csp.variable_group(second) : csp.variable(second);
         }
 
-        void print(std::ostream &os, const LW1_Instance &lw1_instance, const Csp &csp) const {
+        void print(std::ostream &os, const Csp &csp, bool extra_output = false) const {
             const Variable &var_x = variable_x(csp);
             const Variable &var_y = variable_y(csp);
-            var_x.print(os, &lw1_instance);
-            var_y.print(os, &lw1_instance);
+            os << "[var_x=";
+            var_x.print(os, &csp.lw1_instance(), extra_output);
+            os << ",var_y=";
+            var_y.print(os, &csp.lw1_instance(), extra_output);
+            os << "]";
         }
     };
 
@@ -655,6 +680,11 @@ namespace Inference {
                 const Arc &arc = edge.label_;
                 std::pair<bool, bool> p = reduce(arc);
                 if( !p.first ) {
+#ifdef DEBUG
+                    std::cout << "AC3: inconsistency reached when reducing arc=";
+                    arc.print(std::cout, csp_);
+                    std::cout << std::endl;
+#endif
                     return false; // reached inconsistency
                 } else if( p.second ) {
                     // some value of var_x was deleted, add all edges that enter var_x
@@ -780,13 +810,22 @@ namespace Inference {
         }
 
         bool solve(LW1_State &state) const {
-            if( !csp_.is_1consistent() )
+            if( !csp_.is_1consistent() ) {
+#ifdef DEBUG
+                csp_.print_variables_with_empty_domain(std::cout);
+#endif
                 return false;
+            }
+
 
             initialize_worklist();
             bool status = run_ac3();
-            if( !status )
+            if( !status ) {
+#ifdef DEBUG
+                csp_.print_variables_with_empty_domain(std::cout);
+#endif
                 return false; // indicates an incosistency is found
+            }
 
             // Update state using information in CSP. For each value x that is pruned in domain of
             // CSP variable X corresponding to state variable X, add literal K_not_X=x. For each value
