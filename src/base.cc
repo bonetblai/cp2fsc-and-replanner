@@ -1713,7 +1713,7 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
                     const ObsVariable &variable = *jt->first;
                     for( map<Atom, list<const And*> >::const_iterator kt = jt->second.begin(); kt != jt->second.end(); ++kt ) {
                         const Atom &value = kt->first;
-                        if( !value.negated_ || variable.is_binary() ) { //|| options_.is_enabled("lw1:boost:literals-for-observables") ) {
+                        if( !value.negated_ || variable.is_binary() ) { //|| options_.is_enabled("lw1:boost:literals-for-observables") )
                             lw1_create_type4_sensing_drule(action, variable, value, jt->second);
                             if( options_.is_enabled("lw1:boost:drule:sensing:type4") )
                                 lw1_create_type4_boost_sensing_drule(action, variable, value, jt->second);
@@ -1863,10 +1863,15 @@ void PDDL_Base::lw1_create_type3_sensing_drule(const Action &action,
 
     // precondition
     And *precondition = new And;
+#if 0
+    // CHECK: this code was enabled in a previuos version but it is definitely
+    // wrong because whatever is assigned to drule->precondition_ is lost in the
+    // assignment drule->precondition_ = precondition below. This should be checked!
     if( options_.is_enabled("lw1:boost:enable-post-actions") )
         drule->precondition_ = Literal(*lw1_fetch_enabler_for_sensing(value)).copy();
     else
         drule->precondition_ = Literal(lw1_fetch_last_action_atom(action)).copy();
+#endif
 
     for( list<const And*>::const_iterator other_term = dnf.begin(); other_term != dnf.end(); ++other_term ) {
         if( *other_term != &term )
