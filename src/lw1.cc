@@ -254,7 +254,7 @@ int main(int argc, const char *argv[]) {
         g_options.disable("solver:naive-random-action-selection");
         g_options.disable("solver:random-action-selection");
     }
-    if( !g_options.is_enabled("solver:random-action-selection") || !g_options.is_enabled("solver:naive-random-action-selection") ) {
+    if( g_options.is_enabled("solver:random-action-selection") || g_options.is_enabled("solver:naive-random-action-selection") ) {
         g_options.disable("lw1:boost:enable-post-actions");
         g_options.disable("lw1:boost:drule:sensing:type4");
         g_options.disable("lw1:boost:drule:sensing:type4:add");
