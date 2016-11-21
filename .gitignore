@@ -1,9 +1,5 @@
 !gitignore
-grammar.cc
-grammar.h
 grammar.output
-scanner.cc
-scanner.h
 src/lw1
 src/cp2fsc
 src/k-replanner
