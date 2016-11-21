@@ -1863,15 +1863,10 @@ void PDDL_Base::lw1_create_type3_sensing_drule(const Action &action,
 
     // precondition
     And *precondition = new And;
-#if 0
-    // CHECK: this code was enabled in a previuos version but it is definitely
-    // wrong because whatever is assigned to drule->precondition_ is lost in the
-    // assignment drule->precondition_ = precondition below. This should be checked!
     if( options_.is_enabled("lw1:boost:enable-post-actions") )
-        drule->precondition_ = Literal(*lw1_fetch_enabler_for_sensing(value)).copy();
+        precondition->push_back(Literal(*lw1_fetch_enabler_for_sensing(value)).copy());
     else
-        drule->precondition_ = Literal(lw1_fetch_last_action_atom(action)).copy();
-#endif
+        precondition->push_back(Literal(lw1_fetch_last_action_atom(action)).copy());
 
     for( list<const And*>::const_iterator other_term = dnf.begin(); other_term != dnf.end(); ++other_term ) {
         if( *other_term != &term )
