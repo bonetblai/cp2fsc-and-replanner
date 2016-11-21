@@ -98,6 +98,16 @@ namespace Options {
       }
       bool enable(const std::string &opt) { return enable(Option(opt)); }
 
+      bool enable_if_possible(const Option &opt) {
+          bool good_option = is_option(opt);
+          if( good_option && !is_disabled(opt) )
+              enabled_.insert(opt);
+          return good_option && !is_disabled(opt);
+      }
+      bool enable_if_possible(const std::string &opt) {
+          return enable_if_possible(Option(opt));
+      }
+
       bool disable(const Option &opt) {
           bool good_option = is_option(opt);
           if( good_option ) {
