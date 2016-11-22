@@ -1863,10 +1863,15 @@ void PDDL_Base::lw1_create_type3_sensing_drule(const Action &action,
 
     // precondition
     And *precondition = new And;
+#if 0
+    // CHECK: If this is enabled, we can't solve easiest instances of minesweeper, neither with UP or AC3.
+    // This was not here in the first place, the only precondition was the literal belows but then
+    // overriden by variable precondition. All this need to be clarified.
     if( options_.is_enabled("lw1:boost:enable-post-actions") )
         precondition->push_back(Literal(*lw1_fetch_enabler_for_sensing(value)).copy());
     else
         precondition->push_back(Literal(lw1_fetch_last_action_atom(action)).copy());
+#endif
 
     for( list<const And*>::const_iterator other_term = dnf.begin(); other_term != dnf.end(); ++other_term ) {
         if( *other_term != &term )
