@@ -256,10 +256,10 @@ int main(int argc, const char *argv[]) {
     }
     if( g_options.is_enabled("solver:random-action-selection") || g_options.is_enabled("solver:naive-random-action-selection") ) {
         g_options.disable("lw1:boost:enable-post-actions");
-        g_options.disable("lw1:boost:drule:sensing:type4");
-        g_options.disable("lw1:boost:drule:sensing:type4:add");
-        g_options.disable("lw1:boost:literals-for-observables");
-        g_options.disable("lw1:boost:drule:sensing:type3");
+        //g_options.disable("lw1:boost:drule:sensing:type4");
+        //g_options.disable("lw1:boost:drule:sensing:type4:add");
+        //g_options.disable("lw1:boost:literals-for-observables");
+        //g_options.disable("lw1:boost:drule:sensing:type3");
     }
 
 
