@@ -12,6 +12,8 @@ export MPATH=$HOME/software/madagascar
 export BENCHMARKS=$LW1_ROOT/benchmarks/lw1
 export TMPFILE_PATH=/scratch
 
+ulimit -c 0
+
 if [ "$planner" == "ff" ]; then
     $LW1_ROOT/src/lw1 --max-time 10800 --planner-path $FPATH --tmpfile-path $TMPFILE_PATH --options=${options} $BENCHMARKS/$domain $BENCHMARKS/$problem $BENCHMARKS/$hidden
 elif [ "$planner" == "m" ]; then
