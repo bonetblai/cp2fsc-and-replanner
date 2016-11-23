@@ -63,7 +63,9 @@ class State {
         atoms_[0] = 0;
         add(s);
     }
-    virtual ~State() { delete[] atoms_; }
+    virtual ~State() {
+        delete[] atoms_;
+    }
 
     void remap(State &state, index_vec &map) const {
         state.clear();
