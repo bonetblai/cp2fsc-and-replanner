@@ -106,7 +106,6 @@ namespace Inference {
                         for( CNF::iterator jt = it + 1; jt != reduced_cnf.end(); ) {
                             if( jt->find(literal) != jt->end() ) {
                                 reduced_cnf.erase(jt);
-                                change = true;
                             } else {
                                 Clause::iterator kt = jt->find(-literal);
                                 if( kt != jt->end() ) {
@@ -194,19 +193,17 @@ namespace Inference {
 
                 int w1 = replace(cnf, assigned, clause);
                 int w2 = watched_[clause].second;
-                // If w1 cannot be replaced and w2 is unnassigned, recursive call
 
+                // if w1 cannot be replaced and w2 is unnassigned, recursive call
                 int new_prop = cnf[clause][w2];
                 if( w1 != -1 ) {
-                    watched_[clause].first = w1;   // update new watched literal
+                    watched_[clause].first = w1; // update new watched literal
                 } else if( assigned[abs(new_prop)] == -1 ) {
                     assigned[abs(new_prop)] = new_prop > 0 ? 1 : 0;
                     if( !propagate(cnf, assigned, abs(new_prop)) )
                         no_conflict = false;
-                    // propagated[abs(p1)] = true;
-                //} else if( (assigned[abs(new_prop)] ? 1 : -1) * (new_prop) < 0 ) {
                 } else if( !is_true(new_prop, assigned) ) {
-                    // If w1 cannot be replaced and w2 is false there's conflict
+                    // if w1 cannot be replaced and w2 is false there's conflict
                     no_conflict = false;
                 }
             }
