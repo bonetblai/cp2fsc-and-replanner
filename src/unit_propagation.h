@@ -143,9 +143,9 @@ namespace Inference {
             return (value == cnf[clause][watched_[clause].first]) || (value == cnf[clause][watched_[clause].second]);
         }
 
-        // Returns new watched literal in given clause,
-        // after one of the watched literals has changed and evaluates to a non-false
-        // value. It is responsability of the client swapping the non-false watched literal
+        // Returns new watched literal in given clause, after one of the watched
+        // literals has changed and evaluates to a non-false value. It is
+        // responsability of the caller to swap the non-false watched literal
         // into the first watched literal (w1)
         int replace(const CNF &cnf, std::vector<int> &assigned, int clause) {
             for( int w1 = 0, w2 = watched_[clause].second; w1 < cnf[clause].size(); w1++ ) {
@@ -156,8 +156,8 @@ namespace Inference {
         }
 
         // Construct the vector of clauses indexes associated to the negative of
-        // a proposition prop. Since it is watched literals algorithm,
-        // those clauses must watch the value associated with prop.
+        // a proposition prop. Since it is watched literals algorithm, those clauses
+        // must watch the value associated with prop.
         void add_negative_propositions(const CNF &cnf, int var, int value, std::vector<int> &cp) const {
             assert(cp.empty());
             assert((var > 0) && (var < var_to_clauses_map_.size()));
@@ -168,9 +168,8 @@ namespace Inference {
             }
         }
 
-        // Returns true if a prop can propagated with
-        // new value set in assigned vector.
-        // It is client responsability give a proposition (prop > 0)
+        // Returns true if a prop can propagated with new value set in assigned vector.
+        // It is caller's responsability to give a proposition (prop > 0)
         virtual bool propagate(const CNF &cnf, std::vector<int> &assigned, int var) {
             assert((var > 0) && (var < assigned.size()));
             assert(assigned[var] != -1);
