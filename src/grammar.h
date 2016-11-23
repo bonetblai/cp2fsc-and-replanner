@@ -42,7 +42,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <list>
-#include <sstream>
+#include <string>
 #include "base.h"
 #include "utils.h"
 

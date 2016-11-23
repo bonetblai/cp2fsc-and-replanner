@@ -42,7 +42,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <list>
-#include <sstream>
+#include <string>
 #include "base.h"
 #include "utils.h"
 
@@ -162,7 +162,7 @@ domain_elements:
     ;
 
 domain_name:
-      TK_OPEN KW_DOMAIN any_symbol TK_CLOSE { domain_name_ = $3->text; }
+      TK_OPEN KW_DOMAIN any_symbol TK_CLOSE { domain_name_ = std::string($3->text); }
     ;
 
 // symbols
@@ -1023,7 +1023,7 @@ domain_default_sensing:
 
 pddl_problem:
       TK_OPEN KW_DEFINE TK_OPEN KW_PROBLEM any_symbol TK_CLOSE {
-          problem_name_ = $5->text;
+          problem_name_ = std::string($5->text);
       }
       problem_elements TK_CLOSE
     | TK_OPEN KW_DEFINE TK_OPEN KW_PROBLEM error TK_CLOSE {

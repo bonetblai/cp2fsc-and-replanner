@@ -106,7 +106,7 @@ void *alloca ();
 #include <stdlib.h>
 #include <string.h>
 #include <list>
-#include <sstream>
+#include <string>
 #include "base.h"
 #include "utils.h"
 
@@ -1708,7 +1708,7 @@ case 5:
     break;}
 case 13:
 #line 165 "ppddl.y"
-{ domain_name_ = yyvsp[-1].sym->text; ;
+{ domain_name_ = std::string(yyvsp[-1].sym->text); ;
     break;}
 case 14:
 #line 171 "ppddl.y"
@@ -2726,7 +2726,7 @@ case 196:
 case 197:
 #line 1025 "ppddl.y"
 {
-          problem_name_ = yyvsp[-1].sym->text;
+          problem_name_ = std::string(yyvsp[-1].sym->text);
       ;
     break;}
 case 199:

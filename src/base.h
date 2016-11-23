@@ -28,6 +28,7 @@
 #include <list>
 #include <map>
 #include <set>
+#include <string>
 #include <vector>
 
 #pragma GCC diagnostic ignored "-Wpragmas"
@@ -164,7 +165,7 @@ class PDDL_Base {
         void print(std::ostream &os) const { os << to_string(); }
         Condition* copy_and_simplify(bool negate = false) const { return ground(false, negate, false); }
         Condition* negate_and_simplify() const { return copy_and_simplify(true); }
-        bool is_grounded() const { var_symbol_vec empty_param; return !has_free_variables(empty_param, true); }
+        bool is_grounded() const { return !has_free_variables(var_symbol_vec(), true); }
     };
     struct condition_vec : public std::vector<const Condition*> { };
 
@@ -795,8 +796,8 @@ class PDDL_Base {
 
     // end of definitions for internal structures
 
-    const char                                *domain_name_;
-    const char                                *problem_name_;
+    std::string                               domain_name_;
+    std::string                               problem_name_;
 
     StringTable                               &tab_;
     const Options::Mode                       &options_;

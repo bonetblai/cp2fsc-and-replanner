@@ -55,13 +55,16 @@ static void clone_parameters(const PDDL_Base::var_symbol_vec &param, PDDL_Base::
 
 
 PDDL_Base::PDDL_Base(StringTable &t, const Options::Mode &options)
-  : domain_name_(0), problem_name_(0),
-    tab_(t), options_(options),
-    dom_top_type_(0), dom_goal_(0),
+  : tab_(t),
+    options_(options),
+    dom_top_type_(0),
+    dom_eq_pred_(0),
+    dom_goal_(0),
     normal_execution_(0),
     clg_translation_(false),
     lw1_translation_(false),
-    lw1_default_sensing_(0), lw1_default_sensing_proxy_(0) {
+    lw1_default_sensing_(0),
+    lw1_default_sensing_proxy_(0) {
 
     // setup predicate for equality
     StringTable::Cell *sc = tab_.inserta("object");
@@ -77,9 +80,9 @@ PDDL_Base::PDDL_Base(StringTable &t, const Options::Mode &options)
 }
 
 PDDL_Base::~PDDL_Base() {
+    delete dom_goal_;
     delete dom_eq_pred_;
     delete dom_top_type_;
-    delete dom_goal_;
 
     // TODO: for being able to remove actions/sensors and other symbols, symbols
     // cannot be shared between the parser and *-instances. Probably will need to
@@ -2902,8 +2905,8 @@ void PDDL_Base::do_lw1_translation(const variable_vec* &variables,
 }
 
 void PDDL_Base::emit_instance(Instance &ins) const {
-    const char *dname = tab_.table_char_map().strdup(domain_name_ ? domain_name_ : "??");
-    const char *pname = tab_.table_char_map().strdup(problem_name_ ? problem_name_ : "??");
+    const char *dname = tab_.table_char_map().strdup(!domain_name_.empty() ? domain_name_.c_str() : "??");
+    const char *pname = tab_.table_char_map().strdup(!problem_name_.empty() ? problem_name_.c_str() : "??");
     ins.name_ = new InstanceName(dname, pname);
     delete[] dname;
     delete[] pname;
