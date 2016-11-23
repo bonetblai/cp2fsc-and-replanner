@@ -494,7 +494,7 @@ namespace Inference {
             }
         }
 
-        // Deletes from group no longer possible valuations
+        // remove valuations inconsistent with k_dnf
         void filter_group_with_k_dnf(int group_index, const std::vector<std::vector<int> > &k_dnf) const {
             assert((group_index >= 0) && (group_index < variable_groups_.size()));
             const GroupVariable &group = *variable_groups_[group_index];
@@ -550,7 +550,6 @@ namespace Inference {
     };
 
     inline bool GroupVariable::is_consistent_with(const std::vector<int> &joint_valuation, int k_literal, const Csp &csp) const {
-#if 1
         assert(k_literal > 0);
         int k_atom = k_literal - 1;
         bool k_not = k_atom % 2 == 1;
@@ -560,15 +559,6 @@ namespace Inference {
         int pos = get_pos_from_var_index(var_index);
         assert((pos >= 0) && (pos < joint_valuation.size()));
         return var.is_binary() || !k_not ? joint_valuation[pos] == k_atom : joint_valuation[pos] != k_atom - 1;
-#else // DEPRECATED
-        assert(k_literal != 0);
-        int atom = k_literal > 0 ? (k_literal - 1) >> 1 : (-k_literal - 1) >> 1;
-        int var_index = csp.get_var_index(atom);
-        assert(var_index != -1);
-        int pos = get_pos_from_var_index(var_index);
-        assert((pos >= 0) && (pos < joint_valuation.size()));
-        return joint_valuation[pos] == k_literal - 1;
-#endif
     }
 
     inline void GroupVariable::print(std::ostream &os, const std::vector<int> &joint_valuation, const Csp &csp) const {
@@ -687,7 +677,7 @@ namespace Inference {
 #endif
                     return false; // reached inconsistency
                 } else if( p.second ) {
-                    // some value of var_x was deleted, add all edges that enter var_x
+                    // some value of var_x was removed, add all edges that enter var_x
                     const std::vector<int> &alist = digraph_.alist(edge.src_);
                     for( size_t k = 0; k < alist.size(); ++k )
                         worklist_.push_back(alist[k]);
