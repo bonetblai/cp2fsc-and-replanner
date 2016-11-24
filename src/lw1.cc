@@ -20,6 +20,7 @@
 #include <iostream>
 #include <iomanip>
 #include <libgen.h>
+#include <memory>
 #include "action_selection.h"
 #include "classical_planner_wrapper.h"
 #include "problem.h"
@@ -43,7 +44,8 @@ Options::Mode g_options;
 void print_usage(ostream &os, const char *exec_name, const char **cmdline_options) {
     char *tmp = strdup(exec_name);
     const char *base_name = basename(tmp);
-    int indent = strlen("usage: ") + strlen(base_name) + 1;
+    int indent_len = strlen("usage: ") + strlen(base_name) + 1;
+    string indent(indent_len, ' ');
 
     os << endl << "usage: " << base_name << " ";
     free(tmp);
@@ -53,12 +55,12 @@ void print_usage(ostream &os, const char *exec_name, const char **cmdline_option
     } else {
         os << cmdline_options[0] << endl;
         for( int i = 1; cmdline_options[i] != 0; ++i ) {
-            os << setw(indent) << "" << cmdline_options[i] << endl;
+            os << indent << cmdline_options[i] << endl;
         }
     }
 
-    os << setw(indent) << "" << "[--options=<options>]" << endl
-       << setw(indent) << "" << "<pddl-files>" << endl
+    os << indent << "[--options=<options>]" << endl
+       << indent << "<pddl-files>" << endl
        << endl
        << "where <options> is a comma-separated list of options from:" << endl
        << endl;
@@ -125,7 +127,7 @@ int main(int argc, const char *argv[]) {
     }
 
     int nfiles = 0;
-    Parser* reader = new Parser(Parser::replanner, symbols, g_options);
+    unique_ptr<Parser> reader = make_unique<Parser>(Parser::replanner, symbols, g_options);
 
     // parse options
     bool skip_options = false;
@@ -321,7 +323,7 @@ int main(int argc, const char *argv[]) {
     //instance.do_action_compilation(*variables);
 
     cout << "creating KP translation..." << endl;
-    LW1_Instance *lw1_instance = new LW1_Instance(instance, *variables, *variable_groups, *sensing_models, *accepted_literals_for_observables);
+    unique_ptr<LW1_Instance> lw1_instance = make_unique<LW1_Instance>(instance, *variables, *variable_groups, *sensing_models, *accepted_literals_for_observables);
 
     if( g_options.is_enabled("kp:print:raw") ) {
         lw1_instance->print(cout);
@@ -340,18 +342,18 @@ int main(int argc, const char *argv[]) {
     float preprocessing_time = Utils::read_time_in_seconds() - start_time;
 
     // construct classical planner
-    const ClassicalPlanner *planner = 0;
+    unique_ptr<const ClassicalPlanner> planner;
     if( need_classical_planner || g_options.is_enabled("solver:classical-planner") ) {
         if( opt_planner == "ff" ) {
-            planner = new FF_Planner(*lw1_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+            planner = make_unique<const FF_Planner>(*lw1_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
         } else if( opt_planner == "lama" ) {
-            planner = new LAMA_Planner(*lw1_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+            planner = make_unique<const LAMA_Planner>(*lw1_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
         } else if( opt_planner == "m" ) {
-            planner = new M_Planner(*lw1_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+            planner = make_unique<const M_Planner>(*lw1_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
         } else if( opt_planner == "mp" ) {
-            planner = new MP_Planner(*lw1_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+            planner = make_unique<const MP_Planner>(*lw1_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
         } else if( opt_planner == "lama-server" ) {
-            planner = new LAMA_Server_Planner(*lw1_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+            planner = make_unique<const LAMA_Server_Planner>(*lw1_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
         } else {
             std::cout << Utils::error() << "unrecognized planner '" << opt_planner << "'" << std::endl;
             exit(-1);
@@ -359,31 +361,31 @@ int main(int argc, const char *argv[]) {
     }
 
     // construct inference engine
-    Inference::Engine<STATE_CLASS> *inference_engine = 0;
+    unique_ptr<Inference::Engine<STATE_CLASS> > inference_engine;
     if( g_options.is_enabled("lw1:inference:forward-chaining") ) {
-        inference_engine = new Inference::ForwardChaining<STATE_CLASS>(instance, *lw1_instance, g_options);
+        inference_engine = make_unique<Inference::ForwardChaining<STATE_CLASS> >(instance, *lw1_instance, g_options);
     } else if( g_options.is_enabled("lw1:inference:up") ) {
-        inference_engine = new Inference::UnitPropagation<STATE_CLASS>(instance, *lw1_instance, g_options);
+        inference_engine = make_unique<Inference::UnitPropagation<STATE_CLASS> >(instance, *lw1_instance, g_options);
     } else if( g_options.is_enabled("lw1:inference:ac3") ) {
-        inference_engine = new Inference::AC3<STATE_CLASS>(instance, *lw1_instance, g_options);
+        inference_engine = make_unique<Inference::AC3<STATE_CLASS> >(instance, *lw1_instance, g_options);
     } else {
         cout << Utils::error() << "unspecified inference method for lw1" << endl;
         exit(-1);
     }
 
     // construct action selection
-    ActionSelection<STATE_CLASS> *action_selection = 0;
+    unique_ptr<ActionSelection<STATE_CLASS> > action_selection;
     if( g_options.is_enabled("solver:naive-random-action-selection") ) {
-        action_selection = new NaiveRandomActionSelection<STATE_CLASS>(*lw1_instance);
+        action_selection = make_unique<NaiveRandomActionSelection<STATE_CLASS> >(*lw1_instance);
     } else if( g_options.is_enabled("solver:random-action-selection") ) {
         assert(planner != 0);
-        ActionSelection<STATE_CLASS> *alternate_action_selection = new ClassicalPlannerWrapper<STATE_CLASS>(*planner);
-        action_selection = new RandomActionSelection<STATE_CLASS>(*lw1_instance, alternate_action_selection);
+        unique_ptr<const ActionSelection<STATE_CLASS> > alternate_action_selection = make_unique<const ClassicalPlannerWrapper<STATE_CLASS> >(*planner);
+        action_selection = make_unique<RandomActionSelection<STATE_CLASS> >(*lw1_instance, alternate_action_selection);
     } else if( g_options.is_enabled("solver:width-based-action-selection") ) {
-        action_selection = new Width::ActionSelection<STATE_CLASS>(*lw1_instance, *inference_engine);
+        action_selection = make_unique<Width::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine);
     } else {
         assert(planner != 0);
-        action_selection = new ClassicalPlannerWrapper<STATE_CLASS>(*planner);
+        action_selection = make_unique<ClassicalPlannerWrapper<STATE_CLASS> >(*planner);
     }
 
     // solve problem
@@ -432,7 +434,7 @@ int main(int argc, const char *argv[]) {
                 if( g_options.is_enabled("solver:print:sensed-literals") ) {
                     const set<int> &sensed = sensed_literals[0];
                     if( sensed.size() > 0 ) {
-                        if( need_indent ) cout << "      ";
+                        if( need_indent ) cout << string(6, ' ');
                         cout << "init@:" << flush;
                         for( set<int>::const_iterator it = sensed.begin(); it != sensed.end(); ++it ) {
                             int literal = *it;
@@ -447,7 +449,7 @@ int main(int argc, const char *argv[]) {
                 }
 
                 for( size_t k = 0; k < plan.size(); ++k ) {
-                    if( need_indent ) cout << "      ";
+                    if( need_indent ) cout << string(6, ' ');
                     cout << setw(4) << k << " : " << instance.actions_[plan[k]]->name_ << endl;
                     if( g_options.is_enabled("solver:print:fired-sensors") ) {
                         const set<int> &sensors = fired_sensors[1+k];
@@ -514,13 +516,6 @@ int main(int argc, const char *argv[]) {
              << current_time - start_time << " (total-acc-time)" << flush
              << endl << endl;
     }
-
-    delete action_selection;
-    delete inference_engine;
-    delete planner;
-    delete lw1_instance;
-    delete reader;
-
     return 0;
 }
 

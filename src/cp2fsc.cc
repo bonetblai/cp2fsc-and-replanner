@@ -37,7 +37,8 @@ Options::Mode g_options;
 void print_usage(ostream &os, const char *exec_name, const char **cmdline_options) {
     char *tmp = strdup(exec_name);
     const char *base_name = basename(tmp);
-    int indent = strlen("usage: ") + strlen(base_name) + 1;
+    int indent_len = strlen("usage: ") + strlen(base_name) + 1;
+    string indent(indent_len, ' ');
 
     os << endl << "usage: " << base_name << " ";
     free(tmp);
@@ -47,12 +48,12 @@ void print_usage(ostream &os, const char *exec_name, const char **cmdline_option
     } else {
         os << cmdline_options[0] << endl;
         for( int i = 1; cmdline_options[i] != 0; ++i ) {
-            os << setw(indent) << "" << cmdline_options[i] << endl;
+            os << indent << "" << cmdline_options[i] << endl;
         }
     }
 
-    os << setw(indent) << "" << "[--options=<options>]" << endl
-       << setw(indent) << "" << "<pddl-files>" << endl
+    os << indent << "[--options=<options>]" << endl
+       << indent << "<pddl-files>" << endl
        << endl
        << "where <options> is a comma-separated list of options from:" << endl
        << endl;
@@ -96,7 +97,7 @@ int main(int argc, const char *argv[]) {
     }
 
     int nfiles = 0;
-    Parser* reader = new Parser(Parser::cp2fsc, symbols, g_options);
+    unique_ptr<Parser> reader = make_unique<Parser>(Parser::cp2fsc, symbols, g_options);
 
     // parse options
     bool skip_options = false;
@@ -176,7 +177,6 @@ int main(int argc, const char *argv[]) {
 
     cout << "instantiating control problem..." << endl;
     reader->emit_instance(instance);
-    //delete reader;
     if( g_options.is_enabled("problem:print:raw") ) {
         instance.print(cout);
         instance.write_domain(cout);

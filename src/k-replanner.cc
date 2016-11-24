@@ -37,7 +37,8 @@ Options::Mode g_options;
 void print_usage(ostream &os, const char *exec_name, const char **cmdline_options) {
     char *tmp = strdup(exec_name);
     const char *base_name = basename(tmp);
-    int indent = strlen("usage: ") + strlen(base_name) + 1;
+    int indent_len = strlen("usage: ") + strlen(base_name) + 1;
+    string indent(indent_len, ' ');
 
     os << endl << "usage: " << base_name << " ";
     free(tmp);
@@ -47,12 +48,12 @@ void print_usage(ostream &os, const char *exec_name, const char **cmdline_option
     } else {
         os << cmdline_options[0] << endl;
         for( int i = 1; cmdline_options[i] != 0; ++i ) {
-            os << setw(indent) << "" << cmdline_options[i] << endl;
+            os << indent << cmdline_options[i] << endl;
         }
     }
 
-    os << setw(indent) << "" << "[--options=<options>]" << endl
-       << setw(indent) << "" << "<pddl-files>" << endl
+    os << indent << "[--options=<options>]" << endl
+       << indent << "<pddl-files>" << endl
        << endl
        << "where <options> is a comma-separated list of options from:" << endl
        << endl;
@@ -103,7 +104,7 @@ int main(int argc, const char *argv[]) {
     }
 
     int nfiles = 0;
-    Parser* reader = new Parser(Parser::replanner, symbols, g_options);
+    unique_ptr<Parser> reader = make_unique<Parser>(Parser::replanner, symbols, g_options);
 
     // parse options
     bool skip_options = false;
@@ -212,11 +213,11 @@ int main(int argc, const char *argv[]) {
     }
 
     cout << "creating KP translation..." << endl;
-    KP_Instance *kp_instance = 0;
+    unique_ptr<KP_Instance> kp_instance;
     if( translation_type == 0 ) {
-        kp_instance = new Standard_KP_Instance(instance);
+        kp_instance = make_unique<Standard_KP_Instance>(instance);
     } else if( translation_type == 1 ) {
-        kp_instance = new CLG_Instance(instance);
+        kp_instance = make_unique<CLG_Instance>(instance);
     }
     assert(kp_instance != 0);
 
@@ -237,17 +238,17 @@ int main(int argc, const char *argv[]) {
     float preprocessing_time = Utils::read_time_in_seconds() - start_time;
 
     // construct classical planner
-    const ClassicalPlanner *planner = 0;
+    unique_ptr<const ClassicalPlanner> planner;
     if( opt_planner == "ff" ) {
-        planner = new FF_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+        planner = make_unique<const FF_Planner>(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
     } else if( opt_planner == "lama" ) {
-        planner = new LAMA_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+        planner = make_unique<const LAMA_Planner>(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
     } else if( opt_planner == "m" ) {
-        planner = new M_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+        planner = make_unique<const M_Planner>(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
     } else if( opt_planner == "mp" ) {
-        planner = new MP_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+        planner = make_unique<const MP_Planner>(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
     } else if( opt_planner == "lama-server" ) {
-        planner = new LAMA_Server_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+        planner = make_unique<const LAMA_Server_Planner>(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
     }
 
     // solve problem
@@ -288,7 +289,7 @@ int main(int argc, const char *argv[]) {
                 if( g_options.is_enabled("solver:print:sensed-literals") ) {
                     const set<int> &sensed = sensed_literals[0];
                     if( sensed.size() > 0 ) {
-                        if( need_indent ) cout << "      ";
+                        if( need_indent ) cout << string(6, ' ');
                         cout << "init@:" << flush;
                         for( set<int>::const_iterator it = sensed.begin(); it != sensed.end(); ++it ) {
                             int literal = *it;
@@ -303,7 +304,7 @@ int main(int argc, const char *argv[]) {
                 }
 
                 for( size_t k = 0; k < plan.size(); ++k ) {
-                    if( need_indent ) cout << "      ";
+                    if( need_indent ) cout << string(6, ' ');
                     cout << setw(4) << k << " : " << instance.actions_[plan[k]]->name_ << endl;
                     if( g_options.is_enabled("solver:print:fired-sensors") ) {
                         const set<int> &sensors = fired_sensors[1+k];
@@ -369,9 +370,6 @@ int main(int argc, const char *argv[]) {
              << current_time - start_time << " (total-acc-time)" << flush
              << endl << endl;
     }
-
-    delete planner;
-    delete reader;
     return 0;
 }
 
