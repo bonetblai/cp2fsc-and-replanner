@@ -31,23 +31,41 @@ class KP_Instance : public Instance {
   protected:
     // merge of deductive rules
     struct DRTemplate {
+#ifdef SMART
+        std::unique_ptr<const Action> action_;
+#else
         const Action *action_;
+#endif
         std::set<When> when_;
         std::string extra_;
+        DRTemplate(const DRTemplate &dr) = delete;
+#ifdef SMART
+        DRTemplate(std::unique_ptr<const Action> &&action, const std::string &extra = "")
+          : action_(std::move(action)), extra_(extra) {
+            if( action != nullptr ) {
+                for( size_t i = 0; i < action_->when_.size(); ++i )
+                    when_.insert(action_->when_[i]);
+            }
+        }
+#else
         DRTemplate(const Action *action = 0, const std::string &extra = "") : action_(action), extra_(extra) {
             if( action != 0 ) {
                 for( size_t i = 0; i < action_->when_.size(); ++i )
                     when_.insert(action_->when_[i]);
             }
         }
-        bool operator()(const DRTemplate &d1, const DRTemplate &d2) const {
-            return (d1.action_->precondition_ < d2.action_->precondition_) ||
-                   ((d1.action_->precondition_ == d2.action_->precondition_) && (d1.action_->effect_ < d2.action_->effect_)) ||
-                   ((d1.action_->precondition_ == d2.action_->precondition_) && (d1.action_->effect_ == d2.action_->effect_) && (d1.when_ < d2.when_)) ||
-                   ((d1.action_->precondition_ == d2.action_->precondition_) && (d1.action_->effect_ == d2.action_->effect_) && (d1.when_ == d2.when_) && (d1.extra_ < d2.extra_));
-        }
+#endif
+        struct Comparator {
+            bool operator()(const DRTemplate &d1, const DRTemplate &d2) const {
+                return (d1.action_->precondition_ < d2.action_->precondition_) ||
+                       ((d1.action_->precondition_ == d2.action_->precondition_) && (d1.action_->effect_ < d2.action_->effect_)) ||
+                       ((d1.action_->precondition_ == d2.action_->precondition_) && (d1.action_->effect_ == d2.action_->effect_) && (d1.when_ < d2.when_)) ||
+                       ((d1.action_->precondition_ == d2.action_->precondition_) && (d1.action_->effect_ == d2.action_->effect_) && (d1.when_ == d2.when_) && (d1.extra_ < d2.extra_));
+            }
+        };
     };
-    std::multiset<DRTemplate, DRTemplate> drule_store_;
+
+    std::multiset<DRTemplate, DRTemplate::Comparator> drule_store_;
     void merge_drules();
 
     // for subgoaling

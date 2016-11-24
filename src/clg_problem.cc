@@ -185,7 +185,11 @@ void CLG_Instance::create_drules_from_invariant(const Invariant &invariant) {
 
     for( size_t k = 0; k < invariant.size(); ++k ) {
         string name = string("drule-invariant-") + (invariant.type_ == Invariant::AT_LEAST_ONE ? "alo-" : "amo-") + Utils::to_string(drule_store_.size());
+#ifdef SMART
+        unique_ptr<Action> nact = make_unique<Action>(new CopyName(name));
+#else
         Action *nact = new Action(new CopyName(name));
+#endif
 
         // setup precondition
         assert(invariant.Xprecondition_.empty());
@@ -230,7 +234,11 @@ void CLG_Instance::create_drules_from_invariant(const Invariant &invariant) {
         }
 
         // store invariant action
+#ifdef SMART
+        drule_store_.emplace(move(nact));
+#else
         drule_store_.insert(DRTemplate(nact));
+#endif
     }
 }
 

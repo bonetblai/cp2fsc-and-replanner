@@ -1022,7 +1022,11 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
         assert(options_.is_enabled("lw1:boost:drule:sensing:type3") || (action_name.compare(0, 20, "drule-sensing-type3-") != 0));
 
         if( action_name.compare(0, 20, "drule-sensing-type3-") == 0 ) {
+#ifdef SMART
+            unique_ptr<Action> nact = make_unique<Action>(new CopyName(action_name));
+#else
             Action *nact = new Action(new CopyName(action_name));
+#endif
             for( index_set::const_iterator it = action.precondition_.begin(); it != action.precondition_.end(); ++it ) {
                 int index = *it > 0 ? *it - 1 : -*it - 1;
                 nact->precondition_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
@@ -1031,9 +1035,17 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                 int index = *it > 0 ? *it - 1 : -*it - 1;
                 nact->effect_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
             }
+#ifdef SMART
+            drule_store_.emplace(move(nact));
+#else
             drule_store_.insert(DRTemplate(nact));
+#endif
         } else if( action_name.compare(0, 25, "drule-sensing-type4state-") == 0 ) {
+#ifdef SMART
+            unique_ptr<Action> nact = make_unique<Action>(new CopyName(action_name));
+#else
             Action *nact = new Action(new CopyName(action_name));
+#endif
 
             assert(action.precondition_.size() == 1);
             assert(action.effect_.size() == 1);
@@ -1084,11 +1096,19 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                 complete_effect(nact->effect_, literal_for_value, variable);
 
             //nact->print(cout, *this);
+#ifdef SMART
+            drule_store_.emplace(move(nact));
+#else
             drule_store_.insert(DRTemplate(nact));
+#endif
         } else if( action_name.compare(0, 29, "drule-sensing-type4obs-boost-") == 0 ) {
             assert(action.when_.empty());
 
+#ifdef SMART
+            unique_ptr<Action> nact = make_unique<Action>(new CopyName(action_name));
+#else
             Action *nact = new Action(new CopyName(action_name));
+#endif
 
             // obtain variable
             assert(action.comment_ != "");
@@ -1182,10 +1202,19 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             }
 
             //nact->print(cout, *this);
+#ifdef SMART
+            drule_store_.emplace(move(nact));
+#else
             drule_store_.insert(DRTemplate(nact));
+#endif
         } else if( action_name.compare(0, 23, "drule-sensing-type4obs-") == 0 ) {
-            Action *nact = new Action(new CopyName(action_name));
             assert(action.precondition_.size() == 1);
+
+#ifdef SMART
+            unique_ptr<Action> nact = make_unique<Action>(new CopyName(action_name));
+#else
+            Action *nact = new Action(new CopyName(action_name));
+#endif
 
             // obtain variable and value
             assert(action.comment_ != "");
@@ -1412,7 +1441,11 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
 #endif
 
             //nact->print(cout, *this);
+#ifdef SMART
+            drule_store_.emplace(move(nact));
+#else
             drule_store_.insert(DRTemplate(nact));
+#endif
         } else {
             // skip sensing drules of type5 as they are not passed to classical problem (CHECK: WHY?)
             assert(action_name.compare(0, 20, "drule-sensing-type5-") == 0);
@@ -1432,7 +1465,11 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
         }
     } else {
         assert(action_name.compare(0, 14, "drule-sensing-") == 0);
+#ifdef SMART
+        unique_ptr<Action> nact = make_unique<Action>(new CopyName(action_name));
+#else
         Action *nact = new Action(new CopyName(action_name));
+#endif
         for( index_set::const_iterator it = action.precondition_.begin(); it != action.precondition_.end(); ++it ) {
             int index = *it > 0 ? *it - 1 : -*it - 1;
             nact->precondition_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
@@ -1442,7 +1479,11 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             nact->effect_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
             nact->precondition_.insert(*it > 0 ? -(1 + 2*index + 1) : -(1 + 2*index)); // CHECK: is this necessary?
         }
+#ifdef SMART
+        drule_store_.emplace(move(nact));
+#else
         drule_store_.insert(DRTemplate(nact));
+#endif
     }
 }
 
@@ -1465,7 +1506,11 @@ void LW1_Instance::complete_effect(index_set &effect, int literal) const {
 void LW1_Instance::create_drule_for_atom(const Action &action) {
     string action_name = action.name_->to_string();
     assert(action_name.compare(0, 11, "drule-atom-") == 0);
+#ifdef SMART
+    unique_ptr<Action> nact = make_unique<Action>(new CopyName(action_name));
+#else
     Action *nact = new Action(new CopyName(action_name));
+#endif
     for( index_set::const_iterator it = action.precondition_.begin(); it != action.precondition_.end(); ++it ) {
         int index = *it > 0 ? *it - 1 : -*it - 1;
         nact->precondition_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
@@ -1474,7 +1519,11 @@ void LW1_Instance::create_drule_for_atom(const Action &action) {
         int index = *it > 0 ? *it - 1 : -*it - 1;
         nact->effect_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
     }
+#ifdef SMART
+    drule_store_.emplace(move(nact));
+#else
     drule_store_.insert(DRTemplate(nact));
+#endif
 }
 
 void LW1_Instance::create_sensor(const Sensor &sensor) {

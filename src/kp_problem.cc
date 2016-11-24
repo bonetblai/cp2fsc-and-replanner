@@ -50,7 +50,7 @@ void KP_Instance::write_problem(ostream &os, const State *state, int indent) con
 }
 
 void KP_Instance::merge_drules() {
-    multiset<DRTemplate, DRTemplate>::key_compare comparator = drule_store_.key_comp();
+    multiset<DRTemplate, DRTemplate::Comparator>::key_compare comparator = drule_store_.key_comp();
     for( multiset<DRTemplate, DRTemplate>::const_iterator it = drule_store_.begin(); it != drule_store_.end(); ) {
         //string type = it->first.second;
         const DRTemplate &record = *it;
@@ -71,12 +71,16 @@ void KP_Instance::merge_drules() {
             while( !comparator(record, *it) ) {
                 assert(it != drule_store_.end());
                 nact.comment_ = "<merge>";
+#ifndef SMART
                 delete it->action_;
+#endif
                 if( ++it == drule_store_.end() ) break;
             }
         }
 
+#ifndef SMART
         delete record.action_;
+#endif
         if( options_.is_enabled("kp:print:action:drule:sensing") || options_.is_enabled("kp:print:action:drule") )
             nact.print(cout, *this);
     }
@@ -607,7 +611,11 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
 
     // create invariant rules
     size_t invariant_no = 0;
+#ifdef SMART
+    multimap<index_set, unique_ptr<const Action> > invariant_actions;
+#else
     multimap<index_set, const Action*> invariant_actions;
+#endif
     for( invariant_vec::const_iterator it = ins.init_.invariants_.begin(); it != ins.init_.invariants_.end(); ++it ) {
         const Invariant &invariant = *it;
         assert((invariant.type_ == Invariant::AT_LEAST_ONE) || (invariant.type_ == Invariant::AT_MOST_ONE));
@@ -618,7 +626,11 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
         //cout << "Processing invariant "; invariant.write(cout, 0, ins);
         for( size_t k = 0; k < invariant.size(); ++k ) {
             string name = string("invariant-") + (invariant.type_ == Invariant::AT_LEAST_ONE ? "at-least-one" : "at-most-one") + "-" + Utils::to_string(invariant_no++);
+#ifdef SMART
+            unique_ptr<Action> nact = make_unique<Action>(new CopyName(name));
+#else
             Action *nact = new Action(new CopyName(name));
+#endif
             vector<int> completion;
 
             // setup precondition
@@ -684,13 +696,21 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
             nact->comment_ = comment_body + " ==> " + comment_head;
 
             // store invariant action
+#ifdef SMART
+            invariant_actions.emplace(nact->precondition_, move(nact));
+#else
             invariant_actions.insert(make_pair(nact->precondition_, nact));
+#endif
         }
     }
 
     // insert invariant rules into instance (merging similar actions if option is enabled)
     multimap<index_set, const Action*>::key_compare comparator = invariant_actions.key_comp();
+#ifdef SMART
+    for( multimap<index_set, unique_ptr<const Action> >::const_iterator it = invariant_actions.begin(); it != invariant_actions.end(); ) {
+#else
     for( multimap<index_set, const Action*>::const_iterator it = invariant_actions.begin(); it != invariant_actions.end(); ) {
+#endif
         const Action &invariant = *it->second;
         Action &nact = new_action(new CopyName(invariant.name_->to_string()));
         nact.precondition_ = invariant.precondition_;
@@ -698,7 +718,9 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
         nact.when_ = invariant.when_;
         nact.cost_ = invariant.cost_;
         nact.comment_ = invariant.comment_;
+#ifndef SMART
         delete it->second;
+#endif
         if( ++it == invariant_actions.end() ) break;
 
         if( options_.is_enabled("kp:merge-invariants") ) {
@@ -717,7 +739,9 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
                     }
                 }
 #endif
+#ifndef SMART
                 delete it->second;
+#endif
                 if( ++it == invariant_actions.end() ) break;
             }
         }
@@ -828,7 +852,6 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
     create_subgoaling_actions(ins);
     n_subgoaling_actions_ = n_actions() - n_standard_actions_ - n_sensor_actions_ - n_invariant_actions_;
 }
-
 
 Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
   : KP_Instance(ins.options_), po_instance_(ins) {
@@ -995,7 +1018,11 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
 
     // create invariant rules
     size_t invariant_no = 0;
+#ifdef SMART
+    multimap<index_set, unique_ptr<const Action> > invariant_actions;
+#else
     multimap<index_set, const Action*> invariant_actions;
+#endif
     for( invariant_vec::const_iterator it = ins.init_.invariants_.begin(); it != ins.init_.invariants_.end(); ++it ) {
         const Invariant &invariant = *it;
         assert((invariant.type_ == Invariant::AT_LEAST_ONE) || (invariant.type_ == Invariant::AT_MOST_ONE));
@@ -1006,7 +1033,11 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
         //cout << "Processing invariant "; invariant.write(cout, 0, ins);
         for( size_t k = 0; k < invariant.size(); ++k ) {
             string name = string("invariant-") + (invariant.type_ == Invariant::AT_LEAST_ONE ? "at-least-one" : "at-most-one") + "-" + Utils::to_string(invariant_no++);
+#ifdef SMART
+            unique_ptr<Action> nact = make_unique<Action>(new CopyName(name));
+#else
             Action *nact = new Action(new CopyName(name));
+#endif
             vector<int> completion;
 
             // setup precondition
@@ -1072,13 +1103,21 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
             nact->comment_ = comment_body + " ==> " + comment_head;
 
             // store invariant action
+#ifdef SMART
+            invariant_actions.emplace(nact->precondition_, move(nact));
+#else
             invariant_actions.insert(make_pair(nact->precondition_, nact));
+#endif
         }
     }
 
     // insert invariant rules into instance (merging similar actions if option is enabled)
     multimap<index_set, const Action*>::key_compare comparator = invariant_actions.key_comp();
+#ifdef SMART
+    for( multimap<index_set, unique_ptr<const Action> >::const_iterator it = invariant_actions.begin(); it != invariant_actions.end(); ) {
+#else
     for( multimap<index_set, const Action*>::const_iterator it = invariant_actions.begin(); it != invariant_actions.end(); ) {
+#endif
         const Action &invariant = *it->second;
         Action &nact = new_action(new CopyName(invariant.name_->to_string()));
         nact.precondition_ = invariant.precondition_;
@@ -1086,7 +1125,9 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
         nact.when_ = invariant.when_;
         nact.cost_ = invariant.cost_;
         nact.comment_ = invariant.comment_;
+#ifndef SMART
         delete it->second;
+#endif
         if( ++it == invariant_actions.end() ) break;
 
         if( options_.is_enabled("kp:merge-invariants") ) {
@@ -1105,7 +1146,9 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
                     }
                 }
 #endif
+#ifndef SMART
                 delete it->second;
+#endif
                 if( ++it == invariant_actions.end() ) break;
             }
         }
