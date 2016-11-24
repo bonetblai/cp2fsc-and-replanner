@@ -648,11 +648,6 @@ void Instance::write_action_set(ostream &os, const bool_vec &set) const {
 }
 
 void Instance::write_domain(ostream &os, int indent) const {
-    // setup indentation string
-    char *istr = new char[indent+1];
-    for( int i = 0; i < indent; ++i ) istr[i] = ' ';
-    istr[indent] = '\0';
-
     // name of domain
     if( name_ ) {
         Name::domain_name_only = true;
@@ -664,18 +659,18 @@ void Instance::write_domain(ostream &os, int indent) const {
 
     // requirements
     if( always_write_requirements_declaration_ ) {
-        os << istr << "(:requirements :strips :conditional-effects)" << endl;
+        os << string(indent, ' ') << "(:requirements :strips :conditional-effects)" << endl;
     }
 
     // predicates
     if( n_atoms() > 0 ) {
-        os << istr << "(:predicates" << endl;
+        os << string(indent, ' ') << "(:predicates" << endl;
         for( size_t k = 0; k < n_atoms(); k++ ) {
-            os << istr << istr;
+            os << string(2 * indent, ' ');
             State::print_literal(os, 1 + k, this);
             os << endl;
         }
-        os << istr << ")" << endl;
+        os << string(indent, ' ') << ")" << endl;
     }
 
     // actions
@@ -696,38 +691,32 @@ void Instance::write_domain(ostream &os, int indent) const {
     }
 
     os << ")" << endl;
-    delete[] istr;
 }
 
 void Instance::write_problem(ostream &os, const State *state, int indent) const {
-    // setup indentation string
-    char *istr = new char[indent+1];
-    for( int i = 0; i < indent; ++i ) istr[i] = ' ';
-    istr[indent] = '\0';
-
     // name of domain
     if( name_ ) {
         Name::problem_name_only = true;
         os << "(define (problem " << name_ << ")" << endl;
         Name::problem_name_only = false;
         Name::domain_name_only = true;
-        os << istr << "(:domain " << name_ << ")" << endl;
+        os << string(indent, ' ') << "(:domain " << name_ << ")" << endl;
         Name::domain_name_only = false;
     } else {
         os << "(define (problem NONAME)" << endl;
-        os << istr << "(:domain NONAME)" << endl;
+        os << string(indent, ' ') << "(:domain NONAME)" << endl;
     }
 
     // initial situation
     if( (state == 0) && !init_.literals_.empty() ) {
-        os << istr << "(:init";
+        os << string(indent, ' ') << "(:init";
         for( index_set::const_iterator it = init_.literals_.begin(); it != init_.literals_.end(); ++it ) {
             os << " ";
             State::print_literal(os, *it, this);
         }
         os << ")" << endl;
     } else if( state != 0 ) {
-        os << istr << "(:init";
+        os << string(indent, ' ') << "(:init";
         for( State::const_iterator it = state->begin(); it != state->end(); ++it ) {
             os << " ";
             State::print_literal(os, 1 + *it, this);
@@ -737,7 +726,7 @@ void Instance::write_problem(ostream &os, const State *state, int indent) const 
 
     // goal situation
     if( !goal_literals_.empty() ) {
-        os << istr << "(:goal";
+        os << string(indent, ' ') << "(:goal";
         if( goal_literals_.size() > 1 ) os << " (and";
         for( index_set::const_iterator it = goal_literals_.begin(); it != goal_literals_.end(); ++it ) {
             os << " ";
@@ -748,7 +737,6 @@ void Instance::write_problem(ostream &os, const State *state, int indent) const 
     }
 
     os << ")" << endl;
-    delete[] istr;
 }
 
 void Instance::print(ostream &os) const {
@@ -813,21 +801,16 @@ void Instance::Action::print(ostream &os, const Instance &i) const {
 }
 
 void Instance::Action::write(ostream &os, int indent, const Instance &instance) const {
-    // setup indentation string
-    char *istr = new char[indent+1];
-    for( int i = 0; i < indent; ++i ) istr[i] = ' ';
-    istr[indent] = '\0';
-
     // name and parameters
-    os << istr << "(:action " << name_->to_string();
+    os << string(indent, ' ') << "(:action " << name_->to_string();
     if( comment_ != "" ) os << "    ; " << comment_;
     os << endl;
     if( always_write_parameters_declaration_ )
-        os << istr << istr << ":parameters ()" << endl;
+        os << string(2 * indent, ' ') << ":parameters ()" << endl;
 
     // precondition
     if( precondition_.size() > 0 ) {
-        os << istr << istr << ":precondition";
+        os << string(2 * indent, ' ') << ":precondition";
         if( (precondition_.size() > 1) || always_write_conjunction_ ) os << " (and";
         for( index_set::const_iterator p = precondition_.begin(); p != precondition_.end(); ++p ) {
             os << " ";
@@ -837,15 +820,15 @@ void Instance::Action::write(ostream &os, int indent, const Instance &instance) 
         os << endl;
     } else if( always_write_precondition_ ) {
         if( always_write_conjunction_ )
-            os << istr << istr << ":precondition (and)" << endl;
+            os << string(2 * indent, ' ') << ":precondition (and)" << endl;
         else
-            os << istr << istr << ":precondition ()" << endl;
+            os << string(2 * indent, ' ') << ":precondition ()" << endl;
     }
 
     // effects
     int n_effects = effect_.size() + when_.size();
     if( n_effects > 0 ) {
-        os << istr << istr << ":effect";
+        os << string(2 * indent, ' ') << ":effect";
         if( n_effects > 1 ) os << " (and";
 
         // add and del effects
@@ -861,7 +844,7 @@ void Instance::Action::write(ostream &os, int indent, const Instance &instance) 
             if( n_ceffects > 0 ) {
                 assert(!w.condition_.empty());
                 if( (i > 0) || (effect_.size() > 0) )
-                    os << endl << istr << istr << "            ";
+                    os << endl << string(2 * indent, ' ') << "            ";
                 os << " (when";
 
                 // condition
@@ -887,7 +870,6 @@ void Instance::Action::write(ostream &os, int indent, const Instance &instance) 
         if( n_effects > 1 ) os << ")";
     }
     os << ")" << endl;
-    delete[] istr;
 }
 
 void Instance::Sensor::print(ostream &os, const Instance &i) const {
@@ -912,19 +894,14 @@ void Instance::Sensor::print(ostream &os, const Instance &i) const {
 }
 
 void Instance::Sensor::write(ostream &os, int indent, const Instance &instance) const {
-    // setup indentation string
-    char *istr = new char[indent+1];
-    for( int i = 0; i < indent; ++i ) istr[i] = ' ';
-    istr[indent] = '\0';
-
     // name and parameters
-    os << istr << "(:sensor " << name_->to_string() << endl;
+    os << string(indent, ' ') << "(:sensor " << name_->to_string() << endl;
     if( always_write_parameters_declaration_ )
-        os << istr << istr << ":parameters ()" << endl;
+        os << string(2 * indent, ' ') << ":parameters ()" << endl;
 
     // condition
     if( condition_.size() > 0 ) {
-        os << istr << istr << ":condition";
+        os << string(2 * indent, ' ') << ":condition";
         if( (condition_.size() > 1) || always_write_conjunction_ ) os << " (and";
         for( index_set::const_iterator p = condition_.begin(); p != condition_.end(); ++p ) {
             os << " ";
@@ -934,21 +911,20 @@ void Instance::Sensor::write(ostream &os, int indent, const Instance &instance) 
         os << endl;
     } else if( always_write_precondition_ ) {
         if( always_write_conjunction_ )
-            os << istr << istr << ":condition (and)" << endl;
+            os << string(2 * indent, ' ') << ":condition (and)" << endl;
         else
-            os << istr << istr << ":condition ()" << endl;
+            os << string(2 * indent, ' ') << ":condition ()" << endl;
     }
 
     // sense
     assert(!sense_.empty());
-    os << istr << istr << ":sense";
+    os << string(2 * indent, ' ') << ":sense";
     for( index_set::const_iterator it = sense_.begin(); it != sense_.end(); ++it ) {
         int index = *it > 0 ? *it-1 : -*it - 1;
         os << (*it > 0 ? " " : " -") << index << ".";
         State::print_literal(os, 1 + index, &instance);
     }
     os << ")" << endl;
-    delete[] istr;
 }
 
 void Instance::Axiom::print(ostream &os, const Instance &i) const {
@@ -973,19 +949,14 @@ void Instance::Axiom::print(ostream &os, const Instance &i) const {
 }
 
 void Instance::Axiom::write(ostream &os, int indent, const Instance &instance) const {
-    // setup indentation string
-    char *istr = new char[indent+1];
-    for( int i = 0; i < indent; ++i ) istr[i] = ' ';
-    istr[indent] = '\0';
-
     // name and parameters
-    os << istr << "(:axiom " << name_->to_string() << endl;
+    os << string(indent, ' ') << "(:axiom " << name_->to_string() << endl;
     if( always_write_parameters_declaration_ )
-        os << istr << istr << ":parameters ()" << endl;
+        os << string(2 * indent, ' ') << ":parameters ()" << endl;
 
     // body
     if( body_.size() > 0 ) {
-        os << istr << istr << ":body";
+        os << string(2 * indent, ' ') << ":body";
         if( (body_.size() > 1) || always_write_conjunction_ ) os << " (and";
         for( index_set::const_iterator p = body_.begin(); p != body_.end(); ++p ) {
             os << " ";
@@ -995,15 +966,15 @@ void Instance::Axiom::write(ostream &os, int indent, const Instance &instance) c
         os << endl;
     } else if( always_write_precondition_ ) {
         if( always_write_conjunction_ )
-            os << istr << istr << ":body (and)" << endl;
+            os << string(2 * indent, ' ') << ":body (and)" << endl;
         else
-            os << istr << istr << ":body ()" << endl;
+            os << string(2 * indent, ' ') << ":body ()" << endl;
     }
 
     // head
     int n_heads = head_.size();
     if( n_heads > 0 ) {
-        os << istr << istr << ":head";
+        os << string(2 * indent, ' ') << ":head";
         if( n_heads > 1 ) os << " (and";
         for( index_set::const_iterator p = head_.begin(); p != head_.end(); ++p ) {
             assert(*p > 0);
@@ -1013,16 +984,10 @@ void Instance::Axiom::write(ostream &os, int indent, const Instance &instance) c
         if( n_heads > 1 ) os << ")";
     }
     os << ")" << endl;
-    delete[] istr;
 }
 
 void Instance::Invariant::write(ostream &os, int indent, const Instance &instance) const {
-    // setup indentation string
-    char *istr = new char[indent+1];
-    for( int i = 0; i < indent; ++i ) istr[i] = ' ';
-    istr[indent] = '\0';
-    os << istr << "(";
-
+    os << string(indent, ' ') << "(";
     assert((type_ == AT_LEAST_ONE) || (type_ == AT_MOST_ONE));
     if( type_ == AT_LEAST_ONE )
         os << "at-least-one";
@@ -1043,7 +1008,6 @@ void Instance::Invariant::write(ostream &os, int indent, const Instance &instanc
         State::print_literal(os, (*this)[i], &instance);
     }
     os << ")" << endl;
-    delete[] istr;
 }
 
 void Instance::print_actions(ostream &os) const {
