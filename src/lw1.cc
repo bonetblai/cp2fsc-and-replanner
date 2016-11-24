@@ -381,6 +381,7 @@ int main(int argc, const char *argv[]) {
         assert(planner != nullptr);
         unique_ptr<ActionSelection<STATE_CLASS> > alternate_action_selection = make_unique<ClassicalPlannerWrapper<STATE_CLASS> >(*planner);
         action_selection = make_unique<RandomActionSelection<STATE_CLASS> >(*lw1_instance, move(alternate_action_selection));
+        assert(alternate_action_selection == nullptr);
     } else if( g_options.is_enabled("solver:width-based-action-selection") ) {
         action_selection = make_unique<Width::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine);
     } else {
