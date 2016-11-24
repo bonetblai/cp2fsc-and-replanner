@@ -409,12 +409,21 @@ domain_schemas:
 
 action_decl:
       TK_OPEN KW_ACTION action_symbol {
+#ifdef SMART
+          std::unique_ptr<Action> na = std::make_unique<Action>($3->text);
+          dom_actions_.emplace_back(std::move(na));
+#else
           Action *na = new Action($3->text);
           dom_actions_.push_back(na);
+#endif
       }
       action_elements TK_CLOSE {
           clear_param(dom_actions_.back()->param_);
+#ifdef SMART
+          $3->val = dom_actions_.back().get();
+#else
           $3->val = dom_actions_.back();
+#endif
       }
     | TK_OPEN KW_ACTION error TK_CLOSE {
           log_error((char*)"syntax error in action declaration");
@@ -780,12 +789,21 @@ sensing_model:
 
 axiom_decl:
       TK_OPEN KW_AXIOM axiom_symbol {
+#ifdef SMART
+          std::unique_ptr<Axiom> nr = std::make_unique<Axiom>($3->text);
+          dom_axioms_.emplace_back(move(nr));
+#else
           Axiom *nr = new Axiom($3->text);
           dom_axioms_.push_back(nr);
+#endif
       }
       axiom_elements TK_CLOSE {
           clear_param(dom_axioms_.back()->param_);
+#ifdef SMART
+          $3->val = dom_axioms_.back().get();
+#else
           $3->val = dom_axioms_.back();
+#endif
       }
     | TK_OPEN KW_AXIOM error TK_CLOSE {
           log_error((char*)"syntax error in axiom declaration");
@@ -805,12 +823,21 @@ axiom_elements:
 
 sensor_decl:
       TK_OPEN KW_SENSOR sensor_symbol {
+#ifdef SMART
+          std::unique_ptr<Sensor> nr = std::make_unique<Sensor>($3->text);
+          dom_sensors_.emplace_back(move(nr));
+#else
           Sensor *nr = new Sensor($3->text);
           dom_sensors_.push_back(nr);
+#endif
       }
       sensor_elements TK_CLOSE {
           clear_param(dom_sensors_.back()->param_);
+#ifdef SMART
+          $3->val = dom_sensors_.back().get();
+#else
           $3->val = dom_sensors_.back();
+#endif
       }
     | TK_OPEN KW_SENSOR error TK_CLOSE {
           log_error((char*)"syntax error in sensor declaration");
@@ -835,8 +862,13 @@ sensor_elements:
 
 observable_decl:
       TK_OPEN KW_OBSERVABLE {
+#ifdef SMART
+          std::unique_ptr<Observable> obs = std::make_unique<Observable>();
+          dom_observables_.emplace_back(move(obs));
+#else
           Observable *obs = new Observable;
           dom_observables_.push_back(obs);
+#endif
           effect_vec_ptr_ = &obs->observables_;
       }
       fluent_list_decl TK_CLOSE
@@ -862,8 +894,13 @@ fluent_decl:
 
 sticky_decl:
       TK_OPEN KW_STICKY {
+#ifdef SMART
+          std::unique_ptr<Sticky> sticky = std::make_unique<Sticky>();
+          dom_stickies_.emplace_back(move(sticky));
+#else
           Sticky *sticky = new Sticky;
           dom_stickies_.push_back(sticky);
+#endif
           effect_vec_ptr_ = &sticky->stickies_;
       }
       fluent_list_decl TK_CLOSE

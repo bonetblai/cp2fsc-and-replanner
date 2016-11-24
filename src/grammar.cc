@@ -877,23 +877,23 @@ static const short yyrline[] = { 0,
    245,   252,   255,   262,   269,   275,   280,   283,   289,   300,
    302,   307,   311,   319,   322,   324,   327,   329,   337,   339,
    340,   341,   344,   349,   349,   352,   358,   363,   371,   373,
-   379,   385,   391,   397,   404,   410,   415,   419,   425,   430,
-   431,   432,   437,   441,   444,   446,   447,   448,   449,   450,
-   453,   455,   458,   469,   471,   474,   486,   497,   504,   512,
-   516,   519,   526,   533,   537,   541,   551,   555,   559,   569,
-   574,   581,   586,   593,   595,   601,   606,   612,   614,   615,
-   618,   622,   626,   630,   640,   645,   648,   653,   656,   661,
-   667,   672,   678,   682,   686,   688,   691,   697,   704,   706,
-   709,   713,   717,   728,   741,   756,   762,   771,   775,   781,
-   786,   790,   796,   801,   802,   803,   806,   811,   815,   821,
-   826,   829,   833,   836,   842,   843,   849,   853,   858,   860,
-   863,   869,   870,   876,   886,   889,   898,   902,   910,   916,
-   918,   921,   926,   930,   934,   938,   948,   954,   961,   967,
-   970,   979,   992,   996,  1000,  1014,  1024,  1028,  1029,  1035,
-  1037,  1038,  1039,  1040,  1041,  1042,  1045,  1047,  1048,  1051,
-  1057,  1064,  1066,  1077,  1088,  1099,  1109,  1115,  1122,  1130,
-  1137,  1139,  1140,  1143,  1150,  1157,  1164,  1174,  1185,  1191,
-  1196,  1203,  1205
+   379,   385,   391,   397,   404,   410,   420,   428,   434,   439,
+   440,   441,   446,   450,   453,   455,   456,   457,   458,   459,
+   462,   464,   467,   478,   480,   483,   495,   506,   513,   521,
+   525,   528,   535,   542,   546,   550,   560,   564,   568,   578,
+   583,   590,   595,   602,   604,   610,   615,   621,   623,   624,
+   627,   631,   635,   639,   649,   654,   657,   662,   665,   670,
+   676,   681,   687,   691,   695,   697,   700,   706,   713,   715,
+   718,   722,   726,   737,   750,   765,   771,   780,   784,   790,
+   800,   808,   814,   819,   820,   821,   824,   834,   842,   848,
+   853,   856,   860,   863,   874,   875,   881,   885,   890,   892,
+   895,   906,   907,   913,   923,   926,   935,   939,   947,   953,
+   955,   958,   963,   967,   971,   975,   985,   991,   998,  1004,
+  1007,  1016,  1029,  1033,  1037,  1051,  1061,  1065,  1066,  1072,
+  1074,  1075,  1076,  1077,  1078,  1079,  1082,  1084,  1085,  1088,
+  1094,  1101,  1103,  1114,  1125,  1136,  1146,  1152,  1159,  1167,
+  1174,  1176,  1177,  1180,  1187,  1194,  1201,  1211,  1222,  1228,
+  1233,  1240,  1242
 };
 
 static const char * const yytname[] = {   "$","error","$illegal.","TK_OPEN",
@@ -926,7 +926,7 @@ static const char * const yytname[] = {   "$","error","$illegal.","TK_OPEN",
 "state_variable","forall_state_variable_list_decl","@21","@22","domain_default_sensing",
 "pddl_problem","@23","problem_elements","initial_state","init_elements","single_init_element",
 "at_least_one_invariant","at_most_one_invariant","exactly_one_invariant","invariant",
-"clause","oneof","unknown","hidden_state","goal_spec",""
+"clause","oneof","unknown","hidden_state","goal_spec","\37777777736\001\37777777763\001\37777777772\001\017\002\025\002$\002*\0020\0029\002E\002O\002X\002d\002\37777777604\002"
 };
 #endif
 
@@ -1985,41 +1985,50 @@ case 75:
 case 76:
 #line 411 "ppddl.y"
 {
+#ifdef SMART
+          std::unique_ptr<Action> na = std::make_unique<Action>(yyvsp[0].sym->text);
+          dom_actions_.emplace_back(std::move(na));
+#else
           Action *na = new Action(yyvsp[0].sym->text);
           dom_actions_.push_back(na);
+#endif
       ;
     break;}
 case 77:
-#line 415 "ppddl.y"
+#line 420 "ppddl.y"
 {
           clear_param(dom_actions_.back()->param_);
+#ifdef SMART
+          yyvsp[-3].sym->val = dom_actions_.back().get();
+#else
           yyvsp[-3].sym->val = dom_actions_.back();
+#endif
       ;
     break;}
 case 78:
-#line 419 "ppddl.y"
+#line 428 "ppddl.y"
 {
           log_error((char*)"syntax error in action declaration");
           yyerrok;
       ;
     break;}
 case 79:
-#line 426 "ppddl.y"
+#line 435 "ppddl.y"
 {
           dom_actions_.back()->param_ = *yyvsp[-1].vparam;
           delete yyvsp[-1].vparam;
       ;
     break;}
 case 80:
-#line 430 "ppddl.y"
+#line 439 "ppddl.y"
 { dom_actions_.back()->precondition_ = yyvsp[0].condition; ;
     break;}
 case 81:
-#line 431 "ppddl.y"
+#line 440 "ppddl.y"
 { dom_actions_.back()->effect_ = yyvsp[0].effect; ;
     break;}
 case 82:
-#line 432 "ppddl.y"
+#line 441 "ppddl.y"
 {
           declare_clg_translation();
           dom_actions_.back()->observe_ = new AndEffect(*yyvsp[0].effect_vec);
@@ -2027,22 +2036,22 @@ case 82:
       ;
     break;}
 case 83:
-#line 437 "ppddl.y"
+#line 446 "ppddl.y"
 {
           declare_lw1_translation();
           dom_actions_.back()->sensing_proxy_ = yyvsp[0].sensing_proxy_list;
       ;
     break;}
 case 91:
-#line 454 "ppddl.y"
+#line 463 "ppddl.y"
 { yyval.condition = new Constant(true); ;
     break;}
 case 92:
-#line 455 "ppddl.y"
+#line 464 "ppddl.y"
 { yyval.condition = new Constant(false); ;
     break;}
 case 93:
-#line 459 "ppddl.y"
+#line 468 "ppddl.y"
 {
           // if literal is for equality, construct EQ
           if( yyvsp[0].atom->pred_ == dom_eq_pred_ )
@@ -2053,7 +2062,7 @@ case 93:
       ;
     break;}
 case 96:
-#line 475 "ppddl.y"
+#line 484 "ppddl.y"
 {
           PredicateSymbol* p = static_cast<PredicateSymbol*>(yyvsp[-2].sym->val);
           if( p->param_.size() != yyvsp[-1].param->size() ) {
@@ -2067,7 +2076,7 @@ case 96:
       ;
     break;}
 case 97:
-#line 486 "ppddl.y"
+#line 495 "ppddl.y"
 {
           if( yyvsp[-1].param->size() != 2 ) {
               log_error((char*)"wrong number of arguments for equality");
@@ -2079,14 +2088,14 @@ case 97:
       ;
     break;}
 case 98:
-#line 498 "ppddl.y"
+#line 507 "ppddl.y"
 {
           const_cast<Literal*>(static_cast<const Literal*>(yyvsp[-1].atom))->negated_ = true;
           yyval.atom = yyvsp[-1].atom;
       ;
     break;}
 case 99:
-#line 505 "ppddl.y"
+#line 514 "ppddl.y"
 {
           if( yyvsp[0].sym->val == 0 )
               log_error((char*)"undeclared variable in atom args list");
@@ -2096,45 +2105,45 @@ case 99:
       ;
     break;}
 case 100:
-#line 512 "ppddl.y"
+#line 521 "ppddl.y"
 {
           yyvsp[-1].param->push_back(static_cast<Symbol*>(yyvsp[0].sym->val));
           yyval.param = yyvsp[-1].param;
       ;
     break;}
 case 101:
-#line 516 "ppddl.y"
+#line 525 "ppddl.y"
 { yyval.param = new symbol_vec; ;
     break;}
 case 102:
-#line 520 "ppddl.y"
+#line 529 "ppddl.y"
 {
           yyval.condition = new And(*yyvsp[-1].condition_vec);
           delete yyvsp[-1].condition_vec;
       ;
     break;}
 case 103:
-#line 527 "ppddl.y"
+#line 536 "ppddl.y"
 {
           yyval.condition = new Or(*yyvsp[-1].condition_vec);
           delete yyvsp[-1].condition_vec;
       ;
     break;}
 case 104:
-#line 534 "ppddl.y"
+#line 543 "ppddl.y"
 {
           schema_.push_back(new ForallCondition);
       ;
     break;}
 case 105:
-#line 537 "ppddl.y"
+#line 546 "ppddl.y"
 {
           schema_.back()->param_ = *yyvsp[-1].vparam;
           delete yyvsp[-1].vparam;
       ;
     break;}
 case 106:
-#line 541 "ppddl.y"
+#line 550 "ppddl.y"
 {
           assert(dynamic_cast<ForallCondition*>(schema_.back()) != 0);
           ForallCondition *forall_condition = static_cast<ForallCondition*>(schema_.back());
@@ -2145,20 +2154,20 @@ case 106:
       ;
     break;}
 case 107:
-#line 552 "ppddl.y"
+#line 561 "ppddl.y"
 {
           schema_.push_back(new ExistsCondition);
       ;
     break;}
 case 108:
-#line 555 "ppddl.y"
+#line 564 "ppddl.y"
 {
           schema_.back()->param_ = *yyvsp[-1].vparam;
           delete yyvsp[-1].vparam;
       ;
     break;}
 case 109:
-#line 559 "ppddl.y"
+#line 568 "ppddl.y"
 {
           assert(dynamic_cast<ExistsCondition*>(schema_.back()) != 0);
           ExistsCondition *exists_condition = static_cast<ExistsCondition*>(schema_.back());
@@ -2169,14 +2178,14 @@ case 109:
       ;
     break;}
 case 110:
-#line 570 "ppddl.y"
+#line 579 "ppddl.y"
 {
           yyvsp[-1].condition_vec->push_back(yyvsp[0].condition);
           yyval.condition_vec = yyvsp[-1].condition_vec;
       ;
     break;}
 case 111:
-#line 574 "ppddl.y"
+#line 583 "ppddl.y"
 {
           condition_vec *cond_vec = new condition_vec;
           cond_vec->push_back(yyvsp[0].condition);
@@ -2184,14 +2193,14 @@ case 111:
       ;
     break;}
 case 112:
-#line 582 "ppddl.y"
+#line 591 "ppddl.y"
 {
           yyvsp[-1].condition_vec->push_back(yyvsp[0].condition);
           yyval.condition_vec = yyvsp[-1].condition_vec;
       ;
     break;}
 case 113:
-#line 586 "ppddl.y"
+#line 595 "ppddl.y"
 {
           condition_vec *cond_vec = new condition_vec;
           cond_vec->push_back(yyvsp[0].condition);
@@ -2199,45 +2208,45 @@ case 113:
       ;
     break;}
 case 115:
-#line 595 "ppddl.y"
+#line 604 "ppddl.y"
 {
           yyval.effect = new AndEffect(*yyvsp[-1].effect_vec);
           delete yyvsp[-1].effect_vec;
       ;
     break;}
 case 116:
-#line 602 "ppddl.y"
+#line 611 "ppddl.y"
 {
           yyvsp[-1].effect_vec->push_back(yyvsp[0].effect);
           yyval.effect_vec = yyvsp[-1].effect_vec;
       ;
     break;}
 case 117:
-#line 606 "ppddl.y"
+#line 615 "ppddl.y"
 {
           yyval.effect_vec = new effect_vec;
           yyval.effect_vec->push_back(yyvsp[0].effect);
       ;
     break;}
 case 121:
-#line 619 "ppddl.y"
+#line 628 "ppddl.y"
 { yyval.effect = new ConditionalEffect(yyvsp[-2].condition, yyvsp[-1].effect); ;
     break;}
 case 122:
-#line 623 "ppddl.y"
+#line 632 "ppddl.y"
 {
           schema_.push_back(new ForallEffect);
       ;
     break;}
 case 123:
-#line 626 "ppddl.y"
+#line 635 "ppddl.y"
 {
           schema_.back()->param_ = *yyvsp[-1].vparam;
           delete yyvsp[-1].vparam;
       ;
     break;}
 case 124:
-#line 630 "ppddl.y"
+#line 639 "ppddl.y"
 {
           assert(dynamic_cast<ForallEffect*>(schema_.back()) != 0);
           ForallEffect *forall_effect = static_cast<ForallEffect*>(schema_.back());
@@ -2248,61 +2257,61 @@ case 124:
       ;
     break;}
 case 125:
-#line 641 "ppddl.y"
+#line 650 "ppddl.y"
 {
           assert(!schema_.empty());
           schema_.back()->such_that_ = yyvsp[0].condition;
       ;
     break;}
 case 127:
-#line 649 "ppddl.y"
+#line 658 "ppddl.y"
 {
           yyval.effect = new AndEffect(*yyvsp[-1].effect_vec);
           delete yyvsp[-1].effect_vec;
       ;
     break;}
 case 129:
-#line 657 "ppddl.y"
+#line 666 "ppddl.y"
 {
           yyvsp[-1].effect_vec->push_back(yyvsp[0].effect);
           yyval.effect_vec = yyvsp[-1].effect_vec;
       ;
     break;}
 case 130:
-#line 661 "ppddl.y"
+#line 670 "ppddl.y"
 {
           yyval.effect_vec = new effect_vec;
           yyval.effect_vec->push_back(yyvsp[0].effect);
       ;
     break;}
 case 131:
-#line 668 "ppddl.y"
+#line 677 "ppddl.y"
 {
           yyvsp[-1].effect_vec->push_back(yyvsp[0].effect);
           yyval.effect_vec = yyvsp[-1].effect_vec;
       ;
     break;}
 case 132:
-#line 672 "ppddl.y"
+#line 681 "ppddl.y"
 {
           yyval.effect_vec = new effect_vec;
           yyval.effect_vec->push_back(yyvsp[0].effect);
       ;
     break;}
 case 133:
-#line 679 "ppddl.y"
+#line 688 "ppddl.y"
 { yyval.effect = new AtomicEffect(*yyvsp[0].atom); delete yyvsp[0].atom; ;
     break;}
 case 134:
-#line 683 "ppddl.y"
+#line 692 "ppddl.y"
 { yyval.effect = new AtomicEffect(*yyvsp[0].atom); delete yyvsp[0].atom; ;
     break;}
 case 136:
-#line 688 "ppddl.y"
+#line 697 "ppddl.y"
 { yyval.sensing_proxy_list = 0; ;
     break;}
 case 137:
-#line 692 "ppddl.y"
+#line 701 "ppddl.y"
 {
           sensing_proxy_vec *list_sensing_proxy = const_cast<sensing_proxy_vec*>(yyvsp[-1].sensing_proxy_list);
           list_sensing_proxy->push_back(yyvsp[0].sensing_proxy);
@@ -2310,7 +2319,7 @@ case 137:
       ;
     break;}
 case 138:
-#line 697 "ppddl.y"
+#line 706 "ppddl.y"
 {
           sensing_proxy_vec *list_sensing_proxy = new sensing_proxy_vec;
           list_sensing_proxy->push_back(yyvsp[0].sensing_proxy);
@@ -2318,24 +2327,24 @@ case 138:
       ;
     break;}
 case 139:
-#line 705 "ppddl.y"
+#line 714 "ppddl.y"
 { yyval.sensing_proxy = new BasicSensingModel(yyvsp[0].sensing_model); ;
     break;}
 case 141:
-#line 710 "ppddl.y"
+#line 719 "ppddl.y"
 {
           schema_.push_back(new ForallSensing);
       ;
     break;}
 case 142:
-#line 713 "ppddl.y"
+#line 722 "ppddl.y"
 {
           schema_.back()->param_ = *yyvsp[-1].vparam;
           delete yyvsp[-1].vparam;
       ;
     break;}
 case 143:
-#line 717 "ppddl.y"
+#line 726 "ppddl.y"
 {
           assert(dynamic_cast<ForallSensing*>(schema_.back()) != 0);
           ForallSensing *forall_sensing = static_cast<ForallSensing*>(schema_.back());
@@ -2347,7 +2356,7 @@ case 143:
       ;
     break;}
 case 144:
-#line 729 "ppddl.y"
+#line 738 "ppddl.y"
 {
           assert(static_cast<Symbol*>(yyvsp[-3].sym->val)->sym_class_ == sym_varname);
           const Variable *variable = static_cast<Variable*>(yyvsp[-3].sym->val);
@@ -2362,7 +2371,7 @@ case 144:
       ;
     break;}
 case 145:
-#line 741 "ppddl.y"
+#line 750 "ppddl.y"
 {
           assert(static_cast<Symbol*>(yyvsp[-5].sym->val)->sym_class_ == sym_varname);
           const Variable *variable = static_cast<Variable*>(yyvsp[-5].sym->val);
@@ -2380,7 +2389,7 @@ case 145:
       ;
     break;}
 case 146:
-#line 756 "ppddl.y"
+#line 765 "ppddl.y"
 {
           assert(static_cast<Symbol*>(yyvsp[-1].sym->val)->sym_class_ == sym_varname);
           const Variable *variable = static_cast<Variable*>(yyvsp[-1].sym->val);
@@ -2389,7 +2398,7 @@ case 146:
       ;
     break;}
 case 147:
-#line 762 "ppddl.y"
+#line 771 "ppddl.y"
 {
           assert(static_cast<Symbol*>(yyvsp[-3].sym->val)->sym_class_ == sym_varname);
           const Variable *variable = static_cast<Variable*>(yyvsp[-3].sym->val);
@@ -2401,140 +2410,168 @@ case 147:
       ;
     break;}
 case 148:
-#line 771 "ppddl.y"
+#line 780 "ppddl.y"
 {
           log_error((char*)"syntax error in sensing declaration for ':variable'");
           yyerrok;
       ;
     break;}
 case 149:
-#line 775 "ppddl.y"
+#line 784 "ppddl.y"
 {
           log_error((char*)"syntax error in sensing declaration for ':model-for'");
           yyerrok;
       ;
     break;}
 case 150:
-#line 782 "ppddl.y"
+#line 791 "ppddl.y"
 {
+#ifdef SMART
+          std::unique_ptr<Axiom> nr = std::make_unique<Axiom>(yyvsp[0].sym->text);
+          dom_axioms_.emplace_back(move(nr));
+#else
           Axiom *nr = new Axiom(yyvsp[0].sym->text);
           dom_axioms_.push_back(nr);
+#endif
       ;
     break;}
 case 151:
-#line 786 "ppddl.y"
+#line 800 "ppddl.y"
 {
           clear_param(dom_axioms_.back()->param_);
+#ifdef SMART
+          yyvsp[-3].sym->val = dom_axioms_.back().get();
+#else
           yyvsp[-3].sym->val = dom_axioms_.back();
+#endif
       ;
     break;}
 case 152:
-#line 790 "ppddl.y"
+#line 808 "ppddl.y"
 {
           log_error((char*)"syntax error in axiom declaration");
           yyerrok;
       ;
     break;}
 case 153:
-#line 797 "ppddl.y"
+#line 815 "ppddl.y"
 {
           dom_axioms_.back()->param_ = *yyvsp[-1].vparam;
           delete yyvsp[-1].vparam;
       ;
     break;}
 case 154:
-#line 801 "ppddl.y"
+#line 819 "ppddl.y"
 { dom_axioms_.back()->body_ = yyvsp[0].condition; ;
     break;}
 case 155:
-#line 802 "ppddl.y"
+#line 820 "ppddl.y"
 { dom_axioms_.back()->head_ = yyvsp[0].effect; ;
     break;}
 case 157:
-#line 807 "ppddl.y"
+#line 825 "ppddl.y"
 {
+#ifdef SMART
+          std::unique_ptr<Sensor> nr = std::make_unique<Sensor>(yyvsp[0].sym->text);
+          dom_sensors_.emplace_back(move(nr));
+#else
           Sensor *nr = new Sensor(yyvsp[0].sym->text);
           dom_sensors_.push_back(nr);
+#endif
       ;
     break;}
 case 158:
-#line 811 "ppddl.y"
+#line 834 "ppddl.y"
 {
           clear_param(dom_sensors_.back()->param_);
+#ifdef SMART
+          yyvsp[-3].sym->val = dom_sensors_.back().get();
+#else
           yyvsp[-3].sym->val = dom_sensors_.back();
+#endif
       ;
     break;}
 case 159:
-#line 815 "ppddl.y"
+#line 842 "ppddl.y"
 {
           log_error((char*)"syntax error in sensor declaration");
           yyerrok;
       ;
     break;}
 case 160:
-#line 822 "ppddl.y"
+#line 849 "ppddl.y"
 {
           dom_sensors_.back()->param_ = *yyvsp[-1].vparam;
           delete yyvsp[-1].vparam;
       ;
     break;}
 case 161:
-#line 826 "ppddl.y"
+#line 853 "ppddl.y"
 {
           dom_sensors_.back()->condition_ = yyvsp[0].condition;
       ;
     break;}
 case 162:
-#line 829 "ppddl.y"
+#line 856 "ppddl.y"
 {
           dom_sensors_.back()->sense_ = new AndEffect(*yyvsp[0].effect_vec);
           delete yyvsp[0].effect_vec;
       ;
     break;}
 case 164:
-#line 837 "ppddl.y"
+#line 864 "ppddl.y"
 {
+#ifdef SMART
+          std::unique_ptr<Observable> obs = std::make_unique<Observable>();
+          dom_observables_.emplace_back(move(obs));
+#else
           Observable *obs = new Observable;
           dom_observables_.push_back(obs);
+#endif
           effect_vec_ptr_ = &obs->observables_;
       ;
     break;}
 case 166:
-#line 843 "ppddl.y"
+#line 875 "ppddl.y"
 {
           log_error((char*)"syntax error in observable declaration");
           yyerrok;
       ;
     break;}
 case 167:
-#line 850 "ppddl.y"
+#line 882 "ppddl.y"
 {
           effect_vec_ptr_->push_back(yyvsp[0].effect);
       ;
     break;}
 case 168:
-#line 853 "ppddl.y"
+#line 885 "ppddl.y"
 {
           effect_vec_ptr_->push_back(yyvsp[0].effect);
       ;
     break;}
 case 171:
-#line 864 "ppddl.y"
+#line 896 "ppddl.y"
 {
+#ifdef SMART
+          std::unique_ptr<Sticky> sticky = std::make_unique<Sticky>();
+          dom_stickies_.emplace_back(move(sticky));
+#else
           Sticky *sticky = new Sticky;
           dom_stickies_.push_back(sticky);
+#endif
           effect_vec_ptr_ = &sticky->stickies_;
       ;
     break;}
 case 173:
-#line 870 "ppddl.y"
+#line 907 "ppddl.y"
 {
           log_error((char*)"syntax error in sticky declaration");
           yyerrok;
       ;
     break;}
 case 174:
-#line 877 "ppddl.y"
+#line 914 "ppddl.y"
 {
           Variable *var = 0;
           if( yyvsp[-1].ival == 0 )
@@ -2546,13 +2583,13 @@ case 174:
       ;
     break;}
 case 175:
-#line 886 "ppddl.y"
+#line 923 "ppddl.y"
 {
           yyvsp[-3].sym->val = lw1_variables_.back();
       ;
     break;}
 case 176:
-#line 889 "ppddl.y"
+#line 926 "ppddl.y"
 {
           Variable *var = 0;
           if( yyvsp[-2].ival == 0 )
@@ -2564,14 +2601,14 @@ case 176:
       ;
     break;}
 case 177:
-#line 898 "ppddl.y"
+#line 935 "ppddl.y"
 {
           schema_.back()->param_ = *yyvsp[-1].vparam;
           delete yyvsp[-1].vparam;
       ;
     break;}
 case 178:
-#line 902 "ppddl.y"
+#line 939 "ppddl.y"
 {
           assert(dynamic_cast<Variable*>(schema_.back()) != 0);
           Variable *variable = static_cast<Variable*>(schema_.back());
@@ -2582,50 +2619,50 @@ case 178:
       ;
     break;}
 case 179:
-#line 910 "ppddl.y"
+#line 947 "ppddl.y"
 {
           log_error((char*)"syntax error in state variable declaration");
           yyerrok;
       ;
     break;}
 case 180:
-#line 917 "ppddl.y"
+#line 954 "ppddl.y"
 { yyval.ival = 0; ;
     break;}
 case 181:
-#line 918 "ppddl.y"
+#line 955 "ppddl.y"
 { yyval.ival = 1; ;
     break;}
 case 182:
-#line 922 "ppddl.y"
+#line 959 "ppddl.y"
 {
           VariableGroup *group = new VariableGroup(yyvsp[0].sym->text);
           lw1_variable_groups_.push_back(group);
       ;
     break;}
 case 183:
-#line 926 "ppddl.y"
+#line 963 "ppddl.y"
 {
           lw1_variable_groups_.back()->group_ = *yyvsp[-1].state_variable_list_vec;
           delete yyvsp[-1].state_variable_list_vec;
       ;
     break;}
 case 184:
-#line 930 "ppddl.y"
+#line 967 "ppddl.y"
 {
           VariableGroup *group = new VariableGroup(yyvsp[0].sym->text);
           schema_.push_back(group);
       ;
     break;}
 case 185:
-#line 934 "ppddl.y"
+#line 971 "ppddl.y"
 {
           schema_.back()->param_ = *yyvsp[-1].vparam;
           delete yyvsp[-1].vparam;
       ;
     break;}
 case 186:
-#line 938 "ppddl.y"
+#line 975 "ppddl.y"
 {
           assert(dynamic_cast<VariableGroup*>(schema_.back()) != 0);
           VariableGroup *group = static_cast<VariableGroup*>(schema_.back());
@@ -2638,14 +2675,14 @@ case 186:
       ;
     break;}
 case 187:
-#line 948 "ppddl.y"
+#line 985 "ppddl.y"
 {
           log_error((char*)"syntax error in variable group declaration");
           yyerrok;
       ;
     break;}
 case 188:
-#line 955 "ppddl.y"
+#line 992 "ppddl.y"
 {
           state_variable_list_vec *varlist = const_cast<state_variable_list_vec*>(yyvsp[-1].state_variable_list_vec);
           assert(dynamic_cast<const SingleStateVariableList*>(yyvsp[0].state_variable_list) != 0);
@@ -2654,7 +2691,7 @@ case 188:
       ;
     break;}
 case 189:
-#line 961 "ppddl.y"
+#line 998 "ppddl.y"
 {
           state_variable_list_vec *varlist = const_cast<state_variable_list_vec*>(yyvsp[-1].state_variable_list_vec);
           assert(dynamic_cast<const ForallStateVariableList*>(yyvsp[0].state_variable_list) != 0);
@@ -2663,11 +2700,11 @@ case 189:
       ;
     break;}
 case 190:
-#line 967 "ppddl.y"
+#line 1004 "ppddl.y"
 { yyval.state_variable_list_vec = new state_variable_list_vec; ;
     break;}
 case 191:
-#line 971 "ppddl.y"
+#line 1008 "ppddl.y"
 {
           assert(static_cast<Symbol*>(yyvsp[0].sym->val)->sym_class_ == sym_varname);
           const Variable *var = static_cast<Variable*>(yyvsp[0].sym->val);
@@ -2678,7 +2715,7 @@ case 191:
       ;
     break;}
 case 192:
-#line 979 "ppddl.y"
+#line 1016 "ppddl.y"
 {
           assert(static_cast<Symbol*>(yyvsp[-2].sym->val)->sym_class_ == sym_varname);
           const Variable *var = static_cast<Variable*>(yyvsp[-2].sym->val);
@@ -2692,20 +2729,20 @@ case 192:
       ;
     break;}
 case 193:
-#line 993 "ppddl.y"
+#line 1030 "ppddl.y"
 {
           schema_.push_back(new ForallStateVariableList);
       ;
     break;}
 case 194:
-#line 996 "ppddl.y"
+#line 1033 "ppddl.y"
 {
           schema_.back()->param_ = *yyvsp[-1].vparam;
           delete yyvsp[-1].vparam;
       ;
     break;}
 case 195:
-#line 1000 "ppddl.y"
+#line 1037 "ppddl.y"
 {
           assert(dynamic_cast<ForallStateVariableList*>(schema_.back()) != 0);
           ForallStateVariableList *forall_state_variable_list = static_cast<ForallStateVariableList*>(schema_.back());
@@ -2717,35 +2754,35 @@ case 195:
       ;
     break;}
 case 196:
-#line 1015 "ppddl.y"
+#line 1052 "ppddl.y"
 {
           declare_lw1_translation();
           lw1_default_sensing_proxy_ = yyvsp[-1].sensing_proxy_list;
       ;
     break;}
 case 197:
-#line 1025 "ppddl.y"
+#line 1062 "ppddl.y"
 {
           problem_name_ = std::string(yyvsp[-1].sym->text);
       ;
     break;}
 case 199:
-#line 1029 "ppddl.y"
+#line 1066 "ppddl.y"
 {
           log_error((char*)"syntax error in problem definition.");
           yyerrok;
       ;
     break;}
 case 208:
-#line 1047 "ppddl.y"
+#line 1084 "ppddl.y"
 { dom_init_ = *yyvsp[-1].ilist; delete yyvsp[-1].ilist; ;
     break;}
 case 209:
-#line 1048 "ppddl.y"
+#line 1085 "ppddl.y"
 { dom_init_ = *yyvsp[-2].ilist; delete yyvsp[-2].ilist; ;
     break;}
 case 210:
-#line 1052 "ppddl.y"
+#line 1089 "ppddl.y"
 {
           init_element_vec *ilist = const_cast<init_element_vec*>(yyvsp[-1].ilist);
           if( yyvsp[0].ielem != 0 ) ilist->push_back(const_cast<InitElement*>(yyvsp[0].ielem));
@@ -2753,7 +2790,7 @@ case 210:
       ;
     break;}
 case 211:
-#line 1057 "ppddl.y"
+#line 1094 "ppddl.y"
 {
           init_element_vec *ilist = new init_element_vec;
           if( yyvsp[0].ielem != 0 ) ilist->push_back(const_cast<InitElement*>(yyvsp[0].ielem));
@@ -2761,11 +2798,11 @@ case 211:
       ;
     break;}
 case 212:
-#line 1065 "ppddl.y"
+#line 1102 "ppddl.y"
 { yyval.ielem = new InitLiteral(*yyvsp[0].atom); ;
     break;}
 case 213:
-#line 1066 "ppddl.y"
+#line 1103 "ppddl.y"
 {
           if( type_ == cp2fsc ) {
               log_error((char*)"'invariant' is not a valid element in cp2fsc.");
@@ -2779,7 +2816,7 @@ case 213:
       ;
     break;}
 case 214:
-#line 1077 "ppddl.y"
+#line 1114 "ppddl.y"
 {
           if( type_ == replanner ) {
               // We let oneofs pass in k-replanner as they are later mapped
@@ -2793,7 +2830,7 @@ case 214:
       ;
     break;}
 case 215:
-#line 1088 "ppddl.y"
+#line 1125 "ppddl.y"
 {
           if( type_ == replanner ) {
               // We let oneofs pass in k-replanner as they are later mapped
@@ -2807,7 +2844,7 @@ case 215:
       ;
     break;}
 case 216:
-#line 1099 "ppddl.y"
+#line 1136 "ppddl.y"
 {
           yyval.ielem = 0; // when fixing this, remove condition '$2 != 0' and '$1 != 0' above (in single_init_element)
           std::cout << Utils::warning()
@@ -2818,7 +2855,7 @@ case 216:
       ;
     break;}
 case 217:
-#line 1110 "ppddl.y"
+#line 1147 "ppddl.y"
 {
           //$$ = new Invariant(Invariant::AT_LEAST_ONE, *static_cast<const And*>($3));
           yyval.invariant = new Invariant(Invariant::AT_LEAST_ONE, *yyvsp[-1].condition_vec);
@@ -2826,7 +2863,7 @@ case 217:
       ;
     break;}
 case 218:
-#line 1115 "ppddl.y"
+#line 1152 "ppddl.y"
 {
           //$$ = new Invariant(Invariant::AT_LEAST_ONE, *static_cast<const And*>($3));
           yyval.invariant = new Invariant(Invariant::AT_LEAST_ONE, *yyvsp[-1].condition_vec);
@@ -2834,7 +2871,7 @@ case 218:
       ;
     break;}
 case 219:
-#line 1123 "ppddl.y"
+#line 1160 "ppddl.y"
 {
           //$$ = new Invariant(Invariant::AT_MOST_ONE, *static_cast<const And*>($3));
           yyval.invariant = new Invariant(Invariant::AT_MOST_ONE, *yyvsp[-1].condition_vec);
@@ -2842,35 +2879,35 @@ case 219:
       ;
     break;}
 case 220:
-#line 1131 "ppddl.y"
+#line 1168 "ppddl.y"
 {
           yyval.invariant = new Invariant(Invariant::EXACTLY_ONE, *yyvsp[-1].condition_vec);
           delete yyvsp[-1].condition_vec;
       ;
     break;}
 case 224:
-#line 1144 "ppddl.y"
+#line 1181 "ppddl.y"
 {
           yyval.clause = new Clause(*yyvsp[-1].condition_vec);
           delete yyvsp[-1].condition_vec;
       ;
     break;}
 case 225:
-#line 1151 "ppddl.y"
+#line 1188 "ppddl.y"
 {
           yyval.oneof = new Oneof(*yyvsp[-1].condition_vec);
           delete yyvsp[-1].condition_vec;
       ;
     break;}
 case 226:
-#line 1158 "ppddl.y"
+#line 1195 "ppddl.y"
 {
           yyval.unknown = new Unknown(*yyvsp[-1].atom);
           delete yyvsp[-1].atom;
       ;
     break;}
 case 227:
-#line 1165 "ppddl.y"
+#line 1202 "ppddl.y"
 {
           if( type_ == cp2fsc ) {
               log_error((char*)"':hidden' is not a valid element in cp2fsc.");
@@ -2882,7 +2919,7 @@ case 227:
       ;
     break;}
 case 228:
-#line 1174 "ppddl.y"
+#line 1211 "ppddl.y"
 {
           if( type_ == cp2fsc ) {
               log_error((char*)"':hidden' is not a valid element in cp2fsc.");
@@ -2894,18 +2931,18 @@ case 228:
       ;
     break;}
 case 229:
-#line 1186 "ppddl.y"
+#line 1223 "ppddl.y"
 { dom_goal_ = yyvsp[-1].condition; ;
     break;}
 case 230:
-#line 1192 "ppddl.y"
+#line 1229 "ppddl.y"
 {
           const_cast<And*>(static_cast<const And*>(yyvsp[-1].condition))->push_back(yyvsp[0].condition);
           yyval.condition = yyvsp[-1].condition;
       ;
     break;}
 case 231:
-#line 1196 "ppddl.y"
+#line 1233 "ppddl.y"
 {
           And *cond = new And;
           cond->push_back(yyvsp[0].condition);
@@ -2913,11 +2950,11 @@ case 231:
       ;
     break;}
 case 232:
-#line 1204 "ppddl.y"
+#line 1241 "ppddl.y"
 { yyval.condition = new Literal(*yyvsp[0].atom); delete yyvsp[0].atom; ;
     break;}
 case 233:
-#line 1205 "ppddl.y"
+#line 1242 "ppddl.y"
 { yyval.condition = new Literal(*yyvsp[0].atom); delete yyvsp[0].atom; ;
     break;}
 }
@@ -3124,7 +3161,7 @@ YYLABEL(yyerrhandle)
 /* END */
 
 /* #line 1010 "/usr/local/lib/bison.cc" */
-#line 3128 "grammar_tmp.cc"
-#line 1208 "ppddl.y"
+#line 3165 "grammar_tmp.cc"
+#line 1245 "ppddl.y"
 
 

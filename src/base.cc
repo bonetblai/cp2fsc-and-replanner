@@ -93,6 +93,7 @@ PDDL_Base::~PDDL_Base() {
         for( size_t j = 0; j < dom_hidden_[k].size(); ++j )
             delete dom_hidden_[k][j];
     }
+#ifndef SMART
     for( size_t k = 0; k < dom_actions_.size(); ++k )
         delete dom_actions_[k];
     for( size_t k = 0; k < dom_sensors_.size(); ++k )
@@ -103,6 +104,7 @@ PDDL_Base::~PDDL_Base() {
         delete dom_observables_[k];
     for( size_t k = 0; k < dom_stickies_.size(); ++k )
         delete dom_stickies_[k];
+#endif
 
     for( size_t k = 0; k < dom_constants_.size(); ++k )
         delete dom_constants_[k];
@@ -278,14 +280,25 @@ void PDDL_Base::instantiate_elements() {
     }
 
     // instantiate actions
+#ifdef SMART
+    unique_action_list alist;
+#else
     action_list alist;
+#endif
     for( size_t k = 0; k < dom_actions_.size(); ++k ) {
         dom_actions_[k]->instantiate(alist);
+#ifndef SMART
         delete dom_actions_[k];
+#endif
     }
     dom_actions_.clear();
     dom_actions_.reserve(alist.size());
+#ifdef SMART
+    for( unique_action_list::iterator it = alist.begin(); it != alist.end(); ++it )
+        dom_actions_.emplace_back(it->release());
+#else
     dom_actions_.insert(dom_actions_.end(), alist.begin(), alist.end());
+#endif
 
     // finish grounding the sensing and insert default-sensing-model into action with empty sensing models
     for( size_t k = 0; k < dom_actions_.size(); ++k ) {
@@ -297,47 +310,91 @@ void PDDL_Base::instantiate_elements() {
     }
 
     // instantiate sensors
+#ifdef SMART
+    unique_sensor_list slist;
+#else
     sensor_list slist;
+#endif
     for( size_t k = 0; k < dom_sensors_.size(); ++k ) {
         dom_sensors_[k]->instantiate(slist);
+#ifndef SMART
         delete dom_sensors_[k];
+#endif
     }
     dom_sensors_.clear();
     dom_sensors_.reserve(slist.size());
+#ifdef SMART
+    for( unique_sensor_list::iterator it = slist.begin(); it != slist.end(); ++it )
+        dom_sensors_.emplace_back(it->release());
+#else
     dom_sensors_.insert(dom_sensors_.end(), slist.begin(), slist.end());
+#endif
 
     // instantiate axioms
+#ifdef SMART
+    unique_axiom_list xlist;
+#else
     axiom_list xlist;
+#endif
     for( size_t k = 0; k < dom_axioms_.size(); ++k ) {
         dom_axioms_[k]->instantiate(xlist);
+#ifndef SMART
         delete dom_axioms_[k];
+#endif
     }
     dom_axioms_.clear();
     dom_axioms_.reserve(xlist.size());
+#ifdef SMART
+    for( unique_axiom_list::iterator it = xlist.begin(); it != xlist.end(); ++it )
+        dom_axioms_.emplace_back(it->release());
+#else
     dom_axioms_.insert(dom_axioms_.end(), xlist.begin(), xlist.end());
+#endif
 
     // instantiate observables
     cout << "instantiating observables ..." << flush;
+#ifdef SMART
+    unique_observable_list olist;
+#else
     observable_list olist;
+#endif
     for( size_t k = 0; k < dom_observables_.size(); ++k ) {
         dom_observables_[k]->instantiate(olist);
+#ifndef SMART
         delete dom_observables_[k];
+#endif
     }
     dom_observables_.clear();
     dom_observables_.reserve(olist.size());
+#ifdef SMART
+    for( unique_observable_list::iterator it = olist.begin(); it != olist.end(); ++it )
+        dom_observables_.emplace_back(it->release());
+#else
     dom_observables_.insert(dom_observables_.end(), olist.begin(), olist.end());
+#endif
     cout << " done" << endl;
 
     // instantiate stickies
     cout << "instantiating stickies ..." << flush;
+#ifdef SMART
+    unique_sticky_list tlist;
+#else
     sticky_list tlist;
+#endif
     for( size_t k = 0; k < dom_stickies_.size(); ++k ) {
         dom_stickies_[k]->instantiate(tlist);
+#ifndef SMART
         delete dom_stickies_[k];
+#endif
     }
     dom_stickies_.clear();
     dom_stickies_.reserve(olist.size());
+#ifdef SMART
+    for( unique_sticky_list::iterator it = tlist.begin(); it != tlist.end(); ++it )
+        dom_stickies_.emplace_back(it->release());
+#else
     dom_stickies_.insert(dom_stickies_.end(), tlist.begin(), tlist.end());
+#endif
     cout << " done" << endl;
 
     // calculate static atoms
@@ -460,11 +517,20 @@ void PDDL_Base::clg_translate_actions() {
     if( !clg_translation_ ) return;
 
     // compute actions that need translation (those with :observe statement)
+#ifdef SMART
+    unique_action_vec actions_to_translate;
+#else
     action_vec actions_to_translate;
-    for( int k = 0; k < (int)dom_actions_.size(); ++k ) {
+#endif
+    for( size_t k = 0; k < dom_actions_.size(); ++k ) {
         if( dom_actions_[k]->observe_ != 0 ) {
+#ifdef SMART
+            actions_to_translate.emplace_back(move(dom_actions_[k]));
+            dom_actions_[k] = move(dom_actions_.back());
+#else
             actions_to_translate.push_back(dom_actions_[k]);
             dom_actions_[k] = dom_actions_.back();
+#endif
             dom_actions_.pop_back();
             --k;
         } else {
@@ -508,10 +574,15 @@ void PDDL_Base::clg_translate_actions() {
 
     // translate actions
     for( size_t k = 0; k < actions_to_translate.size(); ++k ) {
-        Action *action = actions_to_translate[k];
-        assert(action->observe_->is_grounded());
-        dom_actions_.push_back(action);
-        clg_translate(*action);
+        assert(actions_to_translate[k] != nullptr);
+        Action &action = *actions_to_translate[k];
+        assert(action.observe_->is_grounded());
+#ifdef SMART
+        dom_actions_.emplace_back(move(actions_to_translate[k]));
+#else
+        dom_actions_.push_back(&action);
+#endif
+        clg_translate(action);
     }
 }
 
@@ -557,7 +628,11 @@ void PDDL_Base::clg_translate(Action &action) {
     // 2) create sensor sensor-<action> with same arguments, condition
     //    (do-post-sense-for-<action> <args>), and sense <observation>
 
+#ifdef SMART
+    unique_ptr<Sensor> sensor = make_unique<Sensor>(strdup((string("sensor-for-") + action.print_name_).c_str()));
+#else
     Sensor *sensor = new Sensor(strdup((string("sensor-for-") + action.print_name_).c_str()));
+#endif
     clone_parameters(action.param_, sensor->param_);
     sensor->condition_ = new Literal(need_post);
     sensor->sense_ = observe;
@@ -567,16 +642,24 @@ void PDDL_Base::clg_translate(Action &action) {
     const_cast<Effect*>(sensor->sense_)->remap_parameters(action.param_, sensor->param_);
     assert(!sensor->condition_->has_free_variables(sensor->param_));
     assert(!sensor->sense_->has_free_variables(sensor->param_));
+#ifdef SMART
+    dom_sensors_.emplace_back(move(sensor));
+#else
     dom_sensors_.push_back(sensor);
+#endif
     if( options_.is_enabled("clg:print:sensors") || options_.is_enabled("clg:print:generated") )
-        cout << Utils::yellow() << *sensor << Utils::normal();
+        cout << Utils::yellow() << *dom_sensors_.back() << Utils::normal();
 
     //
     // 3) create action (post-sense-<action> <args>) with precondition
     //    (do-post-sense-for-<action> <args>) and effects that remove
     //    precondition and add (normal-execution)
 
+#ifdef SMART
+    unique_ptr<Action> post_action = make_unique<Action>(strdup((string(action.print_name_) + "__post__").c_str()));
+#else
     Action *post_action = new Action(strdup((string(action.print_name_) + "__post__").c_str()));
+#endif
     clone_parameters(action.param_, post_action->param_);
     post_action->precondition_ = Literal(need_post).copy();
     effect.push_back(AtomicEffect(*normal_execution_).copy());
@@ -591,9 +674,13 @@ void PDDL_Base::clg_translate(Action &action) {
     const_cast<Effect*>(post_action->effect_)->remap_parameters(action.param_, post_action->param_);
     assert(!post_action->precondition_->has_free_variables(post_action->param_));
     assert(!post_action->effect_->has_free_variables(post_action->param_));
+#ifdef SMART
+    dom_actions_.emplace_back(move(post_action));
+#else
     dom_actions_.push_back(post_action);
+#endif
     if( options_.is_enabled("clg:print:post") || options_.is_enabled("clg:print:generated") )
-        cout << Utils::yellow() << *post_action << Utils::normal();
+        cout << Utils::yellow() << *dom_actions_.back() << Utils::normal();
 }
 
 void PDDL_Base::declare_lw1_translation() {
@@ -865,11 +952,20 @@ void PDDL_Base::lw1_translate_actions() {
     assert(lw1_translation_);
 
     // compute actions that need translation (those with non-null sensing model)
+#ifdef SMART
+    unique_action_vec actions_to_translate;
+#else
     action_vec actions_to_translate;
-    for( int k = 0; k < (int)dom_actions_.size(); ++k ) {
+#endif
+    for( size_t k = 0; k < dom_actions_.size(); ++k ) {
         if( dom_actions_[k]->sensing_ != 0 ) {
+#ifdef SMART
+            actions_to_translate.emplace_back(move(dom_actions_[k]));
+            dom_actions_[k] = move(dom_actions_.back());
+#else
             actions_to_translate.push_back(dom_actions_[k]);
             dom_actions_[k] = dom_actions_.back();
+#endif
             dom_actions_.pop_back();
             --k;
         } else {
@@ -913,9 +1009,10 @@ void PDDL_Base::lw1_translate_actions() {
 
     // translate actions
     for( size_t k = 0; k < actions_to_translate.size(); ++k ) {
-        Action *action = actions_to_translate[k];
-        assert(action->sensing_->is_grounded());
-        lw1_translate(*action);
+        assert(actions_to_translate[k] != nullptr);
+        Action &action = *actions_to_translate[k];
+        assert(action.sensing_->is_grounded());
+        lw1_translate(action);
         //delete action; // CHECK: guess: delete params that are needed in sensing model (invariants)
     }
 
@@ -947,7 +1044,11 @@ void PDDL_Base::lw1_translate(Action &action) {
     // create __effect__ action (if needed)
     if( need_effect_action ) {
         // Action that execute only the effects on state variables (i.e. no sensing model involved)
+#ifdef SMART
+        unique_ptr<Action> effect_action = make_unique<Action>(strdup((string(action.print_name_) + "__effect__").c_str()));
+#else
         Action *effect_action = new Action(strdup((string(action.print_name_) + "__effect__").c_str()));
+#endif
         original_actions_.insert(effect_action->print_name_);             // this action counts as the original action
 
         // precondition
@@ -982,14 +1083,22 @@ void PDDL_Base::lw1_translate(Action &action) {
         effect.clear();
 
         // insert action
+#ifdef SMART
+        dom_actions_.emplace_back(move(effect_action));
+#else
         dom_actions_.push_back(effect_action);
+#endif
         if( options_.is_enabled("lw1:print:effect") || options_.is_enabled("lw1:print:generated") )
-            cout << Utils::yellow() << *effect_action << Utils::normal();
+            cout << Utils::yellow() << *dom_actions_.back() << Utils::normal();
     }
 
     if( need_set_sensing_action ) {
         // Action that computes the effects on observables (i.e. sensing model)
+#ifdef SMART
+        unique_ptr<Action> set_sensing_action = make_unique<Action>(strdup((string(action.print_name_) + "__set_sensing__").c_str()));
+#else
         Action *set_sensing_action = new Action(strdup((string(action.print_name_) + "__set_sensing__").c_str()));
+#endif
 
         // precondition
         if( need_effect_action ) {
@@ -1026,9 +1135,13 @@ void PDDL_Base::lw1_translate(Action &action) {
         }
 
         // insert action
+#ifdef SMART
+        dom_actions_.emplace_back(move(set_sensing_action));
+#else
         dom_actions_.push_back(set_sensing_action);
+#endif
         if( options_.is_enabled("lw1:print:set-sensing") || options_.is_enabled("lw1:print:generated") )
-            cout << Utils::yellow() << *set_sensing_action << Utils::normal();
+            cout << Utils::yellow() << *dom_actions_.back() << Utils::normal();
 
         // store sensing model for generating invariants later
         lw1_sensing_models_.push_back(make_pair(&action, action.sensing_->copy_and_simplify()));
@@ -1037,7 +1150,11 @@ void PDDL_Base::lw1_translate(Action &action) {
 
     if( !need_effect_action && !need_set_sensing_action ) {
         // Action that only turns on the sensor
+#ifdef SMART
+        unique_ptr<Action> turn_on_sensor_action = make_unique<Action>(strdup((string(action.print_name_) + "__turn_on_sensor__").c_str()));
+#else
         Action *turn_on_sensor_action = new Action(strdup((string(action.print_name_) + "__turn_on_sensor__").c_str()));
+#endif
         original_actions_.insert(turn_on_sensor_action->print_name_);     // this action counts as the original action
 
         // precondition
@@ -1062,9 +1179,13 @@ void PDDL_Base::lw1_translate(Action &action) {
         }
 
         // insert action
+#ifdef SMART
+        dom_actions_.emplace_back(move(turn_on_sensor_action));
+#else
         dom_actions_.push_back(turn_on_sensor_action);
+#endif
         if( options_.is_enabled("lw1:print:turn-on-sensor") || options_.is_enabled("lw1:print:generated") )
-            cout << Utils::yellow() << *turn_on_sensor_action << Utils::normal();
+            cout << Utils::yellow() << *dom_actions_.back() << Utils::normal();
 
         // store sensing model
         lw1_sensing_models_.push_back(make_pair(&action, action.sensing_->copy_and_simplify()));
@@ -1121,11 +1242,20 @@ void PDDL_Base::lw1_translate_actions_strict() {
     // if requested, manage sensing with post actions
     if( options_.is_enabled("lw1:boost:enable-post-actions") ) {
         // compute actions that need post actions (those with non-null sensing model)
+#ifdef SMART
+        unique_action_vec actions_to_translate;
+#else
         action_vec actions_to_translate;
-        for( int k = 0; k < (int)dom_actions_.size(); ++k ) {
+#endif
+        for( size_t k = 0; k < dom_actions_.size(); ++k ) {
             if( dom_actions_[k]->sensing_ != 0 ) {
+#ifdef SMART
+                actions_to_translate.emplace_back(move(dom_actions_[k]));
+                dom_actions_[k] = move(dom_actions_.back());
+#else
                 actions_to_translate.push_back(dom_actions_[k]);
                 dom_actions_[k] = dom_actions_.back();
+#endif
                 dom_actions_.pop_back();
                 --k;
             }
@@ -1166,7 +1296,11 @@ void PDDL_Base::lw1_translate_actions_strict() {
 
         // translate actions
         for( size_t k = 0; k < actions_to_translate.size(); ++k ) {
+#ifdef SMART
+            Action *action = actions_to_translate[k].release();
+#else
             Action *action = actions_to_translate[k];
+#endif
             assert(action->sensing_->is_grounded());
             lw1_translate_strict_NEW(*action);
         }
@@ -1210,12 +1344,21 @@ void PDDL_Base::lw1_translate_strict(Action &action) { // CHECK: replace this by
         const_cast<AndEffect*>(static_cast<const AndEffect*>(action.effect_))->push_back(AtomicEffect(*last_action_atom).copy());
     }
 
+#ifdef SMART
+    dom_actions_.emplace_back(make_unique<Action>(action));
+    assert(dom_actions_.back() != nullptr); // SMART: CHECK
+#else
     dom_actions_.push_back(&action);
+#endif
     if( options_.is_enabled("lw1:print:effect") || options_.is_enabled("lw1:print:generated") )
-        cout << Utils::yellow() << action << Utils::normal();
+        cout << Utils::yellow() << *dom_actions_.back() << Utils::normal();
 
     // create post-action that remove enablers for sensing and resumes normal-execution
+#ifdef SMART
+    unique_ptr<Action> post_action = make_unique<Action>(strdup((string(action.print_name_) + "__post-action__").c_str()));
+#else
     Action *post_action = new Action(strdup((string(action.print_name_) + "__post-action__").c_str()));
+#endif
     And *precondition = new And;
     precondition->push_back(Literal(*normal_execution_).negate());
     precondition->push_back(Literal(*last_action_atom).copy());
@@ -1226,9 +1369,13 @@ void PDDL_Base::lw1_translate_strict(Action &action) { // CHECK: replace this by
     effect->push_back(AtomicEffect(*last_action_atom).negate());
     post_action->effect_ = effect;
 
+#ifdef SMART
+    dom_actions_.emplace_back(move(post_action));
+#else
     dom_actions_.push_back(post_action);
+#endif
     if( options_.is_enabled("lw1:print:post") || options_.is_enabled("lw1:print:generated") )
-        cout << Utils::yellow() << *post_action << Utils::normal();
+        cout << Utils::yellow() << *dom_actions_.back() << Utils::normal();
 }
 
 void PDDL_Base::lw1_translate_strict_NEW(Action &action) {
@@ -1271,9 +1418,13 @@ void PDDL_Base::lw1_translate_strict_NEW(Action &action) {
     }
     action.effect_ = new_effect;
 
+#ifdef SMART
+    dom_actions_.emplace_back(&action);
+#else
     dom_actions_.push_back(&action);
+#endif
     if( options_.is_enabled("lw1:print:effect") || options_.is_enabled("lw1:print:generated") )
-        cout << Utils::yellow() << action << Utils::normal();
+        cout << Utils::yellow() << *dom_actions_.back() << Utils::normal();
 
     // Post action that re-establish normal execution
     lw1_create_post_action(sensed_atoms);
@@ -1306,7 +1457,11 @@ void PDDL_Base::lw1_create_sensors_for_atom(const Atom &atom, const Condition &c
             // create sensor for each enabler
             string name = string("sensor-for-") + var.to_string(true, true) + "-" + atom.to_string(atom.negated_, true) + "-true";
             if( sensor_index != -1 ) name += "-" + Utils::to_string(sensor_index);
+#ifdef SMART
+            unique_ptr<Sensor> sensor = make_unique<Sensor>(strdup(name.c_str()));
+#else
             Sensor *sensor = new Sensor(strdup(name.c_str()));
+#endif
 
             // condition of sensor is enabler plus conditions on other values of variable
             And *sensor_condition = 0;
@@ -1325,15 +1480,23 @@ void PDDL_Base::lw1_create_sensors_for_atom(const Atom &atom, const Condition &c
             sensor->sense_ = AtomicEffect(atom, atom.negated_).copy();
 
             // insert sensor
+#ifdef SMART
+            dom_sensors_.emplace_back(move(sensor));
+#else
             dom_sensors_.push_back(sensor);
+#endif
             if( options_.is_enabled("lw1:print:sensors") || options_.is_enabled("lw1:print:generated") )
-                cout << Utils::yellow() << *sensor << Utils::normal();
+                cout << Utils::yellow() << *dom_sensors_.back() << Utils::normal();
 
             // if this is a binary variable, create a copy that sets value to false
             if( var.is_binary() ) {
                 string name = string("sensor-for-") + var.to_string(true, true) + "-" + atom.to_string(atom.negated_, true) + "-false";
                 if( sensor_index != -1 ) name += "-" + Utils::to_string(sensor_index);
+#ifdef SMART
+                unique_ptr<Sensor> sensor = make_unique<Sensor>(strdup(name.c_str()));
+#else
                 Sensor *sensor = new Sensor(strdup(name.c_str()));
+#endif
 
                 // condition of sensor is just enabler because there are no other values for the variable
                 sensor->condition_ = condition.copy_and_simplify();
@@ -1342,9 +1505,13 @@ void PDDL_Base::lw1_create_sensors_for_atom(const Atom &atom, const Condition &c
                 sensor->sense_ = AtomicEffect(atom, !atom.negated_).copy();
 
                 // insert sensor
+#ifdef SMART
+                dom_sensors_.emplace_back(move(sensor));
+#else
                 dom_sensors_.push_back(sensor);
+#endif
                 if( options_.is_enabled("lw1:print:sensors") || options_.is_enabled("lw1:print:generated") )
-                    cout << Utils::yellow() << *sensor << Utils::normal();
+                    cout << Utils::yellow() << *dom_sensors_.back() << Utils::normal();
             }
         }
     }
@@ -1367,7 +1534,11 @@ void PDDL_Base::lw1_create_post_action(const unsigned_atom_set &atoms) {
     map<unsigned_atom_set, const Action*>::const_iterator it = post_actions_for_lw1_translation_.find(atoms);
     if( it == post_actions_for_lw1_translation_.end() ) {
         string name = string("post-action-") + Utils::to_string(post_actions_for_lw1_translation_.size());
+#ifdef SMART
+        unique_ptr<Action> post_action = make_unique<Action>(strdup(name.c_str()));
+#else
         Action *post_action = new Action(strdup(name.c_str()));
+#endif
 
         // precondition
         const Atom &enabler = *lw1_fetch_enabler_for_sensing(atoms);
@@ -1387,10 +1558,15 @@ void PDDL_Base::lw1_create_post_action(const unsigned_atom_set &atoms) {
         effect.clear();
 
         // insert action
+#ifdef SMART
+        post_actions_for_lw1_translation_.insert(make_pair(atoms, post_action.get()));
+        dom_actions_.emplace_back(move(post_action));
+#else
         post_actions_for_lw1_translation_.insert(make_pair(atoms, post_action));
         dom_actions_.push_back(post_action);
+#endif
         if( options_.is_enabled("lw1:print:post") || options_.is_enabled("lw1:print:generated") )
-            cout << Utils::yellow() << *post_action << Utils::normal();
+            cout << Utils::yellow() << *dom_actions_.back() << Utils::normal();
     }
 }
 
@@ -1420,7 +1596,11 @@ void PDDL_Base::lw1_create_deductive_rules_for_variables() {
 void PDDL_Base::lw1_create_drule_var_exhaustive(const Variable &variable, const Atom &value) {
     assert(!value.negated_);
     string name = string("drule-var-exhaustive-") + variable.to_string(true, true) + "-" + value.to_string(false, true);
+#ifdef SMART
+    unique_ptr<Action> drule = make_unique<Action>(strdup(name.c_str()));
+#else
     Action *drule = new Action(strdup(name.c_str()));
+#endif
 
     And *precondition = new And;
     for( unsigned_atom_set::const_iterator it = variable.grounded_domain_.begin(); it != variable.grounded_domain_.end(); ++it ) {
@@ -1433,16 +1613,24 @@ void PDDL_Base::lw1_create_drule_var_exhaustive(const Variable &variable, const 
     drule->precondition_ = precondition;
 
     // insert decision rules
+#ifdef SMART
+    dom_actions_.emplace_back(move(drule));
+#else
     dom_actions_.push_back(drule);
+#endif
     if( options_.is_enabled("lw1:print:drule:var") || options_.is_enabled("lw1:print:drule") )
-        cout << Utils::yellow() << *drule << Utils::normal();
+        cout << Utils::yellow() << *dom_actions_.back() << Utils::normal();
 }
 
 // mutual exclusivity of values for variable; i.e. x => -x' for all values x and x' of variable
 void PDDL_Base::lw1_create_drule_var_exclusive(const Variable &variable, const Atom &value) {
     assert(!value.negated_);
     string name = string("drule-var-exclusive-") + variable.to_string(true, true) + "-" + value.to_string(false, true);
+#ifdef SMART
+    unique_ptr<Action> drule = make_unique<Action>(strdup(name.c_str()));
+#else
     Action *drule = new Action(strdup(name.c_str()));
+#endif
 
     AndEffect *effect = new AndEffect;
     for( unsigned_atom_set::const_iterator it = variable.grounded_domain_.begin(); it != variable.grounded_domain_.end(); ++it ) {
@@ -1456,9 +1644,13 @@ void PDDL_Base::lw1_create_drule_var_exclusive(const Variable &variable, const A
     drule->effect_ = effect;
 
     // insert decision rules
+#ifdef SMART
+    dom_actions_.emplace_back(move(drule));
+#else
     dom_actions_.push_back(drule);
+#endif 
     if( options_.is_enabled("lw1:print:drule:var") || options_.is_enabled("lw1:print:drule") )
-        cout << Utils::yellow() << *drule << Utils::normal();
+        cout << Utils::yellow() << *dom_actions_.back() << Utils::normal();
 }
 
 void PDDL_Base::lw1_index_sensing_models() {
@@ -1795,14 +1987,22 @@ void PDDL_Base::lw1_create_type1_sensing_drule(const Atom &obs, const And &term,
 
     // type-1 sensing drules
     string name = string("drule-sensing-type1-") + obs.to_string(false, true) + "-" + Utils::to_string(index);
+#ifdef SMART
+    unique_ptr<Action> drule = make_unique<Action>(strdup(name.c_str()));
+#else
     Action *drule = new Action(strdup(name.c_str()));
+#endif
     drule->precondition_ = term.copy_and_simplify();
     drule->effect_ = AtomicEffect(obs).copy();
 
     // insert action for deductive rule
+#ifdef SMART
+    dom_actions_.emplace_back(move(drule));
+#else
     dom_actions_.push_back(drule);
+#endif
     if( options_.is_enabled("lw1:print:drule:sensing") || options_.is_enabled("lw1:print:drule") )
-        cout << Utils::yellow() << *drule << Utils::normal();
+        cout << Utils::yellow() << *dom_actions_.back() << Utils::normal();
 }
 
 // type2 sensing drules are only used in lw1:aaai option
@@ -1811,7 +2011,11 @@ void PDDL_Base::lw1_create_type2_sensing_drule(const Atom &obs, const And &term,
 
     for( size_t k = 0; k < term.size(); ++k ) {
         string name = string("drule-sensing-type2-") + obs.to_string(false, true) + "-" + Utils::to_string(index);
+#ifdef SMART
+        unique_ptr<Action> drule = make_unique<Action>(strdup(name.c_str()));
+#else
         Action *drule = new Action(strdup(name.c_str()));
+#endif
 
         // precondition
         And *precondition = new And;
@@ -1830,9 +2034,13 @@ void PDDL_Base::lw1_create_type2_sensing_drule(const Atom &obs, const And &term,
         drule->effect_= effect;
 
         // insert action for deductive rule
+#ifdef SMART
+        dom_actions_.emplace_back(move(drule));
+#else
         dom_actions_.push_back(drule);
+#endif
         if( options_.is_enabled("lw1:print:drule:sensing") || options_.is_enabled("lw1:print:drule") )
-            cout << Utils::yellow() << *drule << Utils::normal();
+            cout << Utils::yellow() << *dom_actions_.back() << Utils::normal();
     }
 }
 
@@ -1862,7 +2070,11 @@ void PDDL_Base::lw1_create_type3_sensing_drule(const Action &action,
 #endif
 
     string name = string("drule-sensing-type3-") + value.to_string(false, true) + "-" + Utils::to_string(index);
+#ifdef SMART
+    unique_ptr<Action> drule = make_unique<Action>(strdup(name.c_str()));
+#else
     Action *drule = new Action(strdup(name.c_str()));
+#endif
 
     // precondition
     And *precondition = new And;
@@ -1892,9 +2104,13 @@ void PDDL_Base::lw1_create_type3_sensing_drule(const Action &action,
     drule->effect_ = effect;
 
     // insert action for deductive rule
+#ifdef SMART
+    dom_actions_.emplace_back(move(drule));
+#else
     dom_actions_.push_back(drule);
+#endif
     if( options_.is_enabled("lw1:print:drule:sensing") || options_.is_enabled("lw1:print:drule") )
-        cout << Utils::yellow() << *drule << Utils::normal();
+        cout << Utils::yellow() << *dom_actions_.back() << Utils::normal();
 }
 
 const PDDL_Base::Atom& PDDL_Base::lw1_fetch_atom_for_negated_term(const And &term) {
@@ -1918,14 +2134,22 @@ const PDDL_Base::Atom& PDDL_Base::lw1_fetch_atom_for_negated_term(const And &ter
         for( size_t k = 0; k < term.size(); ++k ) {
             const Literal &literal = *static_cast<const Literal*>(term[k]);
             string name = string("drule-atom-") + atom->to_string(false, true) + "-" + Utils::to_string(k);
+#ifdef SMART
+            unique_ptr<Action> drule = make_unique<Action>(strdup(name.c_str()));
+#else
             Action *drule = new Action(strdup(name.c_str()));
+#endif
             drule->precondition_ = literal.negate();
             drule->effect_ = AtomicEffect(*atom).copy();
 
             // insert action for deductive rule
+#ifdef SMART
+            dom_actions_.emplace_back(move(drule));
+#else
             dom_actions_.push_back(drule);
+#endif
             if( options_.is_enabled("lw1:print:drule:sensing") || options_.is_enabled("lw1:print:drule") )
-                cout << Utils::yellow() << *drule << Utils::normal();
+                cout << Utils::yellow() << *dom_actions_.back() << Utils::normal();
         }
 
         // return atom
@@ -1947,7 +2171,11 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action *action, const State
     assert(!value.negated_ || variable.is_binary());
 
     string name = string("drule-sensing-type4state-") + variable.to_string(false, true) + "-" + value.to_string(false, true);
+#ifdef SMART
+    unique_ptr<Action> drule = make_unique<Action>(strdup(name.c_str()));
+#else
     Action *drule = new Action(strdup(name.c_str()));
+#endif
 
     // pass the variable name to lw1_problem.cc in the comment for this action
     drule->comment_ = variable.to_string(false, true);
@@ -1962,9 +2190,13 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action *action, const State
     drule->effect_ = AtomicEffect(value).copy();
 
     // insert action for deductive rule
+#ifdef SMART
+    dom_actions_.emplace_back(move(drule));
+#else
     dom_actions_.push_back(drule);
+#endif
     if( options_.is_enabled("lw1:print:drule:sensing") || options_.is_enabled("lw1:print:drule") )
-        cout << Utils::yellow() << *drule << Utils::normal();
+        cout << Utils::yellow() << *dom_actions_.back() << Utils::normal();
 }
 
 void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action,
@@ -2008,7 +2240,11 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action,
     }
 
     string name = string("drule-sensing-type4obs-") + action.print_name_ + "-" + variable.to_string(false, true) + "-" + value.to_string(false, true);
+#ifdef SMART
+    unique_ptr<Action> drule = make_unique<Action>(strdup(name.c_str()));
+#else
     Action *drule = new Action(strdup(name.c_str()));
+#endif
 
     // pass the variable name to lw1_problem.cc in the comment for this action
     drule->comment_ = variable.to_string(false, true) + " " + value.to_string(false, true);
@@ -2056,9 +2292,13 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action,
     drule->effect_ = and_effect;
 
     // insert action for deductive rule
+#ifdef SMART
+    dom_actions_.emplace_back(move(drule));
+#else
     dom_actions_.push_back(drule);
+#endif
     if( options_.is_enabled("lw1:print:drule:sensing") || options_.is_enabled("lw1:print:drule") )
-        cout << Utils::yellow() << *drule << Utils::normal();
+        cout << Utils::yellow() << *dom_actions_.back() << Utils::normal();
 }
 
 void PDDL_Base::lw1_create_type4_boost_sensing_drule(const Action &action,
@@ -2098,7 +2338,11 @@ void PDDL_Base::lw1_create_type4_boost_sensing_drule(const Action &action,
     if( term == 0 ) return;
 
     string name = string("drule-sensing-type4obs-boost-") + action.print_name_ + "-" + variable.to_string(false, true) + "-" + value.to_string(false, true);
+#ifdef SMART
+    unique_ptr<Action> drule = make_unique<Action>(strdup(name.c_str()));
+#else
     Action *drule = new Action(strdup(name.c_str()));
+#endif
 
     // pass the variable name to lw1_problem.cc in the comment for this action
     drule->comment_ = variable.to_string(false, true) + " " + value.to_string(false, true);
@@ -2128,9 +2372,13 @@ void PDDL_Base::lw1_create_type4_boost_sensing_drule(const Action &action,
     drule->effect_ = effect;
 
     // insert action for deductive rule
+#ifdef SMART
+    dom_actions_.emplace_back(move(drule));
+#else
     dom_actions_.push_back(drule);
+#endif
     if( options_.is_enabled("lw1:print:drule:sensing") || options_.is_enabled("lw1:print:drule") )
-        cout << Utils::yellow() << *drule << Utils::normal();
+        cout << Utils::yellow() << *dom_actions_.back() << Utils::normal();
 }
 
 void PDDL_Base::lw1_create_type5_sensing_drule(const ObsVariable &variable) {
@@ -2724,13 +2972,21 @@ void PDDL_Base::lw1_compile_static_observable(const Atom &atom) { // CHECK: comp
 
 void PDDL_Base::lw1_add_axiom_for_static_observable(const Literal &literal, const Condition &condition) {
     string axiom_name("[axiom for static observable '");
+#ifdef SMART
+    unique_ptr<Axiom> axiom = make_unique<Axiom>(strdup((axiom_name + literal.to_string() + "']").c_str()));
+#else
     Axiom *axiom = new Axiom(strdup((axiom_name + literal.to_string() + "']").c_str()));
+#endif
     axiom->head_ = new AtomicEffect(literal);
     axiom->body_ = condition.copy_and_simplify();
+#ifdef SMART
+    dom_axioms_.emplace_back(move(axiom));
+#else
     dom_axioms_.push_back(axiom);
+#endif
 
     if( options_.is_enabled("lw1:print:axioms") ) {
-        cout << Utils::yellow() << *axiom << endl;
+        cout << Utils::yellow() << *dom_axioms_.back() << endl;
     }
 }
 
@@ -4937,7 +5193,11 @@ bool PDDL_Base::Action::is_special_action() const {
     return (strncmp(print_name_, "post-action-", 12) == 0) || (strncmp(print_name_, "drule-", 6) == 0);
 }
 
+#ifdef SMART
+void PDDL_Base::Action::instantiate(unique_action_list &alist) const {
+#else
 void PDDL_Base::Action::instantiate(action_list &alist) const {
+#endif
     size_t base_count = alist.size();
     action_list_ptr_ = &alist;
     cout << "instantiating action '" << print_name_ << "' ..." << flush;
@@ -4979,13 +5239,21 @@ void PDDL_Base::Action::process_instance() const {
     }
 
     PDDL_Name name(this, param_, param_.size());
+#ifdef SMART
+    unique_ptr<Action> action = make_unique<Action>(strdup(name.to_string(true).c_str()));
+#else
     Action *action = new Action(strdup(name.to_string(true).c_str()));
+#endif
     action->precondition_ = grounded_precondition;
     if( effect_ != 0 ) action->effect_ = effect_->ground();
     if( observe_ != 0 ) action->observe_ = observe_->ground();
     if( sensing_proxy_ != 0 ) action->sensing_ = sensing_proxy_->ground();
+#ifdef SMART
+    action_list_ptr_->emplace_back(move(action));
+#else
     action_list_ptr_->push_back(action);
-    //cout << *action;
+#endif
+    //cout << *action_list_ptr_->back();
 }
 
 void PDDL_Base::Action::print(ostream &os) const {
@@ -5006,7 +5274,11 @@ void PDDL_Base::Action::print(ostream &os) const {
     os << ")" << endl;
 }
 
+#ifdef SMART
+void PDDL_Base::Sensor::instantiate(unique_sensor_list &slist) const {
+#else
 void PDDL_Base::Sensor::instantiate(sensor_list &slist) const {
+#endif
     size_t base_count = slist.size();
     sensor_list_ptr_ = &slist;
     cout << "instantiating sensor '" << print_name_ << "' ..." << flush;
@@ -5045,10 +5317,18 @@ void PDDL_Base::Sensor::process_instance() const {
     }
 
     PDDL_Name name(this, param_, param_.size());
+#ifdef SMART
+    unique_ptr<Sensor> sensor = make_unique<Sensor>(strdup(name.to_string(true).c_str()));
+#else
     Sensor *sensor = new Sensor(strdup(name.to_string(true).c_str()));
+#endif
     sensor->condition_ = grounded_condition;
     if( sense_ != 0 ) sensor->sense_ = sense_->ground();
+#ifdef SMART
+    sensor_list_ptr_->emplace_back(move(sensor));
+#else
     sensor_list_ptr_->push_back(sensor);
+#endif
 }
 
 void PDDL_Base::Sensor::print(ostream &os) const {
@@ -5070,7 +5350,11 @@ void PDDL_Base::Sensor::print(ostream &os) const {
        << ")" << endl;
 }
 
+#ifdef SMART
+void PDDL_Base::Axiom::instantiate(unique_axiom_list &alist) const {
+#else
 void PDDL_Base::Axiom::instantiate(axiom_list &alist) const {
+#endif
     size_t base_count = alist.size();
     axiom_list_ptr_ = &alist;
     cout << "instantiating axiom '" << print_name_ << "' ..." << flush;
@@ -5109,10 +5393,18 @@ void PDDL_Base::Axiom::process_instance() const {
     }
 
     PDDL_Name name(this, param_, param_.size());
+#ifdef SMART
+    unique_ptr<Axiom> axiom = make_unique<Axiom>(strdup(name.to_string(true).c_str()));
+#else
     Axiom *axiom = new Axiom(strdup(name.to_string(true).c_str()));
+#endif
     axiom->body_ = grounded_body;
     if( head_ != 0 ) axiom->head_ = head_->ground();
+#ifdef SMART
+    axiom_list_ptr_->emplace_back(move(axiom));
+#else
     axiom_list_ptr_->push_back(axiom);
+#endif
 }
 
 void PDDL_Base::Axiom::print(ostream &os) const {
@@ -5131,11 +5423,23 @@ void PDDL_Base::Axiom::print(ostream &os) const {
        << ")" << endl;
 }
 
+#ifdef SMART
+void PDDL_Base::Observable::instantiate(unique_observable_list &olist) const {
+#else
 void PDDL_Base::Observable::instantiate(observable_list &olist) const {
+#endif
+#ifdef SMART
+    unique_ptr<Observable> grounded = make_unique<Observable>();
+#else
     Observable *grounded = new Observable;
+#endif
     for( size_t k = 0; k < observables_.size(); ++k )
         grounded->observables_.push_back(observables_[k]->ground());
+#ifdef SMART
+    olist.emplace_back(move(grounded));
+#else
     olist.push_back(grounded);
+#endif
 }
 
 void PDDL_Base::Observable::emit(Instance &ins) const {
@@ -5152,11 +5456,23 @@ void PDDL_Base::Observable::print(ostream &os) const {
     os << ")";
 }
 
+#ifdef SMART
+void PDDL_Base::Sticky::instantiate(unique_sticky_list &slist) const {
+#else
 void PDDL_Base::Sticky::instantiate(sticky_list &slist) const {
+#endif
+#ifdef SMART
+    unique_ptr<Sticky> grounded = make_unique<Sticky>();
+#else
     Sticky *grounded = new Sticky;
+#endif
     for( size_t k = 0; k < stickies_.size(); ++k )
         grounded->stickies_.push_back(stickies_[k]->ground());
+#ifdef SMART
+    slist.emplace_back(move(grounded));
+#else
     slist.push_back(grounded);
+#endif
 }
 
 void PDDL_Base::Sticky::emit(Instance &ins) const {

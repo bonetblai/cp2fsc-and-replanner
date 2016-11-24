@@ -611,8 +611,13 @@ class PDDL_Base {
     };
 
     struct Action;
+#ifdef SMART
+    struct unique_action_vec : public std::vector<std::unique_ptr<Action> > { };
+    struct unique_action_list : public std::list<std::unique_ptr<Action> > { };
+#else
     struct action_vec : public std::vector<Action*> { };
     struct action_list : public std::list<Action*> { };
+#endif
 
     struct Action : public Symbol, Schema {
         const Condition *precondition_;
@@ -626,67 +631,119 @@ class PDDL_Base {
             sensing_(0), sensing_proxy_(0) { }
         virtual ~Action() { delete precondition_; delete effect_; delete observe_; delete sensing_; }
         bool is_special_action() const;
+#ifdef SMART
+        void instantiate(unique_action_list &alist) const;
+#else
         void instantiate(action_list &alist) const;
+#endif
         void emit(Instance &ins) const;
         virtual void process_instance() const;
         virtual void print(std::ostream &os) const;
-        mutable std::list<Action*> *action_list_ptr_;
+#ifdef SMART
+        mutable unique_action_list *action_list_ptr_;
+#else
+        mutable action_list *action_list_ptr_;
+#endif
     };
 
     struct Sensor;
+#ifdef SMART
+    struct unique_sensor_vec : public std::vector<std::unique_ptr<Sensor> > { };
+    struct unique_sensor_list : public std::list<std::unique_ptr<Sensor> > { };
+#else
     struct sensor_vec : public std::vector<Sensor*> { };
     struct sensor_list : public std::list<Sensor*> { };
+#endif
 
     struct Sensor : public Symbol, Schema {
         const Condition *condition_;
         const Effect *sense_;
         Sensor(const char *name) : Symbol(name, sym_sensor), condition_(0), sense_(0) { }
         virtual ~Sensor() { delete condition_; delete sense_; }
+#ifdef SMART
+        void instantiate(unique_sensor_list &slist) const;
+#else
         void instantiate(sensor_list &slist) const;
+#endif
         void emit(Instance &ins) const;
         virtual void process_instance() const;
         virtual void print(std::ostream &os) const;
+#ifdef SMART
+        mutable unique_sensor_list *sensor_list_ptr_;
+#else
         mutable sensor_list *sensor_list_ptr_;
+#endif
     };
 
     struct Axiom;
+#ifdef SMART
+    struct unique_axiom_vec : public std::vector<std::unique_ptr<Axiom> > { };
+    struct unique_axiom_list : public std::list<std::unique_ptr<Axiom> > { };
+#else
     struct axiom_vec : public std::vector<Axiom*> { };
     struct axiom_list : public std::list<Axiom*> { };
+#endif
 
     struct Axiom : public Symbol, Schema {
         const Condition *body_;
         const Effect *head_;
         Axiom(const char *name) : Symbol(name, sym_axiom), body_(0), head_(0) { }
         virtual ~Axiom() { delete body_; delete head_; }
+#ifdef SMART
+        void instantiate(unique_axiom_list &alist) const;
+#else
         void instantiate(axiom_list &alist) const;
+#endif
         void emit(Instance &ins) const;
         virtual void process_instance() const;
         virtual void print(std::ostream &os) const;
+#ifdef SMART
+        mutable unique_axiom_list *axiom_list_ptr_;
+#else
         mutable axiom_list *axiom_list_ptr_;
+#endif
     };
 
     struct Observable;
+#ifdef SMART
+    struct unique_observable_vec : public std::vector<std::unique_ptr<Observable> > { };
+    struct unique_observable_list : public std::list<std::unique_ptr<Observable> > { };
+#else
     struct observable_vec : public std::vector<Observable*> { };
     struct observable_list : public std::list<Observable*> { };
+#endif
 
     struct Observable {
         effect_vec observables_;
         Observable() { }
         ~Observable() { for( size_t k = 0; k < observables_.size(); ++k ) delete observables_[k]; }
+#ifdef SMART
+        void instantiate(unique_observable_list &olist) const;
+#else
         void instantiate(observable_list &olist) const;
+#endif
         void emit(Instance &ins) const;
         void print(std::ostream &os) const;
     };
 
     struct Sticky;
+#ifdef SMART
+    struct unique_sticky_vec : public std::vector<std::unique_ptr<Sticky> > { };
+    struct unique_sticky_list : public std::list<std::unique_ptr<Sticky> > { };
+#else
     struct sticky_vec : public std::vector<Sticky*> { };
     struct sticky_list : public std::list<Sticky*> { };
+#endif
 
     struct Sticky {
         effect_vec stickies_;
         Sticky() { }
         ~Sticky() { for( size_t k = 0; k < stickies_.size(); ++k ) delete stickies_[k]; }
+#ifdef SMART
+        void instantiate(unique_sticky_list &slist) const;
+#else
         void instantiate(sticky_list &slist) const;
+#endif
         void emit(Instance &ins) const;
         void print(std::ostream &os) const;
     };
@@ -775,6 +832,7 @@ class PDDL_Base {
     };
 
     struct VariableGroup;
+    struct variable_group_vec : public std::vector<VariableGroup*> { };
     struct variable_group_list : public std::list<VariableGroup*> { };
 
     struct VariableGroup : public Symbol, Schema {
@@ -792,7 +850,6 @@ class PDDL_Base {
         mutable variable_group_list *variable_group_list_ptr_;
         mutable const PDDL_Base *base_ptr_;
     };
-    struct variable_group_vec : public std::vector<VariableGroup*> { };
 
     // end of definitions for internal structures
 
@@ -808,16 +865,27 @@ class PDDL_Base {
     predicate_symbol_vec                      dom_predicates_;
     PredicateSymbol                           *dom_eq_pred_;
 
+#ifdef SMART
+    unique_action_vec                                dom_actions_;
+    unique_sensor_vec                                dom_sensors_;
+    unique_axiom_vec                                 dom_axioms_;
+#else
     action_vec                                dom_actions_;
     sensor_vec                                dom_sensors_;
     axiom_vec                                 dom_axioms_;
+#endif
     const Condition                           *dom_goal_;
     init_element_vec                          dom_init_;
     std::vector<init_element_vec>             dom_hidden_;
     unsigned_atom_set                         dom_static_atoms_;
 
+#ifdef SMART
+    unique_observable_vec                            dom_observables_;
+    unique_sticky_vec                                dom_stickies_;
+#else
     observable_vec                            dom_observables_;
     sticky_vec                                dom_stickies_;
+#endif
 
     // set of initial literals (extracted from InitElements in dom_init_
     unsigned_atom_set                         set_of_initial_literals_;
