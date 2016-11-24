@@ -219,7 +219,7 @@ int main(int argc, const char *argv[]) {
     } else if( translation_type == 1 ) {
         kp_instance = make_unique<CLG_Instance>(instance);
     }
-    assert(kp_instance != 0);
+    assert(kp_instance != nullptr);
 
     if( g_options.is_enabled("kp:print:raw") ) {
         kp_instance->print(cout);
