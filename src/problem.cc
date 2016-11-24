@@ -29,6 +29,7 @@ bool Instance::always_write_requirements_declaration_ = false;
 bool Instance::always_write_precondition_ = false;
 bool Instance::always_write_conjunction_ = false;
 
+#ifndef SMART
 Instance::Instance(const Instance& ins)
   : cross_referenced_(false),
     name_(ins.name_),
@@ -46,9 +47,11 @@ Instance::Instance(const Instance& ins)
     static_atoms_from_base_(ins.static_atoms_from_base_),
     options_(ins.options_) {
 }
+#endif
 
 Instance::~Instance() {
     delete name_;
+#ifndef SMART
     for( size_t k = 0; k < actions_.size(); ++k )
         delete actions_[k];
     for( size_t k = 0; k < sensors_.size(); ++k )
@@ -57,38 +60,75 @@ Instance::~Instance() {
         delete axioms_[k];
     for( size_t k = 0; k < atoms_.size(); ++k )
         delete atoms_[k];
+#endif
 }
 
 Instance::Atom& Instance::new_atom(Name *name) {
+#ifdef SMART
+    unique_ptr<Atom> a = make_unique<Atom>(name, atoms_.size());
+    atoms_.emplace_back(move(a));
+#else
     Atom *a = new Atom(name, atoms_.size());
     atoms_.push_back(a);
+#endif
     if( options_.is_enabled("problem:print:atom:creation") )
-        cout << "atom " << a->index_ << "." << a->name_ << " created" << endl;
+        cout << "atom " << atoms_.back()->index_ << "." << atoms_.back()->name_ << " created" << endl;
+#ifdef SMART
+    return *atoms_.back().get();
+#else
     return *a;
+#endif
 }
 
 Instance::Action& Instance::new_action(Name *name) {
+#ifdef SMART
+    unique_ptr<Action> a = make_unique<Action>(name, actions_.size());
+    actions_.emplace_back(move(a));
+#else
     Action *a = new Action(name, actions_.size());
     actions_.push_back(a);
+#endif
     if( options_.is_enabled("problem:print:action:creation") )
-        cout << "action " << a->index_ << "." << a->name_ << " created" << endl;
+        cout << "action " << actions_.back()->index_ << "." << actions_.back()->name_ << " created" << endl;
+#ifdef SMART
+    return *actions_.back().get();
+#else
     return *a;
+#endif
 }
 
 Instance::Sensor& Instance::new_sensor(Name* name) {
+#ifdef SMART
+    unique_ptr<Sensor> r = make_unique<Sensor>(name, sensors_.size());
+    sensors_.emplace_back(move(r));
+#else
     Sensor *r = new Sensor(name, sensors_.size());
     sensors_.push_back(r);
+#endif
     if( options_.is_enabled("problem:print:sensor:creation") )
-        cout << "sensor " << r->index_ << "." << r->name_ << " created" << endl;
+        cout << "sensor " << sensors_.back()->index_ << "." << sensors_.back()->name_ << " created" << endl;
+#ifdef SMART
+    return *sensors_.back().get();
+#else
     return *r;
+#endif
 }
 
 Instance::Axiom& Instance::new_axiom(Name* name) {
+#ifdef SMART
+    unique_ptr<Axiom> r = make_unique<Axiom>(name, axioms_.size());
+    axioms_.emplace_back(move(r));
+#else
     Axiom *r = new Axiom(name, axioms_.size());
     axioms_.push_back(r);
+#endif
     if( options_.is_enabled("problem:print:axiom:creation") )
-        cout << "axiom " << r->index_ << "." << r->name_ << " created" << endl;
+        cout << "axiom " << axioms_.back()->index_ << "." << axioms_.back()->name_ << " created" << endl;
+#ifdef SMART
+    return *axioms_.back().get();
+#else
     return *r;
+#endif
 }
 
 void Instance::remove_unreachable_conditional_effects(const bool_vec &reachable_atoms, const bool_vec &static_atoms) {
@@ -154,8 +194,12 @@ void Instance::remove_unreachable_axioms(const bool_vec &reachable_atoms, const 
         if( !reachable_axiom ) {
             if( options_.is_enabled("problem:print:axiom:removal") )
                 cout << "removing axiom " << k << "." << axioms_[k]->name_ << endl;
+#ifdef SMART
+            axioms_[k] = move(axioms_.back());
+#else
             delete axioms_[k];
             axioms_[k] = axioms_.back();
+#endif
             axioms_.pop_back();
             --k;
         }
@@ -188,8 +232,12 @@ void Instance::remove_unreachable_sensors(const bool_vec &reachable_atoms, const
         if( !reachable_sensor ) {
             if( options_.is_enabled("problem:print:sensor:removal") )
                 cout << "removing sensor " << k << "." << sensors_[k]->name_ << endl;
+#ifdef SMART
+            sensors_[k] = move(sensors_.back());
+#else
             delete sensors_[k];
             sensors_[k] = sensors_.back();
+#endif
             sensors_.pop_back();
             --k;
         }
@@ -385,7 +433,11 @@ void Instance::remove_actions(const bool_vec &set, index_vec &map) {
     for( size_t k = 0; k < actions_.size(); ++k ) {
         if( !set[k] ) {
             if( j < k ) {
+#ifdef SMART
+                actions_[j] = move(actions_[k]);
+#else
                 actions_[j] = actions_[k];
+#endif
                 actions_[j]->index_ = j;
             }
             rm_map[k] = j;
@@ -393,7 +445,9 @@ void Instance::remove_actions(const bool_vec &set, index_vec &map) {
         } else {
             if( options_.is_enabled("problem:print:action:removal") )
                 cout << "removing action " << k << "." << actions_[k]->name_ << endl;
+#ifndef SMART
             delete actions_[k];
+#endif
             rm_map[k] = no_such_index;
         }
     }
@@ -428,13 +482,19 @@ void Instance::remove_atoms(const bool_vec &set, index_vec &map) {
     for( size_t k = 0; k < atoms_.size(); ++k ) {
         if( !new_set[k] ) {
             if( j < k ) {
+#ifdef SMART
+	        atoms_[j] = move(atoms_[k]);
+#else
 	        atoms_[j] = atoms_[k];
+#endif
 	        atoms_[j]->index_ = j;
             }
             rm_map[k] = j;
             ++j;
         } else {
+#ifndef SMART
             delete atoms_[k];
+#endif
             rm_map[k] = no_such_index;
         }
     }
@@ -1119,7 +1179,11 @@ void Instance::create_deductive_rules() {
 
         for( size_t k = 0; k < invariant.size(); ++k ) {
             string name = string("deductive-rule-") + Utils::to_string(deductive_rules_.size());
+#ifdef SMART
+            unique_ptr<Action> rule = make_unique<Action>(new CopyName(name), deductive_rules_.size());
+#else
             Action *rule = new Action(new CopyName(name), deductive_rules_.size());
+#endif
 
             // conditional effects
             When c_eff;
@@ -1151,12 +1215,18 @@ void Instance::create_deductive_rules() {
             // push conditional effect
             if( !c_eff.effect_.empty() ) {
                 rule->when_.push_back(c_eff);
+#ifdef SMART
+                deductive_rules_.emplace_back(move(rule));
+#else
                 deductive_rules_.push_back(rule);
+#endif
                 if( options_.is_enabled("problem:print:deductive-rule:creation") ) {
                     rule->print(cout, *this);
                 }
             } else {
+#ifndef SMART
                 delete rule;
+#endif
             }
         }
     }

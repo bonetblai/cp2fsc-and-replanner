@@ -242,7 +242,11 @@ void Preprocessor::compute_reachability(bool_vec &reachable_atoms, bool_vec &rea
 
         // iterate over sensors
         for( size_t k = 0; k < instance_.sensors_.size(); ++k ) {
-            Instance::Sensor *r = instance_.sensors_[k];
+#ifdef SMART
+            const Instance::Sensor *r = instance_.sensors_[k].get();
+#else
+            const Instance::Sensor *r = instance_.sensors_[k];
+#endif
             assert(!r->sense_.empty());
 
             bool reachable_sensor = true;
@@ -267,7 +271,11 @@ void Preprocessor::compute_reachability(bool_vec &reachable_atoms, bool_vec &rea
 
         // iterate over axioms
         for( size_t k = 0; k < instance_.axioms_.size(); ++k ) {
-            Instance::Axiom *r = instance_.axioms_[k];
+#ifdef SMART
+            const Instance::Axiom *r = instance_.axioms_[k].get();
+#else
+            const Instance::Axiom *r = instance_.axioms_[k];
+#endif
             assert(!r->head_.empty());
 
             bool reachable_axiom = true;

@@ -20,6 +20,9 @@
 #define PROBLEM_H
 
 #include <map>
+#include <memory>
+#include <string>
+#include <vector>
 #include "name.h"
 #include "index.h"
 #include "options.h"
@@ -50,7 +53,15 @@ class Instance {
         }
         bool operator==(const Atom &atom) { return index_ == atom.index_; }
     };
+#ifdef SMART
+    class unique_atom_vec : public std::vector<std::unique_ptr<Atom> > {
+      public:
+        unique_atom_vec() { }
+        unique_atom_vec(const unique_atom_vec &vec) = delete; // unique_ptr's can't be copied
+    };
+#else
     class atom_vec : public std::vector<Atom*> { };
+#endif
 
     struct When {
         index_set condition_;
@@ -89,7 +100,15 @@ class Instance {
         void print(std::ostream &os, const Instance &i) const;
         void write(std::ostream &os, int indent, const Instance &instance) const;
     };
+#ifdef SMART
+    class unique_action_vec : public std::vector<std::unique_ptr<Action> > {
+      public:
+        unique_action_vec() { }
+        unique_action_vec(const unique_action_vec &vec) = delete; // unique_ptr's can't be copied
+    };
+#else
     class action_vec : public std::vector<Action*> { };
+#endif
 
     struct Sensor {
         Name *    name_;
@@ -109,7 +128,15 @@ class Instance {
         void print(std::ostream &os, const Instance &i) const;
         void write(std::ostream &os, int indent, const Instance &instance) const;
     };
+#ifdef SMART
+    class unique_sensor_vec : public std::vector<std::unique_ptr<Sensor> > {
+      public:
+        unique_sensor_vec() { }
+        unique_sensor_vec(const unique_sensor_vec &vec) = delete; // unique_ptr's can't be copied
+    };
+#else
     class sensor_vec : public std::vector<Sensor*> { };
+#endif
 
     struct Axiom {
         Name *    name_;
@@ -129,7 +156,15 @@ class Instance {
         void print(std::ostream &os, const Instance &i) const;
         void write(std::ostream &os, int indent, const Instance &instance) const;
     };
+#ifdef SMART
+    class unique_axiom_vec : public std::vector<std::unique_ptr<Axiom> > {
+      public:
+        unique_axiom_vec() { }
+        unique_axiom_vec(const unique_axiom_vec &vec) = delete; // unique_ptr's can't be copied
+    };
+#else
     class axiom_vec : public std::vector<Axiom*> { };
+#endif
 
     // After instantiation, all invariants are of type AT_LEAST_ONE.
     struct Invariant : public index_vec {
@@ -160,10 +195,17 @@ class Instance {
     class Plan : public std::vector<int> { };
 
     Name        *name_;
+#ifdef SMART
+    unique_atom_vec    atoms_;
+    unique_action_vec  actions_;
+    unique_sensor_vec  sensors_;
+    unique_axiom_vec   axioms_;
+#else
     atom_vec    atoms_;
     action_vec  actions_;
     sensor_vec  sensors_;
     axiom_vec   axioms_;
+#endif
 
     Init        init_;
     init_vec    hidden_;
@@ -176,7 +218,11 @@ class Instance {
     index_set   static_atoms_from_base_; // static atoms detected in PDDL_Base
 
     // deductive rules to apply to hidden state
+#ifdef SMART
+    unique_action_vec  deductive_rules_;
+#else
     action_vec  deductive_rules_;
+#endif
 
     const Options::Mode &options_;
 
@@ -189,7 +235,9 @@ class Instance {
     Instance(const Options::Mode &options)
       : cross_referenced_(false), name_(0), options_(options) {
     }
-    Instance(const Instance &ins);
+#ifndef SMART
+    Instance(const Instance &ins); //NOT USED
+#endif
     virtual ~Instance();
 
     Atom&      new_atom(Name *name);
