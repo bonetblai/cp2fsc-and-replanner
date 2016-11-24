@@ -247,7 +247,7 @@ namespace Inference {
 
         void create_joint_valuations(const std::vector<int> &group,
                                      int group_index,
-                                     const std::vector<const Variable*> &variables,
+                                     const std::vector<std::unique_ptr<const Variable> > &variables,
                                      std::vector<int> &joint_valuation) {
             if( group_index == group.size() ) {
                 joint_valuations_.push_back(joint_valuation);
@@ -265,7 +265,7 @@ namespace Inference {
         }
 
       public:
-        GroupVariable(const std::vector<int> &group, int var_index, const std::vector<const Variable*> &variables)
+        GroupVariable(const std::vector<int> &group, int var_index, const std::vector<std::unique_ptr<const Variable> > &variables)
           : MultiValuedVariable(var_index) {
             name_ = std::string("vg_") + std::to_string(var_index_);
 
@@ -280,7 +280,7 @@ namespace Inference {
             for( size_t k = 0; k < group.size(); ++k ) {
                 assert((group[k] >= 0) && (group[k] < var_index_to_pos_.size()));
                 var_index_to_pos_[group[k]] = k;
-                pos_to_var_index_[k] = std::make_pair(group[k], variables[group[k]]);
+                pos_to_var_index_[k] = std::make_pair(group[k], variables[group[k]].get());
             }
 
             // create joint valuations for group variable
@@ -382,8 +382,8 @@ namespace Inference {
       protected:
         const LW1_Instance &lw1_instance_;
 
-        std::vector<const Variable*> variables_;
-        std::vector<const GroupVariable*> variable_groups_;
+        std::vector<std::unique_ptr<const Variable> > variables_;
+        std::vector<std::unique_ptr<const GroupVariable> > variable_groups_;
         std::vector<std::vector<std::vector<int> > > common_variables_in_groups_;
 
         std::vector<int> atoms_to_var_map_;
@@ -393,38 +393,33 @@ namespace Inference {
           : lw1_instance_(lw1_instance), atoms_to_var_map_(0) {
             for( size_t k = 0; k < lw1_instance_.variables_.size(); ++k ) {
                 const LW1_Instance::Variable &lw1_variable = *lw1_instance_.variables_[k];
-                const Variable *variable = 0;
+                std::unique_ptr<const Variable> variable;
                 if( lw1_variable.is_binary() )
-                    variable = new BinaryVariable(lw1_variable, k);
+                    variable = std::make_unique<const BinaryVariable>(lw1_variable, k);
                 else
-                    variable = new MultiValuedVariable(lw1_variable, k);
-                variables_.push_back(variable);
-                assert(variable->var_index() == k);
+                    variable = std::make_unique<const MultiValuedVariable>(lw1_variable, k);
+                variables_.emplace_back(std::move(variable));
+                assert(variables_.back()->var_index() == k);
             }
             for( size_t k = 0; k < lw1_instance_.vars_for_variable_groups_.size(); ++k ) {
-                const GroupVariable *group = new GroupVariable(lw1_instance_.vars_for_variable_groups_[k], k, variables_);
-                variable_groups_.push_back(group);
-                assert(group->var_index() == k);
+                std::unique_ptr<const GroupVariable> group = std::make_unique<const GroupVariable>(lw1_instance_.vars_for_variable_groups_[k], k, variables_);
+                variable_groups_.emplace_back(std::move(group));
+                assert(variable_groups_.back()->var_index() == k);
             }
         }
-        virtual ~Csp() {
-            for( size_t k = 0; k < variable_groups_.size(); ++k )
-                delete variable_groups_[k];
-            for( size_t k = 0; k < variables_.size(); ++k )
-                delete variables_[k];
-        }
+        virtual ~Csp() { }
 
         const LW1_Instance& lw1_instance() const {
             return lw1_instance_;
         }
-        const std::vector<const Variable*>& variables() const {
+        const std::vector<std::unique_ptr<const Variable> >& variables() const {
             return variables_;
         }
         const Variable& variable(int var_index) const {
             assert((var_index >= 0) && (var_index < variables_.size()));
             return *variables_[var_index];
         }
-        const std::vector<const GroupVariable*>& variable_groups() const {
+        const std::vector<std::unique_ptr<const GroupVariable> >& variable_groups() const {
             return variable_groups_;
         }
         const GroupVariable& variable_group(int var_index) const {
