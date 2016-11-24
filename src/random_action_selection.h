@@ -106,7 +106,7 @@ class RandomActionSelection : public NaiveRandomActionSelection<T> {
     mutable bool used_alternate_selection_;
 
   public:
-    RandomActionSelection(const LW1_Instance &lw1_instance, std::unique_ptr<const ::ActionSelection<T> > alternate_selection)
+    RandomActionSelection(const LW1_Instance &lw1_instance, std::unique_ptr<const ::ActionSelection<T> > &&alternate_selection)
       : NaiveRandomActionSelection<T>(lw1_instance),
         alternate_selection_(std::move(alternate_selection)) {
     }
