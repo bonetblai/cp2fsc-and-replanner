@@ -164,9 +164,9 @@ void PDDL_Base::calculate_strongly_static_predicates() const {
         PredicateSymbol &pred = *dom_predicates_[p];
         bool strongly_static = true;
 
-        for( size_t k = 0; strongly_static && (k < lw1_variables_.size()); ++k ) {
-            for( size_t i = 0; strongly_static && (i < lw1_variables_[k]->domain_.size()); ++i )
-                strongly_static = lw1_variables_[k]->domain_[i]->is_strongly_static(pred);
+        for( size_t k = 0; strongly_static && (k < lw1_uninstantiated_variables_.size()); ++k ) {
+            for( size_t i = 0; strongly_static && (i < lw1_uninstantiated_variables_[k]->domain_.size()); ++i )
+                strongly_static = lw1_uninstantiated_variables_[k]->domain_[i]->is_strongly_static(pred);
         }
 
         for( size_t k = 0; strongly_static && (k < dom_init_.size()); ++k ) {
@@ -234,14 +234,22 @@ void PDDL_Base::instantiate_elements() {
     }
 
     // instantiate lw1 variables (only for lw1 translation)
+#ifdef SMART
+    owned_variable_list vlist;
+#else
     variable_list vlist;
-    for( size_t k = 0; k < lw1_variables_.size(); ++k ) {
-        lw1_variables_[k]->instantiate(vlist);
+#endif
+    for( size_t k = 0; k < lw1_uninstantiated_variables_.size(); ++k ) {
+        lw1_uninstantiated_variables_[k]->instantiate(vlist);
         //delete lw1_variables_[k]; // CHECK: The symbol associated to orig var is deleted (not in instantiation)
     }
-    lw1_variables_.clear();
     lw1_variables_.reserve(vlist.size());
+#ifdef SMART
+    for( owned_variable_list::iterator it = vlist.begin(); it != vlist.end(); ++it )
+        lw1_variables_.emplace_back(it->release());
+#else
     lw1_variables_.insert(lw1_variables_.end(), vlist.begin(), vlist.end());
+#endif
 
     if( options_.is_enabled("lw1:print:variables") ) {
         for( size_t k = 0; k < lw1_variables_.size(); ++k ) {
@@ -254,14 +262,22 @@ void PDDL_Base::instantiate_elements() {
     }
 
     // instantiate groups of variables
+#ifdef SMART
+    owned_variable_group_list vglist;
+#else
     variable_group_list vglist;
-    for( size_t k = 0; k < lw1_variable_groups_.size(); ++k ) {
-        lw1_variable_groups_[k]->instantiate(this, vglist);
+#endif
+    for( size_t k = 0; k < lw1_uninstantiated_variable_groups_.size(); ++k ) {
+        lw1_uninstantiated_variable_groups_[k]->instantiate(this, vglist);
         //delete lw1_variable_groups_[k]; // CHECK: The symbol associated to orig var is deleted (not in instantiation)
     }
-    lw1_variable_groups_.clear();
     lw1_variable_groups_.reserve(vglist.size());
+#ifdef SMART
+    for( owned_variable_group_list::iterator it = vglist.begin(); it != vglist.end(); ++it )
+        lw1_variable_groups_.emplace_back(it->release());
+#else
     lw1_variable_groups_.insert(lw1_variable_groups_.end(), vglist.begin(), vglist.end());
+#endif
     lw1_remove_empty_variable_groups();
 
     if( options_.is_enabled("lw1:print:variables:groups") ) {
@@ -281,7 +297,7 @@ void PDDL_Base::instantiate_elements() {
 
     // instantiate actions
 #ifdef SMART
-    unique_action_list alist;
+    owned_action_list alist;
 #else
     action_list alist;
 #endif
@@ -294,7 +310,7 @@ void PDDL_Base::instantiate_elements() {
     dom_actions_.clear();
     dom_actions_.reserve(alist.size());
 #ifdef SMART
-    for( unique_action_list::iterator it = alist.begin(); it != alist.end(); ++it )
+    for( owned_action_list::iterator it = alist.begin(); it != alist.end(); ++it )
         dom_actions_.emplace_back(it->release());
 #else
     dom_actions_.insert(dom_actions_.end(), alist.begin(), alist.end());
@@ -311,7 +327,7 @@ void PDDL_Base::instantiate_elements() {
 
     // instantiate sensors
 #ifdef SMART
-    unique_sensor_list slist;
+    owned_sensor_list slist;
 #else
     sensor_list slist;
 #endif
@@ -324,7 +340,7 @@ void PDDL_Base::instantiate_elements() {
     dom_sensors_.clear();
     dom_sensors_.reserve(slist.size());
 #ifdef SMART
-    for( unique_sensor_list::iterator it = slist.begin(); it != slist.end(); ++it )
+    for( owned_sensor_list::iterator it = slist.begin(); it != slist.end(); ++it )
         dom_sensors_.emplace_back(it->release());
 #else
     dom_sensors_.insert(dom_sensors_.end(), slist.begin(), slist.end());
@@ -332,7 +348,7 @@ void PDDL_Base::instantiate_elements() {
 
     // instantiate axioms
 #ifdef SMART
-    unique_axiom_list xlist;
+    owned_axiom_list xlist;
 #else
     axiom_list xlist;
 #endif
@@ -345,7 +361,7 @@ void PDDL_Base::instantiate_elements() {
     dom_axioms_.clear();
     dom_axioms_.reserve(xlist.size());
 #ifdef SMART
-    for( unique_axiom_list::iterator it = xlist.begin(); it != xlist.end(); ++it )
+    for( owned_axiom_list::iterator it = xlist.begin(); it != xlist.end(); ++it )
         dom_axioms_.emplace_back(it->release());
 #else
     dom_axioms_.insert(dom_axioms_.end(), xlist.begin(), xlist.end());
@@ -354,7 +370,7 @@ void PDDL_Base::instantiate_elements() {
     // instantiate observables
     cout << "instantiating observables ..." << flush;
 #ifdef SMART
-    unique_observable_list olist;
+    owned_observable_list olist;
 #else
     observable_list olist;
 #endif
@@ -367,7 +383,7 @@ void PDDL_Base::instantiate_elements() {
     dom_observables_.clear();
     dom_observables_.reserve(olist.size());
 #ifdef SMART
-    for( unique_observable_list::iterator it = olist.begin(); it != olist.end(); ++it )
+    for( owned_observable_list::iterator it = olist.begin(); it != olist.end(); ++it )
         dom_observables_.emplace_back(it->release());
 #else
     dom_observables_.insert(dom_observables_.end(), olist.begin(), olist.end());
@@ -377,7 +393,7 @@ void PDDL_Base::instantiate_elements() {
     // instantiate stickies
     cout << "instantiating stickies ..." << flush;
 #ifdef SMART
-    unique_sticky_list tlist;
+    owned_sticky_list tlist;
 #else
     sticky_list tlist;
 #endif
@@ -390,7 +406,7 @@ void PDDL_Base::instantiate_elements() {
     dom_stickies_.clear();
     dom_stickies_.reserve(olist.size());
 #ifdef SMART
-    for( unique_sticky_list::iterator it = tlist.begin(); it != tlist.end(); ++it )
+    for( owned_sticky_list::iterator it = tlist.begin(); it != tlist.end(); ++it )
         dom_stickies_.emplace_back(it->release());
 #else
     dom_stickies_.insert(dom_stickies_.end(), tlist.begin(), tlist.end());
@@ -518,7 +534,7 @@ void PDDL_Base::clg_translate_actions() {
 
     // compute actions that need translation (those with :observe statement)
 #ifdef SMART
-    unique_action_vec actions_to_translate;
+    owned_action_vec actions_to_translate;
 #else
     action_vec actions_to_translate;
 #endif
@@ -901,13 +917,21 @@ void PDDL_Base::lw1_calculate_beam_for_grounded_variable(Variable &var) {
                             cout << Utils::warning() << "creating ad-hoc group for filtering "
                                  << *it << " for " << var << ": group={" << *candidate << "}" << endl;
                             string group_name = string("ad-hoc-group-") + to_string(lw1_ad_hoc_groups_.size());
+#ifdef SMART
+                            unique_ptr<VariableGroup> ad_hoc_group = make_unique<VariableGroup>(strdup(group_name.c_str()));
+#else
                             VariableGroup *ad_hoc_group = new VariableGroup(strdup(group_name.c_str()));
+#endif
                             ad_hoc_group->grounded_group_.push_back(const_cast<StateVariable*>(candidate));
                             ad_hoc_group->grounded_group_str_.insert(string(candidate->print_name_));
-                            lw1_ad_hoc_groups_.insert(make_pair(candidate->print_name_, ad_hoc_group));
+                            lw1_ad_hoc_groups_.insert(make_pair(candidate->print_name_, ad_hoc_group.get()));
                             lw1_calculate_atoms_for_variable_group(*ad_hoc_group, lw1_variable_groups_.size());
-                            lw1_variable_groups_.push_back(ad_hoc_group);
                             ad_hoc_group->filtered_observations_.push_back(make_pair(&var, *it));
+#ifdef SMART
+                            lw1_variable_groups_.emplace_back(move(ad_hoc_group));
+#else
+                            lw1_variable_groups_.push_back(ad_hoc_group);
+#endif
                         }
                     }
                 }
@@ -926,8 +950,12 @@ void PDDL_Base::lw1_remove_variables_with_empty_grounded_domain() {
         const Variable &var = *lw1_variables_[k];
         if( var.grounded_domain_.empty() ) {
             cout << "removing variable '" << var.to_string(true) << "' because it has empty grounded domain" << endl;
+#ifdef SMART
+            lw1_variables_[k] = move(lw1_variables_.back());
+#else
             delete &var;
             lw1_variables_[k] = lw1_variables_.back();
+#endif
             lw1_variables_.pop_back();
             --k;
         }
@@ -939,8 +967,12 @@ void PDDL_Base::lw1_remove_empty_variable_groups() {
         const VariableGroup &group = *lw1_variable_groups_[k];
         if( group.grounded_group_.empty() ) {
             cout << "removing variable group '" << group.print_name_ << "' because it is empty" << endl;
+#ifdef SMART
+            lw1_variable_groups_[k] = move(lw1_variable_groups_.back());
+#else
             delete &group;
             lw1_variable_groups_[k] = lw1_variable_groups_.back();
+#endif
             lw1_variable_groups_.pop_back();
             --k;
         }
@@ -953,7 +985,7 @@ void PDDL_Base::lw1_translate_actions() {
 
     // compute actions that need translation (those with non-null sensing model)
 #ifdef SMART
-    unique_action_vec actions_to_translate;
+    owned_action_vec actions_to_translate;
 #else
     action_vec actions_to_translate;
 #endif
@@ -1243,7 +1275,7 @@ void PDDL_Base::lw1_translate_actions_strict() {
     if( options_.is_enabled("lw1:boost:enable-post-actions") ) {
         // compute actions that need post actions (those with non-null sensing model)
 #ifdef SMART
-        unique_action_vec actions_to_translate;
+        owned_action_vec actions_to_translate;
 #else
         action_vec actions_to_translate;
 #endif
@@ -2496,7 +2528,7 @@ const PDDL_Base::Atom& PDDL_Base::lw1_fetch_last_action_atom(const Action &actio
     if( it != lw1_last_action_atoms_.end() ) {
         return *it->second;
     } else {
-        // create new atom
+        // create atom
         string name = string("last-action-was-") + action.print_name_;
         Atom *atom = create_atom(name);
         lw1_last_action_atoms_.insert(make_pair(action.print_name_, atom));
@@ -3118,10 +3150,17 @@ void PDDL_Base::do_translation() {
     }
 }
 
+#ifdef SMART
+void PDDL_Base::do_lw1_translation(const owned_variable_vec* &variables,
+                                   const owned_variable_group_vec* &variable_groups,
+                                   const list<pair<const Action*, const Sensing*> >* &sensing_models,
+                                   const map<string, set<string> >* &accepted_literals_for_observables) {
+#else
 void PDDL_Base::do_lw1_translation(const variable_vec* &variables,
                                    const variable_group_vec* &variable_groups,
                                    const list<pair<const Action*, const Sensing*> >* &sensing_models,
                                    const map<string, set<string> >* &accepted_literals_for_observables) {
+#endif
     instantiate_elements();
     assert(!clg_translation_);
 
@@ -5194,7 +5233,7 @@ bool PDDL_Base::Action::is_special_action() const {
 }
 
 #ifdef SMART
-void PDDL_Base::Action::instantiate(unique_action_list &alist) const {
+void PDDL_Base::Action::instantiate(owned_action_list &alist) const {
 #else
 void PDDL_Base::Action::instantiate(action_list &alist) const {
 #endif
@@ -5275,7 +5314,7 @@ void PDDL_Base::Action::print(ostream &os) const {
 }
 
 #ifdef SMART
-void PDDL_Base::Sensor::instantiate(unique_sensor_list &slist) const {
+void PDDL_Base::Sensor::instantiate(owned_sensor_list &slist) const {
 #else
 void PDDL_Base::Sensor::instantiate(sensor_list &slist) const {
 #endif
@@ -5351,7 +5390,7 @@ void PDDL_Base::Sensor::print(ostream &os) const {
 }
 
 #ifdef SMART
-void PDDL_Base::Axiom::instantiate(unique_axiom_list &alist) const {
+void PDDL_Base::Axiom::instantiate(owned_axiom_list &alist) const {
 #else
 void PDDL_Base::Axiom::instantiate(axiom_list &alist) const {
 #endif
@@ -5424,7 +5463,7 @@ void PDDL_Base::Axiom::print(ostream &os) const {
 }
 
 #ifdef SMART
-void PDDL_Base::Observable::instantiate(unique_observable_list &olist) const {
+void PDDL_Base::Observable::instantiate(owned_observable_list &olist) const {
 #else
 void PDDL_Base::Observable::instantiate(observable_list &olist) const {
 #endif
@@ -5457,7 +5496,7 @@ void PDDL_Base::Observable::print(ostream &os) const {
 }
 
 #ifdef SMART
-void PDDL_Base::Sticky::instantiate(unique_sticky_list &slist) const {
+void PDDL_Base::Sticky::instantiate(owned_sticky_list &slist) const {
 #else
 void PDDL_Base::Sticky::instantiate(sticky_list &slist) const {
 #endif
@@ -5489,7 +5528,11 @@ void PDDL_Base::Sticky::print(ostream &os) const {
     os << ")";
 }
 
+#ifdef SMART
+void PDDL_Base::Variable::instantiate(owned_variable_list &vlist) const {
+#else
 void PDDL_Base::Variable::instantiate(variable_list &vlist) const {
+#endif
     size_t base_count = vlist.size();
     variable_list_ptr_ = &vlist;
     cout << "instantiating variable '" << print_name_ << "' ..." << flush;
@@ -5511,19 +5554,22 @@ void PDDL_Base::Variable::process_instance() const {
                 variable_name += " " + param_[k]->to_string();
             variable_name += ")";
 
-            Variable *var = make_instance(strdup(variable_name.c_str()));
-            var->grounded_ = true;
-            variable_list_ptr_->push_back(var);
-
+#ifdef SMART
+            unique_ptr<Variable> variable(make_instance(strdup(variable_name.c_str())));
+            assert(variable); // SMART: CHECK
+#else
+            Variable *variable = make_instance(strdup(variable_name.c_str()));
+#endif
+            variable->grounded_ = true;
             for( size_t k = 0; k < domain_.size(); ++k ) {
                 Effect *grounded_value = domain_[k]->ground(true); // clone_variables=true
                 if( dynamic_cast<AtomicEffect*>(grounded_value) != 0 ) {
-                    var->grounded_domain_.insert(*static_cast<AtomicEffect*>(grounded_value));
+                    variable->grounded_domain_.insert(*static_cast<AtomicEffect*>(grounded_value));
                 } else if( dynamic_cast<AndEffect*>(grounded_value) != 0 ) {
                     AndEffect &item_list = *static_cast<AndEffect*>(grounded_value);
                     for( size_t i = 0; i < item_list.size(); ++i ) {
                         assert(dynamic_cast<const AtomicEffect*>(item_list[i]) != 0);
-                        var->grounded_domain_.insert(*static_cast<const AtomicEffect*>(item_list[i]));
+                        variable->grounded_domain_.insert(*static_cast<const AtomicEffect*>(item_list[i]));
                     }
                 } else {
                     cout << *domain_[k] << endl;
@@ -5534,12 +5580,29 @@ void PDDL_Base::Variable::process_instance() const {
                 }
                 delete grounded_value;
             }
+#ifdef SMART
+            variable_list_ptr_->emplace_back(move(variable));
+#else
+            variable_list_ptr_->push_back(variable);
+#endif
         }
     } else if( such_that_ != 0 ) {
         cout << Utils::error() << "condition '" << *such_that_
              << "' in such-that statement must ground to constant value" << endl;
     }
     if( such_that_ != 0 ) delete such_that;
+}
+
+#ifdef SMART
+unique_ptr<PDDL_Base::Variable> PDDL_Base::StateVariable::make_instance(const char *name) const {
+#else
+PDDL_Base::Variable* PDDL_Base::StateVariable::make_instance(const char *name) const {
+#endif
+#ifdef SMART
+    return make_unique<StateVariable>(name, is_observable_);
+#else
+    return new StateVariable(name, is_observable_);
+#endif
 }
 
 string PDDL_Base::StateVariable::to_string(bool only_name, bool mangled) const {
@@ -5579,6 +5642,18 @@ string PDDL_Base::StateVariable::to_string(bool only_name, bool mangled) const {
         if( is_observable_ ) str += " :observable";
         return str + ")";
     }
+}
+
+#ifdef SMART
+unique_ptr<PDDL_Base::Variable> PDDL_Base::ObsVariable::make_instance(const char *name) const {
+#else
+PDDL_Base::Variable* PDDL_Base::ObsVariable::make_instance(const char *name) const {
+#endif
+#ifdef SMART
+    return make_unique<ObsVariable>(name);
+#else
+    return new ObsVariable(name);
+#endif
 }
 
 string PDDL_Base::ObsVariable::to_string(bool only_name, bool mangled) const {
@@ -5678,7 +5753,11 @@ PDDL_Base::state_variable_vec* PDDL_Base::ForallStateVariableList::ground(const 
     return result;
 }
 
+#ifdef SMART
+void PDDL_Base::VariableGroup::instantiate(const PDDL_Base *base, owned_variable_group_list &vglist) const {
+#else
 void PDDL_Base::VariableGroup::instantiate(const PDDL_Base *base, variable_group_list &vglist) const {
+#endif
     size_t base_count = vglist.size();
     variable_group_list_ptr_ = &vglist;
     base_ptr_ = base;
@@ -5701,10 +5780,12 @@ void PDDL_Base::VariableGroup::process_instance() const {
                 group_name += " " + param_[k]->to_string();
             group_name += ")";
 
+#ifdef SMART
+            unique_ptr<VariableGroup> group = make_unique<VariableGroup>(strdup(group_name.c_str()));
+#else
             VariableGroup *group = new VariableGroup(strdup(group_name.c_str()));
+#endif
             group->grounded_ = true;
-            variable_group_list_ptr_->push_back(group);
-
             for( size_t k = 0; k < group_.size(); ++k ) {
                 state_variable_vec *grounded_group = group_[k]->ground(base_ptr_);
                 for( state_variable_vec::iterator it = grounded_group->begin(); it != grounded_group->end(); it++) {
@@ -5718,6 +5799,11 @@ void PDDL_Base::VariableGroup::process_instance() const {
                 }
                 delete grounded_group;
             }
+#ifdef SMART
+            variable_group_list_ptr_->emplace_back(move(group));
+#else
+            variable_group_list_ptr_->push_back(group);
+#endif
         }
     } else if( such_that_ != 0 ) {
         cout << Utils::error() << "condition '" << *such_that_

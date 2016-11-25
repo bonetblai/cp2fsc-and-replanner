@@ -139,7 +139,11 @@ class Standard_KP_Instance : public KP_Instance {
     // for subgoaling
     std::vector<Atom*> atoms_for_unknown_observables_at_init_;
 
+#ifdef SMART
+    Standard_KP_Instance(const Instance &instance, const PDDL_Base::owned_variable_vec &variables);
+#else
     Standard_KP_Instance(const Instance &instance, const PDDL_Base::variable_vec &variables);
+#endif
     Standard_KP_Instance(const Instance &instance);
     ~Standard_KP_Instance();
 

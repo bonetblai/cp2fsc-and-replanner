@@ -102,11 +102,19 @@ class LW1_Instance : public KP_Instance {
     std::vector<std::vector<int> > vars_for_variable_groups_;
     std::map<std::pair<int, int>, int> filtering_groups_;
 
+#ifdef SMART
+    LW1_Instance(const Instance &instance,
+                 const PDDL_Base::owned_variable_vec &variables,
+                 const PDDL_Base::owned_variable_group_vec &variable_groups,
+                 const std::list<std::pair<const PDDL_Base::Action*, const PDDL_Base::Sensing*> > &sensing_models,
+                 const std::map<std::string, std::set<std::string> > &accepted_literals_for_observables);
+#else
     LW1_Instance(const Instance &instance,
                  const PDDL_Base::variable_vec &variables,
                  const PDDL_Base::variable_group_vec &variable_groups,
                  const std::list<std::pair<const PDDL_Base::Action*, const PDDL_Base::Sensing*> > &sensing_models,
                  const std::map<std::string, std::set<std::string> > &accepted_literals_for_observables);
+#endif
     ~LW1_Instance();
 
     bool is_forbidden(int literal) const;

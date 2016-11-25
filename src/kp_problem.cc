@@ -402,7 +402,11 @@ bool KP_Instance::calculate_relevant_assumptions(const Plan &plan,
     return true;
 }
 
+#ifdef SMART
+Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base::owned_variable_vec &variables)
+#else
 Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &variables)
+#endif
   : KP_Instance(ins.options_),
     n_standard_actions_(0),
     n_sensor_actions_(0),

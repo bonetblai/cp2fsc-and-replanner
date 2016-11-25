@@ -612,8 +612,8 @@ class PDDL_Base {
 
     struct Action;
 #ifdef SMART
-    struct unique_action_vec : public std::vector<std::unique_ptr<Action> > { };
-    struct unique_action_list : public std::list<std::unique_ptr<Action> > { };
+    struct owned_action_vec : public std::vector<std::unique_ptr<Action> > { };
+    struct owned_action_list : public std::list<std::unique_ptr<Action> > { };
 #else
     struct action_vec : public std::vector<Action*> { };
     struct action_list : public std::list<Action*> { };
@@ -632,7 +632,7 @@ class PDDL_Base {
         virtual ~Action() { delete precondition_; delete effect_; delete observe_; delete sensing_; }
         bool is_special_action() const;
 #ifdef SMART
-        void instantiate(unique_action_list &alist) const;
+        void instantiate(owned_action_list &alist) const;
 #else
         void instantiate(action_list &alist) const;
 #endif
@@ -640,7 +640,7 @@ class PDDL_Base {
         virtual void process_instance() const;
         virtual void print(std::ostream &os) const;
 #ifdef SMART
-        mutable unique_action_list *action_list_ptr_;
+        mutable owned_action_list *action_list_ptr_;
 #else
         mutable action_list *action_list_ptr_;
 #endif
@@ -648,8 +648,8 @@ class PDDL_Base {
 
     struct Sensor;
 #ifdef SMART
-    struct unique_sensor_vec : public std::vector<std::unique_ptr<Sensor> > { };
-    struct unique_sensor_list : public std::list<std::unique_ptr<Sensor> > { };
+    struct owned_sensor_vec : public std::vector<std::unique_ptr<Sensor> > { };
+    struct owned_sensor_list : public std::list<std::unique_ptr<Sensor> > { };
 #else
     struct sensor_vec : public std::vector<Sensor*> { };
     struct sensor_list : public std::list<Sensor*> { };
@@ -661,7 +661,7 @@ class PDDL_Base {
         Sensor(const char *name) : Symbol(name, sym_sensor), condition_(0), sense_(0) { }
         virtual ~Sensor() { delete condition_; delete sense_; }
 #ifdef SMART
-        void instantiate(unique_sensor_list &slist) const;
+        void instantiate(owned_sensor_list &slist) const;
 #else
         void instantiate(sensor_list &slist) const;
 #endif
@@ -669,7 +669,7 @@ class PDDL_Base {
         virtual void process_instance() const;
         virtual void print(std::ostream &os) const;
 #ifdef SMART
-        mutable unique_sensor_list *sensor_list_ptr_;
+        mutable owned_sensor_list *sensor_list_ptr_;
 #else
         mutable sensor_list *sensor_list_ptr_;
 #endif
@@ -677,8 +677,8 @@ class PDDL_Base {
 
     struct Axiom;
 #ifdef SMART
-    struct unique_axiom_vec : public std::vector<std::unique_ptr<Axiom> > { };
-    struct unique_axiom_list : public std::list<std::unique_ptr<Axiom> > { };
+    struct owned_axiom_vec : public std::vector<std::unique_ptr<Axiom> > { };
+    struct owned_axiom_list : public std::list<std::unique_ptr<Axiom> > { };
 #else
     struct axiom_vec : public std::vector<Axiom*> { };
     struct axiom_list : public std::list<Axiom*> { };
@@ -690,7 +690,7 @@ class PDDL_Base {
         Axiom(const char *name) : Symbol(name, sym_axiom), body_(0), head_(0) { }
         virtual ~Axiom() { delete body_; delete head_; }
 #ifdef SMART
-        void instantiate(unique_axiom_list &alist) const;
+        void instantiate(owned_axiom_list &alist) const;
 #else
         void instantiate(axiom_list &alist) const;
 #endif
@@ -698,7 +698,7 @@ class PDDL_Base {
         virtual void process_instance() const;
         virtual void print(std::ostream &os) const;
 #ifdef SMART
-        mutable unique_axiom_list *axiom_list_ptr_;
+        mutable owned_axiom_list *axiom_list_ptr_;
 #else
         mutable axiom_list *axiom_list_ptr_;
 #endif
@@ -706,8 +706,8 @@ class PDDL_Base {
 
     struct Observable;
 #ifdef SMART
-    struct unique_observable_vec : public std::vector<std::unique_ptr<Observable> > { };
-    struct unique_observable_list : public std::list<std::unique_ptr<Observable> > { };
+    struct owned_observable_vec : public std::vector<std::unique_ptr<Observable> > { };
+    struct owned_observable_list : public std::list<std::unique_ptr<Observable> > { };
 #else
     struct observable_vec : public std::vector<Observable*> { };
     struct observable_list : public std::list<Observable*> { };
@@ -718,7 +718,7 @@ class PDDL_Base {
         Observable() { }
         ~Observable() { for( size_t k = 0; k < observables_.size(); ++k ) delete observables_[k]; }
 #ifdef SMART
-        void instantiate(unique_observable_list &olist) const;
+        void instantiate(owned_observable_list &olist) const;
 #else
         void instantiate(observable_list &olist) const;
 #endif
@@ -728,8 +728,8 @@ class PDDL_Base {
 
     struct Sticky;
 #ifdef SMART
-    struct unique_sticky_vec : public std::vector<std::unique_ptr<Sticky> > { };
-    struct unique_sticky_list : public std::list<std::unique_ptr<Sticky> > { };
+    struct owned_sticky_vec : public std::vector<std::unique_ptr<Sticky> > { };
+    struct owned_sticky_list : public std::list<std::unique_ptr<Sticky> > { };
 #else
     struct sticky_vec : public std::vector<Sticky*> { };
     struct sticky_list : public std::list<Sticky*> { };
@@ -740,7 +740,7 @@ class PDDL_Base {
         Sticky() { }
         ~Sticky() { for( size_t k = 0; k < stickies_.size(); ++k ) delete stickies_[k]; }
 #ifdef SMART
-        void instantiate(unique_sticky_list &slist) const;
+        void instantiate(owned_sticky_list &slist) const;
 #else
         void instantiate(sticky_list &slist) const;
 #endif
@@ -748,8 +748,21 @@ class PDDL_Base {
         void print(std::ostream &os) const;
     };
 
+    struct StateVariableList;
+#ifdef SMART
+    struct owned_variable_vec : public std::vector<std::unique_ptr<Variable> > { };
+    struct owned_variable_list : public std::list<std::unique_ptr<Variable> > { };
+    //struct variable_vec : public std::vector<Variable*> { };
+    //struct unique_state_variable_vec : public std::vector<std::unique_ptr<StateVariable> > { };
+    //struct unique_state_variable_list_vec : public std::vector<std::unique_ptr<StateVariableList> > { };
+    struct state_variable_vec : public std::vector<StateVariable*> { };
+    struct state_variable_list_vec : public std::vector<StateVariableList*> { };
+#else
     struct variable_vec : public std::vector<Variable*> { };
     struct variable_list : public std::list<Variable*> { };
+    struct state_variable_vec : public std::vector<StateVariable*> { };
+    struct state_variable_list_vec : public std::vector<StateVariableList*> { };
+#endif
 
     struct Variable : public Symbol, Schema {
         bool grounded_;
@@ -757,45 +770,68 @@ class PDDL_Base {
         unsigned_atom_set grounded_domain_;
         std::map<Atom, unsigned_atom_set, Atom::unsigned_less_comparator> beam_;
 
+        Variable(const Variable &var) = delete;
         Variable(const char *name) : Symbol(name, sym_varname), grounded_(false) { }
         virtual ~Variable() {
             for( size_t k = 0; k < domain_.size(); ++k )
                 delete domain_[k];
         }
 
+#ifdef SMART
+        void instantiate(owned_variable_list &vlist) const;
+#else
         void instantiate(variable_list &vlist) const;
+#endif
         const unsigned_atom_set& beam_for_value(const Atom &value) const {
             return beam_.at(value);
         }
         bool is_binary() const { return grounded_domain_.size() == 1; }
 
         virtual void process_instance() const;
+#ifdef SMART
+        virtual std::unique_ptr<Variable> make_instance(const char *name) const = 0;
+#else
         virtual Variable* make_instance(const char *name) const = 0;
+#endif
         virtual bool is_state_variable() const = 0;
         virtual bool is_observable_variable() const = 0;
 #pragma GCC diagnostic ignored "-Woverloaded-virtual"
         virtual std::string to_string(bool only_name = false, bool cat = false) const = 0;
 #pragma GCC diagnostic warning "-Woverloaded-virtual"
         virtual void print(std::ostream &os) const { os << to_string(); }
+#ifdef SMART
+        mutable owned_variable_vec *grounded_variables_ptr_;
+        mutable owned_variable_list *variable_list_ptr_;
+#else
         mutable variable_vec *grounded_variables_ptr_;
         mutable variable_list *variable_list_ptr_;
+#endif
     };
 
     struct StateVariable : public Variable {
         bool is_observable_;
+        StateVariable(const StateVariable &var) = delete;
         StateVariable(const char *name, bool is_observable = false) : Variable(name), is_observable_(is_observable) { }
         virtual ~StateVariable() { }
-        virtual Variable* make_instance(const char *name) const { return new StateVariable(name, is_observable_); }
+#ifdef SMART
+        virtual std::unique_ptr<Variable> make_instance(const char *name) const;
+#else
+        virtual Variable* make_instance(const char *name) const;
+#endif
         virtual bool is_state_variable() const { return true; }
         virtual bool is_observable_variable() const { return is_observable_; }
         virtual std::string to_string(bool only_name = false, bool cat = false) const;
     };
-    struct state_variable_vec : public std::vector<StateVariable*> { };
 
     struct ObsVariable : public Variable {
+        ObsVariable(const ObsVariable &var) = delete;
         ObsVariable(const char *name) : Variable(name) { }
         virtual ~ObsVariable() { }
-        virtual Variable* make_instance(const char *name) const { return new ObsVariable(name); }
+#ifdef SMART
+        virtual std::unique_ptr<Variable> make_instance(const char *name) const;
+#else
+        virtual Variable* make_instance(const char *name) const;
+#endif
         virtual bool is_state_variable() const { return false; }
         virtual bool is_observable_variable() const { return true; }
         virtual std::string to_string(bool only_name = false, bool cat = false) const;
@@ -804,11 +840,14 @@ class PDDL_Base {
     struct StateVariableList {
         StateVariableList() { }
         virtual ~StateVariableList() { }
+#if 0//def SMART
+        virtual unique_state_variable_vec* ground(const PDDL_Base *base) const = 0;
+#else
         virtual state_variable_vec* ground(const PDDL_Base *base) const = 0;
+#endif
         virtual std::string to_string() const = 0;
         void print(std::ostream &os) const { os << to_string(); }
     };
-    struct state_variable_list_vec : public std::vector<StateVariableList*> { };
 
     struct SingleStateVariableList : public Symbol, StateVariableList {
         std::string variable_name_;
@@ -816,38 +855,72 @@ class PDDL_Base {
         symbol_vec param_;
         SingleStateVariableList(const char *name) : Symbol(name, sym_varinst) { }
         virtual ~SingleStateVariableList() { }
+#if 0//def SMART
+        virtual unique_state_variable_vec* ground(const PDDL_Base *base) const;
+#else
         virtual state_variable_vec* ground(const PDDL_Base *base) const;
+#endif
         virtual std::string to_string() const { return "<not yet implemented>"; }
     };
 
     struct ForallStateVariableList : public StateVariableList, Schema {
+#if 0//def SMART
+        unique_state_variable_list_vec group_;
+#else
         state_variable_list_vec group_;
+#endif
         ForallStateVariableList() { }
         virtual ~ForallStateVariableList() { }
         virtual void process_instance() const;
+#if 0//def SMART
+        virtual unique_state_variable_vec* ground(const PDDL_Base *base) const;
+#else
         virtual state_variable_vec* ground(const PDDL_Base *base) const;
+#endif
         virtual std::string to_string() const { return "<not yet implemented>"; }
+#if 0//def SMART
+        mutable std::vector<unique_state_variable_vec*> result_stack_;
+#else
         mutable std::vector<state_variable_vec*> result_stack_;
+#endif
         mutable std::vector<const PDDL_Base*> base_stack_;
     };
 
     struct VariableGroup;
+#ifdef SMART
+    struct owned_variable_group_vec : public std::vector<std::unique_ptr<VariableGroup> > { };
+    struct owned_variable_group_list : public std::list<std::unique_ptr<VariableGroup> > { };
+#else
     struct variable_group_vec : public std::vector<VariableGroup*> { };
     struct variable_group_list : public std::list<VariableGroup*> { };
+#endif
 
     struct VariableGroup : public Symbol, Schema {
         bool grounded_;
+#if 0//def SMART
+        unique_state_variable_list_vec group_;
+        unique_state_variable_vec grounded_group_;
+#else
         state_variable_list_vec group_;
         state_variable_vec grounded_group_;
+#endif
         unsigned_atom_set grounded_domain_;
         std::set<std::string> grounded_group_str_;
         std::vector<std::pair<const Variable*, Atom> > filtered_observations_;
         VariableGroup(const char *name) : Symbol(name, sym_vargroup), grounded_(false) { }
         virtual ~VariableGroup() { }
+#ifdef SMART
+        void instantiate(const PDDL_Base *base, owned_variable_group_list &vglist) const;
+#else
         void instantiate(const PDDL_Base *base, variable_group_list &vglist) const;
+#endif
         virtual void process_instance() const;
         virtual std::string to_string() const;
+#ifdef SMART
+        mutable owned_variable_group_list *variable_group_list_ptr_;
+#else
         mutable variable_group_list *variable_group_list_ptr_;
+#endif
         mutable const PDDL_Base *base_ptr_;
     };
 
@@ -866,9 +939,9 @@ class PDDL_Base {
     PredicateSymbol                           *dom_eq_pred_;
 
 #ifdef SMART
-    unique_action_vec                                dom_actions_;
-    unique_sensor_vec                                dom_sensors_;
-    unique_axiom_vec                                 dom_axioms_;
+    owned_action_vec                                dom_actions_;
+    owned_sensor_vec                                dom_sensors_;
+    owned_axiom_vec                                 dom_axioms_;
 #else
     action_vec                                dom_actions_;
     sensor_vec                                dom_sensors_;
@@ -880,8 +953,8 @@ class PDDL_Base {
     unsigned_atom_set                         dom_static_atoms_;
 
 #ifdef SMART
-    unique_observable_vec                            dom_observables_;
-    unique_sticky_vec                                dom_stickies_;
+    owned_observable_vec                            dom_observables_;
+    owned_sticky_vec                                dom_stickies_;
 #else
     observable_vec                            dom_observables_;
     sticky_vec                                dom_stickies_;
@@ -901,7 +974,13 @@ class PDDL_Base {
 
     // For lw1 formulations
     bool                                      lw1_translation_;
+#ifdef SMART
+    owned_variable_vec                              lw1_uninstantiated_variables_;
+    owned_variable_vec                              lw1_variables_;
+#else
+    variable_vec                              lw1_uninstantiated_variables_;
     variable_vec                              lw1_variables_;
+#endif
     unsigned_atom_set                         observable_atoms_;
     unsigned_atom_set                         atoms_for_state_variables_;
     unsigned_atom_set                         atoms_for_variable_groups_;
@@ -922,7 +1001,13 @@ class PDDL_Base {
     const Sensing                             *lw1_default_sensing_;
     const sensing_proxy_vec                   *lw1_default_sensing_proxy_;
 
+#ifdef SMART
+    owned_variable_group_vec                        lw1_variable_groups_;
+    owned_variable_group_vec                        lw1_uninstantiated_variable_groups_;
+#else
     variable_group_vec                        lw1_variable_groups_;
+    variable_group_vec                        lw1_uninstantiated_variable_groups_;
+#endif
     std::map<std::string, const VariableGroup*> lw1_ad_hoc_groups_;
 
     std::map<const Action*, std::map<const ObsVariable*, std::map<Atom, std::list<const And*> > > > lw1_sensing_models_index_;
@@ -947,10 +1032,17 @@ class PDDL_Base {
     bool is_static_atom(const Atom &atom) const;
 
     void do_translation();
+#ifdef SMART
+    void do_lw1_translation(const owned_variable_vec* &variables,
+                            const owned_variable_group_vec* &variable_groups,
+                            const std::list<std::pair<const Action*, const Sensing*> >* &sensing_models,
+                            const std::map<std::string, std::set<std::string> >* &accepted_literals_for_observables);
+#else
     void do_lw1_translation(const variable_vec* &variables,
                             const variable_group_vec* &variable_groups,
                             const std::list<std::pair<const Action*, const Sensing*> >* &sensing_models,
                             const std::map<std::string, std::set<std::string> >* &accepted_literals_for_observables);
+#endif
     void emit_instance(Instance &ins) const;
     void print(std::ostream &os) const;
 

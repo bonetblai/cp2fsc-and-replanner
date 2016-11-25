@@ -73,11 +73,19 @@ void LW1_Instance::Variable::print(ostream &os, const LW1_Instance *lw1_instance
     os << "}";
 }
 
+#ifdef SMART
+LW1_Instance::LW1_Instance(const Instance &ins,
+                           const PDDL_Base::owned_variable_vec &variables,
+                           const PDDL_Base::owned_variable_group_vec &variable_groups,
+                           const list<pair<const PDDL_Base::Action*, const PDDL_Base::Sensing*> > &sensing_models,
+                           const map<string, set<string> > &accepted_literals_for_observables)
+#else
 LW1_Instance::LW1_Instance(const Instance &ins,
                            const PDDL_Base::variable_vec &variables,
                            const PDDL_Base::variable_group_vec &variable_groups,
                            const list<pair<const PDDL_Base::Action*, const PDDL_Base::Sensing*> > &sensing_models,
                            const map<string, set<string> > &accepted_literals_for_observables)
+#endif
   : KP_Instance(ins.options_),
     n_standard_actions_(0),
     n_sensor_actions_(0),

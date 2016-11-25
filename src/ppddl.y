@@ -36,6 +36,7 @@
     int type_; \
   private: \
     std::vector<Schema*> schema_; \
+    std::vector<std::unique_ptr<Schema> > owned_schema_; \
     effect_vec *effect_vec_ptr_;
 
 %header{
@@ -864,12 +865,13 @@ observable_decl:
       TK_OPEN KW_OBSERVABLE {
 #ifdef SMART
           std::unique_ptr<Observable> obs = std::make_unique<Observable>();
+          effect_vec_ptr_ = &obs->observables_;
           dom_observables_.emplace_back(move(obs));
 #else
           Observable *obs = new Observable;
           dom_observables_.push_back(obs);
-#endif
           effect_vec_ptr_ = &obs->observables_;
+#endif
       }
       fluent_list_decl TK_CLOSE
     | TK_OPEN KW_OBSERVABLE error TK_CLOSE {
@@ -896,12 +898,13 @@ sticky_decl:
       TK_OPEN KW_STICKY {
 #ifdef SMART
           std::unique_ptr<Sticky> sticky = std::make_unique<Sticky>();
+          effect_vec_ptr_ = &sticky->stickies_;
           dom_stickies_.emplace_back(move(sticky));
 #else
           Sticky *sticky = new Sticky;
           dom_stickies_.push_back(sticky);
-#endif
           effect_vec_ptr_ = &sticky->stickies_;
+#endif
       }
       fluent_list_decl TK_CLOSE
     | TK_OPEN KW_STICKY error TK_CLOSE {
@@ -912,37 +915,77 @@ sticky_decl:
 
 simple_variable_decl:
       TK_OPEN variable_type TK_NEW_SYMBOL {
+#ifdef SMART
+          std::unique_ptr<Variable> var;
+          if( $2 == 0 )
+              var = std::make_unique<StateVariable>($3->text);
+          else
+              var = std::make_unique<ObsVariable>($3->text);
+          effect_vec_ptr_ = &var->domain_;
+          lw1_uninstantiated_variables_.emplace_back(std::move(var));
+#else
           Variable *var = 0;
           if( $2 == 0 )
               var = new StateVariable($3->text);
           else
               var = new ObsVariable($3->text);
-          lw1_variables_.push_back(var);
+          lw1_uninstantiated_variables_.push_back(var);
           effect_vec_ptr_ = &var->domain_;
+#endif
       }
       fluent_list_decl TK_CLOSE {
-          $3->val = lw1_variables_.back();
+#ifdef SMART
+          $3->val = lw1_uninstantiated_variables_.back().get();
+#else
+          $3->val = lw1_uninstantiated_variables_.back();
+#endif
       }
     | TK_OPEN variable_type TK_OPEN TK_NEW_SYMBOL {
+#ifdef SMART
+          std::unique_ptr<Variable> var;
+          if( $2 == 0 )
+              var = std::make_unique<StateVariable>($4->text);
+          else
+              var = std::make_unique<ObsVariable>($4->text);
+          effect_vec_ptr_ = &var->domain_;
+          owned_schema_.emplace_back(move(var));
+#else
           Variable *var = 0;
           if( $2 == 0 )
               var = new StateVariable($4->text);
           else
               var = new ObsVariable($4->text);
-          schema_.push_back(var);
           effect_vec_ptr_ = &var->domain_;
+          schema_.push_back(var);
+#endif
       }
       param_list TK_CLOSE {
+#ifdef SMART
+          owned_schema_.back()->param_ = *$6;
+#else
           schema_.back()->param_ = *$6;
+#endif
           delete $6;
       }
       optional_such_that fluent_list_decl TK_CLOSE {
+#ifdef SMART
+          assert(dynamic_cast<Variable*>(owned_schema_.back().get()) != 0);
+          std::unique_ptr<Variable> variable(static_cast<Variable*>(owned_schema_.back().release()));
+          owned_schema_.pop_back();
+#else
           assert(dynamic_cast<Variable*>(schema_.back()) != 0);
           Variable *variable = static_cast<Variable*>(schema_.back());
           schema_.pop_back();
+#endif
           clear_param(variable->param_);
+#ifdef SMART
+          $4->val = variable.get();
+          lw1_uninstantiated_variables_.emplace_back(std::move(variable));
+          assert(!variable && lw1_uninstantiated_variables_.back()); // SMART: CHECK
+#else
           $4->val = variable;
-          lw1_variables_.push_back(variable);
+          lw1_uninstantiated_variables_.push_back(variable);
+#endif
       }
     | TK_OPEN KW_VARIABLE error TK_CLOSE {
           log_error((char*)"syntax error in state variable declaration");
@@ -957,30 +1000,55 @@ variable_type:
 
 variable_group_decl:
       TK_OPEN KW_VGROUP TK_NEW_SYMBOL {
+#ifdef SMART
+          std::unique_ptr<VariableGroup> group = std::make_unique<VariableGroup>($3->text);
+          lw1_uninstantiated_variable_groups_.emplace_back(move(group));
+#else
           VariableGroup *group = new VariableGroup($3->text);
-          lw1_variable_groups_.push_back(group);
+          lw1_uninstantiated_variable_groups_.push_back(group);
+#endif
       }
       state_variable_list_decl TK_CLOSE {
-          lw1_variable_groups_.back()->group_ = *$5;
+          lw1_uninstantiated_variable_groups_.back()->group_ = *$5;
           delete $5;
       }
     | TK_OPEN KW_VGROUP TK_OPEN TK_NEW_SYMBOL {
+#ifdef SMART
+          std::unique_ptr<VariableGroup> group = std::make_unique<VariableGroup>($4->text);
+          owned_schema_.emplace_back(move(group));
+#else
           VariableGroup *group = new VariableGroup($4->text);
           schema_.push_back(group);
+#endif
       }
       param_list TK_CLOSE {
+#ifdef SMART
+          owned_schema_.back()->param_ = *$6;
+#else
           schema_.back()->param_ = *$6;
+#endif
           delete $6;
       }
       optional_such_that state_variable_list_decl TK_CLOSE {
+#ifdef SMART
+          assert(dynamic_cast<VariableGroup*>(owned_schema_.back().get()) != 0);
+          std::unique_ptr<VariableGroup> group(static_cast<VariableGroup*>(owned_schema_.back().release()));
+          owned_schema_.pop_back();
+#else
           assert(dynamic_cast<VariableGroup*>(schema_.back()) != 0);
           VariableGroup *group = static_cast<VariableGroup*>(schema_.back());
           schema_.pop_back();
+#endif
           group->group_ = *$10;
           delete $10;
           clear_param(group->param_);
+#ifdef SMART
+          $4->val = group.get();
+          lw1_uninstantiated_variable_groups_.emplace_back(move(group));
+#else
           $4->val = group;
-          lw1_variable_groups_.push_back(group);
+          lw1_uninstantiated_variable_groups_.push_back(group);
+#endif
       }
     | TK_OPEN KW_VGROUP error TK_CLOSE {
           log_error((char*)"syntax error in variable group declaration");
