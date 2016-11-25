@@ -40,7 +40,8 @@ class CP_Instance : public Instance {
     size_t n_unused_fluents_, n_mapped_fluents_; // number of fluents used for removing inconsistent tuples
     size_t unused0_, mapped0_; // initial fluent index for unused and mapped fluents
 
-    CP_Instance(const Instance &instance, size_t fsc_states = 1,
+    CP_Instance(const Instance &instance,
+                size_t fsc_states,
                 bool forbid_inconsistent_tuples = false,
                 bool compound_obs_as_fluents = false);
     ~CP_Instance();

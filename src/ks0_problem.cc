@@ -24,11 +24,10 @@ using namespace std;
 
 KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals) : Instance(instance.options_) {
     // set name
-    if( dynamic_cast<const InstanceName*>(instance.name_) != 0 ) {
+    if( dynamic_cast<const InstanceName*>(instance.name_) != 0 )
         set_name(new InstanceName(*dynamic_cast<const InstanceName*>(instance.name_)));
-    } else {
+    else
         set_name(new CopyName(instance.name_->to_string()));
-    }
 
     // set number of tags; tag0 is the empty tag
     n_tags_ = instance.initial_states_.size();

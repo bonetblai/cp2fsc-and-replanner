@@ -26,20 +26,21 @@ using namespace std;
 
 // TODO: remove map actions for which there are no act actions
 
-CP_Instance::CP_Instance(const Instance &ins, size_t fsc_states,
+CP_Instance::CP_Instance(const Instance &ins,
+                         size_t fsc_states,
                          bool forbid_inconsistent_tuples,
                          bool compound_obs_as_fluents)
-  : Instance(ins.options_), fsc_states_(fsc_states),
+  : Instance(ins.options_),
+    fsc_states_(fsc_states),
     forbid_inconsistent_tuples_(forbid_inconsistent_tuples),
     compound_obs_as_fluents_(compound_obs_as_fluents),
     instance_(ins) {
 
     // set name
-    if( dynamic_cast<const InstanceName*>(ins.name_) != 0 ) {
+    if( dynamic_cast<const InstanceName*>(ins.name_) != 0 )
         set_name(new InstanceName(*dynamic_cast<const InstanceName*>(ins.name_)));
-    } else {
+    else
         set_name(new CopyName(ins.name_->to_string()));
-    }
 
     // set description of init
     init_ = ins.init_;
