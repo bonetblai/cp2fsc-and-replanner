@@ -227,6 +227,13 @@ void PDDL_Base::instantiate_elements() {
     dom_init_.reserve(ilist.size());
     dom_init_.insert(dom_init_.end(), ilist.begin(), ilist.end());
 
+    // instantiate goal
+    if( dom_goal_ != 0 ) {
+        Condition *instantiated_goal = dom_goal_->ground();
+        delete dom_goal_;
+        dom_goal_ = instantiated_goal;
+    }
+
     // extract set of initial literals
     for( size_t k = 0; k < dom_init_.size(); ++k ) {
         if( dynamic_cast<const InitLiteral*>(dom_init_[k]) != 0 )
