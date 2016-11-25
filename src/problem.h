@@ -54,10 +54,10 @@ class Instance {
         bool operator==(const Atom &atom) { return index_ == atom.index_; }
     };
 #ifdef SMART
-    class unique_atom_vec : public std::vector<std::unique_ptr<Atom> > {
+    class owner_atom_vec : public std::vector<std::unique_ptr<Atom> > {
       public:
-        unique_atom_vec() { }
-        unique_atom_vec(const unique_atom_vec &vec) = delete; // unique_ptr's can't be copied
+        owner_atom_vec() { }
+        owner_atom_vec(const owner_atom_vec &vec) = delete; // unique_ptr's can't be copied
     };
 #else
     class atom_vec : public std::vector<Atom*> { };
@@ -101,10 +101,10 @@ class Instance {
         void write(std::ostream &os, int indent, const Instance &instance) const;
     };
 #ifdef SMART
-    class unique_action_vec : public std::vector<std::unique_ptr<Action> > {
+    class owner_action_vec : public std::vector<std::unique_ptr<Action> > {
       public:
-        unique_action_vec() { }
-        unique_action_vec(const unique_action_vec &vec) = delete; // unique_ptr's can't be copied
+        owner_action_vec() { }
+        owner_action_vec(const owner_action_vec &vec) = delete; // unique_ptr's can't be copied
     };
 #else
     class action_vec : public std::vector<Action*> { };
@@ -129,10 +129,10 @@ class Instance {
         void write(std::ostream &os, int indent, const Instance &instance) const;
     };
 #ifdef SMART
-    class unique_sensor_vec : public std::vector<std::unique_ptr<Sensor> > {
+    class owner_sensor_vec : public std::vector<std::unique_ptr<Sensor> > {
       public:
-        unique_sensor_vec() { }
-        unique_sensor_vec(const unique_sensor_vec &vec) = delete; // unique_ptr's can't be copied
+        owner_sensor_vec() { }
+        owner_sensor_vec(const owner_sensor_vec &vec) = delete; // unique_ptr's can't be copied
     };
 #else
     class sensor_vec : public std::vector<Sensor*> { };
@@ -157,10 +157,10 @@ class Instance {
         void write(std::ostream &os, int indent, const Instance &instance) const;
     };
 #ifdef SMART
-    class unique_axiom_vec : public std::vector<std::unique_ptr<Axiom> > {
+    class owner_axiom_vec : public std::vector<std::unique_ptr<Axiom> > {
       public:
-        unique_axiom_vec() { }
-        unique_axiom_vec(const unique_axiom_vec &vec) = delete; // unique_ptr's can't be copied
+        owner_axiom_vec() { }
+        owner_axiom_vec(const owner_axiom_vec &vec) = delete; // unique_ptr's can't be copied
     };
 #else
     class axiom_vec : public std::vector<Axiom*> { };
@@ -196,10 +196,10 @@ class Instance {
 
     Name        *name_;
 #ifdef SMART
-    unique_atom_vec    atoms_;
-    unique_action_vec  actions_;
-    unique_sensor_vec  sensors_;
-    unique_axiom_vec   axioms_;
+    owner_atom_vec    atoms_;
+    owner_action_vec  actions_;
+    owner_sensor_vec  sensors_;
+    owner_axiom_vec   axioms_;
 #else
     atom_vec    atoms_;
     action_vec  actions_;
@@ -219,7 +219,7 @@ class Instance {
 
     // deductive rules to apply to hidden state
 #ifdef SMART
-    unique_action_vec  deductive_rules_;
+    owner_action_vec  deductive_rules_;
 #else
     action_vec  deductive_rules_;
 #endif
