@@ -108,12 +108,13 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals) :
             dup[strlen(dup)-1] = '\0';
         }
         char *t = strtok(dup, " ");
-        lit_name = string("(K_") + t;
+        //CHECK lit_name = string("(K_") + t;
+        lit_name = string("K_") + t;
         if( tagged_[k] && (n_tags_ > 1) ) lit_name += string("__tag") + Utils::to_string(tag0_);
         while( (t = strtok(0, " ")) ) {
             lit_name += string(" ") + t;
         }
-        lit_name += ")";
+        //CHECK lit_name += ")";
         free(aux == 0 ? dup : aux);
 
         tag_map_[tag0_*ins_n_fluents + k] = n_atoms();
@@ -137,11 +138,12 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals) :
                         dup[strlen(dup)-1] = '\0';
                     }
                     char *t = strtok(dup, " ");
-                    lit_name = string("(K_") + t + "__tag" + Utils::to_string(tag);
+                    //CHECK lit_name = string("(K_") + t + "__tag" + Utils::to_string(tag);
+                    lit_name = string("K_") + t + "__tag" + Utils::to_string(tag);
                     while( (t = strtok(0, " ")) ) {
                         lit_name += string(" ") + t;
                     }
-                    lit_name += ")";
+                    //CHECK lit_name += ")";
                     free(aux == 0 ? dup : aux);
 
                     tag_map_[tag*ins_n_fluents + k] = n_atoms();
@@ -167,11 +169,12 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals) :
                         dup[strlen(dup)-1] = '\0';
                     }
                     char *t = strtok(dup, " ");
-                    lit_name = string("(K_") + t + "__tag" + Utils::to_string(tag);
+                    //CHECK lit_name = string("(K_") + t + "__tag" + Utils::to_string(tag);
+                    lit_name = string("K_") + t + "__tag" + Utils::to_string(tag);
                     while( (t = strtok(0, " ")) ) {
                         lit_name += string(" ") + t;
                     }
-                    lit_name += ")";
+                    //CHECK lit_name += ")";
                     free(aux == 0 ? dup : aux);
 
                     tag_map_[tag*ins_n_fluents + *it-1] = n_atoms();

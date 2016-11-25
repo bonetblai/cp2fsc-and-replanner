@@ -176,6 +176,7 @@ int main(int argc, const char *argv[]) {
     Instance instance(g_options);
 
     cout << "instantiating control problem..." << endl;
+    reader->instantiate_elements();
     reader->emit_instance(instance);
     if( g_options.is_enabled("problem:print:raw") ) {
         instance.print(cout);

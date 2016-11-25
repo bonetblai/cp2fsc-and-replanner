@@ -97,7 +97,8 @@ CP_Instance::CP_Instance(const Instance &ins, size_t fsc_states,
     if( compound_obs_as_fluents_ ) {
         obs0_ = n_atoms();
         for( size_t k = 0; k < reachable_obs_.size(); ++k ) {
-            string name = string("(obs") + Utils::to_string(k) + ")";
+            //CHECK string name = string("(obs") + Utils::to_string(k) + ")";
+            string name = string("obs") + Utils::to_string(k);
             new_atom(new CopyName(name));
         }
     }
@@ -105,7 +106,8 @@ CP_Instance::CP_Instance(const Instance &ins, size_t fsc_states,
     // fluents for states
     q0_ = n_atoms();
     for( size_t k = 0; k < fsc_states_; ++k ) {
-        string name = string("(q") + Utils::to_string(k) + ")";
+        //CHECK string name = string("(q") + Utils::to_string(k) + ")";
+        string name = string("q") + Utils::to_string(k);
         new_atom(new CopyName(name));
     }
 
@@ -115,12 +117,14 @@ CP_Instance::CP_Instance(const Instance &ins, size_t fsc_states,
         n_mapped_fluents_ = n_unused_fluents_ * ins.n_actions() * fsc_states_;
         unused0_ = n_atoms();
         for( size_t k = 0; k < n_unused_fluents_; ++k ) {
-            string name = string("(unused") + Utils::to_string(k) + ")";
+            //CHECK string name = string("(unused") + Utils::to_string(k) + ")";
+            string name = string("unused") + Utils::to_string(k);
             new_atom(new CopyName(name));
         }
         mapped0_ = n_atoms();
         for( size_t k = 0; k < n_mapped_fluents_; ++k ) {
-            string name = string("(mapped") + Utils::to_string(k) + ")";
+            //CHECK string name = string("(mapped") + Utils::to_string(k) + ")";
+            string name = string("mapped") + Utils::to_string(k);
             new_atom(new CopyName(name));
         }
     }
