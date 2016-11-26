@@ -232,7 +232,12 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                 beams[atom_index] = beam;
             }
         }
+#ifdef SMART
+        unique_ptr<Variable> variable = make_unique<Variable>(var.to_string(false, true), var.is_observable_variable(), var.is_state_variable(), domain, beams);
+        variables_.emplace_back(move(variable));
+#else
         variables_.push_back(new Variable(var.to_string(false, true), var.is_observable_variable(), var.is_state_variable(), domain, beams));
+#endif
 #ifdef DEBUG
         variables_.back()->print(cout);
         cout << endl;

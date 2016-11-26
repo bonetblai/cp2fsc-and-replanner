@@ -33,9 +33,8 @@ namespace Inference {
 
   void fill_atoms_to_var_map(const LW1_Instance &lw1_instance, map<int, int> &atoms_to_vars) {
       atoms_to_vars.clear();
-      const vector<LW1_Instance::Variable*> &vars = lw1_instance.variables_;
-      for( size_t var_index = 0; var_index < vars.size(); ++var_index ) {
-          const LW1_Instance::Variable &variable = *vars[var_index];
+      for( size_t var_index = 0; var_index < lw1_instance.variables_.size(); ++var_index ) {
+          const LW1_Instance::Variable &variable = *lw1_instance.variables_[var_index];
 
           // iterate over domain of variable to insert atoms into map
           for( set<int>::const_iterator it = variable.domain().begin(); it != variable.domain().end(); ++it ) {

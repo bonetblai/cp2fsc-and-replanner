@@ -123,9 +123,8 @@ class RandomActionSelection : public NaiveRandomActionSelection<T> {
         float start_time = Utils::read_time_in_seconds();
 
         // need to check that each LW1 state variable is instantiated
-        const std::vector<LW1_Instance::Variable*> &vars = lw1_instance_.variables_;
-        for( size_t var_index = 0; var_index < vars.size(); ++var_index ) {
-            const LW1_Instance::Variable &variable = *vars[var_index];
+        for( size_t var_index = 0; var_index < lw1_instance_.variables_.size(); ++var_index ) {
+            const LW1_Instance::Variable &variable = *lw1_instance_.variables_[var_index];
             if( variable.is_state_variable() ) {
                 // iterate over domain of variable to check whether is instantiated
                 bool is_instantiated = false;

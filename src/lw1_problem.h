@@ -81,7 +81,11 @@ class LW1_Instance : public KP_Instance {
     // lw1 variables and sensing models.
     // Sensing models are indexed by (action-name, value-index, var-index) and return DNF
     std::map<std::string, int> varmap_;
+#ifdef SMART
+    std::vector<std::unique_ptr<Variable> > variables_;
+#else
     std::vector<Variable*> variables_;
+#endif
     std::map<int, std::vector<int> > variables_for_atom_;
     std::map<std::string, std::map<int, std::map<int, std::vector<std::vector<int> > > > > sensing_models_as_k_cnf_;
     std::map<std::string, std::map<int, std::map<int, std::vector<std::vector<int> > > > > sensing_models_as_k_dnf_;
