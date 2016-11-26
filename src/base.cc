@@ -84,6 +84,7 @@ PDDL_Base::~PDDL_Base() {
     delete dom_eq_pred_;
     delete dom_top_type_;
 
+#ifndef SMART
     // TODO: for being able to remove actions/sensors and other symbols, symbols
     // cannot be shared between the parser and *-instances. Probably will need to
     // a symbol tape to store the symbols for each instance.
@@ -93,7 +94,6 @@ PDDL_Base::~PDDL_Base() {
         for( size_t j = 0; j < dom_hidden_[k].size(); ++j )
             delete dom_hidden_[k][j];
     }
-#ifndef SMART
     for( size_t k = 0; k < dom_actions_.size(); ++k )
         delete dom_actions_[k];
     for( size_t k = 0; k < dom_sensors_.size(); ++k )
@@ -218,14 +218,25 @@ void PDDL_Base::instantiate_elements() {
 
     // instantiate init elements. We do this first to calculate set
     // of initial literals so that formula grounding is more efficient
+#ifdef SMART
+    owned_init_element_list ilist;
+#else
     init_element_list ilist;
+#endif
     for( size_t k = 0; k < dom_init_.size(); ++k ) {
         dom_init_[k]->instantiate(ilist);
+#ifndef SMART
         delete dom_init_[k];
+#endif
     }
     dom_init_.clear();
     dom_init_.reserve(ilist.size());
+#ifdef SMART
+    for( owned_init_element_list::iterator it = ilist.begin(); it != ilist.end(); ++it )
+        dom_init_.emplace_back(it->release());
+#else
     dom_init_.insert(dom_init_.end(), ilist.begin(), ilist.end());
+#endif
 
     // instantiate goal
     if( dom_goal_ != 0 ) {
@@ -236,8 +247,13 @@ void PDDL_Base::instantiate_elements() {
 
     // extract set of initial literals
     for( size_t k = 0; k < dom_init_.size(); ++k ) {
+#ifdef SMART
+        if( dynamic_cast<const InitLiteral*>(dom_init_[k].get()) != 0 )
+            set_of_initial_literals_.insert(*static_cast<const InitLiteral*>(dom_init_[k].get()));
+#else
         if( dynamic_cast<const InitLiteral*>(dom_init_[k]) != 0 )
             set_of_initial_literals_.insert(*static_cast<const InitLiteral*>(dom_init_[k]));
+#endif
     }
 
     // instantiate lw1 variables (only for lw1 translation)
@@ -500,16 +516,34 @@ void PDDL_Base::declare_clg_translation() {
 
 void PDDL_Base::clg_map_oneofs_and_clauses_to_invariants() {
     // extract oneofs and clauses
+#ifdef SMART
+    vector<pair<int, unique_ptr<InitOneof> > > oneofs;
+    vector<pair<int, unique_ptr<InitClause> > > clauses;
+#else
     vector<pair<int, InitOneof*> > oneofs;
     vector<pair<int, InitClause*> > clauses;
+#endif
     for( size_t k = 0; k < dom_init_.size(); ++k ) {
+#ifdef SMART
+        InitElement *ie = dom_init_[k].get();
+#else
         InitElement *ie = dom_init_[k];
+#endif
         if( dynamic_cast<InitOneof*>(ie) != 0 ) {
+#ifdef SMART
+            oneofs.emplace_back(k, unique_ptr<InitOneof>(static_cast<InitOneof*>(dom_init_[k].release())));
+#else
             oneofs.push_back(make_pair(k, static_cast<InitOneof*>(ie)));
             dom_init_[k] = 0;
+#endif
         } else if( dynamic_cast<InitClause*>(ie) != 0 ) {
+#ifdef SMART
+            clauses.emplace_back(k, unique_ptr<InitClause>(static_cast<InitClause*>(dom_init_[k].release())));
+            dom_init_[k].release();
+#else
             clauses.push_back(make_pair(k, static_cast<InitClause*>(ie)));
             dom_init_[k] = 0;
+#endif
         }
     }
 
@@ -518,10 +552,16 @@ void PDDL_Base::clg_map_oneofs_and_clauses_to_invariants() {
         Invariant invariant(Invariant::EXACTLY_ONE, *oneofs[k].second);
         // BLAI: check precondition
         //if( normal_execution_ != 0 ) invariant.Xprecondition_ = Literal(*normal_execution_).copy();
+#ifdef SMART
+        dom_init_[oneofs[k].first] = make_unique<InitInvariant>(invariant);
+#else
         dom_init_[oneofs[k].first] = new InitInvariant(invariant);
+#endif
         invariant.clear();           // to avoid destruction of elements
         oneofs[k].second->clear();   // to avoid destruction of elements
+#ifndef SMART
         delete oneofs[k].second;
+#endif
     }
 
     // make clauses into at-least-one invariants
@@ -529,10 +569,16 @@ void PDDL_Base::clg_map_oneofs_and_clauses_to_invariants() {
         Invariant invariant(Invariant::AT_LEAST_ONE, *clauses[k].second);
         // BLAI: check precondition
         //if( normal_execution_ != 0 ) invariant.Xprecondition_ = Literal(*normal_execution_).copy();
+#ifdef SMART
+        dom_init_[clauses[k].first] = make_unique<InitInvariant>(invariant);
+#else
         dom_init_[clauses[k].first] = new InitInvariant(invariant);
+#endif
         invariant.clear();           // to avoid destruction of elements
         clauses[k].second->clear();  // to avoid destruction of elements
+#ifndef SMART
         delete clauses[k].second;
+#endif
     }
 }
 
@@ -567,7 +613,11 @@ void PDDL_Base::clg_translate_actions() {
         create_normal_execution_atom();
 
         // extend initial and goal situations with (normal-execution)
+#ifdef SMART
+        dom_init_.emplace_back(make_unique<InitLiteral>(*normal_execution_));
+#else
         dom_init_.push_back(new InitLiteral(*normal_execution_));
+#endif
         if( dom_goal_ == 0 ) {
             dom_goal_ = new And;
         } else if( dynamic_cast<const And*>(dom_goal_) == 0 ) {
@@ -1018,7 +1068,11 @@ void PDDL_Base::lw1_translate_actions() {
         create_normal_execution_atom();
 
         // extend initial and goal situations with (normal-execution)
+#ifdef SMART
+        dom_init_.emplace_back(make_unique<InitLiteral>(*normal_execution_));
+#else
         dom_init_.push_back(new InitLiteral(*normal_execution_));
+#endif
         if( dom_goal_ == 0 ) {
             dom_goal_ = new And;
         } else if( dynamic_cast<const And*>(dom_goal_) == 0 ) {
@@ -1305,7 +1359,11 @@ void PDDL_Base::lw1_translate_actions_strict() {
             create_normal_execution_atom();
 
             // extend initial and goal situations with (normal-execution)
+#ifdef SMART
+            dom_init_.emplace_back(make_unique<InitLiteral>(*normal_execution_));
+#else
             dom_init_.push_back(new InitLiteral(*normal_execution_));
+#endif
             if( dom_goal_ == 0 ) {
                 dom_goal_ = new And;
             } else if( dynamic_cast<const And*>(dom_goal_) == 0 ) {
@@ -3222,8 +3280,13 @@ void PDDL_Base::emit_instance(Instance &ins) const {
     ins.hidden_.resize(dom_hidden_.size());
     for( size_t k = 0; k < dom_hidden_.size(); ++k ) {
         for( size_t j = 0; j < dom_hidden_[k].size(); ++j ) {
+#ifdef SMART
+            assert(dynamic_cast<const InitLiteral*>(dom_hidden_[k][j].get()) != 0);
+            static_cast<const InitLiteral*>(dom_hidden_[k][j].get())->emit(ins, ins.hidden_[k]);
+#else
             assert(dynamic_cast<const InitLiteral*>(dom_hidden_[k][j]) != 0);
             static_cast<const InitLiteral*>(dom_hidden_[k][j])->emit(ins, ins.hidden_[k]);
+#endif
         }
     }
 
@@ -5054,9 +5117,17 @@ void PDDL_Base::InitLiteral::emit(Instance &ins, Instance::Init &state) const {
     }
 }
 
+#ifdef SMART
+void PDDL_Base::InitLiteral::instantiate(owned_init_element_list &ilist) const {
+#else
 void PDDL_Base::InitLiteral::instantiate(init_element_list &ilist) const {
+#endif
     Atom *atom = ground(false);
+#ifdef SMART
+    ilist.emplace_back(make_unique<InitLiteral>(*atom));
+#else
     ilist.push_back(new InitLiteral(*atom));
+#endif
     delete atom;
 }
 
@@ -5077,13 +5148,21 @@ void PDDL_Base::InitLiteral::extract_atoms(unsigned_atom_set &atoms) const {
     atoms.insert(*this);
 }
 
+#ifdef SMART
+void PDDL_Base::InitInvariant::instantiate(owned_init_element_list &ilist) const {
+#else
 void PDDL_Base::InitInvariant::instantiate(init_element_list &ilist) const {
+#endif
     assert(!Invariant::has_free_variables());
     list<Invariant*> invariant_list;
     invariant_list_ptr_ = &invariant_list;
     enumerate();
     for( list<Invariant*>::iterator it = invariant_list.begin(); it != invariant_list.end(); ++it ) {
+#ifdef SMART
+        ilist.push_back(make_unique<InitInvariant>(**it));
+#else
         ilist.push_back(new InitInvariant(**it));
+#endif
         (*it)->clear();
         delete *it;
     }
@@ -5155,11 +5234,19 @@ void PDDL_Base::InitInvariant::extract_atoms(unsigned_atom_set &atoms) const {
         (*this)[k]->extract_atoms(atoms);
 }
 
+#ifdef SMART
+void PDDL_Base::InitClause::instantiate(owned_init_element_list &ilist) const {
+#else
 void PDDL_Base::InitClause::instantiate(init_element_list &ilist) const {
+#endif
     Clause clause;
     for( size_t k = 0; k < size(); ++k )
         clause.push_back((*this)[k]->ground());
+#ifdef SMART
+    ilist.push_back(make_unique<InitClause>(clause));
+#else
     ilist.push_back(new InitClause(clause));
+#endif
     clause.clear();
 }
 
@@ -5185,11 +5272,19 @@ void PDDL_Base::InitClause::extract_atoms(unsigned_atom_set &atoms) const {
         (*this)[k]->extract_atoms(atoms);
 }
 
+#ifdef SMART
+void PDDL_Base::InitOneof::instantiate(owned_init_element_list &ilist) const {
+#else
 void PDDL_Base::InitOneof::instantiate(init_element_list &ilist) const {
+#endif
     Oneof oneof;
     for( size_t k = 0; k < size(); ++k )
         oneof.push_back((*this)[k]->ground());
+#ifdef SMART
+    ilist.push_back(make_unique<InitOneof>(oneof));
+#else
     ilist.push_back(new InitOneof(oneof));
+#endif
     oneof.clear();
 }
 
@@ -5215,7 +5310,11 @@ void PDDL_Base::InitOneof::extract_atoms(unsigned_atom_set &atoms) const {
         (*this)[k]->extract_atoms(atoms);
 }
 
+#ifdef SMART
+void PDDL_Base::InitUnknown::instantiate(owned_init_element_list &ilist) const {
+#else
 void PDDL_Base::InitUnknown::instantiate(init_element_list &ilist) const {
+#endif
     cout << Utils::internal_error() << "call to PDDL_Base::InitUnknown::instantiate()" << endl;
     exit(255);
 }

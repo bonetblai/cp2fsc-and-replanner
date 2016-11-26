@@ -543,13 +543,22 @@ class PDDL_Base {
     };
 
     struct InitElement;
+#ifdef SMART
+    struct owned_init_element_vec : public std::vector<std::unique_ptr<InitElement> > { };
+    struct owned_init_element_list : public std::list<std::unique_ptr<InitElement> > { };
+#else
     struct init_element_vec : public std::vector<InitElement*> { };
     struct init_element_list : public std::list<InitElement*> { };
+#endif
 
     struct InitElement {
         InitElement() { }
         virtual ~InitElement() { }
+#ifdef SMART
+        virtual void instantiate(owned_init_element_list &ilist) const = 0;
+#else
         virtual void instantiate(init_element_list &ilist) const = 0;
+#endif
         virtual void emit(Instance &ins) const = 0;
         virtual bool is_strongly_static(const PredicateSymbol &p) const = 0;
         virtual void extract_atoms(unsigned_atom_set &atoms) const = 0;
@@ -560,7 +569,11 @@ class PDDL_Base {
         InitLiteral(const Atom &atom) : Atom(atom) { }
         virtual ~InitLiteral() { }
         void emit(Instance &ins, Instance::Init &state) const;
+#ifdef SMART
+        virtual void instantiate(owned_init_element_list &ilist) const;
+#else
         virtual void instantiate(init_element_list &ilist) const;
+#endif
         virtual void emit(Instance &ins) const;
         virtual bool is_strongly_static(const PredicateSymbol &p) const;
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
@@ -570,7 +583,11 @@ class PDDL_Base {
     struct InitInvariant : public InitElement, Invariant {
         InitInvariant(const Invariant &invariant) : Invariant(invariant) { }
         virtual ~InitInvariant() { }
+#ifdef SMART
+        virtual void instantiate(owned_init_element_list &ilist) const;
+#else
         virtual void instantiate(init_element_list &ilist) const;
+#endif
         virtual void emit(Instance &ins) const;
         virtual bool is_strongly_static(const PredicateSymbol &p) const;
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
@@ -580,7 +597,11 @@ class PDDL_Base {
     struct InitClause : public InitElement, Clause {
         InitClause(const Clause &clause) : Clause(clause) { }
         virtual ~InitClause() { }
+#ifdef SMART
+        virtual void instantiate(owned_init_element_list &ilist) const;
+#else
         virtual void instantiate(init_element_list &ilist) const;
+#endif
         virtual void emit(Instance &ins) const;
         virtual bool is_strongly_static(const PredicateSymbol &p) const;
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
@@ -591,7 +612,11 @@ class PDDL_Base {
     struct InitOneof : public InitElement, Oneof {
         InitOneof(const Oneof &oneof) : Oneof(oneof) { }
         virtual ~InitOneof() { }
+#ifdef SMART
+        virtual void instantiate(owned_init_element_list &ilist) const;
+#else
         virtual void instantiate(init_element_list &ilist) const;
+#endif
         virtual void emit(Instance &ins) const;
         virtual bool is_strongly_static(const PredicateSymbol &p) const;
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
@@ -602,7 +627,11 @@ class PDDL_Base {
     struct InitUnknown : public InitElement, Unknown {
         InitUnknown(const Unknown &unknown) : Unknown(unknown) { }
         virtual ~InitUnknown() { }
+#ifdef SMART
+        virtual void instantiate(owned_init_element_list &ilist) const;
+#else
         virtual void instantiate(init_element_list &ilist) const;
+#endif
         virtual void emit(Instance &ins) const;
         virtual bool is_strongly_static(const PredicateSymbol &p) const;
         virtual void extract_atoms(unsigned_atom_set &atoms) const;
@@ -948,8 +977,13 @@ class PDDL_Base {
     axiom_vec                                 dom_axioms_;
 #endif
     const Condition                           *dom_goal_;
+#ifdef SMART
+    owned_init_element_vec                          dom_init_;
+    std::vector<owned_init_element_vec>             dom_hidden_;
+#else
     init_element_vec                          dom_init_;
     std::vector<init_element_vec>             dom_hidden_;
+#endif
     unsigned_atom_set                         dom_static_atoms_;
 
 #ifdef SMART

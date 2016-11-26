@@ -70,7 +70,11 @@ typedef union {
     const PDDL_Base::Clause                   *clause;
     const PDDL_Base::Oneof                    *oneof;
     const PDDL_Base::Unknown                  *unknown;
+#ifdef SMART
+    const PDDL_Base::owned_init_element_vec         *ilist;
+#else
     const PDDL_Base::init_element_vec         *ilist;
+#endif
     const PDDL_Base::InitElement              *ielem;
     const PDDL_Base::SensingModel             *sensing_model;
     const PDDL_Base::SensingProxy             *sensing_proxy;
@@ -133,21 +137,21 @@ typedef union {
 #ifndef YY_PDDL_Parser_PURE
 
 /* #line 63 "/usr/local/lib/bison.h" */
-#line 137 "grammar_tmp.h"
+#line 141 "grammar_tmp.h"
 
 #line 63 "/usr/local/lib/bison.h"
 /* YY_PDDL_Parser_PURE */
 #endif
 
 /* #line 65 "/usr/local/lib/bison.h" */
-#line 144 "grammar_tmp.h"
+#line 148 "grammar_tmp.h"
 
 #line 65 "/usr/local/lib/bison.h"
 /* prefix */
 #ifndef YY_PDDL_Parser_DEBUG
 
 /* #line 67 "/usr/local/lib/bison.h" */
-#line 151 "grammar_tmp.h"
+#line 155 "grammar_tmp.h"
 
 #line 67 "/usr/local/lib/bison.h"
 /* YY_PDDL_Parser_DEBUG */
@@ -155,7 +159,7 @@ typedef union {
 #ifndef YY_PDDL_Parser_LSP_NEEDED
 
 /* #line 70 "/usr/local/lib/bison.h" */
-#line 159 "grammar_tmp.h"
+#line 163 "grammar_tmp.h"
 
 #line 70 "/usr/local/lib/bison.h"
  /* YY_PDDL_Parser_LSP_NEEDED*/
@@ -233,7 +237,7 @@ extern YY_PDDL_Parser_STYPE YY_PDDL_Parser_LVAL;
 
 
 /* #line 143 "/usr/local/lib/bison.h" */
-#line 237 "grammar_tmp.h"
+#line 241 "grammar_tmp.h"
 #define	TK_OPEN	258
 #define	TK_CLOSE	259
 #define	TK_OPEN_SQ	260
@@ -345,7 +349,7 @@ public:
 /* static const int token ... */
 
 /* #line 182 "/usr/local/lib/bison.h" */
-#line 349 "grammar_tmp.h"
+#line 353 "grammar_tmp.h"
 static const int TK_OPEN;
 static const int TK_CLOSE;
 static const int TK_OPEN_SQ;
@@ -421,7 +425,7 @@ static const int KW_MODEL_FOR;
 enum YY_PDDL_Parser_ENUM_TOKEN { YY_PDDL_Parser_NULL_TOKEN=0
 
 /* #line 185 "/usr/local/lib/bison.h" */
-#line 425 "grammar_tmp.h"
+#line 429 "grammar_tmp.h"
 	,TK_OPEN=258
 	,TK_CLOSE=259
 	,TK_OPEN_SQ=260
@@ -545,5 +549,5 @@ public:
 /* END */
 
 /* #line 236 "/usr/local/lib/bison.h" */
-#line 549 "grammar_tmp.h"
+#line 553 "grammar_tmp.h"
 #endif

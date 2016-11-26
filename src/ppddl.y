@@ -70,7 +70,11 @@
     const PDDL_Base::Clause                   *clause;
     const PDDL_Base::Oneof                    *oneof;
     const PDDL_Base::Unknown                  *unknown;
+#ifdef SMART
+    const PDDL_Base::owned_init_element_vec         *ilist;
+#else
     const PDDL_Base::init_element_vec         *ilist;
+#endif
     const PDDL_Base::InitElement              *ielem;
     const PDDL_Base::SensingModel             *sensing_model;
     const PDDL_Base::SensingProxy             *sensing_proxy;
@@ -1149,19 +1153,47 @@ problem_elements:
 
 initial_state:
       TK_OPEN KW_INIT TK_CLOSE
-    | TK_OPEN KW_INIT init_elements TK_CLOSE { dom_init_ = *$3; delete $3; }
-    | TK_OPEN KW_INIT TK_OPEN KW_AND init_elements TK_CLOSE TK_CLOSE { dom_init_ = *$5; delete $5; }
+    | TK_OPEN KW_INIT init_elements TK_CLOSE {
+          dom_init_.clear();
+#ifdef SMART
+          for( owned_init_element_vec::iterator it = const_cast<owned_init_element_vec*>($3)->begin(); it != const_cast<owned_init_element_vec*>($3)->end(); ++it )
+              dom_init_.emplace_back(it->release());
+#else
+          dom_init_ = *$3;
+#endif
+          delete $3;
+      }
+    | TK_OPEN KW_INIT TK_OPEN KW_AND init_elements TK_CLOSE TK_CLOSE {
+          dom_init_.clear();
+#ifdef SMART
+          for( owned_init_element_vec::iterator it = const_cast<owned_init_element_vec*>($5)->begin(); it != const_cast<owned_init_element_vec*>($5)->end(); ++it )
+              dom_init_.emplace_back(it->release());
+#else
+          dom_init_ = *$5;
+#endif
+          delete $5;
+      }
     ;
 
 init_elements:
       init_elements single_init_element {
+#ifdef SMART
+          owned_init_element_vec *ilist = const_cast<owned_init_element_vec*>($1);
+          if( $2 != 0 ) ilist->emplace_back(std::unique_ptr<InitElement>(const_cast<InitElement*>($2)));
+#else
           init_element_vec *ilist = const_cast<init_element_vec*>($1);
           if( $2 != 0 ) ilist->push_back(const_cast<InitElement*>($2));
+#endif
           $$ = ilist;
       }
     | single_init_element {
+#ifdef SMART
+          owned_init_element_vec *ilist = new owned_init_element_vec;
+          if( $1 != 0 ) ilist->emplace_back(std::unique_ptr<InitElement>(const_cast<InitElement*>($1)));
+#else
           init_element_vec *ilist = new init_element_vec;
           if( $1 != 0 ) ilist->push_back(const_cast<InitElement*>($1));
+#endif
           $$ = ilist;
       }
     ;
@@ -1272,7 +1304,13 @@ hidden_state:
               log_error((char*)"':hidden' is not a valid element in cp2fsc.");
               yyerrok;
           } else {
+#ifdef SMART
+              dom_hidden_.push_back(owned_init_element_vec());
+              for( owned_init_element_vec::iterator it = const_cast<owned_init_element_vec*>($3)->begin(); it != const_cast<owned_init_element_vec*>($3)->end(); ++it )
+                  dom_hidden_.back().emplace_back(it->release());
+#else
               dom_hidden_.push_back(*$3);
+#endif
               delete $3;
           }
       }
@@ -1281,8 +1319,11 @@ hidden_state:
               log_error((char*)"':hidden' is not a valid element in cp2fsc.");
               yyerrok;
           } else {
-              init_element_vec hidden;
-              dom_hidden_.push_back(hidden);
+#ifdef SMART
+              dom_hidden_.push_back(owned_init_element_vec());
+#else
+              dom_hidden_.push_back(init_element_vec());
+#endif
           }
       }
     ;
