@@ -288,7 +288,6 @@ class PDDL_Base {
     struct Variable;
     struct Effect;
     struct effect_vec : public std::vector<const Effect*> { };
-    struct effect_list : public std::list<const Effect*> { };
 
     struct Effect {
         Effect() { }
@@ -335,6 +334,7 @@ class PDDL_Base {
     struct AndEffect : public Effect, effect_vec {
         AndEffect() { }
         AndEffect(const effect_vec &vec) : effect_vec(vec) { }
+        AndEffect(effect_vec &&vec) : effect_vec(std::move(vec)) { }
         virtual ~AndEffect() { for( size_t k = 0; k < size(); ++k ) delete (*this)[k]; }
         virtual void remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param);
         virtual void emit(Instance &ins, index_set &eff, Instance::when_vec &when = dummy_when_vec_) const;

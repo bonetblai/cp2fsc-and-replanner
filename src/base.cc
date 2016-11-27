@@ -4316,7 +4316,7 @@ PDDL_Base::Effect* PDDL_Base::AndEffect::ground(bool clone_variables, bool repla
         if( effects.size() == 1 )
             result = const_cast<Effect*>(effects[0]);
         else
-            result = new AndEffect(effects);
+            result = new AndEffect(move(effects));
         effects.clear();
     }
     return result;
