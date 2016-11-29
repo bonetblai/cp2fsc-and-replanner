@@ -97,7 +97,7 @@
                               KW_CONSTANTS KW_PREDS KW_TYPES KW_DEFINE KW_DOMAIN
                               KW_ACTION KW_ARGS KW_PRE KW_EFFECT KW_AND KW_TRUE KW_FALSE
                               KW_OR KW_EXISTS KW_FORALL KW_SUCH_THAT KW_NOT KW_WHEN KW_ONEOF KW_UNKNOWN
-                              KW_PROBLEM KW_FORDOMAIN KW_OBJECTS KW_INIT KW_GOAL
+                              KW_PROBLEM KW_FORDOMAIN KW_OBJECTS KW_INIT KW_GOAL KW_EXPLICIT_INITIAL_STATE
                               KW_SENSOR KW_SENSE KW_OBSERVE KW_AXIOM KW_COND KW_OBSERVABLE
                               KW_BODY KW_HEAD KW_STICKY KW_FLUENTS KW_HIDDEN
                               KW_INVARIANT KW_AT_LEAST_ONE KW_AT_MOST_ONE KW_EXACTLY_ONE
@@ -128,6 +128,7 @@
 %type <effect>                fluent_decl
 %type <ilist>                 init_elements
 %type <ielem>                 single_init_element
+%type <ival>                  initial_state_keyword
 
 %type <sensing_proxy_list>    sensing sensing_decl_list
 %type <sensing_proxy>         sensing_decl forall_sensing
@@ -1152,27 +1153,62 @@ problem_elements:
     ;
 
 initial_state:
-      TK_OPEN KW_INIT TK_CLOSE
-    | TK_OPEN KW_INIT init_elements TK_CLOSE {
-          dom_init_.clear();
+      TK_OPEN initial_state_keyword TK_CLOSE {
+          if( $2 == KW_EXPLICIT_INITIAL_STATE ) {
 #ifdef SMART
-          for( owned_init_element_vec::iterator it = const_cast<owned_init_element_vec*>($3)->begin(); it != const_cast<owned_init_element_vec*>($3)->end(); ++it )
-              dom_init_.emplace_back(it->release());
+              dom_explicit_initial_states_.push_back(owned_init_element_vec());
 #else
-          dom_init_ = *$3;
+              dom_explicit_initial_states_.push_back(init_element_vec());
 #endif
+          }
+    }
+    | TK_OPEN initial_state_keyword init_elements TK_CLOSE {
+          if( $2 == KW_INIT ) {
+              dom_init_.clear();
+#ifdef SMART
+              for( owned_init_element_vec::iterator it = const_cast<owned_init_element_vec*>($3)->begin(); it != const_cast<owned_init_element_vec*>($3)->end(); ++it )
+                  dom_init_.emplace_back(it->release());
+#else
+              dom_init_ = *$3;
+#endif
+          } else {
+              assert($2 == KW_EXPLICIT_INITIAL_STATE);
+#ifdef SMART
+              dom_explicit_initial_states_.push_back(owned_init_element_vec());
+              for( owned_init_element_vec::iterator it = const_cast<owned_init_element_vec*>($3)->begin(); it != const_cast<owned_init_element_vec*>($3)->end(); ++it )
+                  dom_explicit_initial_states_.back().emplace_back(it->release());
+#else
+              dom_explicit_initial_states_.push_back(*$3);
+#endif
+          }
           delete $3;
       }
-    | TK_OPEN KW_INIT TK_OPEN KW_AND init_elements TK_CLOSE TK_CLOSE {
-          dom_init_.clear();
+    | TK_OPEN initial_state_keyword TK_OPEN KW_AND init_elements TK_CLOSE TK_CLOSE {
+          if( $2 == KW_INIT ) {
+              dom_init_.clear();
 #ifdef SMART
-          for( owned_init_element_vec::iterator it = const_cast<owned_init_element_vec*>($5)->begin(); it != const_cast<owned_init_element_vec*>($5)->end(); ++it )
-              dom_init_.emplace_back(it->release());
+              for( owned_init_element_vec::iterator it = const_cast<owned_init_element_vec*>($5)->begin(); it != const_cast<owned_init_element_vec*>($5)->end(); ++it )
+                  dom_init_.emplace_back(it->release());
 #else
-          dom_init_ = *$5;
+              dom_init_ = *$5;
 #endif
+          } else {
+              assert($2 == KW_EXPLICIT_INITIAL_STATE);
+#ifdef SMART
+              dom_explicit_initial_states_.push_back(owned_init_element_vec());
+              for( owned_init_element_vec::iterator it = const_cast<owned_init_element_vec*>($5)->begin(); it != const_cast<owned_init_element_vec*>($5)->end(); ++it )
+                  dom_explicit_initial_states_.back().emplace_back(it->release());
+#else
+              dom_explicit_initial_states_.push_back(*$5);
+#endif
+          }
           delete $5;
       }
+    ;
+
+initial_state_keyword:
+      KW_INIT { $$ = KW_INIT; }
+    | KW_EXPLICIT_INITIAL_STATE { $$ = KW_EXPLICIT_INITIAL_STATE; }
     ;
 
 init_elements:

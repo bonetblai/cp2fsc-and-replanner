@@ -44,7 +44,7 @@ class CP_Instance : public Instance {
                 size_t fsc_states,
                 bool forbid_inconsistent_tuples = false,
                 bool compound_obs_as_fluents = false);
-    ~CP_Instance();
+    virtual ~CP_Instance();
 
     void add_to_initial_states(int fluent);
     bool consistent_with_obs(int obs_idx, const index_set &condition) const;
@@ -52,6 +52,9 @@ class CP_Instance : public Instance {
 
     // Remaps atoms in the initial states and then calls Instance::remove_atoms()
     virtual void remove_atoms(const bool_vec &set, index_vec &map);
+
+    // write initial states to pddl problem file
+    virtual void write_problem_additional(std::ostream &os, const State *state, int indent = 4) const;
 };
 
 #endif

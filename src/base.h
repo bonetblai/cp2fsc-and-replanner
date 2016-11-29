@@ -980,9 +980,11 @@ class PDDL_Base {
 #ifdef SMART
     owned_init_element_vec                          dom_init_;
     std::vector<owned_init_element_vec>             dom_hidden_;
+    std::vector<owned_init_element_vec>             dom_explicit_initial_states_; // explicit initial states for conformant problem
 #else
     init_element_vec                          dom_init_;
     std::vector<init_element_vec>             dom_hidden_;
+    std::vector<init_element_vec>             dom_explicit_initial_states_; // explicit initial states for conformant problem
 #endif
     unsigned_atom_set                         dom_static_atoms_;
 

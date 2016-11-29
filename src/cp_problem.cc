@@ -46,6 +46,7 @@ CP_Instance::CP_Instance(const Instance &ins,
     init_ = ins.init_;
 
     // calculate reachable state space
+    assert(initial_states_.empty());
     ins.generate_initial_states(initial_states_);
     for( StateSet::const_iterator it = initial_states_.begin(); it != initial_states_.end(); ++it ) {
         StateSet *space = new StateSet;
@@ -366,5 +367,19 @@ void CP_Instance::remove_atoms(const bool_vec &set, index_vec &map) {
         cout << endl;
     }
     */
+}
+
+void CP_Instance::write_problem_additional(ostream &os, const State *state, int indent) const {
+    // write initial states (so they can be passed through pddl file)
+    if( options_.is_enabled("cp:write:explicit-initial-states") ) {
+        for( StateSet::const_iterator it = initial_states_.begin(); it != initial_states_.end(); ++it ) {
+            os << string(indent, ' ') << "(:explicit-initial-state";
+            for( State::const_iterator jt = (*it)->begin(); jt != (*it)->end(); ++jt ) {
+                os << " ";
+                State::print_literal(os, 1 + *jt, this);
+            }
+            os << ")" << endl;
+        }
+    }
 }
 

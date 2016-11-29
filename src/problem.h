@@ -209,6 +209,7 @@ class Instance {
 
     Init        init_;
     init_vec    hidden_;
+    init_vec    explicit_initial_states_;
     index_set   goal_literals_;
     index_set   non_primitive_fluents_;
     index_set   observable_fluents_;
@@ -306,8 +307,10 @@ class Instance {
     void write_action_set(std::ostream &os, const index_vec &set) const;
     void write_action_set(std::ostream &os, const bool* set) const;
     void write_action_set(std::ostream &os, const bool_vec &set) const;
-    void write_domain(std::ostream &os, int indent = 4) const;
+    virtual void write_domain_additional(std::ostream &os, int indent) const { }
+    virtual void write_problem_additional(std::ostream &os, const State *state, int indent) const { }
     virtual void write_problem(std::ostream &os, const State *state, int indent = 4) const;
+    void write_domain(std::ostream &os, int indent = 4) const;
     void write_problem(std::ostream &os, int indent = 4) const { write_problem(os, 0, indent); }
     void print_atoms(std::ostream &os) const;
     void print_actions(std::ostream &os) const;

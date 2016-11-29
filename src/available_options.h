@@ -56,6 +56,7 @@ const char *available_options[] = {
     // cp-translation options (cp2fsc)
     "cp:print:raw",                                     "[CP] print the translation before preprocessing",
     "cp:print:preprocessed",                            "[CP] print the translation after preprocessing",
+    "cp:write:explicit-initial-states",                 "[CP] write initial states to problem file",
 
     // ks0-translation options (cp2fsc)
     "ks0:print:raw",                                    "[KS0] print the translation before processing",

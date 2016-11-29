@@ -115,6 +115,7 @@ COMMENT ;.*$
 ":init"                    { return PDDL_Parser::KW_INIT; }
 ":hidden"                  { return PDDL_Parser::KW_HIDDEN; }
 ":goal"                    { return PDDL_Parser::KW_GOAL; }
+":explicit-initial-state"  { return PDDL_Parser::KW_EXPLICIT_INITIAL_STATE; }
 
 ":translation"             { return PDDL_Parser::KW_TRANSLATION; }
 ":variable"                { return PDDL_Parser::KW_VARIABLE; }

@@ -22,7 +22,18 @@
 
 using namespace std;
 
-KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals) : Instance(instance.options_) {
+KS0_Instance::KS0_Instance(const Instance &instance, bool tag_all_literals)
+  : Instance(instance.options_),
+    tag_all_literals_(tag_all_literals) {
+}
+
+KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals)
+  : Instance(instance.options_),
+    tag_all_literals_(tag_all_literals) {
+    initialize(instance);
+}
+
+void KS0_Instance::initialize(const CP_Instance &instance) {
     // set name
     if( dynamic_cast<const InstanceName*>(instance.name_) != 0 )
         set_name(new InstanceName(*dynamic_cast<const InstanceName*>(instance.name_)));
@@ -124,7 +135,7 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals) :
     }
 
     // now, generate tagged literals
-    if( tag_all_literals ) {
+    if( tag_all_literals_ ) {
         for( size_t tag = 1; tag < n_tags_; ++tag ) {
             for( size_t k = 0; k < ins_n_fluents; ++k ) {
                 if( tagged_[k] ) {
@@ -337,8 +348,5 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals) :
             options_.is_enabled("ks0:print:merge:action") )
             merge.print(cout, *this);
     }
-}
-
-KS0_Instance::~KS0_Instance() {
 }
 

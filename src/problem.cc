@@ -750,6 +750,9 @@ void Instance::write_domain(ostream &os, int indent) const {
         sensors_[k]->write(os, indent, *this);
     }
 
+    // write additional elements (virtual function call)
+    write_domain_additional(os, indent);
+
     os << ")" << endl;
 }
 
@@ -795,6 +798,9 @@ void Instance::write_problem(ostream &os, const State *state, int indent) const 
         if( goal_literals_.size() > 1 ) os << ")";
         os << ")" << endl;
     }
+
+    // write additional elements (virtual function call)
+    write_problem_additional(os, state, indent);
 
     os << ")" << endl;
 }

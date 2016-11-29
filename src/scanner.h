@@ -409,7 +409,7 @@ class YY_PDDL_Scanner_CLASS YY_PDDL_Scanner_INHERIT
 /* declaration of externs for public use of yylex scanner */
 
 /* % here is the declaration from section2 %header{ */ 
-#line 168 "ppddl.lex"
+#line 169 "ppddl.lex"
 #endif
 #line 375 "/usr/local/lib/flexskel.h"
 

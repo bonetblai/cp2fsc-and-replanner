@@ -94,6 +94,10 @@ PDDL_Base::~PDDL_Base() {
         for( size_t j = 0; j < dom_hidden_[k].size(); ++j )
             delete dom_hidden_[k][j];
     }
+    for( size_t k = 0; k < dom_explicit_initial_states_.size(); ++k ) {
+        for( size_t j = 0; j < dom_explicit_initial_states_[k].size(); ++j )
+            delete dom_explicit_initial_states_[k][j];
+    }
     for( size_t k = 0; k < dom_actions_.size(); ++k )
         delete dom_actions_[k];
     for( size_t k = 0; k < dom_sensors_.size(); ++k )
@@ -3287,6 +3291,23 @@ void PDDL_Base::emit_instance(Instance &ins) const {
             assert(dynamic_cast<const InitLiteral*>(dom_hidden_[k][j]) != 0);
             static_cast<const InitLiteral*>(dom_hidden_[k][j])->emit(ins, ins.hidden_[k]);
 #endif
+        }
+    }
+
+    // emit initial states (only useful for conformant problem / ks0 translation)
+    if( !dom_explicit_initial_states_.empty() ) {
+        cout << "calculating " << dom_explicit_initial_states_.size() << " initial state(s)" << endl;
+        ins.explicit_initial_states_.resize(dom_explicit_initial_states_.size());
+        for( size_t k = 0; k < dom_explicit_initial_states_.size(); ++k ) {
+            for( size_t j = 0; j < dom_explicit_initial_states_[k].size(); ++j ) {
+#ifdef SMART
+                assert(dynamic_cast<const InitLiteral*>(dom_explicit_initial_states_[k][j].get()) != 0);
+                static_cast<const InitLiteral*>(dom_explicit_initial_states_[k][j].get())->emit(ins, ins.explicit_initial_states_[k]);
+#else
+                assert(dynamic_cast<const InitLiteral*>(dom_explicit_initial_states_[k][j]) != 0);
+                static_cast<const InitLiteral*>(dom_explicit_initial_states_[k][j])->emit(ins, ins.explicit_initial_states_[k]);
+#endif
+            }
         }
     }
 
