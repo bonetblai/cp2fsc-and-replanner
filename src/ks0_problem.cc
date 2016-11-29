@@ -25,15 +25,51 @@ using namespace std;
 KS0_Instance::KS0_Instance(const Instance &instance, bool tag_all_literals)
   : Instance(instance.options_),
     tag_all_literals_(tag_all_literals) {
+
+    StateSet initial_states;
+    map<const State*, const StateSet*> reachable_space_from_initial_state;
+    StateSet reachable_space;
+
+    // calculate reachable state space
+    if( instance.explicit_initial_states_.empty() ) {
+        cout << "HOLA.0" << endl;
+        instance.generate_initial_states(initial_states, true);
+        assert(0);
+        for( StateSet::const_iterator it = initial_states.begin(); it != initial_states.end(); ++it ) {
+            StateSet *space = new StateSet;
+            cout << "HOLA.1" << endl;
+            instance.generate_reachable_state_space(**it, *space, true);
+            cout << "HOLA.2" << endl;
+            reachable_space_from_initial_state.insert(make_pair(*it, space));
+            cout << "HOLA.3" << endl;
+            reachable_space.insert(space->begin(), space->end());
+            cout << "HOLA.4" << endl;
+            cout << "# reachable states from "; (*it)->print(cout, instance); cout << " = " << space->size() << endl;
+        }
+        cout << "HOLA.5" << endl;
+
+        cout << "# initial states = " << initial_states.size() << endl;
+        cout << "# reachable states = " << reachable_space.size() << endl;
+    } else {
+    }
+
+    assert(0);
+    translate(instance, initial_states, reachable_space_from_initial_state);
 }
 
 KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals)
   : Instance(instance.options_),
     tag_all_literals_(tag_all_literals) {
-    initialize(instance);
+    const StateSet &initial_states = instance.initial_states_;
+    const map<const State*, const StateSet*> &reachable_space_from_initial_state = instance.reachable_space_from_initial_state_;
+    translate(instance, initial_states, reachable_space_from_initial_state, instance.q0_, instance.fsc_states_);
 }
 
-void KS0_Instance::initialize(const CP_Instance &instance) {
+void KS0_Instance::translate(const Instance &instance,
+                             const StateSet &initial_states,
+                             const map<const State*, const StateSet*> &reachable_space_from_initial_state,
+                             int q0,
+                             int num_fsc_states) {
     // set name
     if( dynamic_cast<const InstanceName*>(instance.name_) != 0 )
         set_name(new InstanceName(*dynamic_cast<const InstanceName*>(instance.name_)));
@@ -41,7 +77,7 @@ void KS0_Instance::initialize(const CP_Instance &instance) {
         set_name(new CopyName(instance.name_->to_string()));
 
     // set number of tags; tag0 is the empty tag
-    n_tags_ = instance.initial_states_.size();
+    n_tags_ = initial_states.size();
     if( n_tags_ > 1 ) ++n_tags_;
     tag0_ = 0;
 
@@ -77,9 +113,9 @@ void KS0_Instance::initialize(const CP_Instance &instance) {
 
     // collect literals reachable from each initial state (tag)
     vector<index_set> reachable_literals;
-    for( StateSet::const_iterator it = instance.initial_states_.begin(); it != instance.initial_states_.end(); ++it ) {
-        map<const State*, const StateSet*>::const_iterator jt = instance.reachable_space_from_initial_state_.find(*it);
-        assert(jt != instance.reachable_space_from_initial_state_.end());
+    for( StateSet::const_iterator it = initial_states.begin(); it != initial_states.end(); ++it ) {
+        map<const State*, const StateSet*>::const_iterator jt = reachable_space_from_initial_state.find(*it);
+        assert(jt != reachable_space_from_initial_state.end());
 
         // collect all literals from states reachable from this initial state
         index_set literals;
@@ -90,8 +126,8 @@ void KS0_Instance::initialize(const CP_Instance &instance) {
         }
 
         // extend literals with fsc states
-        for( size_t q = 0; q < instance.fsc_states_; ++q ) {
-            literals.insert(1 + instance.q0_ + q);
+        for( size_t q = 0; q < num_fsc_states; ++q ) {
+            literals.insert(1 + q0 + q);
         }
 
         // store reachable literals
@@ -202,7 +238,7 @@ void KS0_Instance::initialize(const CP_Instance &instance) {
         bool known_pos = true;
         bool known_neg = true;
         int tag = n_tags_ > 1 ? 1 : 0;
-        for( StateSet::const_iterator it = instance.initial_states_.begin(); it != instance.initial_states_.end(); ++it, ++tag ) {
+        for( StateSet::const_iterator it = initial_states.begin(); it != initial_states.end(); ++it, ++tag ) {
             int tidx = tag_map_[tag*ins_n_fluents + k];
             if( (*it)->satisfy(k) ) {
                 known_neg = false;

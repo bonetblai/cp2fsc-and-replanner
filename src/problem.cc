@@ -1097,33 +1097,41 @@ void Instance::print_axioms(ostream &os) const {
     }
 }
 
-void Instance::generate_reachable_state_space(StateSet &hash) const {
+void Instance::generate_reachable_state_space(StateSet &hash, bool verbose) const {
     State state;
     set_initial_state(state);
     generate_reachable_state_space(state, hash);
 }
 
-void Instance::generate_reachable_state_space(const State &state, StateSet &hash) const {
+void Instance::generate_reachable_state_space(const State &state, StateSet &hash, bool verbose) const {
     deque<const State*> queue;
     State *seed = new State(state);
     queue.push_back(seed);
     hash.insert(seed);
     while( !queue.empty() ) {
         const State *s = queue.front();
-        //cout << "current state = "; s->print(cout, *this); cout << endl;
+        if( verbose ) {
+            cout << "current state = ";
+            s->print(cout, *this);
+            cout << endl;
+        }
         queue.pop_front();
         for( size_t k = 0; k < n_actions(); ++k ) {
             Action &act = *actions_[k];
             if( s->applicable(act) ) {
                 State *t = new State(*s);
                 t->apply(act, *this);
-                //cout << "   next state = "; t->print(cout, *this); cout << " : " << flush;
+                if( verbose ) {
+                    cout << "   next state = ";
+                    t->print(cout, *this);
+                    cout << " : " << flush;
+                }
                 pair<StateSet::iterator, bool> p = hash.insert(t);
                 if( p.second ) {
-                    //cout << "enqueued!" << endl;
+                    if( verbose ) cout << "enqueued!" << endl;
                     queue.push_back(t);
                 } else {
-                    //cout << "deleted!" << endl;
+                    if( verbose ) cout << "deleted!" << endl;
                     delete t;
                 }
             }
@@ -1131,7 +1139,7 @@ void Instance::generate_reachable_state_space(const State &state, StateSet &hash
     }
 }
 
-void Instance::generate_initial_states(StateSet &initial_states) const {
+void Instance::generate_initial_states(StateSet &initial_states, bool verbose) const {
     static State t;
     set_initial_state(t);
 
@@ -1144,6 +1152,11 @@ void Instance::generate_initial_states(StateSet &initial_states) const {
                 State *s = new State(t);
                 s->clear_non_primitive_fluents(*this);
                 s->apply_axioms(*this);
+                if( verbose ) {
+                    cout << "new initial state = ";
+                    s->print(cout, *this);
+                    cout << endl;
+                }
                 initial_states.insert(s);
             }
             if( i == 0 ) break;
