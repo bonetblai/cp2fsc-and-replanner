@@ -600,20 +600,20 @@ void Instance::calculate_non_primitive_and_observable_fluents() {
     }
 }
 
-void Instance::set_initial_state(State &state, bool apply_axioms) const {
-    for( index_set::const_iterator it = init_.literals_.begin(); it != init_.literals_.end(); ++it ) {
-        if( *it > 0 )
-            state.add(*it-1);
+void Instance::set_state(const Init &init, State &state, bool apply_axioms) const {
+    for( index_set::const_iterator it = init.literals_.begin(); it != init.literals_.end(); ++it ) {
+        if( *it > 0 ) state.add(*it - 1);
     }
     if( apply_axioms ) state.apply_axioms(*this);
 }
 
+void Instance::set_initial_state(State &state, bool apply_axioms) const {
+    set_state(init_, state, apply_axioms);
+}
+
 void Instance::set_hidden_state(int k, State &state) const {
     set_initial_state(state, false);
-    for( index_set::const_iterator it = hidden_[k].literals_.begin(); it != hidden_[k].literals_.end(); ++it ) {
-        if( *it > 0 )
-            state.add(*it-1);
-    }
+    set_state(hidden_[k], state, false);
     // close initial hidden state with axioms. Axioms in k-replanner
     // only appear in translations of lw1 problems.
     // (See explanation in solver.cc and generation of axioms in base.cc).

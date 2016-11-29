@@ -31,6 +31,7 @@ KS0_Instance::KS0_Instance(const Instance &instance, bool tag_all_literals)
     StateSet reachable_space;
 
     // calculate reachable state space
+    cout << Utils::error() << "this translation is not working!" << endl;
     if( instance.explicit_initial_states_.empty() ) {
         cout << "HOLA.0" << endl;
         instance.generate_initial_states(initial_states, true);
@@ -47,13 +48,25 @@ KS0_Instance::KS0_Instance(const Instance &instance, bool tag_all_literals)
             cout << "# reachable states from "; (*it)->print(cout, instance); cout << " = " << space->size() << endl;
         }
         cout << "HOLA.5" << endl;
-
-        cout << "# initial states = " << initial_states.size() << endl;
-        cout << "# reachable states = " << reachable_space.size() << endl;
     } else {
+        for( size_t k = 0; k < instance.explicit_initial_states_.size(); ++k ) {
+            State *state = new State;
+            instance.set_state(instance.explicit_initial_states_[k], *state);
+            cout << "state="; state->print(cout, &instance); cout << endl;
+            initial_states.insert(state);
+            cout << "(after insert) # initial states = " << initial_states.size() << endl;
+        }
+        if( !tag_all_literals_ ) {
+            cout << Utils::warning() << "using option 'tag-all-literals' because it's the only one supported when explicit initial states are used" << endl;
+            tag_all_literals_ = true;
+        }
     }
-
-    assert(0);
+    cout << "# initial states = " << initial_states.size() << endl;
+    cout << "# reachable states = " << reachable_space.size() << endl;
+    if( initial_states.empty() ) {
+        cout << Utils::error() << "there must be at least one initial state" << endl;
+        exit(-1);
+    }
     translate(instance, initial_states, reachable_space_from_initial_state);
 }
 
@@ -113,30 +126,32 @@ void KS0_Instance::translate(const Instance &instance,
 
     // collect literals reachable from each initial state (tag)
     vector<index_set> reachable_literals;
-    for( StateSet::const_iterator it = initial_states.begin(); it != initial_states.end(); ++it ) {
-        map<const State*, const StateSet*>::const_iterator jt = reachable_space_from_initial_state.find(*it);
-        assert(jt != reachable_space_from_initial_state.end());
+    if( !tag_all_literals_ ) {
+        for( StateSet::const_iterator it = initial_states.begin(); it != initial_states.end(); ++it ) {
+            map<const State*, const StateSet*>::const_iterator jt = reachable_space_from_initial_state.find(*it);
+            assert(jt != reachable_space_from_initial_state.end());
 
-        // collect all literals from states reachable from this initial state
-        index_set literals;
-        for( StateSet::const_iterator kt = jt->second->begin(); kt != jt->second->end(); ++kt ) {
-            for( State::const_iterator si = (*kt)->begin(); si != (*kt)->end(); ++si ) {
-                literals.insert(1+*si);
+            // collect all literals from states reachable from this initial state
+            index_set literals;
+            for( StateSet::const_iterator kt = jt->second->begin(); kt != jt->second->end(); ++kt ) {
+                for( State::const_iterator si = (*kt)->begin(); si != (*kt)->end(); ++si ) {
+                    literals.insert(1+*si);
+                }
             }
-        }
 
-        // extend literals with fsc states
-        for( size_t q = 0; q < num_fsc_states; ++q ) {
-            literals.insert(1 + q0 + q);
-        }
+            // extend literals with fsc states
+            for( size_t q = 0; q < num_fsc_states; ++q ) {
+                literals.insert(1 + q0 + q);
+            }
 
-        // store reachable literals
-        reachable_literals.push_back(literals);
+            // store reachable literals
+            reachable_literals.push_back(literals);
 
-        if( options_.is_enabled("ks0:print:reachable") ) {
-            cout << "reachable literals = ";
-            instance.write_atom_set(cout, literals);
-            cout << endl;
+            if( options_.is_enabled("ks0:print:reachable") ) {
+                cout << "reachable literals = ";
+                instance.write_atom_set(cout, literals);
+                cout << endl;
+            }
         }
     }
 

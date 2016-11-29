@@ -72,7 +72,7 @@ int main(int argc, const char *argv[]) {
     StringTable symbols(50, lowercase_map);
     bool        opt_debug_parser = false;
     string      opt_prefix = "";
-    bool        opt_tag_all_literals = false;
+    bool        opt_tag_all_literals = true;
     float       start_time = Utils::read_time_in_seconds();
 
     // print cmdline
@@ -109,8 +109,8 @@ int main(int argc, const char *argv[]) {
                 exit(-1);
             }
             opt_prefix = argv[++k];
-        } else if( !skip_options && !strcmp(argv[k], "--tag-all-literals") ) {
-            opt_tag_all_literals = true;
+        } else if( !skip_options && !strcmp(argv[k], "--no-tag-all-literals") ) {
+            opt_tag_all_literals = false;
         } else if( !skip_options && !strncmp(argv[k], "--options=", 10) ) {
             const char *options = &argv[k][10];
             parse_options(g_options, options);
@@ -161,6 +161,7 @@ int main(int argc, const char *argv[]) {
         instance.write_problem(cout);
     }
 
+#if 0 // THIS IS NOT WORKING W/ EXPLICIT INITIAL STATES: GUESS: EXPLICIT I-STATES ARE NOT PREPROCESSED
     cout << "preprocessing conformant problem..." << endl;
     Preprocessor prep(instance);
     prep.preprocess(true);
@@ -168,6 +169,7 @@ int main(int argc, const char *argv[]) {
         instance.write_domain(cout);
         instance.write_problem(cout);
     }
+#endif
 
     cout << "creating KS0 translation..." << endl;
     KS0_Instance ks0_instance(instance, opt_tag_all_literals);
@@ -176,6 +178,7 @@ int main(int argc, const char *argv[]) {
         ks0_instance.write_problem(cout);
     }
 
+#if 0 // THIS IS NOT WORKING W/ EXPLICIT INITIAL STATES: GUESS: EXPLICIT I-STATES ARE NOT PREPROCESSED
     cout << "preprocessing KS0 translation..." << endl;
     Preprocessor ks0_prep(ks0_instance);
     ks0_prep.preprocess(true);
@@ -183,6 +186,7 @@ int main(int argc, const char *argv[]) {
         ks0_instance.write_domain(cout);
         ks0_instance.write_problem(cout);
     }
+#endif
 
     // write output files
     cout << "writing files..." << flush;

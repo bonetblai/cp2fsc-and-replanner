@@ -254,6 +254,7 @@ class Instance {
     void simplify_conditions_and_invariants(const bool_vec &reachable_atoms, const bool_vec &static_atoms);
     void remove_actions(const bool_vec &set, index_vec &map);
     void calculate_non_primitive_and_observable_fluents();
+    void set_state(const Init &init, State &state, bool apply_axioms = true) const;
     void set_initial_state(State &state, bool apply_axioms = true) const;
     void set_hidden_state(int k, State &state) const;
     int num_hidden_states() const { return hidden_.size(); }
