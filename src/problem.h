@@ -69,9 +69,16 @@ class Instance {
 #endif
 
     struct When {
+      protected:
         index_set condition_;
         index_set effect_;
+
+      public:
         When() { }
+        index_set& condition() { return condition_; }
+        index_set& effect() { return effect_; }
+        const index_set& condition() const { return condition_; }
+        const index_set& effect() const { return effect_; }
         bool operator<(const When &when) const {
             return (condition_ < when.condition_) ||
                    ((condition_ == when.condition_) && (effect_ < when.effect_));

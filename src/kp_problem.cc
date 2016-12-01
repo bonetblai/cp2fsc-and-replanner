@@ -318,9 +318,9 @@ bool KP_Instance::calculate_relevant_assumptions(const Plan &plan,
 
         for( size_t i = 0; i < action.when_.size(); ++i ) {
             const When &when = action.when_[i];
-            for( index_set::const_iterator it = when.effect_.begin(); it != when.effect_.end(); ++it ) {
+            for( index_set::const_iterator it = when.effect().begin(); it != when.effect().end(); ++it ) {
                 if( (*it < 0) && (open.find(-*it) != open.end()) ) {
-                    if( when.condition_.size() > 1 ) {
+                    if( when.condition().size() > 1 ) {
                         cout << Utils::warning()
                              << "conditional effect with more than one literal in condition removes open condition ";
                         State::print_literal(std::cout, *it, this);
@@ -328,7 +328,7 @@ bool KP_Instance::calculate_relevant_assumptions(const Plan &plan,
                              << "Regression may be too strong. Consider removing conditional effect by enlarging precondition."
                              << endl;
                     }
-                    for( index_set::const_iterator jt = when.condition_.begin(); jt != when.condition_.end(); ++jt )
+                    for( index_set::const_iterator jt = when.condition().begin(); jt != when.condition().end(); ++jt )
                         to_be_added.insert(*jt > 0 ? (*jt % 2 == 0 ? *jt + 1 : *jt - 1) : -*jt);
                 }
             }
@@ -345,10 +345,10 @@ bool KP_Instance::calculate_relevant_assumptions(const Plan &plan,
 
         for( size_t i = 0; i < action.when_.size(); ++i ) {
             const When &when = action.when_[i];
-            for( index_set::const_iterator it = when.effect_.begin(); it != when.effect_.end(); ++it ) {
-                if( trajectory[k].satisfy(when.condition_) && (*it > 0) && (open.find(*it) != open.end()) ) {
+            for( index_set::const_iterator it = when.effect().begin(); it != when.effect().end(); ++it ) {
+                if( trajectory[k].satisfy(when.condition()) && (*it > 0) && (open.find(*it) != open.end()) ) {
                     to_be_added.insert(action.precondition_.begin(), action.precondition_.end());
-                    to_be_added.insert(when.condition_.begin(), when.condition_.end());
+                    to_be_added.insert(when.condition().begin(), when.condition().end());
                     to_be_removed.insert(*it);
                 }
             }
@@ -535,30 +535,30 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
         for( size_t i = 0; i < act.when_.size(); ++i ) {
             const When &when = act.when_[i];
             When sup_eff, can_eff;
-            for( index_set::const_iterator it = when.condition_.begin(); it != when.condition_.end(); ++it ) {
+            for( index_set::const_iterator it = when.condition().begin(); it != when.condition().end(); ++it ) {
                 int idx = *it > 0 ? *it-1 : -*it-1;
                 if( *it > 0 ) {
-                    sup_eff.condition_.insert(1 + 2*idx);
-                    can_eff.condition_.insert(-(1 + 2*idx+1));
+                    sup_eff.condition().insert(1 + 2*idx);
+                    can_eff.condition().insert(-(1 + 2*idx+1));
                 } else {
-                    sup_eff.condition_.insert(1 + 2*idx+1);
-                    can_eff.condition_.insert(-(1 + 2*idx));
+                    sup_eff.condition().insert(1 + 2*idx+1);
+                    can_eff.condition().insert(-(1 + 2*idx));
                 }
             }
-            for( index_set::const_iterator it = when.effect_.begin(); it != when.effect_.end(); ++it ) {
+            for( index_set::const_iterator it = when.effect().begin(); it != when.effect().end(); ++it ) {
                 int idx = *it > 0 ? *it-1 : -*it-1;
                 if( *it > 0 ) {
-                    sup_eff.effect_.insert(1 + 2*idx);
+                    sup_eff.effect().insert(1 + 2*idx);
                     if( observable_atoms.find(idx) == observable_atoms.end() )
-                        can_eff.effect_.insert(-(1 + 2*idx+1));
+                        can_eff.effect().insert(-(1 + 2*idx+1));
                 } else {
-                    sup_eff.effect_.insert(1 + 2*idx+1);
+                    sup_eff.effect().insert(1 + 2*idx+1);
                     if( observable_atoms.find(idx) == observable_atoms.end() )
-                        can_eff.effect_.insert(-(1 + 2*idx));
+                        can_eff.effect().insert(-(1 + 2*idx));
                 }
             }
             nact.when_.push_back(sup_eff);
-            if( !can_eff.effect_.empty() ) nact.when_.push_back(can_eff);
+            if( !can_eff.effect().empty() ) nact.when_.push_back(can_eff);
         }
 
         if( options_.is_enabled("kp:print:action:regular") ) {
@@ -593,13 +593,13 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
 
                 // conditional effect
                 When c_eff;
-                c_eff.condition_.insert(common_condition.begin(), common_condition.end());
-                c_eff.condition_.insert(-(1 + 2*idx));
-                c_eff.condition_.insert(-(1 + 2*idx+1));
+                c_eff.condition().insert(common_condition.begin(), common_condition.end());
+                c_eff.condition().insert(-(1 + 2*idx));
+                c_eff.condition().insert(-(1 + 2*idx+1));
                 if( n == 0 ) {
-                    c_eff.effect_.insert(1 + 2*idx);
+                    c_eff.effect().insert(1 + 2*idx);
                 } else {
-                    c_eff.effect_.insert(1 + 2*idx+1);
+                    c_eff.effect().insert(1 + 2*idx+1);
                 }
 
                 // add conditional effect to rule
@@ -943,28 +943,28 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
         for( size_t i = 0; i < act.when_.size(); ++i ) {
             const When &when = act.when_[i];
             When sup_eff, can_eff;
-            for( index_set::const_iterator it = when.condition_.begin(); it != when.condition_.end(); ++it ) {
+            for( index_set::const_iterator it = when.condition().begin(); it != when.condition().end(); ++it ) {
                 int idx = *it > 0 ? *it-1 : -*it-1;
                 if( *it > 0 ) {
-                    sup_eff.condition_.insert(1 + 2*idx);
-                    can_eff.condition_.insert(-(1 + 2*idx+1));
+                    sup_eff.condition().insert(1 + 2*idx);
+                    can_eff.condition().insert(-(1 + 2*idx+1));
                 } else {
-                    sup_eff.condition_.insert(1 + 2*idx+1);
-                    can_eff.condition_.insert(-(1 + 2*idx));
+                    sup_eff.condition().insert(1 + 2*idx+1);
+                    can_eff.condition().insert(-(1 + 2*idx));
                 }
             }
-            for( index_set::const_iterator it = when.effect_.begin(); it != when.effect_.end(); ++it ) {
+            for( index_set::const_iterator it = when.effect().begin(); it != when.effect().end(); ++it ) {
                 int idx = *it > 0 ? *it-1 : -*it-1;
                 if( *it > 0 ) {
-                    sup_eff.effect_.insert(1 + 2*idx);
-                    can_eff.effect_.insert(-(1 + 2*idx+1));
+                    sup_eff.effect().insert(1 + 2*idx);
+                    can_eff.effect().insert(-(1 + 2*idx+1));
                 } else {
-                    sup_eff.effect_.insert(1 + 2*idx+1);
-                    can_eff.effect_.insert(-(1 + 2*idx));
+                    sup_eff.effect().insert(1 + 2*idx+1);
+                    can_eff.effect().insert(-(1 + 2*idx));
                 }
             }
             nact.when_.push_back(sup_eff);
-            if( !can_eff.effect_.empty() ) nact.when_.push_back(can_eff);
+            if( !can_eff.effect().empty() ) nact.when_.push_back(can_eff);
         }
 
         if( options_.is_enabled("kp:print:action:regular") ) {
@@ -999,13 +999,13 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
 
                 // conditional effect
                 When c_eff;
-                c_eff.condition_.insert(common_condition.begin(), common_condition.end());
-                c_eff.condition_.insert(-(1 + 2*idx));
-                c_eff.condition_.insert(-(1 + 2*idx+1));
+                c_eff.condition().insert(common_condition.begin(), common_condition.end());
+                c_eff.condition().insert(-(1 + 2*idx));
+                c_eff.condition().insert(-(1 + 2*idx+1));
                 if( n == 0 ) {
-                    c_eff.effect_.insert(1 + 2*idx);
+                    c_eff.effect().insert(1 + 2*idx);
                 } else {
-                    c_eff.effect_.insert(1 + 2*idx+1);
+                    c_eff.effect().insert(1 + 2*idx+1);
                 }
 
                 // add conditional effect to rule
@@ -1349,8 +1349,8 @@ bool KP_Instance::apply_plan(const Plan &plan, const State &initial_state, State
         // the assumptions made with observations rules
         for( size_t i = 0; i < act.when_.size(); ++i ) {
             const Instance::When &w = act.when_[i];
-            if( final_state.satisfy(w.condition_) ) {
-                for( index_set::const_iterator it = w.condition_.begin(); it != w.condition_.end(); ++it ) {
+            if( final_state.satisfy(w.condition()) ) {
+                for( index_set::const_iterator it = w.condition().begin(); it != w.condition().end(); ++it ) {
                     if( *it > 0 ) {
                         support.add(*it - 1);
                     }

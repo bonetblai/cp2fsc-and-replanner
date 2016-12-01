@@ -148,7 +148,7 @@ void Instance::remove_unreachable_conditional_effects(const bool_vec &reachable_
 
         for( int j = 0; j < (int)act.when_.size(); ++j ) {
             bool reachable_effect = true;
-            for( index_set::const_iterator it = act.when_[j].condition_.begin(); it != act.when_[j].condition_.end(); ++it ) {
+            for( index_set::const_iterator it = act.when_[j].condition().begin(); it != act.when_[j].condition().end(); ++it ) {
                 //if( (*it > 0) && !reachable_atoms[*it-1] ) {
                 if( ((*it > 0) && !reachable_atoms[*it-1]) ||
                     ((*it > 0) && static_atoms[*it-1] && neg_literal_in_init[*it-1]) ||
@@ -284,7 +284,7 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
         // conditional effects
         for( int j = 0; j < (int)act.when_.size(); ++j ) {
             When &when = act.when_[j];
-            for( index_set::const_iterator p = when.condition_.begin(); p != when.condition_.end(); ) {
+            for( index_set::const_iterator p = when.condition().begin(); p != when.condition().end(); ) {
                 int index = *p > 0 ? *p - 1 : -*p - 1;
                 if( protected_atoms_.find(index) != protected_atoms_.end() ) {
                     ++p;
@@ -298,7 +298,7 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
                     State::print_literal(cout, *p, this);
                     cout << " from " << act.name_ << endl;
 #endif
-                    when.condition_.erase(p++);
+                    when.condition().erase(p++);
                 } else {
                     ++p;
                 }
@@ -306,8 +306,8 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
 
             // If condition becomes empty, make effects unconditional and
             // remove conditional effect
-            if( when.condition_.empty() ) {
-                act.effect_.insert(when.effect_.begin(), when.effect_.end());
+            if( when.condition().empty() ) {
+                act.effect_.insert(when.effect().begin(), when.effect().end());
                 act.when_[j] = act.when_.back();
                 act.when_.pop_back();
                 --j;
@@ -511,12 +511,12 @@ void Instance::remove_atoms(const bool_vec &set, index_vec &map) {
         // update conditional effects
         for( int j = 0; j < (int)actions_[k]->when_.size(); ++j ) {
             When &when = actions_[k]->when_[j];
-            when.condition_.signed_remap(rm_map);
-            when.effect_.signed_remap(rm_map);
+            when.condition().signed_remap(rm_map);
+            when.effect().signed_remap(rm_map);
 
             // if condition becomes empty, effects are unconditional
-            if( when.condition_.empty() ) {
-                actions_[k]->effect_.insert(when.effect_.begin(), when.effect_.end());
+            if( when.condition().empty() ) {
+                actions_[k]->effect_.insert(when.effect().begin(), when.effect().end());
                 actions_[k]->when_[j] = actions_[k]->when_.back();
                 actions_[k]->when_.pop_back();
                 --j;
@@ -849,13 +849,13 @@ void Instance::Action::print(ostream &os, const Instance &i) const {
     if( when_.size() > 0 ) {
         os << "  when:";
         for( when_vec::const_iterator wi = when_.begin(); wi != when_.end(); ++wi ) {
-            for( index_set::const_iterator it = wi->condition_.begin(); it != wi->condition_.end(); ++it ) {
+            for( index_set::const_iterator it = wi->condition().begin(); it != wi->condition().end(); ++it ) {
                 int idx = *it > 0 ? *it-1 : -*it-1;
                 os << (*it > 0 ? " " : " -") << idx << ".";
                 State::print_literal(os, 1 + idx, &i);
             }
             os << " ==> :effect";
-            for( index_set::const_iterator it = wi->effect_.begin(); it != wi->effect_.end(); ++it ) {
+            for( index_set::const_iterator it = wi->effect().begin(); it != wi->effect().end(); ++it ) {
                 int idx = *it > 0 ? *it-1 : -*it-1;
                 os << (*it > 0 ? " " : " -") << idx << ".";
                 State::print_literal(os, 1 + idx, &i);
@@ -906,24 +906,24 @@ void Instance::Action::write(ostream &os, int indent, const Instance &instance) 
         // conditional effects
         for( size_t i = 0; i < when_.size(); ++i ) {
             const When &w = when_[i];
-            int n_ceffects = w.effect_.size();
+            int n_ceffects = w.effect().size();
             if( n_ceffects > 0 ) {
-                assert(!w.condition_.empty());
+                assert(!w.condition().empty());
                 if( (i > 0) || (effect_.size() > 0) )
                     os << endl << string(2 * indent, ' ') << "            ";
                 os << " (when";
 
                 // condition
-                if( (w.condition_.size() > 1) || always_write_conjunction_ ) os << " (and";
-                for( index_set::const_iterator p = w.condition_.begin(); p != w.condition_.end(); ++p ) {
+                if( (w.condition().size() > 1) || always_write_conjunction_ ) os << " (and";
+                for( index_set::const_iterator p = w.condition().begin(); p != w.condition().end(); ++p ) {
                     os << " ";
                     State::print_literal(os, *p, &instance);
                 }
-                if( (w.condition_.size() > 1) || always_write_conjunction_ ) os << ")";
+                if( (w.condition().size() > 1) || always_write_conjunction_ ) os << ")";
 
                 // effects
                 if( n_ceffects > 1 ) os << " (and";
-                for( index_set::const_iterator p = w.effect_.begin(); p != w.effect_.end(); ++p ) {
+                for( index_set::const_iterator p = w.effect().begin(); p != w.effect().end(); ++p ) {
                     os << " ";
                     State::print_literal(os, *p, &instance);
                 }
@@ -1210,12 +1210,12 @@ void Instance::create_deductive_rules() {
                 for( size_t i = 0; i < invariant.size(); ++i ) {
                     int lit = invariant[i];
                     if( i != k ) {
-                        c_eff.condition_.insert(-lit);
-                        if( c_eff.effect_.contains(-lit) )
-                           c_eff.effect_.clear();
+                        c_eff.condition().insert(-lit);
+                        if( c_eff.effect().contains(-lit) )
+                           c_eff.effect().clear();
                     } else {
-                        if( !c_eff.condition_.contains(lit) )
-                            c_eff.effect_.insert(lit);
+                        if( !c_eff.condition().contains(lit) )
+                            c_eff.effect().insert(lit);
                     }
                 }
             } else {
@@ -1224,15 +1224,15 @@ void Instance::create_deductive_rules() {
                 for( size_t i = 0; i < invariant.size(); ++i ) {
                     int lit = invariant[i];
                     if( i == k ) {
-                        c_eff.condition_.insert(lit);
+                        c_eff.condition().insert(lit);
                     } else {
-                        c_eff.effect_.insert(-lit);
+                        c_eff.effect().insert(-lit);
                     }
                 }
             }
 
             // push conditional effect
-            if( !c_eff.effect_.empty() ) {
+            if( !c_eff.effect().empty() ) {
                 rule->when_.push_back(c_eff);
 #ifdef SMART
                 deductive_rules_.emplace_back(move(rule));

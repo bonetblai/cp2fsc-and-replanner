@@ -104,11 +104,11 @@ void KS0_Instance::translate(const Instance &instance,
         const Action &act = *instance.actions_[k];
         for( size_t i = 0; i < act.when_.size(); ++i ) {
             const When &when = act.when_[i];
-            for( index_set::const_iterator it = when.condition_.begin(); it != when.condition_.end(); ++it ) {
+            for( index_set::const_iterator it = when.condition().begin(); it != when.condition().end(); ++it ) {
                 int idx = *it < 0 ? -*it-1 : *it-1;
                 tagged_[idx] = true;
             }
-            for( index_set::const_iterator it = when.effect_.begin(); it != when.effect_.end(); ++it ) {
+            for( index_set::const_iterator it = when.effect().begin(); it != when.effect().end(); ++it ) {
                 int idx = *it < 0 ? -*it-1 : *it-1;
                 tagged_[idx] = true;
             }
@@ -319,29 +319,29 @@ void KS0_Instance::translate(const Instance &instance,
                 bool safe = true;
 
                 // condition
-                for( index_set::const_iterator it = when.condition_.begin(); it != when.condition_.end(); ++it ) {
+                for( index_set::const_iterator it = when.condition().begin(); it != when.condition().end(); ++it ) {
                     int idx = *it < 0 ? -*it-1 : *it-1;
                     int tidx = tag_map_[tag*ins_n_fluents + idx];
                     if( (tidx == -1) && (*it > 0) ) { safe = false; break; }
                     if( tidx == -1 ) continue;
                     if( *it > 0 ) {
-                        eff.condition_.insert(1 + tidx);
+                        eff.condition().insert(1 + tidx);
                     } else {
-                        eff.condition_.insert(-(1 + tidx));
+                        eff.condition().insert(-(1 + tidx));
                     }
                 }
                 if( !safe ) continue;
 
                 // effects
-                for( index_set::const_iterator it = when.effect_.begin(); it != when.effect_.end(); ++it ) {
+                for( index_set::const_iterator it = when.effect().begin(); it != when.effect().end(); ++it ) {
                     int idx = *it < 0 ? -*it-1 : *it-1;
                     int tidx = tag_map_[tag*ins_n_fluents + idx];
                     if( (tidx == -1) && (*it > 0) ) { safe = false; break; }
                     if( tidx == -1 ) continue;
                     if( *it > 0 ) {
-                        eff.effect_.insert(1 + tidx);
+                        eff.effect().insert(1 + tidx);
                     } else {
-                        eff.effect_.insert(-(1 + tidx));
+                        eff.effect().insert(-(1 + tidx));
                     }
                 }
                 if( !safe ) continue;
@@ -388,10 +388,10 @@ void KS0_Instance::translate(const Instance &instance,
             for( size_t tag = 1; tag < n_tags_; ++tag ) {
                 int tidx = tag_map_[tag*ins_n_fluents + *it];
                 assert(tidx != -1);
-                merge_eff.condition_.insert(1 + tidx);
+                merge_eff.condition().insert(1 + tidx);
             }
             int tidx = tag_map_[tag0_*ins_n_fluents + *it];
-            merge_eff.effect_.insert(1 + tidx);
+            merge_eff.effect().insert(1 + tidx);
             merge.when_.push_back(merge_eff);
         }
 

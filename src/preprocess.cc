@@ -58,8 +58,8 @@ void Preprocessor::mark_inconsistent_actions(bool_vec &actions_to_remove) {
         if( !actions_to_remove[k] ) {
             for( int i = 0; i < (int)act.when_.size(); ++i ) {
                 Instance::When &when = act.when_[i];
-                for( index_set::const_iterator it = when.effect_.begin(); it != when.effect_.end(); ++it ) {
-                    if( when.effect_.contains(-*it) ) {
+                for( index_set::const_iterator it = when.effect().begin(); it != when.effect().end(); ++it ) {
+                    if( when.effect().contains(-*it) ) {
                         act.when_[i] = act.when_.back();
                         act.when_.pop_back();
                         --i;
@@ -90,8 +90,8 @@ void Preprocessor::mark_useless_actions(bool_vec &actions_to_remove) {
         // remove useless conditional effects
         for( int i = 0; i < (int)act.when_.size(); ++i ) {
             bool useless_effect = true;
-            for( index_set::const_iterator it = act.when_[i].effect_.begin(); it != act.when_[i].effect_.end(); ++it ) {
-                if( !act.when_[i].condition_.contains(*it) ) {
+            for( index_set::const_iterator it = act.when_[i].effect().begin(); it != act.when_[i].effect().end(); ++it ) {
+                if( !act.when_[i].condition().contains(*it) ) {
                     useless_effect = false;
                     break;
                 }
@@ -222,7 +222,7 @@ void Preprocessor::compute_reachability(bool_vec &reachable_atoms, bool_vec &rea
             // add all positive effects for firable conditional effects
             for( Instance::when_vec::const_iterator it = act.when_.begin(); it != act.when_.end(); ++it ) {
                 bool reachable_effect = true;
-                for( index_set::const_iterator p = it->condition_.begin(); p != it->condition_.end(); ++p ) {
+                for( index_set::const_iterator p = it->condition().begin(); p != it->condition().end(); ++p ) {
                      if( (*p > 0) && !reachable_atoms[*p - 1] ) {
                          reachable_effect = false;
                          break;
@@ -231,7 +231,7 @@ void Preprocessor::compute_reachability(bool_vec &reachable_atoms, bool_vec &rea
                 if( !reachable_effect ) continue;
 
                 // add all positive effects
-                for( index_set::const_iterator p = it->effect_.begin(); p != it->effect_.end(); ++p ) {
+                for( index_set::const_iterator p = it->effect().begin(); p != it->effect().end(); ++p ) {
                     if( (*p > 0) && !reachable_atoms[*p - 1] ) {
                         reachable_atoms[*p - 1] = true;
                         fix_point_reached = false;
@@ -393,7 +393,7 @@ void Preprocessor::compute_static_atoms(const bool_vec &reachable_actions, bool_
             // conditional effects
             for( size_t i = 0; i < act.when_.size(); ++i ) {
                 const Instance::When &when = act.when_[i];
-                for( index_set::const_iterator it = when.effect_.begin(); it != when.effect_.end(); ++it ) {
+                for( index_set::const_iterator it = when.effect().begin(); it != when.effect().end(); ++it ) {
                     if( (*it > 0) && !init[*it-1] )
                         static_atoms[*it-1] = false;
                     else if( (*it < 0) && init[-*it-1] )
@@ -445,12 +445,12 @@ void Preprocessor::compute_action_compilation(Instance::Action &action) {
         bool valid_completion = true;
         for( size_t i = 0; i < action.when_.size(); ++i ) {
             const Instance::When &when = action.when_[i];
-            if( when.effect_.contains(lit) ) {
-                if( when.condition_.empty() ) {
+            if( when.effect().contains(lit) ) {
+                if( when.condition().empty() ) {
                     valid_completion = false;
                     break;
                 } else {
-                    completion.insert(-*when.condition_.begin());
+                    completion.insert(-*when.condition().begin());
                 }
             }
         }
@@ -460,7 +460,7 @@ void Preprocessor::compute_action_compilation(Instance::Action &action) {
         valid_completion = false;
         for( size_t i = 0; i < action.when_.size(); ++i ) {
             const Instance::When &when = action.when_[i];
-            if( when.condition_.contains(lit) && (when.condition_.size() == 1) && when.effect_.contains(-lit) ) {
+            if( when.condition().contains(lit) && (when.condition().size() == 1) && when.effect().contains(-lit) ) {
                 valid_completion = true;
                 break;
             }
@@ -481,8 +481,8 @@ void Preprocessor::compute_action_compilation(Instance::Action &action) {
 
             if( !completion.empty() ) {
                 Instance::When new_ceff;
-                new_ceff.condition_ = completion;
-                new_ceff.effect_.insert(-lit);
+                new_ceff.condition() = completion;
+                new_ceff.effect().insert(-lit);
                 action.when_.push_back(new_ceff);
             } else {
                 action.effect_.insert(-lit);

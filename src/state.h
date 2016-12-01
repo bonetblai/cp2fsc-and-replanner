@@ -177,7 +177,7 @@ class State {
         State clone(*this);
         apply(act.effect_);
         for( size_t j = 0; j < act.when_.size(); ++j )
-            conditional_apply(clone, act.when_[j].condition_, act.when_[j].effect_);
+            conditional_apply(clone, act.when_[j].condition(), act.when_[j].effect());
     }
     void apply_axioms(const Instance &ins) {
 #ifdef SMART

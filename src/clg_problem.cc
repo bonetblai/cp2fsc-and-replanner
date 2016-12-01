@@ -149,28 +149,28 @@ void CLG_Instance::create_regular_action(const Action &action, int action_index)
     for( size_t i = 0; i < action.when_.size(); ++i ) {
         const When &when = action.when_[i];
         When sup_eff, can_eff;
-        for( index_set::const_iterator it = when.condition_.begin(); it != when.condition_.end(); ++it ) {
+        for( index_set::const_iterator it = when.condition().begin(); it != when.condition().end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
             if( *it > 0 ) {
-                sup_eff.condition_.insert(1 + 2*idx);
-                can_eff.condition_.insert(-(1 + 2*idx+1));
+                sup_eff.condition().insert(1 + 2*idx);
+                can_eff.condition().insert(-(1 + 2*idx+1));
             } else {
-                sup_eff.condition_.insert(1 + 2*idx+1);
-                can_eff.condition_.insert(-(1 + 2*idx));
+                sup_eff.condition().insert(1 + 2*idx+1);
+                can_eff.condition().insert(-(1 + 2*idx));
             }
         }
-        for( index_set::const_iterator it = when.effect_.begin(); it != when.effect_.end(); ++it ) {
+        for( index_set::const_iterator it = when.effect().begin(); it != when.effect().end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
             if( *it > 0 ) {
-                sup_eff.effect_.insert(1 + 2*idx);
-                can_eff.effect_.insert(-(1 + 2*idx+1));
+                sup_eff.effect().insert(1 + 2*idx);
+                can_eff.effect().insert(-(1 + 2*idx+1));
             } else {
-                sup_eff.effect_.insert(1 + 2*idx+1);
-                can_eff.effect_.insert(-(1 + 2*idx));
+                sup_eff.effect().insert(1 + 2*idx+1);
+                can_eff.effect().insert(-(1 + 2*idx));
             }
         }
         nact.when_.push_back(sup_eff);
-        if( !can_eff.effect_.empty() ) nact.when_.push_back(can_eff);
+        if( !can_eff.effect().empty() ) nact.when_.push_back(can_eff);
     }
 
     if( options_.is_enabled("kp:print:action:regular") )

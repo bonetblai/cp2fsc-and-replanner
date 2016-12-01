@@ -192,23 +192,23 @@ CP_Instance::CP_Instance(const Instance &ins,
                         When base_c_eff;
 
                         // condition
-                        base_c_eff.condition_.insert(1 + q0_+q);
-                        base_c_eff.condition_.insert(obs.begin(), obs.end());
+                        base_c_eff.condition().insert(1 + q0_+q);
+                        base_c_eff.condition().insert(obs.begin(), obs.end());
 
                         // effects
-                        base_c_eff.effect_.insert(act.effect_.begin(), act.effect_.end());
+                        base_c_eff.effect().insert(act.effect_.begin(), act.effect_.end());
 
                         // effects for non-primitive fluents for base conditional effect
-                        base_c_eff.effect_.insert(np_ns_effect.begin(), np_ns_effect.end());
+                        base_c_eff.effect().insert(np_ns_effect.begin(), np_ns_effect.end());
 
                         // effect for clearing observation
                         for( index_set::const_iterator it = obs.begin(); it != obs.end(); ++it )
-                            base_c_eff.effect_.insert(-*it);
+                            base_c_eff.effect().insert(-*it);
 
                         // effects for changing (FSC) state
                         if( q != qp ) {
-                            base_c_eff.effect_.insert(-(1 + q0_+q));
-                            base_c_eff.effect_.insert(1 + q0_+qp);
+                            base_c_eff.effect().insert(-(1 + q0_+q));
+                            base_c_eff.effect().insert(1 + q0_+qp);
                         }
                         nact.when_.push_back(base_c_eff);
                     }
@@ -216,26 +216,26 @@ CP_Instance::CP_Instance(const Instance &ins,
                     // conditional effects of action
                     for( size_t i = 0; i < act.when_.size(); ++i ) {
                         const When &w = act.when_[i];
-                        if( consistent_with_obs(obs_idx, w.condition_) ) {
+                        if( consistent_with_obs(obs_idx, w.condition()) ) {
                             When c_eff;
 
                             // condition
-                            c_eff.condition_.insert(1 + q0_+q);
-                            c_eff.condition_.insert(obs.begin(), obs.end());
-                            c_eff.condition_.insert(w.condition_.begin(), w.condition_.end());
+                            c_eff.condition().insert(1 + q0_+q);
+                            c_eff.condition().insert(obs.begin(), obs.end());
+                            c_eff.condition().insert(w.condition().begin(), w.condition().end());
 
                             // effects
-                            c_eff.effect_.insert(w.effect_.begin(), w.effect_.end());
-                            c_eff.effect_.insert(np_ns_effect.begin(), np_ns_effect.end());
+                            c_eff.effect().insert(w.effect().begin(), w.effect().end());
+                            c_eff.effect().insert(np_ns_effect.begin(), np_ns_effect.end());
 
                             // effect for clearing observation
                             for( index_set::const_iterator it = obs.begin(); it != obs.end(); ++it )
-                                c_eff.effect_.insert(-*it);
+                                c_eff.effect().insert(-*it);
 
                             // effects for changing (FSC) state
                             if( q != qp ) {
-                                c_eff.effect_.insert(-(1 + q0_+q));
-                                c_eff.effect_.insert(1 + q0_+qp);
+                                c_eff.effect().insert(-(1 + q0_+q));
+                                c_eff.effect().insert(1 + q0_+qp);
                             }
 
                             // add conditional effect to new action
@@ -252,8 +252,8 @@ CP_Instance::CP_Instance(const Instance &ins,
     for( size_t k = 0; k < ins.n_axioms(); ++k ) {
         Axiom &axiom = *ins.axioms_[k];
         When eff;
-        eff.condition_ = axiom.body();
-        eff.effect_ = axiom.head();
+        eff.condition() = axiom.body();
+        eff.effect() = axiom.head();
         ramif.when_.push_back(eff);
     }
 }

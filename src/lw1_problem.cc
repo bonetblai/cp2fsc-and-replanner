@@ -941,48 +941,48 @@ void LW1_Instance::create_regular_action(const Action &action,
     for( size_t i = 0; i < action.when_.size(); ++i ) {
         const When &when = action.when_[i];
         When sup_eff, can_eff, kps_eff;
-        for( index_set::const_iterator it = when.condition_.begin(); it != when.condition_.end(); ++it ) {
+        for( index_set::const_iterator it = when.condition().begin(); it != when.condition().end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
             assert(normal_execution_atom_ != idx);
             assert(last_action_atoms_.find(idx) == last_action_atoms_.end());
             assert(sensing_enabler_atoms_.find(idx) == sensing_enabler_atoms_.end());
             if( *it > 0 ) {
-                sup_eff.condition_.insert(1 + 2*idx);
-                can_eff.condition_.insert(-(1 + 2*idx+1));
+                sup_eff.condition().insert(1 + 2*idx);
+                can_eff.condition().insert(-(1 + 2*idx+1));
                 if( options_.is_enabled("lw1:enable-kp/s") )
-                    kps_eff.condition_.insert(1 + kps_atoms_.at(idx));
+                    kps_eff.condition().insert(1 + kps_atoms_.at(idx));
             } else {
-                sup_eff.condition_.insert(1 + 2*idx+1);
-                can_eff.condition_.insert(-(1 + 2*idx));
+                sup_eff.condition().insert(1 + 2*idx+1);
+                can_eff.condition().insert(-(1 + 2*idx));
                 if( options_.is_enabled("lw1:enable-kp/s") )
-                    kps_eff.condition_.insert(-(1 + kps_atoms_.at(idx)));
+                    kps_eff.condition().insert(-(1 + kps_atoms_.at(idx)));
             }
         }
-        for( index_set::const_iterator it = when.effect_.begin(); it != when.effect_.end(); ++it ) {
+        for( index_set::const_iterator it = when.effect().begin(); it != when.effect().end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
             assert(normal_execution_atom_ != idx);
             assert(last_action_atoms_.find(idx) == last_action_atoms_.end());
             assert(sensing_enabler_atoms_.find(idx) == sensing_enabler_atoms_.end());
             if( *it > 0 ) {
-                sup_eff.effect_.insert(1 + 2*idx);
+                sup_eff.effect().insert(1 + 2*idx);
                 if( observable_atoms.find(idx) == observable_atoms.end() )
-                    can_eff.effect_.insert(-(1 + 2*idx+1));
+                    can_eff.effect().insert(-(1 + 2*idx+1));
                 if( options_.is_enabled("lw1:enable-kp/s") )
-                    kps_eff.effect_.insert(1 + kps_atoms_.at(idx));
+                    kps_eff.effect().insert(1 + kps_atoms_.at(idx));
             } else {
-                sup_eff.effect_.insert(1 + 2*idx+1);
+                sup_eff.effect().insert(1 + 2*idx+1);
                 if( observable_atoms.find(idx) == observable_atoms.end() )
-                    can_eff.effect_.insert(-(1 + 2*idx));
+                    can_eff.effect().insert(-(1 + 2*idx));
                 if( options_.is_enabled("lw1:enable-kp/s") )
-                    kps_eff.effect_.insert(-(1 + kps_atoms_.at(idx)));
+                    kps_eff.effect().insert(-(1 + kps_atoms_.at(idx)));
             }
             if( !options_.is_enabled("lw1:strict") || options_.is_enabled("lw1:boost:literals-for-observables:dynamic") ) {
-                lw1_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, sup_eff.effect_);
-                lw1_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, can_eff.effect_);
+                lw1_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, sup_eff.effect());
+                lw1_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, can_eff.effect());
             }
         }
         nact.when_.push_back(sup_eff);
-        if( !can_eff.effect_.empty() ) nact.when_.push_back(can_eff);
+        if( !can_eff.effect().empty() ) nact.when_.push_back(can_eff);
         if( options_.is_enabled("lw1:enable-kp/s") ) nact.when_.push_back(kps_eff);
     }
 
@@ -1016,8 +1016,8 @@ void LW1_Instance::create_drule_for_var(const Action &action) {
             assert(*it < 0);
             int index = -*it - 1;
             //When when;
-            //when.condition_.insert(-(1 + 2*index));
-            //when.effect_.insert(1 + 2*index + 1);
+            //when.condition().insert(-(1 + 2*index));
+            //when.effect().insert(1 + 2*index + 1);
             //nact.when_.push_back(when);
             nact.effect_.insert(1 + 2*index + 1);
         }
@@ -1288,26 +1288,26 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                 for( index_set::const_iterator it = action.effect_.begin(); it != action.effect_.end(); ++it ) {
                     int index = *it > 0 ? *it - 1 : -*it - 1;
                     When w;
-                    w.condition_.insert(*it > 0 ? -(1 + 2*index + 1) : -(1 + 2*index));
-                    w.effect_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
-                    if( options_.is_enabled("lw1:boost:complete-effects:type4:obs") ) complete_effect(w.effect_, *it); // CHECK
+                    w.condition().insert(*it > 0 ? -(1 + 2*index + 1) : -(1 + 2*index));
+                    w.effect().insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
+                    if( options_.is_enabled("lw1:boost:complete-effects:type4:obs") ) complete_effect(w.effect(), *it); // CHECK
                     nact->when_.push_back(w);
                 }
 
                 // each conditional effect C => L becomes: KC, -K-L => KL
                 for( size_t k = 0; k < action.when_.size(); ++k ) {
                     const When &when = action.when_[k];
-                    assert(when.effect_.size() == 1);
-                    int head = *when.effect_.begin();
+                    assert(when.effect().size() == 1);
+                    int head = *when.effect().begin();
                     int head_index = head > 0 ? head - 1 : -head - 1;
                     When w;
-                    w.effect_.insert(head > 0 ? 1 + 2*head_index : 1 + 2*head_index + 1);
-                    w.condition_.insert(head > 0 ? -(1 + 2*head_index + 1) : -(1 + 2*head_index));
-                    for( index_set::const_iterator it = when.condition_.begin(); it != when.condition_.end(); ++it ) {
+                    w.effect().insert(head > 0 ? 1 + 2*head_index : 1 + 2*head_index + 1);
+                    w.condition().insert(head > 0 ? -(1 + 2*head_index + 1) : -(1 + 2*head_index));
+                    for( index_set::const_iterator it = when.condition().begin(); it != when.condition().end(); ++it ) {
                         int index = *it > 0 ? *it - 1 : -*it - 1;
-                        w.condition_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
+                        w.condition().insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
                     }
-                    if( options_.is_enabled("lw1:boost:complete-effects:type4:obs") ) complete_effect(w.effect_, head); // CHECK
+                    if( options_.is_enabled("lw1:boost:complete-effects:type4:obs") ) complete_effect(w.effect(), head); // CHECK
                     nact->when_.push_back(w);
                 }
             } else {
@@ -1374,26 +1374,26 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             for( index_set::const_iterator it = action.effect_.begin(); it != action.effect_.end(); ++it ) {
                 int index = *it > 0 ? *it - 1 : -*it - 1;
                 When w;
-                w.condition_.insert(*it > 0 ? -(1 + 2*index + 1) : -(1 + 2*index));
-                w.effect_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
-                if( options_.is_enabled("lw1:boost:complete-effects:type4:obs") ) complete_effect(w.effect_, *it); // CHECK
+                w.condition().insert(*it > 0 ? -(1 + 2*index + 1) : -(1 + 2*index));
+                w.effect().insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
+                if( options_.is_enabled("lw1:boost:complete-effects:type4:obs") ) complete_effect(w.effect(), *it); // CHECK
                 nact->when_.push_back(w);
             }
 
             // each conditional effect C => L becomes: KC, -K-L => KL
             for( size_t k = 0; k < action.when_.size(); ++k ) {
                 const When &when = action.when_[k];
-                assert(when.effect_.size() == 1);
-                int head = *when.effect_.begin();
+                assert(when.effect().size() == 1);
+                int head = *when.effect().begin();
                 int head_index = head > 0 ? head - 1 : -head - 1;
                 When w;
-                w.effect_.insert(head > 0 ? 1 + 2*head_index : 1 + 2*head_index + 1);
-                w.condition_.insert(head > 0 ? -(1 + 2*head_index + 1) : -(1 + 2*head_index));
-                for( index_set::const_iterator it = when.condition_.begin(); it != when.condition_.end(); ++it ) {
+                w.effect().insert(head > 0 ? 1 + 2*head_index : 1 + 2*head_index + 1);
+                w.condition().insert(head > 0 ? -(1 + 2*head_index + 1) : -(1 + 2*head_index));
+                for( index_set::const_iterator it = when.condition().begin(); it != when.condition().end(); ++it ) {
                     int index = *it > 0 ? *it - 1 : -*it - 1;
-                    w.condition_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
+                    w.condition().insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
                 }
-                if( options_.is_enabled("lw1:boost:complete-effects:type4:obs") ) complete_effect(w.effect_, head); // CHECK
+                if( options_.is_enabled("lw1:boost:complete-effects:type4:obs") ) complete_effect(w.effect(), head); // CHECK
                 nact->when_.push_back(w);
             }
 

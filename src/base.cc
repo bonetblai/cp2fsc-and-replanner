@@ -4376,8 +4376,8 @@ void PDDL_Base::ConditionalEffect::remap_parameters(const var_symbol_vec &old_pa
 
 void PDDL_Base::ConditionalEffect::emit(Instance &ins, index_set &eff, Instance::when_vec &when) const {
     Instance::When single_when;
-    condition_->emit(ins, single_when.condition_);
-    effect_->emit(ins, single_when.effect_, when);
+    condition_->emit(ins, single_when.condition());
+    effect_->emit(ins, single_when.effect(), when);
     when.push_back(single_when);
 }
 
