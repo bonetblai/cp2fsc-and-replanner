@@ -238,7 +238,8 @@ class State {
         } else {
             std::string str;
             if( literal < 0 ) str += "(not ";
-            str += std::string("(") + ins->atoms_[literal < 0 ? -literal - 1 : literal - 1]->name_->to_string() + ")";
+            //str += std::string("(") + ins->atoms_[literal < 0 ? -literal - 1 : literal - 1]->name_->to_string() + ")";
+            str += std::string("(") + ins->atoms_[literal < 0 ? -literal - 1 : literal - 1]->name() + ")";
             if( literal < 0 ) str += ")";
             return str;
         }

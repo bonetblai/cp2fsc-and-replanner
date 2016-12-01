@@ -119,7 +119,7 @@ void KS0_Instance::translate(const Instance &instance,
         cout << "literals that *must* be tagged =";
         for( size_t k = 0; k < ins_n_fluents; ++k ) {
             if( tagged_[k] )
-                cout << " " << k << "." << instance.atoms_[k]->name_;
+                cout << " " << k << "." << instance.atoms_[k]->name();
         }
         cout << endl;
     }
@@ -162,7 +162,7 @@ void KS0_Instance::translate(const Instance &instance,
     for( size_t k = 0; k < ins_n_fluents; ++k ) {
         const Atom &atom = *instance.atoms_[k];
         string lit_name;
-        char *dup = strdup(atom.name_->to_string().c_str()), *aux = 0;
+        char *dup = strdup(atom.name().c_str()), *aux = 0;
         if( *dup == '(' ) {
             aux = dup;
             dup = &dup[1];
@@ -192,7 +192,7 @@ void KS0_Instance::translate(const Instance &instance,
                 if( tagged_[k] ) {
                     const Atom &atom = *instance.atoms_[k];
                     string lit_name;
-                    char *dup = strdup(atom.name_->to_string().c_str()), *aux = 0;
+                    char *dup = strdup(atom.name().c_str()), *aux = 0;
                     if( *dup == '(' ) {
                         aux = dup;
                         dup = &dup[1];
@@ -223,7 +223,7 @@ void KS0_Instance::translate(const Instance &instance,
                 const Atom &atom = *instance.atoms_[*it-1];
                 if( tagged_[*it-1] ) {
                     string lit_name;
-                    char *dup = strdup(atom.name_->to_string().c_str()), *aux = 0;
+                    char *dup = strdup(atom.name().c_str()), *aux = 0;
                     if( *dup == '(' ) {
                         aux = dup;
                         dup = &dup[1];
@@ -373,7 +373,7 @@ void KS0_Instance::translate(const Instance &instance,
     if( options_.is_enabled("ks0:print:merge:literals") ) {
         cout << "merge literals =";
         for( set<int>::const_iterator it = merge_lits.begin(); it != merge_lits.end(); ++it ) {
-            cout << " " << instance.atoms_[*it]->name_;
+            cout << " " << instance.atoms_[*it]->name();
         }
         cout << endl;
     }

@@ -303,13 +303,13 @@ void Preprocessor::compute_reachability(bool_vec &reachable_atoms, bool_vec &rea
     if( options_.is_enabled("problem:print:atom:reachable") ) {
         cout << Utils::yellow();
         for( size_t k = 0; k < instance_.n_atoms(); k++ )
-            if( reachable_atoms[k] ) cout << "  reachable atom " << k << "." << instance_.atoms_[k]->name_ << endl;
+            if( reachable_atoms[k] ) cout << "  reachable atom " << k << "." << instance_.atoms_[k]->name() << endl;
         cout << Utils::normal();
     }
     if( options_.is_enabled("problem:print:atom:unreachable") ) {
         cout << Utils::yellow();
         for( size_t k = 0; k < instance_.n_atoms(); k++ )
-            if( !reachable_atoms[k] ) cout << "  unreachable atom " << k << "." << instance_.atoms_[k]->name_ << endl;
+            if( !reachable_atoms[k] ) cout << "  unreachable atom " << k << "." << instance_.atoms_[k]->name() << endl;
         cout << Utils::normal();
     }
     if( options_.is_enabled("problem:print:action:unreachable") ) {
@@ -407,7 +407,7 @@ void Preprocessor::compute_static_atoms(const bool_vec &reachable_actions, bool_
         cout << Utils::yellow();
         for( size_t k = 0; k < instance_.n_atoms(); k++ ) {
             if( static_atoms[k] )
-                cout << "  static atom " << k << "." << instance_.atoms_[k]->name_ << endl;
+                cout << "  static atom " << k << "." << instance_.atoms_[k]->name() << endl;
         }
         cout << Utils::normal();
     }
@@ -471,9 +471,9 @@ void Preprocessor::compute_action_compilation(Instance::Action &action) {
             if( options_.is_enabled("problem:print:action-compilation") ) {
                 cout << Utils::yellow() << "completion for action=" << action.name_ << " and literal=";
                 if( lit > 0 )
-                    cout << instance_.atoms_[lit-1]->name_;
+                    cout << instance_.atoms_[lit-1]->name();
                 else
-                    cout << "(not " << instance_.atoms_[lit-1]->name_ << ")";
+                    cout << "(not " << instance_.atoms_[lit-1]->name() << ")";
                 cout << " : ";
                 instance_.write_atom_set(cout, completion);
                 cout << Utils::normal() << endl;
@@ -675,7 +675,7 @@ void Preprocessor::preprocess(bool remove_atoms) {
     // make sure we don't remove unreachable goals and hidden fluents!
     for( index_set::const_iterator it = instance_.goal_literals_.begin(); it != instance_.goal_literals_.end(); ++it ) {
         int idx = *it > 0 ? *it-1 : -*it-1;
-        //if( atoms_to_remove[idx] == true ) cout << instance_.atoms_[idx]->name_ << endl;
+        //if( atoms_to_remove[idx] == true ) cout << instance_.atoms_[idx]->name() << endl;
         atoms_to_remove[idx] = false;
     }
 

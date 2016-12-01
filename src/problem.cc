@@ -65,14 +65,14 @@ Instance::~Instance() {
 
 Instance::Atom& Instance::new_atom(Name *name) {
 #ifdef SMART
-    unique_ptr<Atom> a = make_unique<Atom>(name, atoms_.size());
+    unique_ptr<Atom> a = make_unique<Atom>(name->to_string(), atoms_.size());
     atoms_.emplace_back(move(a));
 #else
     Atom *a = new Atom(name, atoms_.size());
     atoms_.push_back(a);
 #endif
     if( options_.is_enabled("problem:print:atom:creation") )
-        cout << "atom " << atoms_.back()->index_ << "." << atoms_.back()->name_ << " created" << endl;
+        cout << "atom " << atoms_.back()->index() << "." << atoms_.back()->name() << " created" << endl;
 #ifdef SMART
     return *atoms_.back().get();
 #else
@@ -487,7 +487,7 @@ void Instance::remove_atoms(const bool_vec &set, index_vec &map) {
 #else
 	        atoms_[j] = atoms_[k];
 #endif
-	        atoms_[j]->index_ = j;
+	        atoms_[j]->set_index(j);
             }
             rm_map[k] = j;
             ++j;

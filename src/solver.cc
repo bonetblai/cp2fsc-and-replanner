@@ -351,7 +351,7 @@ bool Solver::inconsistent(const State &state, const vector<State> &assumptions, 
         int atom = *it/2;
 
         if( verbose ) {
-            cout << "*** checking consistency of " << instance_.atoms_[atom]->name_ << ": ";
+            cout << "*** checking consistency of " << instance_.atoms_[atom]->name() << ": ";
         }
 
         if( instance_.is_observable(atom) ) {

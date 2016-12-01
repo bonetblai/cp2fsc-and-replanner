@@ -446,7 +446,7 @@ int main(int argc, const char *argv[]) {
                             int literal = *it;
                             int atom = literal < 0 ? -literal - 1 : literal - 1;
                             cout << (literal < 0 ? " (not " : " ")
-                                 << instance.atoms_[atom]->name_
+                                 << instance.atoms_[atom]->name()
                                  << (literal < 0 ? ")" : "");
                         }
                         cout << endl;
@@ -475,7 +475,7 @@ int main(int argc, const char *argv[]) {
                                 int literal = *it;
                                 int atom = literal < 0 ? -literal - 1 : literal - 1;
                                 cout << (literal < 0 ? " (not " : " ")
-                                     << instance.atoms_[atom]->name_
+                                     << instance.atoms_[atom]->name()
                                      << (literal < 0 ? ")" : "");
                             }
                             cout << endl;

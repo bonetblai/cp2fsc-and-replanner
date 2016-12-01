@@ -41,11 +41,16 @@ class Instance {
     static bool always_write_precondition_;
     static bool always_write_conjunction_;
 
-    struct Atom {
-        Name     *name_;
+    class Atom {
+      protected:
+        std::string name_;
         unsigned index_;
-        Atom(Name* name = 0, unsigned index = 0) : name_(name), index_(index) { }
-        ~Atom() { delete name_; }
+
+      public:
+        Atom(const std::string &name, unsigned index) : name_(name), index_(index) { }
+        const std::string& name() const { return name_; };
+        void set_index(int index) { index_ = index; }
+        int index() const { return index_; }
         const Atom& operator=(const Atom &atom) {
             name_ = atom.name_;
             index_ = atom.index_;
@@ -79,6 +84,7 @@ class Instance {
 
     struct Action {
         Name*       name_;
+        //std::string   name_;
         size_t      index_;
         index_set   precondition_;
         index_set   effect_;
@@ -87,6 +93,9 @@ class Instance {
         std::string comment_;
         Action(Name* name = 0, size_t index = 0) : name_(name), index_(index), cost_(1) { }
         ~Action() { delete name_; }
+        //Action(const std::string &name, size_t index)
+        //  : name_(name), index_(index), cost_(1) {
+        //}
         const Action& operator=(const Action &a) {
             name_ = a.name_;
             index_ = a.index_;

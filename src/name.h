@@ -50,6 +50,7 @@ inline std::ostream& operator<<(std::ostream &os, const Name *n) {
     return os;
 }
 
+#if 0
 class StringName : public Name {
     const char *_string;
   public:
@@ -57,6 +58,7 @@ class StringName : public Name {
     virtual ~StringName() { }
     virtual std::string to_string(bool cat = false) const { return std::string(_string); }
 };
+#endif
 
 class CopyName : public Name {
     char *_string;

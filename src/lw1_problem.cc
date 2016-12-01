@@ -28,7 +28,7 @@ using namespace std;
 
 static int get_atom_index(const Instance &ins, string atom_name) {
     for( size_t k = 0; k < ins.n_atoms(); ++k ) {
-        if( atom_name == ins.atoms_[k]->name_->to_string() )
+        if( atom_name == ins.atoms_[k]->name() )
             return k;
     }
     cout << Utils::error() << "GET FAILED: name=" << atom_name << endl;
@@ -114,7 +114,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
     normal_execution_atom_ = -1;
     atoms_.reserve(1 + 2*ins.n_atoms());
     for( size_t k = 0; k < ins.n_atoms(); ++k ) {
-        string atom_name = ins.atoms_[k]->name_->to_string();
+        const string &atom_name = ins.atoms_[k]->name();
 #ifdef DEBUG
         cout << Utils::yellow() << "ATOM-NAME=" << atom_name << ": " << Utils::normal() << flush;
 #endif
@@ -155,12 +155,12 @@ LW1_Instance::LW1_Instance(const Instance &ins,
     // create state atoms for KP/s translation
     if( options_.is_enabled("lw1:enable-kp/s") ) {
         for( size_t k = 0; k < regular_atoms.size(); ++k ) {
-            string atom_name = ins.atoms_[regular_atoms[k]]->name_->to_string();
+            const string &atom_name = ins.atoms_[regular_atoms[k]]->name();
             const Atom &atom = new_atom(new CopyName("KPS_" + atom_name));
-            kps_atoms_.insert(make_pair(regular_atoms[k], atom.index_));
+            kps_atoms_.insert(make_pair(regular_atoms[k], atom.index()));
 #ifdef DEBUG
             cout << Utils::yellow() << "ATOM-NAME=" << atom_name << ": " << Utils::normal()
-                 << "type=KP/s, index=" << regular_atoms[k] << ", kps-index=" << atom.index_
+                 << "type=KP/s, index=" << regular_atoms[k] << ", kps-index=" << atom.index()
                  << endl;
 #endif
         }
@@ -182,10 +182,10 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                 string atom_name = it->to_string(false, true);
                 new_atom(new CopyName("K_" + atom_name + "_UNUSED"));      // even-numbered atoms
                 Atom &atom = new_atom(new CopyName("K_not_" + atom_name)); // odd-numbered atoms
-                atoms_for_variable_groups_[k].push_back(atom.index_);
+                atoms_for_variable_groups_[k].push_back(atom.index());
 #ifdef DEBUG
                 cout << Utils::yellow() << "ATOM-NAME=" << atom_name << ": " << Utils::normal()
-                     << "type=variable-group, k-indices=" << atom.index_ - 1 << "," << atom.index_
+                     << "type=variable-group, k-indices=" << atom.index() - 1 << "," << atom.index()
                      << endl;
 #endif
             }
@@ -369,7 +369,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                                 int k_head_index = 2*head_index + (head.negated_ ? 0 : 1);
                                 term_for_dnf.push_back(head.negated_ ? -(1 + head_index) : 1 + head_index);
 #ifdef DEBUG
-                                cout << atoms_[k_head_index]->name_ << flush << " <==" << flush;
+                                cout << atoms_[k_head_index]->name() << flush << " <==" << flush;
 #endif
 
                                 // fill clause
@@ -382,7 +382,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                                     assert(index != -1);
                                     int k_index = 2*index + (literal.negated_ ? 1 : 0);
 #ifdef DEBUG
-                                    cout << " " << atoms_[k_index]->name_ << flush;
+                                    cout << " " << atoms_[k_index]->name() << flush;
 #endif
                                     k_clause.push_back(-(1 + k_index));
                                 }
@@ -432,7 +432,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                             assert(index != -1);
                             int k_index = 2*index + (literal.negated_ ? 0 : 1);
 #ifdef DEBUG
-                            cout << "      rule: " << atoms_[k_index]->name_ << " <== true" << endl;
+                            cout << "      rule: " << atoms_[k_index]->name() << " <== true" << endl;
 #endif
 
                             // fill and insert unit term
@@ -495,7 +495,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                         int k_head_index = 2*head_index + (head.negated_ ? 0 : 1);
                         term_for_dnf.push_back(head.negated_ ? -(1 + head_index) : 1 + head_index);
 #ifdef DEBUG
-                        cout << atoms_[k_head_index]->name_ << flush << " <==" << flush;
+                        cout << atoms_[k_head_index]->name() << flush << " <==" << flush;
 #endif
 
                         // fill K-clause
@@ -508,7 +508,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                             assert(index != -1);
                             int k_index = 2*index + (literal.negated_ ? 1 : 0);
 #ifdef DEBUG
-                            cout << " " << atoms_[k_index]->name_ << flush;
+                            cout << " " << atoms_[k_index]->name() << flush;
 #endif
                             k_clause.push_back(-(1 + k_index));
                         }
@@ -558,7 +558,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                     assert(index != -1);
                     int k_index = 2*index + (literal.negated_ ? 0 : 1);
 #ifdef DEBUG
-                    cout << "      rule: " << atoms_[k_index]->name_ << " <== true" << endl;
+                    cout << "      rule: " << atoms_[k_index]->name() << " <== true" << endl;
 #endif
 
                     // fill and insert unit-term
@@ -629,7 +629,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
 #endif
             //init_.literals_.insert(1 + 2*k+1);
             if( options_.is_enabled("kp:print:atom:init") ) {
-                cout << "Atom " << atoms_[2*k+1]->name_ << " added to init" << endl;
+                cout << "Atom " << atoms_[2*k+1]->name() << " added to init" << endl;
             }
         }
     }
@@ -1666,7 +1666,7 @@ void LW1_Instance::cross_reference() {
 
 void LW1_Instance::get_goal_condition(index_set &condition) const {
     condition.clear();
-    condition.insert(1 + new_goal_->index_);
+    condition.insert(1 + new_goal_->index());
 }
 
 void LW1_Instance::print_stats(ostream &os) const {

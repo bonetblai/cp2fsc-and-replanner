@@ -86,14 +86,14 @@ CP_Instance::CP_Instance(const Instance &ins,
         }
         cout << "obs" << it->second << ":";
         for( index_set::const_iterator jt = it->first.begin(); jt != it->first.end(); ++jt )
-            cout << " " << ins.atoms_[*jt-1]->name_;
+            cout << " " << ins.atoms_[*jt-1]->name();
         cout << endl;
     }
 
     // create atoms
     atoms_.reserve(ins.n_atoms() + fsc_states_);
     for( size_t k = 0; k < ins.n_atoms(); ++k )
-        new_atom(new CopyName(ins.atoms_[k]->name_->to_string()));
+        new_atom(new CopyName(ins.atoms_[k]->name()));
 
     // fluents for obs
     if( compound_obs_as_fluents_ ) {
@@ -363,7 +363,7 @@ void CP_Instance::remove_atoms(const bool_vec &set, index_vec &map) {
         }
         cout << "obs" << it->second << ":";
         for( index_set::const_iterator jt = it->first.begin(); jt != it->first.end(); ++jt )
-            cout << " " << atoms[*jt-1]->name_;
+            cout << " " << atoms[*jt-1]->name();
         cout << endl;
     }
     */

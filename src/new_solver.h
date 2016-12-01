@@ -419,7 +419,7 @@ bool NewSolver<T>::inconsistent(const T &state, const std::vector<T> &assumption
         int atom = *it/2;
 
         if( verbose ) {
-            std::cout << "*** checking consistency of " << instance_.atoms_[atom]->name_ << ": ";
+            std::cout << "*** checking consistency of " << instance_.atoms_[atom]->name() << ": ";
         }
 
         if( instance_.is_observable(atom) ) {

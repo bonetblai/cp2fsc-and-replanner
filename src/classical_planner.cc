@@ -275,7 +275,7 @@ LAMA_Planner::LAMA_Planner(const KP_Instance &instance, const string &tmpfile_pa
     first_call_(true) {
     for( size_t k = 0; k < kp_instance_.n_atoms(); ++k ) {
         const Instance::Atom &atom = *kp_instance_.atoms_[k];
-        string name = atom.name_->to_string();
+        string name = atom.name();
         transform(name.begin(), name.end(), name.begin(), ::tolower);
         atom_map_.insert(make_pair(name.substr(1, name.length() - 2), k));
     }
@@ -480,7 +480,7 @@ LAMA_Server_Planner::LAMA_Server_Planner(const KP_Instance &instance, const stri
     first_call_(true) {
     for( size_t k = 0; k < kp_instance_.n_atoms(); ++k ) {
         const Instance::Atom &atom = *kp_instance_.atoms_[k];
-        string name = atom.name_->to_string();
+        string name = atom.name();
         transform(name.begin(), name.end(), name.begin(), ::tolower);
         atom_map_.insert(make_pair(name.substr(1, name.length() - 2), k));
     }

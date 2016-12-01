@@ -28,7 +28,7 @@ using namespace std;
 
 static int get_atom_index(const Instance &ins, string atom_name) {
     for( size_t k = 0; k < ins.n_atoms(); ++k ) {
-        if( atom_name == ins.atoms_[k]->name_->to_string() )
+        if( atom_name == ins.atoms_[k]->name() )
             return k;
     }
     return -1;
@@ -90,7 +90,7 @@ void KP_Instance::merge_drules() {
 void KP_Instance::create_subgoaling_actions(const Instance &ins) {
     // create (new-goal) atom
     new_goal_ = &new_atom(new CopyName("new-goal"));
-    goal_literals_.insert(1 + new_goal_->index_);
+    goal_literals_.insert(1 + new_goal_->index());
 
     // create subgoaling action for original goal
     Action &goal_action = new_action(new CopyName("subgoaling_action_for_original_goal__"));
@@ -101,7 +101,7 @@ void KP_Instance::create_subgoaling_actions(const Instance &ins) {
         else
             goal_action.precondition_.insert(1 + 2*idx+1);
     }
-    goal_action.effect_.insert(1 + new_goal_->index_);
+    goal_action.effect_.insert(1 + new_goal_->index());
     if( options_.is_enabled("kp:print:action:subgoaling") ) {
         goal_action.print(cout, *this);
     }
@@ -149,10 +149,10 @@ void KP_Instance::create_subgoaling_actions(const Instance &ins) {
                 Atom *enabler = &new_atom(new CopyName(enabler_name));
                 //cout << Utils::red() << "action-enabler=" << Utils::normal(); State::print_literal(cout, 1 + enabler->index_, this); cout << endl;
                 Action &goal_action = new_action(new CopyName(action_name));
-                goal_action.precondition_.insert(1 + enabler->index_);
+                goal_action.precondition_.insert(1 + enabler->index());
                 goal_action.precondition_.insert(1 + 2 * (*it));
-                goal_action.effect_.insert(1 + new_goal_->index_);
-                enablers_for_non_reversable_goal_atoms_.push_back(make_pair(2 * (*it), enabler->index_));
+                goal_action.effect_.insert(1 + new_goal_->index());
+                enablers_for_non_reversable_goal_atoms_.push_back(make_pair(2 * (*it), enabler->index()));
                 if( options_.is_enabled("kp:print:action:subgoaling") ) {
                     goal_action.print(cout, *this);
                 }
@@ -427,7 +427,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
     // create K0 atoms
     atoms_.reserve(2*ins.n_atoms());
     for( size_t k = 0; k < ins.n_atoms(); ++k ) {
-        string name = ins.atoms_[k]->name_->to_string();
+        const string &name = ins.atoms_[k]->name();
         new_atom(new CopyName("(K_" + name + ")"));      // even-numbered atoms
         new_atom(new CopyName("(K_not_" + name + ")"));  // odd-numbered atoms
     }
@@ -486,7 +486,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
             for( size_t i = 0; !in_invariant && (i < ins.init_.invariants_.size()); ++i ) {
                 for( size_t j = 0; j < ins.init_.invariants_[i].size(); ++j ) {
                     int lit = ins.init_.invariants_[i][j];
-                    if( (lit > 0) && ((int)atom.index_ == lit-1) ) {
+                    if( (lit > 0) && (atom.index() + 1 == lit) ) {
                         in_invariant = true;
                         break;
                     }
@@ -497,7 +497,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
             if( !in_invariant ) {
                 init_.literals_.insert(1 + 2*k+1);
                 if( options_.is_enabled("kp:print:atom:init") ) {
-                    cout << "Atom " << atoms_[2*k+1]->name_ << " added to init" << endl;
+                    cout << "Atom " << atoms_[2*k+1]->name() << " added to init" << endl;
                 }
             }
         }
@@ -657,7 +657,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
                     if( lit > 0 ) {
                         if( i != k ) {
                             nact->precondition_.insert(1 + 2*idx+1);
-                            comment_body += atoms_[2*idx+1]->name_->to_string() + " ";
+                            comment_body += atoms_[2*idx+1]->name() + " ";
                         } else {
                             nact->precondition_.insert(-(1 + 2*idx+1));
                             nact->effect_.insert(1 + 2*idx);
@@ -665,7 +665,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
                     } else {
                         if( i != k ) {
                             nact->precondition_.insert(1 + 2*idx);
-                            comment_body += atoms_[2*idx]->name_->to_string() + " ";
+                            comment_body += atoms_[2*idx]->name() + " ";
                         } else {
                             nact->precondition_.insert(-(1 + 2*idx));
                             nact->effect_.insert(1 + 2*idx+1);
@@ -679,18 +679,18 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
                     if( lit > 0 ) {
                         if( i != k ) {
                             nact->effect_.insert(1 + 2*idx+1);
-                            comment_head += atoms_[2*idx+1]->name_->to_string() + " ";
+                            comment_head += atoms_[2*idx+1]->name() + " ";
                         } else {
                             nact->precondition_.insert(1 + 2*idx);
-                            comment_body += atoms_[2*idx]->name_->to_string();
+                            comment_body += atoms_[2*idx]->name();
                         }
                     } else {
                         if( i != k ) {
                             nact->effect_.insert(1 + 2*idx);
-                            comment_head += atoms_[2*idx]->name_->to_string() + " ";
+                            comment_head += atoms_[2*idx]->name() + " ";
                         } else {
                             nact->precondition_.insert(1 + 2*idx+1);
-                            comment_body += atoms_[2*idx+1]->name_->to_string();
+                            comment_body += atoms_[2*idx+1]->name();
                         }
                     }
                 }
@@ -870,7 +870,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
     // create K0 atoms
     atoms_.reserve(2*ins.n_atoms());
     for( size_t k = 0; k < ins.n_atoms(); ++k ) {
-        string name = ins.atoms_[k]->name_->to_string();
+        const string &name = ins.atoms_[k]->name();
         new_atom(new CopyName("(K_" + name + ")"));      // even-numbered atoms
         new_atom(new CopyName("(K_not_" + name + ")"));  // odd-numbered atoms
     }
@@ -894,7 +894,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
             for( size_t i = 0; !in_invariant && (i < ins.init_.invariants_.size()); ++i ) {
                 for( size_t j = 0; j < ins.init_.invariants_[i].size(); ++j ) {
                     int lit = ins.init_.invariants_[i][j];
-                    if( (lit > 0) && ((int)atom.index_ == lit-1) ) {
+                    if( (lit > 0) && (atom.index() + 1 == lit) ) {
                         in_invariant = true;
                         break;
                     }
@@ -905,7 +905,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
             if( !in_invariant ) {
                 init_.literals_.insert(1 + 2*k+1);
                 if( options_.is_enabled("kp:print:atom:init") ) {
-                    cout << "Atom " << atoms_[2*k+1]->name_ << " added to init" << endl;
+                    cout << "Atom " << atoms_[2*k+1]->name() << " added to init" << endl;
                 }
             }
         }
@@ -1064,7 +1064,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
                     if( lit > 0 ) {
                         if( i != k ) {
                             nact->precondition_.insert(1 + 2*idx+1);
-                            comment_body += atoms_[2*idx+1]->name_->to_string() + " ";
+                            comment_body += atoms_[2*idx+1]->name() + " ";
                         } else {
                             nact->precondition_.insert(-(1 + 2*idx+1));
                             nact->effect_.insert(1 + 2*idx);
@@ -1072,7 +1072,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
                     } else {
                         if( i != k ) {
                             nact->precondition_.insert(1 + 2*idx);
-                            comment_body += atoms_[2*idx]->name_->to_string() + " ";
+                            comment_body += atoms_[2*idx]->name() + " ";
                         } else {
                             nact->precondition_.insert(-(1 + 2*idx));
                             nact->effect_.insert(1 + 2*idx+1);
@@ -1086,18 +1086,18 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
                     if( lit > 0 ) {
                         if( i != k ) {
                             nact->effect_.insert(1 + 2*idx+1);
-                            comment_head += atoms_[2*idx+1]->name_->to_string() + " ";
+                            comment_head += atoms_[2*idx+1]->name() + " ";
                         } else {
                             nact->precondition_.insert(1 + 2*idx);
-                            comment_body += atoms_[2*idx]->name_->to_string();
+                            comment_body += atoms_[2*idx]->name();
                         }
                     } else {
                         if( i != k ) {
                             nact->effect_.insert(1 + 2*idx);
-                            comment_head += atoms_[2*idx]->name_->to_string() + " ";
+                            comment_head += atoms_[2*idx]->name() + " ";
                         } else {
                             nact->precondition_.insert(1 + 2*idx+1);
-                            comment_body += atoms_[2*idx+1]->name_->to_string();
+                            comment_body += atoms_[2*idx+1]->name();
                         }
                     }
                 }
@@ -1307,7 +1307,7 @@ void Standard_KP_Instance::cross_reference() {
 
 void Standard_KP_Instance::get_goal_condition(index_set &condition) const {
     condition.clear();
-    condition.insert(1 + new_goal_->index_);
+    condition.insert(1 + new_goal_->index());
 }
 
 void Standard_KP_Instance::print_stats(ostream &os) const {

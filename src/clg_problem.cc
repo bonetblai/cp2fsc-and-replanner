@@ -42,7 +42,7 @@ CLG_Instance::CLG_Instance(const Instance &ins)
     // create K0 atoms
     atoms_.reserve(2*ins.n_atoms());
     for( size_t k = 0; k < ins.n_atoms(); ++k ) {
-        string name = ins.atoms_[k]->name_->to_string();
+        string name = ins.atoms_[k]->name();
         new_atom(new CopyName("(K_" + name + ")"));      // even-numbered atoms
         new_atom(new CopyName("(K_not_" + name + ")"));  // odd-numbered atoms
     }
@@ -51,10 +51,10 @@ CLG_Instance::CLG_Instance(const Instance &ins)
     for( index_set::const_iterator it = ins.init_.literals_.begin(); it != ins.init_.literals_.end(); ++it ) {
         int idx = *it > 0 ? *it-1 : -*it-1;
         if( *it > 0 ) {
-            //cout << "Adding +" << ins.atoms_[idx]->name_ << endl;
+            //cout << "Adding +" << ins.atoms_[idx]->name() << endl;
             init_.literals_.insert(1 + 2*idx);
         } else {
-            //cout << "Adding -" << ins.atoms_[idx]->name_ << endl;
+            //cout << "Adding -" << ins.atoms_[idx]->name() << endl;
             init_.literals_.insert(1 + 2*idx+1);
         }
     }
@@ -69,7 +69,7 @@ CLG_Instance::CLG_Instance(const Instance &ins)
             for( size_t i = 0; !in_invariant && (i < ins.init_.invariants_.size()); ++i ) {
                 for( size_t j = 0; j < ins.init_.invariants_[i].size(); ++j ) {
                     int lit = ins.init_.invariants_[i][j];
-                    if( (lit > 0) && ((int)atom.index_ == lit-1) ) {
+                    if( (lit > 0) && (atom.index() + 1 == lit) ) {
                         in_invariant = true;
                         break;
                     }
@@ -81,7 +81,7 @@ CLG_Instance::CLG_Instance(const Instance &ins)
                 //cout << "XXXXXX COMPLETION OF INIT is off!" << endl;
                 //init_.literals_.insert(1 + 2*k+1);
                 if( options_.is_enabled("kp:print:atom:init") ) {
-                    cout << "Atom " << atoms_[2*k+1]->name_ << " added to init" << endl;
+                    cout << "Atom " << atoms_[2*k+1]->name() << " added to init" << endl;
                 }
             }
         }
@@ -334,7 +334,7 @@ void CLG_Instance::cross_reference() {
 
 void CLG_Instance::get_goal_condition(index_set &condition) const {
     condition.clear();
-    condition.insert(1 + new_goal_->index_);
+    condition.insert(1 + new_goal_->index());
 }
 
 void CLG_Instance::print_stats(ostream &os) const {

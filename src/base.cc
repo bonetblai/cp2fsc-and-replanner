@@ -3569,9 +3569,9 @@ bool PDDL_Base::Atom::is_fully_instantiated() const {
 void PDDL_Base::Atom::emit(Instance &ins, index_set &atoms) const {
     Instance::Atom *p = find_prop(ins, false, true);
     if( !negated_ )
-        atoms.insert(1 + p->index_);
+        atoms.insert(1 + p->index());
     else
-        atoms.insert(-(1 + p->index_));
+        atoms.insert(-(1 + p->index()));
 }
 
 string PDDL_Base::Atom::to_string(bool extra_neg, bool mangled) const {
@@ -5087,9 +5087,9 @@ void PDDL_Base::Clause::emit(Instance &ins, Instance::Clause &clause) const {
         assert(lit != 0);
         Instance::Atom *p = lit->find_prop(ins, false, true);
         if( !lit->negated_ )
-            clause.push_back(1 + p->index_);
+            clause.push_back(1 + p->index());
         else
-            clause.push_back(-(1 + p->index_));
+            clause.push_back(-(1 + p->index()));
     }
 }
 
@@ -5106,9 +5106,9 @@ void PDDL_Base::Oneof::emit(Instance &ins, Instance::Oneof &oneof) const {
         assert(lit != 0);
         Instance::Atom *p = lit->find_prop(ins, false, true);
         if( !lit->negated_ )
-            oneof.push_back(1 + p->index_);
+            oneof.push_back(1 + p->index());
         else
-            oneof.push_back(-(1 + p->index_));
+            oneof.push_back(-(1 + p->index()));
     }
 }
 
@@ -5131,9 +5131,9 @@ string PDDL_Base::Unknown::to_string() const {
 void PDDL_Base::InitLiteral::emit(Instance &ins, Instance::Init &state) const {
     Instance::Atom *p = find_prop(ins, false, true);
     if( !negated_ ) {
-        state.literals_.insert(1 + p->index_);
+        state.literals_.insert(1 + p->index());
     } else {
-        state.literals_.insert(-(1 + p->index_));
+        state.literals_.insert(-(1 + p->index()));
     }
 }
 
@@ -5154,9 +5154,9 @@ void PDDL_Base::InitLiteral::instantiate(init_element_list &ilist) const {
 void PDDL_Base::InitLiteral::emit(Instance &ins) const {
     Instance::Atom *p = find_prop(ins, false, true);
     if( !negated_ ) {
-        ins.init_.literals_.insert(1 + p->index_);
+        ins.init_.literals_.insert(1 + p->index());
     } else {
-        ins.init_.literals_.insert(-(1 + p->index_));
+        ins.init_.literals_.insert(-(1 + p->index()));
     }
 }
 
@@ -5197,9 +5197,9 @@ void PDDL_Base::InitInvariant::emit(Instance &ins) const {
         const Literal &literal = *static_cast<const Literal*>((*this)[k]);
         Instance::Atom *p = literal.find_prop(ins, false, true);
         if( !literal.negated_ )
-            typed_invariant.push_back(1 + p->index_);
+            typed_invariant.push_back(1 + p->index());
         else
-            typed_invariant.push_back(-(1 + p->index_));
+            typed_invariant.push_back(-(1 + p->index()));
     }
 
     // construct precondition
@@ -5217,9 +5217,9 @@ void PDDL_Base::InitInvariant::emit(Instance &ins) const {
             const Literal &literal = *static_cast<const Literal*>(precondition[k]);
             Instance::Atom *p = literal.find_prop(ins, false, true);
             if( !literal.negated_ )
-                typed_invariant.Xprecondition_.insert(1 + p->index_);
+                typed_invariant.Xprecondition_.insert(1 + p->index());
             else
-                typed_invariant.Xprecondition_.insert(-(1 + p->index_));
+                typed_invariant.Xprecondition_.insert(-(1 + p->index()));
         }
         precondition.clear();
     }
