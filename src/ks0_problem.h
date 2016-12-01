@@ -33,7 +33,7 @@ class KS0_Instance : public Instance {
     void translate(const Instance &instance,
                    const StateSet &initial_states,
                    const std::map<const State*, const StateSet*> &reachable_space_from_initial_state,
-                   int q0 = 0,
+                   int q0 = -1,
                    int num_fsc_states = 0);
 
   public:
