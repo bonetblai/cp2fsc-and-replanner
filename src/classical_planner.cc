@@ -28,13 +28,19 @@
 
 using namespace std;
 
-ClassicalPlanner::ClassicalPlanner(const char *name,
-                                   const char *tmpfile_path,
-                                   const char *planner_path,
-                                   const char *planner_name,
+ClassicalPlanner::ClassicalPlanner(const string &name,
+                                   const string &tmpfile_path,
+                                   const string &planner_path,
+                                   const string &planner_name,
                                    const KP_Instance &instance)
-  : name_(name), tmpfile_path_(tmpfile_path), planner_path_(planner_path), planner_name_(planner_name),
-    kp_instance_(instance), total_search_time_(0), total_time_(0), n_calls_(0) {
+  : name_(name),
+    tmpfile_path_(tmpfile_path),
+    planner_path_(planner_path),
+    planner_name_(planner_name),
+    kp_instance_(instance),
+    total_search_time_(0),
+    total_time_(0),
+    n_calls_(0) {
     for( size_t k = 0; k < kp_instance_.n_actions(); ++k ) {
         const Instance::Action &act = *kp_instance_.actions_[k];
         action_map_.insert(make_pair(act.name_->to_string(), k));
@@ -42,38 +48,25 @@ ClassicalPlanner::ClassicalPlanner(const char *name,
 
     int pid = getpid();
 
-    string domain_fname;
-    if( tmpfile_path_ != "" ) domain_fname += tmpfile_path_ + "/";
-    domain_fname += string("gen-d") + Utils::to_string(pid) + ".pddl";
-    domain_fn_ = strdup(domain_fname.c_str());
+    domain_fn_.clear();
+    if( tmpfile_path_ != "" ) domain_fn_ += tmpfile_path_ + "/";
+    domain_fn_ += string("gen-d") + Utils::to_string(pid) + ".pddl";
 
-    string problem_fname;
-    if( tmpfile_path_ != "" ) problem_fname += tmpfile_path_ + "/";
-    problem_fname += string("gen-p") + Utils::to_string(pid) + ".pddl";
-    problem_fn_ = strdup(problem_fname.c_str());
+    problem_fn_.clear();
+    if( tmpfile_path_ != "" ) problem_fn_ += tmpfile_path_ + "/";
+    problem_fn_ += string("gen-p") + Utils::to_string(pid) + ".pddl";
 
-    string output_fname;
-    if( tmpfile_path_ != "" ) output_fname += tmpfile_path_ + "/";
-    output_fname += planner_name_ + ".output." + Utils::to_string(pid);
-    output_fn_ = strdup(output_fname.c_str());
+    output_fn_.clear();
+    if( tmpfile_path_ != "" ) output_fn_ += tmpfile_path_ + "/";
+    output_fn_ += planner_name_ + ".output." + Utils::to_string(pid);
 
-    string tmp_fname;
-    if( tmpfile_path_ != "" ) tmp_fname += tmpfile_path_ + "/";
-    tmp_fname += planner_name_ + ".tmp." + Utils::to_string(pid);
-    tmp_fn_ = strdup(tmp_fname.c_str());
+    tmp_fn_.clear();
+    if( tmpfile_path_ != "" ) tmp_fn_ += tmpfile_path_ + "/";
+    tmp_fn_ += planner_name_ + ".tmp." + Utils::to_string(pid);
 
-    string plan_fname;
-    if( tmpfile_path_ != "" ) plan_fname += tmpfile_path_ + "/";
-    plan_fname += planner_name_ + ".plan." + Utils::to_string(pid);
-    plan_fn_ = strdup(plan_fname.c_str());
-}
-
-ClassicalPlanner::~ClassicalPlanner() {
-    free((char*)plan_fn_);
-    free((char*)tmp_fn_);
-    free((char*)output_fn_);
-    free((char*)problem_fn_);
-    free((char*)domain_fn_);
+    plan_fn_.clear();
+    if( tmpfile_path_ != "" ) plan_fn_ += tmpfile_path_ + "/";
+    plan_fn_ += planner_name_ + ".plan." + Utils::to_string(pid);
 }
 
 void ClassicalPlanner::generate_pddl_domain() const {
@@ -90,9 +83,9 @@ void ClassicalPlanner::generate_pddl_problem(const State &state) const {
     ofs.close();
 }
 
-void ClassicalPlanner::remove_file(const char *filename) const {
+void ClassicalPlanner::remove_file(const string &filename) const {
     if( kp_instance_.options_.is_enabled("planner:remove-intermediate-files") )
-        unlink(filename);
+        unlink(filename.c_str());
 }
 
 void ClassicalPlanner::reduce_plan(const KP_Instance::Plan &raw_plan, Instance::Plan &plan) const {
@@ -277,8 +270,9 @@ MP_Planner::~MP_Planner() {
     if( !first_call_ ) remove_file(domain_fn_);
 }
 
-LAMA_Planner::LAMA_Planner(const KP_Instance &instance, const char *tmpfile_path, const char *planner_path)
-  : ClassicalPlanner("LAMA", tmpfile_path, planner_path, "lama", instance), first_call_(true) {
+LAMA_Planner::LAMA_Planner(const KP_Instance &instance, const string &tmpfile_path, const string &planner_path)
+  : ClassicalPlanner("LAMA", tmpfile_path, planner_path, "lama", instance),
+    first_call_(true) {
     for( size_t k = 0; k < kp_instance_.n_atoms(); ++k ) {
         const Instance::Atom &atom = *kp_instance_.atoms_[k];
         string name = atom.name_->to_string();
@@ -292,7 +286,6 @@ LAMA_Planner::~LAMA_Planner() {
 }
 
 int LAMA_Planner::get_raw_plan(const State &state, Instance::Plan &raw_plan) const {
-
     cout << "calling " << name() << " (n=" << 1+n_calls() << ", acc-time=" << get_time() << ")..." << endl;
     float start_time = Utils::read_time_in_seconds();
     ++n_calls_;
@@ -482,8 +475,9 @@ void LAMA_Planner::read_variables(ifstream &ifs) const {
 
 
 
-LAMA_Server_Planner::LAMA_Server_Planner(const KP_Instance &instance, const char *tmpfile_path, const char *planner_path)
-  : ClassicalPlanner("LAMA_Server", tmpfile_path, planner_path, "lama-server", instance), first_call_(true) {
+LAMA_Server_Planner::LAMA_Server_Planner(const KP_Instance &instance, const string &tmpfile_path, const string &planner_path)
+  : ClassicalPlanner("LAMA_Server", tmpfile_path, planner_path, "lama-server", instance),
+    first_call_(true) {
     for( size_t k = 0; k < kp_instance_.n_atoms(); ++k ) {
         const Instance::Atom &atom = *kp_instance_.atoms_[k];
         string name = atom.name_->to_string();
@@ -682,8 +676,7 @@ void LAMA_Server_Planner::read_variables(ifstream &ifs) const {
     }
 }
 
-int LAMA_Server_Planner::create_server_process(const char *base) const {
-
+int LAMA_Server_Planner::create_server_process(const string &base) const {
     // create pipes for redirection of stdin and stderr
     if( pipe(stdin_pipe_) < 0 ) {
         perror((Utils::error() + "allocating pipe for child input redirect stdin").c_str());
@@ -720,12 +713,12 @@ int LAMA_Server_Planner::create_server_process(const char *base) const {
         // run child process image
         string cmd;
         if( planner_path_ != "" ) cmd += planner_path_ + "/src/search/downward-server";
-        char * argv[4];
-        argv[0] = (char*)"downward-server";
-        argv[1] = (char*)"seq-sat-lama-2011-single-plan";
-        argv[2] = (char*)base;
+        const char *argv[4];
+        argv[0] = "downward-server";
+        argv[1] = "seq-sat-lama-2011-single-plan";
+        argv[2] = base.c_str();
         argv[3] = 0;
-        int status = execve(cmd.c_str(), argv, 0);
+        int status = execve(cmd.c_str(), (char **)argv, 0);
 
         // if we get here at all, an error occurred, but we are in the child
         // process, so just exit
@@ -751,8 +744,8 @@ int LAMA_Server_Planner::create_server_process(const char *base) const {
     }
 }
 
-int LAMA_Server_Planner::cat_file_to_server(const char *filename) const {
-    int fd = open(filename, O_RDONLY);
+int LAMA_Server_Planner::cat_file_to_server(const string &filename) const {
+    int fd = open(filename.c_str(), O_RDONLY);
     char buff[1024];
     int readsz = 0;
     while( (readsz = read(fd, buff, 1024)) > 0 )
@@ -762,7 +755,6 @@ int LAMA_Server_Planner::cat_file_to_server(const char *filename) const {
 }
 
 int LAMA_Server_Planner::cat_state_to_server(const State &state) const {
-cout << "begin_state" << endl;
     write(stdin_pipe_[PIPE_WRITE], "state\n", 6);
     write(stdin_pipe_[PIPE_WRITE], "begin_state\n", 12);
     stringstream ss;
@@ -781,11 +773,9 @@ cout << "begin_state" << endl;
         string value = ss.str();
         write(stdin_pipe_[PIPE_WRITE], value.c_str(), strlen(value.c_str()));
         write(stdin_pipe_[PIPE_WRITE], "\n", 1);
-cout << value << endl;
         ss.str("");
     }
     write(stdin_pipe_[PIPE_WRITE], "end_state\n", 10);
-cout << "end_state" << endl;
     return 0;
 }
 

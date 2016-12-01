@@ -38,22 +38,26 @@ class ClassicalPlanner {
     const KP_Instance &kp_instance_;
     std::map<std::string, size_t> action_map_;
 
-    const char *domain_fn_;
-    const char *problem_fn_;
-    const char *output_fn_;
-    const char *tmp_fn_;
-    const char *plan_fn_;
+    std::string domain_fn_;
+    std::string problem_fn_;
+    std::string output_fn_;
+    std::string tmp_fn_;
+    std::string plan_fn_;
 
     mutable float total_search_time_;
     mutable float total_time_;
     mutable size_t n_calls_;
   public:
-    ClassicalPlanner(const char *name, const char *tmpfile_path, const char *planner_path, const char *planner_name, const KP_Instance &instance);
-    virtual ~ClassicalPlanner();
+    ClassicalPlanner(const std::string &name,
+                     const std::string &tmpfile_path,
+                     const std::string &planner_path,
+                     const std::string &planner_name,
+                     const KP_Instance &instance);
+    virtual ~ClassicalPlanner() { }
     virtual int get_raw_plan(const State &state, Instance::Plan &raw_plan) const = 0;
-    const char* name() const { return planner_name_.c_str(); }
-    const char* planner_path() const { return planner_path_.c_str(); }
-    const char* planner_name() const { return planner_name_.c_str(); }
+    const std::string& name() const { return planner_name_; }
+    const std::string& planner_path() const { return planner_path_; }
+    const std::string& planner_name() const { return planner_name_; }
     float get_search_time() const { return total_search_time_; }
     float get_time() const { return total_time_; }
     size_t n_calls() const { return n_calls_; }
@@ -65,7 +69,7 @@ class ClassicalPlanner {
 
     void generate_pddl_domain() const;
     void generate_pddl_problem(const State &state) const;
-    void remove_file(const char *filename) const;
+    void remove_file(const std::string &filename) const;
     void reduce_plan(const Instance::Plan &raw_plan, Instance::Plan &reduced_plan) const;
     int get_plan(const State &state, Instance::Plan &raw_plan, Instance::Plan &plan) const;
 };
@@ -73,7 +77,7 @@ class ClassicalPlanner {
 class FF_Planner : public ClassicalPlanner {
     mutable bool first_call_;
   public:
-    FF_Planner(const KP_Instance &instance, const char *tmpfile_path, const char *planner_path)
+    FF_Planner(const KP_Instance &instance, const std::string &tmpfile_path, const std::string &planner_path)
       : ClassicalPlanner("FF", tmpfile_path, planner_path, "ff", instance), first_call_(true) { }
     virtual ~FF_Planner();
     virtual int get_raw_plan(const State &state, Instance::Plan &raw_plan) const;
@@ -83,7 +87,7 @@ class M_Planner : public ClassicalPlanner {
   protected:
     mutable bool first_call_;
   public:
-    M_Planner(const KP_Instance &instance, const char *tmpfile_path, const char *planner_path, const char *planner_name = "M")
+    M_Planner(const KP_Instance &instance, const std::string &tmpfile_path, const std::string &planner_path, const std::string &planner_name = "M")
       : ClassicalPlanner(planner_name, tmpfile_path, planner_path, planner_name, instance), first_call_(true) { }
     virtual ~M_Planner();
     virtual int get_raw_plan(const State &state, Instance::Plan &raw_plan) const;
@@ -91,7 +95,7 @@ class M_Planner : public ClassicalPlanner {
 
 class MP_Planner : public M_Planner {
   public:
-    MP_Planner(const KP_Instance &instance, const char *tmpfile_path, const char *planner_path)
+    MP_Planner(const KP_Instance &instance, const std::string &tmpfile_path, const std::string &planner_path)
       : M_Planner(instance, tmpfile_path, planner_path, "Mp") { }
     virtual ~MP_Planner();
 };
@@ -102,7 +106,7 @@ class LAMA_Planner : public ClassicalPlanner {
     mutable std::vector<std::vector<int> > variables_;
     std::map<std::string, size_t> atom_map_;
   public:
-    LAMA_Planner(const KP_Instance &instance, const char *tmpfile_path, const char *planner_path);
+    LAMA_Planner(const KP_Instance &instance, const std::string &tmpfile_path, const std::string &planner_path);
     virtual ~LAMA_Planner();
     virtual int get_raw_plan(const State &state, Instance::Plan &raw_plan) const;
 
@@ -125,7 +129,7 @@ class LAMA_Server_Planner : public ClassicalPlanner {
     mutable int child_pid_;
 
   public:
-    LAMA_Server_Planner(const KP_Instance &instance, const char *tmpfile_path, const char *planner_path);
+    LAMA_Server_Planner(const KP_Instance &instance, const std::string &tmpfile_path, const std::string &planner_path);
     virtual ~LAMA_Server_Planner();
     virtual int get_raw_plan(const State &state, Instance::Plan &raw_plan) const;
     //void patch_state_in_sas(std::fstream &iofs, const State &state) const;
@@ -134,8 +138,8 @@ class LAMA_Server_Planner : public ClassicalPlanner {
     struct variable_order;
     void read_variable(std::ifstream &ifs, std::vector<std::pair<int, std::vector<int> > > &variables) const;
     void read_variables(std::ifstream &ifs) const;
-    int create_server_process(const char *base) const;
-    int cat_file_to_server(const char *filename) const;
+    int create_server_process(const std::string &base) const;
+    int cat_file_to_server(const std::string &filename) const;
     int cat_state_to_server(const State &state) const;
     void exit_server() const;
     int get_server_status() const;

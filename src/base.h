@@ -54,19 +54,19 @@ class PDDL_Base {
 
     struct Symbol {
         symbol_class sym_class_;
-        const char *print_name_;
+        std::string print_name_;
         Symbol *sym_type_;
-        Symbol(const char *n, symbol_class c = sym_object) : sym_class_(c), print_name_(n), sym_type_(0) { }
+        Symbol(const std::string &name, symbol_class c = sym_object) : sym_class_(c), print_name_(name), sym_type_(0) { }
         virtual ~Symbol() { /*delete sym_type_;*/ }
         virtual Symbol* clone() const;
-        virtual std::string to_string() const { return std::string(print_name_); }
+        virtual std::string to_string() const { return print_name_; }
         void print(std::ostream &os) const { os << to_string(); }
     };
     struct symbol_vec : public std::vector<Symbol*> { };
 
     struct TypeSymbol : public Symbol {
         symbol_vec elements_;
-        TypeSymbol(const char *n) : Symbol(n, sym_typename) { }
+        TypeSymbol(const std::string &name) : Symbol(name, sym_typename) { }
         virtual ~TypeSymbol() { /*for( size_t k = 0; k < elements_.size(); ++k ) delete elements_[k];*/ }
         virtual Symbol* clone() const;
         void add_element(Symbol* e);
@@ -76,7 +76,7 @@ class PDDL_Base {
 
     struct VariableSymbol : public Symbol {
         mutable Symbol *value_;
-        VariableSymbol(const char *n) : Symbol(n, sym_variable), value_(0) { }
+        VariableSymbol(const std::string &name) : Symbol(name, sym_variable), value_(0) { }
         virtual ~VariableSymbol() { /*delete value_;*/ }
         virtual Symbol* clone() const;
         virtual std::string to_string() const;
@@ -88,7 +88,7 @@ class PDDL_Base {
         ptr_table pos_prop_;
         ptr_table neg_prop_;
         mutable bool strongly_static_;
-        PredicateSymbol(const char *n) : Symbol(n, sym_predicate), strongly_static_(false) { }
+        PredicateSymbol(const std::string &name) : Symbol(name, sym_predicate), strongly_static_(false) { }
         virtual ~PredicateSymbol() { for( size_t k = 0; k < param_.size(); ++k ) delete param_[k]; }
         virtual Symbol* clone() const;
         virtual std::string to_string() const;
@@ -655,7 +655,7 @@ class PDDL_Base {
         const Sensing *sensing_;
         const sensing_proxy_vec *sensing_proxy_;
         std::string comment_;
-        Action(const char *name)
+        Action(const std::string &name)
           : Symbol(name, sym_action), precondition_(0), effect_(0), observe_(0),
             sensing_(0), sensing_proxy_(0) { }
         virtual ~Action() { delete precondition_; delete effect_; delete observe_; delete sensing_; }
@@ -687,7 +687,7 @@ class PDDL_Base {
     struct Sensor : public Symbol, Schema {
         const Condition *condition_;
         const Effect *sense_;
-        Sensor(const char *name) : Symbol(name, sym_sensor), condition_(0), sense_(0) { }
+        Sensor(const std::string &name) : Symbol(name, sym_sensor), condition_(0), sense_(0) { }
         virtual ~Sensor() { delete condition_; delete sense_; }
 #ifdef SMART
         void instantiate(owned_sensor_list &slist) const;
@@ -716,7 +716,7 @@ class PDDL_Base {
     struct Axiom : public Symbol, Schema {
         const Condition *body_;
         const Effect *head_;
-        Axiom(const char *name) : Symbol(name, sym_axiom), body_(0), head_(0) { }
+        Axiom(const std::string &name) : Symbol(name, sym_axiom), body_(0), head_(0) { }
         virtual ~Axiom() { delete body_; delete head_; }
 #ifdef SMART
         void instantiate(owned_axiom_list &alist) const;
@@ -800,7 +800,7 @@ class PDDL_Base {
         std::map<Atom, unsigned_atom_set, Atom::unsigned_less_comparator> beam_;
 
         Variable(const Variable &var) = delete;
-        Variable(const char *name) : Symbol(name, sym_varname), grounded_(false) { }
+        Variable(const std::string &name) : Symbol(name, sym_varname), grounded_(false) { }
         virtual ~Variable() {
             for( size_t k = 0; k < domain_.size(); ++k )
                 delete domain_[k];
@@ -818,9 +818,9 @@ class PDDL_Base {
 
         virtual void process_instance() const;
 #ifdef SMART
-        virtual std::unique_ptr<Variable> make_instance(const char *name) const = 0;
+        virtual std::unique_ptr<Variable> make_instance(const std::string &name) const = 0;
 #else
-        virtual Variable* make_instance(const char *name) const = 0;
+        virtual Variable* make_instance(const std::string &name) const = 0;
 #endif
         virtual bool is_state_variable() const = 0;
         virtual bool is_observable_variable() const = 0;
@@ -840,12 +840,12 @@ class PDDL_Base {
     struct StateVariable : public Variable {
         bool is_observable_;
         StateVariable(const StateVariable &var) = delete;
-        StateVariable(const char *name, bool is_observable = false) : Variable(name), is_observable_(is_observable) { }
+        StateVariable(const std::string &name, bool is_observable = false) : Variable(name), is_observable_(is_observable) { }
         virtual ~StateVariable() { }
 #ifdef SMART
-        virtual std::unique_ptr<Variable> make_instance(const char *name) const;
+        virtual std::unique_ptr<Variable> make_instance(const std::string &name) const;
 #else
-        virtual Variable* make_instance(const char *name) const;
+        virtual Variable* make_instance(const std::string &name) const;
 #endif
         virtual bool is_state_variable() const { return true; }
         virtual bool is_observable_variable() const { return is_observable_; }
@@ -854,12 +854,12 @@ class PDDL_Base {
 
     struct ObsVariable : public Variable {
         ObsVariable(const ObsVariable &var) = delete;
-        ObsVariable(const char *name) : Variable(name) { }
+        ObsVariable(const std::string &name) : Variable(name) { }
         virtual ~ObsVariable() { }
 #ifdef SMART
-        virtual std::unique_ptr<Variable> make_instance(const char *name) const;
+        virtual std::unique_ptr<Variable> make_instance(const std::string &name) const;
 #else
-        virtual Variable* make_instance(const char *name) const;
+        virtual Variable* make_instance(const std::string &name) const;
 #endif
         virtual bool is_state_variable() const { return false; }
         virtual bool is_observable_variable() const { return true; }
@@ -882,7 +882,7 @@ class PDDL_Base {
         std::string variable_name_;
         const StateVariable *variable_;
         symbol_vec param_;
-        SingleStateVariableList(const char *name) : Symbol(name, sym_varinst) { }
+        SingleStateVariableList(const std::string &name) : Symbol(name, sym_varinst) { }
         virtual ~SingleStateVariableList() { }
 #if 0//def SMART
         virtual unique_state_variable_vec* ground(const PDDL_Base *base) const;
@@ -936,7 +936,7 @@ class PDDL_Base {
         unsigned_atom_set grounded_domain_;
         std::set<std::string> grounded_group_str_;
         std::vector<std::pair<const Variable*, Atom> > filtered_observations_;
-        VariableGroup(const char *name) : Symbol(name, sym_vargroup), grounded_(false) { }
+        VariableGroup(const std::string &name) : Symbol(name, sym_vargroup), grounded_(false) { }
         virtual ~VariableGroup() { }
 #ifdef SMART
         void instantiate(const PDDL_Base *base, owned_variable_group_list &vglist) const;
