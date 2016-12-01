@@ -41,7 +41,8 @@ class KP_Instance : public Instance {
         DRTemplate(const DRTemplate &dr) = delete;
 #ifdef SMART
         DRTemplate(std::unique_ptr<const Action> &&action, const std::string &extra = "")
-          : action_(std::move(action)), extra_(extra) {
+          : action_(std::move(action)),
+            extra_(extra) {
             if( action != nullptr ) {
                 for( size_t i = 0; i < action_->when_.size(); ++i )
                     when_.insert(action_->when_[i]);
