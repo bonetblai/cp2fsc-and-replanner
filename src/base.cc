@@ -5373,7 +5373,7 @@ void PDDL_Base::Action::instantiate(action_list &alist) const {
 }
 
 void PDDL_Base::Action::emit(Instance &ins) const {
-    PDDL_Name name(this, param_, param_.size());
+    PDDL_Name name(this, param_);
     Instance::Action &act = ins.new_action(new CopyName(name.to_string(true)));
     act.cost_ = 1;
     //cout << "fully instantiated action " << name << endl;
@@ -5403,7 +5403,7 @@ void PDDL_Base::Action::process_instance() const {
         }
     }
 
-    PDDL_Name name(this, param_, param_.size());
+    PDDL_Name name(this, param_);
 #ifdef SMART
     unique_ptr<Action> action = make_unique<Action>(name.to_string(true));
 #else
@@ -5454,7 +5454,7 @@ void PDDL_Base::Sensor::instantiate(sensor_list &slist) const {
 }
 
 void PDDL_Base::Sensor::emit(Instance &ins) const {
-    PDDL_Name name(this, param_, param_.size());
+    PDDL_Name name(this, param_);
     Instance::Sensor &sensor = ins.new_sensor(new CopyName(name.to_string(true)));
     //cout << "fully instantiated sensor " << name << endl;
     if( condition_ != 0 ) {
@@ -5481,7 +5481,7 @@ void PDDL_Base::Sensor::process_instance() const {
         }
     }
 
-    PDDL_Name name(this, param_, param_.size());
+    PDDL_Name name(this, param_);
 #ifdef SMART
     unique_ptr<Sensor> sensor = make_unique<Sensor>(name.to_string(true));
 #else
@@ -5530,7 +5530,7 @@ void PDDL_Base::Axiom::instantiate(axiom_list &alist) const {
 }
 
 void PDDL_Base::Axiom::emit(Instance &ins) const {
-    PDDL_Name name(this, param_, param_.size());
+    PDDL_Name name(this, param_);
     Instance::Axiom &axiom = ins.new_axiom(new CopyName(name.to_string(true)));
     //cout << "fully instantiated axiom " << name << endl;
     if( body_ != 0 ) {
@@ -5557,7 +5557,7 @@ void PDDL_Base::Axiom::process_instance() const {
         }
     }
 
-    PDDL_Name name(this, param_, param_.size());
+    PDDL_Name name(this, param_);
 #ifdef SMART
     unique_ptr<Axiom> axiom = make_unique<Axiom>(name.to_string(true));
 #else
@@ -5943,47 +5943,5 @@ string PDDL_Base::VariableGroup::to_string() const {
     for( size_t k = 0; k < grounded_group_.size(); ++k )
         str += string(" ") + grounded_group_[k]->print_name_;
     return str + ")";
-}
-
-ostream& operator<<(ostream &os, const PDDL_Base::unsigned_atom_set &atom_set) {
-    os << "(and";
-    for( PDDL_Base::unsigned_atom_set::const_iterator it = atom_set.begin(); it != atom_set.end(); ++it )
-        os << " " << *it;
-    os << ")";
-    return os;
-}
-
-PDDL_Name::PDDL_Name(const PDDL_Base::Symbol *sym, const PDDL_Base::symbol_vec &arg, size_t n)
-  : negated_(false), sym_(sym), arg_(arg) {
-}
-
-PDDL_Name::PDDL_Name(const PDDL_Base::Symbol *sym, const PDDL_Base::var_symbol_vec &arg, size_t n)
-  : negated_(false), sym_(sym) {
-    for( size_t k = 0; k < n; ++k )
-        arg_.push_back(arg[k]->value_);
-}
-
-void PDDL_Name::add(PDDL_Base::Symbol *s) {
-    arg_.push_back(s);
-}
-
-string PDDL_Name::to_string(bool mangled) const {
-    string str;
-    if( mangled ) {
-        if( negated_ )
-            str += string("not_") + sym_->print_name_;
-        else
-            str += sym_->print_name_;
-        for( size_t k = 0; k < arg_.size(); ++k )
-            str += string("_") + arg_[k]->print_name_;
-    } else {
-        if( negated_ ) str += "(not ";
-        str += string("(") + sym_->print_name_;
-        for( size_t k = 0; k < arg_.size(); ++k )
-            str += string(" ") + arg_[k]->print_name_;
-        str += ")";
-        if( negated_ ) str += ")";
-    }
-    return str;
 }
 

@@ -1281,20 +1281,46 @@ inline std::ostream& operator<<(std::ostream &os, const PDDL_Base::Variable &var
     return os;
 }
 
-std::ostream& operator<<(std::ostream &os, const PDDL_Base::unsigned_atom_set &atom_set);
-
-class PDDL_Name : public Name {
+class PDDL_Name {
+  protected:
     bool negated_;
     const PDDL_Base::Symbol *sym_;
-    PDDL_Base::symbol_vec arg_;
+    PDDL_Base::symbol_vec args_;
+
   public:
-    PDDL_Name(const PDDL_Base::Symbol *sym, bool negated = false) : negated_(negated), sym_(sym) { };
-    PDDL_Name(const PDDL_Base::Symbol *sym, const PDDL_Base::symbol_vec &arg, size_t n);
-    PDDL_Name(const PDDL_Base::Symbol *sym, const PDDL_Base::var_symbol_vec &arg, size_t n);
+    PDDL_Name(const PDDL_Base::Symbol *sym, bool negated = false)
+      : negated_(negated), sym_(sym) {
+    }
+    PDDL_Name(const PDDL_Base::Symbol *sym, const PDDL_Base::var_symbol_vec &args)
+      : negated_(false), sym_(sym) {
+        for( size_t k = 0; k < args.size(); ++k )
+            args_.push_back(args[k]->value_);
+    }
     virtual ~PDDL_Name() { }
-    void add(PDDL_Base::Symbol *s);
-    std::string to_string(bool cat = false) const;
+    void add(PDDL_Base::Symbol *s) { args_.push_back(s); }
+    std::string to_string(bool mangled = false) const {
+        std::string str;
+        if( mangled ) {
+            if( negated_ ) str += "not_";
+            str += sym_->print_name_;
+            for( size_t k = 0; k < args_.size(); ++k )
+                str += std::string("_") + args_[k]->print_name_;
+        } else {
+            if( negated_ ) str += "(not ";
+            str += std::string("(") + sym_->print_name_;
+            for( size_t k = 0; k < args_.size(); ++k )
+                str += std::string(" ") + args_[k]->print_name_;
+            str += ")";
+            if( negated_ ) str += ")";
+        }
+        return str;
+    }
 };
+
+inline std::ostream& operator<<(std::ostream &os, const PDDL_Name &name) {
+    os << name.to_string();
+    return os;
+}
 
 #endif
 
