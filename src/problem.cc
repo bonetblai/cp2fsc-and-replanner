@@ -116,14 +116,14 @@ Instance::Sensor& Instance::new_sensor(Name* name) {
 
 Instance::Axiom& Instance::new_axiom(Name* name) {
 #ifdef SMART
-    unique_ptr<Axiom> r = make_unique<Axiom>(name, axioms_.size());
+    unique_ptr<Axiom> r = make_unique<Axiom>(name->to_string(), axioms_.size());
     axioms_.emplace_back(move(r));
 #else
     Axiom *r = new Axiom(name, axioms_.size());
     axioms_.push_back(r);
 #endif
     if( options_.is_enabled("problem:print:axiom:creation") )
-        cout << "axiom " << axioms_.back()->index_ << "." << axioms_.back()->name_ << " created" << endl;
+        cout << "axiom " << axioms_.back()->index() << "." << axioms_.back()->name() << " created" << endl;
 #ifdef SMART
     return *axioms_.back().get();
 #else
@@ -183,7 +183,7 @@ void Instance::remove_unreachable_axioms(const bool_vec &reachable_atoms, const 
     for( int k = 0; k < (int)axioms_.size(); ++k ) {
         Axiom &axiom = *axioms_[k];
         bool reachable_axiom = true;
-        for( index_set::const_iterator it = axiom.body_.begin(); it != axiom.body_.end(); ++it ) {
+        for( index_set::const_iterator it = axiom.body().begin(); it != axiom.body().end(); ++it ) {
             if( ((*it > 0) && !reachable_atoms[*it-1]) ||
                 ((*it > 0) && static_atoms[*it-1] && neg_literal_in_init[*it-1]) ||
                 ((*it < 0) && static_atoms[-*it-1] && pos_literal_in_init[-*it-1]) ) {
@@ -193,7 +193,7 @@ void Instance::remove_unreachable_axioms(const bool_vec &reachable_atoms, const 
         }
         if( !reachable_axiom ) {
             if( options_.is_enabled("problem:print:axiom:removal") )
-                cout << "removing axiom " << k << "." << axioms_[k]->name_ << endl;
+                cout << "removing axiom " << k << "." << axioms_[k]->name() << endl;
 #ifdef SMART
             axioms_[k] = move(axioms_.back());
 #else
@@ -318,7 +318,7 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
     // iterate over axioms
     for( size_t k = 0; k < axioms_.size(); ++k ) {
         Axiom &axiom = *axioms_[k];
-        for( index_set::const_iterator p = axiom.body_.begin(); p != axiom.body_.end(); ) {
+        for( index_set::const_iterator p = axiom.body().begin(); p != axiom.body().end(); ) {
             int index = *p > 0 ? *p - 1 : -*p - 1;
             if( protected_atoms_.find(index) != protected_atoms_.end() ) {
                 ++p;
@@ -327,7 +327,7 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
             if( ((*p < 0) && !reachable_atoms[index]) ||
                 ((*p > 0) && static_atoms[index] && pos_literal_in_init[index]) ||
                 ((*p < 0) && static_atoms[index] && neg_literal_in_init[index]) ) {
-                axiom.body_.erase(p++);
+                axiom.body().erase(p++);
             } else {
                 ++p;
             }
@@ -532,8 +532,8 @@ void Instance::remove_atoms(const bool_vec &set, index_vec &map) {
 
     // update axioms
     for( size_t k = 0; k < axioms_.size(); ++k ) {
-        axioms_[k]->body_.signed_remap(rm_map);
-        axioms_[k]->head_.signed_remap(rm_map);
+        axioms_[k]->body().signed_remap(rm_map);
+        axioms_[k]->head().signed_remap(rm_map);
     }
 
     // update init, hidden, goal, observables and stickies
@@ -577,7 +577,7 @@ void Instance::calculate_non_primitive_and_observable_fluents() {
     non_primitive_fluents_.clear();
     for( size_t k = 0; k < n_axioms(); ++k ) {
         const Axiom &axiom = *axioms_[k];
-        for( index_set::const_iterator it = axiom.head_.begin(); it != axiom.head_.end(); ++it ) {
+        for( index_set::const_iterator it = axiom.head().begin(); it != axiom.head().end(); ++it ) {
             assert(*it > 0);
             non_primitive_fluents_.insert(*it-1);
         }
@@ -1016,7 +1016,7 @@ void Instance::Axiom::print(ostream &os, const Instance &i) const {
 
 void Instance::Axiom::write(ostream &os, int indent, const Instance &instance) const {
     // name and parameters
-    os << string(indent, ' ') << "(:axiom " << name_->to_string() << endl;
+    os << string(indent, ' ') << "(:axiom " << name_ << endl;
     if( always_write_parameters_declaration_ )
         os << string(2 * indent, ' ') << ":parameters ()" << endl;
 

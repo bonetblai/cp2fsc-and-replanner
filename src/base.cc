@@ -5534,12 +5534,12 @@ void PDDL_Base::Axiom::emit(Instance &ins) const {
     Instance::Axiom &axiom = ins.new_axiom(new CopyName(name.to_string(true)));
     //cout << "fully instantiated axiom " << name << endl;
     if( body_ != 0 ) {
-        body_->emit(ins, axiom.body_);
-        //cout << "    :body " << *body_ << endl;
+        body_->emit(ins, axiom.body());
+        //cout << "    :body " << *body() << endl;
     }
     if( head_ != 0 ) {
-        head_->emit(ins, axiom.head_);
-        //cout << "    :head " << *head_ << endl;
+        head_->emit(ins, axiom.head());
+        //cout << "    :head " << *head() << endl;
     }
 }
 

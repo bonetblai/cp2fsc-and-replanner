@@ -182,10 +182,10 @@ class State {
     void apply_axioms(const Instance &ins) {
 #ifdef SMART
         for( Instance::owner_axiom_vec::const_iterator it = ins.axioms_.begin(); it != ins.axioms_.end(); ++it )
-            conditional_apply(*this, (*it)->body_, (*it)->head_);
+            conditional_apply(*this, (*it)->body(), (*it)->head());
 #else
         for( Instance::axiom_vec::const_iterator it = ins.axioms_.begin(); it != ins.axioms_.end(); ++it )
-            conditional_apply(*this, (*it)->body_, (*it)->head_);
+            conditional_apply(*this, (*it)->body(), (*it)->head());
 #endif
     }
     void apply(const Instance::Action &act, const Instance &ins) {

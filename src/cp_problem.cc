@@ -252,8 +252,8 @@ CP_Instance::CP_Instance(const Instance &ins,
     for( size_t k = 0; k < ins.n_axioms(); ++k ) {
         Axiom &axiom = *ins.axioms_[k];
         When eff;
-        eff.condition_ = axiom.body_;
-        eff.effect_ = axiom.head_;
+        eff.condition_ = axiom.body();
+        eff.effect_ = axiom.head();
         ramif.when_.push_back(eff);
     }
 }

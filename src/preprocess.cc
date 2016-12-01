@@ -276,10 +276,10 @@ void Preprocessor::compute_reachability(bool_vec &reachable_atoms, bool_vec &rea
 #else
             const Instance::Axiom *r = instance_.axioms_[k];
 #endif
-            assert(!r->head_.empty());
+            assert(!r->head().empty());
 
             bool reachable_axiom = true;
-            for( index_set::const_iterator p = r->body_.begin(); p != r->body_.end(); ++p ) {
+            for( index_set::const_iterator p = r->body().begin(); p != r->body().end(); ++p ) {
                 if( (*p > 0) && !reachable_atoms[*p - 1] ) {
                     reachable_axiom = false;
                     break;
@@ -289,7 +289,7 @@ void Preprocessor::compute_reachability(bool_vec &reachable_atoms, bool_vec &rea
             reachable_axioms[k] = true;
 
             // add non-primitive fluents to reachable set
-            for( index_set::const_iterator p = r->head_.begin(); p != r->head_.end(); ++p ) {
+            for( index_set::const_iterator p = r->head().begin(); p != r->head().end(); ++p ) {
                 assert(*p > 0);
                 if( !reachable_atoms[*p - 1] ) {
                     reachable_atoms[*p - 1] = true;
@@ -327,7 +327,7 @@ void Preprocessor::compute_reachability(bool_vec &reachable_atoms, bool_vec &rea
     if( options_.is_enabled("problem:print:axiom:unreachable") ) {
         cout << Utils::yellow();
         for( size_t k = 0; k < instance_.axioms_.size(); k++ )
-            if( !reachable_axioms[k] ) cout << "  unreachable axiom " << k << "." << instance_.axioms_[k]->name_ << endl;
+            if( !reachable_axioms[k] ) cout << "  unreachable axiom " << k << "." << instance_.axioms_[k]->name() << endl;
         cout << Utils::normal();
     }
 }
@@ -368,11 +368,11 @@ void Preprocessor::compute_static_atoms(const bool_vec &reachable_actions, bool_
     // TODO: not sure of this is correct!
     for( size_t k = 0; k < instance_.axioms_.size(); ++k ) {
         const Instance::Axiom &axiom = *instance_.axioms_[k];
-        for( index_set::const_iterator it = axiom.body_.begin(); it != axiom.body_.end(); ++it ) {
+        for( index_set::const_iterator it = axiom.body().begin(); it != axiom.body().end(); ++it ) {
             if( *it < 0 )
                 ;//static_atoms[-*it-1] = false; // TODO: CHECK THIS!
         }
-        for( index_set::const_iterator it = axiom.head_.begin(); it != axiom.head_.end(); ++it ) {
+        for( index_set::const_iterator it = axiom.head().begin(); it != axiom.head().end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
             static_atoms[idx] = false;
         }

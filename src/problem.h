@@ -50,7 +50,7 @@ class Instance {
         Atom(const std::string &name, unsigned index) : name_(name), index_(index) { }
         const std::string& name() const { return name_; };
         void set_index(int index) { index_ = index; }
-        int index() const { return index_; }
+        unsigned index() const { return index_; }
         const Atom& operator=(const Atom &atom) {
             name_ = atom.name_;
             index_ = atom.index_;
@@ -147,12 +147,21 @@ class Instance {
     class sensor_vec : public std::vector<Sensor*> { };
 #endif
 
-    struct Axiom {
-        Name *    name_;
-        size_t    index_;
-        index_set body_;
-        index_set head_;
-        Axiom(Name *name = 0, size_t index = 0) : name_(name), index_(index) { }
+    class Axiom {
+      protected:
+        std::string name_;
+        size_t      index_;
+        index_set   body_;
+        index_set   head_;
+
+      public:
+        Axiom(const std::string &name, size_t index) : name_(name), index_(index) { }
+        const std::string& name() const { return name_; }
+        size_t index() const { return index_; }
+        index_set& body() { return body_; }
+        index_set& head() { return head_; }
+        const index_set& body() const { return body_; }
+        const index_set& head() const { return head_; }
         const Axiom& operator=(const Axiom &r) {
             name_ = r.name_;
             index_ = r.index_;
@@ -160,7 +169,6 @@ class Instance {
             head_ = r.head_;
             return *this;
         }
-        ~Axiom() { delete name_; }
         bool operator==(const Axiom &r) { return index_ == r.index_; }
         void print(std::ostream &os, const Instance &i) const;
         void write(std::ostream &os, int indent, const Instance &instance) const;
