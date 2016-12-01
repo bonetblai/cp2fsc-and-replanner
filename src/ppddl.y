@@ -797,7 +797,7 @@ axiom_decl:
       TK_OPEN KW_AXIOM axiom_symbol {
 #ifdef SMART
           std::unique_ptr<Axiom> nr = std::make_unique<Axiom>($3->text);
-          dom_axioms_.emplace_back(move(nr));
+          dom_axioms_.emplace_back(std::move(nr));
 #else
           Axiom *nr = new Axiom($3->text);
           dom_axioms_.push_back(nr);
@@ -831,7 +831,7 @@ sensor_decl:
       TK_OPEN KW_SENSOR sensor_symbol {
 #ifdef SMART
           std::unique_ptr<Sensor> nr = std::make_unique<Sensor>($3->text);
-          dom_sensors_.emplace_back(move(nr));
+          dom_sensors_.emplace_back(std::move(nr));
 #else
           Sensor *nr = new Sensor($3->text);
           dom_sensors_.push_back(nr);
@@ -871,7 +871,7 @@ observable_decl:
 #ifdef SMART
           std::unique_ptr<Observable> obs = std::make_unique<Observable>();
           effect_vec_ptr_ = &obs->observables_;
-          dom_observables_.emplace_back(move(obs));
+          dom_observables_.emplace_back(std::move(obs));
 #else
           Observable *obs = new Observable;
           dom_observables_.push_back(obs);
@@ -904,7 +904,7 @@ sticky_decl:
 #ifdef SMART
           std::unique_ptr<Sticky> sticky = std::make_unique<Sticky>();
           effect_vec_ptr_ = &sticky->stickies_;
-          dom_stickies_.emplace_back(move(sticky));
+          dom_stickies_.emplace_back(std::move(sticky));
 #else
           Sticky *sticky = new Sticky;
           dom_stickies_.push_back(sticky);
@@ -953,7 +953,7 @@ simple_variable_decl:
           else
               var = std::make_unique<ObsVariable>($4->text);
           effect_vec_ptr_ = &var->domain_;
-          owned_schema_.emplace_back(move(var));
+          owned_schema_.emplace_back(std::move(var));
 #else
           Variable *var = 0;
           if( $2 == 0 )
@@ -986,7 +986,6 @@ simple_variable_decl:
 #ifdef SMART
           $4->val = variable.get();
           lw1_uninstantiated_variables_.emplace_back(std::move(variable));
-          assert(!variable && lw1_uninstantiated_variables_.back()); // SMART: CHECK
 #else
           $4->val = variable;
           lw1_uninstantiated_variables_.push_back(variable);
@@ -1007,7 +1006,7 @@ variable_group_decl:
       TK_OPEN KW_VGROUP TK_NEW_SYMBOL {
 #ifdef SMART
           std::unique_ptr<VariableGroup> group = std::make_unique<VariableGroup>($3->text);
-          lw1_uninstantiated_variable_groups_.emplace_back(move(group));
+          lw1_uninstantiated_variable_groups_.emplace_back(std::move(group));
 #else
           VariableGroup *group = new VariableGroup($3->text);
           lw1_uninstantiated_variable_groups_.push_back(group);
@@ -1020,7 +1019,7 @@ variable_group_decl:
     | TK_OPEN KW_VGROUP TK_OPEN TK_NEW_SYMBOL {
 #ifdef SMART
           std::unique_ptr<VariableGroup> group = std::make_unique<VariableGroup>($4->text);
-          owned_schema_.emplace_back(move(group));
+          owned_schema_.emplace_back(std::move(group));
 #else
           VariableGroup *group = new VariableGroup($4->text);
           schema_.push_back(group);
@@ -1049,7 +1048,7 @@ variable_group_decl:
           clear_param(group->param_);
 #ifdef SMART
           $4->val = group.get();
-          lw1_uninstantiated_variable_groups_.emplace_back(move(group));
+          lw1_uninstantiated_variable_groups_.emplace_back(std::move(group));
 #else
           $4->val = group;
           lw1_uninstantiated_variable_groups_.push_back(group);
@@ -1235,7 +1234,9 @@ init_elements:
     ;
 
 single_init_element:
-      literal { $$ = new InitLiteral(*$1); }
+      literal {
+          $$ = new InitLiteral(*$1);
+      }
     | invariant {
           if( type_ == cp2fsc ) {
               log_error((char*)"'invariant' is not a valid element in cp2fsc.");
