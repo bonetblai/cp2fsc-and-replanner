@@ -120,32 +120,32 @@ LW1_Instance::LW1_Instance(const Instance &ins,
 #endif
         if( atom_name.compare(0, 16, "normal-execution") == 0 ) {
             assert(options_.is_enabled("lw1:aaai") || options_.is_enabled("lw1:boost:enable-post-actions"));
-            new_atom(new CopyName(atom_name));                  // even-numbered atoms
-            new_atom(new CopyName(atom_name + "_UNUSED"));      // odd-numbered atoms
+            new_atom(atom_name);                  // even-numbered atoms
+            new_atom(atom_name + "_UNUSED");      // odd-numbered atoms
             normal_execution_atom_ = k;
 #ifdef DEBUG
             cout << "type=normal-execution, index=" << k << ", k-indices=" << 2*k << "," << 2*k+1 << endl;
 #endif
         } else if( atom_name.compare(0, 16, "last-action-was-") == 0 ) {
             assert(!options_.is_enabled("lw1:boost:enable-post-actions"));
-            new_atom(new CopyName(atom_name));                  // even-numbered atoms
-            new_atom(new CopyName(atom_name + "_UNUSED"));      // odd-numbered atoms
+            new_atom(atom_name);                  // even-numbered atoms
+            new_atom(atom_name + "_UNUSED");      // odd-numbered atoms
             last_action_atoms_.insert(k);
 #ifdef DEBUG
             cout << "type=last-action, index=" << k << ", k-indices=" << 2*k << "," << 2*k+1 << endl;
 #endif
         } else if( atom_name.compare(0, 19, "enable-sensing-for-") == 0 ) {
             assert(options_.is_enabled("lw1:aaai") || options_.is_enabled("lw1:boost:enable-post-actions"));
-            new_atom(new CopyName(atom_name));                  // even-numbered atoms
-            new_atom(new CopyName(atom_name + "_UNUSED"));      // odd-numbered atoms
+            new_atom(atom_name);                  // even-numbered atoms
+            new_atom(atom_name + "_UNUSED");      // odd-numbered atoms
             sensing_enabler_atoms_.insert(k);
 #ifdef DEBUG
             cout << "type=enabler, index=" << k << ", k-indices=" << 2*k << "," << 2*k+1 << endl;
 #endif
         } else {
             regular_atoms.push_back(k);
-            new_atom(new CopyName("K_" + atom_name));           // even-numbered atoms
-            new_atom(new CopyName("K_not_" + atom_name));       // odd-numbered atoms
+            new_atom(string("K_") + atom_name);           // even-numbered atoms
+            new_atom(string("K_not_") + atom_name);       // odd-numbered atoms
 #ifdef DEBUG
             cout << "type=regular, index=" << k << ", k-indices=" << 2*k << "," << 2*k+1 << endl;
 #endif
@@ -156,7 +156,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
     if( options_.is_enabled("lw1:enable-kp/s") ) {
         for( size_t k = 0; k < regular_atoms.size(); ++k ) {
             const string &atom_name = ins.atoms_[regular_atoms[k]]->name();
-            const Atom &atom = new_atom(new CopyName("KPS_" + atom_name));
+            const Atom &atom = new_atom(string("KPS_") + atom_name);
             kps_atoms_.insert(make_pair(regular_atoms[k], atom.index()));
 #ifdef DEBUG
             cout << Utils::yellow() << "ATOM-NAME=" << atom_name << ": " << Utils::normal()
@@ -180,8 +180,8 @@ LW1_Instance::LW1_Instance(const Instance &ins,
             const PDDL_Base::VariableGroup &group = *variable_groups[k];
             for( PDDL_Base::unsigned_atom_set::const_iterator it = group.grounded_domain_.begin(); it != group.grounded_domain_.end(); ++it ) {
                 string atom_name = it->to_string(false, true);
-                new_atom(new CopyName("K_" + atom_name + "_UNUSED"));      // even-numbered atoms
-                Atom &atom = new_atom(new CopyName("K_not_" + atom_name)); // odd-numbered atoms
+                new_atom(string("K_") + atom_name + "_UNUSED");      // even-numbered atoms
+                Atom &atom = new_atom(string("K_not_") + atom_name); // odd-numbered atoms
                 atoms_for_variable_groups_[k].push_back(atom.index());
 #ifdef DEBUG
                 cout << Utils::yellow() << "ATOM-NAME=" << atom_name << ": " << Utils::normal()
@@ -893,7 +893,7 @@ void LW1_Instance::create_regular_action(const Action &action,
     assert(action_name.compare(0, 6, "drule-") != 0);
 
     // create new action
-    Action &nact = new_action(new CopyName(action_name));
+    Action &nact = new_action(action_name);
     remap_[action_index] = action_index;
 
     // preconditions
@@ -994,7 +994,7 @@ void LW1_Instance::create_drule_for_var(const Action &action) {
     const string &action_name = action.name();
     assert(action_name.compare(0, 10, "drule-var-") == 0);
 
-    Action &nact = new_action(new CopyName(action_name));
+    Action &nact = new_action(action_name);
     if( action_name.compare(0, 21, "drule-var-exhaustive-") == 0 ) {
         assert(action.effect().size() == 1);
         int eff = *action.effect().begin();
@@ -1464,7 +1464,7 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             assert(action_name.compare(0, 20, "drule-sensing-type5-") == 0);
 #if 0
             // CHECK: type5 rules make planner run slower for unknown reason
-            Action *nact = new Action(new CopyName(action_name));
+            Action *nact = new Action(action_name);
             for( index_set::const_iterator it = action.precondition().begin(); it != action.precondition().end(); ++it ) {
                 int index = *it > 0 ? *it - 1 : -*it - 1;
                 nact->precondition().insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
@@ -1560,7 +1560,7 @@ void LW1_Instance::create_sensor(const Sensor &sensor) {
              << Utils::normal() << endl;
     }
 
-    Action &nact = new_action(new CopyName(strdup(sensor.name().c_str())));
+    Action &nact = new_action(sensor.name());
     nact.effect().insert(sensed > 0 ? 1 + 2*sensed_index : 1 + 2*sensed_index + 1);
     for( index_set::const_iterator it = sensor.condition().begin(); it != sensor.condition().end(); ++it ) {
         int index = *it > 0 ? *it - 1 : -*it - 1;

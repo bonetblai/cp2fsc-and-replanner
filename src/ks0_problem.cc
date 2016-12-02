@@ -179,7 +179,7 @@ void KS0_Instance::translate(const Instance &instance,
         free(aux == 0 ? dup : aux);
 
         tag_map_[tag0_*ins_n_fluents + k] = n_atoms();
-        new_atom(new CopyName(lit_name));
+        new_atom(lit_name);
 
         if( options_.is_enabled("ks0:print:tag:atom:creation") )
             cout << "atom " << n_atoms()-1 << "." << lit_name << " created" << endl;
@@ -208,7 +208,7 @@ void KS0_Instance::translate(const Instance &instance,
                     free(aux == 0 ? dup : aux);
 
                     tag_map_[tag*ins_n_fluents + k] = n_atoms();
-                    new_atom(new CopyName(lit_name));
+                    new_atom(lit_name);
 
                     if( options_.is_enabled("ks0:print:tag:atom:creation") )
                         cout << "atom " << n_atoms()-1 << "." << lit_name << " created" << endl;
@@ -239,7 +239,7 @@ void KS0_Instance::translate(const Instance &instance,
                     free(aux == 0 ? dup : aux);
 
                     tag_map_[tag*ins_n_fluents + *it-1] = n_atoms();
-                    new_atom(new CopyName(lit_name));
+                    new_atom(lit_name);
 
                     if( options_.is_enabled("ks0:print:tag:atom:creation") )
                         cout << "atom " << n_atoms()-1 << "." << lit_name << " created" << endl;
@@ -280,7 +280,7 @@ void KS0_Instance::translate(const Instance &instance,
     // create actions
     for( size_t k = 0; k < instance.n_actions(); ++k ) {
         const Action &act = *instance.actions_[k];
-        Action &nact = new_action(new CopyName(act.name()));
+        Action &nact = new_action(act.name());
 
         // setup precondition
         for( index_set::const_iterator it = act.precondition().begin(); it != act.precondition().end(); ++it ) {
@@ -380,7 +380,7 @@ void KS0_Instance::translate(const Instance &instance,
 
     // create merge actions
     if( n_tags_ > 1 ) {
-        Action &merge = new_action(new CopyName("merge"));
+        Action &merge = new_action("merge");
         for( set<int>::const_iterator it = merge_lits.begin(); it != merge_lits.end(); ++it ) {
             When merge_eff;
             assert(*it >= 0);

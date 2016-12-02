@@ -3518,7 +3518,7 @@ Instance::Atom* PDDL_Base::Atom::find_prop(Instance &ins, bool negated, bool cre
             else
 	        a_name.add(param_[k]);
         }
-        Instance::Atom &p = ins.new_atom(new CopyName(a_name.to_string(true)));
+        Instance::Atom &p = ins.new_atom(a_name.to_string(true));
         r->val = &p;
     }
     return static_cast<Instance::Atom*>(r->val);
@@ -5374,7 +5374,7 @@ void PDDL_Base::Action::instantiate(action_list &alist) const {
 
 void PDDL_Base::Action::emit(Instance &ins) const {
     PDDL_Name name(this, param_);
-    Instance::Action &act = ins.new_action(new CopyName(name.to_string(true)));
+    Instance::Action &act = ins.new_action(name.to_string(true));
     act.set_cost(1);
     //cout << "fully instantiated action " << name << endl;
     if( precondition_ != 0 ) {
@@ -5455,7 +5455,7 @@ void PDDL_Base::Sensor::instantiate(sensor_list &slist) const {
 
 void PDDL_Base::Sensor::emit(Instance &ins) const {
     PDDL_Name name(this, param_);
-    Instance::Sensor &sensor = ins.new_sensor(new CopyName(name.to_string(true)));
+    Instance::Sensor &sensor = ins.new_sensor(name.to_string(true));
     //cout << "fully instantiated sensor " << name << endl;
     if( condition_ != 0 ) {
         condition_->emit(ins, sensor.condition());
@@ -5531,7 +5531,7 @@ void PDDL_Base::Axiom::instantiate(axiom_list &alist) const {
 
 void PDDL_Base::Axiom::emit(Instance &ins) const {
     PDDL_Name name(this, param_);
-    Instance::Axiom &axiom = ins.new_axiom(new CopyName(name.to_string(true)));
+    Instance::Axiom &axiom = ins.new_axiom(name.to_string(true));
     //cout << "fully instantiated axiom " << name << endl;
     if( body_ != 0 ) {
         body_->emit(ins, axiom.body());

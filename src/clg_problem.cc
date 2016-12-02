@@ -43,8 +43,8 @@ CLG_Instance::CLG_Instance(const Instance &ins)
     atoms_.reserve(2*ins.n_atoms());
     for( size_t k = 0; k < ins.n_atoms(); ++k ) {
         string name = ins.atoms_[k]->name();
-        new_atom(new CopyName("(K_" + name + ")"));      // even-numbered atoms
-        new_atom(new CopyName("(K_not_" + name + ")"));  // odd-numbered atoms
+        new_atom(string("(K_") + name + ")");      // even-numbered atoms
+        new_atom(string("(K_not_") + name + ")");  // odd-numbered atoms
     }
 
     // set initial atoms
@@ -121,7 +121,7 @@ void CLG_Instance::create_regular_action(const Action &action, int action_index)
     assert(action_name.compare(0, 6, "drule-") != 0);
 
     // create new action
-    Action &nact = new_action(new CopyName(action_name));
+    Action &nact = new_action(action_name);
     remap_[action_index] = action_index;
 
     // preconditions
@@ -262,7 +262,7 @@ void CLG_Instance::create_sensor(const Sensor &sensor) {
         int idx = *it - 1;
         for( size_t n = 0; n < 2; ++n ) {
             string name = sensor.name() + "-obs" + Utils::to_string(obs) + "-ver" + Utils::to_string(n);
-            Action &nact = new_action(new CopyName(name));
+            Action &nact = new_action(name);
 
             // precondition
             nact.precondition().insert(common_condition.begin(), common_condition.end());

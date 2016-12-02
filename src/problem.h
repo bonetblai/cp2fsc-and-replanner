@@ -309,10 +309,10 @@ class Instance {
 #endif
     virtual ~Instance();
 
-    Atom&      new_atom(Name *name);
-    Action&    new_action(Name *name);
-    Sensor&    new_sensor(Name *name);
-    Axiom&     new_axiom(Name *name);
+    Atom&      new_atom(const std::string &name);
+    Action&    new_action(const std::string &name);
+    Sensor&    new_sensor(const std::string &name);
+    Axiom&     new_axiom(const std::string &name);
 
     // change (remove from) instance
     void set_name(Name *name) { delete name_; name_ = name; }

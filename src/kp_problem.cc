@@ -55,7 +55,7 @@ void KP_Instance::merge_drules() {
         //string type = it->first.second;
         const DRTemplate &record = *it;
         const Action &drule = *it->action_;
-        Action &nact = new_action(new CopyName(drule.name()));
+        Action &nact = new_action(drule.name());
         nact.precondition() = drule.precondition();
         nact.effect() = drule.effect();
         nact.when() = drule.when();
@@ -89,11 +89,11 @@ void KP_Instance::merge_drules() {
 
 void KP_Instance::create_subgoaling_actions(const Instance &ins) {
     // create (new-goal) atom
-    new_goal_ = &new_atom(new CopyName("new-goal"));
+    new_goal_ = &new_atom("new-goal");
     goal_literals_.insert(1 + new_goal_->index());
 
     // create subgoaling action for original goal
-    Action &goal_action = new_action(new CopyName("subgoaling_action_for_original_goal__"));
+    Action &goal_action = new_action("subgoaling_action_for_original_goal__");
     for( index_set::const_iterator it = ins.goal_literals_.begin(); it != ins.goal_literals_.end(); ++it ) {
         int idx = *it > 0 ? *it-1 : -*it-1;
         if( *it > 0 )
@@ -146,9 +146,9 @@ void KP_Instance::create_subgoaling_actions(const Instance &ins) {
                 //cout << "ATOM: index=" << *it << ", name="; State::print_literal(cout, 1 + *it, &ins); cout << endl;
                 string action_name = string("subgoaling_action_for_") + Utils::replace_all(Utils::replace_all(State::to_string(1 + *it, &ins), "(", ""), ")", "");
                 string enabler_name = string("enable_") + action_name;
-                Atom *enabler = &new_atom(new CopyName(enabler_name));
+                Atom *enabler = &new_atom(enabler_name);
                 //cout << Utils::red() << "action-enabler=" << Utils::normal(); State::print_literal(cout, 1 + enabler->index_, this); cout << endl;
-                Action &goal_action = new_action(new CopyName(action_name));
+                Action &goal_action = new_action(action_name);
                 goal_action.precondition().insert(1 + enabler->index());
                 goal_action.precondition().insert(1 + 2 * (*it));
                 goal_action.effect().insert(1 + new_goal_->index());
@@ -182,11 +182,11 @@ void KP_Instance::create_subgoaling_actions(const Instance &ins) {
                     string atom_name("(unknown_");
                     atom_name += ins.atoms_[idx]->name() + ")";
                     cout << "ATOM-NAME: " << atom_name << endl;
-                    atoms_for_unknown_observables_at_init_[idx] = &new_atom(new CopyName(atom_name));
+                    atoms_for_unknown_observables_at_init_[idx] = &new_atom(atom_name);
                     for( int n = 0; n < 2; ++n ) {
                         string action_name("reach_goal_through_knowledge_of_");
                         action_name += ins.atoms_[idx]->name() + "_" + (n == 0 ? "0__" : "1__");
-                        Action &nact = new_action(new CopyName(action_name));
+                        Action &nact = new_action(action_name);
                         nact.precondition().insert(1 + atoms_for_unknown_observables_at_init_[idx]->index_);
                         nact.precondition().insert(1 + 2*idx+n);
                         nact.effect().insert(1 + new_goal_->index_);
@@ -428,8 +428,8 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
     atoms_.reserve(2*ins.n_atoms());
     for( size_t k = 0; k < ins.n_atoms(); ++k ) {
         const string &name = ins.atoms_[k]->name();
-        new_atom(new CopyName("(K_" + name + ")"));      // even-numbered atoms
-        new_atom(new CopyName("(K_not_" + name + ")"));  // odd-numbered atoms
+        new_atom(string("(K_") + name + ")");      // even-numbered atoms
+        new_atom(string("(K_not_") + name + ")");  // odd-numbered atoms
     }
 
     // prepare data for handling problems with variables
@@ -507,7 +507,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
     remap_ = vector<int>(ins.n_actions(),-1);
     for( size_t k = 0; k < ins.n_actions(); ++k ) {
         const Action &act = *ins.actions_[k];
-        Action &nact = new_action(new CopyName(act.name()));
+        Action &nact = new_action(act.name());
         remap_[k] = k;
 
         // preconditions
@@ -589,7 +589,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
             int idx = *it-1;
             for( size_t n = 0; n < 2; ++n ) {
                 string name = string("sensor-") + r.name() + "-obs" + Utils::to_string(obs) + "-ver" + Utils::to_string(n);
-                Action &nact = new_action(new CopyName(name));
+                Action &nact = new_action(name);
 
                 // conditional effect
                 When c_eff;
@@ -633,7 +633,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
 #ifdef SMART
             unique_ptr<Action> nact = make_unique<Action>(name);
 #else
-            Action *nact = new Action(new CopyName(name));
+            Action *nact = new Action(name);
 #endif
             vector<int> completion;
 
@@ -716,7 +716,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
     for( multimap<index_set, const Action*>::const_iterator it = invariant_actions.begin(); it != invariant_actions.end(); ) {
 #endif
         const Action &invariant = *it->second;
-        Action &nact = new_action(new CopyName(invariant.name()));
+        Action &nact = new_action(invariant.name());
         nact.precondition() = invariant.precondition();
         nact.effect() = invariant.effect();
         nact.when() = invariant.when();
@@ -768,7 +768,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
         //cout << "Processing invariant "; invariant.write(cout, 0, ins);
         for( size_t k = 0; k < invariant.size(); ++k ) {
             string name = string("invariant-") + (invariant.type() == Invariant::AT_LEAST_ONE ? "at-least-one" : "at-most-one") + "-" + Utils::to_string(invariant_no++);
-            Action &nact = new_action(new CopyName(name));
+            Action &nact = new_action(name);
             vector<int> completion;
 
             // setup precondition
@@ -871,8 +871,8 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
     atoms_.reserve(2*ins.n_atoms());
     for( size_t k = 0; k < ins.n_atoms(); ++k ) {
         const string &name = ins.atoms_[k]->name();
-        new_atom(new CopyName("(K_" + name + ")"));      // even-numbered atoms
-        new_atom(new CopyName("(K_not_" + name + ")"));  // odd-numbered atoms
+        new_atom(string("(K_") + name + ")");      // even-numbered atoms
+        new_atom(string("(K_not_") + name + ")");  // odd-numbered atoms
     }
 
     // set initial atoms
@@ -915,7 +915,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
     remap_ = vector<int>(ins.n_actions(),-1);
     for( size_t k = 0; k < ins.n_actions(); ++k ) {
         const Action &act = *ins.actions_[k];
-        Action &nact = new_action(new CopyName(act.name()));
+        Action &nact = new_action(act.name());
         remap_[k] = k;
 
         // preconditions
@@ -995,7 +995,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
             int idx = *it-1;
             for( size_t n = 0; n < 2; ++n ) {
                 string name = string("sensor-") + r.name() + "-obs" + Utils::to_string(obs) + "-ver" + Utils::to_string(n);
-                Action &nact = new_action(new CopyName(name));
+                Action &nact = new_action(name);
 
                 // conditional effect
                 When c_eff;
@@ -1040,7 +1040,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
 #ifdef SMART
             unique_ptr<Action> nact = make_unique<Action>(name);
 #else
-            Action *nact = new Action(new CopyName(name));
+            Action *nact = new Action(name);
 #endif
             vector<int> completion;
 
@@ -1123,7 +1123,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
     for( multimap<index_set, const Action*>::const_iterator it = invariant_actions.begin(); it != invariant_actions.end(); ) {
 #endif
         const Action &invariant = *it->second;
-        Action &nact = new_action(new CopyName(invariant.name()));
+        Action &nact = new_action(invariant.name());
         nact.precondition() = invariant.precondition();
         nact.effect() = invariant.effect();
         nact.when() = invariant.when();
@@ -1175,7 +1175,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
         //cout << "Processing invariant "; invariant.write(cout, 0, ins);
         for( size_t k = 0; k < invariant.size(); ++k ) {
             string name = string("invariant-") + (invariant.type() == Invariant::AT_LEAST_ONE ? "at-least-one" : "at-most-one") + "-" + Utils::to_string(invariant_no++);
-            Action &nact = new_action(new CopyName(name));
+            Action &nact = new_action(name);
             vector<int> completion;
 
             // setup precondition

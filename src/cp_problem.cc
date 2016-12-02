@@ -93,7 +93,7 @@ CP_Instance::CP_Instance(const Instance &ins,
     // create atoms
     atoms_.reserve(ins.n_atoms() + fsc_states_);
     for( size_t k = 0; k < ins.n_atoms(); ++k )
-        new_atom(new CopyName(ins.atoms_[k]->name()));
+        new_atom(ins.atoms_[k]->name());
 
     // fluents for obs
     if( compound_obs_as_fluents_ ) {
@@ -101,7 +101,7 @@ CP_Instance::CP_Instance(const Instance &ins,
         for( size_t k = 0; k < reachable_obs_.size(); ++k ) {
             //CHECK string name = string("(obs") + Utils::to_string(k) + ")";
             string name = string("obs") + Utils::to_string(k);
-            new_atom(new CopyName(name));
+            new_atom(name);
         }
     }
 
@@ -110,7 +110,7 @@ CP_Instance::CP_Instance(const Instance &ins,
     for( size_t k = 0; k < fsc_states_; ++k ) {
         //CHECK string name = string("(q") + Utils::to_string(k) + ")";
         string name = string("q") + Utils::to_string(k);
-        new_atom(new CopyName(name));
+        new_atom(name);
     }
 
     // create fluents to forbid inconsistent tuples
@@ -121,13 +121,13 @@ CP_Instance::CP_Instance(const Instance &ins,
         for( size_t k = 0; k < n_unused_fluents_; ++k ) {
             //CHECK string name = string("(unused") + Utils::to_string(k) + ")";
             string name = string("unused") + Utils::to_string(k);
-            new_atom(new CopyName(name));
+            new_atom(name);
         }
         mapped0_ = n_atoms();
         for( size_t k = 0; k < n_mapped_fluents_; ++k ) {
             //CHECK string name = string("(mapped") + Utils::to_string(k) + ")";
             string name = string("mapped") + Utils::to_string(k);
-            new_atom(new CopyName(name));
+            new_atom(name);
         }
     }
 
@@ -173,14 +173,14 @@ CP_Instance::CP_Instance(const Instance &ins,
                                            q*ins.n_actions()*fsc_states_ + k*fsc_states_ + qp;
                     if( forbid_inconsistent_tuples_ ) {
                         string map_act_name = string("map_") + act.name() + "_obs" + Utils::to_string(obs_idx) + "_q" + Utils::to_string(q) + "_q" + Utils::to_string(qp);
-                        Action &map_act = new_action(new CopyName(map_act_name));
+                        Action &map_act = new_action(map_act_name);
                         map_act.precondition().insert(1 + unused0_+unused_fluent);
                         map_act.effect().insert(-(1 + unused0_+unused_fluent));
                         map_act.effect().insert(1 + mapped0_+mapped_fluent);
                     }
 
                     string app_act_name = string("app_") + act.name() + "_obs" + Utils::to_string(obs_idx) + "_q" + Utils::to_string(q) + "_q" + Utils::to_string(qp);
-                    Action &nact = new_action(new CopyName(app_act_name));
+                    Action &nact = new_action(app_act_name);
 
                     // the action has precondition if inconsistent tuples are forbidden
                     if( forbid_inconsistent_tuples_ ) {
@@ -248,7 +248,7 @@ CP_Instance::CP_Instance(const Instance &ins,
     }
 
     // create ramification action
-    Action &ramif = new_action(new CopyName("ramification"));
+    Action &ramif = new_action("ramification");
     for( size_t k = 0; k < ins.n_axioms(); ++k ) {
         Axiom &axiom = *ins.axioms_[k];
         When eff;

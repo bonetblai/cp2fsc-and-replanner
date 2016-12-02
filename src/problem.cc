@@ -63,12 +63,12 @@ Instance::~Instance() {
 #endif
 }
 
-Instance::Atom& Instance::new_atom(Name *name) {
+Instance::Atom& Instance::new_atom(const std::string &name) {
 #ifdef SMART
-    unique_ptr<Atom> a = make_unique<Atom>(name->to_string(), atoms_.size());
+    unique_ptr<Atom> a = make_unique<Atom>(name, atoms_.size());
     atoms_.emplace_back(move(a));
 #else
-    Atom *a = new Atom(name->to_string(), atoms_.size());
+    Atom *a = new Atom(name, atoms_.size());
     atoms_.push_back(a);
 #endif
     if( options_.is_enabled("problem:print:atom:creation") )
@@ -80,12 +80,12 @@ Instance::Atom& Instance::new_atom(Name *name) {
 #endif
 }
 
-Instance::Action& Instance::new_action(Name *name) {
+Instance::Action& Instance::new_action(const std::string &name) {
 #ifdef SMART
-    unique_ptr<Action> a = make_unique<Action>(name->to_string(), actions_.size());
+    unique_ptr<Action> a = make_unique<Action>(name, actions_.size());
     actions_.emplace_back(move(a));
 #else
-    Action *a = new Action(name->to_string(), actions_.size());
+    Action *a = new Action(name, actions_.size());
     actions_.push_back(a);
 #endif
     if( options_.is_enabled("problem:print:action:creation") )
@@ -97,12 +97,12 @@ Instance::Action& Instance::new_action(Name *name) {
 #endif
 }
 
-Instance::Sensor& Instance::new_sensor(Name* name) {
+Instance::Sensor& Instance::new_sensor(const std::string &name) {
 #ifdef SMART
-    unique_ptr<Sensor> r = make_unique<Sensor>(name->to_string(), sensors_.size());
+    unique_ptr<Sensor> r = make_unique<Sensor>(name, sensors_.size());
     sensors_.emplace_back(move(r));
 #else
-    Sensor *r = new Sensor(name->to_string(), sensors_.size());
+    Sensor *r = new Sensor(name, sensors_.size());
     sensors_.push_back(r);
 #endif
     if( options_.is_enabled("problem:print:sensor:creation") )
@@ -114,12 +114,12 @@ Instance::Sensor& Instance::new_sensor(Name* name) {
 #endif
 }
 
-Instance::Axiom& Instance::new_axiom(Name* name) {
+Instance::Axiom& Instance::new_axiom(const std::string &name) {
 #ifdef SMART
-    unique_ptr<Axiom> r = make_unique<Axiom>(name->to_string(), axioms_.size());
+    unique_ptr<Axiom> r = make_unique<Axiom>(name, axioms_.size());
     axioms_.emplace_back(move(r));
 #else
-    Axiom *r = new Axiom(name->to_string(), axioms_.size());
+    Axiom *r = new Axiom(name, axioms_.size());
     axioms_.push_back(r);
 #endif
     if( options_.is_enabled("problem:print:axiom:creation") )
