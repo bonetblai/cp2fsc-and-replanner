@@ -43,7 +43,7 @@ ClassicalPlanner::ClassicalPlanner(const string &name,
     n_calls_(0) {
     for( size_t k = 0; k < kp_instance_.n_actions(); ++k ) {
         const Instance::Action &act = *kp_instance_.actions_[k];
-        action_map_.insert(make_pair(act.name_->to_string(), k));
+        action_map_.insert(make_pair(act.name(), k));
     }
 
     int pid = getpid();
@@ -104,7 +104,7 @@ int ClassicalPlanner::get_plan(const State &state, Instance::Plan &raw_plan, Ins
             int step = 0;
             for( Instance::Plan::const_iterator a = raw_plan.begin(); a != raw_plan.end(); ++a, ++step ) {
                 cout << "    step " << step << ": "
-                     << *a << "." << kp_instance_.actions_[*a]->name_
+                     << *a << "." << kp_instance_.actions_[*a]->name()
                      << endl;
             }
         }
@@ -114,7 +114,7 @@ int ClassicalPlanner::get_plan(const State &state, Instance::Plan &raw_plan, Ins
             int step = 0;
             for( Instance::Plan::const_iterator a = plan.begin(); a != plan.end(); ++a, ++step ) {
                 cout << "    step " << step << ": "
-                     << *a << "." << kp_instance_.actions_[*a]->name_
+                     << *a << "." << kp_instance_.actions_[*a]->name()
                      << endl;
             }
         }

@@ -456,7 +456,7 @@ int main(int argc, const char *argv[]) {
 
                 for( size_t k = 0; k < plan.size(); ++k ) {
                     if( need_indent ) cout << string(6, ' ');
-                    cout << setw(4) << k << " : " << instance.actions_[plan[k]]->name_ << endl;
+                    cout << setw(4) << k << " : " << instance.actions_[plan[k]]->name() << endl;
                     if( g_options.is_enabled("solver:print:fired-sensors") ) {
                         const set<int> &sensors = fired_sensors[1+k];
                         if( sensors.size() > 0 ) {
@@ -505,7 +505,7 @@ int main(int argc, const char *argv[]) {
         // length
         size_t plan_length = 0;
         for( size_t k = 0; k < plan.size(); ++k ) {
-            plan_length += instance.is_original_action(instance.actions_[plan[k]]->name_->to_string()) ? 1 : 0;
+            plan_length += instance.is_original_action(instance.actions_[plan[k]]->name()) ? 1 : 0;
         }
 
         // print some stats

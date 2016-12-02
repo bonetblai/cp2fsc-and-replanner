@@ -82,14 +82,14 @@ Instance::Atom& Instance::new_atom(Name *name) {
 
 Instance::Action& Instance::new_action(Name *name) {
 #ifdef SMART
-    unique_ptr<Action> a = make_unique<Action>(name, actions_.size());
+    unique_ptr<Action> a = make_unique<Action>(name->to_string(), actions_.size());
     actions_.emplace_back(move(a));
 #else
-    Action *a = new Action(name, actions_.size());
+    Action *a = new Action(name->to_string(), actions_.size());
     actions_.push_back(a);
 #endif
     if( options_.is_enabled("problem:print:action:creation") )
-        cout << "action " << actions_.back()->index_ << "." << actions_.back()->name_ << " created" << endl;
+        cout << "action " << actions_.back()->index() << "." << actions_.back()->name() << " created" << endl;
 #ifdef SMART
     return *actions_.back().get();
 #else
@@ -146,9 +146,9 @@ void Instance::remove_unreachable_conditional_effects(const bool_vec &reachable_
     for( size_t k = 0; k < actions_.size(); ++k ) {
         Action &act = *actions_[k];
 
-        for( int j = 0; j < (int)act.when_.size(); ++j ) {
+        for( size_t j = 0; j < act.when().size(); ++j ) {
             bool reachable_effect = true;
-            for( index_set::const_iterator it = act.when_[j].condition().begin(); it != act.when_[j].condition().end(); ++it ) {
+            for( index_set::const_iterator it = act.when()[j].condition().begin(); it != act.when()[j].condition().end(); ++it ) {
                 //if( (*it > 0) && !reachable_atoms[*it-1] ) {
                 if( ((*it > 0) && !reachable_atoms[*it-1]) ||
                     ((*it > 0) && static_atoms[*it-1] && neg_literal_in_init[*it-1]) ||
@@ -160,8 +160,8 @@ void Instance::remove_unreachable_conditional_effects(const bool_vec &reachable_
                 }
             }
             if( !reachable_effect ) {
-                act.when_[j] = act.when_.back();
-                act.when_.pop_back();
+                act.when()[j] = act.when().back();
+                act.when().pop_back();
                 --j;
             }
         }
@@ -180,7 +180,7 @@ void Instance::remove_unreachable_axioms(const bool_vec &reachable_atoms, const 
     }
 
     // iterate over axioms
-    for( int k = 0; k < (int)axioms_.size(); ++k ) {
+    for( size_t k = 0; k < axioms_.size(); ++k ) {
         Axiom &axiom = *axioms_[k];
         bool reachable_axiom = true;
         for( index_set::const_iterator it = axiom.body().begin(); it != axiom.body().end(); ++it ) {
@@ -218,7 +218,7 @@ void Instance::remove_unreachable_sensors(const bool_vec &reachable_atoms, const
     }
 
     // iterate over sensors
-    for( int k = 0; k < (int)sensors_.size(); ++k ) {
+    for( size_t k = 0; k < sensors_.size(); ++k ) {
         Sensor &sensor = *sensors_[k];
         bool reachable_sensor = true;
         for( index_set::const_iterator it = sensor.condition_.begin(); it != sensor.condition_.end(); ++it ) {
@@ -261,7 +261,7 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
         Action &act = *actions_[k];
 
         // precondition
-        for( index_set::const_iterator p = act.precondition_.begin(); p != act.precondition_.end(); ) {
+        for( index_set::const_iterator p = act.precondition().begin(); p != act.precondition().end(); ) {
             int index = *p > 0 ? *p - 1 : -*p - 1;
             if( protected_atoms_.find(index) != protected_atoms_.end() ) {
                 ++p;
@@ -273,17 +273,17 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
 #if 0
                 cout << "Eliminating ";
                 State::print_literal(cout, *p, this);
-                cout << " from " << act.name_ << endl;
+                cout << " from " << act.name() << endl;
 #endif
-                act.precondition_.erase(p++);
+                act.precondition().erase(p++);
             } else {
                 ++p;
             }
         }
 
         // conditional effects
-        for( int j = 0; j < (int)act.when_.size(); ++j ) {
-            When &when = act.when_[j];
+        for( size_t j = 0; j < act.when().size(); ++j ) {
+            When &when = act.when()[j];
             for( index_set::const_iterator p = when.condition().begin(); p != when.condition().end(); ) {
                 int index = *p > 0 ? *p - 1 : -*p - 1;
                 if( protected_atoms_.find(index) != protected_atoms_.end() ) {
@@ -296,7 +296,7 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
 #if 0
                     cout << "Eliminating " << flush;
                     State::print_literal(cout, *p, this);
-                    cout << " from " << act.name_ << endl;
+                    cout << " from " << act.name() << endl;
 #endif
                     when.condition().erase(p++);
                 } else {
@@ -307,9 +307,9 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
             // If condition becomes empty, make effects unconditional and
             // remove conditional effect
             if( when.condition().empty() ) {
-                act.effect_.insert(when.effect().begin(), when.effect().end());
-                act.when_[j] = act.when_.back();
-                act.when_.pop_back();
+                act.effect().insert(when.effect().begin(), when.effect().end());
+                act.when()[j] = act.when().back();
+                act.when().pop_back();
                 --j;
             }
         }
@@ -355,7 +355,7 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
 
     // iterate over invariants: at this stage there should be only
     // AT_LEAST_ONE and AT_MOST_ONE invariants
-    for( int k = 0; k < (int)init_.invariants_.size(); ++k ) {
+    for( size_t k = 0; k < init_.invariants_.size(); ++k ) {
         Invariant &invariant = init_.invariants_[k];
         //cout << "Processing invariant "; invariant.write(cout, 0, *this);
         assert((invariant.type_ == Invariant::AT_LEAST_ONE) || (invariant.type_ == Invariant::AT_MOST_ONE));
@@ -363,7 +363,7 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
         bool remove_invariant = false;
 
         // simplify invariant
-        for( int i = 0; i < (int)invariant.size(); ++i ) {
+        for( size_t i = 0; i < invariant.size(); ++i ) {
             int lit = invariant[i];
             int index = lit > 0 ? lit - 1 : -lit - 1;
             if( protected_atoms_.find(index) != protected_atoms_.end() ) continue;
@@ -399,7 +399,7 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
             remove_invariant = true;
             completion_for_initial_state.insert(invariant[0]);
         } else if( (invariant.type_ == Invariant::AT_MOST_ONE) && remove_invariant ) {
-            for( int i = 0; i < (int)invariant.size(); ++i )
+            for( size_t i = 0; i < invariant.size(); ++i )
                 completion_for_initial_state.insert(-invariant[i]);
         }
 
@@ -438,13 +438,13 @@ void Instance::remove_actions(const bool_vec &set, index_vec &map) {
 #else
                 actions_[j] = actions_[k];
 #endif
-                actions_[j]->index_ = j;
+                actions_[j]->set_index(j);
             }
             rm_map[k] = j;
             ++j;
         } else {
             if( options_.is_enabled("problem:print:action:removal") )
-                cout << "removing action " << k << "." << actions_[k]->name_ << endl;
+                cout << "removing action " << k << "." << actions_[k]->name() << endl;
 #ifndef SMART
             delete actions_[k];
 #endif
@@ -505,20 +505,20 @@ void Instance::remove_atoms(const bool_vec &set, index_vec &map) {
 
     // update actions
     for( size_t k = 0; k < actions_.size(); ++k ) {
-        actions_[k]->precondition_.signed_remap(rm_map);
-        actions_[k]->effect_.signed_remap(rm_map);
+        actions_[k]->precondition().signed_remap(rm_map);
+        actions_[k]->effect().signed_remap(rm_map);
 
         // update conditional effects
-        for( int j = 0; j < (int)actions_[k]->when_.size(); ++j ) {
-            When &when = actions_[k]->when_[j];
+        for( size_t j = 0; j < actions_[k]->when().size(); ++j ) {
+            When &when = actions_[k]->when()[j];
             when.condition().signed_remap(rm_map);
             when.effect().signed_remap(rm_map);
 
             // if condition becomes empty, effects are unconditional
             if( when.condition().empty() ) {
-                actions_[k]->effect_.insert(when.effect().begin(), when.effect().end());
-                actions_[k]->when_[j] = actions_[k]->when_.back();
-                actions_[k]->when_.pop_back();
+                actions_[k]->effect().insert(when.effect().begin(), when.effect().end());
+                actions_[k]->when()[j] = actions_[k]->when().back();
+                actions_[k]->when().pop_back();
                 --j;
             }
         }
@@ -676,7 +676,7 @@ void Instance::write_action_set(ostream &os, const index_vec &set) const {
     os << '{';
     for( size_t k = 0; k < set.size(); k++ ) {
         if( k > 0 ) os << ',';
-        os << actions_[set[k]]->name_;
+        os << actions_[set[k]]->name();
     }
     os << '}';
 }
@@ -687,7 +687,7 @@ void Instance::write_action_set(ostream &os, const bool *set) const {
     for( size_t k = 0; k < n_actions(); k++ ) {
         if( set[k] ) {
             if (need_comma) os << ',';
-            os << actions_[k]->name_;
+            os << actions_[k]->name();
             need_comma = true;
         }
     }
@@ -700,7 +700,7 @@ void Instance::write_action_set(ostream &os, const bool_vec &set) const {
     for( size_t k = 0; k < n_actions(); k++ ) {
         if (set[k]) {
             if (need_comma) os << ',';
-            os << actions_[k]->name_;
+            os << actions_[k]->name();
             need_comma = true;
         }
     }
@@ -736,7 +736,7 @@ void Instance::write_domain(ostream &os, int indent) const {
     // actions
     for( size_t k = 0; k < n_actions(); k++ ) {
         const Action &act = *actions_[k];
-        if( act.effect_.size() + act.when_.size() > 0 )
+        if( act.effect().size() + act.when().size() > 0 )
             act.write(os, indent, *this);
     }
 
@@ -846,9 +846,9 @@ void Instance::Action::print(ostream &os, const Instance &i) const {
         }
         os << endl;
     }
-    if( when_.size() > 0 ) {
+    if( when().size() > 0 ) {
         os << "  when:";
-        for( when_vec::const_iterator wi = when_.begin(); wi != when_.end(); ++wi ) {
+        for( when_vec::const_iterator wi = when().begin(); wi != when().end(); ++wi ) {
             for( index_set::const_iterator it = wi->condition().begin(); it != wi->condition().end(); ++it ) {
                 int idx = *it > 0 ? *it-1 : -*it-1;
                 os << (*it > 0 ? " " : " -") << idx << ".";
@@ -868,7 +868,7 @@ void Instance::Action::print(ostream &os, const Instance &i) const {
 
 void Instance::Action::write(ostream &os, int indent, const Instance &instance) const {
     // name and parameters
-    os << string(indent, ' ') << "(:action " << name_->to_string();
+    os << string(indent, ' ') << "(:action " << name_;
     if( comment_ != "" ) os << "    ; " << comment_;
     os << endl;
     if( always_write_parameters_declaration_ )
@@ -892,7 +892,7 @@ void Instance::Action::write(ostream &os, int indent, const Instance &instance) 
     }
 
     // effects
-    int n_effects = effect_.size() + when_.size();
+    int n_effects = effect_.size() + when().size();
     if( n_effects > 0 ) {
         os << string(2 * indent, ' ') << ":effect";
         if( n_effects > 1 ) os << " (and";
@@ -904,8 +904,8 @@ void Instance::Action::write(ostream &os, int indent, const Instance &instance) 
         }
 
         // conditional effects
-        for( size_t i = 0; i < when_.size(); ++i ) {
-            const When &w = when_[i];
+        for( size_t i = 0; i < when().size(); ++i ) {
+            const When &w = when()[i];
             int n_ceffects = w.effect().size();
             if( n_ceffects > 0 ) {
                 assert(!w.condition().empty());
@@ -1199,9 +1199,9 @@ void Instance::create_deductive_rules() {
         for( size_t k = 0; k < invariant.size(); ++k ) {
             string name = string("deductive-rule-") + Utils::to_string(deductive_rules_.size());
 #ifdef SMART
-            unique_ptr<Action> rule = make_unique<Action>(new CopyName(name), deductive_rules_.size());
+            unique_ptr<Action> rule = make_unique<Action>(name, deductive_rules_.size());
 #else
-            Action *rule = new Action(new CopyName(name), deductive_rules_.size());
+            Action *rule = new Action(name, deductive_rules_.size());
 #endif
 
             // conditional effects
@@ -1233,7 +1233,7 @@ void Instance::create_deductive_rules() {
 
             // push conditional effect
             if( !c_eff.effect().empty() ) {
-                rule->when_.push_back(c_eff);
+                rule->when().push_back(c_eff);
 #ifdef SMART
                 deductive_rules_.emplace_back(move(rule));
 #else

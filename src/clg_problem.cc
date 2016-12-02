@@ -91,7 +91,7 @@ CLG_Instance::CLG_Instance(const Instance &ins)
     remap_ = vector<int>(ins.n_actions(),-1);
     for( size_t k = 0; k < ins.n_actions(); ++k ) {
         const Action &action = *ins.actions_[k];
-        if( action.name_->to_string().compare(0, 6, "drule-") != 0 )
+        if( action.name().compare(0, 6, "drule-") != 0 )
             create_regular_action(action, k);//, observable_atoms_, beams_for_observable_atoms_);
     }
 
@@ -117,7 +117,7 @@ CLG_Instance::~CLG_Instance() {
 }
 
 void CLG_Instance::create_regular_action(const Action &action, int action_index) {
-    string action_name = action.name_->to_string();
+    const string &action_name = action.name();
     assert(action_name.compare(0, 6, "drule-") != 0);
 
     // create new action
@@ -125,29 +125,29 @@ void CLG_Instance::create_regular_action(const Action &action, int action_index)
     remap_[action_index] = action_index;
 
     // preconditions
-    for( index_set::const_iterator it = action.precondition_.begin(); it != action.precondition_.end(); ++it ) {
+    for( index_set::const_iterator it = action.precondition().begin(); it != action.precondition().end(); ++it ) {
         int idx = *it > 0 ? *it-1 : -*it-1;
         if( *it > 0 )
-            nact.precondition_.insert(1 + 2*idx);
+            nact.precondition().insert(1 + 2*idx);
         else
-            nact.precondition_.insert(1 + 2*idx+1);
+            nact.precondition().insert(1 + 2*idx+1);
     }
 
     // support and cancellation rules for unconditional effects
-    for( index_set::const_iterator it = action.effect_.begin(); it != action.effect_.end(); ++it ) {
+    for( index_set::const_iterator it = action.effect().begin(); it != action.effect().end(); ++it ) {
         int idx = *it > 0 ? *it-1 : -*it-1;
         if( *it > 0 ) {
-            nact.effect_.insert(1 + 2*idx);
-            nact.effect_.insert(-(1 + 2*idx+1));
+            nact.effect().insert(1 + 2*idx);
+            nact.effect().insert(-(1 + 2*idx+1));
         } else {
-            nact.effect_.insert(1 + 2*idx+1);
-            nact.effect_.insert(-(1 + 2*idx));
+            nact.effect().insert(1 + 2*idx+1);
+            nact.effect().insert(-(1 + 2*idx));
         }
     }
 
     // support and cancellation rules for conditional effects
-    for( size_t i = 0; i < action.when_.size(); ++i ) {
-        const When &when = action.when_[i];
+    for( size_t i = 0; i < action.when().size(); ++i ) {
+        const When &when = action.when()[i];
         When sup_eff, can_eff;
         for( index_set::const_iterator it = when.condition().begin(); it != when.condition().end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
@@ -169,8 +169,8 @@ void CLG_Instance::create_regular_action(const Action &action, int action_index)
                 can_eff.effect().insert(-(1 + 2*idx));
             }
         }
-        nact.when_.push_back(sup_eff);
-        if( !can_eff.effect().empty() ) nact.when_.push_back(can_eff);
+        nact.when().push_back(sup_eff);
+        if( !can_eff.effect().empty() ) nact.when().push_back(can_eff);
     }
 
     if( options_.is_enabled("kp:print:action:regular") )
@@ -186,9 +186,9 @@ void CLG_Instance::create_drules_from_invariant(const Invariant &invariant) {
     for( size_t k = 0; k < invariant.size(); ++k ) {
         string name = string("drule-invariant-") + (invariant.type_ == Invariant::AT_LEAST_ONE ? "alo-" : "amo-") + Utils::to_string(drule_store_.size());
 #ifdef SMART
-        unique_ptr<Action> nact = make_unique<Action>(new CopyName(name));
+        unique_ptr<Action> nact = make_unique<Action>(name);
 #else
-        Action *nact = new Action(new CopyName(name));
+        Action *nact = new Action(name);
 #endif
 
         // setup precondition
@@ -201,17 +201,17 @@ void CLG_Instance::create_drules_from_invariant(const Invariant &invariant) {
                 int idx = lit > 0 ? lit - 1 : -lit - 1;
                 if( lit > 0 ) {
                     if( i != k ) {
-                        nact->precondition_.insert(1 + 2*idx + 1);
+                        nact->precondition().insert(1 + 2*idx + 1);
                     } else {
-                        nact->precondition_.insert(-(1 + 2*idx + 1));
-                        nact->effect_.insert(1 + 2*idx);
+                        nact->precondition().insert(-(1 + 2*idx + 1));
+                        nact->effect().insert(1 + 2*idx);
                     }
                 } else {
                     if( i != k ) {
-                        nact->precondition_.insert(1 + 2*idx);
+                        nact->precondition().insert(1 + 2*idx);
                     } else {
-                        nact->precondition_.insert(-(1 + 2*idx));
-                        nact->effect_.insert(1 + 2*idx + 1);
+                        nact->precondition().insert(-(1 + 2*idx));
+                        nact->effect().insert(1 + 2*idx + 1);
                     }
                 }
             }
@@ -221,14 +221,14 @@ void CLG_Instance::create_drules_from_invariant(const Invariant &invariant) {
                 int idx = lit > 0 ? lit - 1 : -lit - 1;
                 if( lit > 0 ) {
                     if( i != k )
-                        nact->effect_.insert(1 + 2*idx + 1);
+                        nact->effect().insert(1 + 2*idx + 1);
                     else
-                        nact->precondition_.insert(1 + 2*idx);
+                        nact->precondition().insert(1 + 2*idx);
                 } else {
                     if( i != k )
-                        nact->effect_.insert(1 + 2*idx);
+                        nact->effect().insert(1 + 2*idx);
                     else
-                        nact->precondition_.insert(1 + 2*idx + 1);
+                        nact->precondition().insert(1 + 2*idx + 1);
                 }
             }
         }
@@ -265,15 +265,15 @@ void CLG_Instance::create_sensor(const Sensor &sensor) {
             Action &nact = new_action(new CopyName(name));
 
             // precondition
-            nact.precondition_.insert(common_condition.begin(), common_condition.end());
-            nact.precondition_.insert(-(1 + 2*idx));
-            nact.precondition_.insert(-(1 + 2*idx + 1));
+            nact.precondition().insert(common_condition.begin(), common_condition.end());
+            nact.precondition().insert(-(1 + 2*idx));
+            nact.precondition().insert(-(1 + 2*idx + 1));
 
             // effect
             if( n == 0 )
-                nact.effect_.insert(1 + 2*idx);
+                nact.effect().insert(1 + 2*idx);
             else
-                nact.effect_.insert(1 + 2*idx + 1);
+                nact.effect().insert(1 + 2*idx + 1);
 
             if( options_.is_enabled("kp:print:action:sensor") )
                 nact.print(cout, *this);
@@ -290,7 +290,7 @@ void CLG_Instance::cross_reference() {
 
     size_t k = 0;
     while( k < n_actions() ) {
-        string aname = actions_[k]->name_->to_string();
+        const string &aname = actions_[k]->name();
         if( (aname.compare(0, 6, "drule-") == 0) ||
             (aname.compare(0, 7, "sensor-") == 0) ||
             (aname.compare(0, 22, "subgoaling_action_for_") == 0) ) {
@@ -300,7 +300,7 @@ void CLG_Instance::cross_reference() {
         ++k;
     }
     while( k < n_actions() ) {
-        string aname = actions_[k]->name_->to_string();
+        const string &aname = actions_[k]->name();
         if( (aname.compare(0, 7, "sensor-") == 0) ||
             (aname.compare(0, 22, "subgoaling_action_for_") == 0) ) {
             n_drule_actions_ = k - n_standard_actions_;
@@ -309,7 +309,7 @@ void CLG_Instance::cross_reference() {
         ++k;
     }
     while( k < n_actions() ) {
-        string aname = actions_[k]->name_->to_string();
+        const string &aname = actions_[k]->name();
         if( aname.compare(0, 22, "subgoaling_action_for_") == 0 ) {
             n_sensor_actions_ = k - n_standard_actions_ - n_drule_actions_;
             break;
@@ -322,7 +322,7 @@ void CLG_Instance::cross_reference() {
     for( size_t k = 0; k < n_standard_actions_; ++k ) {
         remap_[k] = -1;
         for( size_t j = 0; j < po_instance_.n_actions(); ++j ) {
-            if( actions_[k]->name_->to_string() == po_instance_.actions_[j]->name_->to_string() ) {
+            if( actions_[k]->name() == po_instance_.actions_[j]->name() ) {
                 remap_[k] = j;
                 break;
             }

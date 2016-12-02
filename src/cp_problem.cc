@@ -172,23 +172,23 @@ CP_Instance::CP_Instance(const Instance &ins,
                     size_t mapped_fluent = obs_idx*fsc_states_*ins.n_actions()*fsc_states_ +
                                            q*ins.n_actions()*fsc_states_ + k*fsc_states_ + qp;
                     if( forbid_inconsistent_tuples_ ) {
-                        string map_act_name = string("map_") + act.name_->to_string() + "_obs" + Utils::to_string(obs_idx) + "_q" + Utils::to_string(q) + "_q" + Utils::to_string(qp);
+                        string map_act_name = string("map_") + act.name() + "_obs" + Utils::to_string(obs_idx) + "_q" + Utils::to_string(q) + "_q" + Utils::to_string(qp);
                         Action &map_act = new_action(new CopyName(map_act_name));
-                        map_act.precondition_.insert(1 + unused0_+unused_fluent);
-                        map_act.effect_.insert(-(1 + unused0_+unused_fluent));
-                        map_act.effect_.insert(1 + mapped0_+mapped_fluent);
+                        map_act.precondition().insert(1 + unused0_+unused_fluent);
+                        map_act.effect().insert(-(1 + unused0_+unused_fluent));
+                        map_act.effect().insert(1 + mapped0_+mapped_fluent);
                     }
 
-                    string app_act_name = string("app_") + act.name_->to_string() + "_obs" + Utils::to_string(obs_idx) + "_q" + Utils::to_string(q) + "_q" + Utils::to_string(qp);
+                    string app_act_name = string("app_") + act.name() + "_obs" + Utils::to_string(obs_idx) + "_q" + Utils::to_string(q) + "_q" + Utils::to_string(qp);
                     Action &nact = new_action(new CopyName(app_act_name));
 
                     // the action has precondition if inconsistent tuples are forbidden
                     if( forbid_inconsistent_tuples_ ) {
-                        nact.precondition_.insert(1 + mapped0_+mapped_fluent);
+                        nact.precondition().insert(1 + mapped0_+mapped_fluent);
                     }
 
                     // unconditional effects of action
-                    if( !act.effect_.empty() ) {
+                    if( !act.effect().empty() ) {
                         When base_c_eff;
 
                         // condition
@@ -196,7 +196,7 @@ CP_Instance::CP_Instance(const Instance &ins,
                         base_c_eff.condition().insert(obs.begin(), obs.end());
 
                         // effects
-                        base_c_eff.effect().insert(act.effect_.begin(), act.effect_.end());
+                        base_c_eff.effect().insert(act.effect().begin(), act.effect().end());
 
                         // effects for non-primitive fluents for base conditional effect
                         base_c_eff.effect().insert(np_ns_effect.begin(), np_ns_effect.end());
@@ -210,12 +210,12 @@ CP_Instance::CP_Instance(const Instance &ins,
                             base_c_eff.effect().insert(-(1 + q0_+q));
                             base_c_eff.effect().insert(1 + q0_+qp);
                         }
-                        nact.when_.push_back(base_c_eff);
+                        nact.when().push_back(base_c_eff);
                     }
 
                     // conditional effects of action
-                    for( size_t i = 0; i < act.when_.size(); ++i ) {
-                        const When &w = act.when_[i];
+                    for( size_t i = 0; i < act.when().size(); ++i ) {
+                        const When &w = act.when()[i];
                         if( consistent_with_obs(obs_idx, w.condition()) ) {
                             When c_eff;
 
@@ -239,7 +239,7 @@ CP_Instance::CP_Instance(const Instance &ins,
                             }
 
                             // add conditional effect to new action
-                            nact.when_.push_back(c_eff);
+                            nact.when().push_back(c_eff);
                         }
                     }
                 }
@@ -254,7 +254,7 @@ CP_Instance::CP_Instance(const Instance &ins,
         When eff;
         eff.condition() = axiom.body();
         eff.effect() = axiom.head();
-        ramif.when_.push_back(eff);
+        ramif.when().push_back(eff);
     }
 }
 

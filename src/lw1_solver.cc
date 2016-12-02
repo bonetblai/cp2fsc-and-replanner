@@ -40,7 +40,7 @@ void LW1_Solver::compute_and_add_observations(const Instance::Action *last_actio
     const LW1_Instance &lw1 = *static_cast<const LW1_Instance*>(&kp_instance_);
 
     if( options_.is_enabled("lw1:strict") && (last_action != 0) ) {
-        map<string, set<int> >::const_iterator it = lw1.vars_sensed_by_action_.find(last_action->name_->to_string());
+        map<string, set<int> >::const_iterator it = lw1.vars_sensed_by_action_.find(last_action->name());
         if( it != lw1.vars_sensed_by_action_.end() ) {
             for( set<int>::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt ) {
                 const LW1_Instance::Variable &variable = *lw1.variables_[*jt];
@@ -76,7 +76,7 @@ void LW1_Solver::compute_and_add_observations(const Instance::Action *last_actio
                             } else {
                                 cout << Utils::error() << "more than one value sensed for variable '"
                                      << variable.name() << "' with action '"
-                                     << last_action->name_->to_string() << "'"
+                                     << last_action->name() << "'"
                                      << endl;
                             }
                         }
@@ -84,7 +84,7 @@ void LW1_Solver::compute_and_add_observations(const Instance::Action *last_actio
                     if( !some_value_sensed ) {
                         cout << Utils::error() << "no value sensed for variable '"
                              << variable.name() << "' with action '"
-                             << last_action->name_->to_string() << "'"
+                             << last_action->name() << "'"
                              << endl;
                     }
                 }
@@ -154,7 +154,7 @@ bool LW1_Solver::value_observable_literal(const STATE_CLASS &hidden,
     assert(dynamic_cast<const LW1_Instance*>(&kp_instance_) != 0);
     const LW1_Instance &lw1 = *static_cast<const LW1_Instance*>(&kp_instance_);
     const LW1_Instance::Variable &variable = *lw1.variables_[var_index];
-    string action_key = last_action.name_->to_string();
+    const string &action_key = last_action.name();
     //cout << Utils::red() << "XXXXXX.0: index=" << index << ", name="; State::print_literal(cout, 1 + index, &instance_); cout << Utils::normal() << endl;
 
     // handle easy case when the variable is a state variable
@@ -261,23 +261,23 @@ void LW1_Solver::fill_relevant_sensing_models(const LW1_Instance &lw1,
     // compute action-key for accessingn sensing models in lw1 instance
     string action_key;
     if( options_.is_enabled("lw1:strict") ) {
-        action_key = last_action->name_->to_string();
+        action_key = last_action->name();
     } else {
-        size_t pos = last_action->name_->to_string().find("__set_sensing__");
+        size_t pos = last_action->name().find("__set_sensing__");
         if( pos != string::npos ) {
-            action_key = string(last_action->name_->to_string(), 0, pos);
+            action_key = last_action->name().substr(0, pos);
             pos = string::npos;
         } else {
-            pos = last_action->name_->to_string().find("__effect__");
+            pos = last_action->name().find("__effect__");
         }
         if( pos != string::npos ) {
-            action_key = string(last_action->name_->to_string(), 0, pos);
+            action_key = last_action->name().substr(0, pos);
             pos = string::npos;
         } else {
-            pos = last_action->name_->to_string().find("__turn_on_sensor__");
+            pos = last_action->name().find("__turn_on_sensor__");
         }
         if( pos != string::npos ) {
-            action_key = string(last_action->name_->to_string(), 0, pos);
+            action_key = last_action->name().substr(0, pos);
             pos = string::npos;
         }
     }

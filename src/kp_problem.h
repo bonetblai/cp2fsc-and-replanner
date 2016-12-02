@@ -44,24 +44,24 @@ class KP_Instance : public Instance {
           : action_(std::move(action)),
             extra_(extra) {
             if( action != nullptr ) {
-                for( size_t i = 0; i < action_->when_.size(); ++i )
-                    when_.insert(action_->when_[i]);
+                for( size_t i = 0; i < action_->when().size(); ++i )
+                    when_.insert(action_->when()[i]);
             }
         }
 #else
         DRTemplate(const Action *action = 0, const std::string &extra = "") : action_(action), extra_(extra) {
             if( action != 0 ) {
-                for( size_t i = 0; i < action_->when_.size(); ++i )
-                    when_.insert(action_->when_[i]);
+                for( size_t i = 0; i < action_->when().size(); ++i )
+                    when_.insert(action_->when()[i]);
             }
         }
 #endif
         struct Comparator {
             bool operator()(const DRTemplate &d1, const DRTemplate &d2) const {
-                return (d1.action_->precondition_ < d2.action_->precondition_) ||
-                       ((d1.action_->precondition_ == d2.action_->precondition_) && (d1.action_->effect_ < d2.action_->effect_)) ||
-                       ((d1.action_->precondition_ == d2.action_->precondition_) && (d1.action_->effect_ == d2.action_->effect_) && (d1.when_ < d2.when_)) ||
-                       ((d1.action_->precondition_ == d2.action_->precondition_) && (d1.action_->effect_ == d2.action_->effect_) && (d1.when_ == d2.when_) && (d1.extra_ < d2.extra_));
+                return (d1.action_->precondition() < d2.action_->precondition()) ||
+                       ((d1.action_->precondition() == d2.action_->precondition()) && (d1.action_->effect() < d2.action_->effect())) ||
+                       ((d1.action_->precondition() == d2.action_->precondition()) && (d1.action_->effect() == d2.action_->effect()) && (d1.when_ < d2.when_)) ||
+                       ((d1.action_->precondition() == d2.action_->precondition()) && (d1.action_->effect() == d2.action_->effect()) && (d1.when_ == d2.when_) && (d1.extra_ < d2.extra_));
             }
         };
     };

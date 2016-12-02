@@ -102,8 +102,8 @@ void KS0_Instance::translate(const Instance &instance,
     // calculate literals that must be tagged because they appear in conditional effects
     for( size_t k = 0; k < instance.n_actions(); ++k ) {
         const Action &act = *instance.actions_[k];
-        for( size_t i = 0; i < act.when_.size(); ++i ) {
-            const When &when = act.when_[i];
+        for( size_t i = 0; i < act.when().size(); ++i ) {
+            const When &when = act.when()[i];
             for( index_set::const_iterator it = when.condition().begin(); it != when.condition().end(); ++it ) {
                 int idx = *it < 0 ? -*it-1 : *it-1;
                 tagged_[idx] = true;
@@ -280,36 +280,36 @@ void KS0_Instance::translate(const Instance &instance,
     // create actions
     for( size_t k = 0; k < instance.n_actions(); ++k ) {
         const Action &act = *instance.actions_[k];
-        Action &nact = new_action(new CopyName(act.name_->to_string()));
+        Action &nact = new_action(new CopyName(act.name()));
 
         // setup precondition
-        for( index_set::const_iterator it = act.precondition_.begin(); it != act.precondition_.end(); ++it ) {
+        for( index_set::const_iterator it = act.precondition().begin(); it != act.precondition().end(); ++it ) {
             int tidx = tag_map_[tag0_*ins_n_fluents + (*it > 0 ? *it-1 : -*it-1)];
             assert(tidx != -1);
             if( *it > 0 )
-                nact.precondition_.insert(1 + tidx);
+                nact.precondition().insert(1 + tidx);
             else
-                nact.precondition_.insert(-(1 + tidx));
+                nact.precondition().insert(-(1 + tidx));
         }
 
         // unconditional effects: add support and cancellation literals
-        for( index_set::const_iterator it = act.effect_.begin(); it != act.effect_.end(); ++it ) {
+        for( index_set::const_iterator it = act.effect().begin(); it != act.effect().end(); ++it ) {
             int idx = *it < 0 ? -*it-1 : *it-1;
             for( size_t tag = 0; tag < n_tags_; ++tag ) {
                 int tidx = tag_map_[tag*ins_n_fluents + idx];
                 assert(tidx != -1);
                 if( *it > 0 ) {
-                    nact.effect_.insert(1 + tidx);
+                    nact.effect().insert(1 + tidx);
                 } else {
-                    nact.effect_.insert(-(1 + tidx));
+                    nact.effect().insert(-(1 + tidx));
                 }
                 if( !tagged_[idx] ) break;
             }
         }
 
         // conditional effects: add support and cancellation rules
-        for( size_t i = 0; i < act.when_.size(); ++i ) {
-            const When &when = act.when_[i];
+        for( size_t i = 0; i < act.when().size(); ++i ) {
+            const When &when = act.when()[i];
 
             // add a conditional effect for each tag
             size_t first_tag = n_tags_ == 1 ? 0 : 1;
@@ -347,7 +347,7 @@ void KS0_Instance::translate(const Instance &instance,
                 if( !safe ) continue;
 
                 // add conditional effects to action
-                nact.when_.push_back(eff);
+                nact.when().push_back(eff);
             }
 
         }
@@ -360,7 +360,7 @@ void KS0_Instance::translate(const Instance &instance,
     set<int> merge_lits;
     for( size_t k = 0; k < instance.n_actions(); ++k ) {
         const Action &act = *instance.actions_[k];
-        for( index_set::const_iterator it = act.precondition_.begin(); it != act.precondition_.end(); ++it ) {
+        for( index_set::const_iterator it = act.precondition().begin(); it != act.precondition().end(); ++it ) {
             int idx = *it < 0 ? -*it-1 : *it-1;
             if( tagged_[idx] ) merge_lits.insert(idx);
         }
@@ -392,7 +392,7 @@ void KS0_Instance::translate(const Instance &instance,
             }
             int tidx = tag_map_[tag0_*ins_n_fluents + *it];
             merge_eff.effect().insert(1 + tidx);
-            merge.when_.push_back(merge_eff);
+            merge.when().push_back(merge_eff);
         }
 
         if( options_.is_enabled("ks0:print:action") ||

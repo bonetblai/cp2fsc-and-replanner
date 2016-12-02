@@ -638,14 +638,14 @@ LW1_Instance::LW1_Instance(const Instance &ins,
     remap_ = vector<int>(ins.n_actions(),-1);
     for( size_t k = 0; k < ins.n_actions(); ++k ) {
         const Action &act = *ins.actions_[k];
-        if( act.name_->to_string().compare(0, 6, "drule-") != 0 )
+        if( act.name().compare(0, 6, "drule-") != 0 )
             create_regular_action(act, k, observable_atoms_, beams_for_observable_atoms_);
     }
 
     // fix decision rules for variables
     for( size_t k = 0; k < ins.n_actions(); ++k ) {
         const Action &act = *ins.actions_[k];
-        if( act.name_->to_string().compare(0, 10, "drule-var-") == 0 )
+        if( act.name().compare(0, 10, "drule-var-") == 0 )
             create_drule_for_var(act);
     }
 
@@ -653,7 +653,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
     // if requested, merge actions and insert them into problem.
     for( size_t k = 0; k < ins.n_actions(); ++k ) {
         const Action &act = *ins.actions_[k];
-        if( act.name_->to_string().compare(0, 14, "drule-sensing-") == 0 )
+        if( act.name().compare(0, 14, "drule-sensing-") == 0 )
             create_drule_for_sensing(act);
     }
     merge_drules();
@@ -661,7 +661,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
     // fix decision rules for atoms (only present with type3 drules for sensing)
     for( size_t k = 0; k < ins.n_actions(); ++k ) {
         const Action &act = *ins.actions_[k];
-        if( act.name_->to_string().compare(0, 11, "drule-atom-") == 0 )
+        if( act.name().compare(0, 11, "drule-atom-") == 0 )
             create_drule_for_atom(act);
     }
     merge_drules();
@@ -745,20 +745,20 @@ LW1_Instance::LW1_Instance(const Instance &ins,
         if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
             for( size_t k = 0; k < ins.n_actions(); ++k ) {
                 const Action &act = *ins.actions_[k];
-                if( act.name_->to_string().compare(0, 20, "drule-sensing-type5-") == 0 ) {
-                    assert(act.effect_.size() == 1);
-                    assert(act.when_.empty());
+                if( act.name().compare(0, 20, "drule-sensing-type5-") == 0 ) {
+                    assert(act.effect().size() == 1);
+                    assert(act.when().empty());
 
                     vector<int> clause;
-                    clause.reserve(act.precondition_.size() + 1);
+                    clause.reserve(act.precondition().size() + 1);
 
                     // preconditions and effects
-                    for( index_set::const_iterator it = act.precondition_.begin(); it != act.precondition_.end(); ++it ) {
+                    for( index_set::const_iterator it = act.precondition().begin(); it != act.precondition().end(); ++it ) {
                         int index = *it > 0 ? *it - 1 : -*it - 1;
                         clause.push_back(*it > 0 ? -(1 + 2*index) : -(1 + 2*index + 1));
                     }
-                    int single_effect_index = *act.effect_.begin() > 0 ? *act.effect_.begin() - 1 : -*act.effect_.begin() - 1;
-                    clause.push_back(*act.effect_.begin() > 0 ? 1 + 2*single_effect_index : 1 + 2*single_effect_index + 1);
+                    int single_effect_index = *act.effect().begin() > 0 ? *act.effect().begin() - 1 : -*act.effect().begin() - 1;
+                    clause.push_back(*act.effect().begin() > 0 ? 1 + 2*single_effect_index : 1 + 2*single_effect_index + 1);
                     clauses_for_axioms_.push_back(clause);
 #ifdef DEBUG
                     cout << Utils::yellow() << "CLAUSE2: " << Utils::normal();
@@ -773,16 +773,16 @@ LW1_Instance::LW1_Instance(const Instance &ins,
         if( options_.is_enabled("lw1:boost:drule:sensing:type3") ) {
             for( size_t k = 0; k < ins.n_actions(); ++k ) {
                 const Action &act = *ins.actions_[k];
-                if( (act.name_->to_string().compare(0, 11, "drule-atom-") == 0) ||
-                    (act.name_->to_string().compare(0, 20, "drule-sensing-type3-") == 0) ) {
+                if( (act.name().compare(0, 11, "drule-atom-") == 0) ||
+                    (act.name().compare(0, 20, "drule-sensing-type3-") == 0) ) {
 
-                    for( index_set::const_iterator it = act.effect_.begin(); it != act.effect_.end(); ++it ) {
+                    for( index_set::const_iterator it = act.effect().begin(); it != act.effect().end(); ++it ) {
                         vector<int> clause;
-                        clause.reserve(1 + act.precondition_.size());
+                        clause.reserve(1 + act.precondition().size());
 
                         int index = *it > 0 ? *it - 1 : -*it - 1;
                         clause.push_back(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
-                        for( index_set::const_iterator jt = act.precondition_.begin(); jt != act.precondition_.end(); ++jt ) {
+                        for( index_set::const_iterator jt = act.precondition().begin(); jt != act.precondition().end(); ++jt ) {
                             int index = *jt > 0 ? *jt - 1 : -*jt - 1;
                             clause.push_back(*jt > 0 ? -(1 + 2*index) : -(1 + 2*index + 1));
                         }
@@ -847,9 +847,9 @@ LW1_Instance::LW1_Instance(const Instance &ins,
             // literals from type3 sensing drules
             for( size_t k = 0; k < ins.n_actions(); ++k ) {
                 const Action &act = *ins.actions_[k];
-                if( act.name_->to_string().compare(0, 11, "drule-atom-") == 0 ) {
-                    assert(act.effect_.size() == 1);
-                    int literal = *act.effect_.begin();
+                if( act.name().compare(0, 11, "drule-atom-") == 0 ) {
+                    assert(act.effect().size() == 1);
+                    int literal = *act.effect().begin();
                     assert(literal > 0);
                     --literal;
                     clause_forbidding_literals_.insert(1 + 2*literal);
@@ -889,7 +889,7 @@ void LW1_Instance::create_regular_action(const Action &action,
                                          int action_index,
                                          const index_set &observable_atoms,
                                          const map<pair<int, int>, index_set> &beams_for_observable_atoms) {
-    string action_name = action.name_->to_string();
+    const string &action_name = action.name();
     assert(action_name.compare(0, 6, "drule-") != 0);
 
     // create new action
@@ -897,49 +897,49 @@ void LW1_Instance::create_regular_action(const Action &action,
     remap_[action_index] = action_index;
 
     // preconditions
-    for( index_set::const_iterator it = action.precondition_.begin(); it != action.precondition_.end(); ++it ) {
+    for( index_set::const_iterator it = action.precondition().begin(); it != action.precondition().end(); ++it ) {
         int idx = *it > 0 ? *it-1 : -*it-1;
         if( (normal_execution_atom_ != idx) &&
             (last_action_atoms_.find(idx) == last_action_atoms_.end()) &&
             (sensing_enabler_atoms_.find(idx) == sensing_enabler_atoms_.end()) ) {
-            nact.precondition_.insert(*it > 0 ? 1 + 2*idx : 1 + 2*idx + 1);
+            nact.precondition().insert(*it > 0 ? 1 + 2*idx : 1 + 2*idx + 1);
 #if 0 // this should redundant because if KL is true, then L must be true and the same for -L
             if( options_.is_enabled("lw1:enable-kp/s") )
-                nact.precondition_.insert(*it > 0 ? 1 + kps_atoms_.at(idx) : -(1 + kps_atoms_.at(idx)));
+                nact.precondition().insert(*it > 0 ? 1 + kps_atoms_.at(idx) : -(1 + kps_atoms_.at(idx)));
 #endif
         } else {
-            nact.precondition_.insert(*it > 0 ? 1 + 2*idx : -(1 + 2*idx));
+            nact.precondition().insert(*it > 0 ? 1 + 2*idx : -(1 + 2*idx));
         }
     }
 
     // support and cancellation rules for unconditional effects
-    for( index_set::const_iterator it = action.effect_.begin(); it != action.effect_.end(); ++it ) {
+    for( index_set::const_iterator it = action.effect().begin(); it != action.effect().end(); ++it ) {
         int idx = *it > 0 ? *it-1 : -*it-1;
         if( (normal_execution_atom_ != idx) &&
             (last_action_atoms_.find(idx) == last_action_atoms_.end()) &&
             (sensing_enabler_atoms_.find(idx) == sensing_enabler_atoms_.end()) ) {
             if( *it > 0 ) {
-                nact.effect_.insert(1 + 2*idx);
-                nact.effect_.insert(-(1 + 2*idx+1));
+                nact.effect().insert(1 + 2*idx);
+                nact.effect().insert(-(1 + 2*idx+1));
                 if( options_.is_enabled("lw1:enable-kp/s") )
-                    nact.effect_.insert(1 + kps_atoms_.at(idx));
+                    nact.effect().insert(1 + kps_atoms_.at(idx));
             } else {
-                nact.effect_.insert(1 + 2*idx+1);
-                nact.effect_.insert(-(1 + 2*idx));
+                nact.effect().insert(1 + 2*idx+1);
+                nact.effect().insert(-(1 + 2*idx));
                 if( options_.is_enabled("lw1:enable-kp/s") )
-                    nact.effect_.insert(-(1 + kps_atoms_.at(idx)));
+                    nact.effect().insert(-(1 + kps_atoms_.at(idx)));
             }
         } else {
-            nact.effect_.insert(*it > 0 ? 1 + 2*idx : -(1 + 2*idx));
+            nact.effect().insert(*it > 0 ? 1 + 2*idx : -(1 + 2*idx));
         }
         if( !options_.is_enabled("lw1:strict") || options_.is_enabled("lw1:boost:literals-for-observables:dynamic") ) {
-            lw1_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, nact.effect_);
+            lw1_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, nact.effect());
         }
     }
 
     // support and cancellation rules for conditional effects
-    for( size_t i = 0; i < action.when_.size(); ++i ) {
-        const When &when = action.when_[i];
+    for( size_t i = 0; i < action.when().size(); ++i ) {
+        const When &when = action.when()[i];
         When sup_eff, can_eff, kps_eff;
         for( index_set::const_iterator it = when.condition().begin(); it != when.condition().end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
@@ -981,9 +981,9 @@ void LW1_Instance::create_regular_action(const Action &action,
                 lw1_extend_effect_with_ramifications_on_observables(idx, beams_for_observable_atoms, can_eff.effect());
             }
         }
-        nact.when_.push_back(sup_eff);
-        if( !can_eff.effect().empty() ) nact.when_.push_back(can_eff);
-        if( options_.is_enabled("lw1:enable-kp/s") ) nact.when_.push_back(kps_eff);
+        nact.when().push_back(sup_eff);
+        if( !can_eff.effect().empty() ) nact.when().push_back(can_eff);
+        if( options_.is_enabled("lw1:enable-kp/s") ) nact.when().push_back(kps_eff);
     }
 
     if( options_.is_enabled("kp:print:action:regular") )
@@ -991,35 +991,35 @@ void LW1_Instance::create_regular_action(const Action &action,
 }
 
 void LW1_Instance::create_drule_for_var(const Action &action) {
-    string action_name = action.name_->to_string();
+    const string &action_name = action.name();
     assert(action_name.compare(0, 10, "drule-var-") == 0);
 
     Action &nact = new_action(new CopyName(action_name));
     if( action_name.compare(0, 21, "drule-var-exhaustive-") == 0 ) {
-        assert(action.effect_.size() == 1);
-        int eff = *action.effect_.begin();
+        assert(action.effect().size() == 1);
+        int eff = *action.effect().begin();
         assert(eff > 0);
-        nact.effect_.insert(1 + 2*(eff - 1));
-        for( index_set::const_iterator it = action.precondition_.begin(); it != action.precondition_.end(); ++it ) {
+        nact.effect().insert(1 + 2*(eff - 1));
+        for( index_set::const_iterator it = action.precondition().begin(); it != action.precondition().end(); ++it ) {
             assert(*it < 0);
             int index = -*it - 1;
-            nact.precondition_.insert(1 + 2*index + 1);
+            nact.precondition().insert(1 + 2*index + 1);
         }
-        nact.precondition_.insert(-(1 + 2*(eff - 1) + 1));
+        nact.precondition().insert(-(1 + 2*(eff - 1) + 1));
     } else {
         assert(action_name.compare(0, 20, "drule-var-exclusive-") == 0);
-        assert(action.precondition_.size() == 1);
-        int pre = *action.precondition_.begin();
+        assert(action.precondition().size() == 1);
+        int pre = *action.precondition().begin();
         assert(pre > 0);
-        nact.precondition_.insert(1 + 2*(pre - 1));
-        for( index_set::const_iterator it = action.effect_.begin(); it != action.effect_.end(); ++it ) {
+        nact.precondition().insert(1 + 2*(pre - 1));
+        for( index_set::const_iterator it = action.effect().begin(); it != action.effect().end(); ++it ) {
             assert(*it < 0);
             int index = -*it - 1;
             //When when;
             //when.condition().insert(-(1 + 2*index));
             //when.effect().insert(1 + 2*index + 1);
-            //nact.when_.push_back(when);
-            nact.effect_.insert(1 + 2*index + 1);
+            //nact.when().push_back(when);
+            nact.effect().insert(1 + 2*index + 1);
         }
     }
 
@@ -1028,7 +1028,7 @@ void LW1_Instance::create_drule_for_var(const Action &action) {
 }
 
 void LW1_Instance::create_drule_for_sensing(const Action &action) {
-    string action_name = action.name_->to_string();
+    const string &action_name = action.name();
     if( options_.is_enabled("lw1:strict") ) {
         assert((action_name.compare(0, 20, "drule-sensing-type3-") == 0) || (action_name.compare(0, 19, "drule-sensing-type4") == 0) || (action_name.compare(0, 20, "drule-sensing-type5-") == 0));
         assert(options_.is_enabled("lw1:boost:literals-for-observables") || (action_name.compare(0, 20, "drule-sensing-type5-") != 0));
@@ -1036,17 +1036,17 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
 
         if( action_name.compare(0, 20, "drule-sensing-type3-") == 0 ) {
 #ifdef SMART
-            unique_ptr<Action> nact = make_unique<Action>(new CopyName(action_name));
+            unique_ptr<Action> nact = make_unique<Action>(action_name);
 #else
-            Action *nact = new Action(new CopyName(action_name));
+            Action *nact = new Action(action_name);
 #endif
-            for( index_set::const_iterator it = action.precondition_.begin(); it != action.precondition_.end(); ++it ) {
+            for( index_set::const_iterator it = action.precondition().begin(); it != action.precondition().end(); ++it ) {
                 int index = *it > 0 ? *it - 1 : -*it - 1;
-                nact->precondition_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
+                nact->precondition().insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
             }
-            for( index_set::const_iterator it = action.effect_.begin(); it != action.effect_.end(); ++it ) {
+            for( index_set::const_iterator it = action.effect().begin(); it != action.effect().end(); ++it ) {
                 int index = *it > 0 ? *it - 1 : -*it - 1;
-                nact->effect_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
+                nact->effect().insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
             }
 #ifdef SMART
             drule_store_.emplace(move(nact));
@@ -1055,37 +1055,37 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
 #endif
         } else if( action_name.compare(0, 25, "drule-sensing-type4state-") == 0 ) {
 #ifdef SMART
-            unique_ptr<Action> nact = make_unique<Action>(new CopyName(action_name));
+            unique_ptr<Action> nact = make_unique<Action>(action_name);
 #else
-            Action *nact = new Action(new CopyName(action_name));
+            Action *nact = new Action(action_name);
 #endif
 
-            assert(action.precondition_.size() == 1);
-            assert(action.effect_.size() == 1);
-            assert(action.when_.empty());
+            assert(action.precondition().size() == 1);
+            assert(action.effect().size() == 1);
+            assert(action.when().empty());
 
             // variable
-            assert(action.comment_ != "");
-            string var_name = action.comment_;
+            assert(action.comment() != "");
+            string var_name = action.comment();
             int var_index = varmap_.at(var_name);
             const Variable &variable = *variables_[var_index];
             assert(variable.is_observable());
             assert(variable.is_state_variable());
 
             // index for precondition and effect
-            assert(*action.precondition_.begin() > 0);
-            int index_for_enabler = *action.precondition_.begin() - 1;
-            int literal_for_value = *action.effect_.begin();
+            assert(*action.precondition().begin() > 0);
+            int index_for_enabler = *action.precondition().begin() - 1;
+            int literal_for_value = *action.effect().begin();
             int index_for_value = literal_for_value > 0 ? literal_for_value - 1 : -literal_for_value - 1;
             assert((literal_for_value > 0) || variable.is_binary());
 
             // precondition for sensing enabler
             if( options_.is_enabled("lw1:boost:enable-post-actions") ) {
                 assert(sensing_enabler_atoms_.find(index_for_enabler) != sensing_enabler_atoms_.end());
-                nact->precondition_.insert(1 + 2*index_for_enabler);
+                nact->precondition().insert(1 + 2*index_for_enabler);
             } else {
                 assert(last_action_atoms_.find(index_for_enabler) != last_action_atoms_.end());
-                nact->precondition_.insert(1 + 2*index_for_enabler);
+                nact->precondition().insert(1 + 2*index_for_enabler);
             }
 
             // other preconditions for action for literal KX=x
@@ -1093,20 +1093,20 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             // For binary variable, -KX=x, -KX!=x
             // For non-binary variable, -KX!=x, -KX=x' for *all* values x' of X
             if( variable.is_binary() ) {
-                nact->precondition_.insert(-(1 + 2*index_for_value));
-                nact->precondition_.insert(-(1 + 2*index_for_value + 1));
+                nact->precondition().insert(-(1 + 2*index_for_value));
+                nact->precondition().insert(-(1 + 2*index_for_value + 1));
             } else {
-                nact->precondition_.insert(-(1 + 2*index_for_value + 1));
+                nact->precondition().insert(-(1 + 2*index_for_value + 1));
                 for( set<int>::const_iterator it = variable.domain().begin(); it != variable.domain().end(); ++it )
-                    nact->precondition_.insert(-(1 + 2**it));
+                    nact->precondition().insert(-(1 + 2**it));
             }
 
             // main effect: KX=x
-            nact->effect_.insert(literal_for_value > 0 ? 1 + 2*index_for_value : 1 + 2*index_for_value + 1);
+            nact->effect().insert(literal_for_value > 0 ? 1 + 2*index_for_value : 1 + 2*index_for_value + 1);
 
             // ramifications on other values of variable: for non-binary variables, KX!=x' for all values x' != x
             if( !variable.is_binary() && options_.is_enabled("lw1:boost:complete-effects:type4:state") )
-                complete_effect(nact->effect_, literal_for_value, variable);
+                complete_effect(nact->effect(), literal_for_value, variable);
 
             //nact->print(cout, *this);
 #ifdef SMART
@@ -1115,21 +1115,21 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             drule_store_.insert(DRTemplate(nact));
 #endif
         } else if( action_name.compare(0, 29, "drule-sensing-type4obs-boost-") == 0 ) {
-            assert(action.when_.empty());
+            assert(action.when().empty());
 
 #ifdef SMART
-            unique_ptr<Action> nact = make_unique<Action>(new CopyName(action_name));
+            unique_ptr<Action> nact = make_unique<Action>(action_name);
 #else
-            Action *nact = new Action(new CopyName(action_name));
+            Action *nact = new Action(action_name);
 #endif
 
             // obtain variable
-            assert(action.comment_ != "");
-            size_t blank_pos = action.comment_.find(" ");
-            string var_name(action.comment_, 0, blank_pos);
+            assert(action.comment() != "");
+            size_t blank_pos = action.comment().find(" ");
+            string var_name(action.comment(), 0, blank_pos);
             int var_index = varmap_.at(var_name);
             const Variable &variable = *variables_[var_index];
-            string value_name(action.comment_, 1 + blank_pos);
+            string value_name(action.comment(), 1 + blank_pos);
 
             assert(variable.is_observable());
             assert(!variable.is_state_variable());
@@ -1151,7 +1151,7 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             vector<int> sensing_enablers;
             int index_for_last_action_atom = -1;
             vector<pair<int, int> > other_preconditions;
-            for( index_set::const_iterator it = action.precondition_.begin(); it != action.precondition_.end(); ++it ) {
+            for( index_set::const_iterator it = action.precondition().begin(); it != action.precondition().end(); ++it ) {
                 int index = *it > 0 ? *it - 1 : -*it - 1;
                 if( last_action_atoms_.find(index) != last_action_atoms_.end() ) {
                     assert(*it > 0);
@@ -1164,31 +1164,31 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                 }
             }
             assert(!other_preconditions.empty());
-            assert(other_preconditions.size() == action.effect_.size());
+            assert(other_preconditions.size() == action.effect().size());
 
             // add as precondition the sensing enablers
             if( options_.is_enabled("lw1:boost:enable-post-actions") ) {
                 assert(!sensing_enablers.empty());
                 for( size_t k = 0; k < sensing_enablers.size(); ++k ) {
-                    nact->precondition_.insert(1 + 2*sensing_enablers[k]);
-                    nact->effect_.insert(-(1 + 2*sensing_enablers[k]));
+                    nact->precondition().insert(1 + 2*sensing_enablers[k]);
+                    nact->effect().insert(-(1 + 2*sensing_enablers[k]));
                 }
             } else {
                 assert(index_for_last_action_atom != -1);
-                nact->precondition_.insert(1 + 2*index_for_last_action_atom);
+                nact->precondition().insert(1 + 2*index_for_last_action_atom);
             }
 
             // add the other preconditions
             for( size_t k = 0; k < other_preconditions.size(); ++k ) {
                 int literal = other_preconditions[k].first;
                 int index = other_preconditions[k].second;
-                nact->precondition_.insert(literal > 0 ? -(1 + 2*index) : -(1 + 2*index + 1));
+                nact->precondition().insert(literal > 0 ? -(1 + 2*index) : -(1 + 2*index + 1));
             }
 
             // add the effects (unconditional)
-            for( index_set::const_iterator it = action.effect_.begin(); it != action.effect_.end(); ++it ) {
+            for( index_set::const_iterator it = action.effect().begin(); it != action.effect().end(); ++it ) {
                 int index = *it > 0 ? *it - 1 : -*it - 1;
-                nact->effect_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
+                nact->effect().insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
             }
 
             // if lw1:boost:literals-for-observables, add precondition on sensed literal
@@ -1200,17 +1200,17 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                 //     * add preconditions -KY=y and -KY!=y
                 //
                 if( !negative_value ) {
-                    nact->precondition_.insert(-(1 + 2*index_for_observable_literal + 1));
+                    nact->precondition().insert(-(1 + 2*index_for_observable_literal + 1));
                     if( !variable.is_binary() ) {
                         for( set<int>::const_iterator jt = variable.domain().begin(); jt != variable.domain().end(); ++jt ) {
                             int index_for_value = *jt;
                             assert(index_for_value >= 0);
-                            nact->precondition_.insert(-(1 + 2*index_for_value));
+                            nact->precondition().insert(-(1 + 2*index_for_value));
                         }
                     }
                 } else {
-                    nact->precondition_.insert(-(1 + 2*index_for_observable_literal));
-                    nact->precondition_.insert(-(1 + 2*index_for_observable_literal + 1));
+                    nact->precondition().insert(-(1 + 2*index_for_observable_literal));
+                    nact->precondition().insert(-(1 + 2*index_for_observable_literal + 1));
                 }
             }
 
@@ -1221,21 +1221,21 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             drule_store_.insert(DRTemplate(nact));
 #endif
         } else if( action_name.compare(0, 23, "drule-sensing-type4obs-") == 0 ) {
-            assert(action.precondition_.size() == 1);
+            assert(action.precondition().size() == 1);
 
 #ifdef SMART
-            unique_ptr<Action> nact = make_unique<Action>(new CopyName(action_name));
+            unique_ptr<Action> nact = make_unique<Action>(action_name);
 #else
-            Action *nact = new Action(new CopyName(action_name));
+            Action *nact = new Action(action_name);
 #endif
 
             // obtain variable and value
-            assert(action.comment_ != "");
-            size_t blank_pos = action.comment_.find(" ");
-            string var_name(action.comment_, 0, blank_pos);
+            assert(action.comment() != "");
+            size_t blank_pos = action.comment().find(" ");
+            string var_name(action.comment(), 0, blank_pos);
             int var_index = varmap_.at(var_name);
             const Variable &variable = *variables_[var_index];
-            string value_name(action.comment_, 1 + blank_pos);
+            string value_name(action.comment(), 1 + blank_pos);
 
             assert(variable.is_observable());
             assert(!variable.is_state_variable());
@@ -1256,7 +1256,7 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             // precondition for sensing enablers
             vector<int> sensing_enablers;
             int index_for_last_action_atom = -1;
-            for( index_set::const_iterator it = action.precondition_.begin(); it != action.precondition_.end(); ++it ) {
+            for( index_set::const_iterator it = action.precondition().begin(); it != action.precondition().end(); ++it ) {
                 int index = *it > 0 ? *it - 1 : -*it - 1;
                 if( last_action_atoms_.find(index) != last_action_atoms_.end() ) {
                     assert(*it > 0);
@@ -1275,28 +1275,28 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             if( options_.is_enabled("lw1:boost:enable-post-actions") ) {
                 assert(!sensing_enablers.empty());
                 for( size_t k = 0; k < sensing_enablers.size(); ++k ) {
-                    nact->precondition_.insert(1 + 2*sensing_enablers[k]);
-                    nact->effect_.insert(-(1 + 2*sensing_enablers[k]));
+                    nact->precondition().insert(1 + 2*sensing_enablers[k]);
+                    nact->effect().insert(-(1 + 2*sensing_enablers[k]));
                 }
             } else {
                 assert(index_for_last_action_atom != -1);
-                nact->precondition_.insert(1 + 2*index_for_last_action_atom);
+                nact->precondition().insert(1 + 2*index_for_last_action_atom);
             }
 
             if( !options_.is_enabled("lw1:boost:literals-for-observables") || (index_for_observable_literal == -1) ) {
                 // each unconditional effect L becomes conditional of form: -K-L => KL
-                for( index_set::const_iterator it = action.effect_.begin(); it != action.effect_.end(); ++it ) {
+                for( index_set::const_iterator it = action.effect().begin(); it != action.effect().end(); ++it ) {
                     int index = *it > 0 ? *it - 1 : -*it - 1;
                     When w;
                     w.condition().insert(*it > 0 ? -(1 + 2*index + 1) : -(1 + 2*index));
                     w.effect().insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
                     if( options_.is_enabled("lw1:boost:complete-effects:type4:obs") ) complete_effect(w.effect(), *it); // CHECK
-                    nact->when_.push_back(w);
+                    nact->when().push_back(w);
                 }
 
                 // each conditional effect C => L becomes: KC, -K-L => KL
-                for( size_t k = 0; k < action.when_.size(); ++k ) {
-                    const When &when = action.when_[k];
+                for( size_t k = 0; k < action.when().size(); ++k ) {
+                    const When &when = action.when()[k];
                     assert(when.effect().size() == 1);
                     int head = *when.effect().begin();
                     int head_index = head > 0 ? head - 1 : -head - 1;
@@ -1308,7 +1308,7 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                         w.condition().insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
                     }
                     if( options_.is_enabled("lw1:boost:complete-effects:type4:obs") ) complete_effect(w.effect(), head); // CHECK
-                    nact->when_.push_back(w);
+                    nact->when().push_back(w);
                 }
             } else {
                 assert(index_for_observable_literal != -1);
@@ -1322,15 +1322,15 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                 //     * add effect KY!=y
                 //
                 if( !negative_value ) {
-                    nact->precondition_.insert(-(1 + 2*index_for_observable_literal + 1));
+                    nact->precondition().insert(-(1 + 2*index_for_observable_literal + 1));
                     if( !variable.is_binary() ) {
                         for( set<int>::const_iterator jt = variable.domain().begin(); jt != variable.domain().end(); ++jt ) {
                             int index_for_value = *jt;
                             assert(index_for_value >= 0);
-                            nact->precondition_.insert(-(1 + 2*index_for_value));
+                            nact->precondition().insert(-(1 + 2*index_for_value));
                         }
                     }
-                    nact->effect_.insert(1 + 2*index_for_observable_literal);
+                    nact->effect().insert(1 + 2*index_for_observable_literal);
                 } else {
                     // we should not reach this point
                     //assert(0);
@@ -1345,7 +1345,7 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             // precondition for sensing enablers
             vector<int> sensing_enablers;
             int index_for_last_action_atom = -1;
-            for( index_set::const_iterator it = action.precondition_.begin(); it != action.precondition_.end(); ++it ) {
+            for( index_set::const_iterator it = action.precondition().begin(); it != action.precondition().end(); ++it ) {
                 int index = *it > 0 ? *it - 1 : -*it - 1;
                 if( last_action_atoms_.find(index) != last_action_atoms_.end() ) {
                     assert(*it > 0);
@@ -1362,27 +1362,27 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             if( options_.is_enabled("lw1:boost:enable-post-actions") ) {
                 assert(!sensing_enablers.empty());
                 for( size_t k = 0; k < sensing_enablers.size(); ++k ) {
-                    nact->precondition_.insert(1 + 2*sensing_enablers[k]);
-                    nact->effect_.insert(-(1 + 2*sensing_enablers[k]));
+                    nact->precondition().insert(1 + 2*sensing_enablers[k]);
+                    nact->effect().insert(-(1 + 2*sensing_enablers[k]));
                 }
             } else {
                 assert(index_for_last_action_atom != -1);
-                nact->precondition_.insert(1 + 2*index_for_last_action_atom);
+                nact->precondition().insert(1 + 2*index_for_last_action_atom);
             }
 
             // each unconditional effect L becomes conditional of form: -K-L => KL
-            for( index_set::const_iterator it = action.effect_.begin(); it != action.effect_.end(); ++it ) {
+            for( index_set::const_iterator it = action.effect().begin(); it != action.effect().end(); ++it ) {
                 int index = *it > 0 ? *it - 1 : -*it - 1;
                 When w;
                 w.condition().insert(*it > 0 ? -(1 + 2*index + 1) : -(1 + 2*index));
                 w.effect().insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
                 if( options_.is_enabled("lw1:boost:complete-effects:type4:obs") ) complete_effect(w.effect(), *it); // CHECK
-                nact->when_.push_back(w);
+                nact->when().push_back(w);
             }
 
             // each conditional effect C => L becomes: KC, -K-L => KL
-            for( size_t k = 0; k < action.when_.size(); ++k ) {
-                const When &when = action.when_[k];
+            for( size_t k = 0; k < action.when().size(); ++k ) {
+                const When &when = action.when()[k];
                 assert(when.effect().size() == 1);
                 int head = *when.effect().begin();
                 int head_index = head > 0 ? head - 1 : -head - 1;
@@ -1394,7 +1394,7 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                     w.condition().insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
                 }
                 if( options_.is_enabled("lw1:boost:complete-effects:type4:obs") ) complete_effect(w.effect(), head); // CHECK
-                nact->when_.push_back(w);
+                nact->when().push_back(w);
             }
 
             // When lw1:boost:literals-for-observables is enabled:
@@ -1410,15 +1410,15 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
                 cout << "Sensed: " << var_name << " " << value_name << " " << index_for_literal_for_observable << endl;
                 if( value_name.compare(0, 4, "not_") != 0 ) {
-                    nact->precondition_.insert(-(1 + 2*index_for_literal_for_observable + 1));
+                    nact->precondition().insert(-(1 + 2*index_for_literal_for_observable + 1));
                     if( !variable.is_binary() ) {
                         for( set<int>::const_iterator jt = variable.domain_.begin(); jt != variable.domain_.end(); ++jt ) {
                             int index_for_value = *jt;
                             assert(index_for_value >= 0);
-                            nact->precondition_.insert(-(1 + 2*index_for_value));
+                            nact->precondition().insert(-(1 + 2*index_for_value));
                         }
                     }
-                    nact->effect_.insert(1 + 2*index_for_literal_for_observable);
+                    nact->effect().insert(1 + 2*index_for_literal_for_observable);
                 } else {
                     assert(0);
                 }
@@ -1429,9 +1429,9 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
                 cout << "Sensed: " << var_name << " " << value_name << " " << index_for_literal_for_observable << endl;
                 assert(value_name.compare(0, 4, "not_") != 0);
-                nact->precondition_.insert(-(1 + 2*index_for_literal_for_observable + 1));
+                nact->precondition().insert(-(1 + 2*index_for_literal_for_observable + 1));
                 //assert(0); // index_for_value must be calculate when decoding comment
-                //nact->precondition_.insert(literal_for_value > 0 ? -(1 + 2*index_for_value + 1) : -(1 + 2*index_for_value));
+                //nact->precondition().insert(literal_for_value > 0 ? -(1 + 2*index_for_value + 1) : -(1 + 2*index_for_value));
             }
 
             // if lw1:boost:literals-for-observables is enabled, add preconditions -KY=y' for *all*
@@ -1441,15 +1441,15 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                 for( set<int>::const_iterator jt = variable.domain_.begin(); jt != variable.domain_.end(); ++jt ) {
                     //int index_for_value = *jt;
                     //assert(index_for_value >= 0);
-                    //nact->precondition_.insert(-(1 + 2*index_for_value));
+                    //nact->precondition().insert(-(1 + 2*index_for_value));
                 }
-                //if( variable.is_binary() ) nact->precondition_.insert(-(1 + 2*index_for_value + 1));
+                //if( variable.is_binary() ) nact->precondition().insert(-(1 + 2*index_for_value + 1));
             }
 
             // effects for observable literals
             if( options_.is_enabled("lw1:boost:literals-for-observables") ) {
                 assert(0); // index_for_value must be calculate when decoding comment
-                //nact->effect_.insert(literal_for_value > 0 ? 1 + 2*index_for_value : 1 + 2*index_for_value + 1);
+                //nact->effect().insert(literal_for_value > 0 ? 1 + 2*index_for_value : 1 + 2*index_for_value + 1);
             }
 #endif
 
@@ -1465,13 +1465,13 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
 #if 0
             // CHECK: type5 rules make planner run slower for unknown reason
             Action *nact = new Action(new CopyName(action_name));
-            for( index_set::const_iterator it = action.precondition_.begin(); it != action.precondition_.end(); ++it ) {
+            for( index_set::const_iterator it = action.precondition().begin(); it != action.precondition().end(); ++it ) {
                 int index = *it > 0 ? *it - 1 : -*it - 1;
-                nact->precondition_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
+                nact->precondition().insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
             }
-            for( index_set::const_iterator it = action.effect_.begin(); it != action.effect_.end(); ++it ) {
+            for( index_set::const_iterator it = action.effect().begin(); it != action.effect().end(); ++it ) {
                 int index = *it > 0 ? *it - 1 : -*it - 1;
-                nact->effect_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
+                nact->effect().insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
             }
             drule_store_.insert(DRTemplate(nact));
 #endif
@@ -1479,18 +1479,18 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
     } else {
         assert(action_name.compare(0, 14, "drule-sensing-") == 0);
 #ifdef SMART
-        unique_ptr<Action> nact = make_unique<Action>(new CopyName(action_name));
+        unique_ptr<Action> nact = make_unique<Action>(action_name);
 #else
-        Action *nact = new Action(new CopyName(action_name));
+        Action *nact = new Action(action_name);
 #endif
-        for( index_set::const_iterator it = action.precondition_.begin(); it != action.precondition_.end(); ++it ) {
+        for( index_set::const_iterator it = action.precondition().begin(); it != action.precondition().end(); ++it ) {
             int index = *it > 0 ? *it - 1 : -*it - 1;
-            nact->precondition_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
+            nact->precondition().insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
         }
-        for( index_set::const_iterator it = action.effect_.begin(); it != action.effect_.end(); ++it ) {
+        for( index_set::const_iterator it = action.effect().begin(); it != action.effect().end(); ++it ) {
             int index = *it > 0 ? *it - 1 : -*it - 1;
-            nact->effect_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
-            nact->precondition_.insert(*it > 0 ? -(1 + 2*index + 1) : -(1 + 2*index)); // CHECK: is this necessary?
+            nact->effect().insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
+            nact->precondition().insert(*it > 0 ? -(1 + 2*index + 1) : -(1 + 2*index)); // CHECK: is this necessary?
         }
 #ifdef SMART
         drule_store_.emplace(move(nact));
@@ -1517,20 +1517,20 @@ void LW1_Instance::complete_effect(index_set &effect, int literal) const {
 }
 
 void LW1_Instance::create_drule_for_atom(const Action &action) {
-    string action_name = action.name_->to_string();
+    const string &action_name = action.name();
     assert(action_name.compare(0, 11, "drule-atom-") == 0);
 #ifdef SMART
-    unique_ptr<Action> nact = make_unique<Action>(new CopyName(action_name));
+    unique_ptr<Action> nact = make_unique<Action>(action_name);
 #else
-    Action *nact = new Action(new CopyName(action_name));
+    Action *nact = new Action(action_name);
 #endif
-    for( index_set::const_iterator it = action.precondition_.begin(); it != action.precondition_.end(); ++it ) {
+    for( index_set::const_iterator it = action.precondition().begin(); it != action.precondition().end(); ++it ) {
         int index = *it > 0 ? *it - 1 : -*it - 1;
-        nact->precondition_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
+        nact->precondition().insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
     }
-    for( index_set::const_iterator it = action.effect_.begin(); it != action.effect_.end(); ++it ) {
+    for( index_set::const_iterator it = action.effect().begin(); it != action.effect().end(); ++it ) {
         int index = *it > 0 ? *it - 1 : -*it - 1;
-        nact->effect_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
+        nact->effect().insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
     }
 #ifdef SMART
     drule_store_.emplace(move(nact));
@@ -1561,18 +1561,18 @@ void LW1_Instance::create_sensor(const Sensor &sensor) {
     }
 
     Action &nact = new_action(new CopyName(strdup(sensor.name_->to_string().c_str())));
-    nact.effect_.insert(sensed > 0 ? 1 + 2*sensed_index : 1 + 2*sensed_index + 1);
+    nact.effect().insert(sensed > 0 ? 1 + 2*sensed_index : 1 + 2*sensed_index + 1);
     for( index_set::const_iterator it = sensor.condition_.begin(); it != sensor.condition_.end(); ++it ) {
         int index = *it > 0 ? *it - 1 : -*it - 1;
-        nact.precondition_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
+        nact.precondition().insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
     }
-    nact.precondition_.insert(sensed > 0 ? -(1 + 2*sensed_index + 1) : -(1 + 2*sensed_index));
+    nact.precondition().insert(sensed > 0 ? -(1 + 2*sensed_index + 1) : -(1 + 2*sensed_index));
 
     // complete condition with conditions on other values of the variable (if applicable)
     if( (sensed > 0) && (varid != -1) ) {
         const Variable &var = *variables_[varid];
         for( set<int>::const_iterator it = var.domain().begin(); it != var.domain().end(); ++it ) {
-            if( *it != sensed_index ) nact.precondition_.insert(-(1 + 2**it));
+            if( *it != sensed_index ) nact.precondition().insert(-(1 + 2**it));
         }
     }
 
@@ -1591,7 +1591,7 @@ void LW1_Instance::cross_reference() {
 
     size_t k = 0;
     while( k < n_actions() ) {
-        string aname = actions_[k]->name_->to_string();
+        const string &aname = actions_[k]->name();
         if( (aname.compare(0, 6, "drule-") == 0) ||
             (aname.compare(0, 7, "sensor-") == 0) ||
             (aname.compare(0, 22, "subgoaling_action_for_") == 0) ) {
@@ -1601,7 +1601,7 @@ void LW1_Instance::cross_reference() {
         ++k;
     }
     while( k < n_actions() ) {
-        string aname = actions_[k]->name_->to_string();
+        const string &aname = actions_[k]->name();
         if( (aname.compare(0, 14, "drule-sensing-") == 0) ||
             (aname.compare(0, 11, "drule-atom-") == 0) ||
             (aname.compare(0, 7, "sensor-") == 0) ||
@@ -1614,7 +1614,7 @@ void LW1_Instance::cross_reference() {
         ++k;
     }
     while( k < n_actions() ) {
-        string aname = actions_[k]->name_->to_string();
+        const string &aname = actions_[k]->name();
         if( (aname.compare(0, 11, "drule-atom-") == 0) ||
             (aname.compare(0, 7, "sensor-") == 0) ||
             (aname.compare(0, 22, "subgoaling_action_for_") == 0) ) {
@@ -1626,7 +1626,7 @@ void LW1_Instance::cross_reference() {
         ++k;
     }
     while( k < n_actions() ) {
-        string aname = actions_[k]->name_->to_string();
+        const string &aname = actions_[k]->name();
         if( (aname.compare(0, 7, "sensor-") == 0) ||
             (aname.compare(0, 22, "subgoaling_action_for_") == 0) ) {
             n_drules_for_atoms_ = k - n_standard_actions_ - n_drules_for_vars_ - n_drules_for_sensing_;
@@ -1639,7 +1639,7 @@ void LW1_Instance::cross_reference() {
         ++k;
     }
     while( k < n_actions() ) {
-        string aname = actions_[k]->name_->to_string();
+        const string &aname = actions_[k]->name();
         if( aname.compare(0, 22, "subgoaling_action_for_") == 0 ) {
             n_sensor_actions_ = k - n_standard_actions_ - n_drule_actions_;
             break;
@@ -1654,7 +1654,7 @@ void LW1_Instance::cross_reference() {
     for( size_t k = 0; k < n_standard_actions_; ++k ) {
         remap_[k] = -1;
         for( size_t j = 0; j < po_instance_.n_actions(); ++j ) {
-            if( actions_[k]->name_->to_string() == po_instance_.actions_[j]->name_->to_string() ) {
+            if( actions_[k]->name() == po_instance_.actions_[j]->name() ) {
                 remap_[k] = j;
                 break;
             }

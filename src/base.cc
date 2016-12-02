@@ -5375,17 +5375,17 @@ void PDDL_Base::Action::instantiate(action_list &alist) const {
 void PDDL_Base::Action::emit(Instance &ins) const {
     PDDL_Name name(this, param_);
     Instance::Action &act = ins.new_action(new CopyName(name.to_string(true)));
-    act.cost_ = 1;
+    act.set_cost(1);
     //cout << "fully instantiated action " << name << endl;
     if( precondition_ != 0 ) {
-        precondition_->emit(ins, act.precondition_);
-        //cout << "    pre=" << *precondition_ << endl;
+        precondition_->emit(ins, act.precondition());
+        //cout << "    pre=" << *precondition() << endl;
     }
     if( effect_ != 0 ) {
-        effect_->emit(ins, act.effect_, act.when_);
-        //cout << "    eff=" << *effect_ << endl;
+        effect_->emit(ins, act.effect(), act.when());
+        //cout << "    eff=" << *effect() << endl;
     }
-    act.comment_ = comment_;
+    act.comment() = comment_;
 }
 
 void PDDL_Base::Action::process_instance() const {

@@ -68,7 +68,7 @@ class Instance {
     class atom_vec : public std::vector<Atom*> { };
 #endif
 
-    struct When {
+    class When {
       protected:
         index_set condition_;
         index_set effect_;
@@ -87,22 +87,36 @@ class Instance {
             return (condition_ == when.condition_) && (effect_ == when.effect_);
         }
     };
-    struct when_vec : public std::vector<When> { };
+    class when_vec : public std::vector<When> { };
 
-    struct Action {
-        Name*       name_;
-        //std::string   name_;
-        size_t      index_;
-        index_set   precondition_;
-        index_set   effect_;
-        when_vec    when_;
-        size_t      cost_;
-        std::string comment_;
-        Action(Name* name = 0, size_t index = 0) : name_(name), index_(index), cost_(1) { }
-        ~Action() { delete name_; }
-        //Action(const std::string &name, size_t index)
-        //  : name_(name), index_(index), cost_(1) {
-        //}
+    class Action {
+      protected:
+        std::string   name_;
+        size_t        index_;
+        index_set     precondition_;
+        index_set     effect_;
+        when_vec      when_;
+        size_t        cost_;
+        std::string   comment_;
+
+      public:
+        Action(const std::string &name, size_t index = 0)
+          : name_(name), index_(index), cost_(1) {
+        }
+        const std::string& name() const { return name_; }
+        size_t index() const { return index_; }
+        void set_index(size_t index) { index_ = index; }
+        index_set& precondition() { return precondition_; }
+        index_set& effect() { return effect_; }
+        when_vec& when() { return when_; }
+        const index_set& precondition() const { return precondition_; }
+        const index_set& effect() const { return effect_; }
+        const when_vec& when() const { return when_; }
+        size_t cost() const { return cost_; }
+        void set_cost(size_t cost) { cost_ = cost; }
+        std::string& comment() { return comment_; }
+        const std::string& comment() const { return comment_; }
+
         const Action& operator=(const Action &a) {
             name_ = a.name_;
             index_ = a.index_;
@@ -202,10 +216,10 @@ class Instance {
     };
     class invariant_vec : public std::vector<Invariant> { };
 
-    struct Clause : public index_vec { };
+    class Clause : public index_vec { };
     class clause_vec : public std::vector<Clause> { };
 
-    struct Oneof : public index_vec { };
+    class Oneof : public index_vec { };
     class oneof_vec : public std::vector<Oneof> { };
 
     struct Init {

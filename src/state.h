@@ -175,9 +175,9 @@ class State {
     }
     void apply(const Instance::Action &act) {
         State clone(*this);
-        apply(act.effect_);
-        for( size_t j = 0; j < act.when_.size(); ++j )
-            conditional_apply(clone, act.when_[j].condition(), act.when_[j].effect());
+        apply(act.effect());
+        for( size_t j = 0; j < act.when().size(); ++j )
+            conditional_apply(clone, act.when()[j].condition(), act.when()[j].effect());
     }
     void apply_axioms(const Instance &ins) {
 #ifdef SMART
@@ -206,7 +206,7 @@ class State {
         return true;
         //return satisfy(ins.goal_cls);
     }
-    bool applicable(const Instance::Action &act) const { return satisfy(act.precondition_); }
+    bool applicable(const Instance::Action &act) const { return satisfy(act.precondition()); }
 
     bool operator==(const State &s) const {
         if( size_ != s.size_ ) return false;
