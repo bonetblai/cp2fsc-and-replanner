@@ -622,14 +622,14 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
 #endif
     for( invariant_vec::const_iterator it = ins.init_.invariants_.begin(); it != ins.init_.invariants_.end(); ++it ) {
         const Invariant &invariant = *it;
-        assert((invariant.type_ == Invariant::AT_LEAST_ONE) || (invariant.type_ == Invariant::AT_MOST_ONE));
+        assert((invariant.type() == Invariant::AT_LEAST_ONE) || (invariant.type() == Invariant::AT_MOST_ONE));
 
         // if trivial invariant, skip it
         if( (invariant.size() == 2) && (invariant[0] == -invariant[1]) ) continue;
 
         //cout << "Processing invariant "; invariant.write(cout, 0, ins);
         for( size_t k = 0; k < invariant.size(); ++k ) {
-            string name = string("invariant-") + (invariant.type_ == Invariant::AT_LEAST_ONE ? "at-least-one" : "at-most-one") + "-" + Utils::to_string(invariant_no++);
+            string name = string("invariant-") + (invariant.type() == Invariant::AT_LEAST_ONE ? "at-least-one" : "at-most-one") + "-" + Utils::to_string(invariant_no++);
 #ifdef SMART
             unique_ptr<Action> nact = make_unique<Action>(name);
 #else
@@ -638,8 +638,8 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
             vector<int> completion;
 
             // setup precondition
-            assert(invariant.Xprecondition_.empty());
-            for( index_set::const_iterator it = invariant.Xprecondition_.begin(); it != invariant.Xprecondition_.end(); ++it ) {
+            assert(invariant.Xprecondition().empty());
+            for( index_set::const_iterator it = invariant.Xprecondition().begin(); it != invariant.Xprecondition().end(); ++it ) {
                 int lit = *it;
                 int idx = lit > 0 ? lit-1 : -lit-1;
                 if( lit > 0 )
@@ -650,7 +650,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
 
             // effects
             string comment_body, comment_head;
-            if( invariant.type_ == Invariant::AT_LEAST_ONE ) {
+            if( invariant.type() == Invariant::AT_LEAST_ONE ) {
                 for( size_t i = 0; i < invariant.size(); ++i ) {
                     int lit = invariant[i];
                     int idx = lit > 0 ? lit-1 : -lit-1;
@@ -760,20 +760,20 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
     //size_t invariant_no = 0;
     for( invariant_vec::const_iterator it = ins.init_.invariants_.begin(); it != ins.init_.invariants_.end(); ++it ) {
         const Invariant &invariant = *it;
-        assert((invariant.type_ == Invariant::AT_LEAST_ONE) || (invariant.type_ == Invariant::AT_MOST_ONE));
+        assert((invariant.type() == Invariant::AT_LEAST_ONE) || (invariant.type() == Invariant::AT_MOST_ONE));
 
         // if trivial invariant, skip it
         if( (invariant.size() == 2) && (invariant[0] == -invariant[1]) ) continue;
 
         //cout << "Processing invariant "; invariant.write(cout, 0, ins);
         for( size_t k = 0; k < invariant.size(); ++k ) {
-            string name = string("invariant-") + (invariant.type_ == Invariant::AT_LEAST_ONE ? "at-least-one" : "at-most-one") + "-" + Utils::to_string(invariant_no++);
+            string name = string("invariant-") + (invariant.type() == Invariant::AT_LEAST_ONE ? "at-least-one" : "at-most-one") + "-" + Utils::to_string(invariant_no++);
             Action &nact = new_action(new CopyName(name));
             vector<int> completion;
 
             // setup precondition
-            assert(invariant.Xprecondition_.empty());
-            for( index_set::const_iterator it = invariant.Xprecondition_.begin(); it != invariant.Xprecondition_.end(); ++it ) {
+            assert(invariant.Xprecondition().empty());
+            for( index_set::const_iterator it = invariant.Xprecondition().begin(); it != invariant.Xprecondition().end(); ++it ) {
                 int lit = *it;
                 int idx = lit > 0 ? lit-1 : -lit-1;
                 if( lit > 0 )
@@ -784,7 +784,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
 
             // effects
             string comment_body, comment_head;
-            if( invariant.type_ == Invariant::AT_LEAST_ONE ) {
+            if( invariant.type() == Invariant::AT_LEAST_ONE ) {
                 for( size_t i = 0; i < invariant.size(); ++i ) {
                     int lit = invariant[i];
                     int idx = lit > 0 ? lit-1 : -lit-1;
@@ -1029,14 +1029,14 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
 #endif
     for( invariant_vec::const_iterator it = ins.init_.invariants_.begin(); it != ins.init_.invariants_.end(); ++it ) {
         const Invariant &invariant = *it;
-        assert((invariant.type_ == Invariant::AT_LEAST_ONE) || (invariant.type_ == Invariant::AT_MOST_ONE));
+        assert((invariant.type() == Invariant::AT_LEAST_ONE) || (invariant.type() == Invariant::AT_MOST_ONE));
 
         // if trivial invariant, skip it
         if( (invariant.size() == 2) && (invariant[0] == -invariant[1]) ) continue;
 
         //cout << "Processing invariant "; invariant.write(cout, 0, ins);
         for( size_t k = 0; k < invariant.size(); ++k ) {
-            string name = string("invariant-") + (invariant.type_ == Invariant::AT_LEAST_ONE ? "at-least-one" : "at-most-one") + "-" + Utils::to_string(invariant_no++);
+            string name = string("invariant-") + (invariant.type() == Invariant::AT_LEAST_ONE ? "at-least-one" : "at-most-one") + "-" + Utils::to_string(invariant_no++);
 #ifdef SMART
             unique_ptr<Action> nact = make_unique<Action>(name);
 #else
@@ -1045,8 +1045,8 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
             vector<int> completion;
 
             // setup precondition
-            assert(invariant.Xprecondition_.empty());
-            for( index_set::const_iterator it = invariant.Xprecondition_.begin(); it != invariant.Xprecondition_.end(); ++it ) {
+            assert(invariant.Xprecondition().empty());
+            for( index_set::const_iterator it = invariant.Xprecondition().begin(); it != invariant.Xprecondition().end(); ++it ) {
                 int lit = *it;
                 int idx = lit > 0 ? lit-1 : -lit-1;
                 if( lit > 0 )
@@ -1057,7 +1057,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
 
             // effects
             string comment_body, comment_head;
-            if( invariant.type_ == Invariant::AT_LEAST_ONE ) {
+            if( invariant.type() == Invariant::AT_LEAST_ONE ) {
                 for( size_t i = 0; i < invariant.size(); ++i ) {
                     int lit = invariant[i];
                     int idx = lit > 0 ? lit-1 : -lit-1;
@@ -1167,20 +1167,20 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
     //size_t invariant_no = 0;
     for( invariant_vec::const_iterator it = ins.init_.invariants_.begin(); it != ins.init_.invariants_.end(); ++it ) {
         const Invariant &invariant = *it;
-        assert((invariant.type_ == Invariant::AT_LEAST_ONE) || (invariant.type_ == Invariant::AT_MOST_ONE));
+        assert((invariant.type() == Invariant::AT_LEAST_ONE) || (invariant.type() == Invariant::AT_MOST_ONE));
 
         // if trivial invariant, skip it
         if( (invariant.size() == 2) && (invariant[0] == -invariant[1]) ) continue;
 
         //cout << "Processing invariant "; invariant.write(cout, 0, ins);
         for( size_t k = 0; k < invariant.size(); ++k ) {
-            string name = string("invariant-") + (invariant.type_ == Invariant::AT_LEAST_ONE ? "at-least-one" : "at-most-one") + "-" + Utils::to_string(invariant_no++);
+            string name = string("invariant-") + (invariant.type() == Invariant::AT_LEAST_ONE ? "at-least-one" : "at-most-one") + "-" + Utils::to_string(invariant_no++);
             Action &nact = new_action(new CopyName(name));
             vector<int> completion;
 
             // setup precondition
-            assert(invariant.Xprecondition_.empty());
-            for( index_set::const_iterator it = invariant.Xprecondition_.begin(); it != invariant.Xprecondition_.end(); ++it ) {
+            assert(invariant.Xprecondition().empty());
+            for( index_set::const_iterator it = invariant.Xprecondition().begin(); it != invariant.Xprecondition().end(); ++it ) {
                 int lit = *it;
                 int idx = lit > 0 ? lit-1 : -lit-1;
                 if( lit > 0 )
@@ -1191,7 +1191,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
 
             // effects
             string comment_body, comment_head;
-            if( invariant.type_ == Invariant::AT_LEAST_ONE ) {
+            if( invariant.type() == Invariant::AT_LEAST_ONE ) {
                 for( size_t i = 0; i < invariant.size(); ++i ) {
                     int lit = invariant[i];
                     int idx = lit > 0 ? lit-1 : -lit-1;

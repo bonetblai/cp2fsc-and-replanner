@@ -5217,15 +5217,15 @@ void PDDL_Base::InitInvariant::emit(Instance &ins) const {
             const Literal &literal = *static_cast<const Literal*>(precondition[k]);
             Instance::Atom *p = literal.find_prop(ins, false, true);
             if( !literal.negated_ )
-                typed_invariant.Xprecondition_.insert(1 + p->index());
+                typed_invariant.Xprecondition().insert(1 + p->index());
             else
-                typed_invariant.Xprecondition_.insert(-(1 + p->index()));
+                typed_invariant.Xprecondition().insert(-(1 + p->index()));
         }
         precondition.clear();
     }
 
     // emit invariant
-    if( typed_invariant.type_ != EXACTLY_ONE ) {
+    if( typed_invariant.type() != EXACTLY_ONE ) {
         ins.init_.invariants_.push_back(typed_invariant);
     } else {
         Instance::Invariant at_least_one(AT_LEAST_ONE, typed_invariant);

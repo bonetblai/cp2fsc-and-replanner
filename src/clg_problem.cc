@@ -178,13 +178,13 @@ void CLG_Instance::create_regular_action(const Action &action, int action_index)
 }
 
 void CLG_Instance::create_drules_from_invariant(const Invariant &invariant) {
-    assert((invariant.type_ == Invariant::AT_LEAST_ONE) || (invariant.type_ == Invariant::AT_MOST_ONE));
+    assert((invariant.type() == Invariant::AT_LEAST_ONE) || (invariant.type() == Invariant::AT_MOST_ONE));
 
     // if trivial invariant, skip it
     if( (invariant.size() == 2) && (invariant[0] == -invariant[1]) ) return;
 
     for( size_t k = 0; k < invariant.size(); ++k ) {
-        string name = string("drule-invariant-") + (invariant.type_ == Invariant::AT_LEAST_ONE ? "alo-" : "amo-") + Utils::to_string(drule_store_.size());
+        string name = string("drule-invariant-") + (invariant.type() == Invariant::AT_LEAST_ONE ? "alo-" : "amo-") + Utils::to_string(drule_store_.size());
 #ifdef SMART
         unique_ptr<Action> nact = make_unique<Action>(name);
 #else
@@ -192,10 +192,10 @@ void CLG_Instance::create_drules_from_invariant(const Invariant &invariant) {
 #endif
 
         // setup precondition
-        assert(invariant.Xprecondition_.empty());
+        assert(invariant.Xprecondition().empty());
 
         // effects
-        if( invariant.type_ == Invariant::AT_LEAST_ONE ) {
+        if( invariant.type() == Invariant::AT_LEAST_ONE ) {
             for( size_t i = 0; i < invariant.size(); ++i ) {
                 int lit = invariant[i];
                 int idx = lit > 0 ? lit - 1 : -lit - 1;

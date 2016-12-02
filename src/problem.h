@@ -215,14 +215,23 @@ class Instance {
 #endif
 
     // After instantiation, all invariants are of type AT_LEAST_ONE.
-    struct Invariant : public index_vec {
+    class Invariant : public index_vec {
+      protected:
         int type_;
         index_set Xprecondition_;
-        enum { AT_LEAST_ONE = 0, AT_MOST_ONE = 1, EXACTLY_ONE = 2 };
+
+      public:
         Invariant(int type = AT_LEAST_ONE) : type_(type) { }
         Invariant(int type, const Invariant &invariant)
-          : index_vec(invariant), type_(type), Xprecondition_(invariant.Xprecondition_) { }
+          : index_vec(invariant), type_(type), Xprecondition_(invariant.Xprecondition_) {
+        }
+        int type() const { return type_; }
+        const index_set& Xprecondition() const { return Xprecondition_; }
+        index_set& Xprecondition() { return Xprecondition_; }
         void write(std::ostream &os, int indent, const Instance &instance) const;
+
+      public:
+        enum { AT_LEAST_ONE = 0, AT_MOST_ONE = 1, EXACTLY_ONE = 2 };
     };
     class invariant_vec : public std::vector<Invariant> { };
 

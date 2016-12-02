@@ -358,7 +358,7 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
     for( size_t k = 0; k < init_.invariants_.size(); ++k ) {
         Invariant &invariant = init_.invariants_[k];
         //cout << "Processing invariant "; invariant.write(cout, 0, *this);
-        assert((invariant.type_ == Invariant::AT_LEAST_ONE) || (invariant.type_ == Invariant::AT_MOST_ONE));
+        assert((invariant.type() == Invariant::AT_LEAST_ONE) || (invariant.type() == Invariant::AT_MOST_ONE));
         index_set completion_for_initial_state;
         bool remove_invariant = false;
 
@@ -395,10 +395,10 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
         }
 
         // calculate completion of initial state
-        if( (invariant.type_ == Invariant::AT_LEAST_ONE) && !remove_invariant && (invariant.size() == 1) ) {
+        if( (invariant.type() == Invariant::AT_LEAST_ONE) && !remove_invariant && (invariant.size() == 1) ) {
             remove_invariant = true;
             completion_for_initial_state.insert(invariant[0]);
-        } else if( (invariant.type_ == Invariant::AT_MOST_ONE) && remove_invariant ) {
+        } else if( (invariant.type() == Invariant::AT_MOST_ONE) && remove_invariant ) {
             for( size_t i = 0; i < invariant.size(); ++i )
                 completion_for_initial_state.insert(-invariant[i]);
         }
@@ -1054,8 +1054,8 @@ void Instance::Axiom::write(ostream &os, int indent, const Instance &instance) c
 
 void Instance::Invariant::write(ostream &os, int indent, const Instance &instance) const {
     os << string(indent, ' ') << "(";
-    assert((type_ == AT_LEAST_ONE) || (type_ == AT_MOST_ONE));
-    if( type_ == AT_LEAST_ONE )
+    assert((type() == AT_LEAST_ONE) || (type() == AT_MOST_ONE));
+    if( type() == AT_LEAST_ONE )
         os << "at-least-one";
     else
         os << "at-most-one";
@@ -1194,7 +1194,7 @@ void Instance::create_deductive_rules() {
     // deductive rules.
     for( invariant_vec::const_iterator it = init_.invariants_.begin(); it != init_.invariants_.end(); ++it ) {
         const Invariant &invariant = *it;
-        assert(invariant.type_ == Invariant::AT_LEAST_ONE);
+        assert(invariant.type() == Invariant::AT_LEAST_ONE);
 
         for( size_t k = 0; k < invariant.size(); ++k ) {
             string name = string("deductive-rule-") + Utils::to_string(deductive_rules_.size());
@@ -1206,7 +1206,7 @@ void Instance::create_deductive_rules() {
 
             // conditional effects
             When c_eff;
-            if( invariant.type_ == Invariant::AT_LEAST_ONE ) {
+            if( invariant.type() == Invariant::AT_LEAST_ONE ) {
                 for( size_t i = 0; i < invariant.size(); ++i ) {
                     int lit = invariant[i];
                     if( i != k ) {
@@ -1220,7 +1220,7 @@ void Instance::create_deductive_rules() {
                 }
             } else {
                 // This should be dead code.
-                assert(invariant.type_ == Invariant::AT_MOST_ONE);
+                assert(invariant.type() == Invariant::AT_MOST_ONE);
                 for( size_t i = 0; i < invariant.size(); ++i ) {
                     int lit = invariant[i];
                     if( i == k ) {
