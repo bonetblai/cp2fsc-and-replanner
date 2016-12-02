@@ -173,9 +173,9 @@ void KP_Instance::create_subgoaling_actions(const Instance &ins) {
         atoms_for_unknown_observables_at_init_ = vector<Atom*>(ins.n_atoms());
         for( size_t k = 0; k < ins.n_sensors(); ++k ) {
             const Sensor &r = *ins.sensors_[k];
-            assert(!r.sense_.empty());
+            assert(!r.sense().empty());
 
-            for( index_set::const_iterator it = r.sense_.begin(); it != r.sense_.end(); ++it ) {
+            for( index_set::const_iterator it = r.sense().begin(); it != r.sense().end(); ++it ) {
                 assert(*it > 0);
                 int idx = *it - 1;
                 if( atoms_for_unknown_observables_at_init_[idx] == 0 ) {
@@ -570,11 +570,11 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
     // create sensor rules
     for( size_t k = 0; k < ins.n_sensors(); ++k ) {
         const Sensor &r = *ins.sensors_[k];
-        assert(!r.sense_.empty());
+        assert(!r.sense().empty());
 
         // create common condition
         index_set common_condition;
-        for( index_set::const_iterator it = r.condition_.begin(); it != r.condition_.end(); ++it ) {
+        for( index_set::const_iterator it = r.condition().begin(); it != r.condition().end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
             if( *it > 0 )
                 common_condition.insert(1 + 2*idx);
@@ -584,11 +584,11 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
 
         // generate different rule for every sensed fluent
         int obs = 0;
-        for( index_set::const_iterator it = r.sense_.begin(); it != r.sense_.end(); ++it ) {
+        for( index_set::const_iterator it = r.sense().begin(); it != r.sense().end(); ++it ) {
             assert(*it > 0);
             int idx = *it-1;
             for( size_t n = 0; n < 2; ++n ) {
-                string name = string("sensor-") + r.name_->to_string() + "-obs" + Utils::to_string(obs) + "-ver" + Utils::to_string(n);
+                string name = string("sensor-") + r.name() + "-obs" + Utils::to_string(obs) + "-ver" + Utils::to_string(n);
                 Action &nact = new_action(new CopyName(name));
 
                 // conditional effect
@@ -976,11 +976,11 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
     // create sensor rules
     for( size_t k = 0; k < ins.n_sensors(); ++k ) {
         const Sensor &r = *ins.sensors_[k];
-        assert(!r.sense_.empty());
+        assert(!r.sense().empty());
 
         // create common condition
         index_set common_condition;
-        for( index_set::const_iterator it = r.condition_.begin(); it != r.condition_.end(); ++it ) {
+        for( index_set::const_iterator it = r.condition().begin(); it != r.condition().end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
             if( *it > 0 )
                 common_condition.insert(1 + 2*idx);
@@ -990,11 +990,11 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
 
         // generate different rule for every sensed fluent
         int obs = 0;
-        for( index_set::const_iterator it = r.sense_.begin(); it != r.sense_.end(); ++it ) {
+        for( index_set::const_iterator it = r.sense().begin(); it != r.sense().end(); ++it ) {
             assert(*it > 0);
             int idx = *it-1;
             for( size_t n = 0; n < 2; ++n ) {
-                string name = string("sensor-") + r.name_->to_string() + "-obs" + Utils::to_string(obs) + "-ver" + Utils::to_string(n);
+                string name = string("sensor-") + r.name() + "-obs" + Utils::to_string(obs) + "-ver" + Utils::to_string(n);
                 Action &nact = new_action(new CopyName(name));
 
                 // conditional effect

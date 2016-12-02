@@ -247,10 +247,10 @@ void Preprocessor::compute_reachability(bool_vec &reachable_atoms, bool_vec &rea
 #else
             const Instance::Sensor *r = instance_.sensors_[k];
 #endif
-            assert(!r->sense_.empty());
+            assert(!r->sense().empty());
 
             bool reachable_sensor = true;
-            for( index_set::const_iterator p = r->condition_.begin(); p != r->condition_.end(); ++p ) {
+            for( index_set::const_iterator p = r->condition().begin(); p != r->condition().end(); ++p ) {
                 if( (*p > 0) && !reachable_atoms[*p - 1] ) {
                     reachable_sensor = false;
                     break;
@@ -260,7 +260,7 @@ void Preprocessor::compute_reachability(bool_vec &reachable_atoms, bool_vec &rea
             reachable_sensors[k] = true;
 
             // add sensed atoms to reachable set
-            for( index_set::const_iterator p = r->sense_.begin(); p != r->sense_.end(); ++p ) {
+            for( index_set::const_iterator p = r->sense().begin(); p != r->sense().end(); ++p ) {
                 if( *p < 0 ) continue;
                 if( !reachable_atoms[*p - 1] ) {
                     reachable_atoms[*p - 1] = true;
@@ -321,7 +321,7 @@ void Preprocessor::compute_reachability(bool_vec &reachable_atoms, bool_vec &rea
     if( options_.is_enabled("problem:print:sensor:unreachable") ) {
         cout << Utils::yellow();
         for( size_t k = 0; k < instance_.sensors_.size(); k++ )
-            if( !reachable_sensors[k] ) cout << "  unreachable sensor " << k << "." << instance_.sensors_[k]->name_ << endl;
+            if( !reachable_sensors[k] ) cout << "  unreachable sensor " << k << "." << instance_.sensors_[k]->name() << endl;
         cout << Utils::normal();
     }
     if( options_.is_enabled("problem:print:axiom:unreachable") ) {
@@ -681,7 +681,7 @@ void Preprocessor::preprocess(bool remove_atoms) {
 
     for( size_t k = 0; k < instance_.n_sensors(); ++k ) {
         const Instance::Sensor &r = *instance_.sensors_[k];
-        for( index_set::const_iterator it = r.sense_.begin(); it != r.sense_.end(); ++it ) {
+        for( index_set::const_iterator it = r.sense().begin(); it != r.sense().end(); ++it ) {
             assert(*it > 0);
             //assert(atoms_to_remove[*it-1] == false);
             atoms_to_remove[*it-1] = false;

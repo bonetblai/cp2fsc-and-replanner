@@ -430,7 +430,7 @@ int main(int argc, const char *argv[]) {
                     if( sensors.size() > 0 ) {
                         cout << "init*:" << flush;
                         for( set<int>::const_iterator it = sensors.begin(); it != sensors.end(); ++it ) {
-                            cout << " " << instance.sensors_[*it]->name_;
+                            cout << " " << instance.sensors_[*it]->name();
                         }
                         cout << endl;
                         need_indent = true;
@@ -462,7 +462,7 @@ int main(int argc, const char *argv[]) {
                         if( sensors.size() > 0 ) {
                             cout << "      " << setw(4) << k << "*:";
                             for( set<int>::const_iterator it = sensors.begin(); it != sensors.end(); ++it ) {
-                                cout << " " << instance.sensors_[*it]->name_;
+                                cout << " " << instance.sensors_[*it]->name();
                             }
                             cout << endl;
                         }

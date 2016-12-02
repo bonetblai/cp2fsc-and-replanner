@@ -68,7 +68,7 @@ Instance::Atom& Instance::new_atom(Name *name) {
     unique_ptr<Atom> a = make_unique<Atom>(name->to_string(), atoms_.size());
     atoms_.emplace_back(move(a));
 #else
-    Atom *a = new Atom(name, atoms_.size());
+    Atom *a = new Atom(name->to_string(), atoms_.size());
     atoms_.push_back(a);
 #endif
     if( options_.is_enabled("problem:print:atom:creation") )
@@ -99,14 +99,14 @@ Instance::Action& Instance::new_action(Name *name) {
 
 Instance::Sensor& Instance::new_sensor(Name* name) {
 #ifdef SMART
-    unique_ptr<Sensor> r = make_unique<Sensor>(name, sensors_.size());
+    unique_ptr<Sensor> r = make_unique<Sensor>(name->to_string(), sensors_.size());
     sensors_.emplace_back(move(r));
 #else
-    Sensor *r = new Sensor(name, sensors_.size());
+    Sensor *r = new Sensor(name->to_string(), sensors_.size());
     sensors_.push_back(r);
 #endif
     if( options_.is_enabled("problem:print:sensor:creation") )
-        cout << "sensor " << sensors_.back()->index_ << "." << sensors_.back()->name_ << " created" << endl;
+        cout << "sensor " << sensors_.back()->index() << "." << sensors_.back()->name() << " created" << endl;
 #ifdef SMART
     return *sensors_.back().get();
 #else
@@ -119,7 +119,7 @@ Instance::Axiom& Instance::new_axiom(Name* name) {
     unique_ptr<Axiom> r = make_unique<Axiom>(name->to_string(), axioms_.size());
     axioms_.emplace_back(move(r));
 #else
-    Axiom *r = new Axiom(name, axioms_.size());
+    Axiom *r = new Axiom(name->to_string(), axioms_.size());
     axioms_.push_back(r);
 #endif
     if( options_.is_enabled("problem:print:axiom:creation") )
@@ -221,7 +221,7 @@ void Instance::remove_unreachable_sensors(const bool_vec &reachable_atoms, const
     for( size_t k = 0; k < sensors_.size(); ++k ) {
         Sensor &sensor = *sensors_[k];
         bool reachable_sensor = true;
-        for( index_set::const_iterator it = sensor.condition_.begin(); it != sensor.condition_.end(); ++it ) {
+        for( index_set::const_iterator it = sensor.condition().begin(); it != sensor.condition().end(); ++it ) {
             if( ((*it > 0) && !reachable_atoms[*it-1]) ||
                 ((*it > 0) && static_atoms[*it-1] && neg_literal_in_init[*it-1]) ||
                 ((*it < 0) && static_atoms[-*it-1] && pos_literal_in_init[-*it-1]) ) {
@@ -231,7 +231,7 @@ void Instance::remove_unreachable_sensors(const bool_vec &reachable_atoms, const
         }
         if( !reachable_sensor ) {
             if( options_.is_enabled("problem:print:sensor:removal") )
-                cout << "removing sensor " << k << "." << sensors_[k]->name_ << endl;
+                cout << "removing sensor " << k << "." << sensors_[k]->name() << endl;
 #ifdef SMART
             sensors_[k] = move(sensors_.back());
 #else
@@ -337,7 +337,7 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
     // iterate over sensors
     for( size_t k = 0; k < sensors_.size(); ++k ) {
         Sensor &sensor = *sensors_[k];
-        for( index_set::const_iterator p = sensor.condition_.begin(); p != sensor.condition_.end(); ) {
+        for( index_set::const_iterator p = sensor.condition().begin(); p != sensor.condition().end(); ) {
             int index = *p > 0 ? *p - 1 : -*p - 1;
             if( protected_atoms_.find(index) != protected_atoms_.end() ) {
                 ++p;
@@ -346,7 +346,7 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
             if( ((*p < 0) && !reachable_atoms[index]) ||
                 ((*p > 0) && static_atoms[index] && pos_literal_in_init[index]) ||
                 ((*p < 0) && static_atoms[index] && neg_literal_in_init[index]) ) {
-                sensor.condition_.erase(p++);
+                sensor.condition().erase(p++);
             } else {
                 ++p;
             }
@@ -526,8 +526,8 @@ void Instance::remove_atoms(const bool_vec &set, index_vec &map) {
 
     // update sensors
     for( size_t k = 0; k < sensors_.size(); ++k ) {
-        sensors_[k]->condition_.signed_remap(rm_map);
-        sensors_[k]->sense_.signed_remap(rm_map);
+        sensors_[k]->condition().signed_remap(rm_map);
+        sensors_[k]->sense().signed_remap(rm_map);
     }
 
     // update axioms
@@ -585,7 +585,7 @@ void Instance::calculate_non_primitive_and_observable_fluents() {
     observable_fluents_.clear();
     for( size_t k = 0; k < n_sensors(); ++k ) {
         const Sensor &sensor = *sensors_[k];
-        for( index_set::const_iterator it = sensor.sense_.begin(); it != sensor.sense_.end(); ++it )
+        for( index_set::const_iterator it = sensor.sense().begin(); it != sensor.sense().end(); ++it )
             observable_fluents_.insert(*it > 0 ? *it - 1 : -*it - 1);
     }
     for( index_set::const_iterator it = given_observables_.begin(); it != given_observables_.end(); ++it ) {
@@ -961,7 +961,7 @@ void Instance::Sensor::print(ostream &os, const Instance &i) const {
 
 void Instance::Sensor::write(ostream &os, int indent, const Instance &instance) const {
     // name and parameters
-    os << string(indent, ' ') << "(:sensor " << name_->to_string() << endl;
+    os << string(indent, ' ') << "(:sensor " << name_ << endl;
     if( always_write_parameters_declaration_ )
         os << string(2 * indent, ' ') << ":parameters ()" << endl;
 

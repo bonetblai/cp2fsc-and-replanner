@@ -140,13 +140,23 @@ class Instance {
     class action_vec : public std::vector<Action*> { };
 #endif
 
-    struct Sensor {
-        Name *    name_;
-        size_t    index_;
-        index_set condition_;
-        index_set sense_;
-        Sensor(Name *name = 0, size_t index = 0) : name_(name), index_(index) { }
-        ~Sensor() { delete name_; }
+    class Sensor {
+      protected:
+        std::string name_;
+        size_t      index_;
+        index_set   condition_;
+        index_set   sense_;
+
+      public:
+        Sensor(const std::string &name, size_t index) : name_(name), index_(index) { }
+        const std::string& name() const { return name_; }
+        size_t index() const { return index_; }
+        void set_index(size_t index) { index_ = index; }
+        index_set& condition() { return condition_; }
+        index_set& sense() { return sense_; }
+        const index_set& condition() const { return condition_; }
+        const index_set& sense() const { return sense_; }
+
         const Sensor& operator=(const Sensor &r) {
             name_ = r.name_;
             index_ = r.index_;

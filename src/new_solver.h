@@ -374,9 +374,9 @@ void NewSolver<T>::compute_and_add_observations(const Instance::Action *last_act
     index_set observations;
     for( size_t k = 0; k < instance_.n_sensors(); ++k ) {
         const Instance::Sensor &r = *instance_.sensors_[k];
-        if( hidden.satisfy(r.condition_) ) {
+        if( hidden.satisfy(r.condition()) ) {
             fired_sensors_at_step.insert(k);
-            for( index_set::const_iterator it = r.sense_.begin(); it != r.sense_.end(); ++it ) {
+            for( index_set::const_iterator it = r.sense().begin(); it != r.sense().end(); ++it ) {
                 int obs = *it > 0 ? *it - 1 : -*it - 1;
                 if( hidden.satisfy(obs) ) {
                     state.remove(2*obs + 1);

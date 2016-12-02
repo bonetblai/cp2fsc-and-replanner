@@ -243,11 +243,11 @@ void CLG_Instance::create_drules_from_invariant(const Invariant &invariant) {
 }
 
 void CLG_Instance::create_sensor(const Sensor &sensor) {
-    assert(!sensor.sense_.empty());
+    assert(!sensor.sense().empty());
 
     // create common condition
     index_set common_condition;
-    for( index_set::const_iterator it = sensor.condition_.begin(); it != sensor.condition_.end(); ++it ) {
+    for( index_set::const_iterator it = sensor.condition().begin(); it != sensor.condition().end(); ++it ) {
         int idx = *it > 0 ? *it - 1 : -*it - 1;
         if( *it > 0 )
             common_condition.insert(1 + 2*idx);
@@ -257,11 +257,11 @@ void CLG_Instance::create_sensor(const Sensor &sensor) {
 
     // generate different rule for every sensed fluent
     int obs = 0;
-    for( index_set::const_iterator it = sensor.sense_.begin(); it != sensor.sense_.end(); ++it ) {
+    for( index_set::const_iterator it = sensor.sense().begin(); it != sensor.sense().end(); ++it ) {
         assert(*it > 0);
         int idx = *it - 1;
         for( size_t n = 0; n < 2; ++n ) {
-            string name = sensor.name_->to_string() + "-obs" + Utils::to_string(obs) + "-ver" + Utils::to_string(n);
+            string name = sensor.name() + "-obs" + Utils::to_string(obs) + "-ver" + Utils::to_string(n);
             Action &nact = new_action(new CopyName(name));
 
             // precondition

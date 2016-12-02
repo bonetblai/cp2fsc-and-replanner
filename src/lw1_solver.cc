@@ -95,13 +95,13 @@ void LW1_Solver::compute_and_add_observations(const Instance::Action *last_actio
         index_set observations;
         for( size_t k = 0; k < instance_.n_sensors(); ++k ) {
             const Instance::Sensor &r = *instance_.sensors_[k];
-            if( hidden.satisfy(r.condition_) ) {
+            if( hidden.satisfy(r.condition()) ) {
 #ifdef DEBUG
                 cout << Utils::yellow() << "firing sensor: " << Utils::normal();
                 r.print(cout, instance_);
 #endif
                 fired_sensors_at_step.insert(k);
-                for( index_set::const_iterator it = r.sense_.begin(); it != r.sense_.end(); ++it ) {
+                for( index_set::const_iterator it = r.sense().begin(); it != r.sense().end(); ++it ) {
                     int obs = *it > 0 ? *it - 1 : -*it - 1;
                     bool satisfy = hidden.satisfy(obs);
 #ifdef DEBUG

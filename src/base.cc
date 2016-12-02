@@ -5458,12 +5458,12 @@ void PDDL_Base::Sensor::emit(Instance &ins) const {
     Instance::Sensor &sensor = ins.new_sensor(new CopyName(name.to_string(true)));
     //cout << "fully instantiated sensor " << name << endl;
     if( condition_ != 0 ) {
-        condition_->emit(ins, sensor.condition_);
-        //cout << "    :condition " << *condition_ << endl;
+        condition_->emit(ins, sensor.condition());
+        //cout << "    :condition " << condition() << endl;
     }
     if( sense_ != 0 ) {
-        sense_->emit(ins, sensor.sense_);
-        //cout << "    :sense " << *sense_ << endl;
+        sense_->emit(ins, sensor.sense());
+        //cout << "    :sense " << sense() << endl;
     }
 }
 

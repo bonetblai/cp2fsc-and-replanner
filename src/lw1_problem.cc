@@ -1540,10 +1540,10 @@ void LW1_Instance::create_drule_for_atom(const Action &action) {
 }
 
 void LW1_Instance::create_sensor(const Sensor &sensor) {
-    assert(!sensor.sense_.empty());
-    assert(sensor.sense_.size() == 1);
+    assert(!sensor.sense().empty());
+    assert(sensor.sense().size() == 1);
 
-    int sensed = *sensor.sense_.begin();
+    int sensed = *sensor.sense().begin();
     int sensed_index = sensed > 0 ? sensed - 1 : -sensed - 1;
 
     int varid = -1;
@@ -1556,13 +1556,13 @@ void LW1_Instance::create_sensor(const Sensor &sensor) {
     }
     if( varid == -1 ) {
         cout << Utils::warning()
-             << "sensed value for '" << *sensor.name_ << "' doesn't correspond to any value"
+             << "sensed value for '" << sensor.name() << "' doesn't correspond to any value"
              << Utils::normal() << endl;
     }
 
-    Action &nact = new_action(new CopyName(strdup(sensor.name_->to_string().c_str())));
+    Action &nact = new_action(new CopyName(strdup(sensor.name().c_str())));
     nact.effect().insert(sensed > 0 ? 1 + 2*sensed_index : 1 + 2*sensed_index + 1);
-    for( index_set::const_iterator it = sensor.condition_.begin(); it != sensor.condition_.end(); ++it ) {
+    for( index_set::const_iterator it = sensor.condition().begin(); it != sensor.condition().end(); ++it ) {
         int index = *it > 0 ? *it - 1 : -*it - 1;
         nact.precondition().insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
     }
