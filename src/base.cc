@@ -496,16 +496,23 @@ bool PDDL_Base::is_static_atom(const Atom &atom) const {
 }
 
 PDDL_Base::PredicateSymbol* PDDL_Base::create_predicate(const string &name, const var_symbol_vec *param) {
-    PredicateSymbol *new_predicate_symbol = new PredicateSymbol(name);
-    if( param != 0 ) new_predicate_symbol->param_ = *param;
-    dom_predicates_.push_back(new_predicate_symbol);
-    return new_predicate_symbol;
+    PredicateSymbol *new_predicate = new PredicateSymbol(name);
+    if( param != 0 ) new_predicate->param_ = *param;
+    dom_predicates_.push_back(new_predicate);
+    return new_predicate;
+}
+
+PDDL_Base::Atom* PDDL_Base::create_atom(const PDDL_Base::Atom &atom) const {
+    Atom *new_atom = new Atom(atom);
+    //cout << "Atom " << *new_atom << " created!" << endl;
+    return new_atom;
 }
 
 PDDL_Base::Atom* PDDL_Base::create_atom(const string &name, const var_symbol_vec *param) {
-    Atom *atom = new Atom(create_predicate(name, param));
-    //cout << "Atom " << *atom << " created!" << endl;
-    return atom;
+    PredicateSymbol *new_predicate = create_predicate(name, param);
+    Atom *new_atom = new Atom(new_predicate);
+    //cout << "Atom " << *new_atom << " created!" << endl;
+    return new_atom;
 }
 
 void PDDL_Base::create_normal_execution_atom() {
@@ -949,7 +956,7 @@ void PDDL_Base::lw1_calculate_beam_for_grounded_variable(Variable &var) {
                         break;
                     }
                 } else {
-                    for( int k = 0; k < int(lw1_variables_.size()); ++k ) {
+                    for( size_t k = 0; k < lw1_variables_.size(); ++k ) {
                         const Variable &v = *lw1_variables_[k];
                         if( v.is_state_variable() && (v.grounded_domain_.find(*kt) != v.grounded_domain_.end()) ) {
                             assert(dynamic_cast<const StateVariable*>(&v) != 0);
@@ -2727,8 +2734,10 @@ void PDDL_Base::lw1_calculate_post_condition(const Condition *precondition, cons
 void PDDL_Base::lw1_simplify_post_condition(signed_atom_set &post_condition) const {
     vector<const Atom*> literals;
     literals.reserve(post_condition.size());
-    for( signed_atom_set::const_iterator it = post_condition.begin(); it != post_condition.end(); ++it )
-        literals.push_back(new Atom(*it));
+    for( signed_atom_set::const_iterator it = post_condition.begin(); it != post_condition.end(); ++it ) {
+        Atom *atom = create_atom(*it);
+        literals.push_back(atom);
+    }
 
     // simplify
     size_t k = 0;

@@ -781,17 +781,12 @@ class PDDL_Base {
 #ifdef SMART
     struct owned_variable_vec : public std::vector<std::unique_ptr<Variable> > { };
     struct owned_variable_list : public std::list<std::unique_ptr<Variable> > { };
-    //struct variable_vec : public std::vector<Variable*> { };
-    //struct unique_state_variable_vec : public std::vector<std::unique_ptr<StateVariable> > { };
-    //struct unique_state_variable_list_vec : public std::vector<std::unique_ptr<StateVariableList> > { };
-    struct state_variable_vec : public std::vector<StateVariable*> { };
-    struct state_variable_list_vec : public std::vector<StateVariableList*> { };
 #else
     struct variable_vec : public std::vector<Variable*> { };
     struct variable_list : public std::list<Variable*> { };
+#endif
     struct state_variable_vec : public std::vector<StateVariable*> { };
     struct state_variable_list_vec : public std::vector<StateVariableList*> { };
-#endif
 
     struct Variable : public Symbol, Schema {
         bool grounded_;
@@ -869,11 +864,7 @@ class PDDL_Base {
     struct StateVariableList {
         StateVariableList() { }
         virtual ~StateVariableList() { }
-#if 0//def SMART
-        virtual unique_state_variable_vec* ground(const PDDL_Base *base) const = 0;
-#else
         virtual state_variable_vec* ground(const PDDL_Base *base) const = 0;
-#endif
         virtual std::string to_string() const = 0;
         void print(std::ostream &os) const { os << to_string(); }
     };
@@ -884,34 +875,18 @@ class PDDL_Base {
         symbol_vec param_;
         SingleStateVariableList(const std::string &name) : Symbol(name, sym_varinst) { }
         virtual ~SingleStateVariableList() { }
-#if 0//def SMART
-        virtual unique_state_variable_vec* ground(const PDDL_Base *base) const;
-#else
         virtual state_variable_vec* ground(const PDDL_Base *base) const;
-#endif
         virtual std::string to_string() const { return "<not yet implemented>"; }
     };
 
     struct ForallStateVariableList : public StateVariableList, Schema {
-#if 0//def SMART
-        unique_state_variable_list_vec group_;
-#else
         state_variable_list_vec group_;
-#endif
         ForallStateVariableList() { }
         virtual ~ForallStateVariableList() { }
         virtual void process_instance() const;
-#if 0//def SMART
-        virtual unique_state_variable_vec* ground(const PDDL_Base *base) const;
-#else
         virtual state_variable_vec* ground(const PDDL_Base *base) const;
-#endif
         virtual std::string to_string() const { return "<not yet implemented>"; }
-#if 0//def SMART
-        mutable std::vector<unique_state_variable_vec*> result_stack_;
-#else
         mutable std::vector<state_variable_vec*> result_stack_;
-#endif
         mutable std::vector<const PDDL_Base*> base_stack_;
     };
 
@@ -926,13 +901,8 @@ class PDDL_Base {
 
     struct VariableGroup : public Symbol, Schema {
         bool grounded_;
-#if 0//def SMART
-        unique_state_variable_list_vec group_;
-        unique_state_variable_vec grounded_group_;
-#else
         state_variable_list_vec group_;
         state_variable_vec grounded_group_;
-#endif
         unsigned_atom_set grounded_domain_;
         std::set<std::string> grounded_group_str_;
         std::vector<std::pair<const Variable*, Atom> > filtered_observations_;
@@ -1087,6 +1057,7 @@ class PDDL_Base {
 
     // creation of atoms
     PredicateSymbol* create_predicate(const std::string &name, const var_symbol_vec *param = 0);
+    Atom* create_atom(const Atom &atom) const;
     Atom* create_atom(const std::string &name, const var_symbol_vec *param = 0);
     void create_normal_execution_atom();
 
