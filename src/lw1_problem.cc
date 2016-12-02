@@ -103,7 +103,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
         set_name(new CopyName(ins.name_->to_string()));
 
     // there should be no invariants
-    if( !ins.init_.invariants_.empty() ) {
+    if( !ins.init_.invariants().empty() ) {
         cout << Utils::warning()
              << "LW1 problem has invariants; ignoring them..."
              << Utils::normal() << endl;
@@ -609,16 +609,16 @@ LW1_Instance::LW1_Instance(const Instance &ins,
     }
 
     // set initial atoms
-    for( index_set::const_iterator it = ins.init_.literals_.begin(); it != ins.init_.literals_.end(); ++it ) {
+    for( index_set::const_iterator it = ins.init_.literals().begin(); it != ins.init_.literals().end(); ++it ) {
         int index = *it > 0 ? *it-1 : -*it-1;
-        init_.literals_.insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
+        init_.literals().insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
     }
 
     // add known literals in initial situation
     for( size_t k = 0; k < ins.n_atoms(); ++k ) {
         //const Atom &atom = *ins.atoms_[k];
-        if( (init_.literals_.find(1 + 2*k) == init_.literals_.end()) &&
-            (init_.literals_.find(1 + 2*k+1) == init_.literals_.end()) ) {
+        if( (init_.literals().find(1 + 2*k) == init_.literals().end()) &&
+            (init_.literals().find(1 + 2*k+1) == init_.literals().end()) ) {
 #ifdef DEBUG
             cout << Utils::red()
                  << "XXXXXX COMPLETION OF INIT:"
@@ -627,7 +627,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
             State::print_literal(cout, 1 + 2*k + 1, this);
             cout << endl;
 #endif
-            //init_.literals_.insert(1 + 2*k+1);
+            //init_.literals().insert(1 + 2*k+1);
             if( options_.is_enabled("kp:print:atom:init") ) {
                 cout << "Atom " << atoms_[2*k+1]->name() << " added to init" << endl;
             }

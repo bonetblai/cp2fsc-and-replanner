@@ -132,13 +132,13 @@ CP_Instance::CP_Instance(const Instance &ins,
     }
 
     // add q0 to initial state
-    init_.literals_.insert(1 + q0_);
+    init_.literals().insert(1 + q0_);
     add_to_initial_states(q0_);
 
     // extend initial situation with fluents to remove inconsistent tuples
     if( forbid_inconsistent_tuples_ ) {
         for( size_t k = 0; k < n_unused_fluents_; ++k ) {
-            init_.literals_.insert(1 + unused0_+k);
+            init_.literals().insert(1 + unused0_+k);
             add_to_initial_states(unused0_ + k);
         }
     }

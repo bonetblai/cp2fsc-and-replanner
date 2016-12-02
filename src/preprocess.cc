@@ -137,7 +137,7 @@ void Preprocessor::mark_unreachable_actions(const bool_vec &reachable_atoms, con
     // compute known literals in init
     bool_vec pos_literal_in_init(instance_.n_atoms(), false);
     bool_vec neg_literal_in_init(instance_.n_atoms(), false);
-    for( index_set::const_iterator it = instance_.init_.literals_.begin(); it != instance_.init_.literals_.end(); ++it ) {
+    for( index_set::const_iterator it = instance_.init_.literals().begin(); it != instance_.init_.literals().end(); ++it ) {
         if( *it > 0 )
             pos_literal_in_init[*it - 1] = true;
         else
@@ -173,20 +173,20 @@ void Preprocessor::compute_reachability(bool_vec &reachable_atoms, bool_vec &rea
     }
 
     // extend reachable atoms with those in the initial situation
-    for( index_set::const_iterator it = instance_.init_.literals_.begin(); it != instance_.init_.literals_.end(); ++it ) {
+    for( index_set::const_iterator it = instance_.init_.literals().begin(); it != instance_.init_.literals().end(); ++it ) {
         if( *it > 0 ) reachable_atoms[*it - 1] = true;
     }
 
     // extend reachable atoms with those in oneofs
-    for( size_t k = 0; k < instance_.init_.oneofs_.size(); ++k ) {
-        const Instance::Oneof &oneof = instance_.init_.oneofs_[k];
+    for( size_t k = 0; k < instance_.init_.oneofs().size(); ++k ) {
+        const Instance::Oneof &oneof = instance_.init_.oneofs()[k];
         for( Instance::Oneof::const_iterator it = oneof.begin(); it != oneof.end(); ++it )
             if( *it > 0 ) reachable_atoms[*it - 1] = true;
     }
 
     // extend reachable atoms with those in invariants.
-    for( size_t k = 0; k < instance_.init_.invariants_.size(); ++k ) {
-        const Instance::Invariant &invariant = instance_.init_.invariants_[k];
+    for( size_t k = 0; k < instance_.init_.invariants().size(); ++k ) {
+        const Instance::Invariant &invariant = instance_.init_.invariants()[k];
         for( Instance::Invariant::const_iterator it = invariant.begin(); it != invariant.end(); ++it )
             if( *it > 0 ) reachable_atoms[*it - 1] = true;
     }
@@ -338,14 +338,14 @@ void Preprocessor::compute_reachability(bool_vec &reachable_atoms, bool_vec &rea
 void Preprocessor::compute_static_atoms(const bool_vec &reachable_actions, bool_vec &static_atoms) const {
     // get the initial situation
     bool_vec init(instance_.n_atoms(), false);
-    for( index_set::const_iterator it = instance_.init_.literals_.begin(); it != instance_.init_.literals_.end(); ++it ) {
+    for( index_set::const_iterator it = instance_.init_.literals().begin(); it != instance_.init_.literals().end(); ++it ) {
         if( *it > 0 ) init[*it - 1] = true;
     }
 
 #if 1
     // atoms in the invariants are non-static
-    for( size_t k = 0; k < instance_.init_.invariants_.size(); ++k ) {
-        const Instance::Invariant &invariant = instance_.init_.invariants_[k];
+    for( size_t k = 0; k < instance_.init_.invariants().size(); ++k ) {
+        const Instance::Invariant &invariant = instance_.init_.invariants()[k];
         for( Instance::Invariant::const_iterator it = invariant.begin(); it != invariant.end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
             static_atoms[idx] = false;
@@ -355,8 +355,8 @@ void Preprocessor::compute_static_atoms(const bool_vec &reachable_actions, bool_
 
     // atoms in the oneofs are non-static
     // TODO: not sure of this is correct!
-    for( size_t k = 0; k < instance_.init_.oneofs_.size(); ++k ) {
-        const Instance::Oneof &oneof = instance_.init_.oneofs_[k];
+    for( size_t k = 0; k < instance_.init_.oneofs().size(); ++k ) {
+        const Instance::Oneof &oneof = instance_.init_.oneofs()[k];
         for( Instance::Oneof::const_iterator it = oneof.begin(); it != oneof.end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
             static_atoms[idx] = false;
@@ -665,7 +665,7 @@ void Preprocessor::preprocess(bool remove_atoms) {
              << Utils::normal() << endl;
     }
     bool_vec atoms_to_remove(instance_.n_atoms(), false);
-    for( index_set::const_iterator it = instance_.init_.literals_.begin(); it != instance_.init_.literals_.end(); ++it )
+    for( index_set::const_iterator it = instance_.init_.literals().begin(); it != instance_.init_.literals().end(); ++it )
         atoms_to_remove[*it > 0 ? *it-1 : -*it-1] = true;
     atoms_to_remove.bitwise_and(static_atoms);
     reachable_atoms.bitwise_complement();
@@ -688,8 +688,8 @@ void Preprocessor::preprocess(bool remove_atoms) {
         }
     }
 
-    for( size_t k = 0; k < instance_.init_.invariants_.size(); ++k ) {
-        const Instance::Invariant &invariant = instance_.init_.invariants_[k];
+    for( size_t k = 0; k < instance_.init_.invariants().size(); ++k ) {
+        const Instance::Invariant &invariant = instance_.init_.invariants()[k];
         for( Instance::Invariant::const_iterator it = invariant.begin(); it != invariant.end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
             //assert(atoms_to_remove[idx] == false);
@@ -697,8 +697,8 @@ void Preprocessor::preprocess(bool remove_atoms) {
         }
     }
 
-    for( size_t k = 0; k < instance_.init_.oneofs_.size(); ++k ) {
-        const Instance::Oneof &oneof = instance_.init_.oneofs_[k];
+    for( size_t k = 0; k < instance_.init_.oneofs().size(); ++k ) {
+        const Instance::Oneof &oneof = instance_.init_.oneofs()[k];
         for( Instance::Oneof::const_iterator it = oneof.begin(); it != oneof.end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
             //assert(atoms_to_remove[idx] == false);

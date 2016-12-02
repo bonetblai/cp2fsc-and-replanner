@@ -48,27 +48,27 @@ CLG_Instance::CLG_Instance(const Instance &ins)
     }
 
     // set initial atoms
-    for( index_set::const_iterator it = ins.init_.literals_.begin(); it != ins.init_.literals_.end(); ++it ) {
+    for( index_set::const_iterator it = ins.init_.literals().begin(); it != ins.init_.literals().end(); ++it ) {
         int idx = *it > 0 ? *it-1 : -*it-1;
         if( *it > 0 ) {
             //cout << "Adding +" << ins.atoms_[idx]->name() << endl;
-            init_.literals_.insert(1 + 2*idx);
+            init_.literals().insert(1 + 2*idx);
         } else {
             //cout << "Adding -" << ins.atoms_[idx]->name() << endl;
-            init_.literals_.insert(1 + 2*idx+1);
+            init_.literals().insert(1 + 2*idx+1);
         }
     }
 
     // add known literals in initial situation
     for( size_t k = 0; k < ins.n_atoms(); ++k ) {
         const Atom &atom = *ins.atoms_[k];
-        if( (init_.literals_.find(1 + 2*k) == init_.literals_.end()) &&
-            (init_.literals_.find(1 + 2*k+1) == init_.literals_.end()) ) {
+        if( (init_.literals().find(1 + 2*k) == init_.literals().end()) &&
+            (init_.literals().find(1 + 2*k+1) == init_.literals().end()) ) {
             // check that atom does not appear in invariants
             bool in_invariant = false;
-            for( size_t i = 0; !in_invariant && (i < ins.init_.invariants_.size()); ++i ) {
-                for( size_t j = 0; j < ins.init_.invariants_[i].size(); ++j ) {
-                    int lit = ins.init_.invariants_[i][j];
+            for( size_t i = 0; !in_invariant && (i < ins.init_.invariants().size()); ++i ) {
+                for( size_t j = 0; j < ins.init_.invariants()[i].size(); ++j ) {
+                    int lit = ins.init_.invariants()[i][j];
                     if( (lit > 0) && (atom.index() + 1 == lit) ) {
                         in_invariant = true;
                         break;
@@ -79,7 +79,7 @@ CLG_Instance::CLG_Instance(const Instance &ins)
             // if not in some invariant, add K_not_<atom> to init
             if( !in_invariant ) {
                 //cout << "XXXXXX COMPLETION OF INIT is off!" << endl;
-                //init_.literals_.insert(1 + 2*k+1);
+                //init_.literals().insert(1 + 2*k+1);
                 if( options_.is_enabled("kp:print:atom:init") ) {
                     cout << "Atom " << atoms_[2*k+1]->name() << " added to init" << endl;
                 }
@@ -96,7 +96,7 @@ CLG_Instance::CLG_Instance(const Instance &ins)
     }
 
     // create deductive rules from invariants
-    for( invariant_vec::const_iterator it = ins.init_.invariants_.begin(); it != ins.init_.invariants_.end(); ++it ) {
+    for( invariant_vec::const_iterator it = ins.init_.invariants().begin(); it != ins.init_.invariants().end(); ++it ) {
         const Invariant &invariant = *it;
         create_drules_from_invariant(invariant);
     }

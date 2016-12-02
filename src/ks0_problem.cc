@@ -257,7 +257,7 @@ void KS0_Instance::translate(const Instance &instance,
             int tidx = tag_map_[tag*ins_n_fluents + k];
             if( (*it)->satisfy(k) ) {
                 known_neg = false;
-                if( tidx != -1 ) init_.literals_.insert(1 + tidx);
+                if( tidx != -1 ) init_.literals().insert(1 + tidx);
             } else {
                 known_pos = false;
             }
@@ -266,7 +266,7 @@ void KS0_Instance::translate(const Instance &instance,
         int tidx = tag_map_[tag0_*ins_n_fluents + k];
         assert(tidx != -1);
         if( known_pos ) {
-            init_.literals_.insert(1 + tidx);
+            init_.literals().insert(1 + tidx);
         }
     }
 

@@ -135,7 +135,7 @@ void Instance::remove_unreachable_conditional_effects(const bool_vec &reachable_
     // compute known literals in init
     bool_vec pos_literal_in_init(n_atoms(), false);
     bool_vec neg_literal_in_init(n_atoms(), false);
-    for( index_set::const_iterator it = init_.literals_.begin(); it != init_.literals_.end(); ++it ) {
+    for( index_set::const_iterator it = init_.literals().begin(); it != init_.literals().end(); ++it ) {
         if( *it > 0 )
             pos_literal_in_init[*it - 1] = true;
         else
@@ -172,7 +172,7 @@ void Instance::remove_unreachable_axioms(const bool_vec &reachable_atoms, const 
     // compute known literals in init
     bool_vec pos_literal_in_init(n_atoms(), false);
     bool_vec neg_literal_in_init(n_atoms(), false);
-    for( index_set::const_iterator it = init_.literals_.begin(); it != init_.literals_.end(); ++it ) {
+    for( index_set::const_iterator it = init_.literals().begin(); it != init_.literals().end(); ++it ) {
         if( *it > 0 )
             pos_literal_in_init[*it - 1] = true;
         else
@@ -210,7 +210,7 @@ void Instance::remove_unreachable_sensors(const bool_vec &reachable_atoms, const
     // compute known literals in init
     bool_vec pos_literal_in_init(n_atoms(), false);
     bool_vec neg_literal_in_init(n_atoms(), false);
-    for( index_set::const_iterator it = init_.literals_.begin(); it != init_.literals_.end(); ++it ) {
+    for( index_set::const_iterator it = init_.literals().begin(); it != init_.literals().end(); ++it ) {
         if( *it > 0 )
             pos_literal_in_init[*it - 1] = true;
         else
@@ -248,7 +248,7 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
     // compute known literals in init
     bool_vec pos_literal_in_init(n_atoms(), false);
     bool_vec neg_literal_in_init(n_atoms(), false);
-    for( index_set::const_iterator it = init_.literals_.begin(); it != init_.literals_.end(); ++it ) {
+    for( index_set::const_iterator it = init_.literals().begin(); it != init_.literals().end(); ++it ) {
         int index = *it > 0 ? *it - 1 : -*it - 1;
         if( *it > 0 )
             pos_literal_in_init[index] = true;
@@ -355,8 +355,8 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
 
     // iterate over invariants: at this stage there should be only
     // AT_LEAST_ONE and AT_MOST_ONE invariants
-    for( size_t k = 0; k < init_.invariants_.size(); ++k ) {
-        Invariant &invariant = init_.invariants_[k];
+    for( size_t k = 0; k < init_.invariants().size(); ++k ) {
+        Invariant &invariant = init_.invariants()[k];
         //cout << "Processing invariant "; invariant.write(cout, 0, *this);
         assert((invariant.type() == Invariant::AT_LEAST_ONE) || (invariant.type() == Invariant::AT_MOST_ONE));
         index_set completion_for_initial_state;
@@ -409,17 +409,17 @@ void Instance::simplify_conditions_and_invariants(const bool_vec &reachable_atom
                 State::print_literal(cout, *it, this);
                 cout << endl;
             }
-            init_.literals_.insert(*it);
+            init_.literals().insert(*it);
         }
 
         // Remove invariant and complete initial state
         if( remove_invariant ) {
             if( options_.is_enabled("problem:print:invariant:removal") ) {
                 cout << "removing invariant ";
-                init_.invariants_[k].write(cout, 0, *this);
+                init_.invariants()[k].write(cout, 0, *this);
             }
-            init_.invariants_[k] = init_.invariants_.back();
-            init_.invariants_.pop_back();
+            init_.invariants()[k] = init_.invariants().back();
+            init_.invariants().pop_back();
             --k;
         }
     }
@@ -537,24 +537,24 @@ void Instance::remove_atoms(const bool_vec &set, index_vec &map) {
     }
 
     // update init, hidden, goal, observables and stickies
-    init_.literals_.signed_remap(rm_map);
-    for( size_t k = 0; k < init_.clauses_.size(); ++k )
-        init_.clauses_[k].signed_remap(rm_map);
-    for( size_t k = 0; k < init_.invariants_.size(); ++k )
-        init_.invariants_[k].signed_remap(rm_map);
-    for( size_t k = 0; k < init_.oneofs_.size(); ++k )
-        init_.oneofs_[k].signed_remap(rm_map);
+    init_.literals().signed_remap(rm_map);
+    for( size_t k = 0; k < init_.clauses().size(); ++k )
+        init_.clauses()[k].signed_remap(rm_map);
+    for( size_t k = 0; k < init_.invariants().size(); ++k )
+        init_.invariants()[k].signed_remap(rm_map);
+    for( size_t k = 0; k < init_.oneofs().size(); ++k )
+        init_.oneofs()[k].signed_remap(rm_map);
     for( size_t k = 0; k < hidden_.size(); ++k ) {
-        hidden_[k].literals_.signed_remap(rm_map);
-        assert(hidden_[k].invariants_.empty());
-        assert(hidden_[k].clauses_.empty());
-        assert(hidden_[k].oneofs_.empty());
+        hidden_[k].literals().signed_remap(rm_map);
+        assert(hidden_[k].invariants().empty());
+        assert(hidden_[k].clauses().empty());
+        assert(hidden_[k].oneofs().empty());
     }
     /*
-    for( size_t k = 0; k < hidden_.clauses_.size(); ++k )
-        hidden_.clauses_[k].signed_remap(rm_map);
-    for( size_t k = 0; k < hidden_.invariants_.size(); ++k )
-        hidden_.invariants_[k].signed_remap(rm_map);
+    for( size_t k = 0; k < hidden_.clauses().size(); ++k )
+        hidden_.clauses()[k].signed_remap(rm_map);
+    for( size_t k = 0; k < hidden_.invariants().size(); ++k )
+        hidden_.invariants()[k].signed_remap(rm_map);
     */
 
     goal_literals_.signed_remap(rm_map);
@@ -601,7 +601,7 @@ void Instance::calculate_non_primitive_and_observable_fluents() {
 }
 
 void Instance::set_state(const Init &init, State &state, bool apply_axioms) const {
-    for( index_set::const_iterator it = init.literals_.begin(); it != init.literals_.end(); ++it ) {
+    for( index_set::const_iterator it = init.literals().begin(); it != init.literals().end(); ++it ) {
         if( *it > 0 ) state.add(*it - 1);
     }
     if( apply_axioms ) state.apply_axioms(*this);
@@ -771,9 +771,9 @@ void Instance::write_problem(ostream &os, const State *state, int indent) const 
     }
 
     // initial situation
-    if( (state == 0) && !init_.literals_.empty() ) {
+    if( (state == 0) && !init_.literals().empty() ) {
         os << string(indent, ' ') << "(:init";
-        for( index_set::const_iterator it = init_.literals_.begin(); it != init_.literals_.end(); ++it ) {
+        for( index_set::const_iterator it = init_.literals().begin(); it != init_.literals().end(); ++it ) {
             os << " ";
             State::print_literal(os, *it, this);
         }
@@ -1147,8 +1147,8 @@ void Instance::generate_initial_states(StateSet &initial_states, bool verbose) c
     std::vector<int> stack, restore;
     while( true ) {
         assert(stack.size() == restore.size());
-        if( i == (int)init_.oneofs_.size() ) {
-            if( t.satisfy(init_.clauses_) ) {
+        if( i == (int)init_.oneofs().size() ) {
+            if( t.satisfy(init_.clauses()) ) {
                 State *s = new State(t);
                 s->clear_non_primitive_fluents(*this);
                 s->apply_axioms(*this);
@@ -1168,7 +1168,7 @@ void Instance::generate_initial_states(StateSet &initial_states, bool verbose) c
             --i;
             continue;
         }
-        if( j == (int)init_.oneofs_[i].size() ) {
+        if( j == (int)init_.oneofs()[i].size() ) {
             if( i == 0 ) break;
             int l = restore.back(), p = l < 0 ? -l : l;
             j = stack.back();
@@ -1178,7 +1178,7 @@ void Instance::generate_initial_states(StateSet &initial_states, bool verbose) c
             --i;
             continue;
         }
-        int l = init_.oneofs_[i][j], p = l < 0? -l : l;
+        int l = init_.oneofs()[i][j], p = l < 0? -l : l;
         restore.push_back(t.satisfy(p-1,p==l) ? -l : INT_MAX);
         t.apply(p-1, p!=l);
         stack.push_back(1+j);
@@ -1192,7 +1192,7 @@ void Instance::create_deductive_rules() {
     // The difference is that this rule apply at the atom level and
     // not at the KP-atom level. We call the generated rules, the
     // deductive rules.
-    for( invariant_vec::const_iterator it = init_.invariants_.begin(); it != init_.invariants_.end(); ++it ) {
+    for( invariant_vec::const_iterator it = init_.invariants().begin(); it != init_.invariants().end(); ++it ) {
         const Invariant &invariant = *it;
         assert(invariant.type() == Invariant::AT_LEAST_ONE);
 

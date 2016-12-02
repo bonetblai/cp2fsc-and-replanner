@@ -241,11 +241,22 @@ class Instance {
     class Oneof : public index_vec { };
     class oneof_vec : public std::vector<Oneof> { };
 
-    struct Init {
+    class Init {
+      protected:
         index_set     literals_;
         invariant_vec invariants_;
         clause_vec    clauses_;
         oneof_vec     oneofs_;
+
+      public:
+        index_set& literals() { return literals_; }
+        invariant_vec& invariants() { return invariants_; }
+        clause_vec& clauses() { return clauses_; }
+        oneof_vec& oneofs() { return oneofs_; }
+        const index_set& literals() const { return literals_; }
+        const invariant_vec& invariants() const { return invariants_; }
+        const clause_vec& clauses() const { return clauses_; }
+        const oneof_vec& oneofs() const { return oneofs_; }
     };
     class init_vec : public std::vector<Init> { };
 

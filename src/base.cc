@@ -5131,9 +5131,9 @@ string PDDL_Base::Unknown::to_string() const {
 void PDDL_Base::InitLiteral::emit(Instance &ins, Instance::Init &state) const {
     Instance::Atom *p = find_prop(ins, false, true);
     if( !negated_ ) {
-        state.literals_.insert(1 + p->index());
+        state.literals().insert(1 + p->index());
     } else {
-        state.literals_.insert(-(1 + p->index()));
+        state.literals().insert(-(1 + p->index()));
     }
 }
 
@@ -5154,9 +5154,9 @@ void PDDL_Base::InitLiteral::instantiate(init_element_list &ilist) const {
 void PDDL_Base::InitLiteral::emit(Instance &ins) const {
     Instance::Atom *p = find_prop(ins, false, true);
     if( !negated_ ) {
-        ins.init_.literals_.insert(1 + p->index());
+        ins.init_.literals().insert(1 + p->index());
     } else {
-        ins.init_.literals_.insert(-(1 + p->index()));
+        ins.init_.literals().insert(-(1 + p->index()));
     }
 }
 
@@ -5226,12 +5226,12 @@ void PDDL_Base::InitInvariant::emit(Instance &ins) const {
 
     // emit invariant
     if( typed_invariant.type() != EXACTLY_ONE ) {
-        ins.init_.invariants_.push_back(typed_invariant);
+        ins.init_.invariants().push_back(typed_invariant);
     } else {
         Instance::Invariant at_least_one(AT_LEAST_ONE, typed_invariant);
         Instance::Invariant at_most_one(AT_MOST_ONE, typed_invariant);
-        ins.init_.invariants_.push_back(at_least_one);
-        ins.init_.invariants_.push_back(at_most_one);
+        ins.init_.invariants().push_back(at_least_one);
+        ins.init_.invariants().push_back(at_most_one);
     }
 }
 
@@ -5273,7 +5273,7 @@ void PDDL_Base::InitClause::instantiate(init_element_list &ilist) const {
 void PDDL_Base::InitClause::emit(Instance &ins) const {
     Instance::Clause clause;
     Clause::emit(ins, clause);
-    ins.init_.clauses_.push_back(clause);
+    ins.init_.clauses().push_back(clause);
 }
 
 bool PDDL_Base::InitClause::is_strongly_static(const PredicateSymbol &p) const {
@@ -5311,7 +5311,7 @@ void PDDL_Base::InitOneof::instantiate(init_element_list &ilist) const {
 void PDDL_Base::InitOneof::emit(Instance &ins) const {
     Instance::Oneof oneof;
     Oneof::emit(ins, oneof);
-    ins.init_.oneofs_.push_back(oneof);
+    ins.init_.oneofs().push_back(oneof);
 }
 
 bool PDDL_Base::InitOneof::is_strongly_static(const PredicateSymbol &p) const {
