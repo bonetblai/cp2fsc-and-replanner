@@ -3268,11 +3268,8 @@ void PDDL_Base::do_lw1_translation(const variable_vec* &variables,
 }
 
 void PDDL_Base::emit_instance(Instance &ins) const {
-    const char *dname = tab_.table_char_map().strdup(!domain_name_.empty() ? domain_name_.c_str() : "??");
-    const char *pname = tab_.table_char_map().strdup(!problem_name_.empty() ? problem_name_.c_str() : "??");
-    ins.name_ = new InstanceName(dname, pname);
-    delete[] dname;
-    delete[] pname;
+    ins.set_domain_name(domain_name_.empty() ? string("??") : domain_name_);
+    ins.set_problem_name(problem_name_.empty() ? string("??") : problem_name_);
 
     // emit initial situation.
     for( size_t k = 0; k < dom_init_.size(); ++k )

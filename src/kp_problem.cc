@@ -35,7 +35,15 @@ static int get_atom_index(const Instance &ins, string atom_name) {
 }
 
 KP_Instance::KP_Instance(const Options::Mode &options)
-  : Instance(options), new_goal_(0), inference_time_(0)  {
+  : Instance(options),
+    new_goal_(0),
+    inference_time_(0)  {
+}
+
+KP_Instance::KP_Instance(const std::string &domain_name, const std::string &problem_name, const Options::Mode &options)
+  : Instance(domain_name, problem_name, options),
+    new_goal_(0),
+    inference_time_(0)  {
 }
 
 void KP_Instance::write_problem(ostream &os, const State *state, int indent) const {
@@ -407,7 +415,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
 #else
 Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base::variable_vec &variables)
 #endif
-  : KP_Instance(ins.options_),
+  : KP_Instance(ins.domain_name_, ins.problem_name_, ins.options_),
     n_standard_actions_(0),
     n_sensor_actions_(0),
     n_invariant_actions_(0),
@@ -416,13 +424,6 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
 
     cout << Utils::internal_error() << "ctor for Standard_KP_Instance shouldn't be called" << endl;
     exit(-1);
-
-    // set name
-    if( dynamic_cast<const InstanceName*>(ins.name_) != 0 ) {
-        set_name(new InstanceName(*dynamic_cast<const InstanceName*>(ins.name_)));
-    } else {
-        set_name(new CopyName(ins.name_->to_string()));
-    }
 
     // create K0 atoms
     atoms_.reserve(2*ins.n_atoms());
@@ -858,14 +859,8 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
 }
 
 Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
-  : KP_Instance(ins.options_), po_instance_(ins) {
-
-    // set name
-    if( dynamic_cast<const InstanceName*>(ins.name_) != 0 ) {
-        set_name(new InstanceName(*dynamic_cast<const InstanceName*>(ins.name_)));
-    } else {
-        set_name(new CopyName(ins.name_->to_string()));
-    }
+  : KP_Instance(ins.domain_name_, ins.problem_name_, ins.options_),
+    po_instance_(ins) {
 
     // create K0 atoms
     atoms_.reserve(2*ins.n_atoms());
@@ -1250,9 +1245,6 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
     // do subgoaling
     create_subgoaling_actions(ins);
     n_subgoaling_actions_ = n_actions() - n_standard_actions_ - n_sensor_actions_ - n_invariant_actions_;
-}
-
-Standard_KP_Instance::~Standard_KP_Instance() {
 }
 
 void Standard_KP_Instance::cross_reference() {

@@ -25,19 +25,12 @@
 using namespace std;
 
 CLG_Instance::CLG_Instance(const Instance &ins)
-  : KP_Instance(ins.options_),
+  : KP_Instance(ins.domain_name_, ins.problem_name_, ins.options_),
     n_standard_actions_(0),
     n_sensor_actions_(0),
     n_drule_actions_(0),
     n_subgoaling_actions_(0),
     po_instance_(ins) {
-
-    // set name
-    if( dynamic_cast<const InstanceName*>(ins.name_) != 0 ) {
-        set_name(new InstanceName(*dynamic_cast<const InstanceName*>(ins.name_)));
-    } else {
-        set_name(new CopyName(ins.name_->to_string()));
-    }
 
     // create K0 atoms
     atoms_.reserve(2*ins.n_atoms());

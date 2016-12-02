@@ -30,17 +30,11 @@ CP_Instance::CP_Instance(const Instance &ins,
                          size_t fsc_states,
                          bool forbid_inconsistent_tuples,
                          bool compound_obs_as_fluents)
-  : Instance(ins.options_),
+  : Instance(ins.domain_name_, ins.problem_name_, ins.options_),
     fsc_states_(fsc_states),
     forbid_inconsistent_tuples_(forbid_inconsistent_tuples),
     compound_obs_as_fluents_(compound_obs_as_fluents),
     instance_(ins) {
-
-    // set name
-    if( dynamic_cast<const InstanceName*>(ins.name_) != 0 )
-        set_name(new InstanceName(*dynamic_cast<const InstanceName*>(ins.name_)));
-    else
-        set_name(new CopyName(ins.name_->to_string()));
 
     // set description of init
     init_ = ins.init_;

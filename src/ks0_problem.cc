@@ -23,7 +23,7 @@
 using namespace std;
 
 KS0_Instance::KS0_Instance(const Instance &instance, bool tag_all_literals)
-  : Instance(instance.options_),
+  : Instance(instance.domain_name_, instance.problem_name_, instance.options_),
     tag_all_literals_(tag_all_literals) {
 
     StateSet initial_states;
@@ -71,7 +71,7 @@ KS0_Instance::KS0_Instance(const Instance &instance, bool tag_all_literals)
 }
 
 KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals)
-  : Instance(instance.options_),
+  : Instance(instance.domain_name_, instance.problem_name_, instance.options_),
     tag_all_literals_(tag_all_literals) {
     const StateSet &initial_states = instance.initial_states_;
     const map<const State*, const StateSet*> &reachable_space_from_initial_state = instance.reachable_space_from_initial_state_;
@@ -83,12 +83,6 @@ void KS0_Instance::translate(const Instance &instance,
                              const map<const State*, const StateSet*> &reachable_space_from_initial_state,
                              int q0,
                              int num_fsc_states) {
-    // set name
-    if( dynamic_cast<const InstanceName*>(instance.name_) != 0 )
-        set_name(new InstanceName(*dynamic_cast<const InstanceName*>(instance.name_)));
-    else
-        set_name(new CopyName(instance.name_->to_string()));
-
     // set number of tags; tag0 is the empty tag
     n_tags_ = initial_states.size();
     if( n_tags_ > 1 ) ++n_tags_;

@@ -757,23 +757,21 @@ int LAMA_Server_Planner::cat_file_to_server(const string &filename) const {
 int LAMA_Server_Planner::cat_state_to_server(const State &state) const {
     write(stdin_pipe_[PIPE_WRITE], "state\n", 6);
     write(stdin_pipe_[PIPE_WRITE], "begin_state\n", 12);
-    stringstream ss;
     for( size_t k = 0; k < variables_.size(); ++k ) {
+        string value;
         bool wrote = false;
         for( size_t j = 0; j < variables_[k].size(); ++j ) {
             int lit = variables_[k][j];
             int atom = lit > 0 ? lit - 1 : -lit - 1;
             if( ((lit > 0) && state.satisfy(atom)) || ((lit < 0) && !state.satisfy(atom)) ) {
-                ss << j;
+                value += to_string(j);
                 wrote = true;
                 break;
             }
         }
-        if( !wrote ) ss << variables_[k].size();
-        string value = ss.str();
+        if( !wrote ) value += to_string(variables_[k].size());
         write(stdin_pipe_[PIPE_WRITE], value.c_str(), strlen(value.c_str()));
         write(stdin_pipe_[PIPE_WRITE], "\n", 1);
-        ss.str("");
     }
     write(stdin_pipe_[PIPE_WRITE], "end_state\n", 10);
     return 0;

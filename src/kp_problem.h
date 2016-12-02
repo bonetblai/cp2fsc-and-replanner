@@ -82,6 +82,7 @@ class KP_Instance : public Instance {
 
   public:
     KP_Instance(const Options::Mode &options);
+    KP_Instance(const std::string &domain_name, const std::string &problem_name, const Options::Mode &options);
     virtual ~KP_Instance() { }
 
     void increase_inference_time(float new_inference_time) const {
@@ -146,7 +147,7 @@ class Standard_KP_Instance : public KP_Instance {
     Standard_KP_Instance(const Instance &instance, const PDDL_Base::variable_vec &variables);
 #endif
     Standard_KP_Instance(const Instance &instance);
-    ~Standard_KP_Instance();
+    ~Standard_KP_Instance() { }
 
     virtual void cross_reference();
     virtual int remap_action(size_t action_id) const {

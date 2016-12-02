@@ -86,7 +86,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                            const list<pair<const PDDL_Base::Action*, const PDDL_Base::Sensing*> > &sensing_models,
                            const map<string, set<string> > &accepted_literals_for_observables)
 #endif
-  : KP_Instance(ins.options_),
+  : KP_Instance(ins.domain_name_, ins.problem_name_, ins.options_),
     n_standard_actions_(0),
     n_sensor_actions_(0),
     n_drule_actions_(0),
@@ -95,12 +95,6 @@ LW1_Instance::LW1_Instance(const Instance &ins,
     n_drules_for_atoms_(0),
     n_subgoaling_actions_(0),
     po_instance_(ins) {
-
-    // set intance name
-    if( dynamic_cast<const InstanceName*>(ins.name_) != 0 )
-        set_name(new InstanceName(*dynamic_cast<const InstanceName*>(ins.name_)));
-    else
-        set_name(new CopyName(ins.name_->to_string()));
 
     // there should be no invariants
     if( !ins.init_.invariants().empty() ) {

@@ -50,7 +50,7 @@ Instance::Instance(const Instance& ins)
 #endif
 
 Instance::~Instance() {
-    delete name_;
+    //delete name_;
 #ifndef SMART
     for( size_t k = 0; k < actions_.size(); ++k )
         delete actions_[k];
@@ -709,13 +709,10 @@ void Instance::write_action_set(ostream &os, const bool_vec &set) const {
 
 void Instance::write_domain(ostream &os, int indent) const {
     // name of domain
-    if( name_ ) {
-        Name::domain_name_only = true;
-        os << "(define (domain " << name_ << ")" << endl;
-        Name::domain_name_only = false;
-    } else {
+    if( domain_name_ != "" )
+        os << "(define (domain " << domain_name_ << ")" << endl;
+    else
         os << "(define (domain NONAME)" << endl;
-    }
 
     // requirements
     if( always_write_requirements_declaration_ ) {
@@ -757,18 +754,17 @@ void Instance::write_domain(ostream &os, int indent) const {
 }
 
 void Instance::write_problem(ostream &os, const State *state, int indent) const {
-    // name of domain
-    if( name_ ) {
-        Name::problem_name_only = true;
-        os << "(define (problem " << name_ << ")" << endl;
-        Name::problem_name_only = false;
-        Name::domain_name_only = true;
-        os << string(indent, ' ') << "(:domain " << name_ << ")" << endl;
-        Name::domain_name_only = false;
-    } else {
+    // name of problem
+    if( problem_name_ != "")
+        os << "(define (problem " << problem_name_ << ")" << endl;
+    else
         os << "(define (problem NONAME)" << endl;
+
+    // name of domain
+    if( domain_name_ != "")
+        os << string(indent, ' ') << "(:domain " << domain_name_ << ")" << endl;
+    else
         os << string(indent, ' ') << "(:domain NONAME)" << endl;
-    }
 
     // initial situation
     if( (state == 0) && !init_.literals().empty() ) {

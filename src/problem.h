@@ -23,7 +23,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "name.h"
 #include "index.h"
 #include "options.h"
 
@@ -262,7 +261,8 @@ class Instance {
 
     class Plan : public std::vector<int> { };
 
-    Name        *name_;
+    std::string domain_name_;
+    std::string problem_name_;
 #ifdef SMART
     owner_atom_vec    atoms_;
     owner_action_vec  actions_;
@@ -298,11 +298,15 @@ class Instance {
     // actions that correspond to original problem
     std::set<std::string> original_actions_;
 
-    Instance(Name *name, const Options::Mode &options)
-      : cross_referenced_(false), name_(name), options_(options) {
+    Instance(const std::string &domain_name, const std::string &problem_name, const Options::Mode &options)
+      : cross_referenced_(false),
+        domain_name_(domain_name),
+        problem_name_(problem_name),
+        options_(options) {
     }
     Instance(const Options::Mode &options)
-      : cross_referenced_(false), name_(0), options_(options) {
+      : cross_referenced_(false),
+        options_(options) {
     }
 #ifndef SMART
     Instance(const Instance &ins); //NOT USED
@@ -314,8 +318,8 @@ class Instance {
     Sensor&    new_sensor(const std::string &name);
     Axiom&     new_axiom(const std::string &name);
 
-    // change (remove from) instance
-    void set_name(Name *name) { delete name_; name_ = name; }
+    void set_domain_name(const std::string &domain_name) { domain_name_ = domain_name; }
+    void set_problem_name(const std::string &problem_name) { problem_name_ = problem_name; }
     void remove_unreachable_conditional_effects(const bool_vec &reachable_atoms, const bool_vec &static_atoms);
     void remove_unreachable_axioms(const bool_vec &reachable_atoms, const bool_vec &static_atoms);
     void remove_unreachable_sensors(const bool_vec &reachable_atoms, const bool_vec &static_atoms);
