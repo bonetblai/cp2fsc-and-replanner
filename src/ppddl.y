@@ -26,7 +26,7 @@
 
 %define INHERIT : public PDDL_Base
 %define CONSTRUCTOR_PARAM StringTable& t, int type, const Options::Mode &options
-%define CONSTRUCTOR_INIT : PDDL_Base(t, options), error_flag_(false), type_(type)
+%define CONSTRUCTOR_INIT : PDDL_Base(t, options), error_flag_(false), type_(type), effect_vec_ptr_(0)
 %define MEMBERS \
   public: \
     typedef enum { replanner, cp2fsc } Type; \
@@ -37,6 +37,7 @@
   private: \
     std::vector<Schema*> schema_; \
     std::vector<std::unique_ptr<Schema> > owned_schema_; \
+    std::vector<bool> using_owned_schema_; \
     effect_vec *effect_vec_ptr_;
 
 %header{
@@ -548,6 +549,7 @@ or_condition:
 forall_condition:
       TK_OPEN KW_FORALL TK_OPEN {
           schema_.push_back(new ForallCondition);
+          using_owned_schema_.push_back(false);
       }
       param_list TK_CLOSE {
           schema_.back()->param_ = *$5;
@@ -557,6 +559,7 @@ forall_condition:
           assert(dynamic_cast<ForallCondition*>(schema_.back()) != 0);
           ForallCondition *forall_condition = static_cast<ForallCondition*>(schema_.back());
           schema_.pop_back();
+          using_owned_schema_.pop_back();
           forall_condition->condition_ = $8;
           clear_param(forall_condition->param_);
           $$ = forall_condition;
@@ -566,6 +569,7 @@ forall_condition:
 exists_condition:
       TK_OPEN KW_EXISTS TK_OPEN {
           schema_.push_back(new ExistsCondition);
+          using_owned_schema_.push_back(false);
       }
       param_list TK_CLOSE {
           schema_.back()->param_ = *$5;
@@ -575,6 +579,7 @@ exists_condition:
           assert(dynamic_cast<ExistsCondition*>(schema_.back()) != 0);
           ExistsCondition *exists_condition = static_cast<ExistsCondition*>(schema_.back());
           schema_.pop_back();
+          using_owned_schema_.pop_back();
           exists_condition->condition_ = $8;
           clear_param(exists_condition->param_);
           $$ = exists_condition;
@@ -637,6 +642,7 @@ conditional_effect:
 forall_effect:
       TK_OPEN KW_FORALL TK_OPEN {
           schema_.push_back(new ForallEffect);
+          using_owned_schema_.push_back(false);
       }
       param_list TK_CLOSE {
           schema_.back()->param_ = *$5;
@@ -646,6 +652,7 @@ forall_effect:
           assert(dynamic_cast<ForallEffect*>(schema_.back()) != 0);
           ForallEffect *forall_effect = static_cast<ForallEffect*>(schema_.back());
           schema_.pop_back();
+          using_owned_schema_.pop_back();
           forall_effect->effect_ = $9;
           clear_param(forall_effect->param_);
           $$ = forall_effect;
@@ -654,8 +661,18 @@ forall_effect:
 
 optional_such_that:
       KW_SUCH_THAT condition {
+#ifdef SMART
+          if( using_owned_schema_.back() ) {
+              assert(!owned_schema_.empty());
+              owned_schema_.back()->such_that_ = $2;
+          } else {
+              assert(!schema_.empty());
+              schema_.back()->such_that_ = $2;
+          }
+#else
           assert(!schema_.empty());
           schema_.back()->such_that_ = $2;
+#endif
       }
     | /* empty */
     ;
@@ -724,6 +741,7 @@ sensing_decl:
 forall_sensing:
       TK_OPEN KW_FORALL TK_OPEN {
           schema_.push_back(new ForallSensing);
+          using_owned_schema_.push_back(false);
       }
       param_list TK_CLOSE {
           schema_.back()->param_ = *$5;
@@ -733,6 +751,7 @@ forall_sensing:
           assert(dynamic_cast<ForallSensing*>(schema_.back()) != 0);
           ForallSensing *forall_sensing = static_cast<ForallSensing*>(schema_.back());
           schema_.pop_back();
+          using_owned_schema_.pop_back();
           forall_sensing->sensing_ = *$9;
           delete $9;
           clear_param(forall_sensing->param_);
@@ -954,6 +973,7 @@ simple_variable_decl:
               var = std::make_unique<ObsVariable>($4->text);
           effect_vec_ptr_ = &var->domain_;
           owned_schema_.emplace_back(std::move(var));
+          using_owned_schema_.push_back(true);
 #else
           Variable *var = 0;
           if( $2 == 0 )
@@ -962,6 +982,7 @@ simple_variable_decl:
               var = new ObsVariable($4->text);
           effect_vec_ptr_ = &var->domain_;
           schema_.push_back(var);
+          using_owned_schema_.push_back(false);
 #endif
       }
       param_list TK_CLOSE {
@@ -977,10 +998,12 @@ simple_variable_decl:
           assert(dynamic_cast<Variable*>(owned_schema_.back().get()) != 0);
           std::unique_ptr<Variable> variable(static_cast<Variable*>(owned_schema_.back().release()));
           owned_schema_.pop_back();
+          using_owned_schema_.pop_back();
 #else
           assert(dynamic_cast<Variable*>(schema_.back()) != 0);
           Variable *variable = static_cast<Variable*>(schema_.back());
           schema_.pop_back();
+          using_owned_schema_.pop_back();
 #endif
           clear_param(variable->param_);
 #ifdef SMART
@@ -1020,9 +1043,11 @@ variable_group_decl:
 #ifdef SMART
           std::unique_ptr<VariableGroup> group = std::make_unique<VariableGroup>($4->text);
           owned_schema_.emplace_back(std::move(group));
+          using_owned_schema_.push_back(true);
 #else
           VariableGroup *group = new VariableGroup($4->text);
           schema_.push_back(group);
+          using_owned_schema_.push_back(false);
 #endif
       }
       param_list TK_CLOSE {
@@ -1038,10 +1063,12 @@ variable_group_decl:
           assert(dynamic_cast<VariableGroup*>(owned_schema_.back().get()) != 0);
           std::unique_ptr<VariableGroup> group(static_cast<VariableGroup*>(owned_schema_.back().release()));
           owned_schema_.pop_back();
+          using_owned_schema_.pop_back();
 #else
           assert(dynamic_cast<VariableGroup*>(schema_.back()) != 0);
           VariableGroup *group = static_cast<VariableGroup*>(schema_.back());
           schema_.pop_back();
+          using_owned_schema_.pop_back();
 #endif
           group->group_ = *$10;
           delete $10;
@@ -1101,6 +1128,7 @@ state_variable:
 forall_state_variable_list_decl:
       TK_OPEN KW_FORALL TK_OPEN {
           schema_.push_back(new ForallStateVariableList);
+          using_owned_schema_.push_back(false);
       }
       param_list TK_CLOSE {
           schema_.back()->param_ = *$5;
@@ -1110,6 +1138,7 @@ forall_state_variable_list_decl:
           assert(dynamic_cast<ForallStateVariableList*>(schema_.back()) != 0);
           ForallStateVariableList *forall_state_variable_list = static_cast<ForallStateVariableList*>(schema_.back());
           schema_.pop_back();
+          using_owned_schema_.pop_back();
           forall_state_variable_list->group_ = *$9;
           delete $9;
           clear_param(forall_state_variable_list->param_);

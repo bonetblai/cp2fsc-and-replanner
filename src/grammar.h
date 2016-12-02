@@ -26,7 +26,7 @@
 #define YY_PDDL_Parser_DEBUG  1
 #define YY_PDDL_Parser_INHERIT  : public PDDL_Base
 #define YY_PDDL_Parser_CONSTRUCTOR_PARAM  StringTable& t, int type, const Options::Mode &options
-#define YY_PDDL_Parser_CONSTRUCTOR_INIT  : PDDL_Base(t, options), error_flag_(false), type_(type)
+#define YY_PDDL_Parser_CONSTRUCTOR_INIT  : PDDL_Base(t, options), error_flag_(false), type_(type), effect_vec_ptr_(0)
 #define YY_PDDL_Parser_MEMBERS  \
   public: \
     typedef enum { replanner, cp2fsc } Type; \
@@ -37,8 +37,9 @@
   private: \
     std::vector<Schema*> schema_; \
     std::vector<std::unique_ptr<Schema> > owned_schema_; \
+    std::vector<bool> using_owned_schema_; \
     effect_vec *effect_vec_ptr_;
-#line 42 "ppddl.y"
+#line 43 "ppddl.y"
 
 #include <stdlib.h>
 #include <string.h>
@@ -55,7 +56,7 @@
 //#pragma GCC diagnostic ignored "-Wuninitialized"
 //#pragma GCC diagnostic ignored "-Wsign-compare"
 
-#line 59 "ppddl.y"
+#line 60 "ppddl.y"
 typedef union {
     StringTable::Cell                         *sym;
     PDDL_Base::VariableSymbol                 *vsym;
@@ -137,21 +138,21 @@ typedef union {
 #ifndef YY_PDDL_Parser_PURE
 
 /* #line 63 "/usr/local/lib/bison.h" */
-#line 141 "grammar_tmp.h"
+#line 142 "grammar_tmp.h"
 
 #line 63 "/usr/local/lib/bison.h"
 /* YY_PDDL_Parser_PURE */
 #endif
 
 /* #line 65 "/usr/local/lib/bison.h" */
-#line 148 "grammar_tmp.h"
+#line 149 "grammar_tmp.h"
 
 #line 65 "/usr/local/lib/bison.h"
 /* prefix */
 #ifndef YY_PDDL_Parser_DEBUG
 
 /* #line 67 "/usr/local/lib/bison.h" */
-#line 155 "grammar_tmp.h"
+#line 156 "grammar_tmp.h"
 
 #line 67 "/usr/local/lib/bison.h"
 /* YY_PDDL_Parser_DEBUG */
@@ -159,7 +160,7 @@ typedef union {
 #ifndef YY_PDDL_Parser_LSP_NEEDED
 
 /* #line 70 "/usr/local/lib/bison.h" */
-#line 163 "grammar_tmp.h"
+#line 164 "grammar_tmp.h"
 
 #line 70 "/usr/local/lib/bison.h"
  /* YY_PDDL_Parser_LSP_NEEDED*/
@@ -237,7 +238,7 @@ extern YY_PDDL_Parser_STYPE YY_PDDL_Parser_LVAL;
 
 
 /* #line 143 "/usr/local/lib/bison.h" */
-#line 241 "grammar_tmp.h"
+#line 242 "grammar_tmp.h"
 #define	TK_OPEN	258
 #define	TK_CLOSE	259
 #define	TK_OPEN_SQ	260
@@ -350,7 +351,7 @@ public:
 /* static const int token ... */
 
 /* #line 182 "/usr/local/lib/bison.h" */
-#line 354 "grammar_tmp.h"
+#line 355 "grammar_tmp.h"
 static const int TK_OPEN;
 static const int TK_CLOSE;
 static const int TK_OPEN_SQ;
@@ -427,7 +428,7 @@ static const int KW_MODEL_FOR;
 enum YY_PDDL_Parser_ENUM_TOKEN { YY_PDDL_Parser_NULL_TOKEN=0
 
 /* #line 185 "/usr/local/lib/bison.h" */
-#line 431 "grammar_tmp.h"
+#line 432 "grammar_tmp.h"
 	,TK_OPEN=258
 	,TK_CLOSE=259
 	,TK_OPEN_SQ=260
@@ -552,5 +553,5 @@ public:
 /* END */
 
 /* #line 236 "/usr/local/lib/bison.h" */
-#line 556 "grammar_tmp.h"
+#line 557 "grammar_tmp.h"
 #endif

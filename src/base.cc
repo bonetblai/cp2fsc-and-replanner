@@ -4473,7 +4473,7 @@ void PDDL_Base::ForallEffect::process_instance() const {
         cout << Utils::error() << "condition '" << *such_that_
              << "' in such-that statement must ground to constant value" << endl;
     }
-    if( such_that_ != 0 ) delete such_that;
+    if( such_that != 0 ) delete such_that;
 }
 
 bool PDDL_Base::ForallEffect::has_free_variables(const var_symbol_vec &param, bool dont_extend) const {
@@ -4778,7 +4778,7 @@ void PDDL_Base::ForallSensing::process_instance() const {
         cout << Utils::error() << "condition '" << *such_that_
              << "' in such-that statement must ground to constant value" << endl;
     }
-    if( such_that_ != 0 ) delete such_that;
+    if( such_that != 0 ) delete such_that;
 }
 
 bool PDDL_Base::ForallSensing::is_strongly_static(const PredicateSymbol &p) const {
@@ -5712,7 +5712,7 @@ void PDDL_Base::Variable::process_instance() const {
         cout << Utils::error() << "condition '" << *such_that_
              << "' in such-that statement must ground to constant value" << endl;
     }
-    if( such_that_ != 0 ) delete such_that;
+    if( such_that != 0 ) delete such_that;
 }
 
 #ifdef SMART
@@ -5862,7 +5862,7 @@ void PDDL_Base::ForallStateVariableList::process_instance() const {
         cout << Utils::error() << "condition '" << *such_that_
              << "' in such-that statement must ground to constant value" << endl;
     }
-    if( such_that_ != 0 ) delete such_that;
+    if( such_that != 0 ) delete such_that;
 }
 
 PDDL_Base::state_variable_vec* PDDL_Base::ForallStateVariableList::ground(const PDDL_Base *base) const {
@@ -5928,10 +5928,10 @@ void PDDL_Base::VariableGroup::process_instance() const {
 #endif
         }
     } else if( such_that_ != 0 ) {
-        cout << Utils::error() << "condition '" << *such_that_
+        cout << Utils::error() << "condition '" << *such_that
              << "' in such-that statement must ground to constant value" << endl;
     }
-    if( such_that_ != 0 ) delete such_that;
+    if( such_that != 0 ) delete such_that;
 }
 
 string PDDL_Base::VariableGroup::to_string() const {
