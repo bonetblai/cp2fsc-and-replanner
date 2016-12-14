@@ -54,8 +54,8 @@ static void clone_parameters(const PDDL_Base::var_symbol_vec &param, PDDL_Base::
 }
 
 
-PDDL_Base::PDDL_Base(StringTable &t, const Options::Mode &options)
-  : tab_(t),
+PDDL_Base::PDDL_Base(StringTable &parser_symbol_table, const Options::Mode &options)
+  : parser_symbol_table_(parser_symbol_table),
     options_(options),
     dom_top_type_(0),
     dom_eq_pred_(0),
@@ -67,12 +67,12 @@ PDDL_Base::PDDL_Base(StringTable &t, const Options::Mode &options)
     lw1_default_sensing_proxy_(0) {
 
     // setup predicate for equality
-    StringTable::Cell *sc = tab_.inserta("object");
-    dom_top_type_ = new TypeSymbol(sc->text);
-    sc->val = dom_top_type_;
-    sc = tab_.inserta("=");
-    dom_eq_pred_ = new PredicateSymbol(sc->text);
-    sc->val = dom_eq_pred_;
+    StringTable::Cell *sc = parser_symbol_table_.insert("object");
+    dom_top_type_ = new TypeSymbol(sc->text_);
+    sc->value_ = dom_top_type_;
+    sc = parser_symbol_table_.insert("=");
+    dom_eq_pred_ = new PredicateSymbol(sc->text_);
+    sc->value_ = dom_eq_pred_;
     dom_eq_pred_->param_.push_back(new VariableSymbol("?x"));
     dom_eq_pred_->param_.push_back(new VariableSymbol("?y"));
     dom_eq_pred_->param_[0]->sym_type_ = dom_top_type_;
@@ -142,7 +142,7 @@ void PDDL_Base::set_constant_type(symbol_vec &vec, size_t n, TypeSymbol *t) {
 
 void PDDL_Base::clear_param(var_symbol_vec &vec, size_t start) {
     for( size_t k = start; k < vec.size(); ++k )
-        tab_.set(vec[k]->print_name_.c_str(), static_cast<void*>(0));
+        parser_symbol_table_.set(vec[k]->print_name_.c_str(), static_cast<void*>(0));
 }
 
 void PDDL_Base::insert_atom(ptr_table &t, Atom *a) {

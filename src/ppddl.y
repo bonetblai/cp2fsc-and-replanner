@@ -25,8 +25,8 @@
 %define DEBUG 1
 
 %define INHERIT : public PDDL_Base
-%define CONSTRUCTOR_PARAM StringTable& t, int type, const Options::Mode &options
-%define CONSTRUCTOR_INIT : PDDL_Base(t, options), error_flag_(false), type_(type), effect_vec_ptr_(0)
+%define CONSTRUCTOR_PARAM StringTable &parser_symbol_table, int type, const Options::Mode &options
+%define CONSTRUCTOR_INIT : PDDL_Base(parser_symbol_table, options), error_flag_(false), type_(type), effect_vec_ptr_(0)
 %define MEMBERS \
   public: \
     typedef enum { replanner, cp2fsc } Type; \
@@ -169,7 +169,7 @@ domain_elements:
     ;
 
 domain_name:
-      TK_OPEN KW_DOMAIN any_symbol TK_CLOSE { domain_name_ = std::string($3->text); }
+      TK_OPEN KW_DOMAIN any_symbol TK_CLOSE { domain_name_ = std::string($3->text_); }
     ;
 
 // symbols
@@ -234,12 +234,12 @@ predicate_list:
 
 predicate_decl:
       TK_OPEN TK_NEW_SYMBOL param_list TK_CLOSE {
-          PredicateSymbol *p = new PredicateSymbol($2->text);
+          PredicateSymbol *p = new PredicateSymbol($2->text_);
           dom_predicates_.push_back(p);
           p->param_ = *$3;
           delete $3;
           clear_param(p->param_);
-          $2->val = p;
+          $2->value_ = p;
       }
     | TK_OPEN error TK_CLOSE {
           log_error((char*)"syntax error in predicate declaration");
@@ -268,13 +268,13 @@ untyped_param_list:
 
 typed_param_list:
       param_sym_list TK_HYPHEN TK_TYPE_SYMBOL typed_param_list {
-          set_variable_type(*$1, $1->size(), static_cast<TypeSymbol*>($3->val));
+          set_variable_type(*$1, $1->size(), static_cast<TypeSymbol*>($3->value_));
           $4->insert($4->end(), $1->begin(), $1->end());
           delete $1;
           $$ = $4;
       }
     | param_sym_list TK_HYPHEN TK_TYPE_SYMBOL {
-          set_variable_type(*$1, $1->size(), static_cast<TypeSymbol*>($3->val));
+          set_variable_type(*$1, $1->size(), static_cast<TypeSymbol*>($3->value_));
           $$ = $1;
       }
     ;
@@ -289,13 +289,13 @@ param_sym_list:
 
 new_var_symbol:
       TK_NEW_VAR_SYMBOL {
-          VariableSymbol *var = new VariableSymbol($1->text);
-          $1->val = var;
+          VariableSymbol *var = new VariableSymbol($1->text_);
+          $1->value_ = var;
           $$ = var;
       }
     | TK_VAR_SYMBOL {
           std::string msg("variable '");
-          msg += $1->text;
+          msg += $1->text_;
           msg += "' shadows variable in outer scope: this is not supported!";
           log_error((char*)msg.c_str());
           yyerrok;
@@ -313,15 +313,15 @@ domain_types:
 
 typed_type_list:
       primitive_type_list TK_HYPHEN TK_TYPE_SYMBOL typed_type_list {
-          set_type_type(dom_types_, dom_types_.size(), static_cast<TypeSymbol*>($3->val));
+          set_type_type(dom_types_, dom_types_.size(), static_cast<TypeSymbol*>($3->value_));
       }
     | primitive_type_list TK_HYPHEN TK_NEW_SYMBOL typed_type_list {
-          $3->val = new TypeSymbol($3->text);
+          $3->value_ = new TypeSymbol($3->text_);
           if( write_warnings_ )
-              std::cout << Utils::warning() << "assuming " << $3->text << " - object" << std::endl;
-          static_cast<TypeSymbol*>($3->val)->sym_type_ = dom_top_type_;
-          set_type_type(dom_types_, dom_types_.size(), static_cast<TypeSymbol*>($3->val));
-          dom_types_.push_back(static_cast<TypeSymbol*>($3->val));
+              std::cout << Utils::warning() << "assuming " << $3->text_ << " - object" << std::endl;
+          static_cast<TypeSymbol*>($3->value_)->sym_type_ = dom_top_type_;
+          set_type_type(dom_types_, dom_types_.size(), static_cast<TypeSymbol*>($3->value_));
+          dom_types_.push_back(static_cast<TypeSymbol*>($3->value_));
       }
     | /* empty */
     ;
@@ -334,8 +334,8 @@ primitive_type_list:
 primitive_type:
       TK_TYPE_SYMBOL
     | TK_NEW_SYMBOL {
-          $1->val = new TypeSymbol($1->text);
-          dom_types_.push_back(static_cast<TypeSymbol*>($1->val));
+          $1->value_ = new TypeSymbol($1->text_);
+          dom_types_.push_back(static_cast<TypeSymbol*>($1->value_));
       }
     ;
 
@@ -350,7 +350,7 @@ domain_constants:
 
 typed_constant_list:
       constant_sym_list TK_HYPHEN TK_TYPE_SYMBOL {
-          set_constant_type(dom_constants_, dom_constants_.size(), static_cast<TypeSymbol*>($3->val));
+          set_constant_type(dom_constants_, dom_constants_.size(), static_cast<TypeSymbol*>($3->value_));
       }
       typed_constant_list
     | /* empty */
@@ -364,12 +364,12 @@ untyped_constant_list:
 
 constant_sym_list:
       constant_sym_list TK_NEW_SYMBOL {
-          $2->val = new Symbol($2->text);
-          dom_constants_.push_back(static_cast<Symbol*>($2->val));
+          $2->value_ = new Symbol($2->text_);
+          dom_constants_.push_back(static_cast<Symbol*>($2->value_));
       }
     | TK_NEW_SYMBOL {
-          $1->val = new Symbol($1->text);
-          dom_constants_.push_back(static_cast<Symbol*>($1->val));
+          $1->value_ = new Symbol($1->text_);
+          dom_constants_.push_back(static_cast<Symbol*>($1->value_));
       }
     ;
 
@@ -417,19 +417,19 @@ domain_schemas:
 action_decl:
       TK_OPEN KW_ACTION action_symbol {
 #ifdef SMART
-          std::unique_ptr<Action> na = std::make_unique<Action>($3->text);
+          std::unique_ptr<Action> na = std::make_unique<Action>($3->text_);
           dom_actions_.emplace_back(std::move(na));
 #else
-          Action *na = new Action($3->text);
+          Action *na = new Action($3->text_);
           dom_actions_.push_back(na);
 #endif
       }
       action_elements TK_CLOSE {
           clear_param(dom_actions_.back()->param_);
 #ifdef SMART
-          $3->val = dom_actions_.back().get();
+          $3->value_ = dom_actions_.back().get();
 #else
-          $3->val = dom_actions_.back();
+          $3->value_ = dom_actions_.back();
 #endif
       }
     | TK_OPEN KW_ACTION error TK_CLOSE {
@@ -489,7 +489,7 @@ literal:
 
 positive_literal:
       TK_OPEN TK_PRED_SYMBOL argument_list TK_CLOSE {
-          PredicateSymbol* p = static_cast<PredicateSymbol*>($2->val);
+          PredicateSymbol* p = static_cast<PredicateSymbol*>($2->value_);
           if( p->param_.size() != $3->size() ) {
               std::string msg = std::string("wrong number of arguments for predicate '") + p->print_name_ + "'";
               log_error(const_cast<char*>(msg.c_str()));
@@ -519,14 +519,14 @@ negative_literal:
 
 argument_list:
       argument_list TK_VAR_SYMBOL {
-          if( $2->val == 0 )
+          if( $2->value_ == 0 )
               log_error((char*)"undeclared variable in atom args list");
           else
-              $1->push_back(static_cast<VariableSymbol*>($2->val));
+              $1->push_back(static_cast<VariableSymbol*>($2->value_));
           $$ = $1;
       }
     | argument_list TK_OBJ_SYMBOL {
-          $1->push_back(static_cast<Symbol*>($2->val));
+          $1->push_back(static_cast<Symbol*>($2->value_));
           $$ = $1;
       }
     | /* empty */ { $$ = new symbol_vec; }
@@ -761,8 +761,8 @@ forall_sensing:
 
 sensing_model:
       TK_OPEN KW_MODEL_FOR TK_VARNAME_SYMBOL literal condition TK_CLOSE {
-          assert(static_cast<Symbol*>($3->val)->sym_class_ == sym_varname);
-          const Variable *variable = static_cast<Variable*>($3->val);
+          assert(static_cast<Symbol*>($3->value_)->sym_class_ == sym_varname);
+          const Variable *variable = static_cast<Variable*>($3->value_);
           if( dynamic_cast<const ObsVariable*>(variable) == 0 ) {
               std::cout << Utils::error() << "sensing model can only be specified for observable variable" << std::endl;
               $$ = 0;
@@ -773,8 +773,8 @@ sensing_model:
           }
       }
     | TK_OPEN KW_MODEL_FOR TK_OPEN TK_VARNAME_SYMBOL argument_list TK_CLOSE literal condition TK_CLOSE {
-          assert(static_cast<Symbol*>($4->val)->sym_class_ == sym_varname);
-          const Variable *variable = static_cast<Variable*>($4->val);
+          assert(static_cast<Symbol*>($4->value_)->sym_class_ == sym_varname);
+          const Variable *variable = static_cast<Variable*>($4->value_);
           if( dynamic_cast<const ObsVariable*>(variable) == 0 ) {
               std::cout << Utils::error() << "sensing model can only be specified for observable variable" << std::endl;
               $$ = 0;
@@ -788,14 +788,14 @@ sensing_model:
           }
       }
     | TK_OPEN KW_VARIABLE TK_VARNAME_SYMBOL TK_CLOSE {
-          assert(static_cast<Symbol*>($3->val)->sym_class_ == sym_varname);
-          const Variable *variable = static_cast<Variable*>($3->val);
+          assert(static_cast<Symbol*>($3->value_)->sym_class_ == sym_varname);
+          const Variable *variable = static_cast<Variable*>($3->value_);
           assert(dynamic_cast<const StateVariable*>(variable) != 0);
           $$ = new SensingModelForStateVariable(static_cast<const StateVariable*>(variable));
       }
     | TK_OPEN KW_VARIABLE TK_OPEN TK_VARNAME_SYMBOL argument_list TK_CLOSE TK_CLOSE {
-          assert(static_cast<Symbol*>($4->val)->sym_class_ == sym_varname);
-          const Variable *variable = static_cast<Variable*>($4->val);
+          assert(static_cast<Symbol*>($4->value_)->sym_class_ == sym_varname);
+          const Variable *variable = static_cast<Variable*>($4->value_);
           assert(dynamic_cast<const StateVariable*>(variable) != 0);
           SensingModelForStateVariable *model = new SensingModelForStateVariable(static_cast<const StateVariable*>(variable));
           model->param_ = *$5;
@@ -815,19 +815,19 @@ sensing_model:
 axiom_decl:
       TK_OPEN KW_AXIOM axiom_symbol {
 #ifdef SMART
-          std::unique_ptr<Axiom> nr = std::make_unique<Axiom>($3->text);
+          std::unique_ptr<Axiom> nr = std::make_unique<Axiom>($3->text_);
           dom_axioms_.emplace_back(std::move(nr));
 #else
-          Axiom *nr = new Axiom($3->text);
+          Axiom *nr = new Axiom($3->text_);
           dom_axioms_.push_back(nr);
 #endif
       }
       axiom_elements TK_CLOSE {
           clear_param(dom_axioms_.back()->param_);
 #ifdef SMART
-          $3->val = dom_axioms_.back().get();
+          $3->value_ = dom_axioms_.back().get();
 #else
-          $3->val = dom_axioms_.back();
+          $3->value_ = dom_axioms_.back();
 #endif
       }
     | TK_OPEN KW_AXIOM error TK_CLOSE {
@@ -849,19 +849,19 @@ axiom_elements:
 sensor_decl:
       TK_OPEN KW_SENSOR sensor_symbol {
 #ifdef SMART
-          std::unique_ptr<Sensor> nr = std::make_unique<Sensor>($3->text);
+          std::unique_ptr<Sensor> nr = std::make_unique<Sensor>($3->text_);
           dom_sensors_.emplace_back(std::move(nr));
 #else
-          Sensor *nr = new Sensor($3->text);
+          Sensor *nr = new Sensor($3->text_);
           dom_sensors_.push_back(nr);
 #endif
       }
       sensor_elements TK_CLOSE {
           clear_param(dom_sensors_.back()->param_);
 #ifdef SMART
-          $3->val = dom_sensors_.back().get();
+          $3->value_ = dom_sensors_.back().get();
 #else
-          $3->val = dom_sensors_.back();
+          $3->value_ = dom_sensors_.back();
 #endif
       }
     | TK_OPEN KW_SENSOR error TK_CLOSE {
@@ -942,44 +942,44 @@ simple_variable_decl:
 #ifdef SMART
           std::unique_ptr<Variable> var;
           if( $2 == 0 )
-              var = std::make_unique<StateVariable>($3->text);
+              var = std::make_unique<StateVariable>($3->text_);
           else
-              var = std::make_unique<ObsVariable>($3->text);
+              var = std::make_unique<ObsVariable>($3->text_);
           effect_vec_ptr_ = &var->domain_;
           lw1_uninstantiated_variables_.emplace_back(std::move(var));
 #else
           Variable *var = 0;
           if( $2 == 0 )
-              var = new StateVariable($3->text);
+              var = new StateVariable($3->text_);
           else
-              var = new ObsVariable($3->text);
+              var = new ObsVariable($3->text_);
           lw1_uninstantiated_variables_.push_back(var);
           effect_vec_ptr_ = &var->domain_;
 #endif
       }
       fluent_list_decl TK_CLOSE {
 #ifdef SMART
-          $3->val = lw1_uninstantiated_variables_.back().get();
+          $3->value_ = lw1_uninstantiated_variables_.back().get();
 #else
-          $3->val = lw1_uninstantiated_variables_.back();
+          $3->value_ = lw1_uninstantiated_variables_.back();
 #endif
       }
     | TK_OPEN variable_type TK_OPEN TK_NEW_SYMBOL {
 #ifdef SMART
           std::unique_ptr<Variable> var;
           if( $2 == 0 )
-              var = std::make_unique<StateVariable>($4->text);
+              var = std::make_unique<StateVariable>($4->text_);
           else
-              var = std::make_unique<ObsVariable>($4->text);
+              var = std::make_unique<ObsVariable>($4->text_);
           effect_vec_ptr_ = &var->domain_;
           owned_schema_.emplace_back(std::move(var));
           using_owned_schema_.push_back(true);
 #else
           Variable *var = 0;
           if( $2 == 0 )
-              var = new StateVariable($4->text);
+              var = new StateVariable($4->text_);
           else
-              var = new ObsVariable($4->text);
+              var = new ObsVariable($4->text_);
           effect_vec_ptr_ = &var->domain_;
           schema_.push_back(var);
           using_owned_schema_.push_back(false);
@@ -1007,10 +1007,10 @@ simple_variable_decl:
 #endif
           clear_param(variable->param_);
 #ifdef SMART
-          $4->val = variable.get();
+          $4->value_ = variable.get();
           lw1_uninstantiated_variables_.emplace_back(std::move(variable));
 #else
-          $4->val = variable;
+          $4->value_ = variable;
           lw1_uninstantiated_variables_.push_back(variable);
 #endif
       }
@@ -1028,10 +1028,10 @@ variable_type:
 variable_group_decl:
       TK_OPEN KW_VGROUP TK_NEW_SYMBOL {
 #ifdef SMART
-          std::unique_ptr<VariableGroup> group = std::make_unique<VariableGroup>($3->text);
+          std::unique_ptr<VariableGroup> group = std::make_unique<VariableGroup>($3->text_);
           lw1_uninstantiated_variable_groups_.emplace_back(std::move(group));
 #else
-          VariableGroup *group = new VariableGroup($3->text);
+          VariableGroup *group = new VariableGroup($3->text_);
           lw1_uninstantiated_variable_groups_.push_back(group);
 #endif
       }
@@ -1041,11 +1041,11 @@ variable_group_decl:
       }
     | TK_OPEN KW_VGROUP TK_OPEN TK_NEW_SYMBOL {
 #ifdef SMART
-          std::unique_ptr<VariableGroup> group = std::make_unique<VariableGroup>($4->text);
+          std::unique_ptr<VariableGroup> group = std::make_unique<VariableGroup>($4->text_);
           owned_schema_.emplace_back(std::move(group));
           using_owned_schema_.push_back(true);
 #else
-          VariableGroup *group = new VariableGroup($4->text);
+          VariableGroup *group = new VariableGroup($4->text_);
           schema_.push_back(group);
           using_owned_schema_.push_back(false);
 #endif
@@ -1074,10 +1074,10 @@ variable_group_decl:
           delete $10;
           clear_param(group->param_);
 #ifdef SMART
-          $4->val = group.get();
+          $4->value_ = group.get();
           lw1_uninstantiated_variable_groups_.emplace_back(std::move(group));
 #else
-          $4->val = group;
+          $4->value_ = group;
           lw1_uninstantiated_variable_groups_.push_back(group);
 #endif
       }
@@ -1105,16 +1105,16 @@ state_variable_list_decl:
 
 state_variable:
       TK_VARNAME_SYMBOL {
-          assert(static_cast<Symbol*>($1->val)->sym_class_ == sym_varname);
-          const Variable *var = static_cast<Variable*>($1->val);
+          assert(static_cast<Symbol*>($1->value_)->sym_class_ == sym_varname);
+          const Variable *var = static_cast<Variable*>($1->value_);
           if( dynamic_cast<const StateVariable*>(var) == 0 ) {
               std::cout << Utils::error() << "only state variables can be grouped together" << std::endl;
           }
           $$ = new SingleStateVariableList(var->print_name_);
       }
     | TK_OPEN TK_VARNAME_SYMBOL argument_list TK_CLOSE {
-          assert(static_cast<Symbol*>($2->val)->sym_class_ == sym_varname);
-          const Variable *var = static_cast<Variable*>($2->val);
+          assert(static_cast<Symbol*>($2->value_)->sym_class_ == sym_varname);
+          const Variable *var = static_cast<Variable*>($2->value_);
           if( dynamic_cast<const StateVariable*>(var) == 0 ) {
               std::cout << Utils::error() << "only state variables can be grouped together" << std::endl;
           }
@@ -1161,7 +1161,7 @@ domain_default_sensing:
 
 pddl_problem:
       TK_OPEN KW_DEFINE TK_OPEN KW_PROBLEM any_symbol TK_CLOSE {
-          problem_name_ = std::string($5->text);
+          problem_name_ = std::string($5->text_);
       }
       problem_elements TK_CLOSE
     | TK_OPEN KW_DEFINE TK_OPEN KW_PROBLEM error TK_CLOSE {

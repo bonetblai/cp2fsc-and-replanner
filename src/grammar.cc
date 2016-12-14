@@ -89,8 +89,8 @@ void *alloca ();
 #define YY_PDDL_Parser_LEX_BODY  = 0
 #define YY_PDDL_Parser_DEBUG  1
 #define YY_PDDL_Parser_INHERIT  : public PDDL_Base
-#define YY_PDDL_Parser_CONSTRUCTOR_PARAM  StringTable& t, int type, const Options::Mode &options
-#define YY_PDDL_Parser_CONSTRUCTOR_INIT  : PDDL_Base(t, options), error_flag_(false), type_(type), effect_vec_ptr_(0)
+#define YY_PDDL_Parser_CONSTRUCTOR_PARAM  StringTable &parser_symbol_table, int type, const Options::Mode &options
+#define YY_PDDL_Parser_CONSTRUCTOR_INIT  : PDDL_Base(parser_symbol_table, options), error_flag_(false), type_(type), effect_vec_ptr_(0)
 #define YY_PDDL_Parser_MEMBERS  \
   public: \
     typedef enum { replanner, cp2fsc } Type; \
@@ -1719,7 +1719,7 @@ case 5:
     break;}
 case 13:
 #line 172 "ppddl.y"
-{ domain_name_ = std::string(yyvsp[-1].sym->text); ;
+{ domain_name_ = std::string(yyvsp[-1].sym->text_); ;
     break;}
 case 14:
 #line 178 "ppddl.y"
@@ -1802,12 +1802,12 @@ case 35:
 case 38:
 #line 236 "ppddl.y"
 {
-          PredicateSymbol *p = new PredicateSymbol(yyvsp[-2].sym->text);
+          PredicateSymbol *p = new PredicateSymbol(yyvsp[-2].sym->text_);
           dom_predicates_.push_back(p);
           p->param_ = *yyvsp[-1].vparam;
           delete yyvsp[-1].vparam;
           clear_param(p->param_);
-          yyvsp[-2].sym->val = p;
+          yyvsp[-2].sym->value_ = p;
       ;
     break;}
 case 39:
@@ -1841,7 +1841,7 @@ case 43:
 case 44:
 #line 270 "ppddl.y"
 {
-          set_variable_type(*yyvsp[-3].vparam, yyvsp[-3].vparam->size(), static_cast<TypeSymbol*>(yyvsp[-1].sym->val));
+          set_variable_type(*yyvsp[-3].vparam, yyvsp[-3].vparam->size(), static_cast<TypeSymbol*>(yyvsp[-1].sym->value_));
           yyvsp[0].vparam->insert(yyvsp[0].vparam->end(), yyvsp[-3].vparam->begin(), yyvsp[-3].vparam->end());
           delete yyvsp[-3].vparam;
           yyval.vparam = yyvsp[0].vparam;
@@ -1850,7 +1850,7 @@ case 44:
 case 45:
 #line 276 "ppddl.y"
 {
-          set_variable_type(*yyvsp[-2].vparam, yyvsp[-2].vparam->size(), static_cast<TypeSymbol*>(yyvsp[0].sym->val));
+          set_variable_type(*yyvsp[-2].vparam, yyvsp[-2].vparam->size(), static_cast<TypeSymbol*>(yyvsp[0].sym->value_));
           yyval.vparam = yyvsp[-2].vparam;
       ;
     break;}
@@ -1868,8 +1868,8 @@ case 47:
 case 48:
 #line 291 "ppddl.y"
 {
-          VariableSymbol *var = new VariableSymbol(yyvsp[0].sym->text);
-          yyvsp[0].sym->val = var;
+          VariableSymbol *var = new VariableSymbol(yyvsp[0].sym->text_);
+          yyvsp[0].sym->value_ = var;
           yyval.vsym = var;
       ;
     break;}
@@ -1877,7 +1877,7 @@ case 49:
 #line 296 "ppddl.y"
 {
           std::string msg("variable '");
-          msg += yyvsp[0].sym->text;
+          msg += yyvsp[0].sym->text_;
           msg += "' shadows variable in outer scope: this is not supported!";
           log_error((char*)msg.c_str());
           yyerrok;
@@ -1892,18 +1892,18 @@ case 51:
 case 52:
 #line 315 "ppddl.y"
 {
-          set_type_type(dom_types_, dom_types_.size(), static_cast<TypeSymbol*>(yyvsp[-1].sym->val));
+          set_type_type(dom_types_, dom_types_.size(), static_cast<TypeSymbol*>(yyvsp[-1].sym->value_));
       ;
     break;}
 case 53:
 #line 318 "ppddl.y"
 {
-          yyvsp[-1].sym->val = new TypeSymbol(yyvsp[-1].sym->text);
+          yyvsp[-1].sym->value_ = new TypeSymbol(yyvsp[-1].sym->text_);
           if( write_warnings_ )
-              std::cout << Utils::warning() << "assuming " << yyvsp[-1].sym->text << " - object" << std::endl;
-          static_cast<TypeSymbol*>(yyvsp[-1].sym->val)->sym_type_ = dom_top_type_;
-          set_type_type(dom_types_, dom_types_.size(), static_cast<TypeSymbol*>(yyvsp[-1].sym->val));
-          dom_types_.push_back(static_cast<TypeSymbol*>(yyvsp[-1].sym->val));
+              std::cout << Utils::warning() << "assuming " << yyvsp[-1].sym->text_ << " - object" << std::endl;
+          static_cast<TypeSymbol*>(yyvsp[-1].sym->value_)->sym_type_ = dom_top_type_;
+          set_type_type(dom_types_, dom_types_.size(), static_cast<TypeSymbol*>(yyvsp[-1].sym->value_));
+          dom_types_.push_back(static_cast<TypeSymbol*>(yyvsp[-1].sym->value_));
       ;
     break;}
 case 56:
@@ -1913,14 +1913,14 @@ case 56:
 case 58:
 #line 336 "ppddl.y"
 {
-          yyvsp[0].sym->val = new TypeSymbol(yyvsp[0].sym->text);
-          dom_types_.push_back(static_cast<TypeSymbol*>(yyvsp[0].sym->val));
+          yyvsp[0].sym->value_ = new TypeSymbol(yyvsp[0].sym->text_);
+          dom_types_.push_back(static_cast<TypeSymbol*>(yyvsp[0].sym->value_));
       ;
     break;}
 case 63:
 #line 352 "ppddl.y"
 {
-          set_constant_type(dom_constants_, dom_constants_.size(), static_cast<TypeSymbol*>(yyvsp[0].sym->val));
+          set_constant_type(dom_constants_, dom_constants_.size(), static_cast<TypeSymbol*>(yyvsp[0].sym->value_));
       ;
     break;}
 case 66:
@@ -1932,15 +1932,15 @@ case 66:
 case 67:
 #line 366 "ppddl.y"
 {
-          yyvsp[0].sym->val = new Symbol(yyvsp[0].sym->text);
-          dom_constants_.push_back(static_cast<Symbol*>(yyvsp[0].sym->val));
+          yyvsp[0].sym->value_ = new Symbol(yyvsp[0].sym->text_);
+          dom_constants_.push_back(static_cast<Symbol*>(yyvsp[0].sym->value_));
       ;
     break;}
 case 68:
 #line 370 "ppddl.y"
 {
-          yyvsp[0].sym->val = new Symbol(yyvsp[0].sym->text);
-          dom_constants_.push_back(static_cast<Symbol*>(yyvsp[0].sym->val));
+          yyvsp[0].sym->value_ = new Symbol(yyvsp[0].sym->text_);
+          dom_constants_.push_back(static_cast<Symbol*>(yyvsp[0].sym->value_));
       ;
     break;}
 case 70:
@@ -1997,10 +1997,10 @@ case 76:
 #line 418 "ppddl.y"
 {
 #ifdef SMART
-          std::unique_ptr<Action> na = std::make_unique<Action>(yyvsp[0].sym->text);
+          std::unique_ptr<Action> na = std::make_unique<Action>(yyvsp[0].sym->text_);
           dom_actions_.emplace_back(std::move(na));
 #else
-          Action *na = new Action(yyvsp[0].sym->text);
+          Action *na = new Action(yyvsp[0].sym->text_);
           dom_actions_.push_back(na);
 #endif
       ;
@@ -2010,9 +2010,9 @@ case 77:
 {
           clear_param(dom_actions_.back()->param_);
 #ifdef SMART
-          yyvsp[-3].sym->val = dom_actions_.back().get();
+          yyvsp[-3].sym->value_ = dom_actions_.back().get();
 #else
-          yyvsp[-3].sym->val = dom_actions_.back();
+          yyvsp[-3].sym->value_ = dom_actions_.back();
 #endif
       ;
     break;}
@@ -2075,7 +2075,7 @@ case 93:
 case 96:
 #line 491 "ppddl.y"
 {
-          PredicateSymbol* p = static_cast<PredicateSymbol*>(yyvsp[-2].sym->val);
+          PredicateSymbol* p = static_cast<PredicateSymbol*>(yyvsp[-2].sym->value_);
           if( p->param_.size() != yyvsp[-1].param->size() ) {
               std::string msg = std::string("wrong number of arguments for predicate '") + p->print_name_ + "'";
               log_error(const_cast<char*>(msg.c_str()));
@@ -2108,17 +2108,17 @@ case 98:
 case 99:
 #line 521 "ppddl.y"
 {
-          if( yyvsp[0].sym->val == 0 )
+          if( yyvsp[0].sym->value_ == 0 )
               log_error((char*)"undeclared variable in atom args list");
           else
-              yyvsp[-1].param->push_back(static_cast<VariableSymbol*>(yyvsp[0].sym->val));
+              yyvsp[-1].param->push_back(static_cast<VariableSymbol*>(yyvsp[0].sym->value_));
           yyval.param = yyvsp[-1].param;
       ;
     break;}
 case 100:
 #line 528 "ppddl.y"
 {
-          yyvsp[-1].param->push_back(static_cast<Symbol*>(yyvsp[0].sym->val));
+          yyvsp[-1].param->push_back(static_cast<Symbol*>(yyvsp[0].sym->value_));
           yyval.param = yyvsp[-1].param;
       ;
     break;}
@@ -2387,8 +2387,8 @@ case 143:
 case 144:
 #line 763 "ppddl.y"
 {
-          assert(static_cast<Symbol*>(yyvsp[-3].sym->val)->sym_class_ == sym_varname);
-          const Variable *variable = static_cast<Variable*>(yyvsp[-3].sym->val);
+          assert(static_cast<Symbol*>(yyvsp[-3].sym->value_)->sym_class_ == sym_varname);
+          const Variable *variable = static_cast<Variable*>(yyvsp[-3].sym->value_);
           if( dynamic_cast<const ObsVariable*>(variable) == 0 ) {
               std::cout << Utils::error() << "sensing model can only be specified for observable variable" << std::endl;
               yyval.sensing_model = 0;
@@ -2402,8 +2402,8 @@ case 144:
 case 145:
 #line 775 "ppddl.y"
 {
-          assert(static_cast<Symbol*>(yyvsp[-5].sym->val)->sym_class_ == sym_varname);
-          const Variable *variable = static_cast<Variable*>(yyvsp[-5].sym->val);
+          assert(static_cast<Symbol*>(yyvsp[-5].sym->value_)->sym_class_ == sym_varname);
+          const Variable *variable = static_cast<Variable*>(yyvsp[-5].sym->value_);
           if( dynamic_cast<const ObsVariable*>(variable) == 0 ) {
               std::cout << Utils::error() << "sensing model can only be specified for observable variable" << std::endl;
               yyval.sensing_model = 0;
@@ -2420,8 +2420,8 @@ case 145:
 case 146:
 #line 790 "ppddl.y"
 {
-          assert(static_cast<Symbol*>(yyvsp[-1].sym->val)->sym_class_ == sym_varname);
-          const Variable *variable = static_cast<Variable*>(yyvsp[-1].sym->val);
+          assert(static_cast<Symbol*>(yyvsp[-1].sym->value_)->sym_class_ == sym_varname);
+          const Variable *variable = static_cast<Variable*>(yyvsp[-1].sym->value_);
           assert(dynamic_cast<const StateVariable*>(variable) != 0);
           yyval.sensing_model = new SensingModelForStateVariable(static_cast<const StateVariable*>(variable));
       ;
@@ -2429,8 +2429,8 @@ case 146:
 case 147:
 #line 796 "ppddl.y"
 {
-          assert(static_cast<Symbol*>(yyvsp[-3].sym->val)->sym_class_ == sym_varname);
-          const Variable *variable = static_cast<Variable*>(yyvsp[-3].sym->val);
+          assert(static_cast<Symbol*>(yyvsp[-3].sym->value_)->sym_class_ == sym_varname);
+          const Variable *variable = static_cast<Variable*>(yyvsp[-3].sym->value_);
           assert(dynamic_cast<const StateVariable*>(variable) != 0);
           SensingModelForStateVariable *model = new SensingModelForStateVariable(static_cast<const StateVariable*>(variable));
           model->param_ = *yyvsp[-2].param;
@@ -2456,10 +2456,10 @@ case 150:
 #line 816 "ppddl.y"
 {
 #ifdef SMART
-          std::unique_ptr<Axiom> nr = std::make_unique<Axiom>(yyvsp[0].sym->text);
+          std::unique_ptr<Axiom> nr = std::make_unique<Axiom>(yyvsp[0].sym->text_);
           dom_axioms_.emplace_back(std::move(nr));
 #else
-          Axiom *nr = new Axiom(yyvsp[0].sym->text);
+          Axiom *nr = new Axiom(yyvsp[0].sym->text_);
           dom_axioms_.push_back(nr);
 #endif
       ;
@@ -2469,9 +2469,9 @@ case 151:
 {
           clear_param(dom_axioms_.back()->param_);
 #ifdef SMART
-          yyvsp[-3].sym->val = dom_axioms_.back().get();
+          yyvsp[-3].sym->value_ = dom_axioms_.back().get();
 #else
-          yyvsp[-3].sym->val = dom_axioms_.back();
+          yyvsp[-3].sym->value_ = dom_axioms_.back();
 #endif
       ;
     break;}
@@ -2501,10 +2501,10 @@ case 157:
 #line 850 "ppddl.y"
 {
 #ifdef SMART
-          std::unique_ptr<Sensor> nr = std::make_unique<Sensor>(yyvsp[0].sym->text);
+          std::unique_ptr<Sensor> nr = std::make_unique<Sensor>(yyvsp[0].sym->text_);
           dom_sensors_.emplace_back(std::move(nr));
 #else
-          Sensor *nr = new Sensor(yyvsp[0].sym->text);
+          Sensor *nr = new Sensor(yyvsp[0].sym->text_);
           dom_sensors_.push_back(nr);
 #endif
       ;
@@ -2514,9 +2514,9 @@ case 158:
 {
           clear_param(dom_sensors_.back()->param_);
 #ifdef SMART
-          yyvsp[-3].sym->val = dom_sensors_.back().get();
+          yyvsp[-3].sym->value_ = dom_sensors_.back().get();
 #else
-          yyvsp[-3].sym->val = dom_sensors_.back();
+          yyvsp[-3].sym->value_ = dom_sensors_.back();
 #endif
       ;
     break;}
@@ -2607,17 +2607,17 @@ case 174:
 #ifdef SMART
           std::unique_ptr<Variable> var;
           if( yyvsp[-1].ival == 0 )
-              var = std::make_unique<StateVariable>(yyvsp[0].sym->text);
+              var = std::make_unique<StateVariable>(yyvsp[0].sym->text_);
           else
-              var = std::make_unique<ObsVariable>(yyvsp[0].sym->text);
+              var = std::make_unique<ObsVariable>(yyvsp[0].sym->text_);
           effect_vec_ptr_ = &var->domain_;
           lw1_uninstantiated_variables_.emplace_back(std::move(var));
 #else
           Variable *var = 0;
           if( yyvsp[-1].ival == 0 )
-              var = new StateVariable(yyvsp[0].sym->text);
+              var = new StateVariable(yyvsp[0].sym->text_);
           else
-              var = new ObsVariable(yyvsp[0].sym->text);
+              var = new ObsVariable(yyvsp[0].sym->text_);
           lw1_uninstantiated_variables_.push_back(var);
           effect_vec_ptr_ = &var->domain_;
 #endif
@@ -2627,9 +2627,9 @@ case 175:
 #line 960 "ppddl.y"
 {
 #ifdef SMART
-          yyvsp[-3].sym->val = lw1_uninstantiated_variables_.back().get();
+          yyvsp[-3].sym->value_ = lw1_uninstantiated_variables_.back().get();
 #else
-          yyvsp[-3].sym->val = lw1_uninstantiated_variables_.back();
+          yyvsp[-3].sym->value_ = lw1_uninstantiated_variables_.back();
 #endif
       ;
     break;}
@@ -2639,18 +2639,18 @@ case 176:
 #ifdef SMART
           std::unique_ptr<Variable> var;
           if( yyvsp[-2].ival == 0 )
-              var = std::make_unique<StateVariable>(yyvsp[0].sym->text);
+              var = std::make_unique<StateVariable>(yyvsp[0].sym->text_);
           else
-              var = std::make_unique<ObsVariable>(yyvsp[0].sym->text);
+              var = std::make_unique<ObsVariable>(yyvsp[0].sym->text_);
           effect_vec_ptr_ = &var->domain_;
           owned_schema_.emplace_back(std::move(var));
           using_owned_schema_.push_back(true);
 #else
           Variable *var = 0;
           if( yyvsp[-2].ival == 0 )
-              var = new StateVariable(yyvsp[0].sym->text);
+              var = new StateVariable(yyvsp[0].sym->text_);
           else
-              var = new ObsVariable(yyvsp[0].sym->text);
+              var = new ObsVariable(yyvsp[0].sym->text_);
           effect_vec_ptr_ = &var->domain_;
           schema_.push_back(var);
           using_owned_schema_.push_back(false);
@@ -2684,10 +2684,10 @@ case 178:
 #endif
           clear_param(variable->param_);
 #ifdef SMART
-          yyvsp[-7].sym->val = variable.get();
+          yyvsp[-7].sym->value_ = variable.get();
           lw1_uninstantiated_variables_.emplace_back(std::move(variable));
 #else
-          yyvsp[-7].sym->val = variable;
+          yyvsp[-7].sym->value_ = variable;
           lw1_uninstantiated_variables_.push_back(variable);
 #endif
       ;
@@ -2711,10 +2711,10 @@ case 182:
 #line 1029 "ppddl.y"
 {
 #ifdef SMART
-          std::unique_ptr<VariableGroup> group = std::make_unique<VariableGroup>(yyvsp[0].sym->text);
+          std::unique_ptr<VariableGroup> group = std::make_unique<VariableGroup>(yyvsp[0].sym->text_);
           lw1_uninstantiated_variable_groups_.emplace_back(std::move(group));
 #else
-          VariableGroup *group = new VariableGroup(yyvsp[0].sym->text);
+          VariableGroup *group = new VariableGroup(yyvsp[0].sym->text_);
           lw1_uninstantiated_variable_groups_.push_back(group);
 #endif
       ;
@@ -2730,11 +2730,11 @@ case 184:
 #line 1042 "ppddl.y"
 {
 #ifdef SMART
-          std::unique_ptr<VariableGroup> group = std::make_unique<VariableGroup>(yyvsp[0].sym->text);
+          std::unique_ptr<VariableGroup> group = std::make_unique<VariableGroup>(yyvsp[0].sym->text_);
           owned_schema_.emplace_back(std::move(group));
           using_owned_schema_.push_back(true);
 #else
-          VariableGroup *group = new VariableGroup(yyvsp[0].sym->text);
+          VariableGroup *group = new VariableGroup(yyvsp[0].sym->text_);
           schema_.push_back(group);
           using_owned_schema_.push_back(false);
 #endif
@@ -2769,10 +2769,10 @@ case 186:
           delete yyvsp[-1].state_variable_list_vec;
           clear_param(group->param_);
 #ifdef SMART
-          yyvsp[-7].sym->val = group.get();
+          yyvsp[-7].sym->value_ = group.get();
           lw1_uninstantiated_variable_groups_.emplace_back(std::move(group));
 #else
-          yyvsp[-7].sym->val = group;
+          yyvsp[-7].sym->value_ = group;
           lw1_uninstantiated_variable_groups_.push_back(group);
 #endif
       ;
@@ -2809,8 +2809,8 @@ case 190:
 case 191:
 #line 1107 "ppddl.y"
 {
-          assert(static_cast<Symbol*>(yyvsp[0].sym->val)->sym_class_ == sym_varname);
-          const Variable *var = static_cast<Variable*>(yyvsp[0].sym->val);
+          assert(static_cast<Symbol*>(yyvsp[0].sym->value_)->sym_class_ == sym_varname);
+          const Variable *var = static_cast<Variable*>(yyvsp[0].sym->value_);
           if( dynamic_cast<const StateVariable*>(var) == 0 ) {
               std::cout << Utils::error() << "only state variables can be grouped together" << std::endl;
           }
@@ -2820,8 +2820,8 @@ case 191:
 case 192:
 #line 1115 "ppddl.y"
 {
-          assert(static_cast<Symbol*>(yyvsp[-2].sym->val)->sym_class_ == sym_varname);
-          const Variable *var = static_cast<Variable*>(yyvsp[-2].sym->val);
+          assert(static_cast<Symbol*>(yyvsp[-2].sym->value_)->sym_class_ == sym_varname);
+          const Variable *var = static_cast<Variable*>(yyvsp[-2].sym->value_);
           if( dynamic_cast<const StateVariable*>(var) == 0 ) {
               std::cout << Utils::error() << "only state variables can be grouped together" << std::endl;
           }
@@ -2868,7 +2868,7 @@ case 196:
 case 197:
 #line 1163 "ppddl.y"
 {
-          problem_name_ = std::string(yyvsp[-1].sym->text);
+          problem_name_ = std::string(yyvsp[-1].sym->text_);
       ;
     break;}
 case 199:

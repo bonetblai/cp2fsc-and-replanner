@@ -20,77 +20,99 @@
 #define STRING_TABLE_H
 
 #include <stdlib.h>
+#include <cassert>
 #include <vector>
-#include <iostream>
-//#include "vector.h"
+
 #include "char_map.h"
-
-//typedef lvector<char*,16> string_vec;
-//typedef svector<char*,16> string_set;
-//typedef lvector<void*,16> element_vec;
-
-class string_vec : public std::vector<char*> { };
-class element_vec : public std::vector<void*> { };
-
-inline std::ostream& operator<<(std::ostream &os, const string_vec &vec) {
-    os << '[';
-    for( size_t k = 0; k < vec.size(); k++ ) {
-        if( k > 0 ) os << ',';
-        os << '"' << vec[k] << '"';
-    }
-    os << ']';
-    return os;
-}
 
 class StringTable {
   public:
     struct Cell {
-        size_t bin;
-        char   *text;
-        void   *val;
-        Cell   *next;
-        Cell(const char *s, char_map &map, size_t b, Cell *n)
-          : bin(b), text(map.strdup(s)), val(0), next(n) {
+        size_t bin_;
+        char   *text_;
+        void   *value_;
+        Cell   *next_;
+
+        Cell(const char *str, const char_map &cmap, size_t bin, Cell *next)
+          : bin_(bin), text_(cmap.strdup(str)), value_(0), next_(next) {
         }
-        Cell(const char *s, size_t len, char_map &map, size_t b, Cell *n)
-          : bin(b), text(map.strdup(s, len)), val(0), next(n) {
+        Cell(const char *str, size_t len, const char_map &cmap, size_t bin, Cell *next)
+          : bin_(bin), text_(cmap.strdup(str, len)), value_(0), next_(next) {
         }
-        Cell(const char *s, char_map &map, void *v, size_t b, Cell *n)
-          : bin(b), text(map.strdup(s)), val(v), next(n) {
+        Cell(const char *str, const char_map &cmap, void *value, size_t bin, Cell *next)
+          : bin_(bin), text_(cmap.strdup(str)), value_(value), next_(next) {
         }
-        Cell(const char *s, size_t len, char_map &map, void *v, size_t b, Cell *n)
-          : bin(b), text(map.strdup(s, len)), val(v), next(n) { }
-        ~Cell() { delete[] text; delete next; }
+        Cell(const char *str, size_t len, const char_map &cmap, void *value, size_t bin, Cell *next)
+          : bin_(bin), text_(cmap.strdup(str, len)), value_(value), next_(next) { }
+        ~Cell() {
+            delete[] text_;
+            delete next_;
+        }
     };
 
-  private:
-    size_t   n_bin;
-    char_map &map;
-    Cell     **table;
-    size_t   n_entries;
+  protected:
+    const char_map& char_map_;
+    size_t          num_bins_;
+    size_t          num_entries_;
+    Cell            **table_;
 
   public:
-    StringTable(size_t b, char_map& cm);
+    StringTable(const char_map &cmap, size_t num_bins);
     ~StringTable();
-    StringTable::Cell* inserta(const char *str);
-    StringTable::Cell* inserta(const char *str, size_t len);
-    char* insert(const char *str);
-    char* insert(const char *str, size_t len);
-    char* set(const char *str, void *val);
-    char* set(const char *str, size_t len, void *val);
-    char* set(const char *str) { return set(str, (void*)0); }
-    char* set(const char *str, size_t len) { return set(str, len, (void*)0); }
-    const StringTable::Cell* find(const char *str) const;
-    const StringTable::Cell* find(const char *str, size_t len) const;
-    void* find_val(const char *str) const;
-    void* find_val(const char *str, size_t len) const;
-    const StringTable::Cell* first() const;
-    const StringTable::Cell* next(const StringTable::Cell *c) const;
-    string_vec* keys();
-    element_vec* values();
-    size_t table_bins() { return n_bin; }
-    size_t table_entries() { return n_entries; }
-    char_map& table_char_map() { return map; }
+
+    size_t num_bins() const {
+        return num_bins_;
+    }
+    size_t num_entries() const {
+        return num_entries_;
+    }
+    const char_map& char_map() const {
+        return char_map_;
+    }
+
+    void keys(std::vector<const char*> &vec) const;
+    void values(std::vector<const void*> &values) const;
+
+    const Cell* first() const;
+    const Cell* next(const Cell *c) const;
+    Cell* find_and_insert(const char *str, size_t len, bool only_find = false);
+
+    Cell* insert(const char *str, size_t len) {
+        return find_and_insert(str, len, false);
+    }
+    const char* set(const char *str, size_t len, void *value = 0) {
+        Cell *sc = find_and_insert(str, len);
+        sc->value_ = value;
+        return sc->text_;
+    }
+    const Cell* find(const char *str, size_t len) const {
+        return const_cast<StringTable*>(this)->find_and_insert(str, len, true);
+    }
+    void* find_value(const char *str, size_t len) const {
+        const Cell *sc = find(str, len);
+        return sc == 0 ? 0 : sc->value_;
+    }
+
+    Cell* find_and_insert(const char *symbol, bool only_find = false) {
+        assert(symbol != 0);
+        return find_and_insert(symbol, strlen(symbol), only_find);
+    }
+    Cell* insert(const char *symbol) {
+        return find_and_insert(symbol, false);
+    }
+    const char* set(const char *symbol, void *value = 0) {
+        assert(symbol != 0);
+        return set(symbol, strlen(symbol), value);
+    }
+    const Cell* find(const char *symbol) const {
+        assert(symbol != 0);
+        return find(symbol, strlen(symbol));
+    }
+    void* find_value(const char *symbol) const {
+        assert(symbol != 0);
+        return find_value(symbol, strlen(symbol));
+    }
 };
 
 #endif
+

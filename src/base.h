@@ -928,7 +928,7 @@ class PDDL_Base {
     std::string                               domain_name_;
     std::string                               problem_name_;
 
-    StringTable                               &tab_;
+    StringTable                               &parser_symbol_table_;
     const Options::Mode                       &options_;
 
     type_symbol_vec                           dom_types_;
@@ -1021,7 +1021,7 @@ class PDDL_Base {
     std::list<std::pair<const Action*, const Sensing*> > lw1_sensing_models_;
     std::map<std::pair<const ObsVariable*, Atom>, std::map<std::string, std::set<const Action*> > > lw1_xxx_;
 
-    PDDL_Base(StringTable& t, const Options::Mode &options);
+    PDDL_Base(StringTable &parser_symbol_table, const Options::Mode &options);
     ~PDDL_Base();
 
     void set_variable_type(var_symbol_vec &vec, size_t n, TypeSymbol *t);

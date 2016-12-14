@@ -69,7 +69,7 @@ void print_usage(ostream &os, const char *exec_name, const char **cmdline_option
 }
 
 int main(int argc, const char *argv[]) {
-    StringTable symbols(50, lowercase_map);
+    StringTable parser_symbol_table(lowercase_map, 50);
     bool        opt_debug_parser = false;
     string      opt_prefix = "";
     bool        opt_tag_all_literals = true;
@@ -93,7 +93,7 @@ int main(int argc, const char *argv[]) {
     }
 
     int nfiles = 0;
-    unique_ptr<Parser> reader = make_unique<Parser>(Parser::cp2fsc, symbols, g_options);
+    unique_ptr<Parser> reader = make_unique<Parser>(Parser::cp2fsc, parser_symbol_table, g_options);
 
     // parse options
     bool skip_options = false;

@@ -1199,27 +1199,27 @@ case 58:
 	YY_BREAK
 case 59:
 #line 130 "ppddl.lex"
-{ val.sym = _tab.inserta(yytext);
-             if( val.sym->val == 0 )
+{ val.sym = _tab.insert(yytext);
+             if( val.sym->value_ == 0 )
                  return PDDL_Parser::TK_NEW_VAR_SYMBOL;
-             if( ((PDDL_Base::Symbol*)val.sym->val)->sym_class_ == PDDL_Base::sym_variable )
+             if( static_cast<PDDL_Base::Symbol*>(val.sym->value_)->sym_class_ == PDDL_Base::sym_variable )
                  return PDDL_Parser::TK_VAR_SYMBOL;
              return PDDL_Parser::TK_NEW_VAR_SYMBOL;
            }
 	YY_BREAK
 case 60:
 #line 138 "ppddl.lex"
-{ val.sym = _tab.inserta(yytext);
+{ val.sym = _tab.insert(yytext);
              return PDDL_Parser::TK_KEYWORD;
            }
 	YY_BREAK
 case 61:
 #line 142 "ppddl.lex"
-{ val.sym = _tab.inserta(yytext);
-             if( val.sym->val == 0 ) {
+{ val.sym = _tab.insert(yytext);
+             if( val.sym->value_ == 0 ) {
                  return PDDL_Parser::TK_NEW_SYMBOL;
              } else {
-                 switch (((PDDL_Base::Symbol*)val.sym->val)->sym_class_) {
+                 switch( static_cast<PDDL_Base::Symbol*>(val.sym->value_)->sym_class_ ) {
                    case PDDL_Base::sym_object:
                      return PDDL_Parser::TK_OBJ_SYMBOL;
                    case PDDL_Base::sym_typename:
