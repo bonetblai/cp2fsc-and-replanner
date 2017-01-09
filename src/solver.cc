@@ -154,17 +154,17 @@ int Solver::solve(const State &initial_hidden_state,
         // apply plan until an inconsistency is found or termination
         for( size_t k = 0; k < plan.size(); ++k ) {
             const Instance::Action &kp_act = *kp_instance_.actions_[plan[k]];
-            assert(kp_instance_.is_regular_action(kp_act.index_));
-            //cout << ">>> kp-action=" << kp_act.name_ << endl;
+            assert(kp_instance_.is_regular_action(kp_act.index()));
+            //cout << ">>> kp-action=" << kp_act.name() << endl;
 
             // if current state doesn't satisfy corresponding assumption, replan
             if( !state.satisfy(assumptions[k]) || !state.applicable(kp_act) ) break;
 
             // apply action at state
             if( options_.is_enabled("solver:print:steps") ) {
-                cout << ">>> kp-action=" << kp_act.name_;
+                cout << ">>> kp-action=" << kp_act.name();
                 if( !kp_instance_.is_subgoaling_rule(plan[k]) )
-                    cout << " [action=" << instance_.actions_[kp_instance_.remap_action(plan[k])]->name_ << "]" << endl;
+                    cout << " [action=" << instance_.actions_[kp_instance_.remap_action(plan[k])]->name() << "]" << endl;
                 else
                     cout << " [subgoaling action]" << endl;
             }
@@ -172,13 +172,13 @@ int Solver::solve(const State &initial_hidden_state,
 
             // if action is standard action, insert it into plan, apply it at
             // hidden state and gather observations (if any)
-            if( !kp_instance_.is_subgoaling_rule(kp_act.index_) ) {
+            if( !kp_instance_.is_subgoaling_rule(kp_act.index()) ) {
                 size_t action_id = kp_instance_.remap_action(plan[k]);
                 final_plan.push_back(action_id);
                 const Instance::Action &act = *instance_.actions_[action_id];
 
                 if( !hidden.applicable(act) ) {
-                    cout << Utils::error() << "action " << act.name_->to_string()
+                    cout << Utils::error() << "action " << act.name()
                          << " isn't applicable at hidden state: "
                          << "check whether hidden specification is correct!"
                          << endl;
@@ -209,7 +209,7 @@ int Solver::solve(const State &initial_hidden_state,
                     if( options_.is_enabled("solver:print:inconsistency") ||
                         options_.is_enabled("solver:print:inconsistency:details") ) {
                         cout << "*** inconsistency found with action "
-                             << plan[k+1] << "." << kp_instance_.actions_[plan[k+1]]->name_
+                             << plan[k+1] << "." << kp_instance_.actions_[plan[k+1]]->name()
                              << endl;
                         if( options_.is_enabled("solver:print:inconsistency:details") ) {
                             cout << "    details:" << endl;
@@ -266,7 +266,7 @@ void Solver::calculate_relevant_assumptions(const Instance::Plan &plan,
         cout << "Assumptions on raw plan (sz=" << assumptions_on_raw_plan.size() << "):" << endl;
         for( size_t k = 0; k < assumptions_on_raw_plan.size(); ++k ) {
             cout << "    step=" << k << ", "
-                 << raw_plan[k] << "." << kp_instance_.actions_[raw_plan[k]]->name_->to_string()
+                 << raw_plan[k] << "." << kp_instance_.actions_[raw_plan[k]]->name()
                  << ": ";
             kp_instance_.write_atom_set(cout, assumptions_on_raw_plan[k]);
             cout << endl;
@@ -288,7 +288,7 @@ void Solver::calculate_relevant_assumptions(const Instance::Plan &plan,
         cout << "Assumptions (sz=" << assumptions.size() << "):" << endl;
         for( size_t k = 0; k < assumptions.size(); ++k ) {
             cout << "    step=" << k << ", "
-                 << plan[k] << "." << kp_instance_.actions_[plan[k]]->name_->to_string()
+                 << plan[k] << "." << kp_instance_.actions_[plan[k]]->name()
                  << ": ";
             kp_instance_.write_atom_set(cout, assumptions[k]);
             cout << endl;
@@ -308,9 +308,9 @@ void Solver::compute_and_add_observations(const Instance::Action *last_action,
     index_set observations;
     for( size_t k = 0; k < instance_.n_sensors(); ++k ) {
         const Instance::Sensor &r = *instance_.sensors_[k];
-        if( hidden.satisfy(r.condition_) ) {
+        if( hidden.satisfy(r.condition()) ) {
             fired_sensors_at_step.insert(k);
-            for( index_set::const_iterator it = r.sense_.begin(); it != r.sense_.end(); ++it ) {
+            for( index_set::const_iterator it = r.sense().begin(); it != r.sense().end(); ++it ) {
                 int obs = *it > 0 ? *it - 1 : -*it - 1;
                 if( hidden.satisfy(obs) ) {
                     state.remove(2*obs + 1);
@@ -351,7 +351,7 @@ bool Solver::inconsistent(const State &state, const vector<State> &assumptions, 
         int atom = *it/2;
 
         if( verbose ) {
-            cout << "*** checking consistency of " << instance_.atoms_[atom]->name_ << ": ";
+            cout << "*** checking consistency of " << instance_.atoms_[atom]->name() << ": ";
         }
 
         if( instance_.is_observable(atom) ) {

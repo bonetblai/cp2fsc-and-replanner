@@ -23,13 +23,23 @@
 #include "cp_problem.h"
 
 class KS0_Instance : public Instance {
+  protected:
+    bool tag_all_literals_;
     size_t n_tags_;
     size_t tag0_; // empty tag
     std::vector<bool> tagged_;
     std::vector<int> tag_map_;
+
+    void translate(const Instance &instance,
+                   const StateSet &initial_states,
+                   const std::map<const State*, const StateSet*> &reachable_space_from_initial_state,
+                   int q0 = -1,
+                   int num_fsc_states = 0);
+
   public:
+    KS0_Instance(const Instance &instance, bool tag_all_literals = true);
     KS0_Instance(const CP_Instance &instance, bool tag_all_literals = true);
-    ~KS0_Instance();
+    virtual ~KS0_Instance() { }
     int n_tags() const { return n_tags_; }
 };
 

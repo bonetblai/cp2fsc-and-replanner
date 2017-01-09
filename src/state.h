@@ -175,17 +175,17 @@ class State {
     }
     void apply(const Instance::Action &act) {
         State clone(*this);
-        apply(act.effect_);
-        for( size_t j = 0; j < act.when_.size(); ++j )
-            conditional_apply(clone, act.when_[j].condition_, act.when_[j].effect_);
+        apply(act.effect());
+        for( size_t j = 0; j < act.when().size(); ++j )
+            conditional_apply(clone, act.when()[j].condition(), act.when()[j].effect());
     }
     void apply_axioms(const Instance &ins) {
 #ifdef SMART
         for( Instance::owner_axiom_vec::const_iterator it = ins.axioms_.begin(); it != ins.axioms_.end(); ++it )
-            conditional_apply(*this, (*it)->body_, (*it)->head_);
+            conditional_apply(*this, (*it)->body(), (*it)->head());
 #else
         for( Instance::axiom_vec::const_iterator it = ins.axioms_.begin(); it != ins.axioms_.end(); ++it )
-            conditional_apply(*this, (*it)->body_, (*it)->head_);
+            conditional_apply(*this, (*it)->body(), (*it)->head());
 #endif
     }
     void apply(const Instance::Action &act, const Instance &ins) {
@@ -206,7 +206,7 @@ class State {
         return true;
         //return satisfy(ins.goal_cls);
     }
-    bool applicable(const Instance::Action &act) const { return satisfy(act.precondition_); }
+    bool applicable(const Instance::Action &act) const { return satisfy(act.precondition()); }
 
     bool operator==(const State &s) const {
         if( size_ != s.size_ ) return false;
@@ -238,7 +238,8 @@ class State {
         } else {
             std::string str;
             if( literal < 0 ) str += "(not ";
-            str += std::string("(") + ins->atoms_[literal < 0 ? -literal - 1 : literal - 1]->name_->to_string() + ")";
+            //str += std::string("(") + ins->atoms_[literal < 0 ? -literal - 1 : literal - 1]->name_->to_string() + ")";
+            str += std::string("(") + ins->atoms_[literal < 0 ? -literal - 1 : literal - 1]->name() + ")";
             if( literal < 0 ) str += ")";
             return str;
         }

@@ -30,22 +30,17 @@ CP_Instance::CP_Instance(const Instance &ins,
                          size_t fsc_states,
                          bool forbid_inconsistent_tuples,
                          bool compound_obs_as_fluents)
-  : Instance(ins.options_),
+  : Instance(ins.domain_name_, ins.problem_name_, ins.options_),
     fsc_states_(fsc_states),
     forbid_inconsistent_tuples_(forbid_inconsistent_tuples),
     compound_obs_as_fluents_(compound_obs_as_fluents),
     instance_(ins) {
 
-    // set name
-    if( dynamic_cast<const InstanceName*>(ins.name_) != 0 )
-        set_name(new InstanceName(*dynamic_cast<const InstanceName*>(ins.name_)));
-    else
-        set_name(new CopyName(ins.name_->to_string()));
-
     // set description of init
     init_ = ins.init_;
 
     // calculate reachable state space
+    assert(initial_states_.empty());
     ins.generate_initial_states(initial_states_);
     for( StateSet::const_iterator it = initial_states_.begin(); it != initial_states_.end(); ++it ) {
         StateSet *space = new StateSet;
@@ -85,14 +80,14 @@ CP_Instance::CP_Instance(const Instance &ins,
         }
         cout << "obs" << it->second << ":";
         for( index_set::const_iterator jt = it->first.begin(); jt != it->first.end(); ++jt )
-            cout << " " << ins.atoms_[*jt-1]->name_;
+            cout << " " << ins.atoms_[*jt-1]->name();
         cout << endl;
     }
 
     // create atoms
     atoms_.reserve(ins.n_atoms() + fsc_states_);
     for( size_t k = 0; k < ins.n_atoms(); ++k )
-        new_atom(new CopyName(ins.atoms_[k]->name_->to_string()));
+        new_atom(ins.atoms_[k]->name());
 
     // fluents for obs
     if( compound_obs_as_fluents_ ) {
@@ -100,7 +95,7 @@ CP_Instance::CP_Instance(const Instance &ins,
         for( size_t k = 0; k < reachable_obs_.size(); ++k ) {
             //CHECK string name = string("(obs") + Utils::to_string(k) + ")";
             string name = string("obs") + Utils::to_string(k);
-            new_atom(new CopyName(name));
+            new_atom(name);
         }
     }
 
@@ -109,7 +104,7 @@ CP_Instance::CP_Instance(const Instance &ins,
     for( size_t k = 0; k < fsc_states_; ++k ) {
         //CHECK string name = string("(q") + Utils::to_string(k) + ")";
         string name = string("q") + Utils::to_string(k);
-        new_atom(new CopyName(name));
+        new_atom(name);
     }
 
     // create fluents to forbid inconsistent tuples
@@ -120,24 +115,24 @@ CP_Instance::CP_Instance(const Instance &ins,
         for( size_t k = 0; k < n_unused_fluents_; ++k ) {
             //CHECK string name = string("(unused") + Utils::to_string(k) + ")";
             string name = string("unused") + Utils::to_string(k);
-            new_atom(new CopyName(name));
+            new_atom(name);
         }
         mapped0_ = n_atoms();
         for( size_t k = 0; k < n_mapped_fluents_; ++k ) {
             //CHECK string name = string("(mapped") + Utils::to_string(k) + ")";
             string name = string("mapped") + Utils::to_string(k);
-            new_atom(new CopyName(name));
+            new_atom(name);
         }
     }
 
     // add q0 to initial state
-    init_.literals_.insert(1 + q0_);
+    init_.literals().insert(1 + q0_);
     add_to_initial_states(q0_);
 
     // extend initial situation with fluents to remove inconsistent tuples
     if( forbid_inconsistent_tuples_ ) {
         for( size_t k = 0; k < n_unused_fluents_; ++k ) {
-            init_.literals_.insert(1 + unused0_+k);
+            init_.literals().insert(1 + unused0_+k);
             add_to_initial_states(unused0_ + k);
         }
     }
@@ -171,74 +166,74 @@ CP_Instance::CP_Instance(const Instance &ins,
                     size_t mapped_fluent = obs_idx*fsc_states_*ins.n_actions()*fsc_states_ +
                                            q*ins.n_actions()*fsc_states_ + k*fsc_states_ + qp;
                     if( forbid_inconsistent_tuples_ ) {
-                        string map_act_name = string("map_") + act.name_->to_string() + "_obs" + Utils::to_string(obs_idx) + "_q" + Utils::to_string(q) + "_q" + Utils::to_string(qp);
-                        Action &map_act = new_action(new CopyName(map_act_name));
-                        map_act.precondition_.insert(1 + unused0_+unused_fluent);
-                        map_act.effect_.insert(-(1 + unused0_+unused_fluent));
-                        map_act.effect_.insert(1 + mapped0_+mapped_fluent);
+                        string map_act_name = string("map_") + act.name() + "_obs" + Utils::to_string(obs_idx) + "_q" + Utils::to_string(q) + "_q" + Utils::to_string(qp);
+                        Action &map_act = new_action(map_act_name);
+                        map_act.precondition().insert(1 + unused0_+unused_fluent);
+                        map_act.effect().insert(-(1 + unused0_+unused_fluent));
+                        map_act.effect().insert(1 + mapped0_+mapped_fluent);
                     }
 
-                    string app_act_name = string("app_") + act.name_->to_string() + "_obs" + Utils::to_string(obs_idx) + "_q" + Utils::to_string(q) + "_q" + Utils::to_string(qp);
-                    Action &nact = new_action(new CopyName(app_act_name));
+                    string app_act_name = string("app_") + act.name() + "_obs" + Utils::to_string(obs_idx) + "_q" + Utils::to_string(q) + "_q" + Utils::to_string(qp);
+                    Action &nact = new_action(app_act_name);
 
                     // the action has precondition if inconsistent tuples are forbidden
                     if( forbid_inconsistent_tuples_ ) {
-                        nact.precondition_.insert(1 + mapped0_+mapped_fluent);
+                        nact.precondition().insert(1 + mapped0_+mapped_fluent);
                     }
 
                     // unconditional effects of action
-                    if( !act.effect_.empty() ) {
+                    if( !act.effect().empty() ) {
                         When base_c_eff;
 
                         // condition
-                        base_c_eff.condition_.insert(1 + q0_+q);
-                        base_c_eff.condition_.insert(obs.begin(), obs.end());
+                        base_c_eff.condition().insert(1 + q0_+q);
+                        base_c_eff.condition().insert(obs.begin(), obs.end());
 
                         // effects
-                        base_c_eff.effect_.insert(act.effect_.begin(), act.effect_.end());
+                        base_c_eff.effect().insert(act.effect().begin(), act.effect().end());
 
                         // effects for non-primitive fluents for base conditional effect
-                        base_c_eff.effect_.insert(np_ns_effect.begin(), np_ns_effect.end());
+                        base_c_eff.effect().insert(np_ns_effect.begin(), np_ns_effect.end());
 
                         // effect for clearing observation
                         for( index_set::const_iterator it = obs.begin(); it != obs.end(); ++it )
-                            base_c_eff.effect_.insert(-*it);
+                            base_c_eff.effect().insert(-*it);
 
                         // effects for changing (FSC) state
                         if( q != qp ) {
-                            base_c_eff.effect_.insert(-(1 + q0_+q));
-                            base_c_eff.effect_.insert(1 + q0_+qp);
+                            base_c_eff.effect().insert(-(1 + q0_+q));
+                            base_c_eff.effect().insert(1 + q0_+qp);
                         }
-                        nact.when_.push_back(base_c_eff);
+                        nact.when().push_back(base_c_eff);
                     }
 
                     // conditional effects of action
-                    for( size_t i = 0; i < act.when_.size(); ++i ) {
-                        const When &w = act.when_[i];
-                        if( consistent_with_obs(obs_idx, w.condition_) ) {
+                    for( size_t i = 0; i < act.when().size(); ++i ) {
+                        const When &w = act.when()[i];
+                        if( consistent_with_obs(obs_idx, w.condition()) ) {
                             When c_eff;
 
                             // condition
-                            c_eff.condition_.insert(1 + q0_+q);
-                            c_eff.condition_.insert(obs.begin(), obs.end());
-                            c_eff.condition_.insert(w.condition_.begin(), w.condition_.end());
+                            c_eff.condition().insert(1 + q0_+q);
+                            c_eff.condition().insert(obs.begin(), obs.end());
+                            c_eff.condition().insert(w.condition().begin(), w.condition().end());
 
                             // effects
-                            c_eff.effect_.insert(w.effect_.begin(), w.effect_.end());
-                            c_eff.effect_.insert(np_ns_effect.begin(), np_ns_effect.end());
+                            c_eff.effect().insert(w.effect().begin(), w.effect().end());
+                            c_eff.effect().insert(np_ns_effect.begin(), np_ns_effect.end());
 
                             // effect for clearing observation
                             for( index_set::const_iterator it = obs.begin(); it != obs.end(); ++it )
-                                c_eff.effect_.insert(-*it);
+                                c_eff.effect().insert(-*it);
 
                             // effects for changing (FSC) state
                             if( q != qp ) {
-                                c_eff.effect_.insert(-(1 + q0_+q));
-                                c_eff.effect_.insert(1 + q0_+qp);
+                                c_eff.effect().insert(-(1 + q0_+q));
+                                c_eff.effect().insert(1 + q0_+qp);
                             }
 
                             // add conditional effect to new action
-                            nact.when_.push_back(c_eff);
+                            nact.when().push_back(c_eff);
                         }
                     }
                 }
@@ -247,13 +242,13 @@ CP_Instance::CP_Instance(const Instance &ins,
     }
 
     // create ramification action
-    Action &ramif = new_action(new CopyName("ramification"));
+    Action &ramif = new_action("ramification");
     for( size_t k = 0; k < ins.n_axioms(); ++k ) {
         Axiom &axiom = *ins.axioms_[k];
         When eff;
-        eff.condition_ = axiom.body_;
-        eff.effect_ = axiom.head_;
-        ramif.when_.push_back(eff);
+        eff.condition() = axiom.body();
+        eff.effect() = axiom.head();
+        ramif.when().push_back(eff);
     }
 }
 
@@ -362,9 +357,23 @@ void CP_Instance::remove_atoms(const bool_vec &set, index_vec &map) {
         }
         cout << "obs" << it->second << ":";
         for( index_set::const_iterator jt = it->first.begin(); jt != it->first.end(); ++jt )
-            cout << " " << atoms[*jt-1]->name_;
+            cout << " " << atoms[*jt-1]->name();
         cout << endl;
     }
     */
+}
+
+void CP_Instance::write_problem_additional(ostream &os, const State *state, int indent) const {
+    // write initial states (so they can be passed through pddl file)
+    if( options_.is_enabled("cp:write:explicit-initial-states") ) {
+        for( StateSet::const_iterator it = initial_states_.begin(); it != initial_states_.end(); ++it ) {
+            os << string(indent, ' ') << "(:explicit-initial-state";
+            for( State::const_iterator jt = (*it)->begin(); jt != (*it)->end(); ++jt ) {
+                os << " ";
+                State::print_literal(os, 1 + *jt, this);
+            }
+            os << ")" << endl;
+        }
+    }
 }
 

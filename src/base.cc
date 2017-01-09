@@ -54,8 +54,8 @@ static void clone_parameters(const PDDL_Base::var_symbol_vec &param, PDDL_Base::
 }
 
 
-PDDL_Base::PDDL_Base(StringTable &t, const Options::Mode &options)
-  : tab_(t),
+PDDL_Base::PDDL_Base(StringTable &parser_symbol_table, const Options::Mode &options)
+  : parser_symbol_table_(parser_symbol_table),
     options_(options),
     dom_top_type_(0),
     dom_eq_pred_(0),
@@ -67,12 +67,12 @@ PDDL_Base::PDDL_Base(StringTable &t, const Options::Mode &options)
     lw1_default_sensing_proxy_(0) {
 
     // setup predicate for equality
-    StringTable::Cell *sc = tab_.inserta("object");
-    dom_top_type_ = new TypeSymbol(sc->text);
-    sc->val = dom_top_type_;
-    sc = tab_.inserta("=");
-    dom_eq_pred_ = new PredicateSymbol(sc->text);
-    sc->val = dom_eq_pred_;
+    StringTable::Cell *sc = parser_symbol_table_.insert("object");
+    dom_top_type_ = new TypeSymbol(sc->text_);
+    sc->value_ = dom_top_type_;
+    sc = parser_symbol_table_.insert("=");
+    dom_eq_pred_ = new PredicateSymbol(sc->text_);
+    sc->value_ = dom_eq_pred_;
     dom_eq_pred_->param_.push_back(new VariableSymbol("?x"));
     dom_eq_pred_->param_.push_back(new VariableSymbol("?y"));
     dom_eq_pred_->param_[0]->sym_type_ = dom_top_type_;
@@ -93,6 +93,10 @@ PDDL_Base::~PDDL_Base() {
     for( size_t k = 0; k < dom_hidden_.size(); ++k ) {
         for( size_t j = 0; j < dom_hidden_[k].size(); ++j )
             delete dom_hidden_[k][j];
+    }
+    for( size_t k = 0; k < dom_explicit_initial_states_.size(); ++k ) {
+        for( size_t j = 0; j < dom_explicit_initial_states_[k].size(); ++j )
+            delete dom_explicit_initial_states_[k][j];
     }
     for( size_t k = 0; k < dom_actions_.size(); ++k )
         delete dom_actions_[k];
@@ -138,7 +142,7 @@ void PDDL_Base::set_constant_type(symbol_vec &vec, size_t n, TypeSymbol *t) {
 
 void PDDL_Base::clear_param(var_symbol_vec &vec, size_t start) {
     for( size_t k = start; k < vec.size(); ++k )
-        tab_.set(vec[k]->print_name_, static_cast<void*>(0));
+        parser_symbol_table_.set(vec[k]->print_name_.c_str(), static_cast<void*>(0));
 }
 
 void PDDL_Base::insert_atom(ptr_table &t, Atom *a) {
@@ -492,16 +496,23 @@ bool PDDL_Base::is_static_atom(const Atom &atom) const {
 }
 
 PDDL_Base::PredicateSymbol* PDDL_Base::create_predicate(const string &name, const var_symbol_vec *param) {
-    PredicateSymbol *new_predicate_symbol = new PredicateSymbol(strdup(name.c_str()));
-    if( param != 0 ) new_predicate_symbol->param_ = *param;
-    dom_predicates_.push_back(new_predicate_symbol);
-    return new_predicate_symbol;
+    PredicateSymbol *new_predicate = new PredicateSymbol(name);
+    if( param != 0 ) new_predicate->param_ = *param;
+    dom_predicates_.push_back(new_predicate);
+    return new_predicate;
+}
+
+PDDL_Base::Atom* PDDL_Base::create_atom(const PDDL_Base::Atom &atom) const {
+    Atom *new_atom = new Atom(atom);
+    //cout << "Atom " << *new_atom << " created!" << endl;
+    return new_atom;
 }
 
 PDDL_Base::Atom* PDDL_Base::create_atom(const string &name, const var_symbol_vec *param) {
-    Atom *atom = new Atom(create_predicate(name, param));
-    //cout << "Atom " << *atom << " created!" << endl;
-    return atom;
+    PredicateSymbol *new_predicate = create_predicate(name, param);
+    Atom *new_atom = new Atom(new_predicate);
+    //cout << "Atom " << *new_atom << " created!" << endl;
+    return new_atom;
 }
 
 void PDDL_Base::create_normal_execution_atom() {
@@ -702,9 +713,9 @@ void PDDL_Base::clg_translate(Action &action) {
     //    (do-post-sense-for-<action> <args>), and sense <observation>
 
 #ifdef SMART
-    unique_ptr<Sensor> sensor = make_unique<Sensor>(strdup((string("sensor-for-") + action.print_name_).c_str()));
+    unique_ptr<Sensor> sensor = make_unique<Sensor>(string("sensor-for-") + action.print_name_);
 #else
-    Sensor *sensor = new Sensor(strdup((string("sensor-for-") + action.print_name_).c_str()));
+    Sensor *sensor = new Sensor(string("sensor-for-") + action.print_name_);
 #endif
     clone_parameters(action.param_, sensor->param_);
     sensor->condition_ = new Literal(need_post);
@@ -729,9 +740,9 @@ void PDDL_Base::clg_translate(Action &action) {
     //    precondition and add (normal-execution)
 
 #ifdef SMART
-    unique_ptr<Action> post_action = make_unique<Action>(strdup((string(action.print_name_) + "__post__").c_str()));
+    unique_ptr<Action> post_action = make_unique<Action>(action.print_name_ + "__post__");
 #else
-    Action *post_action = new Action(strdup((string(action.print_name_) + "__post__").c_str()));
+    Action *post_action = new Action(action.print_name_ + "__post__");
 #endif
     clone_parameters(action.param_, post_action->param_);
     post_action->precondition_ = Literal(need_post).copy();
@@ -945,7 +956,7 @@ void PDDL_Base::lw1_calculate_beam_for_grounded_variable(Variable &var) {
                         break;
                     }
                 } else {
-                    for( int k = 0; k < int(lw1_variables_.size()); ++k ) {
+                    for( size_t k = 0; k < lw1_variables_.size(); ++k ) {
                         const Variable &v = *lw1_variables_[k];
                         if( v.is_state_variable() && (v.grounded_domain_.find(*kt) != v.grounded_domain_.end()) ) {
                             assert(dynamic_cast<const StateVariable*>(&v) != 0);
@@ -975,9 +986,9 @@ void PDDL_Base::lw1_calculate_beam_for_grounded_variable(Variable &var) {
                                  << *it << " for " << var << ": group={" << *candidate << "}" << endl;
                             string group_name = string("ad-hoc-group-") + to_string(lw1_ad_hoc_groups_.size());
 #ifdef SMART
-                            unique_ptr<VariableGroup> ad_hoc_group = make_unique<VariableGroup>(strdup(group_name.c_str()));
+                            unique_ptr<VariableGroup> ad_hoc_group = make_unique<VariableGroup>(group_name);
 #else
-                            VariableGroup *ad_hoc_group = new VariableGroup(strdup(group_name.c_str()));
+                            VariableGroup *ad_hoc_group = new VariableGroup(group_name);
 #endif
                             ad_hoc_group->grounded_group_.push_back(const_cast<StateVariable*>(candidate));
                             ad_hoc_group->grounded_group_str_.insert(string(candidate->print_name_));
@@ -1138,9 +1149,9 @@ void PDDL_Base::lw1_translate(Action &action) {
     if( need_effect_action ) {
         // Action that execute only the effects on state variables (i.e. no sensing model involved)
 #ifdef SMART
-        unique_ptr<Action> effect_action = make_unique<Action>(strdup((string(action.print_name_) + "__effect__").c_str()));
+        unique_ptr<Action> effect_action = make_unique<Action>(action.print_name_ + "__effect__");
 #else
-        Action *effect_action = new Action(strdup((string(action.print_name_) + "__effect__").c_str()));
+        Action *effect_action = new Action(action.print_name_ + "__effect__");
 #endif
         original_actions_.insert(effect_action->print_name_);             // this action counts as the original action
 
@@ -1188,9 +1199,9 @@ void PDDL_Base::lw1_translate(Action &action) {
     if( need_set_sensing_action ) {
         // Action that computes the effects on observables (i.e. sensing model)
 #ifdef SMART
-        unique_ptr<Action> set_sensing_action = make_unique<Action>(strdup((string(action.print_name_) + "__set_sensing__").c_str()));
+        unique_ptr<Action> set_sensing_action = make_unique<Action>(action.print_name_ + "__set_sensing__");
 #else
-        Action *set_sensing_action = new Action(strdup((string(action.print_name_) + "__set_sensing__").c_str()));
+        Action *set_sensing_action = new Action(action.print_name_ + "__set_sensing__");
 #endif
 
         // precondition
@@ -1244,9 +1255,9 @@ void PDDL_Base::lw1_translate(Action &action) {
     if( !need_effect_action && !need_set_sensing_action ) {
         // Action that only turns on the sensor
 #ifdef SMART
-        unique_ptr<Action> turn_on_sensor_action = make_unique<Action>(strdup((string(action.print_name_) + "__turn_on_sensor__").c_str()));
+        unique_ptr<Action> turn_on_sensor_action = make_unique<Action>(action.print_name_ + "__turn_on_sensor__");
 #else
-        Action *turn_on_sensor_action = new Action(strdup((string(action.print_name_) + "__turn_on_sensor__").c_str()));
+        Action *turn_on_sensor_action = new Action(action.print_name_ + "__turn_on_sensor__");
 #endif
         original_actions_.insert(turn_on_sensor_action->print_name_);     // this action counts as the original action
 
@@ -1443,7 +1454,6 @@ void PDDL_Base::lw1_translate_strict(Action &action) { // CHECK: replace this by
 
 #ifdef SMART
     dom_actions_.emplace_back(make_unique<Action>(action));
-    assert(dom_actions_.back() != nullptr); // SMART: CHECK
 #else
     dom_actions_.push_back(&action);
 #endif
@@ -1452,9 +1462,9 @@ void PDDL_Base::lw1_translate_strict(Action &action) { // CHECK: replace this by
 
     // create post-action that remove enablers for sensing and resumes normal-execution
 #ifdef SMART
-    unique_ptr<Action> post_action = make_unique<Action>(strdup((string(action.print_name_) + "__post-action__").c_str()));
+    unique_ptr<Action> post_action = make_unique<Action>(action.print_name_ + "__post-action__");
 #else
-    Action *post_action = new Action(strdup((string(action.print_name_) + "__post-action__").c_str()));
+    Action *post_action = new Action(action.print_name_ + "__post-action__");
 #endif
     And *precondition = new And;
     precondition->push_back(Literal(*normal_execution_).negate());
@@ -1555,9 +1565,9 @@ void PDDL_Base::lw1_create_sensors_for_atom(const Atom &atom, const Condition &c
             string name = string("sensor-for-") + var.to_string(true, true) + "-" + atom.to_string(atom.negated_, true) + "-true";
             if( sensor_index != -1 ) name += "-" + Utils::to_string(sensor_index);
 #ifdef SMART
-            unique_ptr<Sensor> sensor = make_unique<Sensor>(strdup(name.c_str()));
+            unique_ptr<Sensor> sensor = make_unique<Sensor>(name);
 #else
-            Sensor *sensor = new Sensor(strdup(name.c_str()));
+            Sensor *sensor = new Sensor(name);
 #endif
 
             // condition of sensor is enabler plus conditions on other values of variable
@@ -1590,9 +1600,9 @@ void PDDL_Base::lw1_create_sensors_for_atom(const Atom &atom, const Condition &c
                 string name = string("sensor-for-") + var.to_string(true, true) + "-" + atom.to_string(atom.negated_, true) + "-false";
                 if( sensor_index != -1 ) name += "-" + Utils::to_string(sensor_index);
 #ifdef SMART
-                unique_ptr<Sensor> sensor = make_unique<Sensor>(strdup(name.c_str()));
+                unique_ptr<Sensor> sensor = make_unique<Sensor>(name);
 #else
-                Sensor *sensor = new Sensor(strdup(name.c_str()));
+                Sensor *sensor = new Sensor(name);
 #endif
 
                 // condition of sensor is just enabler because there are no other values for the variable
@@ -1632,9 +1642,9 @@ void PDDL_Base::lw1_create_post_action(const unsigned_atom_set &atoms) {
     if( it == post_actions_for_lw1_translation_.end() ) {
         string name = string("post-action-") + Utils::to_string(post_actions_for_lw1_translation_.size());
 #ifdef SMART
-        unique_ptr<Action> post_action = make_unique<Action>(strdup(name.c_str()));
+        unique_ptr<Action> post_action = make_unique<Action>(name);
 #else
-        Action *post_action = new Action(strdup(name.c_str()));
+        Action *post_action = new Action(name);
 #endif
 
         // precondition
@@ -1694,9 +1704,9 @@ void PDDL_Base::lw1_create_drule_var_exhaustive(const Variable &variable, const 
     assert(!value.negated_);
     string name = string("drule-var-exhaustive-") + variable.to_string(true, true) + "-" + value.to_string(false, true);
 #ifdef SMART
-    unique_ptr<Action> drule = make_unique<Action>(strdup(name.c_str()));
+    unique_ptr<Action> drule = make_unique<Action>(name);
 #else
-    Action *drule = new Action(strdup(name.c_str()));
+    Action *drule = new Action(name);
 #endif
 
     And *precondition = new And;
@@ -1724,9 +1734,9 @@ void PDDL_Base::lw1_create_drule_var_exclusive(const Variable &variable, const A
     assert(!value.negated_);
     string name = string("drule-var-exclusive-") + variable.to_string(true, true) + "-" + value.to_string(false, true);
 #ifdef SMART
-    unique_ptr<Action> drule = make_unique<Action>(strdup(name.c_str()));
+    unique_ptr<Action> drule = make_unique<Action>(name);
 #else
-    Action *drule = new Action(strdup(name.c_str()));
+    Action *drule = new Action(name);
 #endif
 
     AndEffect *effect = new AndEffect;
@@ -2085,9 +2095,9 @@ void PDDL_Base::lw1_create_type1_sensing_drule(const Atom &obs, const And &term,
     // type-1 sensing drules
     string name = string("drule-sensing-type1-") + obs.to_string(false, true) + "-" + Utils::to_string(index);
 #ifdef SMART
-    unique_ptr<Action> drule = make_unique<Action>(strdup(name.c_str()));
+    unique_ptr<Action> drule = make_unique<Action>(name);
 #else
-    Action *drule = new Action(strdup(name.c_str()));
+    Action *drule = new Action(name);
 #endif
     drule->precondition_ = term.copy_and_simplify();
     drule->effect_ = AtomicEffect(obs).copy();
@@ -2109,9 +2119,9 @@ void PDDL_Base::lw1_create_type2_sensing_drule(const Atom &obs, const And &term,
     for( size_t k = 0; k < term.size(); ++k ) {
         string name = string("drule-sensing-type2-") + obs.to_string(false, true) + "-" + Utils::to_string(index);
 #ifdef SMART
-        unique_ptr<Action> drule = make_unique<Action>(strdup(name.c_str()));
+        unique_ptr<Action> drule = make_unique<Action>(name);
 #else
-        Action *drule = new Action(strdup(name.c_str()));
+        Action *drule = new Action(name);
 #endif
 
         // precondition
@@ -2168,9 +2178,9 @@ void PDDL_Base::lw1_create_type3_sensing_drule(const Action &action,
 
     string name = string("drule-sensing-type3-") + value.to_string(false, true) + "-" + Utils::to_string(index);
 #ifdef SMART
-    unique_ptr<Action> drule = make_unique<Action>(strdup(name.c_str()));
+    unique_ptr<Action> drule = make_unique<Action>(name);
 #else
-    Action *drule = new Action(strdup(name.c_str()));
+    Action *drule = new Action(name);
 #endif
 
     // precondition
@@ -2232,9 +2242,9 @@ const PDDL_Base::Atom& PDDL_Base::lw1_fetch_atom_for_negated_term(const And &ter
             const Literal &literal = *static_cast<const Literal*>(term[k]);
             string name = string("drule-atom-") + atom->to_string(false, true) + "-" + Utils::to_string(k);
 #ifdef SMART
-            unique_ptr<Action> drule = make_unique<Action>(strdup(name.c_str()));
+            unique_ptr<Action> drule = make_unique<Action>(name);
 #else
-            Action *drule = new Action(strdup(name.c_str()));
+            Action *drule = new Action(name);
 #endif
             drule->precondition_ = literal.negate();
             drule->effect_ = AtomicEffect(*atom).copy();
@@ -2269,9 +2279,9 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action *action, const State
 
     string name = string("drule-sensing-type4state-") + variable.to_string(false, true) + "-" + value.to_string(false, true);
 #ifdef SMART
-    unique_ptr<Action> drule = make_unique<Action>(strdup(name.c_str()));
+    unique_ptr<Action> drule = make_unique<Action>(name);
 #else
-    Action *drule = new Action(strdup(name.c_str()));
+    Action *drule = new Action(name);
 #endif
 
     // pass the variable name to lw1_problem.cc in the comment for this action
@@ -2338,9 +2348,9 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action,
 
     string name = string("drule-sensing-type4obs-") + action.print_name_ + "-" + variable.to_string(false, true) + "-" + value.to_string(false, true);
 #ifdef SMART
-    unique_ptr<Action> drule = make_unique<Action>(strdup(name.c_str()));
+    unique_ptr<Action> drule = make_unique<Action>(name);
 #else
-    Action *drule = new Action(strdup(name.c_str()));
+    Action *drule = new Action(name);
 #endif
 
     // pass the variable name to lw1_problem.cc in the comment for this action
@@ -2436,9 +2446,9 @@ void PDDL_Base::lw1_create_type4_boost_sensing_drule(const Action &action,
 
     string name = string("drule-sensing-type4obs-boost-") + action.print_name_ + "-" + variable.to_string(false, true) + "-" + value.to_string(false, true);
 #ifdef SMART
-    unique_ptr<Action> drule = make_unique<Action>(strdup(name.c_str()));
+    unique_ptr<Action> drule = make_unique<Action>(name);
 #else
-    Action *drule = new Action(strdup(name.c_str()));
+    Action *drule = new Action(name);
 #endif
 
     // pass the variable name to lw1_problem.cc in the comment for this action
@@ -2543,7 +2553,7 @@ void PDDL_Base::lw1_create_type5_sensing_drule(const ObsVariable &variable) {
             size_t n = 0;
             for( list<const And*>::const_iterator term = dnf->begin(); term != dnf->end(); ++term, ++n ) {
                 string name = string("drule-sensing-type5-") + variable.to_string(false, true) + "-" + value.to_string(false, true) + "-term-" + Utils::to_string(1 + n);
-                Action *drule = new Action(strdup(name.c_str()));
+                Action *drule = new Action(name);
 
                 // precondition and effect
                 drule->precondition_ = (*term)->copy_and_simplify();
@@ -2724,8 +2734,10 @@ void PDDL_Base::lw1_calculate_post_condition(const Condition *precondition, cons
 void PDDL_Base::lw1_simplify_post_condition(signed_atom_set &post_condition) const {
     vector<const Atom*> literals;
     literals.reserve(post_condition.size());
-    for( signed_atom_set::const_iterator it = post_condition.begin(); it != post_condition.end(); ++it )
-        literals.push_back(new Atom(*it));
+    for( signed_atom_set::const_iterator it = post_condition.begin(); it != post_condition.end(); ++it ) {
+        Atom *atom = create_atom(*it);
+        literals.push_back(atom);
+    }
 
     // simplify
     size_t k = 0;
@@ -3070,9 +3082,9 @@ void PDDL_Base::lw1_compile_static_observable(const Atom &atom) { // CHECK: comp
 void PDDL_Base::lw1_add_axiom_for_static_observable(const Literal &literal, const Condition &condition) {
     string axiom_name("[axiom for static observable '");
 #ifdef SMART
-    unique_ptr<Axiom> axiom = make_unique<Axiom>(strdup((axiom_name + literal.to_string() + "']").c_str()));
+    unique_ptr<Axiom> axiom = make_unique<Axiom>(axiom_name + literal.to_string() + "']");
 #else
-    Axiom *axiom = new Axiom(strdup((axiom_name + literal.to_string() + "']").c_str()));
+    Axiom *axiom = new Axiom(axiom_name + literal.to_string() + "']");
 #endif
     axiom->head_ = new AtomicEffect(literal);
     axiom->body_ = condition.copy_and_simplify();
@@ -3265,11 +3277,8 @@ void PDDL_Base::do_lw1_translation(const variable_vec* &variables,
 }
 
 void PDDL_Base::emit_instance(Instance &ins) const {
-    const char *dname = tab_.table_char_map().strdup(!domain_name_.empty() ? domain_name_.c_str() : "??");
-    const char *pname = tab_.table_char_map().strdup(!problem_name_.empty() ? problem_name_.c_str() : "??");
-    ins.name_ = new InstanceName(dname, pname);
-    delete[] dname;
-    delete[] pname;
+    ins.set_domain_name(domain_name_.empty() ? string("??") : domain_name_);
+    ins.set_problem_name(problem_name_.empty() ? string("??") : problem_name_);
 
     // emit initial situation.
     for( size_t k = 0; k < dom_init_.size(); ++k )
@@ -3287,6 +3296,23 @@ void PDDL_Base::emit_instance(Instance &ins) const {
             assert(dynamic_cast<const InitLiteral*>(dom_hidden_[k][j]) != 0);
             static_cast<const InitLiteral*>(dom_hidden_[k][j])->emit(ins, ins.hidden_[k]);
 #endif
+        }
+    }
+
+    // emit initial states (only useful for conformant problem / ks0 translation)
+    if( !dom_explicit_initial_states_.empty() ) {
+        cout << "calculating " << dom_explicit_initial_states_.size() << " initial state(s)" << endl;
+        ins.explicit_initial_states_.resize(dom_explicit_initial_states_.size());
+        for( size_t k = 0; k < dom_explicit_initial_states_.size(); ++k ) {
+            for( size_t j = 0; j < dom_explicit_initial_states_[k].size(); ++j ) {
+#ifdef SMART
+                assert(dynamic_cast<const InitLiteral*>(dom_explicit_initial_states_[k][j].get()) != 0);
+                static_cast<const InitLiteral*>(dom_explicit_initial_states_[k][j].get())->emit(ins, ins.explicit_initial_states_[k]);
+#else
+                assert(dynamic_cast<const InitLiteral*>(dom_explicit_initial_states_[k][j]) != 0);
+                static_cast<const InitLiteral*>(dom_explicit_initial_states_[k][j])->emit(ins, ins.explicit_initial_states_[k]);
+#endif
+            }
         }
     }
 
@@ -3338,7 +3364,7 @@ void PDDL_Base::print(ostream &os) const {
 }
 
 PDDL_Base::Symbol* PDDL_Base::Symbol::clone() const {
-    Symbol *cl = new Symbol(strdup(print_name_), sym_class_);
+    Symbol *cl = new Symbol(print_name_, sym_class_);
     cl->sym_type_ = sym_type_;
     return cl;
 }
@@ -3361,14 +3387,14 @@ string PDDL_Base::TypeSymbol::to_string() const {
 }
 
 PDDL_Base::Symbol* PDDL_Base::TypeSymbol::clone() const {
-    TypeSymbol *cl = new TypeSymbol(strdup(print_name_));
+    TypeSymbol *cl = new TypeSymbol(print_name_);
     cl->sym_type_ = sym_type_;
     copy_symbol_vec<Symbol*>(elements_, cl->elements_);
     return cl;
 }
 
 PDDL_Base::Symbol* PDDL_Base::VariableSymbol::clone() const {
-    VariableSymbol *cl = new VariableSymbol(strdup(print_name_));
+    VariableSymbol *cl = new VariableSymbol(print_name_);
     cl->sym_type_ = sym_type_;
     cl->value_ = value_;
     return cl;
@@ -3386,7 +3412,7 @@ string PDDL_Base::VariableSymbol::to_string() const {
 }
 
 PDDL_Base::Symbol* PDDL_Base::PredicateSymbol::clone() const {
-    PredicateSymbol *cl = new PredicateSymbol(strdup(print_name_));
+    PredicateSymbol *cl = new PredicateSymbol(print_name_);
     cl->sym_type_ = sym_type_;
     cl->strongly_static_ = strongly_static_;
     copy_symbol_vec<VariableSymbol*>(param_, cl->param_);
@@ -3498,7 +3524,7 @@ Instance::Atom* PDDL_Base::Atom::find_prop(Instance &ins, bool negated, bool cre
             else
 	        a_name.add(param_[k]);
         }
-        Instance::Atom &p = ins.new_atom(new CopyName(a_name.to_string(true)));
+        Instance::Atom &p = ins.new_atom(a_name.to_string(true));
         r->val = &p;
     }
     return static_cast<Instance::Atom*>(r->val);
@@ -3514,7 +3540,7 @@ PDDL_Base::Atom* PDDL_Base::Atom::ground(bool clone_variables) const {
             if( var->value_ != 0 )
                 result->param_[k] = var->value_;
             else if( clone_variables )
-                result->param_[k] = new VariableSymbol(strdup(var->print_name_));
+                result->param_[k] = new VariableSymbol(var->print_name_);
         }
     }
     return result;
@@ -3549,9 +3575,9 @@ bool PDDL_Base::Atom::is_fully_instantiated() const {
 void PDDL_Base::Atom::emit(Instance &ins, index_set &atoms) const {
     Instance::Atom *p = find_prop(ins, false, true);
     if( !negated_ )
-        atoms.insert(1 + p->index_);
+        atoms.insert(1 + p->index());
     else
-        atoms.insert(-(1 + p->index_));
+        atoms.insert(-(1 + p->index()));
 }
 
 string PDDL_Base::Atom::to_string(bool extra_neg, bool mangled) const {
@@ -3676,13 +3702,13 @@ PDDL_Base::Condition* PDDL_Base::EQ::ground(bool clone_variables, bool negate, b
         if( static_cast<const VariableSymbol*>(first)->value_ != 0 )
             result->first = static_cast<const VariableSymbol*>(first)->value_;
         else if( clone_variables )
-            result->first = new VariableSymbol(strdup(first->print_name_));
+            result->first = new VariableSymbol(first->print_name_);
     }
     if( second->sym_class_ == sym_variable ) {
         if( static_cast<const VariableSymbol*>(second)->value_ != 0 )
             result->second = static_cast<const VariableSymbol*>(second)->value_;
         else if( clone_variables )
-            result->second = new VariableSymbol(strdup(second->print_name_));
+            result->second = new VariableSymbol(second->print_name_);
     }
 
     // check if result can be reduced to a boolean constant
@@ -4356,8 +4382,8 @@ void PDDL_Base::ConditionalEffect::remap_parameters(const var_symbol_vec &old_pa
 
 void PDDL_Base::ConditionalEffect::emit(Instance &ins, index_set &eff, Instance::when_vec &when) const {
     Instance::When single_when;
-    condition_->emit(ins, single_when.condition_);
-    effect_->emit(ins, single_when.effect_, when);
+    condition_->emit(ins, single_when.condition());
+    effect_->emit(ins, single_when.effect(), when);
     when.push_back(single_when);
 }
 
@@ -4456,7 +4482,7 @@ void PDDL_Base::ForallEffect::process_instance() const {
         cout << Utils::error() << "condition '" << *such_that_
              << "' in such-that statement must ground to constant value" << endl;
     }
-    if( such_that_ != 0 ) delete such_that;
+    if( such_that != 0 ) delete such_that;
 }
 
 bool PDDL_Base::ForallEffect::has_free_variables(const var_symbol_vec &param, bool dont_extend) const {
@@ -4761,7 +4787,7 @@ void PDDL_Base::ForallSensing::process_instance() const {
         cout << Utils::error() << "condition '" << *such_that_
              << "' in such-that statement must ground to constant value" << endl;
     }
-    if( such_that_ != 0 ) delete such_that;
+    if( such_that != 0 ) delete such_that;
 }
 
 bool PDDL_Base::ForallSensing::is_strongly_static(const PredicateSymbol &p) const {
@@ -5067,9 +5093,9 @@ void PDDL_Base::Clause::emit(Instance &ins, Instance::Clause &clause) const {
         assert(lit != 0);
         Instance::Atom *p = lit->find_prop(ins, false, true);
         if( !lit->negated_ )
-            clause.push_back(1 + p->index_);
+            clause.push_back(1 + p->index());
         else
-            clause.push_back(-(1 + p->index_));
+            clause.push_back(-(1 + p->index()));
     }
 }
 
@@ -5086,9 +5112,9 @@ void PDDL_Base::Oneof::emit(Instance &ins, Instance::Oneof &oneof) const {
         assert(lit != 0);
         Instance::Atom *p = lit->find_prop(ins, false, true);
         if( !lit->negated_ )
-            oneof.push_back(1 + p->index_);
+            oneof.push_back(1 + p->index());
         else
-            oneof.push_back(-(1 + p->index_));
+            oneof.push_back(-(1 + p->index()));
     }
 }
 
@@ -5111,9 +5137,9 @@ string PDDL_Base::Unknown::to_string() const {
 void PDDL_Base::InitLiteral::emit(Instance &ins, Instance::Init &state) const {
     Instance::Atom *p = find_prop(ins, false, true);
     if( !negated_ ) {
-        state.literals_.insert(1 + p->index_);
+        state.literals().insert(1 + p->index());
     } else {
-        state.literals_.insert(-(1 + p->index_));
+        state.literals().insert(-(1 + p->index()));
     }
 }
 
@@ -5134,9 +5160,9 @@ void PDDL_Base::InitLiteral::instantiate(init_element_list &ilist) const {
 void PDDL_Base::InitLiteral::emit(Instance &ins) const {
     Instance::Atom *p = find_prop(ins, false, true);
     if( !negated_ ) {
-        ins.init_.literals_.insert(1 + p->index_);
+        ins.init_.literals().insert(1 + p->index());
     } else {
-        ins.init_.literals_.insert(-(1 + p->index_));
+        ins.init_.literals().insert(-(1 + p->index()));
     }
 }
 
@@ -5177,9 +5203,9 @@ void PDDL_Base::InitInvariant::emit(Instance &ins) const {
         const Literal &literal = *static_cast<const Literal*>((*this)[k]);
         Instance::Atom *p = literal.find_prop(ins, false, true);
         if( !literal.negated_ )
-            typed_invariant.push_back(1 + p->index_);
+            typed_invariant.push_back(1 + p->index());
         else
-            typed_invariant.push_back(-(1 + p->index_));
+            typed_invariant.push_back(-(1 + p->index()));
     }
 
     // construct precondition
@@ -5197,21 +5223,21 @@ void PDDL_Base::InitInvariant::emit(Instance &ins) const {
             const Literal &literal = *static_cast<const Literal*>(precondition[k]);
             Instance::Atom *p = literal.find_prop(ins, false, true);
             if( !literal.negated_ )
-                typed_invariant.Xprecondition_.insert(1 + p->index_);
+                typed_invariant.Xprecondition().insert(1 + p->index());
             else
-                typed_invariant.Xprecondition_.insert(-(1 + p->index_));
+                typed_invariant.Xprecondition().insert(-(1 + p->index()));
         }
         precondition.clear();
     }
 
     // emit invariant
-    if( typed_invariant.type_ != EXACTLY_ONE ) {
-        ins.init_.invariants_.push_back(typed_invariant);
+    if( typed_invariant.type() != EXACTLY_ONE ) {
+        ins.init_.invariants().push_back(typed_invariant);
     } else {
         Instance::Invariant at_least_one(AT_LEAST_ONE, typed_invariant);
         Instance::Invariant at_most_one(AT_MOST_ONE, typed_invariant);
-        ins.init_.invariants_.push_back(at_least_one);
-        ins.init_.invariants_.push_back(at_most_one);
+        ins.init_.invariants().push_back(at_least_one);
+        ins.init_.invariants().push_back(at_most_one);
     }
 }
 
@@ -5253,7 +5279,7 @@ void PDDL_Base::InitClause::instantiate(init_element_list &ilist) const {
 void PDDL_Base::InitClause::emit(Instance &ins) const {
     Instance::Clause clause;
     Clause::emit(ins, clause);
-    ins.init_.clauses_.push_back(clause);
+    ins.init_.clauses().push_back(clause);
 }
 
 bool PDDL_Base::InitClause::is_strongly_static(const PredicateSymbol &p) const {
@@ -5291,7 +5317,7 @@ void PDDL_Base::InitOneof::instantiate(init_element_list &ilist) const {
 void PDDL_Base::InitOneof::emit(Instance &ins) const {
     Instance::Oneof oneof;
     Oneof::emit(ins, oneof);
-    ins.init_.oneofs_.push_back(oneof);
+    ins.init_.oneofs().push_back(oneof);
 }
 
 bool PDDL_Base::InitOneof::is_strongly_static(const PredicateSymbol &p) const {
@@ -5335,7 +5361,7 @@ void PDDL_Base::InitUnknown::extract_atoms(unsigned_atom_set &atoms) const {
 }
 
 bool PDDL_Base::Action::is_special_action() const {
-    return (strncmp(print_name_, "post-action-", 12) == 0) || (strncmp(print_name_, "drule-", 6) == 0);
+    return (print_name_.compare(0, 12, "post-action-") == 0) || (print_name_.compare(0, 6, "drule-") == 0);
 }
 
 #ifdef SMART
@@ -5353,19 +5379,19 @@ void PDDL_Base::Action::instantiate(action_list &alist) const {
 }
 
 void PDDL_Base::Action::emit(Instance &ins) const {
-    PDDL_Name name(this, param_, param_.size());
-    Instance::Action &act = ins.new_action(new CopyName(name.to_string(true)));
-    act.cost_ = 1;
+    PDDL_Name name(this, param_);
+    Instance::Action &act = ins.new_action(name.to_string(true));
+    act.set_cost(1);
     //cout << "fully instantiated action " << name << endl;
     if( precondition_ != 0 ) {
-        precondition_->emit(ins, act.precondition_);
-        //cout << "    pre=" << *precondition_ << endl;
+        precondition_->emit(ins, act.precondition());
+        //cout << "    pre=" << *precondition() << endl;
     }
     if( effect_ != 0 ) {
-        effect_->emit(ins, act.effect_, act.when_);
-        //cout << "    eff=" << *effect_ << endl;
+        effect_->emit(ins, act.effect(), act.when());
+        //cout << "    eff=" << *effect() << endl;
     }
-    act.comment_ = comment_;
+    act.comment() = comment_;
 }
 
 void PDDL_Base::Action::process_instance() const {
@@ -5383,11 +5409,11 @@ void PDDL_Base::Action::process_instance() const {
         }
     }
 
-    PDDL_Name name(this, param_, param_.size());
+    PDDL_Name name(this, param_);
 #ifdef SMART
-    unique_ptr<Action> action = make_unique<Action>(strdup(name.to_string(true).c_str()));
+    unique_ptr<Action> action = make_unique<Action>(name.to_string(true));
 #else
-    Action *action = new Action(strdup(name.to_string(true).c_str()));
+    Action *action = new Action(name.to_string(true));
 #endif
     action->precondition_ = grounded_precondition;
     if( effect_ != 0 ) action->effect_ = effect_->ground();
@@ -5434,16 +5460,16 @@ void PDDL_Base::Sensor::instantiate(sensor_list &slist) const {
 }
 
 void PDDL_Base::Sensor::emit(Instance &ins) const {
-    PDDL_Name name(this, param_, param_.size());
-    Instance::Sensor &sensor = ins.new_sensor(new CopyName(name.to_string(true)));
+    PDDL_Name name(this, param_);
+    Instance::Sensor &sensor = ins.new_sensor(name.to_string(true));
     //cout << "fully instantiated sensor " << name << endl;
     if( condition_ != 0 ) {
-        condition_->emit(ins, sensor.condition_);
-        //cout << "    :condition " << *condition_ << endl;
+        condition_->emit(ins, sensor.condition());
+        //cout << "    :condition " << condition() << endl;
     }
     if( sense_ != 0 ) {
-        sense_->emit(ins, sensor.sense_);
-        //cout << "    :sense " << *sense_ << endl;
+        sense_->emit(ins, sensor.sense());
+        //cout << "    :sense " << sense() << endl;
     }
 }
 
@@ -5461,11 +5487,11 @@ void PDDL_Base::Sensor::process_instance() const {
         }
     }
 
-    PDDL_Name name(this, param_, param_.size());
+    PDDL_Name name(this, param_);
 #ifdef SMART
-    unique_ptr<Sensor> sensor = make_unique<Sensor>(strdup(name.to_string(true).c_str()));
+    unique_ptr<Sensor> sensor = make_unique<Sensor>(name.to_string(true));
 #else
-    Sensor *sensor = new Sensor(strdup(name.to_string(true).c_str()));
+    Sensor *sensor = new Sensor(name.to_string(true));
 #endif
     sensor->condition_ = grounded_condition;
     if( sense_ != 0 ) sensor->sense_ = sense_->ground();
@@ -5510,16 +5536,16 @@ void PDDL_Base::Axiom::instantiate(axiom_list &alist) const {
 }
 
 void PDDL_Base::Axiom::emit(Instance &ins) const {
-    PDDL_Name name(this, param_, param_.size());
-    Instance::Axiom &axiom = ins.new_axiom(new CopyName(name.to_string(true)));
+    PDDL_Name name(this, param_);
+    Instance::Axiom &axiom = ins.new_axiom(name.to_string(true));
     //cout << "fully instantiated axiom " << name << endl;
     if( body_ != 0 ) {
-        body_->emit(ins, axiom.body_);
-        //cout << "    :body " << *body_ << endl;
+        body_->emit(ins, axiom.body());
+        //cout << "    :body " << *body() << endl;
     }
     if( head_ != 0 ) {
-        head_->emit(ins, axiom.head_);
-        //cout << "    :head " << *head_ << endl;
+        head_->emit(ins, axiom.head());
+        //cout << "    :head " << *head() << endl;
     }
 }
 
@@ -5537,11 +5563,11 @@ void PDDL_Base::Axiom::process_instance() const {
         }
     }
 
-    PDDL_Name name(this, param_, param_.size());
+    PDDL_Name name(this, param_);
 #ifdef SMART
-    unique_ptr<Axiom> axiom = make_unique<Axiom>(strdup(name.to_string(true).c_str()));
+    unique_ptr<Axiom> axiom = make_unique<Axiom>(name.to_string(true));
 #else
-    Axiom *axiom = new Axiom(strdup(name.to_string(true).c_str()));
+    Axiom *axiom = new Axiom(name.to_string(true));
 #endif
     axiom->body_ = grounded_body;
     if( head_ != 0 ) axiom->head_ = head_->ground();
@@ -5661,10 +5687,9 @@ void PDDL_Base::Variable::process_instance() const {
             variable_name += ")";
 
 #ifdef SMART
-            unique_ptr<Variable> variable(make_instance(strdup(variable_name.c_str())));
-            assert(variable); // SMART: CHECK
+            unique_ptr<Variable> variable(make_instance(variable_name));
 #else
-            Variable *variable = make_instance(strdup(variable_name.c_str()));
+            Variable *variable = make_instance(variable_name);
 #endif
             variable->grounded_ = true;
             for( size_t k = 0; k < domain_.size(); ++k ) {
@@ -5696,13 +5721,13 @@ void PDDL_Base::Variable::process_instance() const {
         cout << Utils::error() << "condition '" << *such_that_
              << "' in such-that statement must ground to constant value" << endl;
     }
-    if( such_that_ != 0 ) delete such_that;
+    if( such_that != 0 ) delete such_that;
 }
 
 #ifdef SMART
-unique_ptr<PDDL_Base::Variable> PDDL_Base::StateVariable::make_instance(const char *name) const {
+unique_ptr<PDDL_Base::Variable> PDDL_Base::StateVariable::make_instance(const string &name) const {
 #else
-PDDL_Base::Variable* PDDL_Base::StateVariable::make_instance(const char *name) const {
+PDDL_Base::Variable* PDDL_Base::StateVariable::make_instance(const string &name) const {
 #endif
 #ifdef SMART
     return make_unique<StateVariable>(name, is_observable_);
@@ -5716,7 +5741,7 @@ string PDDL_Base::StateVariable::to_string(bool only_name, bool mangled) const {
         string str;
         if( mangled ) {
             if( print_name_[0] == '(' ) {
-                str = string(print_name_).substr(1, strlen(print_name_) - 2);
+                str = print_name_.substr(1, print_name_.length() - 2);
                 size_t pos = str.find(" ");
                 while( pos != string::npos ) {
                     str.replace(pos, 1, "_");
@@ -5751,9 +5776,9 @@ string PDDL_Base::StateVariable::to_string(bool only_name, bool mangled) const {
 }
 
 #ifdef SMART
-unique_ptr<PDDL_Base::Variable> PDDL_Base::ObsVariable::make_instance(const char *name) const {
+unique_ptr<PDDL_Base::Variable> PDDL_Base::ObsVariable::make_instance(const string &name) const {
 #else
-PDDL_Base::Variable* PDDL_Base::ObsVariable::make_instance(const char *name) const {
+PDDL_Base::Variable* PDDL_Base::ObsVariable::make_instance(const string &name) const {
 #endif
 #ifdef SMART
     return make_unique<ObsVariable>(name);
@@ -5767,7 +5792,7 @@ string PDDL_Base::ObsVariable::to_string(bool only_name, bool mangled) const {
         string str;
         if( mangled ) {
             if( print_name_[0] == '(' ) {
-                str = string(print_name_).substr(1, strlen(print_name_) - 2);
+                str = print_name_.substr(1, print_name_.length() - 2);
                 size_t pos = str.find(" ");
                 while( pos != string::npos ) {
                     str.replace(pos, 1, "_");
@@ -5846,7 +5871,7 @@ void PDDL_Base::ForallStateVariableList::process_instance() const {
         cout << Utils::error() << "condition '" << *such_that_
              << "' in such-that statement must ground to constant value" << endl;
     }
-    if( such_that_ != 0 ) delete such_that;
+    if( such_that != 0 ) delete such_that;
 }
 
 PDDL_Base::state_variable_vec* PDDL_Base::ForallStateVariableList::ground(const PDDL_Base *base) const {
@@ -5887,9 +5912,9 @@ void PDDL_Base::VariableGroup::process_instance() const {
             group_name += ")";
 
 #ifdef SMART
-            unique_ptr<VariableGroup> group = make_unique<VariableGroup>(strdup(group_name.c_str()));
+            unique_ptr<VariableGroup> group = make_unique<VariableGroup>(group_name);
 #else
-            VariableGroup *group = new VariableGroup(strdup(group_name.c_str()));
+            VariableGroup *group = new VariableGroup(group_name);
 #endif
             group->grounded_ = true;
             for( size_t k = 0; k < group_.size(); ++k ) {
@@ -5912,10 +5937,10 @@ void PDDL_Base::VariableGroup::process_instance() const {
 #endif
         }
     } else if( such_that_ != 0 ) {
-        cout << Utils::error() << "condition '" << *such_that_
+        cout << Utils::error() << "condition '" << *such_that
              << "' in such-that statement must ground to constant value" << endl;
     }
-    if( such_that_ != 0 ) delete such_that;
+    if( such_that != 0 ) delete such_that;
 }
 
 string PDDL_Base::VariableGroup::to_string() const {
@@ -5924,47 +5949,5 @@ string PDDL_Base::VariableGroup::to_string() const {
     for( size_t k = 0; k < grounded_group_.size(); ++k )
         str += string(" ") + grounded_group_[k]->print_name_;
     return str + ")";
-}
-
-ostream& operator<<(ostream &os, const PDDL_Base::unsigned_atom_set &atom_set) {
-    os << "(and";
-    for( PDDL_Base::unsigned_atom_set::const_iterator it = atom_set.begin(); it != atom_set.end(); ++it )
-        os << " " << *it;
-    os << ")";
-    return os;
-}
-
-PDDL_Name::PDDL_Name(const PDDL_Base::Symbol *sym, const PDDL_Base::symbol_vec &arg, size_t n)
-  : negated_(false), sym_(sym), arg_(arg) {
-}
-
-PDDL_Name::PDDL_Name(const PDDL_Base::Symbol *sym, const PDDL_Base::var_symbol_vec &arg, size_t n)
-  : negated_(false), sym_(sym) {
-    for( size_t k = 0; k < n; ++k )
-        arg_.push_back(arg[k]->value_);
-}
-
-void PDDL_Name::add(PDDL_Base::Symbol *s) {
-    arg_.push_back(s);
-}
-
-string PDDL_Name::to_string(bool mangled) const {
-    string str;
-    if( mangled ) {
-        if( negated_ )
-            str += string("not_") + sym_->print_name_;
-        else
-            str += sym_->print_name_;
-        for( size_t k = 0; k < arg_.size(); ++k )
-            str += string("_") + arg_[k]->print_name_;
-    } else {
-        if( negated_ ) str += "(not ";
-        str += string("(") + sym_->print_name_;
-        for( size_t k = 0; k < arg_.size(); ++k )
-            str += string(" ") + arg_[k]->print_name_;
-        str += ")";
-        if( negated_ ) str += ")";
-    }
-    return str;
 }
 

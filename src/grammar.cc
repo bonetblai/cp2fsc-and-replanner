@@ -89,8 +89,8 @@ void *alloca ();
 #define YY_PDDL_Parser_LEX_BODY  = 0
 #define YY_PDDL_Parser_DEBUG  1
 #define YY_PDDL_Parser_INHERIT  : public PDDL_Base
-#define YY_PDDL_Parser_CONSTRUCTOR_PARAM  StringTable& t, int type, const Options::Mode &options
-#define YY_PDDL_Parser_CONSTRUCTOR_INIT  : PDDL_Base(t, options), error_flag_(false), type_(type)
+#define YY_PDDL_Parser_CONSTRUCTOR_PARAM  StringTable &parser_symbol_table, int type, const Options::Mode &options
+#define YY_PDDL_Parser_CONSTRUCTOR_INIT  : PDDL_Base(parser_symbol_table, options), error_flag_(false), type_(type), effect_vec_ptr_(0)
 #define YY_PDDL_Parser_MEMBERS  \
   public: \
     typedef enum { replanner, cp2fsc } Type; \
@@ -101,8 +101,9 @@ void *alloca ();
   private: \
     std::vector<Schema*> schema_; \
     std::vector<std::unique_ptr<Schema> > owned_schema_; \
+    std::vector<bool> using_owned_schema_; \
     effect_vec *effect_vec_ptr_;
-#line 42 "ppddl.y"
+#line 43 "ppddl.y"
 
 #include <stdlib.h>
 #include <string.h>
@@ -119,7 +120,7 @@ void *alloca ();
 //#pragma GCC diagnostic ignored "-Wuninitialized"
 //#pragma GCC diagnostic ignored "-Wsign-compare"
 
-#line 59 "ppddl.y"
+#line 60 "ppddl.y"
 typedef union {
     StringTable::Cell                         *sym;
     PDDL_Base::VariableSymbol                 *vsym;
@@ -196,7 +197,7 @@ typedef union {
 #ifndef YY_PDDL_Parser_PURE
 
 /* #line 117 "/usr/local/lib/bison.cc" */
-#line 200 "grammar_tmp.cc"
+#line 201 "grammar_tmp.cc"
 
 #line 117 "/usr/local/lib/bison.cc"
 /*  YY_PDDL_Parser_PURE */
@@ -205,14 +206,14 @@ typedef union {
 /* section apres lecture def, avant lecture grammaire S2 */
 
 /* #line 121 "/usr/local/lib/bison.cc" */
-#line 209 "grammar_tmp.cc"
+#line 210 "grammar_tmp.cc"
 
 #line 121 "/usr/local/lib/bison.cc"
 /* prefix */
 #ifndef YY_PDDL_Parser_DEBUG
 
 /* #line 123 "/usr/local/lib/bison.cc" */
-#line 216 "grammar_tmp.cc"
+#line 217 "grammar_tmp.cc"
 
 #line 123 "/usr/local/lib/bison.cc"
 /* YY_PDDL_Parser_DEBUG */
@@ -222,7 +223,7 @@ typedef union {
 #ifndef YY_PDDL_Parser_LSP_NEEDED
 
 /* #line 128 "/usr/local/lib/bison.cc" */
-#line 226 "grammar_tmp.cc"
+#line 227 "grammar_tmp.cc"
 
 #line 128 "/usr/local/lib/bison.cc"
  /* YY_PDDL_Parser_LSP_NEEDED*/
@@ -335,7 +336,7 @@ typedef
 /* TOKEN C */
 
 /* #line 236 "/usr/local/lib/bison.cc" */
-#line 339 "grammar_tmp.cc"
+#line 340 "grammar_tmp.cc"
 #define	TK_OPEN	258
 #define	TK_CLOSE	259
 #define	TK_OPEN_SQ	260
@@ -382,27 +383,28 @@ typedef
 #define	KW_OBJECTS	301
 #define	KW_INIT	302
 #define	KW_GOAL	303
-#define	KW_SENSOR	304
-#define	KW_SENSE	305
-#define	KW_OBSERVE	306
-#define	KW_AXIOM	307
-#define	KW_COND	308
-#define	KW_OBSERVABLE	309
-#define	KW_BODY	310
-#define	KW_HEAD	311
-#define	KW_STICKY	312
-#define	KW_FLUENTS	313
-#define	KW_HIDDEN	314
-#define	KW_INVARIANT	315
-#define	KW_AT_LEAST_ONE	316
-#define	KW_AT_MOST_ONE	317
-#define	KW_EXACTLY_ONE	318
-#define	KW_VARIABLE	319
-#define	KW_OBS_VARIABLE	320
-#define	KW_VGROUP	321
-#define	KW_SENSING	322
-#define	KW_DEFAULT_SENSING	323
-#define	KW_MODEL_FOR	324
+#define	KW_EXPLICIT_INITIAL_STATE	304
+#define	KW_SENSOR	305
+#define	KW_SENSE	306
+#define	KW_OBSERVE	307
+#define	KW_AXIOM	308
+#define	KW_COND	309
+#define	KW_OBSERVABLE	310
+#define	KW_BODY	311
+#define	KW_HEAD	312
+#define	KW_STICKY	313
+#define	KW_FLUENTS	314
+#define	KW_HIDDEN	315
+#define	KW_INVARIANT	316
+#define	KW_AT_LEAST_ONE	317
+#define	KW_AT_MOST_ONE	318
+#define	KW_EXACTLY_ONE	319
+#define	KW_VARIABLE	320
+#define	KW_OBS_VARIABLE	321
+#define	KW_VGROUP	322
+#define	KW_SENSING	323
+#define	KW_DEFAULT_SENSING	324
+#define	KW_MODEL_FOR	325
 
 
 #line 236 "/usr/local/lib/bison.cc"
@@ -452,7 +454,7 @@ public:
 /* static const int token ... */
 
 /* #line 280 "/usr/local/lib/bison.cc" */
-#line 456 "grammar_tmp.cc"
+#line 458 "grammar_tmp.cc"
 static const int TK_OPEN;
 static const int TK_CLOSE;
 static const int TK_OPEN_SQ;
@@ -499,6 +501,7 @@ static const int KW_FORDOMAIN;
 static const int KW_OBJECTS;
 static const int KW_INIT;
 static const int KW_GOAL;
+static const int KW_EXPLICIT_INITIAL_STATE;
 static const int KW_SENSOR;
 static const int KW_SENSE;
 static const int KW_OBSERVE;
@@ -528,7 +531,7 @@ static const int KW_MODEL_FOR;
 enum YY_PDDL_Parser_ENUM_TOKEN { YY_PDDL_Parser_NULL_TOKEN=0
 
 /* #line 283 "/usr/local/lib/bison.cc" */
-#line 532 "grammar_tmp.cc"
+#line 535 "grammar_tmp.cc"
 	,TK_OPEN=258
 	,TK_CLOSE=259
 	,TK_OPEN_SQ=260
@@ -575,27 +578,28 @@ enum YY_PDDL_Parser_ENUM_TOKEN { YY_PDDL_Parser_NULL_TOKEN=0
 	,KW_OBJECTS=301
 	,KW_INIT=302
 	,KW_GOAL=303
-	,KW_SENSOR=304
-	,KW_SENSE=305
-	,KW_OBSERVE=306
-	,KW_AXIOM=307
-	,KW_COND=308
-	,KW_OBSERVABLE=309
-	,KW_BODY=310
-	,KW_HEAD=311
-	,KW_STICKY=312
-	,KW_FLUENTS=313
-	,KW_HIDDEN=314
-	,KW_INVARIANT=315
-	,KW_AT_LEAST_ONE=316
-	,KW_AT_MOST_ONE=317
-	,KW_EXACTLY_ONE=318
-	,KW_VARIABLE=319
-	,KW_OBS_VARIABLE=320
-	,KW_VGROUP=321
-	,KW_SENSING=322
-	,KW_DEFAULT_SENSING=323
-	,KW_MODEL_FOR=324
+	,KW_EXPLICIT_INITIAL_STATE=304
+	,KW_SENSOR=305
+	,KW_SENSE=306
+	,KW_OBSERVE=307
+	,KW_AXIOM=308
+	,KW_COND=309
+	,KW_OBSERVABLE=310
+	,KW_BODY=311
+	,KW_HEAD=312
+	,KW_STICKY=313
+	,KW_FLUENTS=314
+	,KW_HIDDEN=315
+	,KW_INVARIANT=316
+	,KW_AT_LEAST_ONE=317
+	,KW_AT_MOST_ONE=318
+	,KW_EXACTLY_ONE=319
+	,KW_VARIABLE=320
+	,KW_OBS_VARIABLE=321
+	,KW_VGROUP=322
+	,KW_SENSING=323
+	,KW_DEFAULT_SENSING=324
+	,KW_MODEL_FOR=325
 
 
 #line 283 "/usr/local/lib/bison.cc"
@@ -632,7 +636,7 @@ public:
 #if YY_PDDL_Parser_USE_CONST_TOKEN != 0
 
 /* #line 314 "/usr/local/lib/bison.cc" */
-#line 636 "grammar_tmp.cc"
+#line 640 "grammar_tmp.cc"
 const int YY_PDDL_Parser_CLASS::TK_OPEN=258;
 const int YY_PDDL_Parser_CLASS::TK_CLOSE=259;
 const int YY_PDDL_Parser_CLASS::TK_OPEN_SQ=260;
@@ -679,27 +683,28 @@ const int YY_PDDL_Parser_CLASS::KW_FORDOMAIN=300;
 const int YY_PDDL_Parser_CLASS::KW_OBJECTS=301;
 const int YY_PDDL_Parser_CLASS::KW_INIT=302;
 const int YY_PDDL_Parser_CLASS::KW_GOAL=303;
-const int YY_PDDL_Parser_CLASS::KW_SENSOR=304;
-const int YY_PDDL_Parser_CLASS::KW_SENSE=305;
-const int YY_PDDL_Parser_CLASS::KW_OBSERVE=306;
-const int YY_PDDL_Parser_CLASS::KW_AXIOM=307;
-const int YY_PDDL_Parser_CLASS::KW_COND=308;
-const int YY_PDDL_Parser_CLASS::KW_OBSERVABLE=309;
-const int YY_PDDL_Parser_CLASS::KW_BODY=310;
-const int YY_PDDL_Parser_CLASS::KW_HEAD=311;
-const int YY_PDDL_Parser_CLASS::KW_STICKY=312;
-const int YY_PDDL_Parser_CLASS::KW_FLUENTS=313;
-const int YY_PDDL_Parser_CLASS::KW_HIDDEN=314;
-const int YY_PDDL_Parser_CLASS::KW_INVARIANT=315;
-const int YY_PDDL_Parser_CLASS::KW_AT_LEAST_ONE=316;
-const int YY_PDDL_Parser_CLASS::KW_AT_MOST_ONE=317;
-const int YY_PDDL_Parser_CLASS::KW_EXACTLY_ONE=318;
-const int YY_PDDL_Parser_CLASS::KW_VARIABLE=319;
-const int YY_PDDL_Parser_CLASS::KW_OBS_VARIABLE=320;
-const int YY_PDDL_Parser_CLASS::KW_VGROUP=321;
-const int YY_PDDL_Parser_CLASS::KW_SENSING=322;
-const int YY_PDDL_Parser_CLASS::KW_DEFAULT_SENSING=323;
-const int YY_PDDL_Parser_CLASS::KW_MODEL_FOR=324;
+const int YY_PDDL_Parser_CLASS::KW_EXPLICIT_INITIAL_STATE=304;
+const int YY_PDDL_Parser_CLASS::KW_SENSOR=305;
+const int YY_PDDL_Parser_CLASS::KW_SENSE=306;
+const int YY_PDDL_Parser_CLASS::KW_OBSERVE=307;
+const int YY_PDDL_Parser_CLASS::KW_AXIOM=308;
+const int YY_PDDL_Parser_CLASS::KW_COND=309;
+const int YY_PDDL_Parser_CLASS::KW_OBSERVABLE=310;
+const int YY_PDDL_Parser_CLASS::KW_BODY=311;
+const int YY_PDDL_Parser_CLASS::KW_HEAD=312;
+const int YY_PDDL_Parser_CLASS::KW_STICKY=313;
+const int YY_PDDL_Parser_CLASS::KW_FLUENTS=314;
+const int YY_PDDL_Parser_CLASS::KW_HIDDEN=315;
+const int YY_PDDL_Parser_CLASS::KW_INVARIANT=316;
+const int YY_PDDL_Parser_CLASS::KW_AT_LEAST_ONE=317;
+const int YY_PDDL_Parser_CLASS::KW_AT_MOST_ONE=318;
+const int YY_PDDL_Parser_CLASS::KW_EXACTLY_ONE=319;
+const int YY_PDDL_Parser_CLASS::KW_VARIABLE=320;
+const int YY_PDDL_Parser_CLASS::KW_OBS_VARIABLE=321;
+const int YY_PDDL_Parser_CLASS::KW_VGROUP=322;
+const int YY_PDDL_Parser_CLASS::KW_SENSING=323;
+const int YY_PDDL_Parser_CLASS::KW_DEFAULT_SENSING=324;
+const int YY_PDDL_Parser_CLASS::KW_MODEL_FOR=325;
 
 
 #line 314 "/usr/local/lib/bison.cc"
@@ -716,14 +721,14 @@ YY_PDDL_Parser_CONSTRUCTOR_CODE;
 #endif
 
 /* #line 325 "/usr/local/lib/bison.cc" */
-#line 720 "grammar_tmp.cc"
+#line 725 "grammar_tmp.cc"
 
 
-#define	YYFINAL		422
+#define	YYFINAL		424
 #define	YYFLAG		-32768
-#define	YYNTBASE	70
+#define	YYNTBASE	71
 
-#define YYTRANSLATE(x) ((unsigned)(x) <= 324 ? yytranslate[x] : 180)
+#define YYTRANSLATE(x) ((unsigned)(x) <= 325 ? yytranslate[x] : 182)
 
 static const char yytranslate[] = {     0,
      2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
@@ -758,7 +763,7 @@ static const char yytranslate[] = {     0,
     36,    37,    38,    39,    40,    41,    42,    43,    44,    45,
     46,    47,    48,    49,    50,    51,    52,    53,    54,    55,
     56,    57,    58,    59,    60,    61,    62,    63,    64,    65,
-    66,    67,    68,    69
+    66,    67,    68,    69,    70
 };
 
 #if YY_PDDL_Parser_DEBUG != 0
@@ -784,121 +789,121 @@ static const short yyprhs[] = {     0,
    587,   589,   590,   597,   598,   599,   611,   616,   619,   622,
    623,   625,   630,   631,   632,   643,   648,   649,   659,   666,
    672,   675,   678,   681,   684,   687,   688,   692,   697,   705,
-   708,   710,   712,   714,   716,   718,   720,   725,   730,   735,
-   740,   742,   744,   746,   751,   756,   761,   766,   770,   775,
-   778,   780,   782
+   707,   709,   712,   714,   716,   718,   720,   722,   724,   729,
+   734,   739,   744,   746,   748,   750,   755,   760,   765,   770,
+   774,   779,   782,   784,   786
 };
 
-static const short yyrhs[] = {    71,
-    70,     0,   165,    70,     0,     0,     3,    27,    73,    72,
-     4,     0,     3,    27,    73,     1,     4,     0,    72,    78,
-     0,    72,    88,     0,    72,    92,     0,    72,    80,     0,
-    72,    97,     0,    72,   164,     0,     0,     3,    28,    74,
+static const short yyrhs[] = {    72,
+    71,     0,   166,    71,     0,     0,     3,    27,    74,    73,
+     4,     0,     3,    27,    74,     1,     4,     0,    73,    79,
+     0,    73,    89,     0,    73,    93,     0,    73,    81,     0,
+    73,    98,     0,    73,   165,     0,     0,     3,    28,    75,
      4,     0,     9,     0,    10,     0,    11,     0,    12,     0,
     13,     0,    14,     0,    15,     0,    16,     0,    17,     0,
      9,     0,    14,     0,     9,     0,    16,     0,     9,     0,
-    15,     0,     3,    22,    79,     4,     0,     3,    22,     1,
-     4,     0,    79,    23,     0,    79,    18,     0,     0,     3,
-    25,    81,     4,     0,     3,    25,     1,     4,     0,    81,
-    82,     0,    82,     0,     3,     9,    83,     4,     0,     3,
-     1,     4,     0,    84,     0,    85,     0,     0,    86,     0,
-    86,     8,    11,    85,     0,    86,     8,    11,     0,    87,
-    86,     0,    87,     0,    19,     0,    13,     0,     3,    26,
-    90,     4,     0,     3,    26,    89,     4,     0,    90,     8,
-    11,    89,     0,    90,     8,     9,    89,     0,     0,    90,
-    91,     0,    91,     0,    11,     0,     9,     0,     3,    24,
-    93,     4,     0,     3,    46,    93,     4,     0,     3,    24,
-    95,     4,     0,     3,    46,    95,     4,     0,     0,    96,
-     8,    11,    94,    93,     0,     0,    96,     0,    96,     9,
-     0,     9,     0,    98,     0,   138,     0,   141,     0,   144,
-     0,   148,     0,   150,     0,   155,     0,     0,     3,    29,
-    75,    99,   100,     4,     0,     3,    29,     1,     4,     0,
-   100,    30,     3,    83,     4,     0,   100,    31,   101,     0,
-   100,    32,   118,     0,   100,    51,   128,     0,   100,    67,
-   131,     0,     0,   102,     0,   103,     0,   108,     0,   109,
-     0,   110,     0,   113,     0,    34,     0,    35,     0,   104,
-     0,   105,     0,   106,     0,     3,    12,   107,     4,     0,
-     3,     7,   107,     4,     0,     3,    40,   105,     4,     0,
-   107,    13,     0,   107,    10,     0,     0,     3,    33,   117,
-     4,     0,     3,    36,   117,     4,     0,     0,     0,     3,
-    38,     3,   111,    83,     4,   112,   101,     4,     0,     0,
-     0,     3,    37,     3,   114,    83,     4,   115,   101,     4,
-     0,   116,   103,     0,   103,     0,   117,   101,     0,   101,
-     0,   120,     0,     3,    33,   119,     4,     0,   119,   120,
-     0,   120,     0,   129,     0,   121,     0,   122,     0,     3,
-    41,   101,   126,     4,     0,     0,     0,     3,    38,     3,
-   123,    83,     4,   124,   125,   118,     4,     0,    39,   101,
-     0,     0,     3,    33,   127,     4,     0,   129,     0,   127,
-   129,     0,   129,     0,   128,   130,     0,   130,     0,   104,
-     0,   105,     0,   132,     0,     0,   132,   133,     0,   133,
-     0,   137,     0,   134,     0,     0,     0,     3,    38,     3,
-   135,    83,     4,   136,   125,   132,     4,     0,     3,    69,
-    20,   104,   101,     4,     0,     3,    69,     3,    20,   107,
-     4,   104,   101,     4,     0,     3,    64,    20,     4,     0,
-     3,    64,     3,    20,   107,     4,     4,     0,     3,    64,
-     1,     4,     0,     3,    69,     1,     4,     0,     0,     3,
-    52,    77,   139,   140,     4,     0,     3,    52,     1,     4,
-     0,   140,    30,     3,    83,     4,     0,   140,    55,   101,
-     0,   140,    56,   126,     0,     0,     0,     3,    49,    76,
-   142,   143,     4,     0,     3,    49,     1,     4,     0,   143,
-    30,     3,    83,     4,     0,   143,    53,   101,     0,   143,
-    50,   128,     0,     0,     0,     3,    54,   145,   146,     4,
-     0,     3,    54,     1,     4,     0,   146,   147,     0,   147,
-     0,   130,     0,   122,     0,     0,     3,    57,   149,   146,
-     4,     0,     3,    57,     1,     4,     0,     0,     3,   154,
-     9,   151,   146,     4,     0,     0,     0,     3,   154,     3,
-     9,   152,    83,     4,   153,   125,   146,     4,     0,     3,
-    64,     1,     4,     0,    64,     0,    65,     0,     0,     3,
-    66,     9,   156,   159,     4,     0,     0,     0,     3,    66,
-     3,     9,   157,    83,     4,   158,   125,   159,     4,     0,
-     3,    66,     1,     4,     0,   159,   160,     0,   159,   161,
-     0,     0,    20,     0,     3,    20,   107,     4,     0,     0,
-     0,     3,    38,     3,   162,    83,     4,   163,   125,   159,
-     4,     0,     3,    68,   131,     4,     0,     0,     3,    27,
-     3,    44,    74,     4,   166,   167,     4,     0,     3,    27,
-     3,    44,     1,     4,     0,   167,     3,    45,    74,     4,
-     0,   167,    78,     0,   167,    92,     0,   167,   168,     0,
-   167,   178,     0,   167,   179,     0,     0,     3,    47,     4,
-     0,     3,    47,   169,     4,     0,     3,    47,     3,    33,
-   169,     4,     4,     0,   169,   170,     0,   170,     0,   104,
-     0,   174,     0,   175,     0,   176,     0,   177,     0,     3,
-    60,   116,     4,     0,     3,    61,   116,     4,     0,     3,
-    62,   116,     4,     0,     3,    63,   116,     4,     0,   171,
-     0,   172,     0,   173,     0,     3,    36,   116,     4,     0,
-     3,    42,   116,     4,     0,     3,    43,   105,     4,     0,
-     3,    59,   169,     4,     0,     3,    59,     4,     0,     3,
-    48,   101,     4,     0,     0,     0,     0,     0,     0,   105,
-     0,   106,     0
+    15,     0,     3,    22,    80,     4,     0,     3,    22,     1,
+     4,     0,    80,    23,     0,    80,    18,     0,     0,     3,
+    25,    82,     4,     0,     3,    25,     1,     4,     0,    82,
+    83,     0,    83,     0,     3,     9,    84,     4,     0,     3,
+     1,     4,     0,    85,     0,    86,     0,     0,    87,     0,
+    87,     8,    11,    86,     0,    87,     8,    11,     0,    88,
+    87,     0,    88,     0,    19,     0,    13,     0,     3,    26,
+    91,     4,     0,     3,    26,    90,     4,     0,    91,     8,
+    11,    90,     0,    91,     8,     9,    90,     0,     0,    91,
+    92,     0,    92,     0,    11,     0,     9,     0,     3,    24,
+    94,     4,     0,     3,    46,    94,     4,     0,     3,    24,
+    96,     4,     0,     3,    46,    96,     4,     0,     0,    97,
+     8,    11,    95,    94,     0,     0,    97,     0,    97,     9,
+     0,     9,     0,    99,     0,   139,     0,   142,     0,   145,
+     0,   149,     0,   151,     0,   156,     0,     0,     3,    29,
+    76,   100,   101,     4,     0,     3,    29,     1,     4,     0,
+   101,    30,     3,    84,     4,     0,   101,    31,   102,     0,
+   101,    32,   119,     0,   101,    52,   129,     0,   101,    68,
+   132,     0,     0,   103,     0,   104,     0,   109,     0,   110,
+     0,   111,     0,   114,     0,    34,     0,    35,     0,   105,
+     0,   106,     0,   107,     0,     3,    12,   108,     4,     0,
+     3,     7,   108,     4,     0,     3,    40,   106,     4,     0,
+   108,    13,     0,   108,    10,     0,     0,     3,    33,   118,
+     4,     0,     3,    36,   118,     4,     0,     0,     0,     3,
+    38,     3,   112,    84,     4,   113,   102,     4,     0,     0,
+     0,     3,    37,     3,   115,    84,     4,   116,   102,     4,
+     0,   117,   104,     0,   104,     0,   118,   102,     0,   102,
+     0,   121,     0,     3,    33,   120,     4,     0,   120,   121,
+     0,   121,     0,   130,     0,   122,     0,   123,     0,     3,
+    41,   102,   127,     4,     0,     0,     0,     3,    38,     3,
+   124,    84,     4,   125,   126,   119,     4,     0,    39,   102,
+     0,     0,     3,    33,   128,     4,     0,   130,     0,   128,
+   130,     0,   130,     0,   129,   131,     0,   131,     0,   105,
+     0,   106,     0,   133,     0,     0,   133,   134,     0,   134,
+     0,   138,     0,   135,     0,     0,     0,     3,    38,     3,
+   136,    84,     4,   137,   126,   133,     4,     0,     3,    70,
+    20,   105,   102,     4,     0,     3,    70,     3,    20,   108,
+     4,   105,   102,     4,     0,     3,    65,    20,     4,     0,
+     3,    65,     3,    20,   108,     4,     4,     0,     3,    65,
+     1,     4,     0,     3,    70,     1,     4,     0,     0,     3,
+    53,    78,   140,   141,     4,     0,     3,    53,     1,     4,
+     0,   141,    30,     3,    84,     4,     0,   141,    56,   102,
+     0,   141,    57,   127,     0,     0,     0,     3,    50,    77,
+   143,   144,     4,     0,     3,    50,     1,     4,     0,   144,
+    30,     3,    84,     4,     0,   144,    54,   102,     0,   144,
+    51,   129,     0,     0,     0,     3,    55,   146,   147,     4,
+     0,     3,    55,     1,     4,     0,   147,   148,     0,   148,
+     0,   131,     0,   123,     0,     0,     3,    58,   150,   147,
+     4,     0,     3,    58,     1,     4,     0,     0,     3,   155,
+     9,   152,   147,     4,     0,     0,     0,     3,   155,     3,
+     9,   153,    84,     4,   154,   126,   147,     4,     0,     3,
+    65,     1,     4,     0,    65,     0,    66,     0,     0,     3,
+    67,     9,   157,   160,     4,     0,     0,     0,     3,    67,
+     3,     9,   158,    84,     4,   159,   126,   160,     4,     0,
+     3,    67,     1,     4,     0,   160,   161,     0,   160,   162,
+     0,     0,    20,     0,     3,    20,   108,     4,     0,     0,
+     0,     3,    38,     3,   163,    84,     4,   164,   126,   160,
+     4,     0,     3,    69,   132,     4,     0,     0,     3,    27,
+     3,    44,    75,     4,   167,   168,     4,     0,     3,    27,
+     3,    44,     1,     4,     0,   168,     3,    45,    75,     4,
+     0,   168,    79,     0,   168,    93,     0,   168,   169,     0,
+   168,   180,     0,   168,   181,     0,     0,     3,   170,     4,
+     0,     3,   170,   171,     4,     0,     3,   170,     3,    33,
+   171,     4,     4,     0,    47,     0,    49,     0,   171,   172,
+     0,   172,     0,   105,     0,   176,     0,   177,     0,   178,
+     0,   179,     0,     3,    61,   117,     4,     0,     3,    62,
+   117,     4,     0,     3,    63,   117,     4,     0,     3,    64,
+   117,     4,     0,   173,     0,   174,     0,   175,     0,     3,
+    36,   117,     4,     0,     3,    42,   117,     4,     0,     3,
+    43,   106,     4,     0,     3,    60,   171,     4,     0,     3,
+    60,     4,     0,     3,    48,   102,     4,     0,     0,     0,
+     0,     0,     0,   106,     0,   107,     0
 };
 
 #endif
 
 #if YY_PDDL_Parser_DEBUG != 0
 static const short yyrline[] = { 0,
-   145,   147,   148,   151,   153,   159,   161,   162,   163,   164,
-   165,   166,   169,   175,   177,   178,   179,   180,   181,   182,
-   183,   184,   187,   189,   192,   194,   197,   199,   204,   206,
-   212,   214,   215,   220,   222,   228,   230,   233,   242,   248,
-   250,   257,   260,   267,   274,   280,   285,   288,   294,   305,
-   307,   312,   316,   324,   327,   329,   332,   334,   342,   344,
-   345,   346,   349,   354,   354,   357,   363,   368,   376,   378,
-   384,   390,   396,   402,   409,   415,   425,   433,   439,   444,
-   445,   446,   451,   455,   458,   460,   461,   462,   463,   464,
-   467,   469,   472,   483,   485,   488,   500,   511,   518,   526,
-   530,   533,   540,   547,   551,   555,   565,   569,   573,   583,
-   588,   595,   600,   607,   609,   615,   620,   626,   628,   629,
-   632,   636,   640,   644,   654,   659,   662,   667,   670,   675,
-   681,   686,   692,   696,   700,   702,   705,   711,   718,   720,
-   723,   727,   731,   742,   755,   770,   776,   785,   789,   795,
-   805,   813,   819,   824,   825,   826,   829,   839,   847,   853,
-   858,   861,   865,   868,   880,   881,   887,   891,   896,   898,
-   901,   913,   914,   920,   940,   947,   966,   974,   994,  1000,
-  1002,  1005,  1015,  1019,  1028,  1036,  1057,  1063,  1070,  1076,
-  1079,  1088,  1101,  1105,  1109,  1123,  1133,  1137,  1138,  1144,
-  1146,  1147,  1148,  1149,  1150,  1151,  1154,  1156,  1166,  1178,
-  1189,  1201,  1203,  1214,  1225,  1236,  1246,  1252,  1259,  1267,
-  1274,  1276,  1277,  1280,  1287,  1294,  1301,  1317,  1331,  1337,
-  1342,  1349,  1351
+   147,   149,   150,   153,   155,   161,   163,   164,   165,   166,
+   167,   168,   171,   177,   179,   180,   181,   182,   183,   184,
+   185,   186,   189,   191,   194,   196,   199,   201,   206,   208,
+   214,   216,   217,   222,   224,   230,   232,   235,   244,   250,
+   252,   259,   262,   269,   276,   282,   287,   290,   296,   307,
+   309,   314,   318,   326,   329,   331,   334,   336,   344,   346,
+   347,   348,   351,   356,   356,   359,   365,   370,   378,   380,
+   386,   392,   398,   404,   411,   417,   427,   435,   441,   446,
+   447,   448,   453,   457,   460,   462,   463,   464,   465,   466,
+   469,   471,   474,   485,   487,   490,   502,   513,   520,   528,
+   532,   535,   542,   549,   554,   558,   569,   574,   578,   589,
+   594,   601,   606,   613,   615,   621,   626,   632,   634,   635,
+   638,   642,   647,   651,   662,   677,   680,   685,   688,   693,
+   699,   704,   710,   714,   718,   720,   723,   729,   736,   738,
+   741,   746,   750,   762,   775,   790,   796,   805,   809,   815,
+   825,   833,   839,   844,   845,   846,   849,   859,   867,   873,
+   878,   881,   885,   888,   900,   901,   907,   911,   916,   918,
+   921,   933,   934,   940,   960,   967,   988,   996,  1017,  1023,
+  1025,  1028,  1038,  1042,  1053,  1061,  1084,  1090,  1097,  1103,
+  1106,  1115,  1128,  1133,  1137,  1152,  1162,  1166,  1167,  1173,
+  1175,  1176,  1177,  1178,  1179,  1180,  1183,  1193,  1214,  1237,
+  1239,  1242,  1253,  1265,  1269,  1280,  1291,  1302,  1312,  1318,
+  1325,  1333,  1340,  1342,  1343,  1346,  1353,  1360,  1367,  1383,
+  1397,  1403,  1408,  1415,  1417
 };
 
 static const char * const yytname[] = {   "$","error","$illegal.","TK_OPEN",
@@ -908,58 +913,59 @@ static const char * const yytname[] = {   "$","error","$illegal.","TK_OPEN",
 "TK_INT","KW_REQS","KW_TRANSLATION","KW_CONSTANTS","KW_PREDS","KW_TYPES","KW_DEFINE",
 "KW_DOMAIN","KW_ACTION","KW_ARGS","KW_PRE","KW_EFFECT","KW_AND","KW_TRUE","KW_FALSE",
 "KW_OR","KW_EXISTS","KW_FORALL","KW_SUCH_THAT","KW_NOT","KW_WHEN","KW_ONEOF",
-"KW_UNKNOWN","KW_PROBLEM","KW_FORDOMAIN","KW_OBJECTS","KW_INIT","KW_GOAL","KW_SENSOR",
-"KW_SENSE","KW_OBSERVE","KW_AXIOM","KW_COND","KW_OBSERVABLE","KW_BODY","KW_HEAD",
-"KW_STICKY","KW_FLUENTS","KW_HIDDEN","KW_INVARIANT","KW_AT_LEAST_ONE","KW_AT_MOST_ONE",
-"KW_EXACTLY_ONE","KW_VARIABLE","KW_OBS_VARIABLE","KW_VGROUP","KW_SENSING","KW_DEFAULT_SENSING",
-"KW_MODEL_FOR","pddl_decls","pddl_domain","domain_elements","domain_name","any_symbol",
-"action_symbol","sensor_symbol","axiom_symbol","domain_requires","require_list",
-"domain_predicates","predicate_list","predicate_decl","param_list","untyped_param_list",
-"typed_param_list","param_sym_list","new_var_symbol","domain_types","typed_type_list",
-"primitive_type_list","primitive_type","domain_constants","typed_constant_list",
-"@1","untyped_constant_list","constant_sym_list","domain_schemas","action_decl",
-"@2","action_elements","condition","constant_condition","single_condition","literal",
-"positive_literal","negative_literal","argument_list","and_condition","or_condition",
-"forall_condition","@3","@4","exists_condition","@5","@6","single_condition_list",
-"condition_list","action_effect","action_effect_list","single_action_effect",
-"conditional_effect","forall_effect","@7","@8","optional_such_that","atomic_effect_kw_list",
-"atomic_effect_list","positive_atomic_effect_list","atomic_effect","positive_atomic_effect",
-"sensing","sensing_decl_list","sensing_decl","forall_sensing","@9","@10","sensing_model",
-"axiom_decl","@11","axiom_elements","sensor_decl","@12","sensor_elements","observable_decl",
-"@13","fluent_list_decl","fluent_decl","sticky_decl","@14","simple_variable_decl",
-"@15","@16","@17","variable_type","variable_group_decl","@18","@19","@20","state_variable_list_decl",
-"state_variable","forall_state_variable_list_decl","@21","@22","domain_default_sensing",
-"pddl_problem","@23","problem_elements","initial_state","init_elements","single_init_element",
-"at_least_one_invariant","at_most_one_invariant","exactly_one_invariant","invariant",
-"clause","oneof","unknown","hidden_state","goal_spec",""
+"KW_UNKNOWN","KW_PROBLEM","KW_FORDOMAIN","KW_OBJECTS","KW_INIT","KW_GOAL","KW_EXPLICIT_INITIAL_STATE",
+"KW_SENSOR","KW_SENSE","KW_OBSERVE","KW_AXIOM","KW_COND","KW_OBSERVABLE","KW_BODY",
+"KW_HEAD","KW_STICKY","KW_FLUENTS","KW_HIDDEN","KW_INVARIANT","KW_AT_LEAST_ONE",
+"KW_AT_MOST_ONE","KW_EXACTLY_ONE","KW_VARIABLE","KW_OBS_VARIABLE","KW_VGROUP",
+"KW_SENSING","KW_DEFAULT_SENSING","KW_MODEL_FOR","pddl_decls","pddl_domain",
+"domain_elements","domain_name","any_symbol","action_symbol","sensor_symbol",
+"axiom_symbol","domain_requires","require_list","domain_predicates","predicate_list",
+"predicate_decl","param_list","untyped_param_list","typed_param_list","param_sym_list",
+"new_var_symbol","domain_types","typed_type_list","primitive_type_list","primitive_type",
+"domain_constants","typed_constant_list","@1","untyped_constant_list","constant_sym_list",
+"domain_schemas","action_decl","@2","action_elements","condition","constant_condition",
+"single_condition","literal","positive_literal","negative_literal","argument_list",
+"and_condition","or_condition","forall_condition","@3","@4","exists_condition",
+"@5","@6","single_condition_list","condition_list","action_effect","action_effect_list",
+"single_action_effect","conditional_effect","forall_effect","@7","@8","optional_such_that",
+"atomic_effect_kw_list","atomic_effect_list","positive_atomic_effect_list","atomic_effect",
+"positive_atomic_effect","sensing","sensing_decl_list","sensing_decl","forall_sensing",
+"@9","@10","sensing_model","axiom_decl","@11","axiom_elements","sensor_decl",
+"@12","sensor_elements","observable_decl","@13","fluent_list_decl","fluent_decl",
+"sticky_decl","@14","simple_variable_decl","@15","@16","@17","variable_type",
+"variable_group_decl","@18","@19","@20","state_variable_list_decl","state_variable",
+"forall_state_variable_list_decl","@21","@22","domain_default_sensing","pddl_problem",
+"@23","problem_elements","initial_state","initial_state_keyword","init_elements",
+"single_init_element","at_least_one_invariant","at_most_one_invariant","exactly_one_invariant",
+"invariant","clause","oneof","unknown","hidden_state","goal_spec","goal_list"
 };
 #endif
 
 static const short yyr1[] = {     0,
-    70,    70,    70,    71,    71,    72,    72,    72,    72,    72,
-    72,    72,    73,    74,    74,    74,    74,    74,    74,    74,
-    74,    74,    75,    75,    76,    76,    77,    77,    78,    78,
-    79,    79,    79,    80,    80,    81,    81,    82,    82,    83,
-    83,    83,    84,    85,    85,    86,    86,    87,    87,    88,
-    88,    89,    89,    89,    90,    90,    91,    91,    92,    92,
-    92,    92,    94,    93,    93,    95,    96,    96,    97,    97,
-    97,    97,    97,    97,    97,    99,    98,    98,   100,   100,
-   100,   100,   100,   100,   101,   101,   101,   101,   101,   101,
-   102,   102,   103,   104,   104,   105,   105,   106,   107,   107,
-   107,   108,   109,   111,   112,   110,   114,   115,   113,   116,
-   116,   117,   117,   118,   118,   119,   119,   120,   120,   120,
-   121,   123,   124,   122,   125,   125,   126,   126,   127,   127,
-   128,   128,   129,   130,   131,   131,   132,   132,   133,   133,
-   135,   136,   134,   137,   137,   137,   137,   137,   137,   139,
-   138,   138,   140,   140,   140,   140,   142,   141,   141,   143,
-   143,   143,   143,   145,   144,   144,   146,   146,   147,   147,
-   149,   148,   148,   151,   150,   152,   153,   150,   150,   154,
-   154,   156,   155,   157,   158,   155,   155,   159,   159,   159,
-   160,   160,   162,   163,   161,   164,   166,   165,   165,   167,
-   167,   167,   167,   167,   167,   167,   168,   168,   168,   169,
-   169,   170,   170,   170,   170,   170,   171,   171,   172,   173,
-   174,   174,   174,   175,   176,   177,   178,   178,   179,    -1,
-    -1,    -1,    -1
+    71,    71,    71,    72,    72,    73,    73,    73,    73,    73,
+    73,    73,    74,    75,    75,    75,    75,    75,    75,    75,
+    75,    75,    76,    76,    77,    77,    78,    78,    79,    79,
+    80,    80,    80,    81,    81,    82,    82,    83,    83,    84,
+    84,    84,    85,    86,    86,    87,    87,    88,    88,    89,
+    89,    90,    90,    90,    91,    91,    92,    92,    93,    93,
+    93,    93,    95,    94,    94,    96,    97,    97,    98,    98,
+    98,    98,    98,    98,    98,   100,    99,    99,   101,   101,
+   101,   101,   101,   101,   102,   102,   102,   102,   102,   102,
+   103,   103,   104,   105,   105,   106,   106,   107,   108,   108,
+   108,   109,   110,   112,   113,   111,   115,   116,   114,   117,
+   117,   118,   118,   119,   119,   120,   120,   121,   121,   121,
+   122,   124,   125,   123,   126,   126,   127,   127,   128,   128,
+   129,   129,   130,   131,   132,   132,   133,   133,   134,   134,
+   136,   137,   135,   138,   138,   138,   138,   138,   138,   140,
+   139,   139,   141,   141,   141,   141,   143,   142,   142,   144,
+   144,   144,   144,   146,   145,   145,   147,   147,   148,   148,
+   150,   149,   149,   152,   151,   153,   154,   151,   151,   155,
+   155,   157,   156,   158,   159,   156,   156,   160,   160,   160,
+   161,   161,   163,   164,   162,   165,   167,   166,   166,   168,
+   168,   168,   168,   168,   168,   168,   169,   169,   169,   170,
+   170,   171,   171,   172,   172,   172,   172,   172,   173,   173,
+   174,   175,   176,   176,   176,   177,   178,   179,   180,   180,
+   181,    -1,    -1,    -1,    -1
 };
 
 static const short yyr2[] = {     0,
@@ -983,10 +989,10 @@ static const short yyr2[] = {     0,
      0,     5,     4,     0,     6,     0,     0,    11,     4,     1,
      1,     0,     6,     0,     0,    11,     4,     2,     2,     0,
      1,     4,     0,     0,    10,     4,     0,     9,     6,     5,
-     2,     2,     2,     2,     2,     0,     3,     4,     7,     2,
-     1,     1,     1,     1,     1,     1,     4,     4,     4,     4,
-     1,     1,     1,     4,     4,     4,     4,     3,     4,     2,
-     1,     1,     1
+     2,     2,     2,     2,     2,     0,     3,     4,     7,     1,
+     1,     2,     1,     1,     1,     1,     1,     1,     4,     4,
+     4,     4,     1,     1,     1,     4,     4,     4,     4,     3,
+     4,     2,     1,     1,     1
 };
 
 static const short yydefact[] = {     3,
@@ -1008,105 +1014,105 @@ static const short yydefact[] = {     3,
      0,   198,   201,   202,   203,   204,   205,    63,    39,    49,
     48,     0,    40,    41,    43,    47,    54,    54,     0,     0,
      0,   101,   101,     0,   165,   167,   172,    42,     0,   141,
-     0,     0,     0,     0,     0,     0,    42,     0,     0,     0,
-     0,     0,    65,    38,     0,    46,    53,     0,    52,    77,
-     0,     0,     0,     0,   136,   158,     0,     0,     0,   151,
-     0,     0,     0,     0,     0,   122,     0,     0,   183,   191,
-   188,   189,    42,   148,   101,   146,   149,   101,     0,     0,
-    94,    95,     0,   175,     0,     0,   207,   212,     0,   211,
-   221,   222,   223,   213,   214,   215,   216,     0,    91,    92,
-     0,    85,    86,    93,    87,    88,    89,    90,     0,   228,
-     0,    64,     0,    45,    42,    80,     0,   133,    81,   114,
-   119,   120,   118,     0,    82,   132,    83,    42,   162,   161,
-    42,   154,     0,   155,   128,    97,   100,    99,    96,    42,
-   185,   101,     0,     0,     0,     0,     0,     0,   177,   200,
-     0,     0,     0,     0,     0,     0,     0,     0,   208,   210,
-     0,     0,     0,     0,   229,   227,    44,     0,     0,     0,
-     0,   131,     0,     0,     0,     0,   126,     0,   193,   142,
-     0,     0,     0,   144,   126,     0,   111,     0,     0,     0,
-     0,     0,     0,     0,   113,     0,     0,   107,   104,    79,
-     0,     0,   117,     0,   160,   153,     0,   130,   123,     0,
-   190,   192,    42,   126,   147,     0,    98,     0,     0,   224,
-   110,   225,   226,   217,   218,   219,   220,   102,   112,   103,
-    42,    42,   115,   116,     0,   127,   129,   126,   125,     0,
-     0,     0,     0,     0,   209,     0,     0,   121,     0,   186,
-   194,     0,   145,   178,   108,   105,     0,   126,   143,     0,
-     0,   124,   190,     0,     0,     0,   109,   106,   195,     0,
-     0,     0
+     0,     0,     0,     0,     0,     0,    42,     0,     0,   210,
+     0,   211,     0,     0,    65,    38,     0,    46,    53,     0,
+    52,    77,     0,     0,     0,     0,   136,   158,     0,     0,
+     0,   151,     0,     0,     0,     0,     0,   122,     0,     0,
+   183,   191,   188,   189,    42,   148,   101,   146,   149,   101,
+     0,     0,    94,    95,     0,   175,     0,     0,    91,    92,
+     0,    85,    86,    93,    87,    88,    89,    90,     0,   230,
+   214,     0,   213,   223,   224,   225,   215,   216,   217,   218,
+     0,   207,     0,    64,     0,    45,    42,    80,     0,   133,
+    81,   114,   119,   120,   118,     0,    82,   132,    83,    42,
+   162,   161,    42,   154,     0,   155,   128,    97,   100,    99,
+    96,    42,   185,   101,     0,     0,     0,     0,     0,     0,
+   177,   200,     0,     0,     0,     0,   231,     0,     0,     0,
+     0,     0,     0,     0,   229,   212,     0,   208,    44,     0,
+     0,     0,     0,   131,     0,     0,     0,     0,   126,     0,
+   193,   142,     0,     0,     0,   144,   126,   113,     0,     0,
+   107,   104,   111,     0,     0,     0,     0,     0,     0,     0,
+     0,    79,     0,     0,   117,     0,   160,   153,     0,   130,
+   123,     0,   190,   192,    42,   126,   147,     0,    98,     0,
+   102,   112,   103,    42,    42,   226,   110,   227,   228,   219,
+   220,   221,   222,     0,   115,   116,     0,   127,   129,   126,
+   125,     0,     0,     0,     0,     0,     0,     0,   209,   121,
+     0,   186,   194,     0,   145,   178,   108,   105,     0,   126,
+   143,     0,     0,   124,   190,     0,     0,     0,   109,   106,
+   195,     0,     0,     0
 };
 
 static const short yydefgoto[] = {     5,
      2,    12,     8,    22,    78,    84,    88,    28,    61,    29,
-    68,    69,   162,   163,   164,   165,   166,    30,    72,   198,
-    74,    31,    63,   193,    64,    65,    32,    33,   124,   169,
-   345,   252,   253,   254,   231,   232,   214,   255,   256,   257,
-   382,   411,   258,   381,   410,   338,   346,   269,   352,   270,
-   271,   134,   290,   388,   361,   284,   357,   275,   273,   135,
-    98,    99,   100,   101,   223,   364,   102,    34,   130,   171,
+    68,    69,   162,   163,   164,   165,   166,    30,    72,   200,
+    74,    31,    63,   195,    64,    65,    32,    33,   124,   169,
+   338,   242,   243,   244,   233,   234,   216,   245,   246,   247,
+   375,   413,   248,   374,   412,   344,   339,   271,   354,   272,
+   273,   134,   292,   390,   363,   286,   359,   277,   275,   135,
+    98,    99,   100,   101,   225,   366,   102,    34,   130,   171,
     35,   128,   170,    36,    90,   136,   137,    37,    92,    38,
-   150,   187,   335,    58,    39,   143,   178,   327,   179,   221,
-   222,   363,   408,    40,     3,    59,   105,   155,   239,   240,
-   241,   242,   243,   244,   245,   246,   247,   156,   157
+   150,   187,   337,    58,    39,   143,   178,   329,   179,   223,
+   224,   365,   410,    40,     3,    59,   105,   155,   194,   252,
+   253,   254,   255,   256,   257,   258,   259,   260,   156,   157
 };
 
-static const short yypact[] = {    28,
-    11,    28,    28,    69,-32768,-32768,    47,   294,   306,   275,
-    38,   127,-32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,
--32768,    83,    93,   103,-32768,   193,-32768,-32768,-32768,-32768,
+static const short yypact[] = {    50,
+     7,    50,    50,   110,-32768,-32768,    10,   252,   324,   300,
+   123,    27,-32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,
+-32768,   148,   156,   159,-32768,   219,-32768,-32768,-32768,-32768,
 -32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,
--32768,-32768,-32768,   242,   144,   208,   316,   207,   144,    52,
-   255,   342,   343,    32,-32768,   107,   114,   235,-32768,   136,
-   245,-32768,   216,   229,   300,   236,   174,   309,-32768,-32768,
--32768,   244,   320,-32768,   247,-32768,-32768,-32768,   268,   271,
-   277,-32768,-32768,-32768,   292,-32768,-32768,-32768,   322,   175,
-   344,   175,   384,   385,   188,-32768,    75,   386,   114,-32768,
--32768,-32768,   214,-32768,   334,-32768,-32768,-32768,-32768,-32768,
--32768,   380,-32768,-32768,   388,   261,-32768,-32768,-32768,-32768,
-   338,-32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,
--32768,   138,-32768,-32768,-32768,   347,-32768,-32768,   349,-32768,
--32768,-32768,-32768,   390,    31,   185,-32768,-32768,-32768,   175,
-   182,-32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,
--32768,   391,-32768,-32768,   389,   261,   316,   316,    33,    39,
-    18,-32768,-32768,   393,-32768,-32768,-32768,   261,   249,-32768,
-   394,   374,   395,   396,   382,   398,   261,   351,   306,   353,
-    98,   355,   144,-32768,   392,-32768,-32768,   331,-32768,-32768,
-   401,    98,   402,   403,   114,-32768,   404,   403,    98,-32768,
-   405,    98,   406,   269,   289,-32768,   407,     7,-32768,-32768,
--32768,-32768,   261,-32768,-32768,-32768,-32768,-32768,    50,    98,
--32768,-32768,   408,-32768,   409,    43,-32768,-32768,   357,-32768,
--32768,-32768,-32768,-32768,-32768,-32768,-32768,   131,-32768,-32768,
-   410,-32768,-32768,-32768,-32768,-32768,-32768,-32768,   130,-32768,
-   359,-32768,   300,   261,   261,-32768,   108,-32768,-32768,-32768,
--32768,-32768,-32768,   329,   403,-32768,-32768,   261,   403,-32768,
-   261,-32768,   170,-32768,-32768,-32768,-32768,-32768,-32768,   261,
--32768,-32768,   412,   413,   290,   297,   403,   414,-32768,-32768,
-   416,   398,   398,   403,   398,   398,   398,   398,-32768,-32768,
-    98,    98,   417,   418,-32768,-32768,-32768,   389,   419,   421,
-    98,-32768,   422,   423,   398,   424,   383,   301,-32768,-32768,
-   425,   398,   426,-32768,   383,   361,-32768,   363,   365,   427,
-   367,   369,   371,   373,-32768,    90,   123,-32768,-32768,-32768,
-    40,   375,-32768,   406,-32768,-32768,   377,-32768,-32768,    98,
--32768,-32768,   261,   383,-32768,    98,-32768,   175,   428,-32768,
--32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,
-   261,   261,-32768,-32768,   429,-32768,-32768,   383,-32768,   251,
-   430,   114,   431,   379,-32768,   432,   433,-32768,   402,-32768,
--32768,   381,-32768,-32768,-32768,-32768,   434,   383,-32768,    98,
-    98,-32768,-32768,   435,   436,   263,-32768,-32768,-32768,   441,
-   442,-32768
+-32768,-32768,-32768,   170,   163,   122,   142,   221,   163,   197,
+   317,   183,   294,    42,-32768,   320,   172,   216,-32768,   178,
+   181,-32768,   191,   203,    78,   220,    87,    38,-32768,-32768,
+-32768,   233,   139,-32768,   238,-32768,-32768,-32768,   259,   271,
+   279,-32768,-32768,-32768,   295,-32768,-32768,-32768,   303,   319,
+   316,   319,   323,   327,   342,-32768,   -15,   387,   172,-32768,
+-32768,-32768,   383,-32768,   230,-32768,-32768,-32768,-32768,-32768,
+-32768,   189,-32768,-32768,   389,   311,-32768,-32768,-32768,-32768,
+   333,-32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,
+-32768,    99,-32768,-32768,-32768,   350,-32768,-32768,   352,-32768,
+-32768,-32768,-32768,   391,   121,   211,-32768,-32768,-32768,   319,
+   244,-32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,
+-32768,   392,-32768,-32768,   390,   311,   142,   142,    31,    28,
+    36,-32768,-32768,   394,-32768,-32768,-32768,   311,   258,-32768,
+   395,   375,   396,   397,   385,   399,   311,   354,   324,-32768,
+    33,-32768,   356,   358,   163,-32768,   393,-32768,-32768,   341,
+-32768,-32768,   400,    33,   403,   404,   172,-32768,   405,   404,
+    33,-32768,   406,    33,   407,   236,   263,-32768,   408,    80,
+-32768,-32768,-32768,-32768,   311,-32768,-32768,-32768,-32768,-32768,
+    96,    33,-32768,-32768,   409,-32768,   410,   214,-32768,-32768,
+   411,-32768,-32768,-32768,-32768,-32768,-32768,-32768,   154,-32768,
+-32768,   360,-32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,
+   196,-32768,   362,-32768,    78,   311,   311,-32768,    32,-32768,
+-32768,-32768,-32768,-32768,-32768,    77,   404,-32768,-32768,   311,
+   404,-32768,   311,-32768,    57,-32768,-32768,-32768,-32768,-32768,
+-32768,   311,-32768,-32768,   413,   414,   290,   292,   404,   415,
+-32768,-32768,    33,    33,   417,   418,-32768,   399,   399,   404,
+   399,   399,   399,   399,-32768,-32768,   419,-32768,-32768,   390,
+   420,   422,    33,-32768,   423,   424,   399,   425,   398,   315,
+-32768,-32768,   426,   399,   427,-32768,   398,-32768,   111,   176,
+-32768,-32768,-32768,   364,   366,   428,   368,   370,   372,   374,
+   376,-32768,    64,   378,-32768,   407,-32768,-32768,   380,-32768,
+-32768,    33,-32768,-32768,   311,   398,-32768,    33,-32768,   319,
+-32768,-32768,-32768,   311,   311,-32768,-32768,-32768,-32768,-32768,
+-32768,-32768,-32768,   429,-32768,-32768,   430,-32768,-32768,   398,
+-32768,   267,   431,   172,   432,   382,   434,   435,-32768,-32768,
+   403,-32768,-32768,   384,-32768,-32768,-32768,-32768,   436,   398,
+-32768,    33,    33,-32768,-32768,   437,   438,   278,-32768,-32768,
+-32768,   443,   444,-32768
 };
 
-static const short yypgoto[] = {   162,
--32768,-32768,-32768,    -2,-32768,-32768,-32768,   305,-32768,-32768,
--32768,   348,  -169,-32768,   161,  -145,-32768,-32768,   219,   397,
-   -62,   340,   -37,-32768,   399,   250,-32768,-32768,-32768,-32768,
-  -186,-32768,  -107,  -173,   -90,-32768,  -158,-32768,-32768,-32768,
--32768,-32768,-32768,-32768,-32768,    27,   134,    48,-32768,  -281,
--32768,  -197,-32768,-32768,  -306,    95,-32768,   243,  -203,  -180,
-   248,    58,   -96,-32768,-32768,-32768,-32768,-32768,-32768,-32768,
+static const short yypgoto[] = {   109,
+-32768,-32768,-32768,     0,-32768,-32768,-32768,   306,-32768,-32768,
+-32768,   349,  -173,-32768,   157,  -149,-32768,-32768,   222,   379,
+   -60,   340,   -38,-32768,   401,   251,-32768,-32768,-32768,-32768,
+  -185,-32768,  -180,  -178,   -90,-32768,  -152,-32768,-32768,-32768,
+-32768,-32768,-32768,-32768,-32768,    34,   143,    47,-32768,  -274,
+-32768,  -196,-32768,-32768,  -309,    93,-32768,   241,  -197,  -186,
+   245,    59,   -96,-32768,-32768,-32768,-32768,-32768,-32768,-32768,
 -32768,-32768,-32768,-32768,-32768,   -91,  -132,-32768,-32768,-32768,
--32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,  -336,-32768,
--32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,  -172,  -225,
--32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768
+-32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,  -338,-32768,
+-32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,  -182,
+  -230,-32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768,-32768
 };
 
 
@@ -1114,101 +1120,101 @@ static const short yypgoto[] = {   162,
 
 
 static const short yytable[] = {   133,
-   139,   133,   148,   176,   251,   272,   176,    24,   217,   285,
-   122,    79,   230,   310,   215,   266,   238,   233,   238,   261,
-   196,   210,   280,   276,   390,   282,   292,   276,   368,   268,
-     1,   181,    93,   182,  -180,   310,   200,     4,   353,   268,
-  -180,    25,   206,   298,   293,   133,   172,   211,   133,   172,
-   183,   173,    81,   294,   173,   176,   172,   392,   188,   133,
-    82,   173,   201,   202,   203,   238,   295,    83,   207,   296,
-   384,     7,   212,   213,     9,   301,   416,   174,   302,   297,
-   321,   399,   297,   204,   303,   304,    41,   238,   208,   297,
-    10,   209,   248,   378,   322,   319,    42,   133,   322,   205,
-   248,   413,   305,   306,   307,   308,    43,    94,   323,    95,
-   310,   324,   144,   133,   172,    96,    97,   133,   318,   173,
-   326,   358,   272,   249,   250,   248,   380,   238,   336,    26,
-    27,   249,   250,   328,   354,   122,   172,   172,   145,   106,
-   320,   173,   173,   146,   172,   174,   268,   297,   321,   173,
-   285,   268,    62,   387,   272,   262,   249,   250,   366,   379,
-   379,   420,   238,   311,     6,   302,   312,   313,   314,   297,
-   297,   303,   304,   389,   115,   174,   172,   132,   268,   393,
-   268,   173,   116,   268,   133,   184,   235,   185,   133,   305,
-   306,   307,   308,   391,   337,   337,   142,   337,   337,   337,
-   337,   272,   325,    44,   186,    45,   333,    75,    66,   297,
-    67,   396,   397,   340,    44,    76,    45,    46,    47,   110,
-    77,    48,   149,   414,   415,   268,   189,    49,   190,   191,
-   371,   371,   111,   371,   371,   371,   371,   103,    49,   114,
-   192,    50,    60,   104,    51,   -33,    52,   119,   107,    53,
-   123,   218,   219,   218,   400,    85,    54,    55,    56,   -33,
-    57,   176,   108,    86,   -33,   218,   419,   109,   220,    87,
-   220,   125,   286,   160,   126,    23,   394,   133,   287,   161,
-   127,   288,   220,    13,    14,    15,    16,    17,    18,    19,
-    20,    21,   289,   331,    11,   129,   -12,   -12,   287,   287,
-   332,   288,   288,   133,   362,   148,   287,   112,   113,   288,
-   287,    67,   117,   288,    13,    14,    15,    16,    17,    18,
-    19,    20,    21,   120,    70,   131,    71,   121,    70,   339,
-    71,   341,   342,   343,   344,   172,   151,   152,   121,    70,
-   173,    71,    89,    91,  -164,  -171,   167,   138,   168,   132,
-   175,   132,   177,   132,   234,   236,   237,   259,   260,   259,
-   309,   259,   316,   259,   369,   229,   370,   229,   372,   229,
-   374,   229,   375,   229,   376,   229,   377,   351,   383,   229,
-   386,   132,   404,    97,   409,   197,   199,   140,   141,   147,
-   158,   159,   180,   225,   194,   216,   195,   224,   226,   227,
-   229,   228,   264,   265,   267,   274,   278,   281,   283,   153,
-   291,   299,   300,   315,   329,   118,   330,   334,   259,   348,
-   349,   360,   350,   351,   317,   355,   356,   359,   365,   367,
-   373,   395,   398,   401,   403,   405,   406,   412,   417,   418,
-   421,   422,   263,    73,   154,   347,   407,    80,   385,   402,
-   279,     0,   277
+   139,   133,   148,   176,   219,   241,   176,   232,   274,    24,
+    79,   263,   122,   235,   251,   251,   198,   287,   268,   278,
+   217,   316,   144,   278,   392,   282,   270,   370,   284,    26,
+    27,   208,   316,     4,   202,   238,   270,     9,   172,   212,
+    67,   117,    93,   173,  -180,   133,   300,   355,   133,   145,
+  -180,   296,     1,    10,   146,   176,   394,   209,   188,   133,
+   203,   204,   205,   172,   322,   213,   239,   240,   173,   174,
+   172,   299,   323,   251,   297,   173,   418,   298,   210,   386,
+   401,   211,   206,   172,   251,   112,   113,   115,   173,   327,
+   324,   214,   215,   321,   324,   116,   299,   133,   207,   294,
+   415,   174,   172,   299,   323,   172,   325,   173,   422,   326,
+   173,     6,     7,   238,   371,   133,   320,   295,   328,   133,
+   316,   181,    66,   182,    67,   274,    25,   343,   343,   360,
+   343,   343,   343,   343,   351,   299,   174,   356,   251,   122,
+   183,   330,   120,   270,   239,   240,   121,    70,   270,    71,
+    70,    41,    71,   372,   372,   368,   264,   274,   287,    42,
+   172,   389,    43,   377,   377,   173,   377,   377,   377,   377,
+    60,    62,   251,   -33,    97,   270,   391,   270,   238,   373,
+   270,   106,   395,    89,   107,  -164,   133,   -33,   237,   308,
+   133,   393,   -33,   299,   110,   309,   310,    81,   108,   158,
+   397,   398,   172,   109,   274,    82,   111,   173,   335,   239,
+   240,   184,    83,   185,   311,   312,   313,   314,   103,   346,
+   172,    75,   270,   114,   104,   173,   416,   417,   317,    76,
+   186,   308,   151,   152,    77,   299,   119,   309,   310,   288,
+    44,   123,    45,    46,    47,   289,   303,    48,   290,   304,
+   305,   306,    11,   299,   -12,   -12,   311,   312,   313,   314,
+   220,   221,   125,   176,    49,    44,   291,    45,    50,   220,
+   402,    51,   289,    52,   126,   290,    53,   222,   396,   133,
+   220,   421,   127,    54,    55,    56,   222,    57,   189,    49,
+   190,   191,   192,   333,    91,   334,  -171,   222,   129,   289,
+    23,   289,   290,   193,   290,   133,   131,   148,    13,    14,
+    15,    16,    17,    18,    19,    20,    21,    85,   364,   138,
+    94,   132,    95,   160,   289,    86,   140,   290,    96,   161,
+   141,    87,    13,    14,    15,    16,    17,    18,    19,    20,
+    21,   167,   345,   168,   347,   348,   349,   350,   121,    70,
+   142,    71,   132,   175,   132,   177,   132,   236,   249,   250,
+   261,   262,   249,   315,   249,   318,   231,   376,   231,   378,
+   231,   380,   231,   381,   231,   382,   231,   383,   249,   384,
+   353,   385,   231,   388,   132,   406,    97,   411,   199,   201,
+   147,   149,   159,   180,   227,   196,   218,   197,   226,   228,
+   229,   231,   267,   266,   230,   269,   276,   280,   283,   285,
+   153,   293,   301,   302,   307,   331,   118,   332,   336,   341,
+   342,   249,   319,   352,   353,    73,   357,   358,   361,   367,
+   369,   379,   399,   400,   403,   405,   362,   407,   408,   414,
+   419,   420,   423,   424,   154,   265,   340,   409,   387,    80,
+   281,   279,   404
 };
 
 static const short yycheck[] = {    90,
-    92,    92,    99,   136,   191,   203,   139,    10,   178,   213,
-    73,    49,   186,   239,   173,   202,   190,   187,   192,   192,
-   166,     4,   209,   204,   361,   212,    20,   208,   335,   203,
-     3,     1,     1,     3,     3,   261,     4,    27,   320,   213,
-     9,     4,     4,   230,    38,   136,     7,    30,   139,     7,
-    20,    12,     1,   223,    12,   188,     7,   364,   150,   150,
-     9,    12,    30,    31,    32,   239,   225,    16,    30,   228,
-   352,     3,    55,    56,    28,    33,   413,    38,    36,    40,
-    41,   388,    40,    51,    42,    43,     4,   261,    50,    40,
-    44,    53,     3,     4,   275,   265,     4,   188,   279,    67,
-     3,   408,    60,    61,    62,    63,     4,     1,   278,     3,
-   336,   281,    38,   204,     7,     9,     3,   208,   264,    12,
-   290,   325,   320,    34,    35,     3,     4,   301,   301,     3,
-     4,    34,    35,   292,   321,   198,     7,     7,    64,     4,
-    33,    12,    12,    69,     7,    38,   320,    40,    41,    12,
-   354,   325,     9,   357,   352,   193,    34,    35,   332,   346,
-   347,     0,   336,    33,     3,    36,    36,    37,    38,    40,
-    40,    42,    43,   360,     1,    38,     7,     3,   352,   366,
-   354,    12,     9,   357,   275,     1,   189,     3,   279,    60,
-    61,    62,    63,   363,   302,   303,     9,   305,   306,   307,
-   308,   399,    33,    22,    20,    24,   297,     1,     1,    40,
-     3,   381,   382,   304,    22,     9,    24,    25,    26,     4,
-    14,    29,     9,   410,   411,   399,    45,    46,    47,    48,
-   338,   339,     4,   341,   342,   343,   344,     3,    46,     4,
-    59,    49,     1,     9,    52,     4,    54,     4,     4,    57,
-     4,     3,     4,     3,     4,     1,    64,    65,    66,    18,
-    68,   394,    18,     9,    23,     3,     4,    23,    20,    15,
-    20,     4,     4,    13,     4,     1,   368,   368,    10,    19,
-     4,    13,    20,     9,    10,    11,    12,    13,    14,    15,
-    16,    17,     4,     4,     1,     4,     3,     4,    10,    10,
-     4,    13,    13,   394,     4,   402,    10,     8,     9,    13,
-    10,     3,     4,    13,     9,    10,    11,    12,    13,    14,
-    15,    16,    17,     4,     9,     4,    11,     8,     9,   303,
-    11,   305,   306,   307,   308,     7,     3,     4,     8,     9,
-    12,    11,     1,     1,     3,     3,     9,     4,    11,     3,
-     4,     3,     4,     3,     4,     3,     4,     3,     4,     3,
-     4,     3,     4,     3,     4,     3,     4,     3,     4,     3,
-     4,     3,     4,     3,     4,     3,     4,     3,     4,     3,
-     4,     3,     4,     3,     4,   167,   168,     4,     4,     4,
-    11,     4,     3,    20,     4,     3,     8,     4,     4,     4,
-     3,    20,    11,     3,     3,     3,     3,     3,     3,   105,
-     4,     4,     4,     4,     3,    68,     4,     4,     3,     3,
-     3,    39,     4,     3,   264,     4,     4,     4,     4,     4,
-     4,     4,     4,     4,     4,     4,     4,     4,     4,     4,
-     0,     0,   193,    47,   105,   312,   399,    49,   354,   392,
-   208,    -1,   205
+    92,    92,    99,   136,   178,   191,   139,   186,   205,    10,
+    49,   194,    73,   187,   193,   194,   166,   215,   204,   206,
+   173,   252,    38,   210,   363,   211,   205,   337,   214,     3,
+     4,     4,   263,    27,     4,     3,   215,    28,     7,     4,
+     3,     4,     1,    12,     3,   136,   232,   322,   139,    65,
+     9,   225,     3,    44,    70,   188,   366,    30,   150,   150,
+    30,    31,    32,     7,    33,    30,    34,    35,    12,    38,
+     7,    40,    41,   252,   227,    12,   415,   230,    51,   354,
+   390,    54,    52,     7,   263,     8,     9,     1,    12,    33,
+   277,    56,    57,   267,   281,     9,    40,   188,    68,    20,
+   410,    38,     7,    40,    41,     7,   280,    12,     0,   283,
+    12,     3,     3,     3,     4,   206,   266,    38,   292,   210,
+   351,     1,     1,     3,     3,   322,     4,   308,   309,   327,
+   311,   312,   313,   314,   317,    40,    38,   323,   317,   200,
+    20,   294,     4,   322,    34,    35,     8,     9,   327,    11,
+     9,     4,    11,   339,   340,   334,   195,   354,   356,     4,
+     7,   359,     4,   344,   345,    12,   347,   348,   349,   350,
+     1,     9,   351,     4,     3,   354,   362,   356,     3,     4,
+   359,     4,   368,     1,     4,     3,   277,    18,   189,    36,
+   281,   365,    23,    40,     4,    42,    43,     1,    18,    11,
+   374,   375,     7,    23,   401,     9,     4,    12,   299,    34,
+    35,     1,    16,     3,    61,    62,    63,    64,     3,   310,
+     7,     1,   401,     4,     9,    12,   412,   413,    33,     9,
+    20,    36,     3,     4,    14,    40,     4,    42,    43,     4,
+    22,     4,    24,    25,    26,    10,    33,    29,    13,    36,
+    37,    38,     1,    40,     3,     4,    61,    62,    63,    64,
+     3,     4,     4,   396,    46,    22,     4,    24,    50,     3,
+     4,    53,    10,    55,     4,    13,    58,    20,   370,   370,
+     3,     4,     4,    65,    66,    67,    20,    69,    45,    46,
+    47,    48,    49,     4,     1,     4,     3,    20,     4,    10,
+     1,    10,    13,    60,    13,   396,     4,   404,     9,    10,
+    11,    12,    13,    14,    15,    16,    17,     1,     4,     4,
+     1,     3,     3,    13,    10,     9,     4,    13,     9,    19,
+     4,    15,     9,    10,    11,    12,    13,    14,    15,    16,
+    17,     9,   309,    11,   311,   312,   313,   314,     8,     9,
+     9,    11,     3,     4,     3,     4,     3,     4,     3,     4,
+     3,     4,     3,     4,     3,     4,     3,     4,     3,     4,
+     3,     4,     3,     4,     3,     4,     3,     4,     3,     4,
+     3,     4,     3,     4,     3,     4,     3,     4,   167,   168,
+     4,     9,     4,     3,    20,     4,     3,     8,     4,     4,
+     4,     3,     3,    11,    20,     3,     3,     3,     3,     3,
+   105,     4,     4,     4,     4,     3,    68,     4,     4,     3,
+     3,     3,   266,     4,     3,    47,     4,     4,     4,     4,
+     4,     4,     4,     4,     4,     4,    39,     4,     4,     4,
+     4,     4,     0,     0,   105,   195,   304,   401,   356,    49,
+   210,   207,   394
 };
 
 #line 325 "/usr/local/lib/bison.cc"
@@ -1700,119 +1706,119 @@ YYLABEL(yyreduce)
 
 
 /* #line 811 "/usr/local/lib/bison.cc" */
-#line 1704 "grammar_tmp.cc"
+#line 1710 "grammar_tmp.cc"
 
   switch (yyn) {
 
 case 5:
-#line 153 "ppddl.y"
+#line 155 "ppddl.y"
 {
           log_error((char*)"syntax error in domain");
           yyerrok;
       ;
     break;}
 case 13:
-#line 170 "ppddl.y"
-{ domain_name_ = std::string(yyvsp[-1].sym->text); ;
+#line 172 "ppddl.y"
+{ domain_name_ = std::string(yyvsp[-1].sym->text_); ;
     break;}
 case 14:
-#line 176 "ppddl.y"
-{ yyval.sym = yyvsp[0].sym; ;
-    break;}
-case 15:
-#line 177 "ppddl.y"
-{ yyval.sym = yyvsp[0].sym; ;
-    break;}
-case 16:
 #line 178 "ppddl.y"
 { yyval.sym = yyvsp[0].sym; ;
     break;}
-case 17:
+case 15:
 #line 179 "ppddl.y"
 { yyval.sym = yyvsp[0].sym; ;
     break;}
-case 18:
+case 16:
 #line 180 "ppddl.y"
 { yyval.sym = yyvsp[0].sym; ;
     break;}
-case 19:
+case 17:
 #line 181 "ppddl.y"
 { yyval.sym = yyvsp[0].sym; ;
     break;}
-case 20:
+case 18:
 #line 182 "ppddl.y"
 { yyval.sym = yyvsp[0].sym; ;
     break;}
-case 21:
+case 19:
 #line 183 "ppddl.y"
 { yyval.sym = yyvsp[0].sym; ;
     break;}
-case 22:
+case 20:
 #line 184 "ppddl.y"
 { yyval.sym = yyvsp[0].sym; ;
     break;}
+case 21:
+#line 185 "ppddl.y"
+{ yyval.sym = yyvsp[0].sym; ;
+    break;}
+case 22:
+#line 186 "ppddl.y"
+{ yyval.sym = yyvsp[0].sym; ;
+    break;}
 case 23:
-#line 188 "ppddl.y"
+#line 190 "ppddl.y"
 { yyval.sym = yyvsp[0].sym; ;
     break;}
 case 24:
-#line 189 "ppddl.y"
+#line 191 "ppddl.y"
 { yyval.sym = yyvsp[0].sym; ;
     break;}
 case 25:
-#line 193 "ppddl.y"
+#line 195 "ppddl.y"
 { yyval.sym = yyvsp[0].sym; ;
     break;}
 case 26:
-#line 194 "ppddl.y"
+#line 196 "ppddl.y"
 { yyval.sym = yyvsp[0].sym; ;
     break;}
 case 27:
-#line 198 "ppddl.y"
+#line 200 "ppddl.y"
 { yyval.sym = yyvsp[0].sym; ;
     break;}
 case 28:
-#line 199 "ppddl.y"
+#line 201 "ppddl.y"
 { yyval.sym = yyvsp[0].sym; ;
     break;}
 case 30:
-#line 206 "ppddl.y"
+#line 208 "ppddl.y"
 {
           log_error((char*)"syntax error in requirements declaration.");
           yyerrok;
       ;
     break;}
 case 31:
-#line 213 "ppddl.y"
+#line 215 "ppddl.y"
 { declare_lw1_translation(); ;
     break;}
 case 35:
-#line 222 "ppddl.y"
+#line 224 "ppddl.y"
 {
           log_error((char*)"syntax error in (:predicates ...)");
           yyerrok;
       ;
     break;}
 case 38:
-#line 234 "ppddl.y"
+#line 236 "ppddl.y"
 {
-          PredicateSymbol *p = new PredicateSymbol(yyvsp[-2].sym->text);
+          PredicateSymbol *p = new PredicateSymbol(yyvsp[-2].sym->text_);
           dom_predicates_.push_back(p);
           p->param_ = *yyvsp[-1].vparam;
           delete yyvsp[-1].vparam;
           clear_param(p->param_);
-          yyvsp[-2].sym->val = p;
+          yyvsp[-2].sym->value_ = p;
       ;
     break;}
 case 39:
-#line 242 "ppddl.y"
+#line 244 "ppddl.y"
 {
           log_error((char*)"syntax error in predicate declaration");
           yyerrok;
       ;
     break;}
 case 41:
-#line 250 "ppddl.y"
+#line 252 "ppddl.y"
 {
           // must reverse parameter list
           var_symbol_vec tmp_list(*yyvsp[0].vparam);
@@ -1822,123 +1828,123 @@ case 41:
       ;
     break;}
 case 42:
-#line 257 "ppddl.y"
+#line 259 "ppddl.y"
 { yyval.vparam = new var_symbol_vec; ;
     break;}
 case 43:
-#line 261 "ppddl.y"
+#line 263 "ppddl.y"
 {
           set_variable_type(*yyvsp[0].vparam, yyvsp[0].vparam->size(), dom_top_type_);
           yyval.vparam = yyvsp[0].vparam;
       ;
     break;}
 case 44:
-#line 268 "ppddl.y"
+#line 270 "ppddl.y"
 {
-          set_variable_type(*yyvsp[-3].vparam, yyvsp[-3].vparam->size(), static_cast<TypeSymbol*>(yyvsp[-1].sym->val));
+          set_variable_type(*yyvsp[-3].vparam, yyvsp[-3].vparam->size(), static_cast<TypeSymbol*>(yyvsp[-1].sym->value_));
           yyvsp[0].vparam->insert(yyvsp[0].vparam->end(), yyvsp[-3].vparam->begin(), yyvsp[-3].vparam->end());
           delete yyvsp[-3].vparam;
           yyval.vparam = yyvsp[0].vparam;
       ;
     break;}
 case 45:
-#line 274 "ppddl.y"
+#line 276 "ppddl.y"
 {
-          set_variable_type(*yyvsp[-2].vparam, yyvsp[-2].vparam->size(), static_cast<TypeSymbol*>(yyvsp[0].sym->val));
+          set_variable_type(*yyvsp[-2].vparam, yyvsp[-2].vparam->size(), static_cast<TypeSymbol*>(yyvsp[0].sym->value_));
           yyval.vparam = yyvsp[-2].vparam;
       ;
     break;}
 case 46:
-#line 281 "ppddl.y"
+#line 283 "ppddl.y"
 {
           yyvsp[0].vparam->push_back(static_cast<VariableSymbol*>(yyvsp[-1].vsym));
           yyval.vparam = yyvsp[0].vparam;
       ;
     break;}
 case 47:
-#line 285 "ppddl.y"
+#line 287 "ppddl.y"
 { yyval.vparam = new var_symbol_vec; yyval.vparam->push_back(yyvsp[0].vsym); ;
     break;}
 case 48:
-#line 289 "ppddl.y"
+#line 291 "ppddl.y"
 {
-          VariableSymbol *var = new VariableSymbol(yyvsp[0].sym->text);
-          yyvsp[0].sym->val = var;
+          VariableSymbol *var = new VariableSymbol(yyvsp[0].sym->text_);
+          yyvsp[0].sym->value_ = var;
           yyval.vsym = var;
       ;
     break;}
 case 49:
-#line 294 "ppddl.y"
+#line 296 "ppddl.y"
 {
           std::string msg("variable '");
-          msg += yyvsp[0].sym->text;
+          msg += yyvsp[0].sym->text_;
           msg += "' shadows variable in outer scope: this is not supported!";
           log_error((char*)msg.c_str());
           yyerrok;
       ;
     break;}
 case 51:
-#line 307 "ppddl.y"
+#line 309 "ppddl.y"
 {
           set_type_type(dom_types_, dom_types_.size(), dom_top_type_);
       ;
     break;}
 case 52:
-#line 313 "ppddl.y"
+#line 315 "ppddl.y"
 {
-          set_type_type(dom_types_, dom_types_.size(), static_cast<TypeSymbol*>(yyvsp[-1].sym->val));
+          set_type_type(dom_types_, dom_types_.size(), static_cast<TypeSymbol*>(yyvsp[-1].sym->value_));
       ;
     break;}
 case 53:
-#line 316 "ppddl.y"
+#line 318 "ppddl.y"
 {
-          yyvsp[-1].sym->val = new TypeSymbol(yyvsp[-1].sym->text);
+          yyvsp[-1].sym->value_ = new TypeSymbol(yyvsp[-1].sym->text_);
           if( write_warnings_ )
-              std::cout << Utils::warning() << "assuming " << yyvsp[-1].sym->text << " - object" << std::endl;
-          static_cast<TypeSymbol*>(yyvsp[-1].sym->val)->sym_type_ = dom_top_type_;
-          set_type_type(dom_types_, dom_types_.size(), static_cast<TypeSymbol*>(yyvsp[-1].sym->val));
-          dom_types_.push_back(static_cast<TypeSymbol*>(yyvsp[-1].sym->val));
+              std::cout << Utils::warning() << "assuming " << yyvsp[-1].sym->text_ << " - object" << std::endl;
+          static_cast<TypeSymbol*>(yyvsp[-1].sym->value_)->sym_type_ = dom_top_type_;
+          set_type_type(dom_types_, dom_types_.size(), static_cast<TypeSymbol*>(yyvsp[-1].sym->value_));
+          dom_types_.push_back(static_cast<TypeSymbol*>(yyvsp[-1].sym->value_));
       ;
     break;}
 case 56:
-#line 329 "ppddl.y"
+#line 331 "ppddl.y"
 { ;
     break;}
 case 58:
-#line 334 "ppddl.y"
+#line 336 "ppddl.y"
 {
-          yyvsp[0].sym->val = new TypeSymbol(yyvsp[0].sym->text);
-          dom_types_.push_back(static_cast<TypeSymbol*>(yyvsp[0].sym->val));
+          yyvsp[0].sym->value_ = new TypeSymbol(yyvsp[0].sym->text_);
+          dom_types_.push_back(static_cast<TypeSymbol*>(yyvsp[0].sym->value_));
       ;
     break;}
 case 63:
-#line 350 "ppddl.y"
+#line 352 "ppddl.y"
 {
-          set_constant_type(dom_constants_, dom_constants_.size(), static_cast<TypeSymbol*>(yyvsp[0].sym->val));
+          set_constant_type(dom_constants_, dom_constants_.size(), static_cast<TypeSymbol*>(yyvsp[0].sym->value_));
       ;
     break;}
 case 66:
-#line 358 "ppddl.y"
+#line 360 "ppddl.y"
 {
           set_constant_type(dom_constants_, dom_constants_.size(), dom_top_type_);
       ;
     break;}
 case 67:
-#line 364 "ppddl.y"
+#line 366 "ppddl.y"
 {
-          yyvsp[0].sym->val = new Symbol(yyvsp[0].sym->text);
-          dom_constants_.push_back(static_cast<Symbol*>(yyvsp[0].sym->val));
+          yyvsp[0].sym->value_ = new Symbol(yyvsp[0].sym->text_);
+          dom_constants_.push_back(static_cast<Symbol*>(yyvsp[0].sym->value_));
       ;
     break;}
 case 68:
-#line 368 "ppddl.y"
+#line 370 "ppddl.y"
 {
-          yyvsp[0].sym->val = new Symbol(yyvsp[0].sym->text);
-          dom_constants_.push_back(static_cast<Symbol*>(yyvsp[0].sym->val));
+          yyvsp[0].sym->value_ = new Symbol(yyvsp[0].sym->text_);
+          dom_constants_.push_back(static_cast<Symbol*>(yyvsp[0].sym->value_));
       ;
     break;}
 case 70:
-#line 378 "ppddl.y"
+#line 380 "ppddl.y"
 {
           if( type_ == replanner ) {
               log_error((char*)"':axiom' is not a valid element in k-replanner.");
@@ -1947,7 +1953,7 @@ case 70:
       ;
     break;}
 case 71:
-#line 384 "ppddl.y"
+#line 386 "ppddl.y"
 {
           if( type_ == cp2fsc ) {
               log_error((char*)"':sensor' is not a valid element in cp2fsc.");
@@ -1956,7 +1962,7 @@ case 71:
       ;
     break;}
 case 72:
-#line 390 "ppddl.y"
+#line 392 "ppddl.y"
 {
           if( type_ == replanner ) {
               log_error((char*)"':observable' is not a valid element in k-replanner.");
@@ -1965,7 +1971,7 @@ case 72:
       ;
     break;}
 case 73:
-#line 396 "ppddl.y"
+#line 398 "ppddl.y"
 {
           if( type_ == replanner ) {
               log_error((char*)"':sticky' is not a valid element in k-replanner.");
@@ -1974,7 +1980,7 @@ case 73:
       ;
     break;}
 case 74:
-#line 402 "ppddl.y"
+#line 404 "ppddl.y"
 {
           declare_lw1_translation();
           if( type_ == cp2fsc ) {
@@ -1984,56 +1990,56 @@ case 74:
       ;
     break;}
 case 75:
-#line 409 "ppddl.y"
+#line 411 "ppddl.y"
 { ;
     break;}
 case 76:
-#line 416 "ppddl.y"
+#line 418 "ppddl.y"
 {
 #ifdef SMART
-          std::unique_ptr<Action> na = std::make_unique<Action>(yyvsp[0].sym->text);
+          std::unique_ptr<Action> na = std::make_unique<Action>(yyvsp[0].sym->text_);
           dom_actions_.emplace_back(std::move(na));
 #else
-          Action *na = new Action(yyvsp[0].sym->text);
+          Action *na = new Action(yyvsp[0].sym->text_);
           dom_actions_.push_back(na);
 #endif
       ;
     break;}
 case 77:
-#line 425 "ppddl.y"
+#line 427 "ppddl.y"
 {
           clear_param(dom_actions_.back()->param_);
 #ifdef SMART
-          yyvsp[-3].sym->val = dom_actions_.back().get();
+          yyvsp[-3].sym->value_ = dom_actions_.back().get();
 #else
-          yyvsp[-3].sym->val = dom_actions_.back();
+          yyvsp[-3].sym->value_ = dom_actions_.back();
 #endif
       ;
     break;}
 case 78:
-#line 433 "ppddl.y"
+#line 435 "ppddl.y"
 {
           log_error((char*)"syntax error in action declaration");
           yyerrok;
       ;
     break;}
 case 79:
-#line 440 "ppddl.y"
+#line 442 "ppddl.y"
 {
           dom_actions_.back()->param_ = *yyvsp[-1].vparam;
           delete yyvsp[-1].vparam;
       ;
     break;}
 case 80:
-#line 444 "ppddl.y"
+#line 446 "ppddl.y"
 { dom_actions_.back()->precondition_ = yyvsp[0].condition; ;
     break;}
 case 81:
-#line 445 "ppddl.y"
+#line 447 "ppddl.y"
 { dom_actions_.back()->effect_ = yyvsp[0].effect; ;
     break;}
 case 82:
-#line 446 "ppddl.y"
+#line 448 "ppddl.y"
 {
           declare_clg_translation();
           dom_actions_.back()->observe_ = new AndEffect(*yyvsp[0].effect_vec);
@@ -2041,22 +2047,22 @@ case 82:
       ;
     break;}
 case 83:
-#line 451 "ppddl.y"
+#line 453 "ppddl.y"
 {
           declare_lw1_translation();
           dom_actions_.back()->sensing_proxy_ = yyvsp[0].sensing_proxy_list;
       ;
     break;}
 case 91:
-#line 468 "ppddl.y"
+#line 470 "ppddl.y"
 { yyval.condition = new Constant(true); ;
     break;}
 case 92:
-#line 469 "ppddl.y"
+#line 471 "ppddl.y"
 { yyval.condition = new Constant(false); ;
     break;}
 case 93:
-#line 473 "ppddl.y"
+#line 475 "ppddl.y"
 {
           // if literal is for equality, construct EQ
           if( yyvsp[0].atom->pred_ == dom_eq_pred_ )
@@ -2067,9 +2073,9 @@ case 93:
       ;
     break;}
 case 96:
-#line 489 "ppddl.y"
+#line 491 "ppddl.y"
 {
-          PredicateSymbol* p = static_cast<PredicateSymbol*>(yyvsp[-2].sym->val);
+          PredicateSymbol* p = static_cast<PredicateSymbol*>(yyvsp[-2].sym->value_);
           if( p->param_.size() != yyvsp[-1].param->size() ) {
               std::string msg = std::string("wrong number of arguments for predicate '") + p->print_name_ + "'";
               log_error(const_cast<char*>(msg.c_str()));
@@ -2081,7 +2087,7 @@ case 96:
       ;
     break;}
 case 97:
-#line 500 "ppddl.y"
+#line 502 "ppddl.y"
 {
           if( yyvsp[-1].param->size() != 2 ) {
               log_error((char*)"wrong number of arguments for equality");
@@ -2093,104 +2099,108 @@ case 97:
       ;
     break;}
 case 98:
-#line 512 "ppddl.y"
+#line 514 "ppddl.y"
 {
           const_cast<Literal*>(static_cast<const Literal*>(yyvsp[-1].atom))->negated_ = true;
           yyval.atom = yyvsp[-1].atom;
       ;
     break;}
 case 99:
-#line 519 "ppddl.y"
+#line 521 "ppddl.y"
 {
-          if( yyvsp[0].sym->val == 0 )
+          if( yyvsp[0].sym->value_ == 0 )
               log_error((char*)"undeclared variable in atom args list");
           else
-              yyvsp[-1].param->push_back(static_cast<VariableSymbol*>(yyvsp[0].sym->val));
+              yyvsp[-1].param->push_back(static_cast<VariableSymbol*>(yyvsp[0].sym->value_));
           yyval.param = yyvsp[-1].param;
       ;
     break;}
 case 100:
-#line 526 "ppddl.y"
+#line 528 "ppddl.y"
 {
-          yyvsp[-1].param->push_back(static_cast<Symbol*>(yyvsp[0].sym->val));
+          yyvsp[-1].param->push_back(static_cast<Symbol*>(yyvsp[0].sym->value_));
           yyval.param = yyvsp[-1].param;
       ;
     break;}
 case 101:
-#line 530 "ppddl.y"
+#line 532 "ppddl.y"
 { yyval.param = new symbol_vec; ;
     break;}
 case 102:
-#line 534 "ppddl.y"
+#line 536 "ppddl.y"
 {
           yyval.condition = new And(*yyvsp[-1].condition_vec);
           delete yyvsp[-1].condition_vec;
       ;
     break;}
 case 103:
-#line 541 "ppddl.y"
+#line 543 "ppddl.y"
 {
           yyval.condition = new Or(*yyvsp[-1].condition_vec);
           delete yyvsp[-1].condition_vec;
       ;
     break;}
 case 104:
-#line 548 "ppddl.y"
+#line 550 "ppddl.y"
 {
           schema_.push_back(new ForallCondition);
+          using_owned_schema_.push_back(false);
       ;
     break;}
 case 105:
-#line 551 "ppddl.y"
+#line 554 "ppddl.y"
 {
           schema_.back()->param_ = *yyvsp[-1].vparam;
           delete yyvsp[-1].vparam;
       ;
     break;}
 case 106:
-#line 555 "ppddl.y"
+#line 558 "ppddl.y"
 {
           assert(dynamic_cast<ForallCondition*>(schema_.back()) != 0);
           ForallCondition *forall_condition = static_cast<ForallCondition*>(schema_.back());
           schema_.pop_back();
+          using_owned_schema_.pop_back();
           forall_condition->condition_ = yyvsp[-1].condition;
           clear_param(forall_condition->param_);
           yyval.condition = forall_condition;
       ;
     break;}
 case 107:
-#line 566 "ppddl.y"
+#line 570 "ppddl.y"
 {
           schema_.push_back(new ExistsCondition);
+          using_owned_schema_.push_back(false);
       ;
     break;}
 case 108:
-#line 569 "ppddl.y"
+#line 574 "ppddl.y"
 {
           schema_.back()->param_ = *yyvsp[-1].vparam;
           delete yyvsp[-1].vparam;
       ;
     break;}
 case 109:
-#line 573 "ppddl.y"
+#line 578 "ppddl.y"
 {
           assert(dynamic_cast<ExistsCondition*>(schema_.back()) != 0);
           ExistsCondition *exists_condition = static_cast<ExistsCondition*>(schema_.back());
           schema_.pop_back();
+          using_owned_schema_.pop_back();
           exists_condition->condition_ = yyvsp[-1].condition;
           clear_param(exists_condition->param_);
           yyval.condition = exists_condition;
       ;
     break;}
 case 110:
-#line 584 "ppddl.y"
+#line 590 "ppddl.y"
 {
           yyvsp[-1].condition_vec->push_back(yyvsp[0].condition);
           yyval.condition_vec = yyvsp[-1].condition_vec;
       ;
     break;}
 case 111:
-#line 588 "ppddl.y"
+#line 594 "ppddl.y"
 {
           condition_vec *cond_vec = new condition_vec;
           cond_vec->push_back(yyvsp[0].condition);
@@ -2198,14 +2208,14 @@ case 111:
       ;
     break;}
 case 112:
-#line 596 "ppddl.y"
+#line 602 "ppddl.y"
 {
           yyvsp[-1].condition_vec->push_back(yyvsp[0].condition);
           yyval.condition_vec = yyvsp[-1].condition_vec;
       ;
     break;}
 case 113:
-#line 600 "ppddl.y"
+#line 606 "ppddl.y"
 {
           condition_vec *cond_vec = new condition_vec;
           cond_vec->push_back(yyvsp[0].condition);
@@ -2213,110 +2223,122 @@ case 113:
       ;
     break;}
 case 115:
-#line 609 "ppddl.y"
+#line 615 "ppddl.y"
 {
           yyval.effect = new AndEffect(*yyvsp[-1].effect_vec);
           delete yyvsp[-1].effect_vec;
       ;
     break;}
 case 116:
-#line 616 "ppddl.y"
+#line 622 "ppddl.y"
 {
           yyvsp[-1].effect_vec->push_back(yyvsp[0].effect);
           yyval.effect_vec = yyvsp[-1].effect_vec;
       ;
     break;}
 case 117:
-#line 620 "ppddl.y"
+#line 626 "ppddl.y"
 {
           yyval.effect_vec = new effect_vec;
           yyval.effect_vec->push_back(yyvsp[0].effect);
       ;
     break;}
 case 121:
-#line 633 "ppddl.y"
+#line 639 "ppddl.y"
 { yyval.effect = new ConditionalEffect(yyvsp[-2].condition, yyvsp[-1].effect); ;
     break;}
 case 122:
-#line 637 "ppddl.y"
+#line 643 "ppddl.y"
 {
           schema_.push_back(new ForallEffect);
+          using_owned_schema_.push_back(false);
       ;
     break;}
 case 123:
-#line 640 "ppddl.y"
+#line 647 "ppddl.y"
 {
           schema_.back()->param_ = *yyvsp[-1].vparam;
           delete yyvsp[-1].vparam;
       ;
     break;}
 case 124:
-#line 644 "ppddl.y"
+#line 651 "ppddl.y"
 {
           assert(dynamic_cast<ForallEffect*>(schema_.back()) != 0);
           ForallEffect *forall_effect = static_cast<ForallEffect*>(schema_.back());
           schema_.pop_back();
+          using_owned_schema_.pop_back();
           forall_effect->effect_ = yyvsp[-1].effect;
           clear_param(forall_effect->param_);
           yyval.effect = forall_effect;
       ;
     break;}
 case 125:
-#line 655 "ppddl.y"
+#line 663 "ppddl.y"
 {
+#ifdef SMART
+          if( using_owned_schema_.back() ) {
+              assert(!owned_schema_.empty());
+              owned_schema_.back()->such_that_ = yyvsp[0].condition;
+          } else {
+              assert(!schema_.empty());
+              schema_.back()->such_that_ = yyvsp[0].condition;
+          }
+#else
           assert(!schema_.empty());
           schema_.back()->such_that_ = yyvsp[0].condition;
+#endif
       ;
     break;}
 case 127:
-#line 663 "ppddl.y"
+#line 681 "ppddl.y"
 {
           yyval.effect = new AndEffect(*yyvsp[-1].effect_vec);
           delete yyvsp[-1].effect_vec;
       ;
     break;}
 case 129:
-#line 671 "ppddl.y"
+#line 689 "ppddl.y"
 {
           yyvsp[-1].effect_vec->push_back(yyvsp[0].effect);
           yyval.effect_vec = yyvsp[-1].effect_vec;
       ;
     break;}
 case 130:
-#line 675 "ppddl.y"
+#line 693 "ppddl.y"
 {
           yyval.effect_vec = new effect_vec;
           yyval.effect_vec->push_back(yyvsp[0].effect);
       ;
     break;}
 case 131:
-#line 682 "ppddl.y"
+#line 700 "ppddl.y"
 {
           yyvsp[-1].effect_vec->push_back(yyvsp[0].effect);
           yyval.effect_vec = yyvsp[-1].effect_vec;
       ;
     break;}
 case 132:
-#line 686 "ppddl.y"
+#line 704 "ppddl.y"
 {
           yyval.effect_vec = new effect_vec;
           yyval.effect_vec->push_back(yyvsp[0].effect);
       ;
     break;}
 case 133:
-#line 693 "ppddl.y"
+#line 711 "ppddl.y"
 { yyval.effect = new AtomicEffect(*yyvsp[0].atom); delete yyvsp[0].atom; ;
     break;}
 case 134:
-#line 697 "ppddl.y"
+#line 715 "ppddl.y"
 { yyval.effect = new AtomicEffect(*yyvsp[0].atom); delete yyvsp[0].atom; ;
     break;}
 case 136:
-#line 702 "ppddl.y"
+#line 720 "ppddl.y"
 { yyval.sensing_proxy_list = 0; ;
     break;}
 case 137:
-#line 706 "ppddl.y"
+#line 724 "ppddl.y"
 {
           sensing_proxy_vec *list_sensing_proxy = const_cast<sensing_proxy_vec*>(yyvsp[-1].sensing_proxy_list);
           list_sensing_proxy->push_back(yyvsp[0].sensing_proxy);
@@ -2324,7 +2346,7 @@ case 137:
       ;
     break;}
 case 138:
-#line 711 "ppddl.y"
+#line 729 "ppddl.y"
 {
           sensing_proxy_vec *list_sensing_proxy = new sensing_proxy_vec;
           list_sensing_proxy->push_back(yyvsp[0].sensing_proxy);
@@ -2332,28 +2354,30 @@ case 138:
       ;
     break;}
 case 139:
-#line 719 "ppddl.y"
+#line 737 "ppddl.y"
 { yyval.sensing_proxy = new BasicSensingModel(yyvsp[0].sensing_model); ;
     break;}
 case 141:
-#line 724 "ppddl.y"
+#line 742 "ppddl.y"
 {
           schema_.push_back(new ForallSensing);
+          using_owned_schema_.push_back(false);
       ;
     break;}
 case 142:
-#line 727 "ppddl.y"
+#line 746 "ppddl.y"
 {
           schema_.back()->param_ = *yyvsp[-1].vparam;
           delete yyvsp[-1].vparam;
       ;
     break;}
 case 143:
-#line 731 "ppddl.y"
+#line 750 "ppddl.y"
 {
           assert(dynamic_cast<ForallSensing*>(schema_.back()) != 0);
           ForallSensing *forall_sensing = static_cast<ForallSensing*>(schema_.back());
           schema_.pop_back();
+          using_owned_schema_.pop_back();
           forall_sensing->sensing_ = *yyvsp[-1].sensing_proxy_list;
           delete yyvsp[-1].sensing_proxy_list;
           clear_param(forall_sensing->param_);
@@ -2361,10 +2385,10 @@ case 143:
       ;
     break;}
 case 144:
-#line 743 "ppddl.y"
+#line 763 "ppddl.y"
 {
-          assert(static_cast<Symbol*>(yyvsp[-3].sym->val)->sym_class_ == sym_varname);
-          const Variable *variable = static_cast<Variable*>(yyvsp[-3].sym->val);
+          assert(static_cast<Symbol*>(yyvsp[-3].sym->value_)->sym_class_ == sym_varname);
+          const Variable *variable = static_cast<Variable*>(yyvsp[-3].sym->value_);
           if( dynamic_cast<const ObsVariable*>(variable) == 0 ) {
               std::cout << Utils::error() << "sensing model can only be specified for observable variable" << std::endl;
               yyval.sensing_model = 0;
@@ -2376,10 +2400,10 @@ case 144:
       ;
     break;}
 case 145:
-#line 755 "ppddl.y"
+#line 775 "ppddl.y"
 {
-          assert(static_cast<Symbol*>(yyvsp[-5].sym->val)->sym_class_ == sym_varname);
-          const Variable *variable = static_cast<Variable*>(yyvsp[-5].sym->val);
+          assert(static_cast<Symbol*>(yyvsp[-5].sym->value_)->sym_class_ == sym_varname);
+          const Variable *variable = static_cast<Variable*>(yyvsp[-5].sym->value_);
           if( dynamic_cast<const ObsVariable*>(variable) == 0 ) {
               std::cout << Utils::error() << "sensing model can only be specified for observable variable" << std::endl;
               yyval.sensing_model = 0;
@@ -2394,19 +2418,19 @@ case 145:
       ;
     break;}
 case 146:
-#line 770 "ppddl.y"
+#line 790 "ppddl.y"
 {
-          assert(static_cast<Symbol*>(yyvsp[-1].sym->val)->sym_class_ == sym_varname);
-          const Variable *variable = static_cast<Variable*>(yyvsp[-1].sym->val);
+          assert(static_cast<Symbol*>(yyvsp[-1].sym->value_)->sym_class_ == sym_varname);
+          const Variable *variable = static_cast<Variable*>(yyvsp[-1].sym->value_);
           assert(dynamic_cast<const StateVariable*>(variable) != 0);
           yyval.sensing_model = new SensingModelForStateVariable(static_cast<const StateVariable*>(variable));
       ;
     break;}
 case 147:
-#line 776 "ppddl.y"
+#line 796 "ppddl.y"
 {
-          assert(static_cast<Symbol*>(yyvsp[-3].sym->val)->sym_class_ == sym_varname);
-          const Variable *variable = static_cast<Variable*>(yyvsp[-3].sym->val);
+          assert(static_cast<Symbol*>(yyvsp[-3].sym->value_)->sym_class_ == sym_varname);
+          const Variable *variable = static_cast<Variable*>(yyvsp[-3].sym->value_);
           assert(dynamic_cast<const StateVariable*>(variable) != 0);
           SensingModelForStateVariable *model = new SensingModelForStateVariable(static_cast<const StateVariable*>(variable));
           model->param_ = *yyvsp[-2].param;
@@ -2415,121 +2439,121 @@ case 147:
       ;
     break;}
 case 148:
-#line 785 "ppddl.y"
+#line 805 "ppddl.y"
 {
           log_error((char*)"syntax error in sensing declaration for ':variable'");
           yyerrok;
       ;
     break;}
 case 149:
-#line 789 "ppddl.y"
+#line 809 "ppddl.y"
 {
           log_error((char*)"syntax error in sensing declaration for ':model-for'");
           yyerrok;
       ;
     break;}
 case 150:
-#line 796 "ppddl.y"
+#line 816 "ppddl.y"
 {
 #ifdef SMART
-          std::unique_ptr<Axiom> nr = std::make_unique<Axiom>(yyvsp[0].sym->text);
-          dom_axioms_.emplace_back(move(nr));
+          std::unique_ptr<Axiom> nr = std::make_unique<Axiom>(yyvsp[0].sym->text_);
+          dom_axioms_.emplace_back(std::move(nr));
 #else
-          Axiom *nr = new Axiom(yyvsp[0].sym->text);
+          Axiom *nr = new Axiom(yyvsp[0].sym->text_);
           dom_axioms_.push_back(nr);
 #endif
       ;
     break;}
 case 151:
-#line 805 "ppddl.y"
+#line 825 "ppddl.y"
 {
           clear_param(dom_axioms_.back()->param_);
 #ifdef SMART
-          yyvsp[-3].sym->val = dom_axioms_.back().get();
+          yyvsp[-3].sym->value_ = dom_axioms_.back().get();
 #else
-          yyvsp[-3].sym->val = dom_axioms_.back();
+          yyvsp[-3].sym->value_ = dom_axioms_.back();
 #endif
       ;
     break;}
 case 152:
-#line 813 "ppddl.y"
+#line 833 "ppddl.y"
 {
           log_error((char*)"syntax error in axiom declaration");
           yyerrok;
       ;
     break;}
 case 153:
-#line 820 "ppddl.y"
+#line 840 "ppddl.y"
 {
           dom_axioms_.back()->param_ = *yyvsp[-1].vparam;
           delete yyvsp[-1].vparam;
       ;
     break;}
 case 154:
-#line 824 "ppddl.y"
+#line 844 "ppddl.y"
 { dom_axioms_.back()->body_ = yyvsp[0].condition; ;
     break;}
 case 155:
-#line 825 "ppddl.y"
+#line 845 "ppddl.y"
 { dom_axioms_.back()->head_ = yyvsp[0].effect; ;
     break;}
 case 157:
-#line 830 "ppddl.y"
+#line 850 "ppddl.y"
 {
 #ifdef SMART
-          std::unique_ptr<Sensor> nr = std::make_unique<Sensor>(yyvsp[0].sym->text);
-          dom_sensors_.emplace_back(move(nr));
+          std::unique_ptr<Sensor> nr = std::make_unique<Sensor>(yyvsp[0].sym->text_);
+          dom_sensors_.emplace_back(std::move(nr));
 #else
-          Sensor *nr = new Sensor(yyvsp[0].sym->text);
+          Sensor *nr = new Sensor(yyvsp[0].sym->text_);
           dom_sensors_.push_back(nr);
 #endif
       ;
     break;}
 case 158:
-#line 839 "ppddl.y"
+#line 859 "ppddl.y"
 {
           clear_param(dom_sensors_.back()->param_);
 #ifdef SMART
-          yyvsp[-3].sym->val = dom_sensors_.back().get();
+          yyvsp[-3].sym->value_ = dom_sensors_.back().get();
 #else
-          yyvsp[-3].sym->val = dom_sensors_.back();
+          yyvsp[-3].sym->value_ = dom_sensors_.back();
 #endif
       ;
     break;}
 case 159:
-#line 847 "ppddl.y"
+#line 867 "ppddl.y"
 {
           log_error((char*)"syntax error in sensor declaration");
           yyerrok;
       ;
     break;}
 case 160:
-#line 854 "ppddl.y"
+#line 874 "ppddl.y"
 {
           dom_sensors_.back()->param_ = *yyvsp[-1].vparam;
           delete yyvsp[-1].vparam;
       ;
     break;}
 case 161:
-#line 858 "ppddl.y"
+#line 878 "ppddl.y"
 {
           dom_sensors_.back()->condition_ = yyvsp[0].condition;
       ;
     break;}
 case 162:
-#line 861 "ppddl.y"
+#line 881 "ppddl.y"
 {
           dom_sensors_.back()->sense_ = new AndEffect(*yyvsp[0].effect_vec);
           delete yyvsp[0].effect_vec;
       ;
     break;}
 case 164:
-#line 869 "ppddl.y"
+#line 889 "ppddl.y"
 {
 #ifdef SMART
           std::unique_ptr<Observable> obs = std::make_unique<Observable>();
           effect_vec_ptr_ = &obs->observables_;
-          dom_observables_.emplace_back(move(obs));
+          dom_observables_.emplace_back(std::move(obs));
 #else
           Observable *obs = new Observable;
           dom_observables_.push_back(obs);
@@ -2538,31 +2562,31 @@ case 164:
       ;
     break;}
 case 166:
-#line 881 "ppddl.y"
+#line 901 "ppddl.y"
 {
           log_error((char*)"syntax error in observable declaration");
           yyerrok;
       ;
     break;}
 case 167:
-#line 888 "ppddl.y"
+#line 908 "ppddl.y"
 {
           effect_vec_ptr_->push_back(yyvsp[0].effect);
       ;
     break;}
 case 168:
-#line 891 "ppddl.y"
+#line 911 "ppddl.y"
 {
           effect_vec_ptr_->push_back(yyvsp[0].effect);
       ;
     break;}
 case 171:
-#line 902 "ppddl.y"
+#line 922 "ppddl.y"
 {
 #ifdef SMART
           std::unique_ptr<Sticky> sticky = std::make_unique<Sticky>();
           effect_vec_ptr_ = &sticky->stickies_;
-          dom_stickies_.emplace_back(move(sticky));
+          dom_stickies_.emplace_back(std::move(sticky));
 #else
           Sticky *sticky = new Sticky;
           dom_stickies_.push_back(sticky);
@@ -2571,68 +2595,70 @@ case 171:
       ;
     break;}
 case 173:
-#line 914 "ppddl.y"
+#line 934 "ppddl.y"
 {
           log_error((char*)"syntax error in sticky declaration");
           yyerrok;
       ;
     break;}
 case 174:
-#line 921 "ppddl.y"
+#line 941 "ppddl.y"
 {
 #ifdef SMART
           std::unique_ptr<Variable> var;
           if( yyvsp[-1].ival == 0 )
-              var = std::make_unique<StateVariable>(yyvsp[0].sym->text);
+              var = std::make_unique<StateVariable>(yyvsp[0].sym->text_);
           else
-              var = std::make_unique<ObsVariable>(yyvsp[0].sym->text);
+              var = std::make_unique<ObsVariable>(yyvsp[0].sym->text_);
           effect_vec_ptr_ = &var->domain_;
           lw1_uninstantiated_variables_.emplace_back(std::move(var));
 #else
           Variable *var = 0;
           if( yyvsp[-1].ival == 0 )
-              var = new StateVariable(yyvsp[0].sym->text);
+              var = new StateVariable(yyvsp[0].sym->text_);
           else
-              var = new ObsVariable(yyvsp[0].sym->text);
+              var = new ObsVariable(yyvsp[0].sym->text_);
           lw1_uninstantiated_variables_.push_back(var);
           effect_vec_ptr_ = &var->domain_;
 #endif
       ;
     break;}
 case 175:
-#line 940 "ppddl.y"
+#line 960 "ppddl.y"
 {
 #ifdef SMART
-          yyvsp[-3].sym->val = lw1_uninstantiated_variables_.back().get();
+          yyvsp[-3].sym->value_ = lw1_uninstantiated_variables_.back().get();
 #else
-          yyvsp[-3].sym->val = lw1_uninstantiated_variables_.back();
+          yyvsp[-3].sym->value_ = lw1_uninstantiated_variables_.back();
 #endif
       ;
     break;}
 case 176:
-#line 947 "ppddl.y"
+#line 967 "ppddl.y"
 {
 #ifdef SMART
           std::unique_ptr<Variable> var;
           if( yyvsp[-2].ival == 0 )
-              var = std::make_unique<StateVariable>(yyvsp[0].sym->text);
+              var = std::make_unique<StateVariable>(yyvsp[0].sym->text_);
           else
-              var = std::make_unique<ObsVariable>(yyvsp[0].sym->text);
+              var = std::make_unique<ObsVariable>(yyvsp[0].sym->text_);
           effect_vec_ptr_ = &var->domain_;
-          owned_schema_.emplace_back(move(var));
+          owned_schema_.emplace_back(std::move(var));
+          using_owned_schema_.push_back(true);
 #else
           Variable *var = 0;
           if( yyvsp[-2].ival == 0 )
-              var = new StateVariable(yyvsp[0].sym->text);
+              var = new StateVariable(yyvsp[0].sym->text_);
           else
-              var = new ObsVariable(yyvsp[0].sym->text);
+              var = new ObsVariable(yyvsp[0].sym->text_);
           effect_vec_ptr_ = &var->domain_;
           schema_.push_back(var);
+          using_owned_schema_.push_back(false);
 #endif
       ;
     break;}
 case 177:
-#line 966 "ppddl.y"
+#line 988 "ppddl.y"
 {
 #ifdef SMART
           owned_schema_.back()->param_ = *yyvsp[-1].vparam;
@@ -2643,76 +2669,79 @@ case 177:
       ;
     break;}
 case 178:
-#line 974 "ppddl.y"
+#line 996 "ppddl.y"
 {
 #ifdef SMART
           assert(dynamic_cast<Variable*>(owned_schema_.back().get()) != 0);
           std::unique_ptr<Variable> variable(static_cast<Variable*>(owned_schema_.back().release()));
           owned_schema_.pop_back();
+          using_owned_schema_.pop_back();
 #else
           assert(dynamic_cast<Variable*>(schema_.back()) != 0);
           Variable *variable = static_cast<Variable*>(schema_.back());
           schema_.pop_back();
+          using_owned_schema_.pop_back();
 #endif
           clear_param(variable->param_);
 #ifdef SMART
-          yyvsp[-7].sym->val = variable.get();
+          yyvsp[-7].sym->value_ = variable.get();
           lw1_uninstantiated_variables_.emplace_back(std::move(variable));
-          assert(!variable && lw1_uninstantiated_variables_.back()); // SMART: CHECK
 #else
-          yyvsp[-7].sym->val = variable;
+          yyvsp[-7].sym->value_ = variable;
           lw1_uninstantiated_variables_.push_back(variable);
 #endif
       ;
     break;}
 case 179:
-#line 994 "ppddl.y"
+#line 1017 "ppddl.y"
 {
           log_error((char*)"syntax error in state variable declaration");
           yyerrok;
       ;
     break;}
 case 180:
-#line 1001 "ppddl.y"
+#line 1024 "ppddl.y"
 { yyval.ival = 0; ;
     break;}
 case 181:
-#line 1002 "ppddl.y"
+#line 1025 "ppddl.y"
 { yyval.ival = 1; ;
     break;}
 case 182:
-#line 1006 "ppddl.y"
+#line 1029 "ppddl.y"
 {
 #ifdef SMART
-          std::unique_ptr<VariableGroup> group = std::make_unique<VariableGroup>(yyvsp[0].sym->text);
-          lw1_uninstantiated_variable_groups_.emplace_back(move(group));
+          std::unique_ptr<VariableGroup> group = std::make_unique<VariableGroup>(yyvsp[0].sym->text_);
+          lw1_uninstantiated_variable_groups_.emplace_back(std::move(group));
 #else
-          VariableGroup *group = new VariableGroup(yyvsp[0].sym->text);
+          VariableGroup *group = new VariableGroup(yyvsp[0].sym->text_);
           lw1_uninstantiated_variable_groups_.push_back(group);
 #endif
       ;
     break;}
 case 183:
-#line 1015 "ppddl.y"
+#line 1038 "ppddl.y"
 {
           lw1_uninstantiated_variable_groups_.back()->group_ = *yyvsp[-1].state_variable_list_vec;
           delete yyvsp[-1].state_variable_list_vec;
       ;
     break;}
 case 184:
-#line 1019 "ppddl.y"
+#line 1042 "ppddl.y"
 {
 #ifdef SMART
-          std::unique_ptr<VariableGroup> group = std::make_unique<VariableGroup>(yyvsp[0].sym->text);
-          owned_schema_.emplace_back(move(group));
+          std::unique_ptr<VariableGroup> group = std::make_unique<VariableGroup>(yyvsp[0].sym->text_);
+          owned_schema_.emplace_back(std::move(group));
+          using_owned_schema_.push_back(true);
 #else
-          VariableGroup *group = new VariableGroup(yyvsp[0].sym->text);
+          VariableGroup *group = new VariableGroup(yyvsp[0].sym->text_);
           schema_.push_back(group);
+          using_owned_schema_.push_back(false);
 #endif
       ;
     break;}
 case 185:
-#line 1028 "ppddl.y"
+#line 1053 "ppddl.y"
 {
 #ifdef SMART
           owned_schema_.back()->param_ = *yyvsp[-1].vparam;
@@ -2723,38 +2752,40 @@ case 185:
       ;
     break;}
 case 186:
-#line 1036 "ppddl.y"
+#line 1061 "ppddl.y"
 {
 #ifdef SMART
           assert(dynamic_cast<VariableGroup*>(owned_schema_.back().get()) != 0);
           std::unique_ptr<VariableGroup> group(static_cast<VariableGroup*>(owned_schema_.back().release()));
           owned_schema_.pop_back();
+          using_owned_schema_.pop_back();
 #else
           assert(dynamic_cast<VariableGroup*>(schema_.back()) != 0);
           VariableGroup *group = static_cast<VariableGroup*>(schema_.back());
           schema_.pop_back();
+          using_owned_schema_.pop_back();
 #endif
           group->group_ = *yyvsp[-1].state_variable_list_vec;
           delete yyvsp[-1].state_variable_list_vec;
           clear_param(group->param_);
 #ifdef SMART
-          yyvsp[-7].sym->val = group.get();
-          lw1_uninstantiated_variable_groups_.emplace_back(move(group));
+          yyvsp[-7].sym->value_ = group.get();
+          lw1_uninstantiated_variable_groups_.emplace_back(std::move(group));
 #else
-          yyvsp[-7].sym->val = group;
+          yyvsp[-7].sym->value_ = group;
           lw1_uninstantiated_variable_groups_.push_back(group);
 #endif
       ;
     break;}
 case 187:
-#line 1057 "ppddl.y"
+#line 1084 "ppddl.y"
 {
           log_error((char*)"syntax error in variable group declaration");
           yyerrok;
       ;
     break;}
 case 188:
-#line 1064 "ppddl.y"
+#line 1091 "ppddl.y"
 {
           state_variable_list_vec *varlist = const_cast<state_variable_list_vec*>(yyvsp[-1].state_variable_list_vec);
           assert(dynamic_cast<const SingleStateVariableList*>(yyvsp[0].state_variable_list) != 0);
@@ -2763,7 +2794,7 @@ case 188:
       ;
     break;}
 case 189:
-#line 1070 "ppddl.y"
+#line 1097 "ppddl.y"
 {
           state_variable_list_vec *varlist = const_cast<state_variable_list_vec*>(yyvsp[-1].state_variable_list_vec);
           assert(dynamic_cast<const ForallStateVariableList*>(yyvsp[0].state_variable_list) != 0);
@@ -2772,14 +2803,14 @@ case 189:
       ;
     break;}
 case 190:
-#line 1076 "ppddl.y"
+#line 1103 "ppddl.y"
 { yyval.state_variable_list_vec = new state_variable_list_vec; ;
     break;}
 case 191:
-#line 1080 "ppddl.y"
+#line 1107 "ppddl.y"
 {
-          assert(static_cast<Symbol*>(yyvsp[0].sym->val)->sym_class_ == sym_varname);
-          const Variable *var = static_cast<Variable*>(yyvsp[0].sym->val);
+          assert(static_cast<Symbol*>(yyvsp[0].sym->value_)->sym_class_ == sym_varname);
+          const Variable *var = static_cast<Variable*>(yyvsp[0].sym->value_);
           if( dynamic_cast<const StateVariable*>(var) == 0 ) {
               std::cout << Utils::error() << "only state variables can be grouped together" << std::endl;
           }
@@ -2787,10 +2818,10 @@ case 191:
       ;
     break;}
 case 192:
-#line 1088 "ppddl.y"
+#line 1115 "ppddl.y"
 {
-          assert(static_cast<Symbol*>(yyvsp[-2].sym->val)->sym_class_ == sym_varname);
-          const Variable *var = static_cast<Variable*>(yyvsp[-2].sym->val);
+          assert(static_cast<Symbol*>(yyvsp[-2].sym->value_)->sym_class_ == sym_varname);
+          const Variable *var = static_cast<Variable*>(yyvsp[-2].sym->value_);
           if( dynamic_cast<const StateVariable*>(var) == 0 ) {
               std::cout << Utils::error() << "only state variables can be grouped together" << std::endl;
           }
@@ -2801,24 +2832,26 @@ case 192:
       ;
     break;}
 case 193:
-#line 1102 "ppddl.y"
+#line 1129 "ppddl.y"
 {
           schema_.push_back(new ForallStateVariableList);
+          using_owned_schema_.push_back(false);
       ;
     break;}
 case 194:
-#line 1105 "ppddl.y"
+#line 1133 "ppddl.y"
 {
           schema_.back()->param_ = *yyvsp[-1].vparam;
           delete yyvsp[-1].vparam;
       ;
     break;}
 case 195:
-#line 1109 "ppddl.y"
+#line 1137 "ppddl.y"
 {
           assert(dynamic_cast<ForallStateVariableList*>(schema_.back()) != 0);
           ForallStateVariableList *forall_state_variable_list = static_cast<ForallStateVariableList*>(schema_.back());
           schema_.pop_back();
+          using_owned_schema_.pop_back();
           forall_state_variable_list->group_ = *yyvsp[-1].state_variable_list_vec;
           delete yyvsp[-1].state_variable_list_vec;
           clear_param(forall_state_variable_list->param_);
@@ -2826,53 +2859,95 @@ case 195:
       ;
     break;}
 case 196:
-#line 1124 "ppddl.y"
+#line 1153 "ppddl.y"
 {
           declare_lw1_translation();
           lw1_default_sensing_proxy_ = yyvsp[-1].sensing_proxy_list;
       ;
     break;}
 case 197:
-#line 1134 "ppddl.y"
+#line 1163 "ppddl.y"
 {
-          problem_name_ = std::string(yyvsp[-1].sym->text);
+          problem_name_ = std::string(yyvsp[-1].sym->text_);
       ;
     break;}
 case 199:
-#line 1138 "ppddl.y"
+#line 1167 "ppddl.y"
 {
           log_error((char*)"syntax error in problem definition.");
           yyerrok;
       ;
     break;}
-case 208:
-#line 1156 "ppddl.y"
+case 207:
+#line 1184 "ppddl.y"
 {
-          dom_init_.clear();
+          if( yyvsp[-1].ival == KW_EXPLICIT_INITIAL_STATE ) {
 #ifdef SMART
-          for( owned_init_element_vec::iterator it = const_cast<owned_init_element_vec*>(yyvsp[-1].ilist)->begin(); it != const_cast<owned_init_element_vec*>(yyvsp[-1].ilist)->end(); ++it )
-              dom_init_.emplace_back(it->release());
+              dom_explicit_initial_states_.push_back(owned_init_element_vec());
 #else
-          dom_init_ = *yyvsp[-1].ilist;
+              dom_explicit_initial_states_.push_back(init_element_vec());
 #endif
+          }
+    ;
+    break;}
+case 208:
+#line 1193 "ppddl.y"
+{
+          if( yyvsp[-2].ival == KW_INIT ) {
+              dom_init_.clear();
+#ifdef SMART
+              for( owned_init_element_vec::iterator it = const_cast<owned_init_element_vec*>(yyvsp[-1].ilist)->begin(); it != const_cast<owned_init_element_vec*>(yyvsp[-1].ilist)->end(); ++it )
+                  dom_init_.emplace_back(it->release());
+#else
+              dom_init_ = *yyvsp[-1].ilist;
+#endif
+          } else {
+              assert(yyvsp[-2].ival == KW_EXPLICIT_INITIAL_STATE);
+#ifdef SMART
+              dom_explicit_initial_states_.push_back(owned_init_element_vec());
+              for( owned_init_element_vec::iterator it = const_cast<owned_init_element_vec*>(yyvsp[-1].ilist)->begin(); it != const_cast<owned_init_element_vec*>(yyvsp[-1].ilist)->end(); ++it )
+                  dom_explicit_initial_states_.back().emplace_back(it->release());
+#else
+              dom_explicit_initial_states_.push_back(*yyvsp[-1].ilist);
+#endif
+          }
           delete yyvsp[-1].ilist;
       ;
     break;}
 case 209:
-#line 1166 "ppddl.y"
+#line 1214 "ppddl.y"
 {
-          dom_init_.clear();
+          if( yyvsp[-5].ival == KW_INIT ) {
+              dom_init_.clear();
 #ifdef SMART
-          for( owned_init_element_vec::iterator it = const_cast<owned_init_element_vec*>(yyvsp[-2].ilist)->begin(); it != const_cast<owned_init_element_vec*>(yyvsp[-2].ilist)->end(); ++it )
-              dom_init_.emplace_back(it->release());
+              for( owned_init_element_vec::iterator it = const_cast<owned_init_element_vec*>(yyvsp[-2].ilist)->begin(); it != const_cast<owned_init_element_vec*>(yyvsp[-2].ilist)->end(); ++it )
+                  dom_init_.emplace_back(it->release());
 #else
-          dom_init_ = *yyvsp[-2].ilist;
+              dom_init_ = *yyvsp[-2].ilist;
 #endif
+          } else {
+              assert(yyvsp[-5].ival == KW_EXPLICIT_INITIAL_STATE);
+#ifdef SMART
+              dom_explicit_initial_states_.push_back(owned_init_element_vec());
+              for( owned_init_element_vec::iterator it = const_cast<owned_init_element_vec*>(yyvsp[-2].ilist)->begin(); it != const_cast<owned_init_element_vec*>(yyvsp[-2].ilist)->end(); ++it )
+                  dom_explicit_initial_states_.back().emplace_back(it->release());
+#else
+              dom_explicit_initial_states_.push_back(*yyvsp[-2].ilist);
+#endif
+          }
           delete yyvsp[-2].ilist;
       ;
     break;}
 case 210:
-#line 1179 "ppddl.y"
+#line 1238 "ppddl.y"
+{ yyval.ival = KW_INIT; ;
+    break;}
+case 211:
+#line 1239 "ppddl.y"
+{ yyval.ival = KW_EXPLICIT_INITIAL_STATE; ;
+    break;}
+case 212:
+#line 1243 "ppddl.y"
 {
 #ifdef SMART
           owned_init_element_vec *ilist = const_cast<owned_init_element_vec*>(yyvsp[-1].ilist);
@@ -2884,8 +2959,8 @@ case 210:
           yyval.ilist = ilist;
       ;
     break;}
-case 211:
-#line 1189 "ppddl.y"
+case 213:
+#line 1253 "ppddl.y"
 {
 #ifdef SMART
           owned_init_element_vec *ilist = new owned_init_element_vec;
@@ -2897,12 +2972,14 @@ case 211:
           yyval.ilist = ilist;
       ;
     break;}
-case 212:
-#line 1202 "ppddl.y"
-{ yyval.ielem = new InitLiteral(*yyvsp[0].atom); ;
+case 214:
+#line 1266 "ppddl.y"
+{
+          yyval.ielem = new InitLiteral(*yyvsp[0].atom);
+      ;
     break;}
-case 213:
-#line 1203 "ppddl.y"
+case 215:
+#line 1269 "ppddl.y"
 {
           if( type_ == cp2fsc ) {
               log_error((char*)"'invariant' is not a valid element in cp2fsc.");
@@ -2915,8 +2992,8 @@ case 213:
           }
       ;
     break;}
-case 214:
-#line 1214 "ppddl.y"
+case 216:
+#line 1280 "ppddl.y"
 {
           if( type_ == replanner ) {
               // We let oneofs pass in k-replanner as they are later mapped
@@ -2929,8 +3006,8 @@ case 214:
           delete yyvsp[0].clause;
       ;
     break;}
-case 215:
-#line 1225 "ppddl.y"
+case 217:
+#line 1291 "ppddl.y"
 {
           if( type_ == replanner ) {
               // We let oneofs pass in k-replanner as they are later mapped
@@ -2943,8 +3020,8 @@ case 215:
           delete yyvsp[0].oneof;
       ;
     break;}
-case 216:
-#line 1236 "ppddl.y"
+case 218:
+#line 1302 "ppddl.y"
 {
           yyval.ielem = 0; // when fixing this, remove condition '$2 != 0' and '$1 != 0' above (in single_init_element)
           std::cout << Utils::warning()
@@ -2954,60 +3031,60 @@ case 216:
           delete yyvsp[0].unknown;
       ;
     break;}
-case 217:
-#line 1247 "ppddl.y"
-{
-          //$$ = new Invariant(Invariant::AT_LEAST_ONE, *static_cast<const And*>($3));
-          yyval.invariant = new Invariant(Invariant::AT_LEAST_ONE, *yyvsp[-1].condition_vec);
-          delete yyvsp[-1].condition_vec;
-      ;
-    break;}
-case 218:
-#line 1252 "ppddl.y"
-{
-          //$$ = new Invariant(Invariant::AT_LEAST_ONE, *static_cast<const And*>($3));
-          yyval.invariant = new Invariant(Invariant::AT_LEAST_ONE, *yyvsp[-1].condition_vec);
-          delete yyvsp[-1].condition_vec;
-      ;
-    break;}
 case 219:
-#line 1260 "ppddl.y"
+#line 1313 "ppddl.y"
+{
+          //$$ = new Invariant(Invariant::AT_LEAST_ONE, *static_cast<const And*>($3));
+          yyval.invariant = new Invariant(Invariant::AT_LEAST_ONE, *yyvsp[-1].condition_vec);
+          delete yyvsp[-1].condition_vec;
+      ;
+    break;}
+case 220:
+#line 1318 "ppddl.y"
+{
+          //$$ = new Invariant(Invariant::AT_LEAST_ONE, *static_cast<const And*>($3));
+          yyval.invariant = new Invariant(Invariant::AT_LEAST_ONE, *yyvsp[-1].condition_vec);
+          delete yyvsp[-1].condition_vec;
+      ;
+    break;}
+case 221:
+#line 1326 "ppddl.y"
 {
           //$$ = new Invariant(Invariant::AT_MOST_ONE, *static_cast<const And*>($3));
           yyval.invariant = new Invariant(Invariant::AT_MOST_ONE, *yyvsp[-1].condition_vec);
           delete yyvsp[-1].condition_vec;
       ;
     break;}
-case 220:
-#line 1268 "ppddl.y"
+case 222:
+#line 1334 "ppddl.y"
 {
           yyval.invariant = new Invariant(Invariant::EXACTLY_ONE, *yyvsp[-1].condition_vec);
           delete yyvsp[-1].condition_vec;
       ;
     break;}
-case 224:
-#line 1281 "ppddl.y"
+case 226:
+#line 1347 "ppddl.y"
 {
           yyval.clause = new Clause(*yyvsp[-1].condition_vec);
           delete yyvsp[-1].condition_vec;
       ;
     break;}
-case 225:
-#line 1288 "ppddl.y"
+case 227:
+#line 1354 "ppddl.y"
 {
           yyval.oneof = new Oneof(*yyvsp[-1].condition_vec);
           delete yyvsp[-1].condition_vec;
       ;
     break;}
-case 226:
-#line 1295 "ppddl.y"
+case 228:
+#line 1361 "ppddl.y"
 {
           yyval.unknown = new Unknown(*yyvsp[-1].atom);
           delete yyvsp[-1].atom;
       ;
     break;}
-case 227:
-#line 1302 "ppddl.y"
+case 229:
+#line 1368 "ppddl.y"
 {
           if( type_ == cp2fsc ) {
               log_error((char*)"':hidden' is not a valid element in cp2fsc.");
@@ -3024,8 +3101,8 @@ case 227:
           }
       ;
     break;}
-case 228:
-#line 1317 "ppddl.y"
+case 230:
+#line 1383 "ppddl.y"
 {
           if( type_ == cp2fsc ) {
               log_error((char*)"':hidden' is not a valid element in cp2fsc.");
@@ -3039,31 +3116,31 @@ case 228:
           }
       ;
     break;}
-case 229:
-#line 1332 "ppddl.y"
+case 231:
+#line 1398 "ppddl.y"
 { dom_goal_ = yyvsp[-1].condition; ;
     break;}
-case 230:
-#line 1338 "ppddl.y"
+case 232:
+#line 1404 "ppddl.y"
 {
           const_cast<And*>(static_cast<const And*>(yyvsp[-1].condition))->push_back(yyvsp[0].condition);
           yyval.condition = yyvsp[-1].condition;
       ;
     break;}
-case 231:
-#line 1342 "ppddl.y"
+case 233:
+#line 1408 "ppddl.y"
 {
           And *cond = new And;
           cond->push_back(yyvsp[0].condition);
           yyval.condition = cond;
       ;
     break;}
-case 232:
-#line 1350 "ppddl.y"
+case 234:
+#line 1416 "ppddl.y"
 { yyval.condition = new Literal(*yyvsp[0].atom); delete yyvsp[0].atom; ;
     break;}
-case 233:
-#line 1351 "ppddl.y"
+case 235:
+#line 1417 "ppddl.y"
 { yyval.condition = new Literal(*yyvsp[0].atom); delete yyvsp[0].atom; ;
     break;}
 }
@@ -3270,7 +3347,7 @@ YYLABEL(yyerrhandle)
 /* END */
 
 /* #line 1010 "/usr/local/lib/bison.cc" */
-#line 3274 "grammar_tmp.cc"
-#line 1354 "ppddl.y"
+#line 3351 "grammar_tmp.cc"
+#line 1420 "ppddl.y"
 
 

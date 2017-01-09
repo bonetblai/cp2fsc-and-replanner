@@ -612,7 +612,7 @@ std::cout << "NEW POLICY FOR " << feature << std::endl;
                   int action_index = fp[k];
                   if( action_index != -1 ) {
                       const Instance::Action &action = *lw1_instance_.actions_[action_index];
-                      std::cout << action_index << "." << action.name_;
+                      std::cout << action_index << "." << action.name();
                   } else {
                       std::cout << action_index << "." << "NOOP";
                   }
@@ -695,14 +695,14 @@ std::cout << "NEW POLICY FOR " << feature << std::endl;
               const Instance::Action &action = *lw1_instance_.actions_[action_index];
               assert(lw1_instance_.is_regular_action(action_index));
               if( tip.applicable(action) ) {
-                  std::cout << Utils::green() << "action=" << Utils::normal() << action.name_ << std::endl;
+                  std::cout << Utils::green() << "action=" << Utils::normal() << action.name() << std::endl;
 
                   // calculate result of action
                   T *result_after_action = new T(tip);
                   result_after_action->apply(action);
 
 #ifdef DEBUG
-                  std::cout << Utils::blue() << "RESULT(a=" << action.name_ << ")=" << Utils::normal();
+                  std::cout << Utils::blue() << "RESULT(a=" << action.name() << ")=" << Utils::normal();
                   result_after_action->print(std::cout, &lw1_instance_);
                   std::cout << std::endl;
 #endif
@@ -733,14 +733,14 @@ std::cout << "NEW POLICY FOR " << feature << std::endl;
                           if( status ) {
                               valid_successors.push_back(result_after_action_and_obs);
 #ifdef DEBUG
-                              std::cout << Utils::blue() << "RESULT(a=" << action.name_
+                              std::cout << Utils::blue() << "RESULT(a=" << action.name()
                                         << ",o=obs[" << j << "])=" << Utils::normal();
                               result_after_action_and_obs->print(std::cout, &lw1_instance_);
                               std::cout << std::endl;
 #endif
                           } else {
 #ifdef DEBUG
-                              //std::cout << Utils::blue() << "INCONSISTENT(a=" << action.name_
+                              //std::cout << Utils::blue() << "INCONSISTENT(a=" << action.name()
                               //          << ",o=obs[" << j << "])=" << Utils::normal();
                               //result_after_action_and_obs->print(std::cout, &lw1_instance_);
                               //std::cout << std::endl;
@@ -751,7 +751,7 @@ std::cout << "NEW POLICY FOR " << feature << std::endl;
                   } else {
                       // there are no observable variables. Hence, there is single
                       // successor equal to belief_a
-                      assert(lw1_instance_.vars_sensed_by_action_.find(action.name_->to_string()) == lw1_instance_.vars_sensed_by_action_.end());
+                      assert(lw1_instance_.vars_sensed_by_action_.find(action.name()) == lw1_instance_.vars_sensed_by_action_.end());
                       valid_successors.push_back(new T(*result_after_action));
                   }
 #ifdef DEBUG
@@ -780,7 +780,7 @@ std::cout << "NEW POLICY FOR " << feature << std::endl;
 #ifdef DEBUG
                           //std::cout << Utils::red()
                           //          << "feature '" << feature << "'"
-                          //          << " holds after action " << action.name_
+                          //          << " holds after action " << action.name()
                           //          << Utils::normal() << std::endl;
 #endif
                       }
@@ -803,17 +803,17 @@ std::cout << "NEW POLICY FOR " << feature << std::endl;
       void compute_possible_observations(const T &tip,
                                          const Instance::Action &action,
                                          std::vector<std::set<int> > &possible_observations) const {
-          map<std::string, std::set<int> >::const_iterator it = lw1_instance_.vars_sensed_by_action_.find(action.name_->to_string());
+          map<std::string, std::set<int> >::const_iterator it = lw1_instance_.vars_sensed_by_action_.find(action.name());
 
 #ifdef DEBUG
           //std::cout << Utils::magenta() << "Policy<T>::compute_possible_observations():" << Utils::normal()
-          //          << " action=" << action.name_
+          //          << " action=" << action.name()
           //          << ", #vars-sensed-by-action=" << (it == lw1_instance_.vars_sensed_by_action_.end() ? 0 : it->second.size())
           //          << std::endl;
 #endif
 
           if( it != lw1_instance_.vars_sensed_by_action_.end() ) {
-              assert(it->first == action.name_->to_string());
+              assert(it->first == action.name());
 
               std::map<int, std::vector<int> > observable_literals;
               for( std::set<int>::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt ) {

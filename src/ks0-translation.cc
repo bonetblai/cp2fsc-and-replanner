@@ -71,12 +71,8 @@ void print_usage(ostream &os, const char *exec_name, const char **cmdline_option
 int main(int argc, const char *argv[]) {
     StringTable parser_symbol_table(lowercase_map, 50);
     bool        opt_debug_parser = false;
-    int         opt_fsc_states = 1;
-    bool        opt_forbid_inconsistent_tuples = true;
-    bool        opt_compound_obs_as_fluents = false;
     string      opt_prefix = "";
-    bool        opt_tag_all_literals = false;
-    string      opt_metadata_filename = "";
+    bool        opt_tag_all_literals = true;
     float       start_time = Utils::read_time_in_seconds();
 
     // print cmdline
@@ -107,32 +103,14 @@ int main(int argc, const char *argv[]) {
             exit(0);
         } else if( !skip_options && !strcmp(argv[k], "--debug-parser") ) {
             opt_debug_parser = true;
-        } else if( !skip_options && !strcmp(argv[k], "--compound-obs-as-fluents") ) {
-            opt_compound_obs_as_fluents = true;
-            cout << Utils::error() << "'" << argv[k] << "' is currently not implemented." << endl;
-            exit(-1);
-        } else if( !skip_options && !strcmp(argv[k], "--fsc-states") ) {
-            if( k == argc-1 ) {
-                cout << Utils::error() << "not enough arguments for '" << argv[k] << "'." << endl;
-                exit(-1);
-            }
-            opt_fsc_states = atoi(argv[++k]);
-        } else if( !skip_options && !strcmp(argv[k], "--no-forbid-inconsistent-tuples") ) {
-            opt_forbid_inconsistent_tuples = false;
-        } else if( !skip_options && !strcmp(argv[k], "--output-metadata") ) {
-            if( k == argc-1 ) {
-                cout << Utils::error() << "not enough arguments for '" << argv[k] << "'." << endl;
-                exit(-1);
-            }
-            opt_metadata_filename = argv[++k];
         } else if( !skip_options && !strcmp(argv[k], "--prefix") ) {
             if( k == argc-1 ) {
                 cout << Utils::error() << "not enough arguments for '" << argv[k] << "'." << endl;
                 exit(-1);
             }
             opt_prefix = argv[++k];
-        } else if( !skip_options && !strcmp(argv[k], "--tag-all-literals") ) {
-            opt_tag_all_literals = true;
+        } else if( !skip_options && !strcmp(argv[k], "--no-tag-all-literals") ) {
+            opt_tag_all_literals = false;
         } else if( !skip_options && !strncmp(argv[k], "--options=", 10) ) {
             const char *options = &argv[k][10];
             parse_options(g_options, options);
@@ -175,52 +153,32 @@ int main(int argc, const char *argv[]) {
 
     Instance instance(g_options);
 
-    cout << "instantiating control problem..." << endl;
+    cout << "instantiating conformant problem..." << endl;
     reader->instantiate_elements();
     reader->emit_instance(instance);
     if( g_options.is_enabled("problem:print:raw") ) {
-        instance.print(cout);
         instance.write_domain(cout);
         instance.write_problem(cout);
     }
 
-    cout << "preprocessing control problem..." << endl;
+#if 0 // THIS IS NOT WORKING W/ EXPLICIT INITIAL STATES: GUESS: EXPLICIT I-STATES ARE NOT PREPROCESSED
+    cout << "preprocessing conformant problem..." << endl;
     Preprocessor prep(instance);
     prep.preprocess(true);
     if( g_options.is_enabled("problem:print:preprocessed") ) {
-        instance.print(cout);
         instance.write_domain(cout);
         instance.write_problem(cout);
     }
-
-    cout << "creating CP translation..." << endl;
-    CP_Instance cp_instance(instance, opt_fsc_states,
-                            opt_forbid_inconsistent_tuples, opt_compound_obs_as_fluents);
-    if( g_options.is_enabled("cp:print:raw") ) {
-        cp_instance.write_domain(cout);
-        cp_instance.write_problem(cout);
-    }
-
-    cout << "preprocessing CP translation..." << endl;
-    Preprocessor cp_prep(cp_instance);
-
-    // For some reason, true instead of false works better in some hard problems such as
-    // visual marker. This flag instruct the preprocessor to remove unreachable and
-    // static atoms. This odd behaviour could be a bug somewhere...
-    cp_prep.preprocess(false);
-
-    if( g_options.is_enabled("cp:print:preprocessed") ) {
-        cp_instance.write_domain(cout);
-        cp_instance.write_problem(cout);
-    }
+#endif
 
     cout << "creating KS0 translation..." << endl;
-    KS0_Instance ks0_instance(cp_instance, opt_tag_all_literals);
+    KS0_Instance ks0_instance(instance, opt_tag_all_literals);
     if( g_options.is_enabled("ks0:print:raw") ) {
         ks0_instance.write_domain(cout);
         ks0_instance.write_problem(cout);
     }
 
+#if 0 // THIS IS NOT WORKING W/ EXPLICIT INITIAL STATES: GUESS: EXPLICIT I-STATES ARE NOT PREPROCESSED
     cout << "preprocessing KS0 translation..." << endl;
     Preprocessor ks0_prep(ks0_instance);
     ks0_prep.preprocess(true);
@@ -228,6 +186,7 @@ int main(int argc, const char *argv[]) {
         ks0_instance.write_domain(cout);
         ks0_instance.write_problem(cout);
     }
+#endif
 
     // write output files
     cout << "writing files..." << flush;
@@ -237,14 +196,6 @@ int main(int argc, const char *argv[]) {
     ofstream prb_ofs(string(opt_prefix + "p.pddl").c_str());
     ks0_instance.write_problem(prb_ofs);
     prb_ofs.close();
-    if( opt_metadata_filename != "" ) {
-        ofstream met_ofs(string(opt_prefix + opt_metadata_filename).c_str());
-        met_ofs << "nqstates " << opt_fsc_states << " "
-                << "nobs " << cp_instance.n_obs() << " "
-                << "ntags " << ks0_instance.n_tags()
-                << endl;
-        met_ofs.close();
-    }
     cout << endl;
 
     // print some stats

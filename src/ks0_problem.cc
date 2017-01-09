@@ -22,15 +22,69 @@
 
 using namespace std;
 
-KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals) : Instance(instance.options_) {
-    // set name
-    if( dynamic_cast<const InstanceName*>(instance.name_) != 0 )
-        set_name(new InstanceName(*dynamic_cast<const InstanceName*>(instance.name_)));
-    else
-        set_name(new CopyName(instance.name_->to_string()));
+KS0_Instance::KS0_Instance(const Instance &instance, bool tag_all_literals)
+  : Instance(instance.domain_name_, instance.problem_name_, instance.options_),
+    tag_all_literals_(tag_all_literals) {
 
+    StateSet initial_states;
+    map<const State*, const StateSet*> reachable_space_from_initial_state;
+    StateSet reachable_space;
+
+    // calculate reachable state space
+    cout << Utils::error() << "this translation is not working!" << endl;
+    if( instance.explicit_initial_states_.empty() ) {
+        cout << "HOLA.0" << endl;
+        instance.generate_initial_states(initial_states, true);
+        assert(0);
+        for( StateSet::const_iterator it = initial_states.begin(); it != initial_states.end(); ++it ) {
+            StateSet *space = new StateSet;
+            cout << "HOLA.1" << endl;
+            instance.generate_reachable_state_space(**it, *space, true);
+            cout << "HOLA.2" << endl;
+            reachable_space_from_initial_state.insert(make_pair(*it, space));
+            cout << "HOLA.3" << endl;
+            reachable_space.insert(space->begin(), space->end());
+            cout << "HOLA.4" << endl;
+            cout << "# reachable states from "; (*it)->print(cout, instance); cout << " = " << space->size() << endl;
+        }
+        cout << "HOLA.5" << endl;
+    } else {
+        for( size_t k = 0; k < instance.explicit_initial_states_.size(); ++k ) {
+            State *state = new State;
+            instance.set_state(instance.explicit_initial_states_[k], *state);
+            cout << "state="; state->print(cout, &instance); cout << endl;
+            initial_states.insert(state);
+            cout << "(after insert) # initial states = " << initial_states.size() << endl;
+        }
+        if( !tag_all_literals_ ) {
+            cout << Utils::warning() << "using option 'tag-all-literals' because it's the only one supported when explicit initial states are used" << endl;
+            tag_all_literals_ = true;
+        }
+    }
+    cout << "# initial states = " << initial_states.size() << endl;
+    cout << "# reachable states = " << reachable_space.size() << endl;
+    if( initial_states.empty() ) {
+        cout << Utils::error() << "there must be at least one initial state" << endl;
+        exit(-1);
+    }
+    translate(instance, initial_states, reachable_space_from_initial_state);
+}
+
+KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals)
+  : Instance(instance.domain_name_, instance.problem_name_, instance.options_),
+    tag_all_literals_(tag_all_literals) {
+    const StateSet &initial_states = instance.initial_states_;
+    const map<const State*, const StateSet*> &reachable_space_from_initial_state = instance.reachable_space_from_initial_state_;
+    translate(instance, initial_states, reachable_space_from_initial_state, instance.q0_, instance.fsc_states_);
+}
+
+void KS0_Instance::translate(const Instance &instance,
+                             const StateSet &initial_states,
+                             const map<const State*, const StateSet*> &reachable_space_from_initial_state,
+                             int q0,
+                             int num_fsc_states) {
     // set number of tags; tag0 is the empty tag
-    n_tags_ = instance.initial_states_.size();
+    n_tags_ = initial_states.size();
     if( n_tags_ > 1 ) ++n_tags_;
     tag0_ = 0;
 
@@ -42,13 +96,13 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals) :
     // calculate literals that must be tagged because they appear in conditional effects
     for( size_t k = 0; k < instance.n_actions(); ++k ) {
         const Action &act = *instance.actions_[k];
-        for( size_t i = 0; i < act.when_.size(); ++i ) {
-            const When &when = act.when_[i];
-            for( index_set::const_iterator it = when.condition_.begin(); it != when.condition_.end(); ++it ) {
+        for( size_t i = 0; i < act.when().size(); ++i ) {
+            const When &when = act.when()[i];
+            for( index_set::const_iterator it = when.condition().begin(); it != when.condition().end(); ++it ) {
                 int idx = *it < 0 ? -*it-1 : *it-1;
                 tagged_[idx] = true;
             }
-            for( index_set::const_iterator it = when.effect_.begin(); it != when.effect_.end(); ++it ) {
+            for( index_set::const_iterator it = when.effect().begin(); it != when.effect().end(); ++it ) {
                 int idx = *it < 0 ? -*it-1 : *it-1;
                 tagged_[idx] = true;
             }
@@ -59,37 +113,39 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals) :
         cout << "literals that *must* be tagged =";
         for( size_t k = 0; k < ins_n_fluents; ++k ) {
             if( tagged_[k] )
-                cout << " " << k << "." << instance.atoms_[k]->name_;
+                cout << " " << k << "." << instance.atoms_[k]->name();
         }
         cout << endl;
     }
 
     // collect literals reachable from each initial state (tag)
     vector<index_set> reachable_literals;
-    for( StateSet::const_iterator it = instance.initial_states_.begin(); it != instance.initial_states_.end(); ++it ) {
-        map<const State*, const StateSet*>::const_iterator jt = instance.reachable_space_from_initial_state_.find(*it);
-        assert(jt != instance.reachable_space_from_initial_state_.end());
+    if( !tag_all_literals_ ) {
+        for( StateSet::const_iterator it = initial_states.begin(); it != initial_states.end(); ++it ) {
+            map<const State*, const StateSet*>::const_iterator jt = reachable_space_from_initial_state.find(*it);
+            assert(jt != reachable_space_from_initial_state.end());
 
-        // collect all literals from states reachable from this initial state
-        index_set literals;
-        for( StateSet::const_iterator kt = jt->second->begin(); kt != jt->second->end(); ++kt ) {
-            for( State::const_iterator si = (*kt)->begin(); si != (*kt)->end(); ++si ) {
-                literals.insert(1+*si);
+            // collect all literals from states reachable from this initial state
+            index_set literals;
+            for( StateSet::const_iterator kt = jt->second->begin(); kt != jt->second->end(); ++kt ) {
+                for( State::const_iterator si = (*kt)->begin(); si != (*kt)->end(); ++si ) {
+                    literals.insert(1+*si);
+                }
             }
-        }
 
-        // extend literals with fsc states
-        for( size_t q = 0; q < instance.fsc_states_; ++q ) {
-            literals.insert(1 + instance.q0_ + q);
-        }
+            // extend literals with fsc states
+            for( size_t q = 0; q < num_fsc_states; ++q ) {
+                literals.insert(1 + q0 + q);
+            }
 
-        // store reachable literals
-        reachable_literals.push_back(literals);
+            // store reachable literals
+            reachable_literals.push_back(literals);
 
-        if( options_.is_enabled("ks0:print:reachable") ) {
-            cout << "reachable literals = ";
-            instance.write_atom_set(cout, literals);
-            cout << endl;
+            if( options_.is_enabled("ks0:print:reachable") ) {
+                cout << "reachable literals = ";
+                instance.write_atom_set(cout, literals);
+                cout << endl;
+            }
         }
     }
 
@@ -100,7 +156,7 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals) :
     for( size_t k = 0; k < ins_n_fluents; ++k ) {
         const Atom &atom = *instance.atoms_[k];
         string lit_name;
-        char *dup = strdup(atom.name_->to_string().c_str()), *aux = 0;
+        char *dup = strdup(atom.name().c_str()), *aux = 0;
         if( *dup == '(' ) {
             aux = dup;
             dup = &dup[1];
@@ -117,20 +173,20 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals) :
         free(aux == 0 ? dup : aux);
 
         tag_map_[tag0_*ins_n_fluents + k] = n_atoms();
-        new_atom(new CopyName(lit_name));
+        new_atom(lit_name);
 
         if( options_.is_enabled("ks0:print:tag:atom:creation") )
             cout << "atom " << n_atoms()-1 << "." << lit_name << " created" << endl;
     }
 
     // now, generate tagged literals
-    if( tag_all_literals ) {
+    if( tag_all_literals_ ) {
         for( size_t tag = 1; tag < n_tags_; ++tag ) {
             for( size_t k = 0; k < ins_n_fluents; ++k ) {
                 if( tagged_[k] ) {
                     const Atom &atom = *instance.atoms_[k];
                     string lit_name;
-                    char *dup = strdup(atom.name_->to_string().c_str()), *aux = 0;
+                    char *dup = strdup(atom.name().c_str()), *aux = 0;
                     if( *dup == '(' ) {
                         aux = dup;
                         dup = &dup[1];
@@ -146,7 +202,7 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals) :
                     free(aux == 0 ? dup : aux);
 
                     tag_map_[tag*ins_n_fluents + k] = n_atoms();
-                    new_atom(new CopyName(lit_name));
+                    new_atom(lit_name);
 
                     if( options_.is_enabled("ks0:print:tag:atom:creation") )
                         cout << "atom " << n_atoms()-1 << "." << lit_name << " created" << endl;
@@ -161,7 +217,7 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals) :
                 const Atom &atom = *instance.atoms_[*it-1];
                 if( tagged_[*it-1] ) {
                     string lit_name;
-                    char *dup = strdup(atom.name_->to_string().c_str()), *aux = 0;
+                    char *dup = strdup(atom.name().c_str()), *aux = 0;
                     if( *dup == '(' ) {
                         aux = dup;
                         dup = &dup[1];
@@ -177,7 +233,7 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals) :
                     free(aux == 0 ? dup : aux);
 
                     tag_map_[tag*ins_n_fluents + *it-1] = n_atoms();
-                    new_atom(new CopyName(lit_name));
+                    new_atom(lit_name);
 
                     if( options_.is_enabled("ks0:print:tag:atom:creation") )
                         cout << "atom " << n_atoms()-1 << "." << lit_name << " created" << endl;
@@ -191,11 +247,11 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals) :
         bool known_pos = true;
         bool known_neg = true;
         int tag = n_tags_ > 1 ? 1 : 0;
-        for( StateSet::const_iterator it = instance.initial_states_.begin(); it != instance.initial_states_.end(); ++it, ++tag ) {
+        for( StateSet::const_iterator it = initial_states.begin(); it != initial_states.end(); ++it, ++tag ) {
             int tidx = tag_map_[tag*ins_n_fluents + k];
             if( (*it)->satisfy(k) ) {
                 known_neg = false;
-                if( tidx != -1 ) init_.literals_.insert(1 + tidx);
+                if( tidx != -1 ) init_.literals().insert(1 + tidx);
             } else {
                 known_pos = false;
             }
@@ -204,7 +260,7 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals) :
         int tidx = tag_map_[tag0_*ins_n_fluents + k];
         assert(tidx != -1);
         if( known_pos ) {
-            init_.literals_.insert(1 + tidx);
+            init_.literals().insert(1 + tidx);
         }
     }
 
@@ -218,36 +274,36 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals) :
     // create actions
     for( size_t k = 0; k < instance.n_actions(); ++k ) {
         const Action &act = *instance.actions_[k];
-        Action &nact = new_action(new CopyName(act.name_->to_string()));
+        Action &nact = new_action(act.name());
 
         // setup precondition
-        for( index_set::const_iterator it = act.precondition_.begin(); it != act.precondition_.end(); ++it ) {
+        for( index_set::const_iterator it = act.precondition().begin(); it != act.precondition().end(); ++it ) {
             int tidx = tag_map_[tag0_*ins_n_fluents + (*it > 0 ? *it-1 : -*it-1)];
             assert(tidx != -1);
             if( *it > 0 )
-                nact.precondition_.insert(1 + tidx);
+                nact.precondition().insert(1 + tidx);
             else
-                nact.precondition_.insert(-(1 + tidx));
+                nact.precondition().insert(-(1 + tidx));
         }
 
         // unconditional effects: add support and cancellation literals
-        for( index_set::const_iterator it = act.effect_.begin(); it != act.effect_.end(); ++it ) {
+        for( index_set::const_iterator it = act.effect().begin(); it != act.effect().end(); ++it ) {
             int idx = *it < 0 ? -*it-1 : *it-1;
             for( size_t tag = 0; tag < n_tags_; ++tag ) {
                 int tidx = tag_map_[tag*ins_n_fluents + idx];
                 assert(tidx != -1);
                 if( *it > 0 ) {
-                    nact.effect_.insert(1 + tidx);
+                    nact.effect().insert(1 + tidx);
                 } else {
-                    nact.effect_.insert(-(1 + tidx));
+                    nact.effect().insert(-(1 + tidx));
                 }
                 if( !tagged_[idx] ) break;
             }
         }
 
         // conditional effects: add support and cancellation rules
-        for( size_t i = 0; i < act.when_.size(); ++i ) {
-            const When &when = act.when_[i];
+        for( size_t i = 0; i < act.when().size(); ++i ) {
+            const When &when = act.when()[i];
 
             // add a conditional effect for each tag
             size_t first_tag = n_tags_ == 1 ? 0 : 1;
@@ -257,35 +313,35 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals) :
                 bool safe = true;
 
                 // condition
-                for( index_set::const_iterator it = when.condition_.begin(); it != when.condition_.end(); ++it ) {
+                for( index_set::const_iterator it = when.condition().begin(); it != when.condition().end(); ++it ) {
                     int idx = *it < 0 ? -*it-1 : *it-1;
                     int tidx = tag_map_[tag*ins_n_fluents + idx];
                     if( (tidx == -1) && (*it > 0) ) { safe = false; break; }
                     if( tidx == -1 ) continue;
                     if( *it > 0 ) {
-                        eff.condition_.insert(1 + tidx);
+                        eff.condition().insert(1 + tidx);
                     } else {
-                        eff.condition_.insert(-(1 + tidx));
+                        eff.condition().insert(-(1 + tidx));
                     }
                 }
                 if( !safe ) continue;
 
                 // effects
-                for( index_set::const_iterator it = when.effect_.begin(); it != when.effect_.end(); ++it ) {
+                for( index_set::const_iterator it = when.effect().begin(); it != when.effect().end(); ++it ) {
                     int idx = *it < 0 ? -*it-1 : *it-1;
                     int tidx = tag_map_[tag*ins_n_fluents + idx];
                     if( (tidx == -1) && (*it > 0) ) { safe = false; break; }
                     if( tidx == -1 ) continue;
                     if( *it > 0 ) {
-                        eff.effect_.insert(1 + tidx);
+                        eff.effect().insert(1 + tidx);
                     } else {
-                        eff.effect_.insert(-(1 + tidx));
+                        eff.effect().insert(-(1 + tidx));
                     }
                 }
                 if( !safe ) continue;
 
                 // add conditional effects to action
-                nact.when_.push_back(eff);
+                nact.when().push_back(eff);
             }
 
         }
@@ -298,7 +354,7 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals) :
     set<int> merge_lits;
     for( size_t k = 0; k < instance.n_actions(); ++k ) {
         const Action &act = *instance.actions_[k];
-        for( index_set::const_iterator it = act.precondition_.begin(); it != act.precondition_.end(); ++it ) {
+        for( index_set::const_iterator it = act.precondition().begin(); it != act.precondition().end(); ++it ) {
             int idx = *it < 0 ? -*it-1 : *it-1;
             if( tagged_[idx] ) merge_lits.insert(idx);
         }
@@ -311,14 +367,14 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals) :
     if( options_.is_enabled("ks0:print:merge:literals") ) {
         cout << "merge literals =";
         for( set<int>::const_iterator it = merge_lits.begin(); it != merge_lits.end(); ++it ) {
-            cout << " " << instance.atoms_[*it]->name_;
+            cout << " " << instance.atoms_[*it]->name();
         }
         cout << endl;
     }
 
     // create merge actions
     if( n_tags_ > 1 ) {
-        Action &merge = new_action(new CopyName("merge"));
+        Action &merge = new_action("merge");
         for( set<int>::const_iterator it = merge_lits.begin(); it != merge_lits.end(); ++it ) {
             When merge_eff;
             assert(*it >= 0);
@@ -326,19 +382,16 @@ KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals) :
             for( size_t tag = 1; tag < n_tags_; ++tag ) {
                 int tidx = tag_map_[tag*ins_n_fluents + *it];
                 assert(tidx != -1);
-                merge_eff.condition_.insert(1 + tidx);
+                merge_eff.condition().insert(1 + tidx);
             }
             int tidx = tag_map_[tag0_*ins_n_fluents + *it];
-            merge_eff.effect_.insert(1 + tidx);
-            merge.when_.push_back(merge_eff);
+            merge_eff.effect().insert(1 + tidx);
+            merge.when().push_back(merge_eff);
         }
 
         if( options_.is_enabled("ks0:print:action") ||
             options_.is_enabled("ks0:print:merge:action") )
             merge.print(cout, *this);
     }
-}
-
-KS0_Instance::~KS0_Instance() {
 }
 

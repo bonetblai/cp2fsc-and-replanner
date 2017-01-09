@@ -23,7 +23,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "name.h"
 #include "index.h"
 #include "options.h"
 
@@ -41,11 +40,16 @@ class Instance {
     static bool always_write_precondition_;
     static bool always_write_conjunction_;
 
-    struct Atom {
-        Name     *name_;
+    class Atom {
+      protected:
+        std::string name_;
         unsigned index_;
-        Atom(Name* name = 0, unsigned index = 0) : name_(name), index_(index) { }
-        ~Atom() { delete name_; }
+
+      public:
+        Atom(const std::string &name, unsigned index) : name_(name), index_(index) { }
+        const std::string& name() const { return name_; };
+        void set_index(int index) { index_ = index; }
+        unsigned index() const { return index_; }
         const Atom& operator=(const Atom &atom) {
             name_ = atom.name_;
             index_ = atom.index_;
@@ -63,10 +67,17 @@ class Instance {
     class atom_vec : public std::vector<Atom*> { };
 #endif
 
-    struct When {
+    class When {
+      protected:
         index_set condition_;
         index_set effect_;
+
+      public:
         When() { }
+        index_set& condition() { return condition_; }
+        index_set& effect() { return effect_; }
+        const index_set& condition() const { return condition_; }
+        const index_set& effect() const { return effect_; }
         bool operator<(const When &when) const {
             return (condition_ < when.condition_) ||
                    ((condition_ == when.condition_) && (effect_ < when.effect_));
@@ -75,18 +86,36 @@ class Instance {
             return (condition_ == when.condition_) && (effect_ == when.effect_);
         }
     };
-    struct when_vec : public std::vector<When> { };
+    class when_vec : public std::vector<When> { };
 
-    struct Action {
-        Name*       name_;
-        size_t      index_;
-        index_set   precondition_;
-        index_set   effect_;
-        when_vec    when_;
-        size_t      cost_;
-        std::string comment_;
-        Action(Name* name = 0, size_t index = 0) : name_(name), index_(index), cost_(1) { }
-        ~Action() { delete name_; }
+    class Action {
+      protected:
+        std::string   name_;
+        size_t        index_;
+        index_set     precondition_;
+        index_set     effect_;
+        when_vec      when_;
+        size_t        cost_;
+        std::string   comment_;
+
+      public:
+        Action(const std::string &name, size_t index = 0)
+          : name_(name), index_(index), cost_(1) {
+        }
+        const std::string& name() const { return name_; }
+        size_t index() const { return index_; }
+        void set_index(size_t index) { index_ = index; }
+        index_set& precondition() { return precondition_; }
+        index_set& effect() { return effect_; }
+        when_vec& when() { return when_; }
+        const index_set& precondition() const { return precondition_; }
+        const index_set& effect() const { return effect_; }
+        const when_vec& when() const { return when_; }
+        size_t cost() const { return cost_; }
+        void set_cost(size_t cost) { cost_ = cost; }
+        std::string& comment() { return comment_; }
+        const std::string& comment() const { return comment_; }
+
         const Action& operator=(const Action &a) {
             name_ = a.name_;
             index_ = a.index_;
@@ -110,13 +139,23 @@ class Instance {
     class action_vec : public std::vector<Action*> { };
 #endif
 
-    struct Sensor {
-        Name *    name_;
-        size_t    index_;
-        index_set condition_;
-        index_set sense_;
-        Sensor(Name *name = 0, size_t index = 0) : name_(name), index_(index) { }
-        ~Sensor() { delete name_; }
+    class Sensor {
+      protected:
+        std::string name_;
+        size_t      index_;
+        index_set   condition_;
+        index_set   sense_;
+
+      public:
+        Sensor(const std::string &name, size_t index) : name_(name), index_(index) { }
+        const std::string& name() const { return name_; }
+        size_t index() const { return index_; }
+        void set_index(size_t index) { index_ = index; }
+        index_set& condition() { return condition_; }
+        index_set& sense() { return sense_; }
+        const index_set& condition() const { return condition_; }
+        const index_set& sense() const { return sense_; }
+
         const Sensor& operator=(const Sensor &r) {
             name_ = r.name_;
             index_ = r.index_;
@@ -138,12 +177,21 @@ class Instance {
     class sensor_vec : public std::vector<Sensor*> { };
 #endif
 
-    struct Axiom {
-        Name *    name_;
-        size_t    index_;
-        index_set body_;
-        index_set head_;
-        Axiom(Name *name = 0, size_t index = 0) : name_(name), index_(index) { }
+    class Axiom {
+      protected:
+        std::string name_;
+        size_t      index_;
+        index_set   body_;
+        index_set   head_;
+
+      public:
+        Axiom(const std::string &name, size_t index) : name_(name), index_(index) { }
+        const std::string& name() const { return name_; }
+        size_t index() const { return index_; }
+        index_set& body() { return body_; }
+        index_set& head() { return head_; }
+        const index_set& body() const { return body_; }
+        const index_set& head() const { return head_; }
         const Axiom& operator=(const Axiom &r) {
             name_ = r.name_;
             index_ = r.index_;
@@ -151,7 +199,6 @@ class Instance {
             head_ = r.head_;
             return *this;
         }
-        ~Axiom() { delete name_; }
         bool operator==(const Axiom &r) { return index_ == r.index_; }
         void print(std::ostream &os, const Instance &i) const;
         void write(std::ostream &os, int indent, const Instance &instance) const;
@@ -167,34 +214,55 @@ class Instance {
 #endif
 
     // After instantiation, all invariants are of type AT_LEAST_ONE.
-    struct Invariant : public index_vec {
+    class Invariant : public index_vec {
+      protected:
         int type_;
         index_set Xprecondition_;
-        enum { AT_LEAST_ONE = 0, AT_MOST_ONE = 1, EXACTLY_ONE = 2 };
+
+      public:
         Invariant(int type = AT_LEAST_ONE) : type_(type) { }
         Invariant(int type, const Invariant &invariant)
-          : index_vec(invariant), type_(type), Xprecondition_(invariant.Xprecondition_) { }
+          : index_vec(invariant), type_(type), Xprecondition_(invariant.Xprecondition_) {
+        }
+        int type() const { return type_; }
+        const index_set& Xprecondition() const { return Xprecondition_; }
+        index_set& Xprecondition() { return Xprecondition_; }
         void write(std::ostream &os, int indent, const Instance &instance) const;
+
+      public:
+        enum { AT_LEAST_ONE = 0, AT_MOST_ONE = 1, EXACTLY_ONE = 2 };
     };
     class invariant_vec : public std::vector<Invariant> { };
 
-    struct Clause : public index_vec { };
+    class Clause : public index_vec { };
     class clause_vec : public std::vector<Clause> { };
 
-    struct Oneof : public index_vec { };
+    class Oneof : public index_vec { };
     class oneof_vec : public std::vector<Oneof> { };
 
-    struct Init {
+    class Init {
+      protected:
         index_set     literals_;
         invariant_vec invariants_;
         clause_vec    clauses_;
         oneof_vec     oneofs_;
+
+      public:
+        index_set& literals() { return literals_; }
+        invariant_vec& invariants() { return invariants_; }
+        clause_vec& clauses() { return clauses_; }
+        oneof_vec& oneofs() { return oneofs_; }
+        const index_set& literals() const { return literals_; }
+        const invariant_vec& invariants() const { return invariants_; }
+        const clause_vec& clauses() const { return clauses_; }
+        const oneof_vec& oneofs() const { return oneofs_; }
     };
     class init_vec : public std::vector<Init> { };
 
     class Plan : public std::vector<int> { };
 
-    Name        *name_;
+    std::string domain_name_;
+    std::string problem_name_;
 #ifdef SMART
     owner_atom_vec    atoms_;
     owner_action_vec  actions_;
@@ -209,6 +277,7 @@ class Instance {
 
     Init        init_;
     init_vec    hidden_;
+    init_vec    explicit_initial_states_;
     index_set   goal_literals_;
     index_set   non_primitive_fluents_;
     index_set   observable_fluents_;
@@ -229,30 +298,35 @@ class Instance {
     // actions that correspond to original problem
     std::set<std::string> original_actions_;
 
-    Instance(Name *name, const Options::Mode &options)
-      : cross_referenced_(false), name_(name), options_(options) {
+    Instance(const std::string &domain_name, const std::string &problem_name, const Options::Mode &options)
+      : cross_referenced_(false),
+        domain_name_(domain_name),
+        problem_name_(problem_name),
+        options_(options) {
     }
     Instance(const Options::Mode &options)
-      : cross_referenced_(false), name_(0), options_(options) {
+      : cross_referenced_(false),
+        options_(options) {
     }
 #ifndef SMART
     Instance(const Instance &ins); //NOT USED
 #endif
     virtual ~Instance();
 
-    Atom&      new_atom(Name *name);
-    Action&    new_action(Name *name);
-    Sensor&    new_sensor(Name *name);
-    Axiom&     new_axiom(Name *name);
+    Atom&      new_atom(const std::string &name);
+    Action&    new_action(const std::string &name);
+    Sensor&    new_sensor(const std::string &name);
+    Axiom&     new_axiom(const std::string &name);
 
-    // change (remove from) instance
-    void set_name(Name *name) { delete name_; name_ = name; }
+    void set_domain_name(const std::string &domain_name) { domain_name_ = domain_name; }
+    void set_problem_name(const std::string &problem_name) { problem_name_ = problem_name; }
     void remove_unreachable_conditional_effects(const bool_vec &reachable_atoms, const bool_vec &static_atoms);
     void remove_unreachable_axioms(const bool_vec &reachable_atoms, const bool_vec &static_atoms);
     void remove_unreachable_sensors(const bool_vec &reachable_atoms, const bool_vec &static_atoms);
     void simplify_conditions_and_invariants(const bool_vec &reachable_atoms, const bool_vec &static_atoms);
     void remove_actions(const bool_vec &set, index_vec &map);
     void calculate_non_primitive_and_observable_fluents();
+    void set_state(const Init &init, State &state, bool apply_axioms = true) const;
     void set_initial_state(State &state, bool apply_axioms = true) const;
     void set_hidden_state(int k, State &state) const;
     int num_hidden_states() const { return hidden_.size(); }
@@ -286,9 +360,9 @@ class Instance {
     void reserve_axioms(int n) { axioms_.reserve(n); }
 
     // generate reachable state space
-    void generate_reachable_state_space(StateSet &hash) const;
-    void generate_reachable_state_space(const State &state, StateSet &hash) const;
-    void generate_initial_states(StateSet &initial_states) const;
+    void generate_reachable_state_space(StateSet &hash, bool verbose = false) const;
+    void generate_reachable_state_space(const State &state, StateSet &hash, bool verbose = false) const;
+    void generate_initial_states(StateSet &initial_states, bool verbose = false) const;
 
     // set/get original actions
     bool is_original_action(const std::string &action_name) const {
@@ -306,8 +380,10 @@ class Instance {
     void write_action_set(std::ostream &os, const index_vec &set) const;
     void write_action_set(std::ostream &os, const bool* set) const;
     void write_action_set(std::ostream &os, const bool_vec &set) const;
-    void write_domain(std::ostream &os, int indent = 4) const;
+    virtual void write_domain_additional(std::ostream &os, int indent) const { }
+    virtual void write_problem_additional(std::ostream &os, const State *state, int indent) const { }
     virtual void write_problem(std::ostream &os, const State *state, int indent = 4) const;
+    void write_domain(std::ostream &os, int indent = 4) const;
     void write_problem(std::ostream &os, int indent = 4) const { write_problem(os, 0, indent); }
     void print_atoms(std::ostream &os) const;
     void print_actions(std::ostream &os) const;

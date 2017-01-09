@@ -115,6 +115,7 @@ COMMENT ;.*$
 ":init"                    { return PDDL_Parser::KW_INIT; }
 ":hidden"                  { return PDDL_Parser::KW_HIDDEN; }
 ":goal"                    { return PDDL_Parser::KW_GOAL; }
+":explicit-initial-state"  { return PDDL_Parser::KW_EXPLICIT_INITIAL_STATE; }
 
 ":translation"             { return PDDL_Parser::KW_TRANSLATION; }
 ":variable"                { return PDDL_Parser::KW_VARIABLE; }
@@ -126,23 +127,23 @@ COMMENT ;.*$
 "such-that"                { return PDDL_Parser::KW_SUCH_THAT; }
 
 
-\?{STRING} { val.sym = _tab.inserta(yytext);
-             if( val.sym->val == 0 )
+\?{STRING} { val.sym = _tab.insert(yytext);
+             if( val.sym->value_ == 0 )
                  return PDDL_Parser::TK_NEW_VAR_SYMBOL;
-             if( ((PDDL_Base::Symbol*)val.sym->val)->sym_class_ == PDDL_Base::sym_variable )
+             if( static_cast<PDDL_Base::Symbol*>(val.sym->value_)->sym_class_ == PDDL_Base::sym_variable )
                  return PDDL_Parser::TK_VAR_SYMBOL;
              return PDDL_Parser::TK_NEW_VAR_SYMBOL;
            }
 
-\:{STRING} { val.sym = _tab.inserta(yytext);
+\:{STRING} { val.sym = _tab.insert(yytext);
              return PDDL_Parser::TK_KEYWORD;
            }
 
-{STRING}   { val.sym = _tab.inserta(yytext);
-             if( val.sym->val == 0 ) {
+{STRING}   { val.sym = _tab.insert(yytext);
+             if( val.sym->value_ == 0 ) {
                  return PDDL_Parser::TK_NEW_SYMBOL;
              } else {
-                 switch (((PDDL_Base::Symbol*)val.sym->val)->sym_class_) {
+                 switch( static_cast<PDDL_Base::Symbol*>(val.sym->value_)->sym_class_ ) {
                    case PDDL_Base::sym_object:
                      return PDDL_Parser::TK_OBJ_SYMBOL;
                    case PDDL_Base::sym_typename:

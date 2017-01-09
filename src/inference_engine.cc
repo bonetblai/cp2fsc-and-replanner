@@ -61,23 +61,23 @@ namespace Inference {
       // compute action-key for accessingn sensing models in lw1 instance
       string action_key;
       if( options.is_enabled("lw1:strict") ) {
-          action_key = last_action->name_->to_string();
+          action_key = last_action->name();
       } else {
-          size_t pos = last_action->name_->to_string().find("__set_sensing__");
+          size_t pos = last_action->name().find("__set_sensing__");
           if( pos != string::npos ) {
-              action_key = string(last_action->name_->to_string(), 0, pos);
+              action_key = last_action->name().substr(0, pos);
               pos = string::npos;
           } else {
-              pos = last_action->name_->to_string().find("__effect__");
+              pos = last_action->name().find("__effect__");
           }
           if( pos != string::npos ) {
-              action_key = string(last_action->name_->to_string(), 0, pos);
+              action_key = last_action->name().substr(0, pos);
               pos = string::npos;
           } else {
-              pos = last_action->name_->to_string().find("__turn_on_sensor__");
+              pos = last_action->name().find("__turn_on_sensor__");
           }
           if( pos != string::npos ) {
-              action_key = string(last_action->name_->to_string(), 0, pos);
+              action_key = last_action->name().substr(0, pos);
               pos = string::npos;
           }
       }

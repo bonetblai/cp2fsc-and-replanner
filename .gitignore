@@ -3,5 +3,6 @@ grammar.output
 src/lw1
 src/cp2fsc
 src/k-replanner
+src/ks0-translation
 src/libp.a
 src/*.o

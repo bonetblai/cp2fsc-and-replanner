@@ -69,7 +69,7 @@ void print_usage(ostream &os, const char *exec_name, const char **cmdline_option
 }
 
 int main(int argc, const char *argv[]) {
-    StringTable symbols(50, lowercase_map);
+    StringTable parser_symbol_table(lowercase_map, 50);
     bool        opt_debug_parser = false;
     bool        opt_print_plan = true;
     string      opt_planner = "ff";
@@ -104,7 +104,7 @@ int main(int argc, const char *argv[]) {
     }
 
     int nfiles = 0;
-    unique_ptr<Parser> reader = make_unique<Parser>(Parser::replanner, symbols, g_options);
+    unique_ptr<Parser> reader = make_unique<Parser>(Parser::replanner, parser_symbol_table, g_options);
 
     // parse options
     bool skip_options = false;
@@ -279,7 +279,7 @@ int main(int argc, const char *argv[]) {
                     if( sensors.size() > 0 ) {
                         cout << "init*:" << flush;
                         for( set<int>::const_iterator it = sensors.begin(); it != sensors.end(); ++it ) {
-                            cout << " " << instance.sensors_[*it]->name_;
+                            cout << " " << instance.sensors_[*it]->name();
                         }
                         cout << endl;
                         need_indent = true;
@@ -295,7 +295,7 @@ int main(int argc, const char *argv[]) {
                             int literal = *it;
                             int atom = literal < 0 ? -literal - 1 : literal - 1;
                             cout << (literal < 0 ? " (not " : " ")
-                                 << instance.atoms_[atom]->name_
+                                 << instance.atoms_[atom]->name()
                                  << (literal < 0 ? ")" : "");
                         }
                         cout << endl;
@@ -305,13 +305,13 @@ int main(int argc, const char *argv[]) {
 
                 for( size_t k = 0; k < plan.size(); ++k ) {
                     if( need_indent ) cout << string(6, ' ');
-                    cout << setw(4) << k << " : " << instance.actions_[plan[k]]->name_ << endl;
+                    cout << setw(4) << k << " : " << instance.actions_[plan[k]]->name() << endl;
                     if( g_options.is_enabled("solver:print:fired-sensors") ) {
                         const set<int> &sensors = fired_sensors[1+k];
                         if( sensors.size() > 0 ) {
                             cout << "      " << setw(4) << k << "*:";
                             for( set<int>::const_iterator it = sensors.begin(); it != sensors.end(); ++it ) {
-                                cout << " " << instance.sensors_[*it]->name_;
+                                cout << " " << instance.sensors_[*it]->name();
                             }
                             cout << endl;
                         }
@@ -324,7 +324,7 @@ int main(int argc, const char *argv[]) {
                                 int literal = *it;
                                 int atom = literal < 0 ? -literal - 1 : literal - 1;
                                 cout << (literal < 0 ? " (not " : " ")
-                                     << instance.atoms_[atom]->name_
+                                     << instance.atoms_[atom]->name()
                                      << (literal < 0 ? ")" : "");
                             }
                             cout << endl;
@@ -354,7 +354,7 @@ int main(int argc, const char *argv[]) {
         // length
         size_t plan_length = 0;
         for( size_t k = 0; k < plan.size(); ++k ) {
-            plan_length += instance.is_original_action(instance.actions_[plan[k]]->name_->to_string()) ? 1 : 0;
+            plan_length += instance.is_original_action(instance.actions_[plan[k]]->name()) ? 1 : 0;
         }
 
         // print some stats

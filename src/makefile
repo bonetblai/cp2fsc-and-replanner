@@ -5,14 +5,15 @@ include makedefs
 .cc.o:
 	$(C++) $(CFLAGS) -c $<
 
-LIBSRCS = string_table.cc base.cc ptr_table.cc char_map.cc problem.cc kp_problem.cc clg_problem.cc lw1_problem.cc cp_problem.cc ks0_problem.cc name.cc preprocess.cc solver.cc lw1_solver.cc classical_planner.cc inference_engine.cc
+LIBSRCS = string_table.cc base.cc ptr_table.cc char_map.cc problem.cc kp_problem.cc clg_problem.cc lw1_problem.cc cp_problem.cc ks0_problem.cc preprocess.cc solver.cc lw1_solver.cc classical_planner.cc inference_engine.cc
 LIBGENSRCS = grammar.cc scanner.cc
 GENSRCS = ppddl.y ppddl.lex
 TARGET1 = k-replanner
 TARGET2 = cp2fsc
 TARGET3 = lw1
+TARGET4 = ks0-translation
 
-all: $(TARGET1) $(TARGET2) $(TARGET3)
+all: $(TARGET1) $(TARGET2) $(TARGET3) $(TARGET4)
 
 grammar.h: ppddl.y base.h
 	$(BISON) -v -d -o grammar_tmp.cc ppddl.y
@@ -54,12 +55,15 @@ $(TARGET2): $(TARGET2).o libp.a
 $(TARGET3): $(TARGET3).o libp.a
 	$(LINK) $(LFLAGS) $(TARGET3).o -lp -o $(TARGET3)
 
-deps:	$(TARGET1).cc $(TARGET2).cc $(TARGET3).cc $(LIBSRCS) $(LIBGENSRCS)
+$(TARGET4): $(TARGET4).o libp.a
+	$(LINK) $(LFLAGS) $(TARGET4).o -lp -o $(TARGET4)
+
+deps:	$(TARGET1).cc $(TARGET2).cc $(TARGET3).cc $(TARGET4).cc $(LIBSRCS) $(LIBGENSRCS)
 	rm -f makedeps
-	$(C++) -MM $(TARGET1).cc $(TARGET2).cc $(TARGET3).cc $(LIBSRCS) $(LIBGENSRCS) > makedeps
+	$(C++) -MM $(TARGET1).cc $(TARGET2).cc $(TARGET3).cc $(TARGET4).cc $(LIBSRCS) $(LIBGENSRCS) > makedeps
 
 clean:
-	rm -f *~ *.o *.a core $(TARGET1) $(TARGET2) $(TARGET3) gen-[pd]*.pddl
+	rm -f *~ *.o *.a core $(TARGET1) $(TARGET2) $(TARGET3) $(TARGET4) gen-[pd]*.pddl
 
 remake: clean
 	rm -f grammar.* scanner.*

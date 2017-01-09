@@ -25,8 +25,8 @@
 #define YY_PDDL_Parser_LEX_BODY  = 0
 #define YY_PDDL_Parser_DEBUG  1
 #define YY_PDDL_Parser_INHERIT  : public PDDL_Base
-#define YY_PDDL_Parser_CONSTRUCTOR_PARAM  StringTable& t, int type, const Options::Mode &options
-#define YY_PDDL_Parser_CONSTRUCTOR_INIT  : PDDL_Base(t, options), error_flag_(false), type_(type)
+#define YY_PDDL_Parser_CONSTRUCTOR_PARAM  StringTable &parser_symbol_table, int type, const Options::Mode &options
+#define YY_PDDL_Parser_CONSTRUCTOR_INIT  : PDDL_Base(parser_symbol_table, options), error_flag_(false), type_(type), effect_vec_ptr_(0)
 #define YY_PDDL_Parser_MEMBERS  \
   public: \
     typedef enum { replanner, cp2fsc } Type; \
@@ -37,8 +37,9 @@
   private: \
     std::vector<Schema*> schema_; \
     std::vector<std::unique_ptr<Schema> > owned_schema_; \
+    std::vector<bool> using_owned_schema_; \
     effect_vec *effect_vec_ptr_;
-#line 42 "ppddl.y"
+#line 43 "ppddl.y"
 
 #include <stdlib.h>
 #include <string.h>
@@ -55,7 +56,7 @@
 //#pragma GCC diagnostic ignored "-Wuninitialized"
 //#pragma GCC diagnostic ignored "-Wsign-compare"
 
-#line 59 "ppddl.y"
+#line 60 "ppddl.y"
 typedef union {
     StringTable::Cell                         *sym;
     PDDL_Base::VariableSymbol                 *vsym;
@@ -137,21 +138,21 @@ typedef union {
 #ifndef YY_PDDL_Parser_PURE
 
 /* #line 63 "/usr/local/lib/bison.h" */
-#line 141 "grammar_tmp.h"
+#line 142 "grammar_tmp.h"
 
 #line 63 "/usr/local/lib/bison.h"
 /* YY_PDDL_Parser_PURE */
 #endif
 
 /* #line 65 "/usr/local/lib/bison.h" */
-#line 148 "grammar_tmp.h"
+#line 149 "grammar_tmp.h"
 
 #line 65 "/usr/local/lib/bison.h"
 /* prefix */
 #ifndef YY_PDDL_Parser_DEBUG
 
 /* #line 67 "/usr/local/lib/bison.h" */
-#line 155 "grammar_tmp.h"
+#line 156 "grammar_tmp.h"
 
 #line 67 "/usr/local/lib/bison.h"
 /* YY_PDDL_Parser_DEBUG */
@@ -159,7 +160,7 @@ typedef union {
 #ifndef YY_PDDL_Parser_LSP_NEEDED
 
 /* #line 70 "/usr/local/lib/bison.h" */
-#line 163 "grammar_tmp.h"
+#line 164 "grammar_tmp.h"
 
 #line 70 "/usr/local/lib/bison.h"
  /* YY_PDDL_Parser_LSP_NEEDED*/
@@ -237,7 +238,7 @@ extern YY_PDDL_Parser_STYPE YY_PDDL_Parser_LVAL;
 
 
 /* #line 143 "/usr/local/lib/bison.h" */
-#line 241 "grammar_tmp.h"
+#line 242 "grammar_tmp.h"
 #define	TK_OPEN	258
 #define	TK_CLOSE	259
 #define	TK_OPEN_SQ	260
@@ -284,27 +285,28 @@ extern YY_PDDL_Parser_STYPE YY_PDDL_Parser_LVAL;
 #define	KW_OBJECTS	301
 #define	KW_INIT	302
 #define	KW_GOAL	303
-#define	KW_SENSOR	304
-#define	KW_SENSE	305
-#define	KW_OBSERVE	306
-#define	KW_AXIOM	307
-#define	KW_COND	308
-#define	KW_OBSERVABLE	309
-#define	KW_BODY	310
-#define	KW_HEAD	311
-#define	KW_STICKY	312
-#define	KW_FLUENTS	313
-#define	KW_HIDDEN	314
-#define	KW_INVARIANT	315
-#define	KW_AT_LEAST_ONE	316
-#define	KW_AT_MOST_ONE	317
-#define	KW_EXACTLY_ONE	318
-#define	KW_VARIABLE	319
-#define	KW_OBS_VARIABLE	320
-#define	KW_VGROUP	321
-#define	KW_SENSING	322
-#define	KW_DEFAULT_SENSING	323
-#define	KW_MODEL_FOR	324
+#define	KW_EXPLICIT_INITIAL_STATE	304
+#define	KW_SENSOR	305
+#define	KW_SENSE	306
+#define	KW_OBSERVE	307
+#define	KW_AXIOM	308
+#define	KW_COND	309
+#define	KW_OBSERVABLE	310
+#define	KW_BODY	311
+#define	KW_HEAD	312
+#define	KW_STICKY	313
+#define	KW_FLUENTS	314
+#define	KW_HIDDEN	315
+#define	KW_INVARIANT	316
+#define	KW_AT_LEAST_ONE	317
+#define	KW_AT_MOST_ONE	318
+#define	KW_EXACTLY_ONE	319
+#define	KW_VARIABLE	320
+#define	KW_OBS_VARIABLE	321
+#define	KW_VGROUP	322
+#define	KW_SENSING	323
+#define	KW_DEFAULT_SENSING	324
+#define	KW_MODEL_FOR	325
 
 
 #line 143 "/usr/local/lib/bison.h"
@@ -349,7 +351,7 @@ public:
 /* static const int token ... */
 
 /* #line 182 "/usr/local/lib/bison.h" */
-#line 353 "grammar_tmp.h"
+#line 355 "grammar_tmp.h"
 static const int TK_OPEN;
 static const int TK_CLOSE;
 static const int TK_OPEN_SQ;
@@ -396,6 +398,7 @@ static const int KW_FORDOMAIN;
 static const int KW_OBJECTS;
 static const int KW_INIT;
 static const int KW_GOAL;
+static const int KW_EXPLICIT_INITIAL_STATE;
 static const int KW_SENSOR;
 static const int KW_SENSE;
 static const int KW_OBSERVE;
@@ -425,7 +428,7 @@ static const int KW_MODEL_FOR;
 enum YY_PDDL_Parser_ENUM_TOKEN { YY_PDDL_Parser_NULL_TOKEN=0
 
 /* #line 185 "/usr/local/lib/bison.h" */
-#line 429 "grammar_tmp.h"
+#line 432 "grammar_tmp.h"
 	,TK_OPEN=258
 	,TK_CLOSE=259
 	,TK_OPEN_SQ=260
@@ -472,27 +475,28 @@ enum YY_PDDL_Parser_ENUM_TOKEN { YY_PDDL_Parser_NULL_TOKEN=0
 	,KW_OBJECTS=301
 	,KW_INIT=302
 	,KW_GOAL=303
-	,KW_SENSOR=304
-	,KW_SENSE=305
-	,KW_OBSERVE=306
-	,KW_AXIOM=307
-	,KW_COND=308
-	,KW_OBSERVABLE=309
-	,KW_BODY=310
-	,KW_HEAD=311
-	,KW_STICKY=312
-	,KW_FLUENTS=313
-	,KW_HIDDEN=314
-	,KW_INVARIANT=315
-	,KW_AT_LEAST_ONE=316
-	,KW_AT_MOST_ONE=317
-	,KW_EXACTLY_ONE=318
-	,KW_VARIABLE=319
-	,KW_OBS_VARIABLE=320
-	,KW_VGROUP=321
-	,KW_SENSING=322
-	,KW_DEFAULT_SENSING=323
-	,KW_MODEL_FOR=324
+	,KW_EXPLICIT_INITIAL_STATE=304
+	,KW_SENSOR=305
+	,KW_SENSE=306
+	,KW_OBSERVE=307
+	,KW_AXIOM=308
+	,KW_COND=309
+	,KW_OBSERVABLE=310
+	,KW_BODY=311
+	,KW_HEAD=312
+	,KW_STICKY=313
+	,KW_FLUENTS=314
+	,KW_HIDDEN=315
+	,KW_INVARIANT=316
+	,KW_AT_LEAST_ONE=317
+	,KW_AT_MOST_ONE=318
+	,KW_EXACTLY_ONE=319
+	,KW_VARIABLE=320
+	,KW_OBS_VARIABLE=321
+	,KW_VGROUP=322
+	,KW_SENSING=323
+	,KW_DEFAULT_SENSING=324
+	,KW_MODEL_FOR=325
 
 
 #line 185 "/usr/local/lib/bison.h"
@@ -549,5 +553,5 @@ public:
 /* END */
 
 /* #line 236 "/usr/local/lib/bison.h" */
-#line 553 "grammar_tmp.h"
+#line 557 "grammar_tmp.h"
 #endif

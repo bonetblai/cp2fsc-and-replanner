@@ -16,162 +16,182 @@
  *
  */
 
+#include <cassert>
 #include "string_table.h"
 
-StringTable::StringTable(size_t b, char_map &cm)
-  : n_bin(b), map(cm), table(0), n_entries(0) {
-    table = new StringTable::Cell*[n_bin];
-    for( size_t k = 0; k < n_bin; k++ )
-        table[k] = 0;
+using namespace std;
+
+StringTable::StringTable(const class char_map &cmap, size_t num_bins)
+  : char_map_(cmap),
+    num_bins_(num_bins),
+    num_entries_(0),
+    table_(0) {
+    table_ = new StringTable::Cell*[num_bins_];
+    for( size_t k = 0; k < num_bins_; ++k )
+        table_[k] = 0;
 }
 
 StringTable::~StringTable() {
-    for( size_t k = 0; k < n_bin; k++ )
-        delete table[k];
-    delete[] table;
+    for( size_t k = 0; k < num_bins_; ++k )
+        delete table_[k];
+    delete[] table_;
 }
 
-StringTable::Cell* StringTable::inserta(const char *str) {
-    size_t l = map.hash(str) % n_bin;
-    StringTable::Cell **sc = &(table[l]);
-    while( true ) {
-        if( !*sc ) {
-            *sc = new StringTable::Cell(str, map, 0, l, 0);
-            n_entries += 1;
-            return *sc;
-        } else {
-            int d = map.strcmp((*sc)->text, str);
-            if( d == 0 )
-	        return *sc;
-            else if( d < 0 )
-                sc = &((*sc)->next);
-            else {
-	        *sc = new StringTable::Cell(str, map, 0, l, *sc);
-	        n_entries += 1;
-	        return *sc;
-            }
-        }
+void StringTable::keys(vector<const char*> &vec) const {
+    vec.clear();
+    for( const StringTable::Cell *sc = first(); sc; sc = next(sc) )
+        vec.push_back(sc->text_);
+}
+
+void StringTable::values(vector<const void*> &vec) const {
+    vec. clear();
+    for( const StringTable::Cell *sc = first(); sc; sc = next(sc) ) {
+        if( sc->value_ != 0 )
+            vec.push_back(sc->value_);
     }
-}
-
-StringTable::Cell* StringTable::inserta(const char *str, size_t len) {
-    size_t l = map.hash(str, len) % n_bin;
-    StringTable::Cell **sc = &(table[l]);
-    while( true ) {
-        if( !*sc ) {
-            *sc = new StringTable::Cell(str, map, 0, l, 0);
-            n_entries += 1;
-            return *sc;
-        } else {
-            int d = map.strcmp((*sc)->text, str, len);
-            if( d == 0 )
-	        return *sc;
-            else if( d < 0 )
-                sc = &((*sc)->next);
-            else {
-	        *sc = new StringTable::Cell(str, len, map, 0, l, *sc);
-	        n_entries += 1;
-	        return *sc;
-            }
-        }
-    }
-}
-
-char* StringTable::insert(const char *str) {
-    StringTable::Cell *sc = inserta(str);
-    return sc->text;
-}
-
-char* StringTable::insert(const char *str, size_t len) {
-    StringTable::Cell *sc = inserta(str, len);
-    return sc->text;
-}
-
-char* StringTable::set(const char *str, void *val) {
-    StringTable::Cell *sc = inserta(str);
-    sc->val = val;
-    return sc->text;
-}
-
-char* StringTable::set(const char* str, size_t len, void* val) {
-    StringTable::Cell *sc = inserta(str, len);
-    sc->val = val;
-    return sc->text;
-}
-
-const StringTable::Cell* StringTable::find(const char *str) const {
-    size_t l = map.hash(str) % n_bin;
-    StringTable::Cell **sc = &(table[l]);
-    while( true ) {
-        if( !*sc )
-            return 0;
-        else {
-            int d = map.strcmp((*sc)->text, str);
-            if(d == 0 )
-                return *sc;
-            else if( d < 0 )
-                sc = &((*sc)->next);
-            else
-                return 0;
-        }
-    }
-}
-
-const StringTable::Cell* StringTable::find(const char *str, size_t len) const {
-    size_t l = map.hash(str, len) % n_bin;
-    StringTable::Cell **sc = &(table[l]);
-    while( true ) {
-        if( !*sc )
-            return 0;
-        else {
-            int d = map.strcmp((*sc)->text, str, len);
-            if( d == 0 )
-                return *sc;
-            else if( d < 0 )
-                sc = &((*sc)->next);
-            else
-                return 0;
-        }
-    }
-}
-
-void* StringTable::find_val(const char* str) const {
-    const StringTable::Cell* sc = find(str);
-    return sc ? sc->val : (void*)0;
-}
-
-void* StringTable::find_val(const char *str, size_t len) const {
-    const StringTable::Cell *sc = find(str, len);
-    return sc ? sc->val : (void*)0;
 }
 
 const StringTable::Cell* StringTable::first() const {
-    for( size_t k = 0; k < n_bin; k++ )
-        if( table[k] )
-            return table[k];
+    for( size_t k = 0; k < num_bins_; ++k ) {
+        if( table_[k] != 0 )
+            return table_[k];
+    }
     return 0;
 }
 
-const StringTable::Cell* StringTable::next(const StringTable::Cell* c) const {
-    if( c->next ) return c->next;
-    for( size_t k = c->bin + 1; k < n_bin; k++ )
-        if( table[k] )
-            return table[k];
-    return 0;
+const StringTable::Cell* StringTable::next(const StringTable::Cell *sc) const {
+    if( sc->next_ != 0 ) {
+        return sc->next_;
+    } else {
+        for( size_t k = sc->bin_ + 1; k < num_bins_; ++k ) {
+            if( table_[k] != 0 )
+                return table_[k];
+        }
+        return 0;
+    }
 }
 
-string_vec* StringTable::keys() {
-    string_vec* vec = new string_vec;
-    for( const StringTable::Cell *sc = first(); sc; sc = next(sc) )
-        vec->push_back((char*)sc->text);
-    return vec;
+StringTable::Cell* StringTable::find_and_insert(const char *str, size_t len, bool only_find) {
+    size_t bin = char_map_.hash(str, len) % num_bins_;
+    StringTable::Cell **sc = &(table_[bin]);
+    while( true ) {
+        if( *sc == 0 ) {
+            if( only_find ) {
+                return 0;
+            } else {
+                *sc = new StringTable::Cell(str, len, char_map_, 0, bin, 0);
+                ++num_entries_;
+                return *sc;
+            }
+        } else {
+            int d = char_map_.strcmp((*sc)->text_, str, len);
+            if( d == 0 ) {
+	        return *sc;
+            } else if( d < 0 ) {
+                sc = &(*sc)->next_;
+            } else {
+                if( only_find ) {
+                    return 0;
+                } else {
+	            *sc = new StringTable::Cell(str, len, char_map_, 0, bin, *sc);
+	            ++num_entries_;
+	            return *sc;
+                }
+            }
+        }
+    }
 }
 
-element_vec* StringTable::values() {
-    element_vec *vec = new element_vec;
-    for( const StringTable::Cell *sc = first(); sc; sc = next(sc) )
-        if( sc->val )
-            vec->push_back((void*)sc->val);
-    return vec;
+#if 0
+char* StringTable::insert_other(const char *str, size_t len) {
+    StringTable::Cell *sc = insert(str, len);
+    return sc->text_;
 }
+
+const char* StringTable::set(const char* str, size_t len, void* value) {
+    StringTable::Cell *sc = insert(str, len);
+    sc->value_ = value;
+    return sc->text_;
+}
+
+const StringTable::Cell* StringTable::find(const char *str, size_t len) const {
+    size_t bin = char_map_.hash(str, len) % num_bins_;
+    const StringTable::Cell *sc = table_[bin];
+    while( true ) {
+        if( sc == 0 )
+            return 0;
+        else {
+            int d = char_map_.strcmp(sc->text_, str, len);
+            if( d == 0 )
+                return sc;
+            else if( d < 0 )
+                sc = sc->next_;
+            else
+                return 0;
+        }
+    }
+}
+
+void* StringTable::find_value(const char *str, size_t len) const {
+    const StringTable::Cell *sc = find(str, len);
+    return sc ? sc->value_ : 0;
+}
+
+StringTable::Cell* StringTable::insert(const char *symbol) {
+    size_t bin = char_map_.hash(symbol) % num_bins_;
+    StringTable::Cell **sc = &(table_[bin]);
+    while( true ) {
+        if( *sc == 0 ) {
+            *sc = new StringTable::Cell(symbol, char_map_, 0, bin, 0);
+            ++num_entries_;
+            return *sc;
+        } else {
+            int d = char_map_.strcmp((*sc)->text_, symbol);
+            if( d == 0 ) {
+	        return *sc;
+            } else if( d < 0 ) {
+                sc = &(*sc)->next_;
+            } else {
+	        *sc = new StringTable::Cell(symbol, char_map_, 0, bin, *sc);
+	        ++num_entries_;
+	        return *sc;
+            }
+        }
+    }
+}
+
+char* StringTable::insert_other(const char *str) {
+    StringTable::Cell *sc = insert(str);
+    return sc->text_;
+}
+
+const char* StringTable::set(const char *symbol, void *value) {
+    StringTable::Cell *sc = insert(symbol);
+    sc->value_ = value;
+    return sc->text_;
+}
+
+const StringTable::Cell* StringTable::find(const char *symbol) const {
+    size_t bin = char_map_.hash(symbol) % num_bins_;
+    const StringTable::Cell *sc = table_[bin];
+    while( true ) {
+        if( sc == 0 )
+            return 0;
+        else {
+            int d = char_map_.strcmp(sc->text_, symbol);
+            if( d == 0 )
+                return sc;
+            else if( d < 0 )
+                sc = sc->next_;
+            else
+                return 0;
+        }
+    }
+}
+
+void* StringTable::find_value(const char *symbol) const {
+    const StringTable::Cell* sc = find(symbol);
+    return sc ? sc->value_ : 0;
+}
+#endif
 

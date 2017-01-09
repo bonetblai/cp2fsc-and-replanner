@@ -47,8 +47,8 @@ void Preprocessor::mark_inconsistent_actions(bool_vec &actions_to_remove) {
         Instance::Action &act = *instance_.actions_[k];
 
         // check for inconsistencies in add and del
-        for( index_set::const_iterator it = act.effect_.begin(); it != act.effect_.end(); ++it ) {
-            if( act.effect_.contains(-*it) ) {
+        for( index_set::const_iterator it = act.effect().begin(); it != act.effect().end(); ++it ) {
+            if( act.effect().contains(-*it) ) {
                 actions_to_remove[k] = true;
                 break;
             }
@@ -56,12 +56,12 @@ void Preprocessor::mark_inconsistent_actions(bool_vec &actions_to_remove) {
 
         // check for inconsistencies in conditional effects
         if( !actions_to_remove[k] ) {
-            for( int i = 0; i < (int)act.when_.size(); ++i ) {
-                Instance::When &when = act.when_[i];
-                for( index_set::const_iterator it = when.effect_.begin(); it != when.effect_.end(); ++it ) {
-                    if( when.effect_.contains(-*it) ) {
-                        act.when_[i] = act.when_.back();
-                        act.when_.pop_back();
+            for( size_t i = 0; i < act.when().size(); ++i ) {
+                Instance::When &when = act.when()[i];
+                for( index_set::const_iterator it = when.effect().begin(); it != when.effect().end(); ++it ) {
+                    if( when.effect().contains(-*it) ) {
+                        act.when()[i] = act.when().back();
+                        act.when().pop_back();
                         --i;
                         break;
                     }
@@ -71,7 +71,7 @@ void Preprocessor::mark_inconsistent_actions(bool_vec &actions_to_remove) {
 
         if( actions_to_remove[k] && options_.is_enabled("problem:print:action:inconsistent") ) {
             cout << Utils::yellow()
-                 << "  action " << k << "." << act.name_ << " is inconsistent."
+                 << "  action " << k << "." << act.name() << " is inconsistent."
                  << Utils::normal() << endl;
         }
     }
@@ -88,26 +88,26 @@ void Preprocessor::mark_useless_actions(bool_vec &actions_to_remove) {
         Instance::Action &act = *instance_.actions_[k];
 
         // remove useless conditional effects
-        for( int i = 0; i < (int)act.when_.size(); ++i ) {
+        for( size_t i = 0; i < act.when().size(); ++i ) {
             bool useless_effect = true;
-            for( index_set::const_iterator it = act.when_[i].effect_.begin(); it != act.when_[i].effect_.end(); ++it ) {
-                if( !act.when_[i].condition_.contains(*it) ) {
+            for( index_set::const_iterator it = act.when()[i].effect().begin(); it != act.when()[i].effect().end(); ++it ) {
+                if( !act.when()[i].condition().contains(*it) ) {
                     useless_effect = false;
                     break;
                 }
             }
 
             if( useless_effect ) {
-                act.when_[i] = act.when_.back();
-                act.when_.pop_back();
+                act.when()[i] = act.when().back();
+                act.when().pop_back();
                 --i;
             }
         }
 
         // remove useless actions
-        if( act.when_.empty() ) {
-            for( index_set::const_iterator it = act.effect_.begin(); it != act.effect_.end(); ++it ) {
-                if( !act.precondition_.contains(*it) ) {
+        if( act.when().empty() ) {
+            for( index_set::const_iterator it = act.effect().begin(); it != act.effect().end(); ++it ) {
+                if( !act.precondition().contains(*it) ) {
                     useless[k] = false;
                     break;
                 } else {
@@ -121,7 +121,7 @@ void Preprocessor::mark_useless_actions(bool_vec &actions_to_remove) {
             actions_to_remove[k] = true;
             if( options_.is_enabled("problem:print:action:useless") ) {
                 cout << Utils::yellow()
-                     << "action " << k << "." << act.name_ << " is useless."
+                     << "action " << k << "." << act.name() << " is useless."
                      << Utils::normal() << endl;
             }
         }
@@ -137,7 +137,7 @@ void Preprocessor::mark_unreachable_actions(const bool_vec &reachable_atoms, con
     // compute known literals in init
     bool_vec pos_literal_in_init(instance_.n_atoms(), false);
     bool_vec neg_literal_in_init(instance_.n_atoms(), false);
-    for( index_set::const_iterator it = instance_.init_.literals_.begin(); it != instance_.init_.literals_.end(); ++it ) {
+    for( index_set::const_iterator it = instance_.init_.literals().begin(); it != instance_.init_.literals().end(); ++it ) {
         if( *it > 0 )
             pos_literal_in_init[*it - 1] = true;
         else
@@ -148,7 +148,7 @@ void Preprocessor::mark_unreachable_actions(const bool_vec &reachable_atoms, con
     for( size_t k = 0; k < instance_.actions_.size(); ++k ) {
         Instance::Action &act = *instance_.actions_[k];
         bool reachable_action = true;
-        for( index_set::const_iterator it = act.precondition_.begin(); it != act.precondition_.end(); ++it ) {
+        for( index_set::const_iterator it = act.precondition().begin(); it != act.precondition().end(); ++it ) {
             if( ((*it > 0) && !reachable_atoms[*it-1]) ||
                 ((*it > 0) && static_atoms[*it-1] && neg_literal_in_init[*it-1]) ||
                 ((*it < 0) && static_atoms[-*it-1] && pos_literal_in_init[-*it-1]) ) {
@@ -173,20 +173,20 @@ void Preprocessor::compute_reachability(bool_vec &reachable_atoms, bool_vec &rea
     }
 
     // extend reachable atoms with those in the initial situation
-    for( index_set::const_iterator it = instance_.init_.literals_.begin(); it != instance_.init_.literals_.end(); ++it ) {
+    for( index_set::const_iterator it = instance_.init_.literals().begin(); it != instance_.init_.literals().end(); ++it ) {
         if( *it > 0 ) reachable_atoms[*it - 1] = true;
     }
 
     // extend reachable atoms with those in oneofs
-    for( size_t k = 0; k < instance_.init_.oneofs_.size(); ++k ) {
-        const Instance::Oneof &oneof = instance_.init_.oneofs_[k];
+    for( size_t k = 0; k < instance_.init_.oneofs().size(); ++k ) {
+        const Instance::Oneof &oneof = instance_.init_.oneofs()[k];
         for( Instance::Oneof::const_iterator it = oneof.begin(); it != oneof.end(); ++it )
             if( *it > 0 ) reachable_atoms[*it - 1] = true;
     }
 
     // extend reachable atoms with those in invariants.
-    for( size_t k = 0; k < instance_.init_.invariants_.size(); ++k ) {
-        const Instance::Invariant &invariant = instance_.init_.invariants_[k];
+    for( size_t k = 0; k < instance_.init_.invariants().size(); ++k ) {
+        const Instance::Invariant &invariant = instance_.init_.invariants()[k];
         for( Instance::Invariant::const_iterator it = invariant.begin(); it != invariant.end(); ++it )
             if( *it > 0 ) reachable_atoms[*it - 1] = true;
     }
@@ -202,7 +202,7 @@ void Preprocessor::compute_reachability(bool_vec &reachable_atoms, bool_vec &rea
             Instance::Action &act = *instance_.actions_[k];
             // check if action is reachable
             bool reachable_action = true;
-            for( index_set::const_iterator p = act.precondition_.begin(); p != act.precondition_.end(); ++p ) {
+            for( index_set::const_iterator p = act.precondition().begin(); p != act.precondition().end(); ++p ) {
                 if( (*p > 0) && !reachable_atoms[*p - 1] ) {
                     reachable_action = false;
                     break;
@@ -212,7 +212,7 @@ void Preprocessor::compute_reachability(bool_vec &reachable_atoms, bool_vec &rea
             reachable_actions[k] = true;
 
             // add all positive effects
-            for( index_set::const_iterator p = act.effect_.begin(); p != act.effect_.end(); ++p ) {
+            for( index_set::const_iterator p = act.effect().begin(); p != act.effect().end(); ++p ) {
                 if( (*p > 0) && !reachable_atoms[*p - 1] ) {
                     reachable_atoms[*p - 1] = true;
                     fix_point_reached = false;
@@ -220,9 +220,9 @@ void Preprocessor::compute_reachability(bool_vec &reachable_atoms, bool_vec &rea
             }
 
             // add all positive effects for firable conditional effects
-            for( Instance::when_vec::const_iterator it = act.when_.begin(); it != act.when_.end(); ++it ) {
+            for( Instance::when_vec::const_iterator it = act.when().begin(); it != act.when().end(); ++it ) {
                 bool reachable_effect = true;
-                for( index_set::const_iterator p = it->condition_.begin(); p != it->condition_.end(); ++p ) {
+                for( index_set::const_iterator p = it->condition().begin(); p != it->condition().end(); ++p ) {
                      if( (*p > 0) && !reachable_atoms[*p - 1] ) {
                          reachable_effect = false;
                          break;
@@ -231,7 +231,7 @@ void Preprocessor::compute_reachability(bool_vec &reachable_atoms, bool_vec &rea
                 if( !reachable_effect ) continue;
 
                 // add all positive effects
-                for( index_set::const_iterator p = it->effect_.begin(); p != it->effect_.end(); ++p ) {
+                for( index_set::const_iterator p = it->effect().begin(); p != it->effect().end(); ++p ) {
                     if( (*p > 0) && !reachable_atoms[*p - 1] ) {
                         reachable_atoms[*p - 1] = true;
                         fix_point_reached = false;
@@ -247,10 +247,10 @@ void Preprocessor::compute_reachability(bool_vec &reachable_atoms, bool_vec &rea
 #else
             const Instance::Sensor *r = instance_.sensors_[k];
 #endif
-            assert(!r->sense_.empty());
+            assert(!r->sense().empty());
 
             bool reachable_sensor = true;
-            for( index_set::const_iterator p = r->condition_.begin(); p != r->condition_.end(); ++p ) {
+            for( index_set::const_iterator p = r->condition().begin(); p != r->condition().end(); ++p ) {
                 if( (*p > 0) && !reachable_atoms[*p - 1] ) {
                     reachable_sensor = false;
                     break;
@@ -260,7 +260,7 @@ void Preprocessor::compute_reachability(bool_vec &reachable_atoms, bool_vec &rea
             reachable_sensors[k] = true;
 
             // add sensed atoms to reachable set
-            for( index_set::const_iterator p = r->sense_.begin(); p != r->sense_.end(); ++p ) {
+            for( index_set::const_iterator p = r->sense().begin(); p != r->sense().end(); ++p ) {
                 if( *p < 0 ) continue;
                 if( !reachable_atoms[*p - 1] ) {
                     reachable_atoms[*p - 1] = true;
@@ -276,10 +276,10 @@ void Preprocessor::compute_reachability(bool_vec &reachable_atoms, bool_vec &rea
 #else
             const Instance::Axiom *r = instance_.axioms_[k];
 #endif
-            assert(!r->head_.empty());
+            assert(!r->head().empty());
 
             bool reachable_axiom = true;
-            for( index_set::const_iterator p = r->body_.begin(); p != r->body_.end(); ++p ) {
+            for( index_set::const_iterator p = r->body().begin(); p != r->body().end(); ++p ) {
                 if( (*p > 0) && !reachable_atoms[*p - 1] ) {
                     reachable_axiom = false;
                     break;
@@ -289,7 +289,7 @@ void Preprocessor::compute_reachability(bool_vec &reachable_atoms, bool_vec &rea
             reachable_axioms[k] = true;
 
             // add non-primitive fluents to reachable set
-            for( index_set::const_iterator p = r->head_.begin(); p != r->head_.end(); ++p ) {
+            for( index_set::const_iterator p = r->head().begin(); p != r->head().end(); ++p ) {
                 assert(*p > 0);
                 if( !reachable_atoms[*p - 1] ) {
                     reachable_atoms[*p - 1] = true;
@@ -303,31 +303,31 @@ void Preprocessor::compute_reachability(bool_vec &reachable_atoms, bool_vec &rea
     if( options_.is_enabled("problem:print:atom:reachable") ) {
         cout << Utils::yellow();
         for( size_t k = 0; k < instance_.n_atoms(); k++ )
-            if( reachable_atoms[k] ) cout << "  reachable atom " << k << "." << instance_.atoms_[k]->name_ << endl;
+            if( reachable_atoms[k] ) cout << "  reachable atom " << k << "." << instance_.atoms_[k]->name() << endl;
         cout << Utils::normal();
     }
     if( options_.is_enabled("problem:print:atom:unreachable") ) {
         cout << Utils::yellow();
         for( size_t k = 0; k < instance_.n_atoms(); k++ )
-            if( !reachable_atoms[k] ) cout << "  unreachable atom " << k << "." << instance_.atoms_[k]->name_ << endl;
+            if( !reachable_atoms[k] ) cout << "  unreachable atom " << k << "." << instance_.atoms_[k]->name() << endl;
         cout << Utils::normal();
     }
     if( options_.is_enabled("problem:print:action:unreachable") ) {
         cout << Utils::yellow();
         for( size_t k = 0; k < instance_.actions_.size(); k++ )
-            if( !reachable_actions[k] ) cout << "  unreachable action " << k << "." << instance_.actions_[k]->name_ << endl;
+            if( !reachable_actions[k] ) cout << "  unreachable action " << k << "." << instance_.actions_[k]->name() << endl;
         cout << Utils::normal();
     }
     if( options_.is_enabled("problem:print:sensor:unreachable") ) {
         cout << Utils::yellow();
         for( size_t k = 0; k < instance_.sensors_.size(); k++ )
-            if( !reachable_sensors[k] ) cout << "  unreachable sensor " << k << "." << instance_.sensors_[k]->name_ << endl;
+            if( !reachable_sensors[k] ) cout << "  unreachable sensor " << k << "." << instance_.sensors_[k]->name() << endl;
         cout << Utils::normal();
     }
     if( options_.is_enabled("problem:print:axiom:unreachable") ) {
         cout << Utils::yellow();
         for( size_t k = 0; k < instance_.axioms_.size(); k++ )
-            if( !reachable_axioms[k] ) cout << "  unreachable axiom " << k << "." << instance_.axioms_[k]->name_ << endl;
+            if( !reachable_axioms[k] ) cout << "  unreachable axiom " << k << "." << instance_.axioms_[k]->name() << endl;
         cout << Utils::normal();
     }
 }
@@ -338,14 +338,14 @@ void Preprocessor::compute_reachability(bool_vec &reachable_atoms, bool_vec &rea
 void Preprocessor::compute_static_atoms(const bool_vec &reachable_actions, bool_vec &static_atoms) const {
     // get the initial situation
     bool_vec init(instance_.n_atoms(), false);
-    for( index_set::const_iterator it = instance_.init_.literals_.begin(); it != instance_.init_.literals_.end(); ++it ) {
+    for( index_set::const_iterator it = instance_.init_.literals().begin(); it != instance_.init_.literals().end(); ++it ) {
         if( *it > 0 ) init[*it - 1] = true;
     }
 
 #if 1
     // atoms in the invariants are non-static
-    for( size_t k = 0; k < instance_.init_.invariants_.size(); ++k ) {
-        const Instance::Invariant &invariant = instance_.init_.invariants_[k];
+    for( size_t k = 0; k < instance_.init_.invariants().size(); ++k ) {
+        const Instance::Invariant &invariant = instance_.init_.invariants()[k];
         for( Instance::Invariant::const_iterator it = invariant.begin(); it != invariant.end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
             static_atoms[idx] = false;
@@ -355,8 +355,8 @@ void Preprocessor::compute_static_atoms(const bool_vec &reachable_actions, bool_
 
     // atoms in the oneofs are non-static
     // TODO: not sure of this is correct!
-    for( size_t k = 0; k < instance_.init_.oneofs_.size(); ++k ) {
-        const Instance::Oneof &oneof = instance_.init_.oneofs_[k];
+    for( size_t k = 0; k < instance_.init_.oneofs().size(); ++k ) {
+        const Instance::Oneof &oneof = instance_.init_.oneofs()[k];
         for( Instance::Oneof::const_iterator it = oneof.begin(); it != oneof.end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
             static_atoms[idx] = false;
@@ -368,11 +368,11 @@ void Preprocessor::compute_static_atoms(const bool_vec &reachable_actions, bool_
     // TODO: not sure of this is correct!
     for( size_t k = 0; k < instance_.axioms_.size(); ++k ) {
         const Instance::Axiom &axiom = *instance_.axioms_[k];
-        for( index_set::const_iterator it = axiom.body_.begin(); it != axiom.body_.end(); ++it ) {
+        for( index_set::const_iterator it = axiom.body().begin(); it != axiom.body().end(); ++it ) {
             if( *it < 0 )
                 ;//static_atoms[-*it-1] = false; // TODO: CHECK THIS!
         }
-        for( index_set::const_iterator it = axiom.head_.begin(); it != axiom.head_.end(); ++it ) {
+        for( index_set::const_iterator it = axiom.head().begin(); it != axiom.head().end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
             static_atoms[idx] = false;
         }
@@ -383,7 +383,7 @@ void Preprocessor::compute_static_atoms(const bool_vec &reachable_actions, bool_
     for( size_t k = 0; k < instance_.actions_.size(); k++ ) {
         if( reachable_actions[k] ) {
             const Instance::Action &act = *instance_.actions_[k];
-            for( index_set::const_iterator it = act.effect_.begin(); it != act.effect_.end(); ++it ) {
+            for( index_set::const_iterator it = act.effect().begin(); it != act.effect().end(); ++it ) {
                 if( (*it > 0) && !init[*it-1] )
                     static_atoms[*it - 1] = false;
                 else if( (*it < 0) && init[-*it-1] )
@@ -391,9 +391,9 @@ void Preprocessor::compute_static_atoms(const bool_vec &reachable_actions, bool_
             }
 
             // conditional effects
-            for( size_t i = 0; i < act.when_.size(); ++i ) {
-                const Instance::When &when = act.when_[i];
-                for( index_set::const_iterator it = when.effect_.begin(); it != when.effect_.end(); ++it ) {
+            for( size_t i = 0; i < act.when().size(); ++i ) {
+                const Instance::When &when = act.when()[i];
+                for( index_set::const_iterator it = when.effect().begin(); it != when.effect().end(); ++it ) {
                     if( (*it > 0) && !init[*it-1] )
                         static_atoms[*it-1] = false;
                     else if( (*it < 0) && init[-*it-1] )
@@ -407,7 +407,7 @@ void Preprocessor::compute_static_atoms(const bool_vec &reachable_actions, bool_
         cout << Utils::yellow();
         for( size_t k = 0; k < instance_.n_atoms(); k++ ) {
             if( static_atoms[k] )
-                cout << "  static atom " << k << "." << instance_.atoms_[k]->name_ << endl;
+                cout << "  static atom " << k << "." << instance_.atoms_[k]->name() << endl;
         }
         cout << Utils::normal();
     }
@@ -438,19 +438,19 @@ void Preprocessor::compute_action_compilation(Instance::Action &action) {
 
     for( size_t k = 0; k < candidate_literals.size(); ++k ) {
         int lit = candidate_literals[k];
-        if( action.effect_.contains(lit) ) continue;
+        if( action.effect().contains(lit) ) continue;
 
         // check first condition while building completion S
         index_set completion;
         bool valid_completion = true;
-        for( size_t i = 0; i < action.when_.size(); ++i ) {
-            const Instance::When &when = action.when_[i];
-            if( when.effect_.contains(lit) ) {
-                if( when.condition_.empty() ) {
+        for( size_t i = 0; i < action.when().size(); ++i ) {
+            const Instance::When &when = action.when()[i];
+            if( when.effect().contains(lit) ) {
+                if( when.condition().empty() ) {
                     valid_completion = false;
                     break;
                 } else {
-                    completion.insert(-*when.condition_.begin());
+                    completion.insert(-*when.condition().begin());
                 }
             }
         }
@@ -458,9 +458,9 @@ void Preprocessor::compute_action_compilation(Instance::Action &action) {
 
         // check second condition
         valid_completion = false;
-        for( size_t i = 0; i < action.when_.size(); ++i ) {
-            const Instance::When &when = action.when_[i];
-            if( when.condition_.contains(lit) && (when.condition_.size() == 1) && when.effect_.contains(-lit) ) {
+        for( size_t i = 0; i < action.when().size(); ++i ) {
+            const Instance::When &when = action.when()[i];
+            if( when.condition().contains(lit) && (when.condition().size() == 1) && when.effect().contains(-lit) ) {
                 valid_completion = true;
                 break;
             }
@@ -469,11 +469,11 @@ void Preprocessor::compute_action_compilation(Instance::Action &action) {
         // If valid completion, add new conditional effect
         if( valid_completion ) {
             if( options_.is_enabled("problem:print:action-compilation") ) {
-                cout << Utils::yellow() << "completion for action=" << action.name_ << " and literal=";
+                cout << Utils::yellow() << "completion for action=" << action.name() << " and literal=";
                 if( lit > 0 )
-                    cout << instance_.atoms_[lit-1]->name_;
+                    cout << instance_.atoms_[lit-1]->name();
                 else
-                    cout << "(not " << instance_.atoms_[lit-1]->name_ << ")";
+                    cout << "(not " << instance_.atoms_[lit-1]->name() << ")";
                 cout << " : ";
                 instance_.write_atom_set(cout, completion);
                 cout << Utils::normal() << endl;
@@ -481,11 +481,11 @@ void Preprocessor::compute_action_compilation(Instance::Action &action) {
 
             if( !completion.empty() ) {
                 Instance::When new_ceff;
-                new_ceff.condition_ = completion;
-                new_ceff.effect_.insert(-lit);
-                action.when_.push_back(new_ceff);
+                new_ceff.condition() = completion;
+                new_ceff.effect().insert(-lit);
+                action.when().push_back(new_ceff);
             } else {
-                action.effect_.insert(-lit);
+                action.effect().insert(-lit);
             }
         }
     }
@@ -665,7 +665,7 @@ void Preprocessor::preprocess(bool remove_atoms) {
              << Utils::normal() << endl;
     }
     bool_vec atoms_to_remove(instance_.n_atoms(), false);
-    for( index_set::const_iterator it = instance_.init_.literals_.begin(); it != instance_.init_.literals_.end(); ++it )
+    for( index_set::const_iterator it = instance_.init_.literals().begin(); it != instance_.init_.literals().end(); ++it )
         atoms_to_remove[*it > 0 ? *it-1 : -*it-1] = true;
     atoms_to_remove.bitwise_and(static_atoms);
     reachable_atoms.bitwise_complement();
@@ -675,21 +675,21 @@ void Preprocessor::preprocess(bool remove_atoms) {
     // make sure we don't remove unreachable goals and hidden fluents!
     for( index_set::const_iterator it = instance_.goal_literals_.begin(); it != instance_.goal_literals_.end(); ++it ) {
         int idx = *it > 0 ? *it-1 : -*it-1;
-        //if( atoms_to_remove[idx] == true ) cout << instance_.atoms_[idx]->name_ << endl;
+        //if( atoms_to_remove[idx] == true ) cout << instance_.atoms_[idx]->name() << endl;
         atoms_to_remove[idx] = false;
     }
 
     for( size_t k = 0; k < instance_.n_sensors(); ++k ) {
         const Instance::Sensor &r = *instance_.sensors_[k];
-        for( index_set::const_iterator it = r.sense_.begin(); it != r.sense_.end(); ++it ) {
+        for( index_set::const_iterator it = r.sense().begin(); it != r.sense().end(); ++it ) {
             assert(*it > 0);
             //assert(atoms_to_remove[*it-1] == false);
             atoms_to_remove[*it-1] = false;
         }
     }
 
-    for( size_t k = 0; k < instance_.init_.invariants_.size(); ++k ) {
-        const Instance::Invariant &invariant = instance_.init_.invariants_[k];
+    for( size_t k = 0; k < instance_.init_.invariants().size(); ++k ) {
+        const Instance::Invariant &invariant = instance_.init_.invariants()[k];
         for( Instance::Invariant::const_iterator it = invariant.begin(); it != invariant.end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
             //assert(atoms_to_remove[idx] == false);
@@ -697,8 +697,8 @@ void Preprocessor::preprocess(bool remove_atoms) {
         }
     }
 
-    for( size_t k = 0; k < instance_.init_.oneofs_.size(); ++k ) {
-        const Instance::Oneof &oneof = instance_.init_.oneofs_[k];
+    for( size_t k = 0; k < instance_.init_.oneofs().size(); ++k ) {
+        const Instance::Oneof &oneof = instance_.init_.oneofs()[k];
         for( Instance::Oneof::const_iterator it = oneof.begin(); it != oneof.end(); ++it ) {
             int idx = *it > 0 ? *it-1 : -*it-1;
             //assert(atoms_to_remove[idx] == false);
