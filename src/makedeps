@@ -12,7 +12,8 @@ lw1.o: lw1.cc action_selection.h problem.h index.h options.h utils.h \
   parser.h scanner.h grammar.h clg_problem.h lw1_problem.h lw1_solver.h \
   inference_engine.h csp.h lw1_state.h unit_propagation.h new_solver.h \
   random_action_selection.h available_options.h width.h and_or_search.h \
-  and_or_search_api.h features.h and_or2.h
+  and_or_search_api.h features.h and_or2.h width_search.h \
+  and_or_search_api2.h and_or3.h belief_features.h
 ks0-translation.o: ks0-translation.cc cp_problem.h problem.h index.h \
   options.h utils.h state.h ks0_problem.h preprocess.h parser.h \
   scanner.h string_table.h char_map.h grammar.h base.h ptr_table.h \

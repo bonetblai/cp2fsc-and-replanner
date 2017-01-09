@@ -35,6 +35,7 @@
 #include "available_options.h"
 #include "utils.h"
 #include "width.h"
+#include "width_search.h"
 #include "random_action_selection.h"
 
 using namespace std;
@@ -388,7 +389,7 @@ int main(int argc, const char *argv[]) {
         action_selection = make_unique<RandomActionSelection<STATE_CLASS> >(*lw1_instance, move(alternate_action_selection));
         assert(alternate_action_selection == nullptr);
     } else if( g_options.is_enabled("solver:width-based-action-selection") ) {
-        action_selection = make_unique<Width::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine);
+        action_selection = make_unique<Width2::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine);
     } else {
         assert(planner != nullptr);
         action_selection = make_unique<ClassicalPlannerWrapper<STATE_CLASS> >(*planner);
