@@ -43,7 +43,8 @@ class StringTable {
           : bin_(bin), text_(cmap.strdup(str)), value_(value), next_(next) {
         }
         Cell(const char *str, size_t len, const char_map &cmap, void *value, size_t bin, Cell *next)
-          : bin_(bin), text_(cmap.strdup(str, len)), value_(value), next_(next) { }
+          : bin_(bin), text_(cmap.strdup(str, len)), value_(value), next_(next) {
+        }
         ~Cell() {
             delete[] text_;
             delete next_;
