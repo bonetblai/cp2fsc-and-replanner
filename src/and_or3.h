@@ -33,8 +33,8 @@ namespace AndOr3 {
   template<typename T>
   class Belief {
     protected:
-      mutable int ref_count_;
-      const T *belief_;
+      mutable int ref_count_; // reference count (UNUSED)
+      const T *rep_;          // representation of belief
 
     public:
       int ref_count() const {
@@ -43,10 +43,12 @@ namespace AndOr3 {
       int increase_ref_count() const {
           return ++ref_count_;
       }
+#if 0
       const Belief* copy() const {
           ++ref_count_;
           return this;
       }
+#endif
       static bool deallocate(const Belief *belief) { // CHECK
           if( belief != 0 ) {
               if( belief->ref_count_ <= 0 ) std::cout << "REF-C=" << belief->ref_count_ << std::endl;
@@ -62,21 +64,19 @@ namespace AndOr3 {
       }
 
     public:
-      Belief(const T *belief = 0) : ref_count_(1), belief_(belief) {
+      Belief(const T *belief = 0) : ref_count_(1), rep_(belief) {
       }
-      ~Belief() {
+      virtual ~Belief() {
           std::cout << "(dtor for Belief)" << std::flush;
       }
-
-      const T* belief() const {
-          return belief_;
+      const T* rep() const {
+          return rep_;
       }
-
       void print(std::ostream &os) const {
-          if( belief_ == 0 )
+          if( rep_ == 0 )
               os << "(null)";
           else
-              belief_->print(os);
+              rep_->print(os);
       }
   };
 
@@ -87,6 +87,7 @@ namespace AndOr3 {
   class Node {
     protected:
       mutable int ref_count_; // CHECK: currently unused
+      mutable int cached_value_;  // used for computation of global features
 
     protected:
       virtual int deallocate() const = 0;
@@ -120,6 +121,12 @@ namespace AndOr3 {
     public:
       Node() : ref_count_(1) { }
       virtual ~Node() { std::cout << "(dtor for Node)" << std::flush; }
+      int cached_value() const {
+          return cached_value_;
+      }
+      void set_cached_value(int value) const {
+          cached_value_ = value;
+      }
       virtual void print(std::ostream &os) const = 0;
       virtual void pretty_print(std::ostream &os, int indent) const = 0;
   };
@@ -131,6 +138,7 @@ namespace AndOr3 {
       const Belief<T> *belief_;                // belief after action is applied (belief for this node)
       const OrNode<T> *parent_;                // parent node
       std::vector<const OrNode<T>*> children_; // children
+      mutable bool has_solution_;              // has_solution
 
     protected:
       virtual int deallocate() const { // CHECK
@@ -148,7 +156,7 @@ namespace AndOr3 {
 
     public:
       AndNode(int action, const Belief<T> *belief, const OrNode<T> *parent)
-        : action_(action), belief_(belief), parent_(parent) {
+        : action_(action), belief_(belief), parent_(parent), has_solution_(false) {
       }
       virtual ~AndNode() {
           std::cout << "(dtor for AndNode)" << std::flush;
@@ -176,6 +184,12 @@ namespace AndOr3 {
       void set_parent(const OrNode<T> *parent) {
           parent_ = parent;
       }
+      bool has_solution() const {
+          return has_solution_;
+      }
+      void set_has_solution(bool has_solution) const {
+          has_solution_ = has_solution;
+      }
 
       const std::vector<const OrNode<T>*>& children() const {
           return children_;
@@ -183,6 +197,9 @@ namespace AndOr3 {
       const OrNode<T>* child(int k) const {
           assert((k >= 0) && (k < children_.size()));
           return children_[k];
+      }
+      void reserve(size_t num_children) {
+          children_.reserve(num_children);
       }
       size_t add_child(const OrNode<T> *child) {
           children_.push_back(child);
@@ -196,6 +213,8 @@ namespace AndOr3 {
       const Belief<T> *belief_;                 // belief for this node
       const AndNode<T> *parent_;                // parent node
       std::vector<const AndNode<T>*> children_; // children
+      bool is_goal_;                            // is_goal
+      mutable int best_child_;                  // index of best child
 
     protected:
       virtual int deallocate() const { // CHECK
@@ -212,8 +231,8 @@ namespace AndOr3 {
       }
 
     public:
-      OrNode(const Belief<T> *belief, const AndNode<T> *parent)
-        : belief_(belief), parent_(parent) {
+      OrNode(const Belief<T> *belief, const AndNode<T> *parent, bool is_goal)
+        : belief_(belief), parent_(parent), is_goal_(is_goal), best_child_(-1) {
       }
       virtual ~OrNode() {
           std::cout << "(dtor for OrNode)" << std::flush;
@@ -223,6 +242,8 @@ namespace AndOr3 {
           os << "OR[ptr=" << this
              << ",ref=" << Node::ref_count_
              << ",parent=" << parent_
+             << ",is-goal=" << is_goal_
+             << ",best-child=" << best_child_
              << "]";
       }
       virtual void pretty_print(std::ostream &os, int indent) const { // CHECK: FILL MISSING CODE
@@ -234,6 +255,15 @@ namespace AndOr3 {
       const AndNode<T>* parent() const {
           return parent_;
       }
+      bool is_goal() const {
+          return is_goal_;
+      }
+      int best_child() const {
+          return best_child_;
+      }
+      void set_best_child(int best_child) const {
+          best_child_ = best_child;
+      }
 
       const std::vector<const AndNode<T>*>& children() const {
           return children_;
@@ -242,25 +272,14 @@ namespace AndOr3 {
           assert((k >= 0) && (k < children_.size()));
           return children_[k];
       }
+      void reserve(size_t num_children) {
+          children_.reserve(num_children);
+      }
       size_t add_child(const AndNode<T> *child) {
           children_.push_back(child);
           return children_.size();
       }
   };
-
-#if 0
-  template<typename T>
-  inline AndNode<T>* create_and_node(int action, const T *bel_a, std::vector<const T*> &successors) {
-      const Belief<T> *belief_a = new Belief<T>(bel_a);
-      AndNode<T> *and_node = new AndNode<T>(action, belief_a, 0);
-      for( size_t k = 0; k < successors.size(); ++k ) {
-          const Belief<T> *belief_ao = new Belief<T>(successors[k]);
-          OrNode<T> *child = new OrNode<T>(belief_ao, and_node);
-          and_node->add_child(child);
-      }
-      return and_node;
-  }
-#endif
 
 } // namespace AndOr3
 

@@ -49,10 +49,82 @@ namespace AndOr3 {
         }
 
         virtual void reset() const = 0;
-        virtual const OrNode<T>* make_root_node(const T *state) const = 0;
+        virtual OrNode<T>* make_root_node(const T *state) const = 0;
         virtual bool prune(const OrNode<T> &node) const = 0;
-        virtual bool is_goal(const OrNode<T> &node) const = 0;
-        virtual void expand(const OrNode<T> &node, std::vector<const AndNode<T>*> &successors) const = 0;
+        virtual bool is_goal(const T *state) const = 0;
+        virtual void expand(const OrNode<T> &node, std::vector<AndNode<T>*> &successors) const = 0;
+        virtual void compute_features(const OrNode<T> &root, const std::vector<OrNode<T>*> &fringe) const = 0;
+        virtual void register_features(const OrNode<T> &node) const = 0;
+
+        bool is_goal(const OrNode<T> &node) const {
+            return node.is_goal();
+        }
+        bool has_solution(const OrNode<T> &node, bool explore = false) const {
+            if( node.is_goal() ) {
+                return true;
+            } else {
+                if( explore ) {
+                    for( size_t k = 0; k < node.children().size(); ++k ) {
+                        const AndNode<T> &child = *node.child(k);
+                        if( has_solution(child, explore) ) {
+                            node.set_best_child(k);
+                            break;
+                        }
+                    }
+                }
+                return node.best_child() != -1;
+            }
+        }
+        bool has_solution(const AndNode<T> &node, bool explore = false) const {
+            if( explore ) {
+                bool node_has_solution = true;
+                for( size_t k = 0; k < node.children().size(); ++k ) {
+                    const OrNode<T> &child = *node.child(k);
+                    if( !has_solution(child, explore) ) {
+                        node_has_solution = false;
+                        break;
+                    }
+                }
+                node.set_has_solution(node_has_solution);
+            }
+            return node.has_solution();
+        }
+        void compute_subtree_solution(const OrNode<T> &node) const {
+            has_solution(node, true);
+        }
+        void compute_subtree_solution(const AndNode<T> &node) const {
+            has_solution(node, true);
+        }
+        void propagate_subtree_solution_upwards(const OrNode<T> &node) const {
+            if( has_solution(node) && (node.parent() != 0) ) {
+                const AndNode<T> &parent = *node.parent();
+                assert(!has_solution(parent));
+                bool parent_has_solution = true;
+                for( size_t k = 0; k < parent.children().size(); ++k ) {
+                    const OrNode<T> &child = *parent.child(k);
+                    if( !has_solution(child) ) {
+                        parent_has_solution = false;
+                        break;
+                    }
+                }
+                parent.set_has_solution(parent_has_solution);
+                propagate_subtree_solution_upwards(parent);
+            }
+        }
+        void propagate_subtree_solution_upwards(const AndNode<T> &node) const {
+            if( has_solution(node) && (node.parent() != 0) ) {
+                const OrNode<T> &parent = *node.parent();
+                assert(!has_solution(parent));
+                for( size_t k = 0; k < parent.children().size(); ++k ) {
+                    const AndNode<T> &child = *parent.child(k);
+                    if( !has_solution(child) ) {
+                        parent.set_best_child(k);
+                        break;
+                    }
+                }
+                propagate_subtree_solution_upwards(parent);
+            }
+        }
     };
 
   } // namespace Search

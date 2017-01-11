@@ -27,6 +27,8 @@
 #include "lw1_problem.h"
 //#include "and_or2.h"
 
+//#define DEBUG
+
 namespace Width2 {
 
   template<typename T>
@@ -48,18 +50,22 @@ namespace Width2 {
     public:
       Feature(int index) : index_(index) { }
       virtual ~Feature() { }
-      virtual int value(const T &belief, bool verbose = false) const = 0;
-      //virtual bool holds(const T &state, bool verbose = false) const = 0;
-      //virtual bool holds(const AndOr::Policy<T> &policy, const T &tip, bool verbose = false) const = 0;
-      //virtual bool holds(const AndOr::Policy<T> &policy, bool verbose = false) const = 0;
-      //virtual bool subsumes(const Feature<T> &feature) const = 0;
-      virtual std::string to_string() const = 0;
+
       int index() const {
           return index_;
       }
       void print(std::ostream &os) const {
           os << to_string() << std::flush;
       }
+
+      // feature types
+      virtual bool atomic() const = 0;      // if true, feature value cannot be decomposed
+      virtual bool value_term() const = 0;  // if true, this is not a feature but a value to construct a feature
+
+      // basic functions
+      virtual int value(const T &belief, const std::vector<int> *cache = 0, bool verbose = false) const = 0;
+      virtual bool holds(const T &belief, const std::vector<int> *cache = 0, bool verbose = false) const = 0;
+      virtual std::string to_string() const = 0;
 
       // comparison for feature pointers
       struct ptr_compare_t {
@@ -68,6 +74,224 @@ namespace Width2 {
           }
       };
   };
+
+  template<typename T>
+  class LiteralFeature : public Feature<T> {
+    using Feature<T>::index;
+    protected:
+      const LW1_Instance &lw1_instance_;
+      const int var_index_;
+      const int literal_;
+
+    public:
+      LiteralFeature(int index, const LW1_Instance &lw1_instance, int var_index, int literal)
+        : Feature<T>(index),
+          lw1_instance_(lw1_instance),
+          var_index_(var_index),
+          literal_(literal) {
+      }
+      virtual ~LiteralFeature() { }
+
+      const LW1_Instance& lw1_instance() const {
+          return lw1_instance_;
+      }
+      int var_index() const {
+          return var_index_;
+      }
+      int literal() const {
+          return literal_;
+      }
+
+      virtual bool atomic() const {
+          return true;
+      }
+      virtual bool value_term() const {
+          return false;
+      }
+      virtual int value(const T &belief, const std::vector<int> *cache = 0, bool verbose = false) const {
+          int feature_value = -1;
+          if( false && cache != 0 ) {
+              assert((index() >= 0) && (index() < (*cache).size()));
+              feature_value = (*cache)[index()];
+          } else {
+              feature_value = belief.satisfy(literal_ > 0 ? literal_ - 1 : -literal_ - 1, literal_ < 0) ? 1 : 0;
+          }
+          if( verbose ) std::cout << *this << " --> " << feature_value << std::endl;
+          return feature_value;
+      }
+      virtual bool holds(const T &belief, const std::vector<int> *cache = 0, bool verbose = false) const {
+          return value(belief, cache, verbose) == 1;
+      }
+      virtual std::string to_string() const {
+          std::string str("Feature[index=");
+          str += std::to_string(this->index());
+          str += ",type=literal,name=";
+          str += State::to_string(literal_, &lw1_instance_);
+          return str + "]";
+      }
+  };
+
+  template<typename T>
+  class DomainSizeValue : public Feature<T> {
+    using Feature<T>::index;
+    protected:
+      const LW1_Instance &lw1_instance_;
+      const int var_index_;
+
+    public:
+      DomainSizeValue(int index, const LW1_Instance &lw1_instance, int var_index)
+        : Feature<T>(index),
+          lw1_instance_(lw1_instance),
+          var_index_(var_index) {
+      }
+      virtual ~DomainSizeValue() { }
+
+      const LW1_Instance& lw1_instance() const {
+          return lw1_instance_;
+      }
+      int var_index() const {
+          return var_index_;
+      }
+
+      int num_possible_values(const T &belief, bool verbose = false) const {
+          const LW1_Instance::Variable &var = *lw1_instance_.variables_[var_index_];
+          int num_values = var.is_binary() ? 2 : var.domain().size();
+          if( var.is_binary() ) {
+              int atom_index = *var.domain().begin();
+              if( belief.satisfy(2*atom_index, false) )
+                  --num_values;
+              if( belief.satisfy(2*atom_index + 1, false) )
+                  --num_values;
+          } else {
+              for( set<int>::const_iterator it = var.domain().begin(); it != var.domain().end(); ++it ) {
+                  int literal = 1 + 2*(*it) + 1;
+                  if( belief.satisfy(literal - 1, false) )
+                      --num_values;
+#ifdef DEBUG
+                  std::cout << "checking "; belief::print_literal(std::cout, literal, &lw1_instance_);
+                  std::cout << " --> " << belief.satisfy(literal - 1, false) << std::endl;
+#endif
+              }
+          }
+          if( verbose ) std::cout << "domain-size(var=" << var.name() << ") --> " << num_values << std::endl;
+          return num_values;
+      }
+
+      virtual bool atomic() const {
+          return true;
+      }
+      virtual bool value_term() const {
+          return true;
+      }
+      virtual int value(const T &belief, const std::vector<int> *cache = 0, bool verbose = false) const {
+          int feature_value = -1;
+          if( cache != 0 ) {
+              assert((index() >= 0) && (index() < (*cache).size()));
+              feature_value = (*cache)[index()];
+          } else {
+              feature_value = num_possible_values(belief, verbose);
+          }
+          if( verbose ) std::cout << *this << " --> " << feature_value << std::endl;
+          return feature_value;
+      }
+      virtual bool holds(const T &belief, const std::vector<int> *cache = 0, bool verbose = false) const {
+          std::cout << Utils::internal_error() << "holds() called for feature value" << std::endl;
+          exit(-1);
+      }
+      virtual std::string to_string() const {
+          std::string str("Feature[index=");
+          str += std::to_string(this->index());
+          str += ",type=dsz-value,var=" + lw1_instance_.variables_[var_index_]->name();
+          return str + "]";
+      }
+  };
+
+  template<typename T>
+  class ValueTestFeature : public Feature<T> {
+    protected:
+      const Feature<T> &base_;
+      int target_;
+      int test_type_;
+
+    public:
+      ValueTestFeature(int index, const Feature<T> &base, int target, int test_type)
+        : Feature<T>(index),
+          base_(base),
+          target_(target),
+          test_type_(test_type) {
+      }
+      virtual ~ValueTestFeature() { }
+
+      const Feature<T> &base() const {
+          return base_;
+      }
+      int target() const {
+          return target_;
+      }
+      int test_type() const {
+          return test_type;
+      }
+
+      virtual bool atomic() const {
+          return false;
+      }
+      virtual bool value_term() const {
+          return false;
+      }
+      virtual int value(const T &belief, const std::vector<int> *cache = 0, bool verbose = false) const {
+          int feature_value = -1;
+          int base_value = base_.value(belief, cache, verbose);
+          if( test_type_ == 0 ) { // EQ
+              feature_value = base_value == target_ ? 1 : 0;
+          } else if( test_type_ == 1 ) { // LE
+              feature_value = base_value <= target_ ? 1 : 0;
+          } else {
+              assert(test_type_ == 2); // GE
+              feature_value = base_value >= target_ ? 1 : 0;
+          }
+          if( verbose ) std::cout << *this << " --> " << feature_value << std::endl;
+          return feature_value;
+      }
+      virtual bool holds(const T &belief, const std::vector<int> *cache = 0, bool verbose = false) const {
+          return value(belief, cache, verbose) == 1;
+      }
+      virtual std::string to_string() const {
+          std::string str("Feature[index=");
+          str += std::to_string(this->index());
+          str += ",type=value-test,base=" + base_.to_string();
+          str += ",target=" + std::to_string(target_);
+          str += ",test-type=" + std::to_string(test_type_);
+          return str + "]";
+      }
+  };
+
+  template<typename T>
+  class ValueTestEQ : public ValueTestFeature<T> {
+    public:
+      ValueTestEQ(int index, const Feature<T> &base, int target)
+        : ValueTestFeature<T>(index, base, target, 0) {
+      }
+      virtual ~ValueTestEQ() { }
+  };
+
+  template<typename T>
+  class ValueTestLE : public ValueTestFeature<T> {
+    public:
+      ValueTestLE(int index, const Feature<T> &base, int target)
+        : ValueTestFeature<T>(index, base, target, 1) {
+      }
+      virtual ~ValueTestLE() { }
+  };
+
+  template<typename T>
+  class ValueTestGE : public ValueTestFeature<T> {
+    public:
+      ValueTestGE(int index, const Feature<T> &base, int target)
+        : ValueTestFeature<T>(index, base, target, 2) {
+      }
+      virtual ~ValueTestGE() { }
+  };
+
 
 #if 0
   template<typename T>
@@ -86,7 +310,9 @@ namespace Width2 {
               os << **it << std::endl;
       }
   };
+#endif
 
+#if 0
   template<typename T>
   class BoxFeature : public Feature<T> {
     protected:
@@ -102,7 +328,7 @@ namespace Width2 {
           return feature_;
       }
 
-      virtual bool holds(const T &state, bool verbose = false) const {
+      virtual bool holds(const T &belief, bool verbose = false) const {
           std::cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << std::endl;
           assert(0);
       }
@@ -127,7 +353,9 @@ namespace Width2 {
           return str + "]";
       }
   };
+#endif
 
+#if 0
   template<typename T>
   class NotFeature : public Feature<T> {
     protected:
@@ -143,8 +371,8 @@ namespace Width2 {
           return feature_;
       }
 
-      virtual bool holds(const T &state, bool verbose = false) const {
-          return !feature_.holds(state, verbose);
+      virtual bool holds(const T &belief, bool verbose = false) const {
+          return !feature_.holds(belief, verbose);
       }
       virtual bool holds(const AndOr::Policy<T> &policy, const T &tip, bool verbose = false) const {
           return !feature_.holds(policy, tip, verbose);
@@ -187,9 +415,9 @@ namespace Width2 {
           disjuncts_.push_back(&feature);
       }
 
-      virtual bool holds(const T &state, bool verbose = false) const {
+      virtual bool holds(const T &belief, bool verbose = false) const {
           for( size_t k = 0; k < disjuncts_.size(); ++k ) {
-              if( disjuncts_[k]->holds(state, verbose) )
+              if( disjuncts_[k]->holds(belief, verbose) )
                   return true;
           }
           return false;
@@ -255,9 +483,9 @@ namespace Width2 {
           conjuncts_.push_back(&feature);
       }
 
-      virtual bool holds(const T &state, bool verbose = false) const {
+      virtual bool holds(const T &belief, bool verbose = false) const {
           for( size_t k = 0; k < conjuncts_.size(); ++k ) {
-              if( !conjuncts_[k]->holds(state, verbose) )
+              if( !conjuncts_[k]->holds(belief, verbose) )
                   return false;
           }
           return true;
@@ -306,208 +534,6 @@ namespace Width2 {
   };
 #endif
 
-  template<typename T>
-  class DomainSizeFeature : public Feature<T> {
-    protected:
-      const LW1_Instance &lw1_instance_;
-      const int test_type_;
-      const int var_index_;
-      const int size_;
-
-      DomainSizeFeature(int index, const LW1_Instance &lw1_instance, int test_type, int var_index, int size)
-        : Feature<T>(index),
-          lw1_instance_(lw1_instance),
-          test_type_(test_type),
-          var_index_(var_index),
-          size_(size) {
-      }
-
-    public:
-      virtual ~DomainSizeFeature() { }
-
-      const LW1_Instance& lw1_instance() const {
-          return lw1_instance_;
-      }
-      int var_index() const {
-          return var_index_;
-      }
-      int size() const {
-          return size_;
-      }
-
-      int num_possible_values(const T &state, bool verbose = false) const {
-          const LW1_Instance::Variable &var = *lw1_instance_.variables_[var_index_];
-          int num_values = var.is_binary() ? 2 : var.domain().size();
-          if( var.is_binary() ) {
-              int atom_index = *var.domain().begin();
-              if( state.satisfy(2*atom_index, false) )
-                  --num_values;
-              if( state.satisfy(2*atom_index + 1, false) )
-                  --num_values;
-          } else {
-              for( set<int>::const_iterator it = var.domain().begin(); it != var.domain().end(); ++it ) {
-                  int literal = 1 + 2*(*it) + 1;
-                  if( state.satisfy(literal - 1, false) )
-                      --num_values;
-#ifdef DEBUG
-                  std::cout << "checking "; State::print_literal(std::cout, literal, &lw1_instance_);
-                  std::cout << " --> " << state.satisfy(literal - 1, false) << std::endl;
-#endif
-              }
-#ifdef DEBUG
-              std::cout << "value for " << var << " = " << num_values << std::endl;
-#endif
-          }
-          return num_values;
-      }
-
-      virtual int value(const T &belief, bool verbose = false) const {
-          return num_possible_values(belief, verbose);
-      }
-
-#if 0
-      virtual bool holds(const T &state, bool verbose = false) const {
-          int num_values = num_possible_values(state, verbose);
-          if( test_type_ == 0 ) { // equality
-              return num_values == size_;
-          } else if( test_type_ == 1 ) { // less than or equal
-              return num_values <= size_;
-          } else if( test_type_ == 2 ) { // greater than or equal
-              return num_values >= size_;
-          } else {
-              std::cout << Utils::internal_error() << "unexpected test type in DomainSizeLiteral" << std::endl;
-              exit(255);
-          }
-      }
-      virtual bool holds(const AndOr::Policy<T> &policy, const T &tip, bool verbose = false) const {
-          // feature can't decompose into simpler features
-          return holds(tip, verbose);
-      }
-      virtual bool holds(const AndOr::Policy<T> &policy, bool verbose = false) const {
-          return Feature<T>::default_holds(policy, verbose);
-      }
-      virtual bool subsumes(const Feature<T> &feature) const {
-          if( dynamic_cast<const OrFeature<T>*>(&feature) != 0 ) {
-              const OrFeature<T> &or_feature = static_cast<const OrFeature<T>&>(feature);
-              assert(or_feature.disjuncts().size() > 1);
-              for( size_t k = 0; k < or_feature.disjuncts().size(); ++k ) {
-                  if( this == or_feature.disjuncts()[k] )
-                      return true;
-              }
-              return false;
-          }
-          return false;
-      }
-#endif
-
-      virtual std::string to_string() const {
-          std::string str("Feature[index=");
-          str += std::to_string(this->index());
-          str += ",type=dsz,var=" + lw1_instance_.variables_[var_index_]->name();
-          str += ",size=" + std::to_string(size_);
-          str += ",test=" + std::to_string(test_type_);
-          return str + "]";
-      }
-  };
-
-  template<typename T>
-  class DomainSizeFeatureEQ : public DomainSizeFeature<T> {
-    public:
-      DomainSizeFeatureEQ(int index, const LW1_Instance &lw1_instance, int var_index, int size)
-        : DomainSizeFeature<T>(index, lw1_instance, 0, var_index, size) {
-      }
-      virtual ~DomainSizeFeatureEQ() { }
-  };
-
-  template<typename T>
-  class DomainSizeFeatureLE : public DomainSizeFeature<T> {
-    public:
-      DomainSizeFeatureLE(int index, const LW1_Instance &lw1_instance, int var_index, int size)
-        : DomainSizeFeature<T>(index, lw1_instance, 1, var_index, size) {
-      }
-      virtual ~DomainSizeFeatureLE() { }
-  };
-
-  template<typename T>
-  class DomainSizeFeatureGE : public DomainSizeFeature<T> {
-    public:
-      DomainSizeFeatureGE(int index, const LW1_Instance &lw1_instance, int var_index, int size)
-        : DomainSizeFeature<T>(index, lw1_instance, 2, var_index, size) {
-      }
-      virtual ~DomainSizeFeatureGE() { }
-  };
-
-  template<typename T>
-  class LiteralFeature : public Feature<T> {
-    protected:
-      const LW1_Instance &lw1_instance_;
-      const int var_index_;
-      const int literal_;
-
-    public:
-      LiteralFeature(int index, const LW1_Instance &lw1_instance, int var_index, int literal)
-        : Feature<T>(index),
-          lw1_instance_(lw1_instance),
-          var_index_(var_index),
-          literal_(literal) {
-      }
-      virtual ~LiteralFeature() { }
-
-      const LW1_Instance& lw1_instance() const {
-          return lw1_instance_;
-      }
-      int var_index() const {
-          return var_index_;
-      }
-      int literal() const {
-          return literal_;
-      }
-
-      virtual int value(const T &belief, bool verbose = false) const {
-          if( verbose )
-              std::cout << *this << " --> " << belief.satisfy(literal_ > 0 ? literal_ - 1 : -literal_ - 1, literal_ < 0) << std::endl;
-          return belief.satisfy(literal_ > 0 ? literal_ - 1 : -literal_ - 1, literal_ < 0) ? 1 : 0;
-      }
-
-#if 0
-      virtual bool holds(const T &state, bool verbose = false) const {
-          if( verbose )
-              std::cout << *this << " --> " << state.satisfy(literal_ > 0 ? literal_ - 1 : -literal_ - 1, literal_ < 0) << std::endl;
-          return state.satisfy(literal_ > 0 ? literal_ - 1 : -literal_ - 1, literal_ < 0);
-      }
-      virtual bool holds(const AndOr::Policy<T> &policy, const T &tip, bool verbose = false) const {
-          // feature can't decompose into simpler features
-          return holds(tip, verbose);
-      }
-      virtual bool holds(const AndOr::Policy<T> &policy, bool verbose = false) const {
-          return Feature<T>::default_holds(policy, verbose);
-      }
-      virtual bool subsumes(const Feature<T> &feature) const {
-          if( dynamic_cast<const OrFeature<T>*>(&feature) != 0 ) {
-              const OrFeature<T> &or_feature = static_cast<const OrFeature<T>&>(feature);
-              assert(or_feature.disjuncts().size() > 1);
-              for( size_t k = 0; k < or_feature.disjuncts().size(); ++k ) {
-                  if( this == or_feature.disjuncts()[k] )
-                      return true;
-              }
-              return false;
-          } else if( dynamic_cast<const DomainSizeFeature<T>*>(&feature) != 0 ) {
-              const DomainSizeFeature<T> &dsz_feature = static_cast<const DomainSizeFeature<T>&>(feature);
-              return (literal_ > 0) && (var_index_ == dsz_feature.var_index()) && (dsz_feature.size() == 1);
-          }
-          return this == &feature;
-      }
-#endif
-
-      virtual std::string to_string() const {
-          std::string str("Feature[index=");
-          str += std::to_string(this->index());
-          str += ",type=literal,name=";
-          str += State::to_string(literal_, &lw1_instance_);
-          return str + "]";
-      }
-  };
-
 #if 0
   template<typename T>
   class GoalFeature : public Feature<T> {
@@ -533,10 +559,10 @@ namespace Width2 {
           return goal_literals_;
       }
 
-      virtual bool holds(const T &state, bool verbose = false) const {
+      virtual bool holds(const T &belief, bool verbose = false) const {
           for( size_t k = 0; k < goal_literals_.size(); ++k ) {
               int literal = goal_literals_[k];
-              if( !state.satisfy(literal > 0 ? literal - 1 : -literal - 1, literal < 0) )
+              if( !belief.satisfy(literal > 0 ? literal - 1 : -literal - 1, literal < 0) )
                   return false;
           }
           return true;
@@ -574,13 +600,7 @@ inline std::ostream& operator<<(std::ostream &os, const Width2::Feature<T> &feat
     return os;
 }
 
-#if 0
-template<typename T>
-inline std::ostream& operator<<(std::ostream &os, const Width2::FeatureSet<T> &feature_set) {
-    feature_set.print(os);
-    return os;
-}
-#endif
+#undef DEBUG
 
 #endif
 
