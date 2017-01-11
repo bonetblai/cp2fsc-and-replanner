@@ -119,7 +119,7 @@ namespace AndOr3 {
       }
 
     public:
-      Node() : ref_count_(1) { }
+      Node() : ref_count_(1), cached_value_(-1) { }
       virtual ~Node() { std::cout << "(dtor for Node)" << std::flush; }
       int cached_value() const {
           return cached_value_;

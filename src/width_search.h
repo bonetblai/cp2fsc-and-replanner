@@ -409,6 +409,7 @@ namespace Width2 {
       void bottom_up_pass(const AndOr3::OrNode<T> &node, const Feature<T> &feature, bool verbose = false) const {
           if( node.children().empty() ) {
               node.set_cached_value(feature.value(*node.belief()->rep(), 0, verbose));
+              assert(node.cached_value() >= 0); // REMOVE
           } else {
               int min_value = std::numeric_limits<int>::max();
               for( size_t k = 0; k < node.children().size(); ++k ) {
@@ -417,6 +418,7 @@ namespace Width2 {
                   min_value = min(min_value, child.cached_value());
               }
               node.set_cached_value(min_value);
+              assert(node.cached_value() >= 0); // REMOVE
           }
           if( verbose ) std::cout << "bottom-up: value for " << feature << " at " << node << " --> " << node.cached_value() << std::endl;
       }
@@ -429,12 +431,14 @@ namespace Width2 {
               max_value = max(max_value, child.cached_value());
           }
           node.set_cached_value(max_value);
+          assert(node.cached_value() >= 0); // REMOVE
           if( verbose ) std::cout << "bottom-up: value for " << feature << " at " << node << " --> " << node.cached_value() << std::endl;
       }
       void top_down_pass(const AndOr3::OrNode<T> &node, const Feature<T> &feature, bool verbose = false) const {
           if( node.parent() != 0 ) {
               node.set_cached_value(node.parent()->cached_value());
           }
+          assert(node.cached_value() >= 0); // REMOVE
           for( size_t k = 0; k < node.children().size(); ++k ) {
               const AndOr3::AndNode<T> &child = *node.child(k);
               top_down_pass(child, feature, verbose);
@@ -444,6 +448,7 @@ namespace Width2 {
       void top_down_pass(const AndOr3::AndNode<T> &node, const Feature<T> &feature, bool verbose = false) const {
           assert(node.parent() != 0);
           node.set_cached_value(max(node.cached_value(), node.parent()->cached_value()));
+          assert(node.cached_value() >= 0); // REMOVE
           for( size_t k = 0; k < node.children().size(); ++k ) {
               const AndOr3::OrNode<T> &child = *node.child(k);
               top_down_pass(child, feature, verbose);
@@ -458,28 +463,23 @@ namespace Width2 {
       virtual AndOr3::OrNode<T>* make_root_node(const T *state) const {
           return new AndOr3::OrNode<T>(new AndOr3::Belief<T>(state), 0, is_goal(state));
       }
-      virtual bool prune(const AndOr3::OrNode<T> &n) const {
+      virtual bool prune(const AndOr3::OrNode<T> &node, bool verbose = false) const {
+          bool prune_node = prune_nodes_;
           if( prune_nodes_ ) {
-              return false;
-              //assert(0);
-#if 0
-              const Node<T> &node = static_cast<const Node<T>&>(n);
-              if( node.features() != 0 ) {
-                  for( typename FeatureSet<T>::const_iterator it = node.features()->begin(); it != node.features()->end(); ++it ) {
-                      if( is_feature_available(**it) ) // CHECK: ext
-                          return false;
+              cache_t::const_iterator it = feature_value_cache_.find(const_cast<AndOr3::OrNode<T>*>(&node));
+              assert(it != feature_value_cache_.end());
+              for( size_t k = 0; k < feature_language_.size(); ++k ) {
+                  const Feature<T> &feature = *feature_language_[k];
+                  if( is_feature_available(feature) && feature.holds(*node.belief()->rep(), &it->second) ) {
+                      prune_node = false;
+                      break;
                   }
               }
-              std::cout << Utils::magenta() << "API::prune():" << Utils::normal()
-                        << " node=" << n
-                        << ": " << Utils::red() << "prune node!" << Utils::normal()
-                        << std::endl;
-#endif
-              return true;
           } else {
               std::cout << Utils::magenta() << "API::prune():" << Utils::normal() << " pruning is off" << std::endl;
-              return false;
           }
+          if( verbose && prune_node ) std::cout << Utils::magenta() << "prune: node=" << node << Utils::normal() << std::endl;
+          return prune_node;
       }
       virtual bool is_goal(const T *n) const {
           return (n != 0) && n->is_goal(lw1_instance_);
@@ -488,10 +488,12 @@ namespace Width2 {
           const AndOr3::Belief<T> &belief = *n.belief();
           const T &tip = *belief.rep();
 
+#ifdef DEBUG
           std::cout << Utils::magenta() << "API::expand():" << Utils::normal() << std::flush
                     << " ptr=" << &n
                     << " node=" << n
                     << std::endl;
+#endif
 
           // for each action, compute available features reached with action
           successors.clear();
@@ -500,7 +502,7 @@ namespace Width2 {
               const Instance::Action &action = *lw1_instance_.actions_[action_index];
               assert(lw1_instance_.is_regular_action(action_index));
               if( tip.applicable(action) ) {
-                  std::cout << Utils::green() << "action=" << Utils::normal() << action.name() << std::endl;
+                  //std::cout << Utils::green() << "action=" << Utils::normal() << action.name() << std::endl;
 
                   // calculate result of action
                   T *result_after_action = new T(tip);
@@ -508,7 +510,7 @@ namespace Width2 {
 
 #ifdef DEBUG
                   std::cout << Utils::blue() << "RESULT(a=" << action.name() << ")=" << Utils::normal();
-                  result_after_action->print(std::cout, &lw1_instance_);
+                  //result_after_action->print(std::cout, &lw1_instance_);
                   std::cout << std::endl;
 #endif
 
@@ -516,7 +518,7 @@ namespace Width2 {
                   std::vector<std::set<int> > possible_observations;
                   compute_possible_observations(*result_after_action, action, possible_observations);
 #ifdef DEBUG
-                  std::cout << Utils::green() << "#possible-obs=" << possible_observations.size() << Utils::normal() << std::endl;
+                  //std::cout << Utils::green() << "#possible-obs=" << possible_observations.size() << Utils::normal() << std::endl;
 #endif
 
                   // generate valid successors after (action,obs). A valid successor
@@ -539,7 +541,7 @@ namespace Width2 {
 #ifdef DEBUG
                               std::cout << Utils::blue() << "RESULT(a=" << action.name()
                                         << ",o=obs[" << j << "])=" << Utils::normal();
-                              result_after_action_and_obs->print(std::cout, &lw1_instance_);
+                              //result_after_action_and_obs->print(std::cout, &lw1_instance_);
                               std::cout << std::endl;
 #endif
                           } else {
@@ -559,7 +561,7 @@ namespace Width2 {
                       valid_successors.push_back(std::make_pair(-1, new T(*result_after_action)));
                   }
 #ifdef DEBUG
-                  std::cout << Utils::green() << "#valid-successors-after-action=" << valid_successors.size() << Utils::normal() << std::endl;
+                  //std::cout << Utils::green() << "#valid-successors-after-action=" << valid_successors.size() << Utils::normal() << std::endl;
 #endif
                   assert(!valid_successors.empty());
 
@@ -574,21 +576,25 @@ namespace Width2 {
               }
           }
 #ifdef DEBUG
-          std::cout << Utils::green() << "#successors=" << successors.size() << Utils::normal() << std::endl;
+          //std::cout << Utils::green() << "#successors=" << successors.size() << Utils::normal() << std::endl;
 #endif
       }
-      virtual void compute_features(const AndOr3::OrNode<T> &root, const std::vector<AndOr3::OrNode<T>*> &fringe) const {
+      virtual void compute_features(const AndOr3::OrNode<T> &root, const std::vector<AndOr3::OrNode<T>*> &fringe, bool verbose = false) const {
           // make sure we don't store values for fringe nodes
-          for( size_t j = 0; j < fringe.size(); ++j )
-              assert(feature_value_cache_.find(fringe[j]) == feature_value_cache_.end());
+          for( size_t j = 0; j < fringe.size(); ++j ) {
+              if( feature_value_cache_.find(fringe[j]) != feature_value_cache_.end() ) {
+                  std::cout << Utils::internal_error() << "expecting no entry in cache for feature value for fringe node" << std::endl;
+                  exit(-1);
+              }
+          }
 
           // global atomic features
           for( typename std::map<int, const Feature<T>*>::const_iterator it = global_atomic_features_.begin(); it != global_atomic_features_.end(); ++it ) {
               const Feature<T> &feature = *it->second;
 
               // compute values at all nodes in tree
-              bottom_up_pass(root, feature, true);
-              top_down_pass(root, feature, true);
+              bottom_up_pass(root, feature, verbose);
+              top_down_pass(root, feature, verbose);
 
               // save feature value for fringe nodes
               for( size_t k = 0; k < fringe.size(); ++k ) {
@@ -602,6 +608,7 @@ namespace Width2 {
                   }
                   assert(feature.index() < jt->second.size());
                   jt->second[feature.index()] = node->cached_value();
+                  assert(node->cached_value() >= 0); // REMOVE
               }
           }
           std::cout << "DONE W/ GLOBAL" << std::endl;
@@ -624,12 +631,12 @@ namespace Width2 {
           std::cout << "DONE W/ LOCAL" << std::endl;
 #endif
       }
-      virtual void register_features(const AndOr3::OrNode<T> &node) const {
+      virtual void register_features(const AndOr3::OrNode<T> &node, bool verbose = false) const {
           cache_t::const_iterator it = feature_value_cache_.find(const_cast<AndOr3::OrNode<T>*>(&node));
           assert(it != feature_value_cache_.end());
           for( size_t k = 0; k < feature_language_.size(); ++k ) {
               const Feature<T> &feature = *feature_language_[k];
-              if( is_feature_available(feature) && feature.holds(*node.belief()->rep(), &it->second, true) ) {
+              if( is_feature_available(feature) && feature.holds(*node.belief()->rep(), &it->second, false) ) {
                   // mark this feature as seen
                   register_feature(feature);
 #ifdef DEBUG
@@ -688,17 +695,15 @@ namespace Width2 {
                       }
                   } else {
 #ifdef DEBUG
-                      std::cout << Utils::green() << "variable '" << variable.name() << "' is multivalued" << Utils::normal() << std::endl;
-                      if( variable.is_state_variable() )
-                          std::cout << Utils::green() << "variable '" << variable.name() << "' is state variable" << Utils::normal() << std::endl;
-                      else
-                          std::cout << Utils::green() << "variable '" << variable.name() << "' is observable variable" << Utils::normal() << std::endl;
+                      //std::cout << Utils::green() << "variable '" << variable.name() << "' is multivalued" << Utils::normal() << std::endl;
+                      //if( variable.is_state_variable() )
+                      //    std::cout << Utils::green() << "variable '" << variable.name() << "' is state variable" << Utils::normal() << std::endl;
+                      //else
+                      //    std::cout << Utils::green() << "variable '" << variable.name() << "' is observable variable" << Utils::normal() << std::endl;
 #endif
-std::cout << "TIP="; tip.print(std::cout, &lw1_instance_); std::cout << std::endl;
                       for( set<int>::const_iterator kt = variable.domain().begin(); kt != variable.domain().end(); ++kt ) {
                           int atom = *kt;
                           if( variable.is_state_variable() ) {
-std::cout << "CHECKING: k-literal="; State::print_literal(std::cout, 1 + 2*atom + 1, &lw1_instance_); std::cout << ", atom="; State::print_literal(std::cout, 1 + atom, &lw1_instance_.po_instance_); std::cout << ", value=" << tip.satisfy(2*atom + 1) << std::endl;
                               if( !tip.satisfy(2*atom + 1) )
                                   observable_literals[var_index].push_back(1 + atom);
                           } else {
@@ -714,7 +719,7 @@ std::cout << "CHECKING: k-literal="; State::print_literal(std::cout, 1 + 2*atom 
               generate_combinations_recursively(tip, observable_literals.begin(), observable_literals.end(), combination, possible_observations);
               assert(combination.empty());
 #ifdef DEBUG
-              std::cout << Utils::green() << "#combinations-for-sensed-vars=" << possible_observations.size() << std::endl;
+              //std::cout << Utils::green() << "#combinations-for-sensed-vars=" << possible_observations.size() << std::endl;
 #endif
           }
       }
@@ -745,21 +750,21 @@ std::cout << "CHECKING: k-literal="; State::print_literal(std::cout, 1 + 2*atom 
               // Such a check is performed later at full combination using the
               // inference engine.
 #ifdef DEBUG
-              std::cout << "possible-observation:";
+              //std::cout << "possible-observation:";
 #endif
               std::set<int> observation;
               for( size_t i = 0; i < combination.size(); ++i ) {
                   observation.insert(combination[i].second);
 #ifdef DEBUG
-                   std::cout << " [var=" << lw1_instance_.variables_[combination[i].first]->name()
-                             << ",value=";
-                   State::print_literal(std::cout, combination[i].second, &lw1_instance_.po_instance_);
-                   std::cout << "]";
+                   //std::cout << " [var=" << lw1_instance_.variables_[combination[i].first]->name()
+                   //          << ",value=";
+                   //State::print_literal(std::cout, combination[i].second, &lw1_instance_.po_instance_);
+                   //std::cout << "]";
 #endif
               }
               possible_observations.push_back(observation);
 #ifdef DEBUG
-               std::cout << std::endl;
+               //std::cout << std::endl;
 #endif
           }
       }
@@ -782,11 +787,8 @@ std::cout << "CHECKING: k-literal="; State::print_literal(std::cout, 1 + 2*atom 
       // CHECK: testing: turn off pruning
 
       API<T> api(lw1_instance_, inference_engine_, feature_universe_, feature_language_, global_atomic_features_, local_atomic_features_, true);
-std::cout << "HOLA.0" << std::endl;
       AndOr3::Search::bfs<T> bfs(lw1_instance_, api);
-std::cout << "HOLA.1" << std::endl;
       const AndOr3::OrNode<T> *root = bfs.search(state);
-std::cout << "HOLA.2: root=" << root << std::endl;
 
       std::cout << Utils::error() << "width-based action selection not yet implemented!" << std::endl;
       exit(-1);

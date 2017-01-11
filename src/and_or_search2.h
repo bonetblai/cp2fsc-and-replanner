@@ -55,8 +55,7 @@ namespace AndOr3 {
 
         const OrNode<T>* search(const T &init) const {
 #ifdef DEBUG
-            std::cout << Utils::green() << "BEGIN-SEARCH:" << Utils::normal()
-                      << " init=";
+            std::cout << Utils::red() << "BEGIN-SEARCH:" << Utils::normal() << " init=";
             init.print(std::cout, &lw1_instance_);
             std::cout << std::endl;
 #endif
@@ -72,14 +71,15 @@ namespace AndOr3 {
             size_t num_expansions = 0;
             std::vector<OrNode<T>*> fringe;
             while( !q.empty() && !api_.has_solution(*root) ) {
-#ifdef DEBUG
-                std::cout << "EXPANDING FRONTIER: size=" << q.size() << std::endl;
-#endif
                 compute_features_and_select_nodes_for_expansion(*root, q, fringe);
 
-                // expand all current frontier
+#ifdef DEBUG
+                std::cout << Utils::red() << "EXPAND FRINGE: size=" << fringe.size() << Utils::normal() << std::endl;
+#endif
+
+                // expand current fringe
                 for( size_t k = 0; k < fringe.size(); ++k ) {
-                    const OrNode<T> &n = *fringe[k];
+                    OrNode<T> &n = *fringe[k];
                     assert(!api_.is_goal(n));
 
                     // register features of node to be expanded
@@ -90,11 +90,15 @@ namespace AndOr3 {
                     api_.expand(n, successors);
                     ++num_expansions;
                     for( size_t i = 0; i < successors.size(); ++i ) {
-                        const AndNode<T> *succ = successors[i];
-                        for( size_t j = 0; j < succ->children().size(); ++j ) {
-                            OrNode<T> &child = *const_cast<OrNode<T>*>(succ->child(j));
+                        AndNode<T> &succ = *successors[i];
+                        for( size_t j = 0; j < succ.children().size(); ++j ) {
+                            OrNode<T> &child = *const_cast<OrNode<T>*>(succ.child(j));
                             q.push_back(&child);
                         }
+
+                        // link child with parent node
+                        succ.set_parent(&n);
+                        n.add_child(&succ);
                     }
                     api_.compute_subtree_solution(n);
                     api_.propagate_subtree_solution_upwards(n);
@@ -105,6 +109,9 @@ namespace AndOr3 {
         }
 
         void compute_features_and_select_nodes_for_expansion(const OrNode<T> &root, std::deque<OrNode<T>*> &in, std::vector<OrNode<T>*> &out) const {
+#ifdef DEBUG
+            std::cout << Utils::red() << "COMPUTE FEATURES: fringe-size=" << in.size() << Utils::normal() << std::endl;
+#endif
             assert(!in.empty() && out.empty());
             while( !in.empty() ) {
                 assert(in.front() != 0);
@@ -117,7 +124,7 @@ namespace AndOr3 {
             api_.compute_features(root, out);
             for( size_t k = 0; k < out.size(); ) {
                 const OrNode<T> &n = *out[k++];
-                if( api_.prune(n) ) {
+                if( api_.prune(n, true) ) {
                     assert(k > 0);
                     out[--k] = out.back();
                     out.pop_back();

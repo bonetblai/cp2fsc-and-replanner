@@ -50,11 +50,11 @@ namespace AndOr3 {
 
         virtual void reset() const = 0;
         virtual OrNode<T>* make_root_node(const T *state) const = 0;
-        virtual bool prune(const OrNode<T> &node) const = 0;
+        virtual bool prune(const OrNode<T> &node, bool verbose = false) const = 0;
         virtual bool is_goal(const T *state) const = 0;
         virtual void expand(const OrNode<T> &node, std::vector<AndNode<T>*> &successors) const = 0;
-        virtual void compute_features(const OrNode<T> &root, const std::vector<OrNode<T>*> &fringe) const = 0;
-        virtual void register_features(const OrNode<T> &node) const = 0;
+        virtual void compute_features(const OrNode<T> &root, const std::vector<OrNode<T>*> &fringe, bool verbose = false) const = 0;
+        virtual void register_features(const OrNode<T> &node, bool verbose = false) const = 0;
 
         bool is_goal(const OrNode<T> &node) const {
             return node.is_goal();

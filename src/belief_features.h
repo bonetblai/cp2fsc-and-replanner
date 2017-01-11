@@ -21,11 +21,9 @@
 
 #include <cassert>
 #include <iostream>
-//#include <set>
 #include <string>
 
 #include "lw1_problem.h"
-//#include "and_or2.h"
 
 //#define DEBUG
 
@@ -35,17 +33,6 @@ namespace Width2 {
   class Feature {
     protected:
       int index_;
-
-#if 0
-      // (default) semantic definition
-      virtual bool default_holds(const AndOr::Policy<T> &policy, bool verbose = false) const {
-          for( typename AndOr::OrNodeList<T>::const_iterator it = policy.tip_nodes().begin(); it != policy.tip_nodes().end(); ++it ) {
-              if( !holds(policy, *(*it)->belief()->belief(), verbose) )
-                  return false;
-          }
-          return true;
-      }
-#endif
 
     public:
       Feature(int index) : index_(index) { }
@@ -110,7 +97,7 @@ namespace Width2 {
       }
       virtual int value(const T &belief, const std::vector<int> *cache = 0, bool verbose = false) const {
           int feature_value = -1;
-          if( false && cache != 0 ) {
+          if( cache != 0 ) {
               assert((index() >= 0) && (index() < (*cache).size()));
               feature_value = (*cache)[index()];
           } else {
@@ -192,6 +179,7 @@ namespace Width2 {
               feature_value = num_possible_values(belief, verbose);
           }
           if( verbose ) std::cout << *this << " --> " << feature_value << std::endl;
+          if( feature_value < -1 ) exit(0);
           return feature_value;
       }
       virtual bool holds(const T &belief, const std::vector<int> *cache = 0, bool verbose = false) const {
@@ -292,6 +280,71 @@ namespace Width2 {
       virtual ~ValueTestGE() { }
   };
 
+  template<typename T>
+  class GoalFeature : public Feature<T> {
+    using Feature<T>::index;
+    protected:
+      const LW1_Instance &lw1_instance_;
+      std::vector<int> goal_literals_;
+
+    public:
+      GoalFeature(int index, const LW1_Instance &lw1_instance)
+        : Feature<T>(index), lw1_instance_(lw1_instance) {
+          for( index_set::const_iterator it = lw1_instance_.po_instance_.goal_literals_.begin(); it != lw1_instance_.po_instance_.goal_literals_.end(); ++it ) {
+              int atom = *it > 0 ? *it - 1 : -*it - 1;
+              int literal = *it > 0 ? 1 + 2*atom : 1 + 2*atom + 1;
+              goal_literals_.push_back(literal);
+          }
+      }
+      virtual ~GoalFeature() { }
+
+      const LW1_Instance& lw1_instance() const {
+          return lw1_instance_;
+      }
+      const std::vector<int>& goal_literals() const {
+          return goal_literals_;
+      }
+
+      virtual bool atomic() const {
+          return true;
+      }
+      virtual bool value_term() const {
+          return false;
+      }
+      virtual int value(const T &belief, const std::vector<int> *cache = 0, bool verbose = false) const {
+          int feature_value = -1;
+          if( cache != 0 ) {
+              assert((index() >= 0) && (index() < (*cache).size()));
+              feature_value = (*cache)[index()];
+          } else {
+              feature_value = 1;
+              for( size_t k = 0; k < goal_literals_.size(); ++k ) {
+                  int literal = goal_literals_[k];
+                  if( !belief.satisfy(literal > 0 ? literal - 1 : -literal - 1, literal < 0) ) {
+                      feature_value = 0;
+                      break;
+                  }
+              }
+          }
+          if( verbose ) std::cout << *this << " --> " << feature_value << std::endl;
+          return feature_value;
+      }
+      virtual bool holds(const T &belief, const std::vector<int> *cache = 0, bool verbose = false) const {
+          return value(belief, cache, verbose) == 1;
+      }
+      virtual std::string to_string() const {
+          std::string str("Feature[index=");
+          str += std::to_string(this->index());
+          str += ",type=goal,literals={";
+          for( size_t k = 0; k < goal_literals_.size(); ++k ) {
+              int literal = goal_literals_[k];
+              str += State::to_string(literal, &lw1_instance_);
+              if( 1 + k < goal_literals_.size() )
+                  str += ",";
+          }
+          return str + "}]";
+      }
+  };
 
 #if 0
   template<typename T>
@@ -391,7 +444,9 @@ namespace Width2 {
           return str + "]";
       }
   };
+#endif
 
+#if 0
   template<typename T>
   class OrFeature : public Feature<T> {
     protected:
@@ -459,7 +514,9 @@ namespace Width2 {
           return str + "}]";
       }
   };
+#endif
 
+#if 0
   template<typename T>
   class AndFeature : public Feature<T> {
     protected:
@@ -527,64 +584,6 @@ namespace Width2 {
           for( size_t k = 0; k < conjuncts_.size(); ++k ) {
               str += conjuncts_[k]->to_string();
               if( k + 1 < conjuncts_.size() )
-                  str += ",";
-          }
-          return str + "}]";
-      }
-  };
-#endif
-
-#if 0
-  template<typename T>
-  class GoalFeature : public Feature<T> {
-    protected:
-      const LW1_Instance &lw1_instance_;
-      std::vector<int> goal_literals_;
-
-    public:
-      GoalFeature(int index, const LW1_Instance &lw1_instance)
-        : Feature<T>(index), lw1_instance_(lw1_instance) {
-          for( index_set::const_iterator it = lw1_instance_.po_instance_.goal_literals_.begin(); it != lw1_instance_.po_instance_.goal_literals_.end(); ++it ) {
-              int atom = *it > 0 ? *it - 1 : -*it - 1;
-              int literal = *it > 0 ? 1 + 2*atom : 1 + 2*atom + 1;
-              goal_literals_.push_back(literal);
-          }
-      }
-      virtual ~GoalFeature() { }
-
-      const LW1_Instance& lw1_instance() const {
-          return lw1_instance_;
-      }
-      const std::vector<int>& goal_literals() const {
-          return goal_literals_;
-      }
-
-      virtual bool holds(const T &belief, bool verbose = false) const {
-          for( size_t k = 0; k < goal_literals_.size(); ++k ) {
-              int literal = goal_literals_[k];
-              if( !belief.satisfy(literal > 0 ? literal - 1 : -literal - 1, literal < 0) )
-                  return false;
-          }
-          return true;
-      }
-      virtual bool holds(const AndOr::Policy<T> &policy, const T &tip, bool verbose = false) const {
-          // feature can't decompose into simpler features
-          return holds(tip, verbose);
-      }
-      virtual bool holds(const AndOr::Policy<T> &policy, bool verbose = false) const {
-          return Feature<T>::default_holds(policy, verbose);
-      }
-      virtual bool subsumes(const Feature<T> &feature) const {
-          return false;
-      }
-      virtual std::string to_string() const {
-          std::string str("Feature[index=");
-          str += std::to_string(this->index());
-          str += ",type=goal,literals={";
-          for( size_t k = 0; k < goal_literals_.size(); ++k ) {
-              int literal = goal_literals_[k];
-              str += State::to_string(literal, &lw1_instance_);
-              if( 1 + k < goal_literals_.size() )
                   str += ",";
           }
           return str + "}]";
