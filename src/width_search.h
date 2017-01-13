@@ -22,6 +22,7 @@
 #include <cassert>
 #include <iostream>
 #include <map>
+#include <set>
 #include <vector>
 
 #include "action_selection.h"
@@ -49,13 +50,8 @@ namespace Width2 {
       std::vector<const Feature<T>*> feature_language_;          // created features that are considered
       std::map<int, const Feature<T>*> global_atomic_features_;  // features that are evaluated wrt given tree
       std::vector<const Feature<T>*> local_atomic_features_;     // features evaluated at (local) node
-      std::vector<const Feature<T>*> literal_features_;          // literal features
-      std::vector<const Feature<T>*> domain_size_features_;      // domain-sz features (global)
-
-      //std::vector<const Feature<T>*> feature_language_noext_;  // created features that are used for prunning but not for computing extensions
-      //std::vector<const AndFeature<T>*> term_features_;
-      //std::vector<const OrFeature<T>*> disjunctive_features_;
-      //std::vector<const OrFeature<T>*> disjunctive_features_involving_goal_feature_;
+      std::vector<const Feature<T>*> max_domain_size_features_;  // max-domain-sz features (global)
+      std::vector<const LiteralFeature<T>*> literal_features_;   // literal features
 
       mutable float total_search_time_;
       mutable float total_time_;
@@ -91,7 +87,7 @@ namespace Width2 {
                   for( set<int>::const_iterator it = variable.domain().begin(); it != variable.domain().end(); ++it ) {
                       int atom = *it;
                       int feature_index = feature_universe_.size();
-                      Feature<T> *feature = new LiteralFeature<T>(feature_index, lw1_instance_, var_index, 1 + 2*atom);
+                      LiteralFeature<T> *feature = new LiteralFeature<T>(feature_index, lw1_instance_, var_index, 1 + 2*atom, true);
                       local_atomic_features_.push_back(feature);
                       literal_features_.push_back(feature);
                       feature_language_.push_back(feature);
@@ -101,7 +97,7 @@ namespace Width2 {
 #endif
 
                       feature_index = feature_universe_.size();
-                      feature = new LiteralFeature<T>(feature_index, lw1_instance_, var_index, 1 + 2*atom + 1);
+                      feature = new LiteralFeature<T>(feature_index, lw1_instance_, var_index, 1 + 2*atom + 1, false);
                       local_atomic_features_.push_back(feature);
                       literal_features_.push_back(feature);
                       feature_language_.push_back(feature);
@@ -116,8 +112,8 @@ namespace Width2 {
                   for( size_t i = 0; i < dsize; ++i ) {
                       int feature_index = feature_universe_.size();
                       const Feature<T> *base = global_atomic_features_.at(var_index);
-                      Feature<T> *feature = new ValueTestEQ<T>(feature_index, *base, 1 + i);
-                      domain_size_features_.push_back(feature);
+                      ValueTestFeature<T> *feature = new ValueTestEQ<T>(feature_index, *base, 1 + i);
+                      max_domain_size_features_.push_back(feature);
                       feature_universe_.push_back(feature);
                       feature_language_.push_back(feature);
 #ifdef DEBUG
@@ -129,31 +125,48 @@ namespace Width2 {
           std::cout << Utils::green() << "#global-atomic-features=" << global_atomic_features_.size() << Utils::normal() << std::endl;
           std::cout << Utils::green() << "#local-atomic-features=" << local_atomic_features_.size() << Utils::normal() << std::endl;
           std::cout << Utils::green() << "#literal-features=" << literal_features_.size() << Utils::normal() << std::endl;
-          std::cout << Utils::green() << "#domain-size-features=" << domain_size_features_.size() << Utils::normal() << std::endl;
+          std::cout << Utils::green() << "#max-domain-size-features=" << max_domain_size_features_.size() << Utils::normal() << std::endl;
 
-#if 0
           // create 2-term features of the form (<literal-feature> AND <domain-size-feature>)
           for( size_t k = 0; k < literal_features_.size(); ++k ) {
               const Feature<T> &f1 = *literal_features_[k];
-              for( size_t j = 0; j < domain_size_features_.size(); ++j ) {
-                  const Feature<T> &f2 = *domain_size_features_[j];
-                  //if( f1.subsumes(f2) || f2.subsumes(f1) ) continue;
+              for( size_t j = 0; j < max_domain_size_features_.size(); ++j ) {
+                  const Feature<T> &f2 = *max_domain_size_features_[j];
                   int feature_index = feature_universe_.size();
                   AndFeature<T> *feature = new AndFeature<T>(feature_index);
                   feature->add_conjunct(f1);
                   feature->add_conjunct(f2);
-                  term_features_.push_back(feature);
                   feature_universe_.push_back(feature);
+                  feature_language_.push_back(feature);
+#ifdef DEBUG
+                  std::cout << "using " << *feature << std::endl;
+#endif
               }
           }
-          for( size_t k = 0; k < term_features_.size(); ++k ) {
-              feature_language_.push_back(term_features_[k]);
-#ifdef DEBUG
-              //std::cout << "using " << *feature_language_.back() << std::endl;
-#endif
-          }
-          std::cout << Utils::green() << "#term-features=" << term_features_.size() << Utils::normal() << std::endl;
 
+          // CHECK: mix literals for known variables w/ literals for unknown-variables
+          // create 2-term features of the form (<positive-literal-feature> AND <positive-literal-size-feature>)
+          for( size_t k = 0; k < literal_features_.size(); ++k ) {
+              const LiteralFeature<T> &f1 = *literal_features_[k];
+              //if( !f1.positive() ) continue;
+              for( size_t j = k + 1; j < literal_features_.size(); ++j ) {
+                  const LiteralFeature<T> &f2 = *literal_features_[j];
+                  //if( !f2.positive() ) continue;
+                  if( f1.var_index() == f2.var_index() ) continue;
+                  int feature_index = feature_universe_.size();
+                  AndFeature<T> *feature = new AndFeature<T>(feature_index);
+                  feature->add_conjunct(f1);
+                  feature->add_conjunct(f2);
+                  feature_universe_.push_back(feature);
+                  feature_language_.push_back(feature);
+#ifdef DEBUG
+                  std::cout << "using " << *feature << std::endl;
+#endif
+              }
+          }
+
+
+#if 0
           // create goal feature
 #if 0
           goal_feature_index_ = feature_universe_.size();
@@ -175,7 +188,9 @@ namespace Width2 {
           //std::cout << "using " << *goal_feature_ << std::endl;
 #endif
           std::cout << Utils::green() << "#goal-features=1" << Utils::normal() << std::endl;
+#endif
 
+#if 0
           // create disjunctive features
 #if 1 // CHECK: REMOVE
 #  if 1
@@ -230,7 +245,9 @@ namespace Width2 {
           }
           std::cout << Utils::green() << "#disjunctive-features=" << disjunctive_features_.size() << Utils::normal() << std::endl;
           std::cout << Utils::green() << "#features=" << feature_language_.size() << Utils::normal() << std::endl;
+#endif
 
+#if 0
           feature_language_noext_ = feature_language_;
 #if 0
           std::map<const Feature<T>*, const BoxFeature<T>*> box_map;
@@ -295,8 +312,9 @@ namespace Width2 {
           }
           std::cout << Utils::green() << "#features-ext=" << feature_language_noext_.size() << Utils::normal() << std::endl;
 #endif
-          std::cout << Utils::green() << "#feature-universe=" << feature_universe_.size() << Utils::normal() << std::endl;
 #endif
+          std::cout << Utils::green() << "#feature-universe=" << feature_universe_.size() << Utils::normal() << std::endl;
+          std::cout << Utils::green() << "#feature-language=" << feature_language_.size() << Utils::normal() << std::endl;
       }
       virtual ~ActionSelection() {
           assert(0);
@@ -342,10 +360,7 @@ namespace Width2 {
       typedef std::map<AndOr3::Node*, std::vector<int> > cache_t;
       mutable cache_t feature_value_cache_;
 
-      //std::set<int> noop_singleton_;
-
-      //typedef typename std::map<const AndOr::OrNode<T>*, std::pair<std::map<int, AndOr::AndNode<T>*>, std::map<const Feature<T>*, std::set<int> > > > t_map_t;
-      //typedef typename t_map_t::mapped_type t_map_mapped_type_t;
+      mutable std::vector<std::set<const AndOr3::OrNode<T>*> > support_for_features_;
 
     public:
       API(const LW1_Instance &lw1_instance,
@@ -370,12 +385,11 @@ namespace Width2 {
           prune_nodes_(prune_nodes) {
           feature_bitmap_size_ = (feature_universe_.size() >> 5) + ((feature_universe_.size() % 32) == 0 ? 0 : 1);
           feature_bitmap_ = new unsigned[feature_bitmap_size_];
-          //noop_singleton_ = std::set<int>();
-          //noop_singleton_.insert(-1);
+
+          // create support for features
+          support_for_features_.resize(1 + feature_language_.back()->index());
       }
       virtual ~API() {
-          //delete[] available_features_bitmap_;
-          //delete[] available_features_ext_bitmap_;
           delete[] feature_bitmap_;
       }
 
@@ -405,11 +419,22 @@ namespace Width2 {
               --num_available_features_;
           register_feature(index, offset);
       }
+      void re_establish_feature(int index, int offset) const {
+          assert((index >= 0) && (index < feature_bitmap_size_));
+          assert((offset >= 0) && (offset < 32));
+          feature_bitmap_[index] = feature_bitmap_[index] | (1 << offset);
+      }
+      void re_establish_feature(const Feature<T> &feature) const {
+          assert(feature.index() < feature_universe_.size());
+          assert(!is_feature_available(feature));
+          ++num_available_features_;
+          int index = feature.index() >> 5, offset = feature.index() % 32;
+          re_establish_feature(index, offset);
+      }
 
       void bottom_up_pass(const AndOr3::OrNode<T> &node, const Feature<T> &feature, bool verbose = false) const {
           if( node.children().empty() ) {
               node.set_cached_value(feature.value(*node.belief()->rep(), 0, verbose));
-              assert(node.cached_value() >= 0); // REMOVE
           } else {
               int min_value = std::numeric_limits<int>::max();
               for( size_t k = 0; k < node.children().size(); ++k ) {
@@ -418,7 +443,6 @@ namespace Width2 {
                   min_value = min(min_value, child.cached_value());
               }
               node.set_cached_value(min_value);
-              assert(node.cached_value() >= 0); // REMOVE
           }
           if( verbose ) std::cout << "bottom-up: value for " << feature << " at " << node << " --> " << node.cached_value() << std::endl;
       }
@@ -431,14 +455,12 @@ namespace Width2 {
               max_value = max(max_value, child.cached_value());
           }
           node.set_cached_value(max_value);
-          assert(node.cached_value() >= 0); // REMOVE
           if( verbose ) std::cout << "bottom-up: value for " << feature << " at " << node << " --> " << node.cached_value() << std::endl;
       }
       void top_down_pass(const AndOr3::OrNode<T> &node, const Feature<T> &feature, bool verbose = false) const {
           if( node.parent() != 0 ) {
               node.set_cached_value(node.parent()->cached_value());
           }
-          assert(node.cached_value() >= 0); // REMOVE
           for( size_t k = 0; k < node.children().size(); ++k ) {
               const AndOr3::AndNode<T> &child = *node.child(k);
               top_down_pass(child, feature, verbose);
@@ -448,7 +470,6 @@ namespace Width2 {
       void top_down_pass(const AndOr3::AndNode<T> &node, const Feature<T> &feature, bool verbose = false) const {
           assert(node.parent() != 0);
           node.set_cached_value(max(node.cached_value(), node.parent()->cached_value()));
-          assert(node.cached_value() >= 0); // REMOVE
           for( size_t k = 0; k < node.children().size(); ++k ) {
               const AndOr3::OrNode<T> &child = *node.child(k);
               top_down_pass(child, feature, verbose);
@@ -464,8 +485,9 @@ namespace Width2 {
           return new AndOr3::OrNode<T>(new AndOr3::Belief<T>(state), 0, is_goal(state));
       }
       virtual bool prune(const AndOr3::OrNode<T> &node, bool verbose = false) const {
+          // check whether this node can be pruned using features
           bool prune_node = prune_nodes_;
-          if( prune_nodes_ ) {
+          if( prune_node ) {
               cache_t::const_iterator it = feature_value_cache_.find(const_cast<AndOr3::OrNode<T>*>(&node));
               assert(it != feature_value_cache_.end());
               for( size_t k = 0; k < feature_language_.size(); ++k ) {
@@ -475,10 +497,8 @@ namespace Width2 {
                       break;
                   }
               }
-          } else {
-              std::cout << Utils::magenta() << "API::prune():" << Utils::normal() << " pruning is off" << std::endl;
+              if( prune_node && verbose ) std::cout << Utils::magenta() << "prune: node=" << node << Utils::normal() << std::endl;
           }
-          if( verbose && prune_node ) std::cout << Utils::magenta() << "prune: node=" << node << Utils::normal() << std::endl;
           return prune_node;
       }
       virtual bool is_goal(const T *n) const {
@@ -580,12 +600,15 @@ namespace Width2 {
 #endif
       }
       virtual void compute_features(const AndOr3::OrNode<T> &root, const std::vector<AndOr3::OrNode<T>*> &fringe, bool verbose = false) const {
-          // make sure we don't store values for fringe nodes
-          for( size_t j = 0; j < fringe.size(); ++j ) {
-              if( feature_value_cache_.find(fringe[j]) != feature_value_cache_.end() ) {
-                  std::cout << Utils::internal_error() << "expecting no entry in cache for feature value for fringe node" << std::endl;
-                  exit(-1);
-              }
+          //assert(verify_supports());
+
+          // skip nodes that have an entry on the cache as this nodes re-entered the queue
+          // A node re-enters the queue when it was previously marked as dead-by-feature but
+          // then cleared when a new solution (tip) node was generated
+          std::vector<bool> skip_list(fringe.size(), false);
+          for( size_t k = 0; k < fringe.size(); ++k ) {
+              if( feature_value_cache_.find(fringe[k]) != feature_value_cache_.end() )
+                  skip_list[k] = true;
           }
 
           // global atomic features
@@ -598,52 +621,98 @@ namespace Width2 {
 
               // save feature value for fringe nodes
               for( size_t k = 0; k < fringe.size(); ++k ) {
-                  AndOr3::OrNode<T> *node = fringe[k];
-                  cache_t::iterator jt = feature_value_cache_.find(node);
-                  if( jt == feature_value_cache_.end() ) {
-                      feature_value_cache_.emplace(std::piecewise_construct,
-                                                   std::forward_as_tuple(node),
-                                                   std::forward_as_tuple(global_atomic_features_.size(), 0));
-                      jt = feature_value_cache_.find(node);
+                  if( !skip_list[k] ) {
+                      AndOr3::OrNode<T> *node = fringe[k];
+                      cache_t::iterator jt = feature_value_cache_.find(node);
+                      if( jt == feature_value_cache_.end() ) {
+                          feature_value_cache_.emplace(std::piecewise_construct,
+                                                       std::forward_as_tuple(node),
+                                                       std::forward_as_tuple(global_atomic_features_.size(), 0));
+                          jt = feature_value_cache_.find(node);
+                      }
+                      assert(feature.index() < jt->second.size());
+                      jt->second[feature.index()] = node->cached_value();
                   }
-                  assert(feature.index() < jt->second.size());
-                  jt->second[feature.index()] = node->cached_value();
-                  assert(node->cached_value() >= 0); // REMOVE
               }
           }
-          std::cout << "DONE W/ GLOBAL" << std::endl;
 
-#if 0
-          // local (atomic) features
-          for( size_t k = 0; k < local_atomic_features_.size(); ++k ) {
-              const Feature<T> &feature = *local_atomic_features_[k];
-              for( size_t j = 0; j < fringe.size(); ++j ) {
-                  AndOr3::OrNode<T> *node = fringe[j];
-                  cache_t::iterator it = feature_value_cache_.find(node);
-                  if( it == feature_value_cache_.end() ) {
-                      feature_value_cache_.emplace(std::piecewise_construct, std::forward_as_tuple(node), std::forward_as_tuple(200, 0)); // CHECK: dimension of 200
-                      it = feature_value_cache_.find(node);
-                  }
-                  assert(feature.index() < it->second.size());
-                  it->second[feature.index()] = feature.value(*node->belief()->rep(), 0, true);
+#ifdef DEBUG
+          for( size_t k = 0; k < fringe.size(); ++k ) {
+              AndOr3::OrNode<T> *node = fringe[k];
+              cache_t::iterator jt = feature_value_cache_.find(node);
+              assert(jt != feature_value_cache_.end());
+              const std::vector<int> &cache = jt->second;
+              std::cout << "global features for node=" << *node << std::endl;
+              for( typename std::map<int, const Feature<T>*>::const_iterator it = global_atomic_features_.begin(); it != global_atomic_features_.end(); ++it ) {
+                  const Feature<T> &feature = *it->second;
+                  std::cout << "    value(" << feature << ")=" << feature.value(*node->belief()->rep(), &cache) << std::endl;
               }
           }
-          std::cout << "DONE W/ LOCAL" << std::endl;
 #endif
       }
       virtual void register_features(const AndOr3::OrNode<T> &node, bool verbose = false) const {
+          //assert(verify_supports());
           cache_t::const_iterator it = feature_value_cache_.find(const_cast<AndOr3::OrNode<T>*>(&node));
           assert(it != feature_value_cache_.end());
           for( size_t k = 0; k < feature_language_.size(); ++k ) {
               const Feature<T> &feature = *feature_language_[k];
-              if( is_feature_available(feature) && feature.holds(*node.belief()->rep(), &it->second, false) ) {
-                  // mark this feature as seen
-                  register_feature(feature);
+              if( feature.holds(*node.belief()->rep(), &it->second, false) ) {
+                  // update support and mark feature as seen
+                  assert((feature.index() >= 0) && (feature.index() < support_for_features_.size()));
+                  support_for_features_[feature.index()].insert(&node);
+                  if( is_feature_available(feature) ) {
+                      register_feature(feature);
 #ifdef DEBUG
-                  std::cout << "feature achieved --> " << feature << std::endl;
+                      std::cout << "feature achieved --> " << feature << std::endl;
 #endif
+                  }
               }
           }
+          //assert(verify_supports());
+      }
+      virtual void kill_by_label(const AndOr3::OrNode<T> &node) const {
+          //assert(verify_supports());
+          if( !node.children().empty() ) { // CHECK: test if node was expanded (wouldn't work if node is dead-end, though)
+              cache_t::const_iterator it = feature_value_cache_.find(const_cast<AndOr3::OrNode<T>*>(&node));
+              assert(it != feature_value_cache_.end());
+              if( it != feature_value_cache_.end() ) {
+                  for( size_t k = 0; k < feature_language_.size(); ++k ) {
+                      const Feature<T> &feature = *feature_language_[k];
+                      if( feature.holds(*node.belief()->rep(), &it->second, false) ) {
+                          assert((feature.index() >= 0) && (feature.index() < support_for_features_.size()));
+                          assert(support_for_features_[feature.index()].find(&node) != support_for_features_[feature.index()].end());
+                          support_for_features_[feature.index()].erase(&node);
+                          if( support_for_features_[feature.index()].empty() ) {
+                              re_establish_feature(feature);
+#ifdef DEBUG
+                              std::cout << "feature re-established --> " << feature << std::endl;
+#endif
+                          }
+                      }
+                  }
+              }
+          }
+          node.kill_by_label();
+          //assert(verify_supports());
+      }
+      virtual void kill_by_label(const AndOr3::AndNode<T> &node) const {
+          node.kill_by_label();
+      }
+
+      bool verify_supports() const {
+          bool bug = false;
+          for( size_t k = 0; k < feature_language_.size(); ++k ) {
+              const Feature<T> &feature = *feature_language_[k];
+              if( is_feature_available(feature) && !support_for_features_[feature.index()].empty() ) {
+                  std::cout << "available feature " << feature << " has non-empty support" << std::endl;
+                  bug = true;
+              }
+              if( !is_feature_available(feature) && support_for_features_[feature.index()].empty() ) {
+                  std::cout << "non-available feature " << feature << " has empty support" << std::endl;
+                  bug = true;
+              }
+          }
+          assert(!bug);
       }
 
       void compute_possible_observations(const T &tip,
@@ -789,6 +858,12 @@ namespace Width2 {
       API<T> api(lw1_instance_, inference_engine_, feature_universe_, feature_language_, global_atomic_features_, local_atomic_features_, true);
       AndOr3::Search::bfs<T> bfs(lw1_instance_, api);
       const AndOr3::OrNode<T> *root = bfs.search(state);
+      std::cout << Utils::green() << "STATUS=" << api.has_solution(*root) << Utils::normal() << std::endl;
+      if( api.has_solution(*root) )
+          root->pretty_print(std::cout, true, lw1_instance_, Utils::cyan());
+      else
+          root->pretty_print(std::cout, false, lw1_instance_, Utils::cyan());
+      std::cout << Utils::green() << "STATUS=" << api.has_solution(*root) << Utils::normal() << std::endl;
 
       std::cout << Utils::error() << "width-based action selection not yet implemented!" << std::endl;
       exit(-1);

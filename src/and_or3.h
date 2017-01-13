@@ -25,6 +25,7 @@
 #include <string>
 #include <vector>
 
+#include "lw1_problem.h"
 #include "utils.h"
 
 namespace AndOr3 {
@@ -86,8 +87,10 @@ namespace AndOr3 {
 
   class Node {
     protected:
-      mutable int ref_count_; // CHECK: currently unused
-      mutable int cached_value_;  // used for computation of global features
+      mutable int ref_count_;          // CHECK: currently unused
+      mutable int cached_value_;       // used for computation of global features
+      mutable bool dead_by_label_;     // either node is goal or descendant of solved OR node
+      mutable bool dead_by_feature_;   // either pruned by feature or descendant of dead AND node
 
     protected:
       virtual int deallocate() const = 0;
@@ -119,7 +122,7 @@ namespace AndOr3 {
       }
 
     public:
-      Node() : ref_count_(1), cached_value_(-1) { }
+      Node() : ref_count_(1), cached_value_(-1), dead_by_label_(false), dead_by_feature_(false) { }
       virtual ~Node() { std::cout << "(dtor for Node)" << std::flush; }
       int cached_value() const {
           return cached_value_;
@@ -127,8 +130,29 @@ namespace AndOr3 {
       void set_cached_value(int value) const {
           cached_value_ = value;
       }
+      bool dead_by_label() const {
+          return dead_by_label_;
+      }
+      void kill_by_label() const {
+          dead_by_label_ = true;
+      }
+      bool dead_by_feature() const {
+          return dead_by_feature_;
+      }
+      void kill_by_feature() const {
+          dead_by_feature_ = true;
+      }
+      bool dead() const {
+          return dead_by_label() || dead_by_feature();
+      }
+
+      virtual std::string to_string(const LW1_Instance *lw1_instance, const std::string &color) const = 0;
       virtual void print(std::ostream &os) const = 0;
-      virtual void pretty_print(std::ostream &os, int indent) const = 0;
+      virtual void pretty_print(std::ostream &os, bool solution, const LW1_Instance &lw1_instance, const std::string &color, int indent = 0) const = 0;
+
+      std::string to_string(const LW1_Instance *lw1_instance = 0) const {
+          return to_string(lw1_instance, Utils::normal());
+      }
   };
 
   template<typename T>
@@ -162,14 +186,35 @@ namespace AndOr3 {
           std::cout << "(dtor for AndNode)" << std::flush;
       }
 
-      virtual void print(std::ostream &os) const {
-          os << "AND[ptr=" << this
-             << ",ref=" << Node::ref_count_
-             << ",action=" << action_
-             << ",parent=" << parent_
-             << "}]";
+      virtual std::string to_string(const LW1_Instance *lw1_instance, const std::string &color) const {
+          std::string str = color + "And[";
+          str += std::string("ptr=0x") + std::to_string(size_t(this));
+          str += std::string(",ref=") + std::to_string(Node::ref_count_);
+          if( lw1_instance != 0 ) {
+              const Instance::Action &action = *lw1_instance->actions_[action_];
+              str += std::string(",action=") + Utils::blue() + action.name() + color;
+          } else {
+              str += std::string(",action=") + std::to_string(action_);
+          }
+          str += std::string(",parent=0x") + std::to_string(size_t(parent_));
+          str += std::string(",solution=") + std::to_string(has_solution_);
+          return str + "]" + Utils::normal();
       }
-      virtual void pretty_print(std::ostream &os, int indent) const { // CHECK: FILL MISSING CODE
+      virtual void print(std::ostream &os) const {
+          os << Node::to_string();
+      }
+      virtual void pretty_print(std::ostream &os, bool solution, const LW1_Instance &lw1_instance, const std::string &color, int indent = 0) const {
+          os << std::string(2 * indent, ' ')
+             << std::to_string(indent) << ".";
+          if( dead_by_label() )
+               os << to_string(&lw1_instance, Utils::red());
+          else if( dead_by_feature() )
+               os << to_string(&lw1_instance, Utils::magenta());
+          else
+               os << to_string(&lw1_instance, color);
+          os << std::endl;
+          for( size_t k = 0; k < children_.size(); ++k )
+              children_[k]->pretty_print(os, solution, lw1_instance, color, 1 + indent);
       }
 
       const int action() const {
@@ -189,6 +234,9 @@ namespace AndOr3 {
       }
       void set_has_solution(bool has_solution) const {
           has_solution_ = has_solution;
+      }
+      void clear_dead_by_feature() const {
+          dead_by_feature_ = false;
       }
 
       const std::vector<const OrNode<T>*>& children() const {
@@ -238,15 +286,35 @@ namespace AndOr3 {
           std::cout << "(dtor for OrNode)" << std::flush;
       }
 
-      virtual void print(std::ostream &os) const {
-          os << "OR[ptr=" << this
-             << ",ref=" << Node::ref_count_
-             << ",parent=" << parent_
-             << ",is-goal=" << is_goal_
-             << ",best-child=" << best_child_
-             << "]";
+      virtual std::string to_string(const LW1_Instance *lw1_instance, const std::string &color) const {
+          std::string str = color + "Or[";
+          str += std::string("ptr=0x") + std::to_string(size_t(this));
+          str += std::string(",ref=") + std::to_string(Node::ref_count_);
+          str += std::string(",parent=0x") + std::to_string(size_t(parent_));
+          str += std::string(",best-child=") + std::to_string(best_child_);
+          str += std::string(",is-goal=") + std::to_string(is_goal_);
+          return str + "]" + Utils::normal();
       }
-      virtual void pretty_print(std::ostream &os, int indent) const { // CHECK: FILL MISSING CODE
+      virtual void print(std::ostream &os) const {
+          os << Node::to_string();
+      }
+      virtual void pretty_print(std::ostream &os, bool solution, const LW1_Instance &lw1_instance, const std::string &color, int indent = 0) const {
+          os << std::string(2 * indent, ' ')
+             << std::to_string(indent) << ".";
+          if( dead_by_label() )
+               os << to_string(&lw1_instance, Utils::red());
+          else if( dead_by_feature() )
+               os << to_string(&lw1_instance, Utils::magenta());
+          else
+               os << to_string(&lw1_instance, color);
+          os << std::endl;
+          if( solution && (best_child_ != -1) ) {
+              assert((best_child_ >= 0) && (best_child_ < children_.size()));
+              children_[best_child_]->pretty_print(os, solution, lw1_instance, color, 1 + indent);
+          } else {
+              for( size_t k = 0; k < children_.size(); ++k )
+                  children_[k]->pretty_print(os, solution, lw1_instance, color, 1 + indent);
+          }
       }
 
       const Belief<T>* belief() const {
@@ -263,6 +331,9 @@ namespace AndOr3 {
       }
       void set_best_child(int best_child) const {
           best_child_ = best_child;
+      }
+      void clear_dead_by_feature() const {
+          dead_by_feature_ = false;
       }
 
       const std::vector<const AndNode<T>*>& children() const {

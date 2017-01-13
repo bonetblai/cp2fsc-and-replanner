@@ -55,6 +55,8 @@ namespace AndOr3 {
         virtual void expand(const OrNode<T> &node, std::vector<AndNode<T>*> &successors) const = 0;
         virtual void compute_features(const OrNode<T> &root, const std::vector<OrNode<T>*> &fringe, bool verbose = false) const = 0;
         virtual void register_features(const OrNode<T> &node, bool verbose = false) const = 0;
+        virtual void kill_by_label(const OrNode<T> &node) const = 0;
+        virtual void kill_by_label(const AndNode<T> &node) const = 0;
 
         bool is_goal(const OrNode<T> &node) const {
             return node.is_goal();
@@ -90,10 +92,12 @@ namespace AndOr3 {
             return node.has_solution();
         }
         void compute_subtree_solution(const OrNode<T> &node) const {
-            has_solution(node, true);
-        }
-        void compute_subtree_solution(const AndNode<T> &node) const {
-            has_solution(node, true);
+            if( has_solution(node, true) ) {
+                for( size_t k = 0; k < node.children().size(); ++k ) {
+                    if( k != node.best_child() )
+                        kill_node_and_descendants_by_label(*node.child(k));
+                }
+            }
         }
         void propagate_subtree_solution_upwards(const OrNode<T> &node) const {
             if( has_solution(node) && (node.parent() != 0) ) {
@@ -102,7 +106,7 @@ namespace AndOr3 {
                 bool parent_has_solution = true;
                 for( size_t k = 0; k < parent.children().size(); ++k ) {
                     const OrNode<T> &child = *parent.child(k);
-                    if( !has_solution(child) ) {
+                    if( (&child != &node) && !has_solution(child) ) {
                         parent_has_solution = false;
                         break;
                     }
@@ -112,18 +116,33 @@ namespace AndOr3 {
             }
         }
         void propagate_subtree_solution_upwards(const AndNode<T> &node) const {
-            if( has_solution(node) && (node.parent() != 0) ) {
+            assert(node.parent() != 0);
+            if( has_solution(node) ) {
                 const OrNode<T> &parent = *node.parent();
                 assert(!has_solution(parent));
                 for( size_t k = 0; k < parent.children().size(); ++k ) {
-                    const AndNode<T> &child = *parent.child(k);
-                    if( !has_solution(child) ) {
+                    if( parent.child(k) == &node ) {
                         parent.set_best_child(k);
                         break;
                     }
                 }
+                assert(has_solution(parent));
                 propagate_subtree_solution_upwards(parent);
+                for( size_t k = 0; k < parent.children().size(); ++k ) {
+                    if( parent.child(k) != &node )
+                        kill_node_and_descendants_by_label(*parent.child(k));
+                }
             }
+        }
+        void kill_node_and_descendants_by_label(const OrNode<T> &node) const {
+            kill_by_label(node);
+            for( size_t k = 0; k < node.children().size(); ++k )
+                kill_node_and_descendants_by_label(*node.child(k));
+        }
+        void kill_node_and_descendants_by_label(const AndNode<T> &node) const {
+            kill_by_label(node);
+            for( size_t k = 0; k < node.children().size(); ++k )
+                kill_node_and_descendants_by_label(*node.child(k));
         }
     };
 

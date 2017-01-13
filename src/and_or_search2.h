@@ -71,6 +71,7 @@ namespace AndOr3 {
             size_t num_expansions = 0;
             std::vector<OrNode<T>*> fringe;
             while( !q.empty() && !api_.has_solution(*root) ) {
+                root->pretty_print(std::cout, false, lw1_instance_, Utils::cyan());
                 compute_features_and_select_nodes_for_expansion(*root, q, fringe);
 
 #ifdef DEBUG
@@ -78,9 +79,17 @@ namespace AndOr3 {
 #endif
 
                 // expand current fringe
-                for( size_t k = 0; k < fringe.size(); ++k ) {
+                bool new_solved_node = false;
+                for( size_t k = 0; (k < fringe.size()) && !api_.has_solution(*root); ++k ) {
                     OrNode<T> &n = *fringe[k];
                     assert(!api_.is_goal(n));
+                    assert(!n.dead_by_feature());
+
+                    // node may be pruned by solved ancestor
+                    if( n.dead_by_label() ) {
+                        std::cout << Utils::magenta() << "pruned by solved ancestor: node=" << n << Utils::normal() << std::endl;
+                        continue;
+                    }
 
                     // register features of node to be expanded
                     api_.register_features(n);
@@ -101,9 +110,25 @@ namespace AndOr3 {
                         n.add_child(&succ);
                     }
                     api_.compute_subtree_solution(n);
+                    new_solved_node = new_solved_node || api_.has_solution(n);
                     api_.propagate_subtree_solution_upwards(n);
                 }
                 fringe.clear();
+
+                // if there is a new solved node, then the set of achieved features
+                // may have changed. Clear all dead-by-feature flags. New flags will
+                // be recomputed as nodes are selected for expansion
+                if( new_solved_node ) {
+                    clear_all_dead_by_feature_nodes(*root);
+#ifdef DEBUG
+                    std::cout << Utils::red() << "All dead-by-feature flags cleared!" << std::endl;
+                    //root->pretty_print(std::cout, false, lw1_instance_, Utils::green());
+#endif
+
+                    // recompute queue
+                    q.clear();
+                    recompute_queue(*root, q);
+                 }
             }
             return root;
         }
@@ -122,13 +147,84 @@ namespace AndOr3 {
             }
 
             api_.compute_features(root, out);
-            for( size_t k = 0; k < out.size(); ) {
-                const OrNode<T> &n = *out[k++];
-                if( api_.prune(n, true) ) {
-                    assert(k > 0);
-                    out[--k] = out.back();
+
+            // mark nodes
+            for( size_t k = 0; k < out.size(); ++k ) {
+                const OrNode<T> &n = *out[k];
+                if( !n.dead() && api_.prune(n, true) )
+                    kill_by_feature(n);
+            }
+
+            // remove pruned nodes
+            for( size_t k = 0; k < out.size(); ++k ) {
+                while( (k < out.size()) && out[k]->dead() ) {
+                    out[k] = out.back();
                     out.pop_back();
                 }
+            }
+#ifdef DEBUG
+            std::cout << Utils::red() << "COMPUTE FEATURES: DONE" << Utils::normal() << std::endl;
+#endif
+        }
+
+        void kill_by_feature(const OrNode<T> &node) const {
+            if( node.parent() != 0 ) kill_by_feature(*node.parent());
+            kill_node_and_descendants_by_feature(node);
+        }
+        void kill_by_feature(const AndNode<T> &node) const {
+            assert(node.parent() != 0);
+            bool kill_parent = true;
+            for( size_t k = 0; k < node.parent()->children().size(); ++k ) {
+                const AndNode<T> &child = *node.parent()->child(k);
+                if( (&child != &node) && !child.dead() ) {
+                    kill_parent = false;
+                    break;
+                }
+            }
+            if( kill_parent ) kill_by_feature(*node.parent());
+            kill_node_and_descendants_by_feature(node);
+        }
+
+        void kill_node_and_descendants_by_feature(const OrNode<T> &node) const {
+            if( !node.dead() ) {
+                node.kill_by_feature();
+                for( size_t k = 0; k < node.children().size(); ++k )
+                    kill_node_and_descendants_by_feature(*node.child(k));
+            }
+        }
+        void kill_node_and_descendants_by_feature(const AndNode<T> &node) const {
+            if( !node.dead() ) {
+                node.kill_by_feature();
+                for( size_t k = 0; k < node.children().size(); ++k )
+                    kill_node_and_descendants_by_feature(*node.child(k));
+            }
+        }
+
+        void clear_all_dead_by_feature_nodes(const OrNode<T> &node) const {
+            node.clear_dead_by_feature();
+            for( size_t k = 0; k < node.children().size(); ++k )
+                clear_all_dead_by_feature_nodes(*node.child(k));
+        }
+        void clear_all_dead_by_feature_nodes(const AndNode<T> &node) const {
+            node.clear_dead_by_feature();
+            for( size_t k = 0; k < node.children().size(); ++k )
+                clear_all_dead_by_feature_nodes(*node.child(k));
+        }
+
+        void recompute_queue(OrNode<T> &node, deque_t &q) const {
+            assert(!node.dead_by_feature());
+            if( !node.dead() ) {
+                if( node.children().empty() )
+                    q.push_back(&node);
+                for( size_t k = 0; k < node.children().size(); ++k )
+                    recompute_queue(*const_cast<AndNode<T>*>(node.child(k)), q);
+            }
+        }
+        void recompute_queue(AndNode<T> &node, deque_t &q) const {
+            assert(!node.dead_by_feature());
+            if( !node.dead() ) {
+                for( size_t k = 0; k < node.children().size(); ++k )
+                    recompute_queue(*const_cast<OrNode<T>*>(node.child(k)), q);
             }
         }
     };

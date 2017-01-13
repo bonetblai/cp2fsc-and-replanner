@@ -33,16 +33,20 @@ namespace Width2 {
   class Feature {
     protected:
       int index_;
+      bool cached_;
 
     public:
-      Feature(int index) : index_(index) { }
+      Feature(int index, bool cached) : index_(index), cached_(cached) { }
       virtual ~Feature() { }
 
       int index() const {
           return index_;
       }
-      void print(std::ostream &os) const {
-          os << to_string() << std::flush;
+      bool cached() const {
+          return cached_;
+      }
+      void print(std::ostream &os, bool pretty = false) const {
+          os << to_string(pretty) << std::flush;
       }
 
       // feature types
@@ -52,7 +56,7 @@ namespace Width2 {
       // basic functions
       virtual int value(const T &belief, const std::vector<int> *cache = 0, bool verbose = false) const = 0;
       virtual bool holds(const T &belief, const std::vector<int> *cache = 0, bool verbose = false) const = 0;
-      virtual std::string to_string() const = 0;
+      virtual std::string to_string(bool pretty = false) const = 0;
 
       // comparison for feature pointers
       struct ptr_compare_t {
@@ -65,17 +69,20 @@ namespace Width2 {
   template<typename T>
   class LiteralFeature : public Feature<T> {
     using Feature<T>::index;
+    using Feature<T>::cached;
     protected:
       const LW1_Instance &lw1_instance_;
       const int var_index_;
       const int literal_;
+      const bool positive_;
 
     public:
-      LiteralFeature(int index, const LW1_Instance &lw1_instance, int var_index, int literal)
-        : Feature<T>(index),
+      LiteralFeature(int index, const LW1_Instance &lw1_instance, int var_index, int literal, bool positive)
+        : Feature<T>(index, false),
           lw1_instance_(lw1_instance),
           var_index_(var_index),
-          literal_(literal) {
+          literal_(literal),
+          positive_(positive) {
       }
       virtual ~LiteralFeature() { }
 
@@ -88,6 +95,9 @@ namespace Width2 {
       int literal() const {
           return literal_;
       }
+      bool positive() const {
+          return positive_;
+      }
 
       virtual bool atomic() const {
           return true;
@@ -97,7 +107,7 @@ namespace Width2 {
       }
       virtual int value(const T &belief, const std::vector<int> *cache = 0, bool verbose = false) const {
           int feature_value = -1;
-          if( cache != 0 ) {
+          if( cached() && (cache != 0) ) {
               assert((index() >= 0) && (index() < (*cache).size()));
               feature_value = (*cache)[index()];
           } else {
@@ -109,25 +119,30 @@ namespace Width2 {
       virtual bool holds(const T &belief, const std::vector<int> *cache = 0, bool verbose = false) const {
           return value(belief, cache, verbose) == 1;
       }
-      virtual std::string to_string() const {
-          std::string str("Feature[index=");
-          str += std::to_string(this->index());
-          str += ",type=literal,name=";
-          str += State::to_string(literal_, &lw1_instance_);
-          return str + "]";
+      virtual std::string to_string(bool pretty = false) const {
+          if( pretty ) {
+              return State::to_string(literal_, &lw1_instance_);
+          } else {
+              std::string str("Feature[index=");
+              str += std::to_string(this->index());
+              str += ",type=literal,name=";
+              str += State::to_string(literal_, &lw1_instance_);
+              return str + "]";
+          }
       }
   };
 
   template<typename T>
   class DomainSizeValue : public Feature<T> {
     using Feature<T>::index;
+    using Feature<T>::cached;
     protected:
       const LW1_Instance &lw1_instance_;
       const int var_index_;
 
     public:
       DomainSizeValue(int index, const LW1_Instance &lw1_instance, int var_index)
-        : Feature<T>(index),
+        : Feature<T>(index, true),
           lw1_instance_(lw1_instance),
           var_index_(var_index) {
       }
@@ -172,7 +187,7 @@ namespace Width2 {
       }
       virtual int value(const T &belief, const std::vector<int> *cache = 0, bool verbose = false) const {
           int feature_value = -1;
-          if( cache != 0 ) {
+          if( cached() && (cache != 0) ) {
               assert((index() >= 0) && (index() < (*cache).size()));
               feature_value = (*cache)[index()];
           } else {
@@ -186,11 +201,15 @@ namespace Width2 {
           std::cout << Utils::internal_error() << "holds() called for feature value" << std::endl;
           exit(-1);
       }
-      virtual std::string to_string() const {
-          std::string str("Feature[index=");
-          str += std::to_string(this->index());
-          str += ",type=dsz-value,var=" + lw1_instance_.variables_[var_index_]->name();
-          return str + "]";
+      virtual std::string to_string(bool pretty = false) const {
+          if( pretty ) {
+              return std::string("dsz(") + lw1_instance_.variables_[var_index_]->name() + ")";
+          } else {
+              std::string str("Feature[index=");
+              str += std::to_string(this->index());
+              str += ",type=dsz-value,var=" + lw1_instance_.variables_[var_index_]->name();
+              return str + "]";
+          }
       }
   };
 
@@ -203,7 +222,7 @@ namespace Width2 {
 
     public:
       ValueTestFeature(int index, const Feature<T> &base, int target, int test_type)
-        : Feature<T>(index),
+        : Feature<T>(index, false),
           base_(base),
           target_(target),
           test_type_(test_type) {
@@ -243,13 +262,25 @@ namespace Width2 {
       virtual bool holds(const T &belief, const std::vector<int> *cache = 0, bool verbose = false) const {
           return value(belief, cache, verbose) == 1;
       }
-      virtual std::string to_string() const {
-          std::string str("Feature[index=");
-          str += std::to_string(this->index());
-          str += ",type=value-test,base=" + base_.to_string();
-          str += ",target=" + std::to_string(target_);
-          str += ",test-type=" + std::to_string(test_type_);
-          return str + "]";
+      virtual std::string to_string(bool pretty = false) const {
+          if( pretty ) {
+              std::string str = base_.to_string(pretty);
+              if( test_type_ == 0 )
+                  str += std::string("=");
+              else if( test_type_ == 1 )
+                  str += std::string("<=");
+              else
+                  str += std::string(">=");
+              str += std::to_string(target_);
+              return str;
+          } else {
+              std::string str("Feature[index=");
+              str += std::to_string(this->index());
+              str += ",type=value-test,base=" + base_.to_string(pretty);
+              str += ",target=" + std::to_string(target_);
+              str += ",test-type=" + std::to_string(test_type_);
+              return str + "]";
+          }
       }
   };
 
@@ -283,13 +314,14 @@ namespace Width2 {
   template<typename T>
   class GoalFeature : public Feature<T> {
     using Feature<T>::index;
+    using Feature<T>::cached;
     protected:
       const LW1_Instance &lw1_instance_;
       std::vector<int> goal_literals_;
 
     public:
       GoalFeature(int index, const LW1_Instance &lw1_instance)
-        : Feature<T>(index), lw1_instance_(lw1_instance) {
+        : Feature<T>(index, false), lw1_instance_(lw1_instance) {
           for( index_set::const_iterator it = lw1_instance_.po_instance_.goal_literals_.begin(); it != lw1_instance_.po_instance_.goal_literals_.end(); ++it ) {
               int atom = *it > 0 ? *it - 1 : -*it - 1;
               int literal = *it > 0 ? 1 + 2*atom : 1 + 2*atom + 1;
@@ -313,7 +345,7 @@ namespace Width2 {
       }
       virtual int value(const T &belief, const std::vector<int> *cache = 0, bool verbose = false) const {
           int feature_value = -1;
-          if( cache != 0 ) {
+          if( cached() && (cache != 0) ) {
               assert((index() >= 0) && (index() < (*cache).size()));
               feature_value = (*cache)[index()];
           } else {
@@ -332,17 +364,21 @@ namespace Width2 {
       virtual bool holds(const T &belief, const std::vector<int> *cache = 0, bool verbose = false) const {
           return value(belief, cache, verbose) == 1;
       }
-      virtual std::string to_string() const {
-          std::string str("Feature[index=");
-          str += std::to_string(this->index());
-          str += ",type=goal,literals={";
-          for( size_t k = 0; k < goal_literals_.size(); ++k ) {
-              int literal = goal_literals_[k];
-              str += State::to_string(literal, &lw1_instance_);
-              if( 1 + k < goal_literals_.size() )
-                  str += ",";
+      virtual std::string to_string(bool pretty = false) const {
+          if( pretty ) {
+              return "[goal]";
+          } else {
+              std::string str("Feature[index=");
+              str += std::to_string(this->index());
+              str += ",type=goal,literals={";
+              for( size_t k = 0; k < goal_literals_.size(); ++k ) {
+                  int literal = goal_literals_[k];
+                  str += State::to_string(literal, &lw1_instance_);
+                  if( 1 + k < goal_literals_.size() )
+                      str += ",";
+              }
+              return str + "}]";
           }
-          return str + "}]";
       }
   };
 
@@ -516,14 +552,13 @@ namespace Width2 {
   };
 #endif
 
-#if 0
   template<typename T>
   class AndFeature : public Feature<T> {
     protected:
       std::vector<const Feature<T>*> conjuncts_;
 
     public:
-      AndFeature(int index) : Feature<T>(index) { }
+      AndFeature(int index) : Feature<T>(index, false) { }
       virtual ~AndFeature() { }
 
       size_t size() const {
@@ -540,62 +575,51 @@ namespace Width2 {
           conjuncts_.push_back(&feature);
       }
 
-      virtual bool holds(const T &belief, bool verbose = false) const {
-          for( size_t k = 0; k < conjuncts_.size(); ++k ) {
-              if( !conjuncts_[k]->holds(belief, verbose) )
-                  return false;
-          }
-          return true;
+      virtual bool atomic() const {
+          return false;
       }
-      virtual bool holds(const AndOr::Policy<T> &policy, const T &tip, bool verbose = false) const {
-          for( size_t k = 0; k < conjuncts_.size(); ++k ) {
-              if( !conjuncts_[k]->holds(policy, tip, verbose) )
-                  return false;
-          }
-          return true;
+      virtual bool value_term() const {
+          return false;
       }
-      virtual bool holds(const AndOr::Policy<T> &policy, bool verbose = false) const {
+      virtual int value(const T &belief, const std::vector<int> *cache = 0, bool verbose = false) const {
+          int feature_value = 1;
           for( size_t k = 0; k < conjuncts_.size(); ++k ) {
-              if( !conjuncts_[k]->holds(policy, verbose) )
-                  return false;
+              if( conjuncts_[k]->value(belief, cache, verbose) == 0 )
+                  feature_value = 0;
           }
-          return true;
+          return feature_value;
       }
-      virtual bool subsumes(const Feature<T> &feature) const {
-          std::set<const Feature<T>*> fset(conjuncts_.begin(), conjuncts_.end());
-          if( dynamic_cast<const AndFeature<T>*>(&feature) != 0 ) {
-              const AndFeature<T> &and_feature = static_cast<const AndFeature<T>&>(feature);
-              if( conjuncts_.size() >= and_feature.conjuncts_.size() ) {
-                  for( size_t k = 0; k < and_feature.conjuncts_.size(); ++k ) {
-                      if( fset.find(and_feature.conjuncts_[k]) == fset.end() )
-                          return false;
-                  }
-                  return true;
+      virtual bool holds(const T &belief, const std::vector<int> *cache = 0, bool verbose = false) const {
+          return value(belief, cache, verbose) == 1;
+      }
+      virtual std::string to_string(bool pretty = false) const {
+          if( pretty ) {
+              std::string str;
+              for( size_t k = 0; k < conjuncts_.size(); ++k ) {
+                  str += conjuncts_[k]->to_string(pretty);
+                  if( k + 1 < conjuncts_.size() )
+                      str += " & ";
               }
-              return false;
+              return str;
           } else {
-              return fset.find(&feature) != fset.end();
+              std::string str("Feature[index=");
+              str += std::to_string(this->index());
+              str += ",type=and,conjuncts={";
+              for( size_t k = 0; k < conjuncts_.size(); ++k ) {
+                  str += conjuncts_[k]->to_string(pretty);
+                  if( k + 1 < conjuncts_.size() )
+                      str += ",";
+              }
+              return str + "}]";
           }
-      }
-      virtual std::string to_string() const {
-          std::string str("Feature[index=");
-          str += std::to_string(this->index());
-          str += ",type=and,conjuncts={";
-          for( size_t k = 0; k < conjuncts_.size(); ++k ) {
-              str += conjuncts_[k]->to_string();
-              if( k + 1 < conjuncts_.size() )
-                  str += ",";
-          }
-          return str + "}]";
       }
   };
-#endif
 
 } // namespace Width2
 
 template<typename T>
 inline std::ostream& operator<<(std::ostream &os, const Width2::Feature<T> &feature) {
-    feature.print(os);
+    feature.print(os, true);
     return os;
 }
 
