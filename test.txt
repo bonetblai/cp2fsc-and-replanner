@@ -1,1 +1,2 @@
 $LW1 --options=solver:width-based-action-selection --planner-path $FPATH benchmarks/lw1/doors/d.pddl benchmarks/lw1/doors/p05/p.pddl benchmarks/lw1/doors/p05/broken-hidden/h01.pddl
+$LW1 --options=solver:forced-moves,-lw1:boost:enable-post-actions,solver:width-based-action-selection --planner-path $FPATH d-d.pddl d-p03.pddl d-h01.pddl

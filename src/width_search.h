@@ -50,7 +50,8 @@ namespace Width2 {
       std::vector<const Feature<T>*> feature_language_;          // created features that are considered
       std::map<int, const Feature<T>*> global_atomic_features_;  // features that are evaluated wrt given tree
       std::vector<const Feature<T>*> local_atomic_features_;     // features evaluated at (local) node
-      std::vector<const Feature<T>*> max_domain_size_features_;  // max-domain-sz features (global)
+      std::vector<const Feature<T>*> global_max_domain_size_features_;  // global max-domain-sz features (global)
+      std::vector<const Feature<T>*> local_max_domain_size_features_;  // local max-domain-sz features (global)
       std::vector<const LiteralFeature<T>*> literal_features_;   // literal features
 
       mutable float total_search_time_;
@@ -107,13 +108,33 @@ namespace Width2 {
 #endif
                   }
 
-                  // generate feature for domain size
+                  // domain size
                   size_t dsize = variable.is_binary() ? 2 : variable.domain().size();
+
+#if 0
+                  // generate local feature for domain size
+                  int feature_index = feature_universe_.size();
+                  const Feature<T> *local_base = new DomainSizeValue<T>(feature_index, lw1_instance_, var_index);
+                  feature_universe_.push_back(local_base);
                   for( size_t i = 0; i < dsize; ++i ) {
                       int feature_index = feature_universe_.size();
-                      const Feature<T> *base = global_atomic_features_.at(var_index);
-                      ValueTestFeature<T> *feature = new ValueTestEQ<T>(feature_index, *base, 1 + i);
-                      max_domain_size_features_.push_back(feature);
+                      ValueTestFeature<T> *feature = new ValueTestEQ<T>(feature_index, *local_base, 1 + i);
+                      local_max_domain_size_features_.push_back(feature);
+                      local_atomic_features_.push_back(feature);
+                      feature_universe_.push_back(feature);
+                      feature_language_.push_back(feature);
+#ifdef DEBUG
+                      std::cout << "using " << *feature << std::endl;
+#endif
+                  }
+#endif
+
+                  // generate global feature for domain size
+                  const Feature<T> *global_base = global_atomic_features_.at(var_index);
+                  for( size_t i = 0; i < dsize; ++i ) {
+                      int feature_index = feature_universe_.size();
+                      ValueTestFeature<T> *feature = new ValueTestEQ<T>(feature_index, *global_base, 1 + i);
+                      global_max_domain_size_features_.push_back(feature);
                       feature_universe_.push_back(feature);
                       feature_language_.push_back(feature);
 #ifdef DEBUG
@@ -125,13 +146,13 @@ namespace Width2 {
           std::cout << Utils::green() << "#global-atomic-features=" << global_atomic_features_.size() << Utils::normal() << std::endl;
           std::cout << Utils::green() << "#local-atomic-features=" << local_atomic_features_.size() << Utils::normal() << std::endl;
           std::cout << Utils::green() << "#literal-features=" << literal_features_.size() << Utils::normal() << std::endl;
-          std::cout << Utils::green() << "#max-domain-size-features=" << max_domain_size_features_.size() << Utils::normal() << std::endl;
+          std::cout << Utils::green() << "#global-max-domain-size-features=" << global_max_domain_size_features_.size() << Utils::normal() << std::endl;
 
           // create 2-term features of the form (<literal-feature> AND <domain-size-feature>)
           for( size_t k = 0; k < literal_features_.size(); ++k ) {
               const Feature<T> &f1 = *literal_features_[k];
-              for( size_t j = 0; j < max_domain_size_features_.size(); ++j ) {
-                  const Feature<T> &f2 = *max_domain_size_features_[j];
+              for( size_t j = 0; j < global_max_domain_size_features_.size(); ++j ) {
+                  const Feature<T> &f2 = *global_max_domain_size_features_[j];
                   int feature_index = feature_universe_.size();
                   AndFeature<T> *feature = new AndFeature<T>(feature_index);
                   feature->add_conjunct(f1);
