@@ -106,6 +106,7 @@ const char *available_options[] = {
     "solver:width-based-action-selection",              "[SOLVER] use width-based algorithm for action selection (LW1)",
     "solver:naive-random-action-selection",             "[SOLVER] use always random action selection (LW1)",
     "solver:random-action-selection",                   "[SOLVER] use random action selection for non-singleton beliefs (LW1)",
+    "solver:despot",                                    "[SOLVER] use DESPOT algorithm",
 
     // clg
     "clg:print:effect",                                 "[CLG] print effect actions",

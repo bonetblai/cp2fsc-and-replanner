@@ -37,6 +37,7 @@
 #include "width.h"
 #include "width_search.h"
 #include "random_action_selection.h"
+#include "despot.h"
 
 using namespace std;
 
@@ -245,17 +246,27 @@ int main(int argc, const char *argv[]) {
         g_options.disable("solver:classical-planner");
         g_options.disable("solver:random-action-selection");
         g_options.disable("solver:width-based-action-selection");
+        g_options.disable("solver:despot");
     }
     if( g_options.is_enabled("solver:random-action-selection") ) {
         need_classical_planner = true;
         g_options.disable("solver:naive-random-action-selection");
         g_options.disable("solver:width-based-action-selection");
+        g_options.disable("solver:despot");
     }
     if( g_options.is_enabled("solver:width-based-action-selection") ) {
         need_classical_planner = false;
         g_options.disable("solver:classical-planner");
         g_options.disable("solver:naive-random-action-selection");
         g_options.disable("solver:random-action-selection");
+        g_options.disable("solver:despot");
+    }
+    if( g_options.is_enabled("solver:despot") ) {
+        need_classical_planner = false;
+        g_options.disable("solver:classical-planner");
+        g_options.disable("solver:naive-random-action-selection");
+        g_options.disable("solver:random-action-selection");
+        g_options.disable("solver:width-based-action-selection");
     }
     if( g_options.is_enabled("solver:random-action-selection") || g_options.is_enabled("solver:naive-random-action-selection") ) {
         g_options.disable("lw1:boost:enable-post-actions");
@@ -390,6 +401,8 @@ int main(int argc, const char *argv[]) {
         assert(alternate_action_selection == nullptr);
     } else if( g_options.is_enabled("solver:width-based-action-selection") ) {
         action_selection = make_unique<Width2::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine);
+    } else if( g_options.is_enabled("solver:despot") ) {
+        action_selection = make_unique<Despot::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine, 50, 50, 1, .5, 10);
     } else {
         assert(planner != nullptr);
         action_selection = make_unique<ClassicalPlannerWrapper<STATE_CLASS> >(*planner);
