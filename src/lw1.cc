@@ -37,6 +37,7 @@
 #include "width.h"
 #include "width_search.h"
 #include "random_action_selection.h"
+#include "hop.h"
 #include "despot.h"
 
 using namespace std;
@@ -241,17 +242,26 @@ int main(int argc, const char *argv[]) {
     if( g_options.is_enabled("lw1:boost:literals-for-observables:dynamic") )
         g_options.enable("lw1:boost:literals-for-observables");
 
+    // solver options:
+    //     solver:classical-planner (default)
+    //     solver:naive-random-action-selection
+    //     solver:random-action-selection
+    //     solver:width-based-action-selection
+    //     solver:hop
+    //     solver:despot
     if( g_options.is_enabled("solver:naive-random-action-selection") ) {
         need_classical_planner = false;
         g_options.disable("solver:classical-planner");
         g_options.disable("solver:random-action-selection");
         g_options.disable("solver:width-based-action-selection");
+        g_options.disable("solver:hop");
         g_options.disable("solver:despot");
     }
     if( g_options.is_enabled("solver:random-action-selection") ) {
         need_classical_planner = true;
         g_options.disable("solver:naive-random-action-selection");
         g_options.disable("solver:width-based-action-selection");
+        g_options.disable("solver:hop");
         g_options.disable("solver:despot");
     }
     if( g_options.is_enabled("solver:width-based-action-selection") ) {
@@ -259,6 +269,15 @@ int main(int argc, const char *argv[]) {
         g_options.disable("solver:classical-planner");
         g_options.disable("solver:naive-random-action-selection");
         g_options.disable("solver:random-action-selection");
+        g_options.disable("solver:hop");
+        g_options.disable("solver:despot");
+    }
+    if( g_options.is_enabled("solver:hop") ) {
+        need_classical_planner = false;
+        g_options.disable("solver:classical-planner");
+        g_options.disable("solver:naive-random-action-selection");
+        g_options.disable("solver:random-action-selection");
+        g_options.disable("solver:width-based-action-selection");
         g_options.disable("solver:despot");
     }
     if( g_options.is_enabled("solver:despot") ) {
@@ -267,8 +286,12 @@ int main(int argc, const char *argv[]) {
         g_options.disable("solver:naive-random-action-selection");
         g_options.disable("solver:random-action-selection");
         g_options.disable("solver:width-based-action-selection");
+        g_options.disable("solver:hop");
     }
-    if( g_options.is_enabled("solver:random-action-selection") || g_options.is_enabled("solver:naive-random-action-selection") ) {
+    if( g_options.is_enabled("solver:random-action-selection") ||
+        g_options.is_enabled("solver:naive-random-action-selection") ||
+        g_options.is_enabled("solver:hop") ||
+        g_options.is_enabled("solver:despot") ) {
         g_options.disable("lw1:boost:enable-post-actions");
         //g_options.disable("lw1:boost:drule:sensing:type4");
         //g_options.disable("lw1:boost:drule:sensing:type4:add");
@@ -401,6 +424,8 @@ int main(int argc, const char *argv[]) {
         assert(alternate_action_selection == nullptr);
     } else if( g_options.is_enabled("solver:width-based-action-selection") ) {
         action_selection = make_unique<Width2::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine);
+    } else if( g_options.is_enabled("solver:hop") ) {
+        action_selection = make_unique<HOP::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine, 50);
     } else if( g_options.is_enabled("solver:despot") ) {
         action_selection = make_unique<Despot::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine, 50, 50, 1, .5, 10);
     } else {

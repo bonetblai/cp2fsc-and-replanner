@@ -122,7 +122,6 @@ namespace AndOr {
       Belief(const T *belief = 0) : ref_count_(1), belief_(belief) {
       }
       ~Belief() {
-          std::cout << "(dtor for Belief)" << std::flush;
       }
 
       const T* belief() const {
@@ -183,7 +182,7 @@ namespace AndOr {
 
     public:
       Node() : ref_count_(1) { }
-      virtual ~Node() { std::cout << "(dtor for Node)" << std::flush; }
+      virtual ~Node() { }
       virtual void print(std::ostream &os) const = 0;
       virtual void pretty_print(std::ostream &os, int indent) const = 0;
   };
@@ -220,7 +219,6 @@ namespace AndOr {
       }
 #endif
       virtual ~AndNode() {
-          std::cout << "(dtor for AndNode)" << std::flush;
       }
 
       virtual void print(std::ostream &os) const {
@@ -262,8 +260,9 @@ namespace AndOr {
   template<typename T>
   class OrNode : public Node {
     protected:
-      const Belief<T> *belief_;        // belief for this node
-      const AndNode<T> *parent_;       // parent node
+      const Belief<T> *belief_;                 // belief for this node
+      const AndNode<T> *parent_;                // parent node
+      std::vector<const AndNode<T>*> children_; // children
 
     protected:
       virtual int deallocate() const { // CHECK
@@ -289,7 +288,6 @@ namespace AndOr {
       }
 #endif
       virtual ~OrNode() {
-          std::cout << "(dtor for OrNode)" << std::flush;
       }
 
       virtual void print(std::ostream &os) const {
@@ -306,6 +304,21 @@ namespace AndOr {
       }
       const AndNode<T>* parent() const {
           return parent_;
+      }
+      void set_parent(const AndNode<T> *parent) {
+          parent_ = parent;
+      }
+
+      const std::vector<const AndNode<T>*>& children() const {
+          return children_;
+      }
+      const AndNode<T>* child(int k) const {
+          assert((k >= 0) && (k < children_.size()));
+          return children_[k];
+      }
+      size_t add_child(const AndNode<T> *child) {
+          children_.push_back(child);
+          return children_.size();
       }
   };
 
