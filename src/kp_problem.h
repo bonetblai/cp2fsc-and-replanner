@@ -71,6 +71,8 @@ class KP_Instance : public Instance {
 
     // for subgoaling
     Atom *new_goal_;
+    Instance::Action *top_subgoaling_action_;
+    int index_top_subgoaling_action_;
     std::vector<std::pair<int, int> > enablers_for_non_reversable_goal_atoms_;
 
     void create_subgoaling_actions(const Instance &ins);
@@ -93,6 +95,13 @@ class KP_Instance : public Instance {
     }
     void reset_inference_time() {
         inference_time_ = 0;
+    }
+
+    const Instance::Action* top_subgoaling_action() const {
+        return top_subgoaling_action_;
+    }
+    int index_top_subgoaling_action() const {
+        return index_top_subgoaling_action_;
     }
 
     virtual void cross_reference() = 0;

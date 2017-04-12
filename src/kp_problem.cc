@@ -37,6 +37,8 @@ static int get_atom_index(const Instance &ins, string atom_name) {
 KP_Instance::KP_Instance(const Options::Mode &options)
   : Instance(options),
     new_goal_(0),
+    top_subgoaling_action_(0),
+    index_top_subgoaling_action_(-1),
     inference_time_(0)  {
 }
 
@@ -100,18 +102,20 @@ void KP_Instance::create_subgoaling_actions(const Instance &ins) {
     new_goal_ = &new_atom("new-goal");
     goal_literals_.insert(1 + new_goal_->index());
 
-    // create subgoaling action for original goal
-    Action &goal_action = new_action("subgoaling_action_for_original_goal__");
+    // create top subgoaling action: subgoaling action for original goal
+    top_subgoaling_action_ = &new_action("subgoaling_action_for_original_goal__");
+    index_top_subgoaling_action_ = actions_.size();
+    assert(actions_.back().get() == top_subgoaling_action_);
     for( index_set::const_iterator it = ins.goal_literals_.begin(); it != ins.goal_literals_.end(); ++it ) {
         int idx = *it > 0 ? *it-1 : -*it-1;
         if( *it > 0 )
-            goal_action.precondition().insert(1 + 2*idx);
+            top_subgoaling_action_->precondition().insert(1 + 2*idx);
         else
-            goal_action.precondition().insert(1 + 2*idx+1);
+            top_subgoaling_action_->precondition().insert(1 + 2*idx+1);
     }
-    goal_action.effect().insert(1 + new_goal_->index());
+    top_subgoaling_action_->effect().insert(1 + new_goal_->index());
     if( options_.is_enabled("kp:print:action:subgoaling") ) {
-        goal_action.print(cout, *this);
+        top_subgoaling_action_->print(cout, *this);
     }
 
     if( options_.is_enabled("kp:subgoaling") ) {
