@@ -425,7 +425,7 @@ int main(int argc, const char *argv[]) {
     } else if( g_options.is_enabled("solver:width-based-action-selection") ) {
         action_selection = make_unique<Width2::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine);
     } else if( g_options.is_enabled("solver:hop") ) {
-        action_selection = make_unique<HOP::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine, 50);
+        action_selection = make_unique<HOP::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine, 20);
     } else if( g_options.is_enabled("solver:despot") ) {
         action_selection = make_unique<Despot::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine, 50, 50, 1, .5, 10);
     } else {

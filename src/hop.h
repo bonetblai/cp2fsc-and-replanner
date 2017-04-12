@@ -33,7 +33,7 @@
 #include "features.h"
 #include "and_or2.h"
 
-#define DEBUG
+//#define DEBUG
 
 namespace HOP {
 
@@ -100,7 +100,7 @@ namespace HOP {
           for( size_t var_index = 0; var_index < lw1_instance_.variables_.size(); ++var_index ) {
               const LW1_Instance::Variable &variable = *lw1_instance_.variables_[var_index];
               if( variable.is_state_variable() ) {
-                  std::cout << variable << std::endl;
+                  //std::cout << variable << std::endl;
                   // generate features for domain values
                   for( set<int>::const_iterator it = variable.domain().begin(); it != variable.domain().end(); ++it ) {
                       int feature_index = feature_universe_.size();
@@ -133,8 +133,10 @@ namespace HOP {
                   }
               }
           }
+#ifdef DEBUG
           std::cout << Utils::green() << "#literal-features=" << literal_features_.size() << Utils::normal() << std::endl;
           std::cout << Utils::green() << "#domain-size-features=" << domain_size_features_.size() << Utils::normal() << std::endl;
+#endif
 
           // create goal feature
           goal_feature_index_ = feature_universe_.size();
@@ -143,8 +145,8 @@ namespace HOP {
           feature_language_.push_back(goal_feature_);
 #ifdef DEBUG
           std::cout << "using " << *goal_feature_ << std::endl;
-#endif
           std::cout << Utils::green() << "#goal-features=1" << Utils::normal() << std::endl;
+#endif
 
           // create feature bitmap
           create_feature_bitmap(feature_universe_);
@@ -224,11 +226,8 @@ namespace HOP {
           num_expansions_ = 0;
       }
 
-      bool expand_node(const AndOr::OrNode<T> &nodes, const Width::FeatureSet<T> &features) const {
+      bool need_to_expand_node(const AndOr::OrNode<T> &nodes, const Width::FeatureSet<T> &features) const {
           assert(goal_feature_ != 0);
-          if( features.find(goal_feature_) != features.end() ) { // CHECK
-              std::cout << "********** GOAL BELIEF **********" << std::endl;
-          }
           return !features.empty() && (features.find(goal_feature_) == features.end());
       }
 
@@ -239,23 +238,23 @@ namespace HOP {
           while( !queue.empty() ) {
               AndOr::OrNode<T> *node = queue.back();
               queue.pop_back();
-              std::cout << "processing=" << *node << std::endl;
+              //std::cout << "processing node=" << *node << std::endl;
 
               // compute features
               Width::FeatureSet<T> features;
               compute_features(*node->belief()->belief(), features, feature_language_, false);
 
-              if( expand_node(*node, features) ) {
+              if( need_to_expand_node(*node, features) ) {
                   // register node's features
                   for( typename Width::FeatureSet<T>::const_iterator it = features.begin(); it != features.end(); ++it ) {
                       assert(*it != 0);
                       register_feature(**it);
                   }
-                  std::cout << Utils::green() << "#available-features=" << num_available_features_ << Utils::normal() << std::endl;
+                  //std::cout << Utils::green() << "#available-features=" << num_available_features_ << Utils::normal() << std::endl;
 
                   assert(successors.empty());
                   expand(*node, successors, do_sampling);
-                  std::cout << "#successors=" << successors.size() << std::endl;
+                  //std::cout << "#successors=" << successors.size() << std::endl;
                   for( size_t k = 0; k < successors.size(); ++k ) {
                       AndOr::AndNode<T> *succ = successors[k];
                       for( size_t j = 0; j < succ->children().size(); ++j )
@@ -285,6 +284,12 @@ namespace HOP {
       void expand(const AndOr::OrNode<T> &node, std::vector<AndOr::AndNode<T>*> &successors, bool do_sampling) const {
           ++num_expansions_;
 
+#ifdef DEBUG
+          std::cout << Utils::blue() << "state=" << Utils::normal();
+          node.belief()->belief()->print(std::cout, &lw1_instance_);
+          std::cout << std::endl;
+#endif
+
           // generate successors for each action
           const T &tip = *node.belief()->belief();
           for( size_t action_index = 0; action_index < lw1_instance_.actions_.size(); ++action_index ) {
@@ -292,7 +297,7 @@ namespace HOP {
               assert(lw1_instance_.is_regular_action(action_index));
               const Instance::Action &action = *lw1_instance_.actions_[action_index];
               if( tip.applicable(action) ) {
-                  std::cout << Utils::green() << "action=" << Utils::normal() << action.name() << std::endl;
+                  //std::cout << Utils::green() << "action=" << Utils::normal() << action.name() << std::endl;
 
                   // calculate result of action
                   T *result_after_action = new T(tip);
@@ -308,7 +313,7 @@ namespace HOP {
                   // is achieved in all successor beliefs
                   std::vector<std::set<int> > possible_observations;
                   compute_possible_observations(*result_after_action, action, possible_observations);
-#ifdef DEBUG
+#ifdef DEBUG 
                   std::cout << Utils::green() << "#possible-obs=" << possible_observations.size() << Utils::normal() << std::endl;
 #endif
 
@@ -380,10 +385,10 @@ namespace HOP {
           map<std::string, std::set<int> >::const_iterator it = lw1_instance_.vars_sensed_by_action_.find(action.name());
 
 #ifdef DEBUG
-          //std::cout << Utils::magenta() << "Policy<T>::compute_possible_observations():" << Utils::normal()
-          //          << " action=" << action.name()
-          //          << ", #vars-sensed-by-action=" << (it == lw1_instance_.vars_sensed_by_action_.end() ? 0 : it->second.size())
-          //          << std::endl;
+          std::cout << Utils::magenta() << "Policy<T>::compute_possible_observations():" << Utils::normal()
+                    << " action=" << action.name()
+                    << ", #vars-sensed-by-action=" << (it == lw1_instance_.vars_sensed_by_action_.end() ? 0 : it->second.size())
+                    << std::endl;
 #endif
 
           if( it != lw1_instance_.vars_sensed_by_action_.end() ) {
@@ -394,7 +399,9 @@ namespace HOP {
                   int var_index = *jt;
                   const LW1_Instance::Variable &variable = *lw1_instance_.variables_[var_index];
                   assert(variable.is_observable());
+#ifdef DEBUG
                   std::cout << Utils::green() << variable << Utils::normal() << std::endl;
+#endif
 
                   // for state variable, possible observations correspond to values not tule
                   // out by tip node; i.e. X=x is possible iff K-x doesn't hold in tip. For
@@ -403,36 +410,45 @@ namespace HOP {
                   // engine. Binary variables are handled separately as usual ...
                   if( variable.is_binary() ) {
 #ifdef DEBUG
-                      //std::cout << Utils::green() << "variable '" << variable.name() << "' is binary" << Utils::normal() << std::endl;
+                      std::cout << Utils::green() << "variable '" << variable.name() << "' is binary" << Utils::normal() << std::endl;
 #endif
                       int atom = *variable.domain().begin();
                       if( variable.is_state_variable() ) {
 #ifdef DEBUG
-                          //std::cout << Utils::green() << "variable '" << variable.name() << "' is state variable" << Utils::normal() << std::endl;
+                          std::cout << Utils::green() << "variable '" << variable.name() << "' is state variable" << Utils::normal() << std::endl;
 #endif
-                          if( !tip.satisfy(1 + 2*atom + 1) )
+                          if( !tip.satisfy(2*atom + 1) )
                               observable_literals[var_index].push_back(1 + atom);
-                          if( !tip.satisfy(1 + 2*atom) )
+                          if( !tip.satisfy(2*atom) )
                               observable_literals[var_index].push_back(-(1 + atom));
                       } else {
 #ifdef DEBUG
-                          //std::cout << Utils::green() << "variable '" << variable.name() << "' is observable variable" << Utils::normal() << std::endl;
+                          std::cout << Utils::green() << "variable '" << variable.name() << "' is observable variable" << Utils::normal() << std::endl;
 #endif
                           observable_literals[var_index].push_back(1 + atom);
                           observable_literals[var_index].push_back(-(1 + atom));
                       }
                   } else {
 #ifdef DEBUG
-                      //std::cout << Utils::green() << "variable '" << variable.name() << "' is multivalued" << Utils::normal() << std::endl;
-                      //if( variable.is_state_variable() )
-                      //    std::cout << Utils::green() << "variable '" << variable.name() << "' is state variable" << Utils::normal() << std::endl;
-                      //else
-                      //    std::cout << Utils::green() << "variable '" << variable.name() << "' is observable variable" << Utils::normal() << std::endl;
+                      std::cout << Utils::green() << "variable '" << variable.name() << "' is multivalued" << Utils::normal() << std::endl;
+                      if( variable.is_state_variable() )
+                          std::cout << Utils::green() << "variable '" << variable.name() << "' is state variable" << Utils::normal() << std::endl;
+                      else
+                          std::cout << Utils::green() << "variable '" << variable.name() << "' is observable variable" << Utils::normal() << std::endl;
 #endif
                       for( set<int>::const_iterator kt = variable.domain().begin(); kt != variable.domain().end(); ++kt ) {
                           int atom = *kt;
+#ifdef DEBUG
+                          std::cout << "Literals: positive=";
+                          State::print_literal(std::cout, 1 + 2*atom, &lw1_instance_);
+                          std::cout << ", negative=";
+                          State::print_literal(std::cout, 1 + 2*atom + 1, &lw1_instance_);
+                          std::cout << ", satisfy-positive= ";
+                          std::cout << tip.satisfy(2*atom);
+                          std::cout << std::endl;
+#endif
                           if( variable.is_state_variable() ) {
-                              if( !tip.satisfy(1 + 2*atom + 1) )
+                              if( !tip.satisfy(2*atom + 1) )
                                   observable_literals[var_index].push_back(1 + atom);
                           } else {
                               observable_literals[var_index].push_back(1 + atom);
@@ -447,7 +463,7 @@ namespace HOP {
               generate_combinations_recursively(tip, observable_literals.begin(), observable_literals.end(), combination, possible_observations);
               assert(combination.empty());
 #ifdef DEBUG
-              //std::cout << Utils::green() << "#combinations-for-sensed-vars=" << possible_observations.size() << std::endl;
+              std::cout << Utils::green() << "#combinations-for-sensed-vars=" << possible_observations.size() << std::endl;
 #endif
           }
       }
@@ -529,28 +545,34 @@ namespace HOP {
       }
 
       virtual int get_plan(const T &state, Instance::Plan &raw_plan, Instance::Plan &plan) const {
-          std::cout << "solver=" << name() << std::endl;
-          std::cout << Utils::magenta() << "HOP::ActionSelection<T>::get_plan()" << Utils::normal() << std::endl;
+          if( is_goal(state) ) {
+              assert(state.applicable(*lw1_instance_.top_subgoaling_action()));
+              raw_plan.push_back(lw1_instance_.index_top_subgoaling_action());
+              plan.push_back(lw1_instance_.index_top_subgoaling_action());
+              return ActionSelection<T>::SOLVED;
+          }
 
           // sample graph to score actions
           std::vector<float> action_scores(lw1_instance_.actions_.size(), std::numeric_limits<float>::max());
           for( size_t k = 0; k < num_sampled_scenarios_; ++k ) {
-              std::cout << "running sampled scenario " << k << std::endl;
               reset_graph();
+              //std::cout << "running sampled scenario " << k << ": " << std::flush;
 
               // construct AND/OR graph rooted at state
               AndOr::OrNode<T> *root = make_root(state);
-              std::cout << "root=" << *root << std::endl;
+              //std::cout << "root=" << *root << std::endl;
               create_graph_breadth_first(root, true);
-              std::cout << "num-expansions=" << num_expansions_ << std::endl;
+              //std::cout << "num-expansions=" << num_expansions_ << std::endl;
 
               // propagate values in graph
               std::pair<int, float> p = propagate(root);
+              assert((p.first >= 0) && (p.first < root->children().size()));
+              int action = root->child(p.first)->action();
 
               // update score for best first actions in graph
-              if( action_scores[p.first] == std::numeric_limits<float>::max() )
-                  action_scores[p.first] = 0;
-              action_scores[p.first] += p.second / float(num_sampled_scenarios_);
+              if( action_scores[action] == std::numeric_limits<float>::max() )
+                  action_scores[action] = 0;
+              action_scores[action] += p.second / float(num_sampled_scenarios_);
 
               // deallocate AND/OR graph
               deallocate_graph(root);
@@ -570,14 +592,33 @@ namespace HOP {
           }
           assert(score_best_actions < std::numeric_limits<float>::max());
           assert(!best_actions.empty());
+
+#ifdef DEBUG
+          // print action scores
+          for( size_t k = 0; k < action_scores.size(); ++k ) {
+              if( action_scores[k] < std::numeric_limits<float>::max() ) {
+                  const Instance::Action &action = *lw1_instance_.actions_[k];
+                  std::cout << "score for '" << action.name() << "' is " << action_scores[k] << std::endl;
+              }
+          }
+#endif
        
           // select best action
           int best_action_index = best_actions[lrand48() % best_actions.size()];
           const Instance::Action &best_action = *lw1_instance_.actions_[best_action_index];
-          std::cout << "hop: best-action=" << best_action.name() << ", index=" << best_action_index << ", score=" << score_best_actions << std::endl;
+          assert(state.applicable(best_action));
 
-          exit(-1);
-          return 0; // CHECK: not clear what to return and how to update raw_plan and plan
+#ifdef DEBUG
+          // print best action
+          state.print(std::cout, lw1_instance_);
+          std::cout << std::endl;
+          std::cout << "hop: best-action=" << best_action.name() << ", index=" << best_action_index << ", score=" << score_best_actions << std::endl;
+#endif
+
+          // return best action as single-action plan // CHECK: not clear what to return and how to update raw_plan and plan
+          raw_plan.push_back(best_action_index);
+          plan.push_back(best_action_index);
+          return ActionSelection<T>::SOLVED;
       }
   };
 

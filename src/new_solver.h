@@ -177,10 +177,10 @@ int NewSolver<T>::solve(const T &initial_hidden_state,
                 return TIME;
             }
             assert(!plan.empty());
-            if( options_.is_enabled("solver:naive-random-action-selection") || options_.is_enabled("solver:random-action-selection") ) {
+            if( options_.is_enabled("solver:naive-random-action-selection") || options_.is_enabled("solver:random-action-selection") || options_.is_enabled("solver:hop") ) {
                 // we need to diferentiate because calculate_relevant_assumptions()
                 // assumes the plan reaches the goal
-                if( options_.is_enabled("solver:naive-random-action-selection") ) {
+                if( options_.is_enabled("solver:naive-random-action-selection") || options_.is_enabled("solver:hop") ) {
                     assumptions.push_back(index_set());
                 } else {
                     assert(dynamic_cast<const RandomActionSelection<T>*>(&action_selection_) != 0);
