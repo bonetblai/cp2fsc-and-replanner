@@ -288,6 +288,8 @@ int main(int argc, const char *argv[]) {
         g_options.disable("solver:width-based-action-selection");
         g_options.disable("solver:hop");
     }
+
+    // disable lw1:boost:enable-post-actions
     if( g_options.is_enabled("solver:random-action-selection") ||
         g_options.is_enabled("solver:naive-random-action-selection") ||
         g_options.is_enabled("solver:hop") ||
@@ -425,7 +427,7 @@ int main(int argc, const char *argv[]) {
     } else if( g_options.is_enabled("solver:width-based-action-selection") ) {
         action_selection = make_unique<Width2::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine);
     } else if( g_options.is_enabled("solver:hop") ) {
-        action_selection = make_unique<HOP::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine, 20);
+        action_selection = make_unique<HOP::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine, 10);
     } else if( g_options.is_enabled("solver:despot") ) {
         action_selection = make_unique<Despot::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine, 50, 50, 1, .5, 10);
     } else {
