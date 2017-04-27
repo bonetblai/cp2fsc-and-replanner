@@ -62,6 +62,7 @@ namespace Inference {
       virtual bool internal_apply_inference(const Instance::Action *last_action,
                                             const std::set<int> &sensed_at_step,
                                             T &state) const = 0;
+      virtual bool internal_propagate(T &state) const = 0;
 
     public:
       Engine(const std::string &name, const Instance &instance, const LW1_Instance &lw1_instance, const Options::Mode &options)
@@ -88,6 +89,26 @@ namespace Inference {
 
           float start_time = Utils::read_time_in_seconds();
           bool status = internal_apply_inference(last_action, sensed_at_step, state);
+          float end_time = Utils::read_time_in_seconds();
+          lw1_instance_.increase_inference_time(end_time - start_time);
+
+#ifdef DEBUG
+          std::cout << Utils::green() << ">>> state  after inference=";
+          state.print(std::cout, lw1_instance_);
+          std::cout << Utils::normal() << std::endl;
+#endif
+
+          return status;
+      }
+      bool propagate(T &state) const {
+#ifdef DEBUG
+          std::cout << Utils::magenta() << ">>> state before inference=";
+          state.print(std::cout, lw1_instance_);
+          std::cout << Utils::normal() << std::endl;
+#endif
+
+          float start_time = Utils::read_time_in_seconds();
+          bool status = internal_propagate(state);
           float end_time = Utils::read_time_in_seconds();
           lw1_instance_.increase_inference_time(end_time - start_time);
 
@@ -157,6 +178,10 @@ namespace Inference {
               fix_point_reached = old_state == state;
           }
           return true; // forward chaining cannot detect inconsistencies
+      }
+      virtual bool internal_propagate(T &state) const {
+          std::cout << Utils::internal_error() << "forward-chaining: internal_propagate() not yet implemented" << std::endl;
+          exit(-1);
       }
 
     public:
@@ -428,6 +453,132 @@ namespace Inference {
           restore_cnf();
           return true;
       }
+      virtual bool internal_propagate(T &state) const {
+          assert(options_.is_enabled("lw1:inference:up"));
+          assert(dynamic_cast<const LW1_Instance*>(&lw1_instance_) != 0);
+          const LW1_Instance &lw1_instance = static_cast<const LW1_Instance&>(lw1_instance_);
+
+#ifdef DEBUG
+          std::cout << Utils::cyan() << "Using inference: 'unit propagation'" << Utils::normal() << std::endl;
+#endif
+
+          // check basic invariants
+          assert(cnf_.empty() || options_.is_enabled("lw1:inference:up:preload"));
+          assert(cnf_.size() == frontier_);
+
+          // 1. Add positive literals from state
+          for( typename T::const_iterator it = state.begin(); it != state.end(); ++it ) {
+              assert(*it >= 0);
+              Propositional::Clause cl;
+              cl.push_back(1 + *it);
+              cnf_.push_back(cl);
+              if( !options_.is_enabled("lw1:inference:up:watched-literals") )
+                  base_theory_.insert(cl);
+#ifdef DEBUG
+              std::cout << Utils::red() << "[UP] [Theory] Add literal from state: ";
+              LW1_State::print_literal(std::cout, 1 + *it, &lw1_instance_);
+              std::cout << "[" << *it << "]" << Utils::normal() << std::endl;
+#endif
+          }
+
+          // 2. Add axioms (if preload, these are already present)
+          if( !options_.is_enabled("lw1:inference:up:preload") ) {
+              for( std::vector<std::vector<int> >::const_iterator it = lw1_instance.clauses_for_axioms_.begin(); it != lw1_instance.clauses_for_axioms_.end(); ++it ) {
+                  const std::vector<int> &clause = *it;
+                  cnf_.push_back(static_cast<const Propositional::Clause&>(clause));
+                  if( !options_.is_enabled("lw1:inference:up:watched-literals") )
+                      base_theory_.insert(static_cast<const Propositional::Clause&>(clause));
+#ifdef DEBUG
+                  std::cout << Utils::red() << "[UP] [Theory] Add axiom: ";
+                  state.print_clause_or_term(std::cout, clause, &lw1_instance_);
+                  std::cout << Utils::normal() << std::endl;
+#endif
+              }
+          }
+
+          // 4. Add (extra) static clauses (if enhanced mode)
+          if( options_.is_enabled("lw1:inference:up:enhanced") ) {
+              std::cout << Utils::internal_error() << "lw1:inference:up:enhanced is EXPERIMENTAL!" << std::endl;
+              exit(-1);
+          }
+
+          // 5. Do inference
+          bool consistent = true;
+          if( options_.is_enabled("lw1:inference:up:watched-literals") ) {
+#ifdef DEBUG
+              std::cout << Utils::cyan() << "[UP] Using method: 'watched-literals'" << Utils::normal() << std::endl;
+#endif
+              consistent = watched_literals_.solve(cnf_, frontier_, up_assignment_);
+              if( consistent && options_.is_enabled("lw1:inference:up:lookahead") ) {
+                  std::cout << Utils::internal_error() << "lw1:inference:up:lookahead is EXPERIMENTAL!" << std::endl;
+                  exit(-1);
+              }
+              watched_literals_.restore(frontier_);
+          } else {
+#ifdef DEBUG
+              std::cout << Utils::cyan() << "[UP] Using method: 'standard'" << Utils::normal() << std::endl;
+#endif
+              consistent = standard_.solve(cnf_, reduced_cnf_);
+          }
+
+          // check consistency
+          if( !consistent ) {
+              restore_cnf();
+              return false;
+          }
+
+          // 6. Update state: insert positive literals from result into state
+          if( options_.is_enabled("lw1:inference:up:watched-literals") ) {
+              for( unsigned i = 1; i < up_assignment_.size(); ++i ) {
+                  int literal_sign = up_assignment_[i];
+                  if( is_forbidden(i) ) continue;
+                  assert((literal_sign != 0) || options_.is_enabled("lw1:inference:up:enhanced") || options_.is_enabled("lw1:inference:up:lookahead") || !options_.is_enabled("solver:classical-planner"));
+                  if( literal_sign == 1 ) { // positive literal
+                      state.add(i - 1);
+#ifdef DEBUG
+                      std::cout << Utils::yellow() << "[UP] [State] Add inferred literal: ";
+                      LW1_State::print_literal(std::cout, i, &lw1_instance_);
+                      std::cout << "[" << i - 1 << "]" << Utils::normal() << std::endl;
+#endif
+                  }
+              }
+          } else {
+              for( size_t k = 0; k < reduced_cnf_.size(); ++k ) {
+                  const Propositional::Clause &clause = reduced_cnf_[k];
+                  assert(!clause.empty());
+
+                  // if this is not a unit clause or new derived clause, skip it
+                  if( clause.size() > 1 ) continue;
+                  if( base_theory_.find(clause) != base_theory_.end() ) continue;
+                  if( base_theory_axioms_.find(clause) != base_theory_axioms_.end() ) continue;
+
+                  // if this is a unit clause, insert literal in state
+                  int literal = clause[0];
+                  if( !is_forbidden(literal) ) {
+                      assert(literal != 0);
+                      assert((literal > 0) || options_.is_enabled("lw1:inference:up:enhanced") || !options_.is_enabled("solver:classical-planner"));
+                      if( literal > 0 ) {
+                          state.add(literal - 1);
+#ifdef DEBUG
+                          std::cout << Utils::yellow() << "[UP] [State] Add inferred literal: ";
+                          LW1_State::print_literal(std::cout, literal, &lw1_instance_);
+                          std::cout << "[" << literal - 1 << "]" << Utils::normal() << std::endl;
+#endif
+                      }
+                  }
+              }
+          }
+
+          // 7. Update state: insert non-forbidden clauses in reduced cnf into state (if enhanced mode)
+          if( options_.is_enabled("lw1:inference:up:enhanced") ) {
+              std::cout << Utils::internal_error() << "lw1:inference:up:enhanced is EXPERIMENTAL!" << std::endl;
+              exit(-1);
+          }
+
+          // 8. Restore CNF and return
+          restore_cnf();
+          return true;
+      }
 
     public:
       UnitPropagation(const Instance &instance, const LW1_Instance &lw1_instance, const Options::Mode &options)
@@ -581,6 +732,10 @@ namespace Inference {
           // there is an error in // the planning model
           bool status = ac3_.solve(state);
           return status;
+      }
+      virtual bool internal_propagate(T &state) const {
+          std::cout << Utils::internal_error() << "ac3: internal_propagate() not yet implemented" << std::endl;
+          exit(-1);
       }
 
     public:

@@ -58,7 +58,7 @@ namespace Inference {
                                     bool as_k_cnf) {
       assert(last_action != 0);
 
-      // compute action-key for accessingn sensing models in lw1 instance
+      // compute action-key for accessing sensing models in lw1 instance
       string action_key;
       if( options.is_enabled("lw1:strict") ) {
           action_key = last_action->name();
