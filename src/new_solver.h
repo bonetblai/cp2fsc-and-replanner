@@ -216,6 +216,7 @@ int NewSolver<T>::solve(const T &initial_hidden_state,
         }
 
         // apply plan until an inconsistency is found or termination
+        assert(plan.size() == assumptions.size());
         for( size_t k = 0; k < plan.size(); ++k ) {
             const Instance::Action &kp_act = *kp_instance_.actions_[plan[k]];
             assert(kp_instance_.is_regular_action(kp_act.index()));
