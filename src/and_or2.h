@@ -128,7 +128,8 @@ namespace AndOr {
           return belief_;
       }
 
-      void print(std::ostream &os) const {
+      void print(std::ostream &os, int indent = 0) const {
+          os << std::string(indent, ' ');
           if( belief_ == 0 )
               os << "(null)";
           else
@@ -150,6 +151,7 @@ namespace AndOr {
   class Node {
     protected:
       mutable int ref_count_;
+      mutable float score_;
 
     protected:
       virtual int deallocate() const = 0;
@@ -167,6 +169,14 @@ namespace AndOr {
           return this;
       }
 #endif
+
+      float score() const {
+          return score_;
+      }
+      void set_score(float score) const {
+          score_ = score;
+      }
+
       static bool deallocate(const Node *node) { // CHECK
           if( node != 0 ) {
               assert(node->ref_count_ > 0);
@@ -181,10 +191,10 @@ namespace AndOr {
       }
 
     public:
-      Node() : ref_count_(1) { }
+      Node() : ref_count_(1), score_(-1) { }
       virtual ~Node() { }
-      virtual void print(std::ostream &os) const = 0;
-      virtual void pretty_print(std::ostream &os, int indent) const = 0;
+      virtual void print(std::ostream &os, int indent = 0) const = 0;
+      virtual void print_tree(std::ostream &os, int indent = 0) const = 0;
   };
 
   template<typename T>
@@ -221,14 +231,23 @@ namespace AndOr {
       virtual ~AndNode() {
       }
 
-      virtual void print(std::ostream &os) const {
-          os << "AND[ptr=" << this
+      virtual void print(std::ostream &os, int indent = 0) const {
+          os << std::string(indent, ' ')
+             << Utils::blue()
+             << "AND[ptr=" << this
              << ",ref=" << Node::ref_count_
              << ",action=" << action_
              << ",parent=" << parent_
-             << "}]";
+             << ",score=" << score_
+             << "}]"
+             << Utils::normal();
       }
-      virtual void pretty_print(std::ostream &os, int indent) const { // CHECK: FILL MISSING CODE
+      virtual void print_tree(std::ostream &os, int indent = 0) const {
+          os << std::string(indent, ' ');
+          print(os, 0);
+          os << std::endl;
+          for( size_t k = 0; k < children_.size(); ++k )
+              children_[k]->print_tree(os, 4 + indent);
       }
 
       const int action() const {
@@ -290,13 +309,22 @@ namespace AndOr {
       virtual ~OrNode() {
       }
 
-      virtual void print(std::ostream &os) const {
-          os << "OR[ptr=" << this
+      virtual void print(std::ostream &os, int indent = 0) const {
+          os << std::string(indent, ' ')
+             << Utils::green()
+             << "OR[ptr=" << this
              << ",ref=" << Node::ref_count_
              << ",parent=" << parent_
-             << "]";
+             << ",score=" << score_
+             << "]" 
+             << Utils::normal();
       }
-      virtual void pretty_print(std::ostream &os, int indent) const { // CHECK: FILL MISSING CODE
+      virtual void print_tree(std::ostream &os, int indent = 0) const {
+          os << std::string(indent, ' ');
+          print(os, 0);
+          os << std::endl;
+          for( size_t k = 0; k < children_.size(); ++k )
+              children_[k]->print_tree(os, 4 + indent);
       }
 
       const Belief<T>* belief() const {
