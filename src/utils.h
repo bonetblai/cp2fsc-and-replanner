@@ -49,6 +49,7 @@ namespace Utils {
   }
 
   inline std::string normal() { return "\x1B[0m"; }
+  inline std::string bold() { return "\x1B[1m"; }
   inline std::string red() { return "\x1B[31;1m"; }
   inline std::string green() { return "\x1B[32;1m"; }
   inline std::string yellow() { return "\x1B[33;1m"; }
