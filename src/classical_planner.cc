@@ -127,7 +127,6 @@ FF_Planner::~FF_Planner() {
 }
 
 int FF_Planner::get_raw_plan(const State &state, Instance::Plan &raw_plan) const {
-
     cout << "calling " << name() << " (n=" << 1+n_calls() << ", acc-time=" << get_time() << ")..." << endl;
     float start_time = Utils::read_time_in_seconds();
     ++n_calls_;
@@ -200,7 +199,6 @@ M_Planner::~M_Planner() {
 }
 
 int M_Planner::get_raw_plan(const State &state, Instance::Plan &raw_plan) const {
-
     cout << "calling " << name() << " (n=" << 1+n_calls() << ", acc-time=" << get_time() << ")..." << endl;
     float start_time = Utils::read_time_in_seconds();
     ++n_calls_;
@@ -491,7 +489,6 @@ LAMA_Server_Planner::~LAMA_Server_Planner() {
 }
 
 int LAMA_Server_Planner::get_raw_plan(const State &state, Instance::Plan &raw_plan) const {
-
     cout << "calling " << name() << " (n=" << 1+n_calls() << ", acc-time=" << get_time() << ")..." << endl;
     float start_time = Utils::read_time_in_seconds();
     ++n_calls_;
