@@ -170,13 +170,6 @@ namespace AndOr {
       }
 #endif
 
-      float score() const {
-          return score_;
-      }
-      void set_score(float score) const {
-          score_ = score;
-      }
-
       static bool deallocate(const Node *node) { // CHECK
           if( node != 0 ) {
               assert(node->ref_count_ > 0);
@@ -193,6 +186,22 @@ namespace AndOr {
     public:
       Node() : ref_count_(1), score_(-1) { }
       virtual ~Node() { }
+      float score() const {
+          return score_;
+      }
+      void set_score(float score) const {
+          score_ = score;
+      }
+      int node_count() const {
+          return node_count(0);
+      }
+      int and_node_count() const {
+          return node_count(1);
+      }
+      int or_node_count() const {
+          return node_count(2);
+      }
+      virtual int node_count(int type) const = 0;
       virtual void print(std::ostream &os, int indent = 0) const = 0;
       virtual void print_tree(std::ostream &os, int indent = 0) const = 0;
   };
@@ -231,6 +240,12 @@ namespace AndOr {
       virtual ~AndNode() {
       }
 
+      virtual int node_count(int type) const {
+          int count = 0;
+          for( size_t k = 0; k < children_.size(); ++k )
+              count += children_[k]->node_count(type);
+          return type != 2 ? 1 + count : count;
+      }
       virtual void print(std::ostream &os, int indent = 0) const {
           os << std::string(indent, ' ')
              << Utils::blue()
@@ -309,6 +324,12 @@ namespace AndOr {
       virtual ~OrNode() {
       }
 
+      virtual int node_count(int type) const {
+          int count = 0;
+          for( size_t k = 0; k < children_.size(); ++k )
+              count += children_[k]->node_count(type);
+          return type != 1 ? 1 + count : count;
+      }
       virtual void print(std::ostream &os, int indent = 0) const {
           os << std::string(indent, ' ')
              << Utils::green()
