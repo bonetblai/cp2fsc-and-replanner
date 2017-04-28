@@ -177,10 +177,10 @@ int NewSolver<T>::solve(const T &initial_hidden_state,
                 return TIME;
             }
             assert(!plan.empty());
-            if( options_.is_enabled("solver:naive-random-action-selection") || options_.is_enabled("solver:random-action-selection") || options_.is_enabled("solver:hop") ) {
+            if( options_.is_enabled("solver:naive-random-action-selection") || options_.is_enabled("solver:random-action-selection") ) {
                 // we need to diferentiate because calculate_relevant_assumptions()
                 // assumes the plan reaches the goal
-                if( options_.is_enabled("solver:naive-random-action-selection") || options_.is_enabled("solver:hop") ) {
+                if( options_.is_enabled("solver:naive-random-action-selection") ) {
                     assumptions.push_back(index_set());
                 } else {
                     assert(dynamic_cast<const RandomActionSelection<T>*>(&action_selection_) != 0);
@@ -190,6 +190,9 @@ int NewSolver<T>::solve(const T &initial_hidden_state,
                     else
                         assumptions.push_back(index_set());
                 }
+            } else if( options_.is_enabled("solver:hop") ) {
+                // apply actions in plan as long as they are applicable
+                assumptions.insert(assumptions.end(), plan.size(), index_set());
             } else {
                 calculate_relevant_assumptions(plan, raw_plan, state, goal_condition, assumptions);
             }
