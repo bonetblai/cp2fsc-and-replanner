@@ -31,12 +31,12 @@ grammar.cc: ppddl.y base.h
 	#touch grammar.cc grammar.h
 scanner.cc: ppddl.lex grammar.h
 	$(FLEX) -i -hscanner.h -oscanner_tmp.cc ppddl.lex
-	cat scanner_tmp.cc | sed "s/register //g" > scanner.cc
+	cat scanner_tmp.cc | sed "s/register //g" | sed "s/cout/std::cout/g" | sed "s/endl/std::endl/g" > scanner.cc
 	rm -f scanner_tmp.cc
 	#touch scanner.cc scanner.h
 scanner.h: ppddl.lex grammar.h
 	$(FLEX) -i -hscanner.h -oscanner_tmp.cc ppddl.lex
-	cat scanner_tmp.cc | sed "s/register //g" > scanner.cc
+	cat scanner_tmp.cc | sed "s/register //g" | sed "s/cout/std::cout/g" | sed "s/endl/std::endl/g" > scanner.cc
 	rm -f scanner_tmp.cc
 	#touch scanner.cc scanner.h
 

@@ -165,7 +165,7 @@ namespace Width2 {
               if( belief.satisfy(2*atom_index + 1, false) )
                   --num_values;
           } else {
-              for( set<int>::const_iterator it = var.domain().begin(); it != var.domain().end(); ++it ) {
+              for( std::set<int>::const_iterator it = var.domain().begin(); it != var.domain().end(); ++it ) {
                   int literal = 1 + 2*(*it) + 1;
                   if( belief.satisfy(literal - 1, false) )
                       --num_values;

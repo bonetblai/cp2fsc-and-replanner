@@ -73,7 +73,7 @@ namespace Width {
                   if( variable.name() == "obj-col_o1" ) continue; // CHECK: REMOVE (colorballs)
                   std::cout << variable << std::endl;
                   // generate features for domain values
-                  for( set<int>::const_iterator it = variable.domain().begin(); it != variable.domain().end(); ++it ) {
+                  for( std::set<int>::const_iterator it = variable.domain().begin(); it != variable.domain().end(); ++it ) {
                       int feature_index = feature_universe_.size();
                       literal_features_.push_back(new LiteralFeature<T>(feature_index, lw1_instance_, var_index, 1 + 2*(*it)));
                       feature_universe_.push_back(literal_features_.back());
@@ -109,7 +109,7 @@ namespace Width {
                       //std::cout << "using " << *feature_language_.back() << std::endl;
 #endif
                   } else {
-                      for( set<int>::const_iterator it = variable.domain().begin(); it != variable.domain().end(); ++it ) {
+                      for( std::set<int>::const_iterator it = variable.domain().begin(); it != variable.domain().end(); ++it ) {
                           int feature_index = feature_universe_.size();
                           literal_features_.push_back(new LiteralFeature<T>(feature_index, lw1_instance_, var_index, 1 + 2*(*it)));
                           feature_universe_.push_back(literal_features_.back());
@@ -803,7 +803,7 @@ std::cout << "NEW POLICY FOR " << feature << std::endl;
       void compute_possible_observations(const T &tip,
                                          const Instance::Action &action,
                                          std::vector<std::set<int> > &possible_observations) const {
-          map<std::string, std::set<int> >::const_iterator it = lw1_instance_.vars_sensed_by_action_.find(action.name());
+          std::map<std::string, std::set<int> >::const_iterator it = lw1_instance_.vars_sensed_by_action_.find(action.name());
 
 #ifdef DEBUG
           //std::cout << Utils::magenta() << "Policy<T>::compute_possible_observations():" << Utils::normal()
@@ -855,7 +855,7 @@ std::cout << "NEW POLICY FOR " << feature << std::endl;
                       //else
                       //    std::cout << Utils::green() << "variable '" << variable.name() << "' is observable variable" << Utils::normal() << std::endl;
 #endif
-                      for( set<int>::const_iterator kt = variable.domain().begin(); kt != variable.domain().end(); ++kt ) {
+                      for( std::set<int>::const_iterator kt = variable.domain().begin(); kt != variable.domain().end(); ++kt ) {
                           int atom = *kt;
                           if( variable.is_state_variable() ) {
                               if( !tip.satisfy(1 + 2*atom + 1) )

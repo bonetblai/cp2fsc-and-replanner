@@ -85,7 +85,7 @@ namespace Width2 {
               if( variable.is_state_variable() ) {
                   std::cout << "Features for variable: " << variable << std::endl;
                   // generate features for domain values
-                  for( set<int>::const_iterator it = variable.domain().begin(); it != variable.domain().end(); ++it ) {
+                  for( std::set<int>::const_iterator it = variable.domain().begin(); it != variable.domain().end(); ++it ) {
                       int atom = *it;
                       int feature_index = feature_universe_.size();
                       LiteralFeature<T> *feature = new LiteralFeature<T>(feature_index, lw1_instance_, var_index, 1 + 2*atom, true);
@@ -461,7 +461,7 @@ namespace Width2 {
               for( size_t k = 0; k < node.children().size(); ++k ) {
                   const AndOr3::AndNode<T> &child = *node.child(k);
                   bottom_up_pass(child, feature, verbose);
-                  min_value = min(min_value, child.cached_value());
+                  min_value = std::min(min_value, child.cached_value());
               }
               node.set_cached_value(min_value);
           }
@@ -473,7 +473,7 @@ namespace Width2 {
           for( size_t k = 0; k < node.children().size(); ++k ) {
               const AndOr3::OrNode<T> &child = *node.child(k);
               bottom_up_pass(child, feature, verbose);
-              max_value = max(max_value, child.cached_value());
+              max_value = std::max(max_value, child.cached_value());
           }
           node.set_cached_value(max_value);
           if( verbose ) std::cout << "bottom-up: value for " << feature << " at " << node << " --> " << node.cached_value() << std::endl;
@@ -490,7 +490,7 @@ namespace Width2 {
       }
       void top_down_pass(const AndOr3::AndNode<T> &node, const Feature<T> &feature, bool verbose = false) const {
           assert(node.parent() != 0);
-          node.set_cached_value(max(node.cached_value(), node.parent()->cached_value()));
+          node.set_cached_value(std::max(node.cached_value(), node.parent()->cached_value()));
           for( size_t k = 0; k < node.children().size(); ++k ) {
               const AndOr3::OrNode<T> &child = *node.child(k);
               top_down_pass(child, feature, verbose);
@@ -739,7 +739,7 @@ namespace Width2 {
       void compute_possible_observations(const T &tip,
                                          const Instance::Action &action,
                                          std::vector<std::set<int> > &possible_observations) const {
-          map<std::string, std::set<int> >::const_iterator it = lw1_instance_.vars_sensed_by_action_.find(action.name());
+          std::map<std::string, std::set<int> >::const_iterator it = lw1_instance_.vars_sensed_by_action_.find(action.name());
 
 #ifdef DEBUG
           //std::cout << Utils::magenta() << "API<T>::compute_possible_observations():" << Utils::normal()
@@ -791,7 +791,7 @@ namespace Width2 {
                       //else
                       //    std::cout << Utils::green() << "variable '" << variable.name() << "' is observable variable" << Utils::normal() << std::endl;
 #endif
-                      for( set<int>::const_iterator kt = variable.domain().begin(); kt != variable.domain().end(); ++kt ) {
+                      for( std::set<int>::const_iterator kt = variable.domain().begin(); kt != variable.domain().end(); ++kt ) {
                           int atom = *kt;
                           if( variable.is_state_variable() ) {
                               if( !tip.satisfy(2*atom + 1) )

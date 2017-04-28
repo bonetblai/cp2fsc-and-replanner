@@ -42,9 +42,6 @@
 #include <strings.h>
 #include "string_table.h"
 #include "grammar.h"
-
-using namespace std;
-
 %}
 
 CHAR [a-zA-Z_]

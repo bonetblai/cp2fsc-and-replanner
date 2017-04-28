@@ -81,10 +81,7 @@
 #include <strings.h>
 #include "string_table.h"
 #include "grammar.h"
-
-using namespace std;
-
-#line 59 "ppddl.lex"
+#line 56 "ppddl.lex"
 #line 52 "/usr/local/lib/flexskel.h"
 
 #ifdef YY_USE_CLASS
@@ -409,7 +406,7 @@ class YY_PDDL_Scanner_CLASS YY_PDDL_Scanner_INHERIT
 /* declaration of externs for public use of yylex scanner */
 
 /* % here is the declaration from section2 %header{ */ 
-#line 169 "ppddl.lex"
+#line 166 "ppddl.lex"
 #endif
 #line 375 "/usr/local/lib/flexskel.h"
 
