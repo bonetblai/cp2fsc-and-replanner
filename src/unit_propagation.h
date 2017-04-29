@@ -168,7 +168,7 @@ namespace Inference {
             }
         }
 
-        // Returns true if a prop can propagated with new value set in assigned vector.
+        // Returns true if a prop can be propagated with new value set in assigned vector.
         // It is caller's responsability to give a proposition (prop > 0)
         virtual bool propagate(const CNF &cnf, std::vector<int> &assigned, int var) {
             assert((var > 0) && (var < assigned.size()));
