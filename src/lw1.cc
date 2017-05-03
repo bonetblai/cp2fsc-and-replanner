@@ -300,6 +300,14 @@ int main(int argc, const char *argv[]) {
         //g_options.disable("lw1:boost:literals-for-observables");
         //g_options.disable("lw1:boost:drule:sensing:type3");
     }
+    // disable options for hop
+    if( g_options.is_enabled("solver:hop") ) {
+        g_options.disable("lw1:boost:enable-post-actions");
+        g_options.disable("lw1:boost:drule:sensing:type4");
+        g_options.disable("lw1:boost:drule:sensing:type4:add");
+        g_options.disable("lw1:boost:literals-for-observables");
+        g_options.disable("lw1:boost:drule:sensing:type3");
+    }
 
 
     // print enabled options

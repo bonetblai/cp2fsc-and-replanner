@@ -82,7 +82,7 @@ namespace Inference {
           std::cout << Utils::normal() << std::endl;
 
           if( last_action != 0 )
-              std::cout << "Last action=" << last_action->name_ << std::endl;
+              std::cout << "Last action=" << last_action->name() << std::endl;
           else
               std::cout << "Last action=" << last_action << std::endl;
 #endif
@@ -91,6 +91,7 @@ namespace Inference {
           bool status = internal_apply_inference(last_action, sensed_at_step, state);
           float end_time = Utils::read_time_in_seconds();
           lw1_instance_.increase_inference_time(end_time - start_time);
+std::cout << "internal-time=" << lw1_instance_.get_inference_time() << std::flush; //CHECK
 
 #ifdef DEBUG
           std::cout << Utils::green() << ">>> state  after inference=";
@@ -202,6 +203,8 @@ namespace Inference {
       std::map<int, int> atoms_to_vars_;
       std::set<Propositional::Clause> base_theory_axioms_;
       size_t frontier_;
+      mutable float up_time_;
+      mutable float fill_time_; //CHECK
 
       // base theories are used to detect new clauses inferred by UP
       mutable Propositional::CNF cnf_;
@@ -252,11 +255,10 @@ namespace Inference {
           if( options_.is_enabled("lw1:inference:up:enhanced") || options_.is_enabled("lw1:boost:literals-for-observables") ) {
               for( std::set<int>::const_iterator it = sensed_at_step.begin(); it != sensed_at_step.end(); ++it ) {
                   int k_literal = *it > 0 ? 2 * (*it - 1) : 2 * (-*it - 1) + 1;
-                  Propositional::Clause cl;
-                  cl.push_back(1 + k_literal);
-                  cnf_.push_back(cl);
+                  cnf_.emplace_back(Propositional::Clause());
+                  cnf_.back().emplace_back(1 + k_literal);
                   if( !options_.is_enabled("lw1:inference:up:watched-literals") )
-                      base_theory_.insert(cl);
+                      base_theory_.insert(cnf_.back());
 #ifdef DEBUG
                   std::cout << Utils::red() << "[UP] [Theory] Add obs literal: ";
                   LW1_State::print_literal(std::cout, 1 + k_literal, &lw1_instance_);
@@ -268,11 +270,10 @@ namespace Inference {
           // 1. Add positive literals from state
           for( typename T::const_iterator it = state.begin(); it != state.end(); ++it ) {
               assert(*it >= 0);
-              Propositional::Clause cl;
-              cl.push_back(1 + *it);
-              cnf_.push_back(cl);
+              cnf_.emplace_back(Propositional::Clause());
+              cnf_.back().emplace_back(1 + *it);
               if( !options_.is_enabled("lw1:inference:up:watched-literals") )
-                  base_theory_.insert(cl);
+                  base_theory_.insert(cnf_.back());
 #ifdef DEBUG
               std::cout << Utils::red() << "[UP] [Theory] Add literal from state: ";
               LW1_State::print_literal(std::cout, 1 + *it, &lw1_instance_);
@@ -284,7 +285,8 @@ namespace Inference {
           if( !options_.is_enabled("lw1:inference:up:preload") ) {
               for( std::vector<std::vector<int> >::const_iterator it = lw1_instance.clauses_for_axioms_.begin(); it != lw1_instance.clauses_for_axioms_.end(); ++it ) {
                   const std::vector<int> &clause = *it;
-                  cnf_.push_back(static_cast<const Propositional::Clause&>(clause));
+                  //cnf_.push_back(static_cast<const Propositional::Clause&>(clause));//CHECK: is this equivalent?
+                  cnf_.emplace_back(static_cast<const Propositional::Clause&>(clause));
                   if( !options_.is_enabled("lw1:inference:up:watched-literals") )
                       base_theory_.insert(static_cast<const Propositional::Clause&>(clause));
 #ifdef DEBUG
@@ -304,9 +306,8 @@ namespace Inference {
                   if( variable.is_state_variable() ) {
                       assert(jt->second.empty());
                       int k_literal = sensed_literal > 0 ? 2*(sensed_literal - 1) : 2*(-sensed_literal - 1) + 1;
-                      Propositional::Clause cl;
-                      cl.push_back(1 + k_literal);
-                      cnf_.push_back(cl);
+                      cnf_.emplace_back(Propositional::Clause());
+                      cnf_.back().emplace_back(1 + k_literal);
 #ifdef DEBUG
                       std::cout << Utils::red() << "[UP] [Theory] Add obs (state) literal: ";
                       LW1_State::print_literal(std::cout, 1 + k_literal, &lw1_instance_);
@@ -318,7 +319,8 @@ namespace Inference {
                           const cnf_or_dnf_t &k_cnf_for_sensing_model = *sensing_models_as_k_cnf[k];
                           for( size_t j = 0; j < k_cnf_for_sensing_model.size(); ++j ) {
                               const clause_or_term_t &clause = k_cnf_for_sensing_model[j];
-                              cnf_.push_back(static_cast<const Propositional::Clause&>(clause));
+                              //cnf_.push_back(static_cast<const Propositional::Clause&>(clause));//CHECK: is this equivalent?
+                              cnf_.emplace_back(static_cast<const Propositional::Clause&>(clause));
 #ifdef DEBUG
                               std::cout << Utils::red() << "[UP] [Theory] Add K_o clause: ";
                               state.print_clause_or_term(std::cout, clause, &lw1_instance_);
@@ -338,7 +340,8 @@ namespace Inference {
               assert(dynamic_cast<LW1_State*>(&state) != 0);
               for( size_t k = 0; k < state.cnf_.size(); ++k ) {
                   const clause_or_term_t &clause = state.cnf_[k];
-                  cnf_.push_back(static_cast<const Propositional::Clause&>(clause));
+                  //cnf_.push_back(static_cast<const Propositional::Clause&>(clause));//CHECK: is this equivalent?
+                  cnf_.emplace_back(static_cast<const Propositional::Clause&>(clause));
                   if( !options_.is_enabled("lw1:inference:up:watched-literals") )
                       base_theory_.insert(static_cast<const Propositional::Clause&>(clause));
 #ifdef DEBUG
@@ -351,6 +354,7 @@ namespace Inference {
 
           // 5. Do inference
           bool consistent = true;
+          float up_start_time = Utils::read_time_in_seconds();
           if( options_.is_enabled("lw1:inference:up:watched-literals") ) {
 #ifdef DEBUG
               std::cout << Utils::cyan() << "[UP] Using method: 'watched-literals'" << Utils::normal() << std::endl;
@@ -372,6 +376,8 @@ namespace Inference {
 #endif
               consistent = standard_.solve(cnf_, reduced_cnf_);
           }
+          up_time_ += Utils::read_time_in_seconds() - up_start_time;
+std::cout << ", up-time=" << up_time_ << std::endl; //CHECK
 
           // check consistency
           if( !consistent ) {
@@ -380,6 +386,7 @@ namespace Inference {
           }
 
           // 6. Update state: insert positive literals from result into state
+//float st = Utils::read_time_in_seconds(); //CHECK
           if( options_.is_enabled("lw1:inference:up:watched-literals") ) {
               for( unsigned i = 1; i < up_assignment_.size(); ++i ) {
                   int literal_sign = up_assignment_[i];
@@ -420,6 +427,8 @@ namespace Inference {
                   }
               }
           }
+//fill_time_ += Utils::read_time_in_seconds() - st; //CHECK
+//std::cout << ", step6-time=" << fill_time_ << std::endl; //CHECK
 
           // 7. Update state: insert non-forbidden clauses in reduced cnf into state (if enhanced mode)
           if( options_.is_enabled("lw1:inference:up:enhanced") ) {
@@ -439,7 +448,8 @@ namespace Inference {
 
                   // if this is a non-forbidden non-unit clause, insert it into state
                   if( (clause.size() > 1) && !is_forbidden(clause) ) {
-                      state.cnf_.push_back(clause);
+                      //state.cnf_.push_back(clause);//CHECK: is this equivalent?
+                      state.cnf_.emplace_back(clause);
 #ifdef DEBUG
                       std::cout << Utils::yellow() << "[UP] [State] Add clause: ";
                       state.print_clause_or_term(std::cout, clause, &lw1_instance_);
@@ -469,11 +479,10 @@ namespace Inference {
           // 1. Add positive literals from state
           for( typename T::const_iterator it = state.begin(); it != state.end(); ++it ) {
               assert(*it >= 0);
-              Propositional::Clause cl;
-              cl.push_back(1 + *it);
-              cnf_.push_back(cl);
+              cnf_.emplace_back(Propositional::Clause());
+              cnf_.back().emplace_back(1 + *it);
               if( !options_.is_enabled("lw1:inference:up:watched-literals") )
-                  base_theory_.insert(cl);
+                  base_theory_.insert(cnf_.back());
 #ifdef DEBUG
               std::cout << Utils::red() << "[UP] [Theory] Add literal from state: ";
               LW1_State::print_literal(std::cout, 1 + *it, &lw1_instance_);
@@ -485,7 +494,8 @@ namespace Inference {
           if( !options_.is_enabled("lw1:inference:up:preload") ) {
               for( std::vector<std::vector<int> >::const_iterator it = lw1_instance.clauses_for_axioms_.begin(); it != lw1_instance.clauses_for_axioms_.end(); ++it ) {
                   const std::vector<int> &clause = *it;
-                  cnf_.push_back(static_cast<const Propositional::Clause&>(clause));
+                  //cnf_.push_back(static_cast<const Propositional::Clause&>(clause));//CHECK: is this equivalent?
+                  cnf_.emplace_back(static_cast<const Propositional::Clause&>(clause));
                   if( !options_.is_enabled("lw1:inference:up:watched-literals") )
                       base_theory_.insert(static_cast<const Propositional::Clause&>(clause));
 #ifdef DEBUG
@@ -582,7 +592,7 @@ namespace Inference {
 
     public:
       UnitPropagation(const Instance &instance, const LW1_Instance &lw1_instance, const Options::Mode &options)
-        : Engine<T>("unit-propagation", instance, lw1_instance, options), frontier_(0) {
+        : Engine<T>("unit-propagation", instance, lw1_instance, options), frontier_(0), up_time_(0), fill_time_(0) { //CHECK
           if( options_.is_enabled("lw1:inference:up:preload") ) {
               for( size_t j = 0; j < lw1_instance.clauses_for_axioms_.size(); ++j ) {
                   const std::vector<int> &clause = lw1_instance.clauses_for_axioms_[j];

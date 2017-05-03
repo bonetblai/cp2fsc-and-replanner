@@ -1,2 +1,9 @@
 $LW1 --options=solver:width-based-action-selection --planner-path $FPATH benchmarks/lw1/doors/d.pddl benchmarks/lw1/doors/p05/p.pddl benchmarks/lw1/doors/p05/broken-hidden/h01.pddl
 $LW1 --options=solver:forced-moves,-lw1:boost:enable-post-actions,solver:width-based-action-selection --planner-path $FPATH d-d.pddl d-p03.pddl d-h01.pddl
+$LW1 --options=Xsolver:print:steps,solver:forced-moves,solver:hop --planner-path /Users/blaibonet/software/FF-v2.3-parse-patch benchmarks/lw1/wumpus/p10d/{d,p}.pddl benchmarks/lw1/wumpus/p10d/broken-hidden/h010.pddl
+$LW1 --options=Xsolver:print:steps,solver:forced-moves,solver:hop --planner-path /Users/blaibonet/software/FF-v2.3-parse-patch d-d.pddl benchmarks/lw1/doors/p15/p.pddl benchmarks/lw1/doors/p15/broken-hidden/h0233.pddl
+$LW1 --options=Xsolver:print:steps,solver:forced-moves,solver:hop --planner-path /Users/blaibonet/software/FF-v2.3-parse-patch benchmarks/lw1/clog/d2.pddl benchmarks/lw1/clog/p7/p.pddl benchmarks/lw1/clog/p7/broken-hidden/h10.pddl
+$LW1 --options=Xsolver:print:steps,solver:forced-moves,solver:hop --planner-path /Users/blaibonet/software/FF-v2.3-parse-patch benchmarks/lw1/localize/d.pddl benchmarks/lw1/localize/p11/p.pddl benchmarks/lw1/localize/p11/broken-hidden/h18.pddl
+$LW1 --options=Xsolver:print:steps,solver:forced-moves,solver:hop --planner-path /Users/blaibonet/software/FF-v2.3-parse-patch benchmarks/lw1/unix/d.pddl benchmarks/lw1/unix/p3/p.pddl benchmarks/lw1/unix/p3/broken-hidden/h20.pddl
+$LW1 --options=Xsolver:print:steps,solver:forced-moves,solver:hop --planner-path /Users/blaibonet/software/FF-v2.3-parse-patch benchmarks/lw1/rocksample/d2.pddl benchmarks/lw1/rocksample/p4-2/{p2,h}.pddl
+
