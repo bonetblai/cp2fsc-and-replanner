@@ -152,6 +152,7 @@ namespace AndOr {
     protected:
       mutable int ref_count_;
       mutable float score_;
+      mutable bool pruned_;
 
     protected:
       virtual int deallocate() const = 0;
@@ -184,13 +185,19 @@ namespace AndOr {
       }
 
     public:
-      Node() : ref_count_(1), score_(-1) { }
+      Node() : ref_count_(1), score_(-1), pruned_(false) { }
       virtual ~Node() { }
       float score() const {
           return score_;
       }
       void set_score(float score) const {
           score_ = score;
+      }
+      bool pruned() const {
+          return pruned_;
+      }
+      void mark_as_pruned() const {
+          pruned_ = true;
       }
       int node_count() const {
           return node_count(0);
