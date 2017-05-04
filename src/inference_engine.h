@@ -91,7 +91,6 @@ namespace Inference {
           bool status = internal_apply_inference(last_action, sensed_at_step, state);
           float end_time = Utils::read_time_in_seconds();
           lw1_instance_.increase_inference_time(end_time - start_time);
-std::cout << "internal-time=" << lw1_instance_.get_inference_time() << std::flush; //CHECK
 
 #ifdef DEBUG
           std::cout << Utils::green() << ">>> state  after inference=";
@@ -204,7 +203,6 @@ std::cout << "internal-time=" << lw1_instance_.get_inference_time() << std::flus
       std::set<Propositional::Clause> base_theory_axioms_;
       size_t frontier_;
       mutable float up_time_;
-      mutable float fill_time_; //CHECK
 
       // base theories are used to detect new clauses inferred by UP
       mutable Propositional::CNF cnf_;
@@ -377,7 +375,6 @@ std::cout << "internal-time=" << lw1_instance_.get_inference_time() << std::flus
               consistent = standard_.solve(cnf_, reduced_cnf_);
           }
           up_time_ += Utils::read_time_in_seconds() - up_start_time;
-std::cout << ", up-time=" << up_time_ << std::endl; //CHECK
 
           // check consistency
           if( !consistent ) {
@@ -386,7 +383,6 @@ std::cout << ", up-time=" << up_time_ << std::endl; //CHECK
           }
 
           // 6. Update state: insert positive literals from result into state
-//float st = Utils::read_time_in_seconds(); //CHECK
           if( options_.is_enabled("lw1:inference:up:watched-literals") ) {
               for( unsigned i = 1; i < up_assignment_.size(); ++i ) {
                   int literal_sign = up_assignment_[i];
@@ -427,8 +423,6 @@ std::cout << ", up-time=" << up_time_ << std::endl; //CHECK
                   }
               }
           }
-//fill_time_ += Utils::read_time_in_seconds() - st; //CHECK
-//std::cout << ", step6-time=" << fill_time_ << std::endl; //CHECK
 
           // 7. Update state: insert non-forbidden clauses in reduced cnf into state (if enhanced mode)
           if( options_.is_enabled("lw1:inference:up:enhanced") ) {
@@ -592,7 +586,7 @@ std::cout << ", up-time=" << up_time_ << std::endl; //CHECK
 
     public:
       UnitPropagation(const Instance &instance, const LW1_Instance &lw1_instance, const Options::Mode &options)
-        : Engine<T>("unit-propagation", instance, lw1_instance, options), frontier_(0), up_time_(0), fill_time_(0) { //CHECK
+        : Engine<T>("unit-propagation", instance, lw1_instance, options), frontier_(0), up_time_(0) {
           if( options_.is_enabled("lw1:inference:up:preload") ) {
               for( size_t j = 0; j < lw1_instance.clauses_for_axioms_.size(); ++j ) {
                   const std::vector<int> &clause = lw1_instance.clauses_for_axioms_[j];
