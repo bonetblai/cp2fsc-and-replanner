@@ -48,6 +48,7 @@ namespace Width {
       Feature(int index) : index_(index) { }
       virtual ~Feature() { }
       virtual bool holds(const T &state, bool verbose = false) const = 0;
+      virtual bool holds(const std::vector<bool> &state_bitmap, bool verbose = false) const = 0;
       virtual bool holds(const AndOr::Policy<T> &policy, const T &tip, bool verbose = false) const = 0;
       virtual bool holds(const AndOr::Policy<T> &policy, bool verbose = false) const = 0;
       virtual bool subsumes(const Feature<T> &feature) const = 0;
@@ -143,6 +144,9 @@ namespace Width {
       virtual bool holds(const T &state, bool verbose = false) const {
           return !feature_.holds(state, verbose);
       }
+      virtual bool holds(const std::vector<bool> &state_bitmap, bool verbose = false) const {
+          return !feature_.holds(state_bitmap, verbose);
+      }
       virtual bool holds(const AndOr::Policy<T> &policy, const T &tip, bool verbose = false) const {
           return !feature_.holds(policy, tip, verbose);
       }
@@ -187,6 +191,13 @@ namespace Width {
       virtual bool holds(const T &state, bool verbose = false) const {
           for( size_t k = 0; k < disjuncts_.size(); ++k ) {
               if( disjuncts_[k]->holds(state, verbose) )
+                  return true;
+          }
+          return false;
+      }
+      virtual bool holds(const std::vector<bool> &state_bitmap, bool verbose = false) const {
+          for( size_t k = 0; k < disjuncts_.size(); ++k ) {
+              if( disjuncts_[k]->holds(state_bitmap, verbose) )
                   return true;
           }
           return false;
@@ -255,6 +266,13 @@ namespace Width {
       virtual bool holds(const T &state, bool verbose = false) const {
           for( size_t k = 0; k < conjuncts_.size(); ++k ) {
               if( !conjuncts_[k]->holds(state, verbose) )
+                  return false;
+          }
+          return true;
+      }
+      virtual bool holds(const std::vector<bool> &state_bitmap, bool verbose = false) const {
+          for( size_t k = 0; k < conjuncts_.size(); ++k ) {
+              if( !conjuncts_[k]->holds(state_bitmap, verbose) )
                   return false;
           }
           return true;
@@ -356,8 +374,50 @@ namespace Width {
           }
           return num_values;
       }
+      int num_possible_values(const std::vector<bool> &state_bitmap, bool verbose = false) const {
+          const LW1_Instance::Variable &var = *lw1_instance_.variables_[var_index_];
+          int num_values = var.is_binary() ? 2 : var.domain().size();
+          if( var.is_binary() ) {
+              int atom_index = *var.domain().begin();
+              assert((2 * atom_index >= 0) && (2 * atom_index < state_bitmap.size()));
+              if( state_bitmap[2 * atom_index] )
+                  --num_values;
+              assert((2 * atom_index + 1 >= 0) && (2 * atom_index + 1 < state_bitmap.size()));
+              if( state_bitmap[2 * atom_index + 1] )
+                  --num_values;
+          } else {
+              for( std::set<int>::const_iterator it = var.domain().begin(); it != var.domain().end(); ++it ) {
+                  int k_literal = 1 + 2 * (*it) + 1;
+                  assert((k_literal - 1 >= 0) && (k_literal - 1 < state_bitmap.size()));
+                  if( state_bitmap[k_literal - 1] )
+                      --num_values;
+#ifdef DEBUG
+                  std::cout << "checking "; State::print_literal(std::cout, k_literal, &lw1_instance_);
+                  std::cout << " --> " << state_bitmap[k_literal - 1] << std::endl;
+#endif
+              }
+#ifdef DEBUG
+              std::cout << "value for " << var << " = " << num_values << std::endl;
+#endif
+          }
+          return num_values;
+      }
+
       virtual bool holds(const T &state, bool verbose = false) const {
           int num_values = num_possible_values(state, verbose);
+          if( test_type_ == 0 ) { // equality
+              return num_values == size_;
+          } else if( test_type_ == 1 ) { // less than or equal
+              return num_values <= size_;
+          } else if( test_type_ == 2 ) { // greater than or equal
+              return num_values >= size_;
+          } else {
+              std::cout << Utils::internal_error() << "unexpected test type in DomainSizeLiteral" << std::endl;
+              exit(255);
+          }
+      }
+      virtual bool holds(const std::vector<bool> &state_bitmap, bool verbose = false) const {
+          int num_values = num_possible_values(state_bitmap, verbose);
           if( test_type_ == 0 ) { // equality
               return num_values == size_;
           } else if( test_type_ == 1 ) { // less than or equal
@@ -430,14 +490,15 @@ namespace Width {
     protected:
       const LW1_Instance &lw1_instance_;
       const int var_index_;
-      const int literal_;
+      const int k_literal_;
 
     public:
-      LiteralFeature(int index, const LW1_Instance &lw1_instance, int var_index, int literal)
+      LiteralFeature(int index, const LW1_Instance &lw1_instance, int var_index, int k_literal)
         : Feature<T>(index),
           lw1_instance_(lw1_instance),
           var_index_(var_index),
-          literal_(literal) {
+          k_literal_(k_literal) {
+          assert(k_literal_ > 0);
       }
       virtual ~LiteralFeature() { }
 
@@ -447,14 +508,19 @@ namespace Width {
       int var_index() const {
           return var_index_;
       }
-      int literal() const {
-          return literal_;
+      int k_literal() const {
+          return k_literal_;
       }
 
       virtual bool holds(const T &state, bool verbose = false) const {
           if( verbose )
-              std::cout << *this << " --> " << state.satisfy(literal_ > 0 ? literal_ - 1 : -literal_ - 1, literal_ < 0) << std::endl;
-          return state.satisfy(literal_ > 0 ? literal_ - 1 : -literal_ - 1, literal_ < 0);
+              std::cout << *this << " --> " << state.satisfy(k_literal_ - 1) << std::endl;
+          return state.satisfy(k_literal_ - 1);
+      }
+      virtual bool holds(const std::vector<bool> &state_bitmap, bool verbose = false) const {
+          if( verbose )
+              std::cout << *this << " --> " << state_bitmap[k_literal_ - 1] << std::endl;
+          return state_bitmap[k_literal_ - 1];
       }
       virtual bool holds(const AndOr::Policy<T> &policy, const T &tip, bool verbose = false) const {
           // feature can't decompose into simpler features
@@ -474,7 +540,7 @@ namespace Width {
               return false;
           } else if( dynamic_cast<const DomainSizeFeature<T>*>(&feature) != 0 ) {
               const DomainSizeFeature<T> &dsz_feature = static_cast<const DomainSizeFeature<T>&>(feature);
-              return (literal_ > 0) && (var_index_ == dsz_feature.var_index()) && (dsz_feature.size() == 1);
+              return (k_literal_ > 0) && (var_index_ == dsz_feature.var_index()) && (dsz_feature.size() == 1);
           }
           return this == &feature;
       }
@@ -482,7 +548,7 @@ namespace Width {
           std::string str("Feature[index=");
           str += std::to_string(this->index());
           str += ",type=literal,name=";
-          str += State::to_string(literal_, &lw1_instance_);
+          str += State::to_string(k_literal_, &lw1_instance_);
           return str + "]";
       }
   };
@@ -491,15 +557,15 @@ namespace Width {
   class GoalFeature : public Feature<T> {
     protected:
       const LW1_Instance &lw1_instance_;
-      std::vector<int> goal_literals_;
+      std::vector<int> goal_k_literals_;
 
     public:
       GoalFeature(int index, const LW1_Instance &lw1_instance)
         : Feature<T>(index), lw1_instance_(lw1_instance) {
           for( index_set::const_iterator it = lw1_instance_.po_instance_.goal_literals_.begin(); it != lw1_instance_.po_instance_.goal_literals_.end(); ++it ) {
               int atom = *it > 0 ? *it - 1 : -*it - 1;
-              int literal = *it > 0 ? 1 + 2*atom : 1 + 2*atom + 1;
-              goal_literals_.push_back(literal);
+              int k_literal = *it > 0 ? 1 + 2*atom : 1 + 2*atom + 1;
+              goal_k_literals_.push_back(k_literal);
           }
       }
       virtual ~GoalFeature() { }
@@ -507,14 +573,23 @@ namespace Width {
       const LW1_Instance& lw1_instance() const {
           return lw1_instance_;
       }
-      const std::vector<int>& goal_literals() const {
-          return goal_literals_;
+      const std::vector<int>& goal_k_literals() const {
+          return goal_k_literals_;
       }
 
       virtual bool holds(const T &state, bool verbose = false) const {
-          for( size_t k = 0; k < goal_literals_.size(); ++k ) {
-              int literal = goal_literals_[k];
-              if( !state.satisfy(literal > 0 ? literal - 1 : -literal - 1, literal < 0) )
+          for( size_t k = 0; k < goal_k_literals_.size(); ++k ) {
+              int k_literal = goal_k_literals_[k];
+              if( !state.satisfy(k_literal - 1) )
+                  return false;
+          }
+          return true;
+      }
+      virtual bool holds(const std::vector<bool> &state_bitmap, bool verbose = false) const {
+          for( size_t k = 0; k < goal_k_literals_.size(); ++k ) {
+              int k_literal = goal_k_literals_[k];
+              assert(k_literal > 0);
+              if( !state_bitmap[k_literal - 1] )
                   return false;
           }
           return true;
@@ -532,11 +607,11 @@ namespace Width {
       virtual std::string to_string() const {
           std::string str("Feature[index=");
           str += std::to_string(this->index());
-          str += ",type=goal,literals={";
-          for( size_t k = 0; k < goal_literals_.size(); ++k ) {
-              int literal = goal_literals_[k];
-              str += State::to_string(literal, &lw1_instance_);
-              if( 1 + k < goal_literals_.size() )
+          str += ",type=goal,k-literals={";
+          for( size_t k = 0; k < goal_k_literals_.size(); ++k ) {
+              int k_literal = goal_k_literals_[k];
+              str += State::to_string(k_literal, &lw1_instance_);
+              if( 1 + k < goal_k_literals_.size() )
                   str += ",";
           }
           return str + "}]";
