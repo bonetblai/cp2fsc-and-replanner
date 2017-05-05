@@ -191,7 +191,7 @@ int NewSolver<T>::solve(const T &initial_hidden_state,
                         assumptions.push_back(index_set());
                 }
             } else if( options_.is_enabled("solver:hop") ) {
-                // apply actions in plan as long as they are applicable
+                // apply actions in plan as long as they are applicable // CHECK: wrong as it may lead to a dead-end (see medpks)
                 assumptions.insert(assumptions.end(), plan.size(), index_set());
             } else {
                 calculate_relevant_assumptions(plan, raw_plan, state, goal_condition, assumptions);
