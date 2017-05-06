@@ -26,6 +26,9 @@
 #include "kp_problem.h"
 #include "utils.h"
 
+// forward reference
+template<typename T> class NewSolver;
+
 template<typename T> class ActionSelection {
   public:
     ActionSelection() { }
@@ -39,6 +42,12 @@ template<typename T> class ActionSelection {
     virtual size_t n_calls() const = 0;
     virtual void reset_stats() const = 0;
     virtual int get_plan(const T &state, Instance::Plan &raw_plan, Instance::Plan &plan) const = 0;
+    virtual void calculate_assumptions(const NewSolver<T> &solver,
+                                       const T &state,
+                                       const Instance::Plan &raw_plan,
+                                       const Instance::Plan &plan,
+                                       const index_set &goal,
+                                       std::vector<index_set> &assumptions) const = 0;
 };
 
 #endif

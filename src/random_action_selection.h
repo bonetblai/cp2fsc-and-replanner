@@ -92,6 +92,15 @@ class NaiveRandomActionSelection : public ::ActionSelection<T> {
         total_time_ += elapsed_time;
         return status;
     }
+
+    virtual void calculate_assumptions(const NewSolver<T> &solver,
+                                       const T &state,
+                                       const Instance::Plan &raw_plan,
+                                       const Instance::Plan &plan,
+                                       const index_set &goal,
+                                       std::vector<index_set> &assumptions) const {
+        assumptions.push_back(index_set());
+    }
 };
 
 template<typename T>
@@ -179,6 +188,18 @@ class RandomActionSelection : public NaiveRandomActionSelection<T> {
         } else {
             return NaiveRandomActionSelection<T>::get_plan(state, raw_plan, plan);
         }
+    }
+
+    virtual void calculate_assumptions(const NewSolver<T> &solver,
+                                       const T &state,
+                                       const Instance::Plan &raw_plan,
+                                       const Instance::Plan &plan,
+                                       const index_set &goal,
+                                       std::vector<index_set> &assumptions) const {
+        if( used_alternate_selection() )
+            solver.calculate_relevant_assumptions(plan, raw_plan, state, goal, assumptions);
+        else
+            assumptions.push_back(index_set());
     }
 };
 

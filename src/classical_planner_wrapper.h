@@ -21,12 +21,15 @@
 
 #include <cassert>
 #include <iostream>
+
 #include "action_selection.h"
 #include "classical_planner.h"
 
 template<typename T>
 class ClassicalPlannerWrapper : public ActionSelection<T> {
+  protected:
     const ClassicalPlanner &planner_;
+
   public:
     ClassicalPlannerWrapper(const ClassicalPlanner &planner) : planner_(planner) { }
     virtual ~ClassicalPlannerWrapper() { }
@@ -56,6 +59,15 @@ class ClassicalPlannerWrapper : public ActionSelection<T> {
             assert(status == ClassicalPlanner::ERROR);
             return ActionSelection<T>::ERROR;
         }
+    }
+
+    virtual void calculate_assumptions(const NewSolver<T> &solver,
+                                       const T &state,
+                                       const Instance::Plan &raw_plan,
+                                       const Instance::Plan &plan,
+                                       const index_set &goal,
+                                       std::vector<index_set> &assumptions) const {
+        solver.calculate_relevant_assumptions(plan, raw_plan, state, goal, assumptions);
     }
 };
 

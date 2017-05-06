@@ -1170,6 +1170,16 @@ namespace HOP {
           total_time_ += end_time - start_time;
           return ActionSelection<T>::SOLVED;
       }
+
+      virtual void calculate_assumptions(const NewSolver<T> &solver,
+                                         const T &state,
+                                         const Instance::Plan &raw_plan,
+                                         const Instance::Plan &plan,
+                                         const index_set &goal,
+                                         std::vector<index_set> &assumptions) const {
+          // apply actions in plan as long as they are applicable // CHECK: wrong as it may lead to a dead-end (see medpks)
+          assumptions.insert(assumptions.end(), plan.size(), index_set());
+      }
   };
 
 } // namespace HOP

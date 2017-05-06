@@ -90,6 +90,15 @@ namespace Despot {
       }
 
       virtual int get_plan(const T &state, Instance::Plan &raw_plan, Instance::Plan &plan) const;
+
+      virtual void calculate_assumptions(const NewSolver<T> &solver,
+                                         const T &state,
+                                         const Instance::Plan &raw_plan,
+                                         const Instance::Plan &plan,
+                                         const index_set &goal,
+                                         std::vector<index_set> &assumptions) const {
+          assert(0);
+      }
   };
 
 #if 0

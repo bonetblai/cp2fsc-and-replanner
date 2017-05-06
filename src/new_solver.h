@@ -33,6 +33,7 @@ template<typename T> class NewSolver {
   public:
     enum { SOLVED = 0, NO_SOLUTION = 1, TIME = 2, AS_CALLS = 3, ERROR = 4 };
     enum { K_REPLANNER = 0, CLG = 1, LW1 = 2 };
+
   protected:
     const int translation_type_;
     const Instance &instance_;
@@ -41,6 +42,7 @@ template<typename T> class NewSolver {
     const int time_bound_;
     const int max_as_calls_;
     const Options::Mode &options_;
+
   public:
     NewSolver(int translation_type,
               const Instance &instance,
@@ -60,6 +62,11 @@ template<typename T> class NewSolver {
                       Instance::Plan &final_plan,
                       std::vector<std::set<int> > &fired_sensors_during_execution,
                       std::vector<std::set<int> > &sensed_literals_during_execution) const;
+    virtual void calculate_relevant_assumptions(const Instance::Plan &plan,
+                                                const Instance::Plan &raw_plan,
+                                                const T &initial_state,
+                                                const index_set &goal,
+                                                std::vector<index_set> &assumptions) const;
   protected:
     virtual void compute_and_add_observations(const Instance::Action *last_action,
                                               const T &hidden,
@@ -69,11 +76,6 @@ template<typename T> class NewSolver {
     virtual void apply_inference(const Instance::Action *action,
                                  const std::set<int> &sensed_at_step,
                                  T &state) const;
-    virtual void calculate_relevant_assumptions(const Instance::Plan &plan,
-                                                const Instance::Plan &raw_plan,
-                                                const T &initial_state,
-                                                const index_set &goal,
-                                                std::vector<index_set> &assumptions) const;
     virtual bool inconsistent(const T &state, const std::vector<T> &assumptions, size_t k) const;
 };
 
@@ -177,25 +179,7 @@ int NewSolver<T>::solve(const T &initial_hidden_state,
                 return TIME;
             }
             assert(!plan.empty());
-            if( options_.is_enabled("solver:naive-random-action-selection") || options_.is_enabled("solver:random-action-selection") ) {
-                // we need to diferentiate because calculate_relevant_assumptions()
-                // assumes the plan reaches the goal
-                if( options_.is_enabled("solver:naive-random-action-selection") ) {
-                    assumptions.push_back(index_set());
-                } else {
-                    assert(dynamic_cast<const RandomActionSelection<T>*>(&action_selection_) != 0);
-                    const RandomActionSelection<T> &random_action_selection = static_cast<const RandomActionSelection<T>&>(action_selection_);
-                    if( random_action_selection.used_alternate_selection() )
-                        calculate_relevant_assumptions(plan, raw_plan, state, goal_condition, assumptions);
-                    else
-                        assumptions.push_back(index_set());
-                }
-            } else if( options_.is_enabled("solver:hop") ) {
-                // apply actions in plan as long as they are applicable // CHECK: wrong as it may lead to a dead-end (see medpks)
-                assumptions.insert(assumptions.end(), plan.size(), index_set());
-            } else {
-                calculate_relevant_assumptions(plan, raw_plan, state, goal_condition, assumptions);
-            }
+            action_selection_.calculate_assumptions(*this, state, raw_plan, plan, goal_condition, assumptions);
         }
 
         // first assumption for reduced plan should be satisfied by current state.
