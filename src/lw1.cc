@@ -84,7 +84,7 @@ int main(int argc, const char *argv[]) {
     bool        opt_print_plan = true;
     string      opt_planner = "ff";
     int         opt_time_bound = 3600;
-    int         opt_ncalls_bound = 1000;
+    int         opt_max_as_calls = 1000;
     string      opt_prefix = "";
     float       start_time = Utils::read_time_in_seconds();
     string      opt_planner_path = "";
@@ -146,12 +146,12 @@ int main(int argc, const char *argv[]) {
                 exit(-1);
             }
             opt_time_bound = atoi(argv[++k]);
-        } else if( !skip_options && !strcmp(argv[k], "--max-ncalls") ) {
+        } else if( !skip_options && !strcmp(argv[k], "--max-as-calls") ) {
             if( k == argc - 1 ) {
                 cout << Utils::error() << "not enough arguments for '" << argv[k] << "'." << endl;
                 exit(-1);
             }
-            opt_ncalls_bound = atoi(argv[++k]);
+            opt_max_as_calls = atoi(argv[++k]);
         } else if( !skip_options && !strcmp(argv[k], "--no-print-plan") ) {
             opt_print_plan = false;
         } else if( !skip_options && !strcmp(argv[k], "--prefix") ) {
@@ -434,8 +434,12 @@ int main(int argc, const char *argv[]) {
         assert(alternate_action_selection == nullptr);
     } else if( g_options.is_enabled("solver:width-based-action-selection") ) {
         action_selection = make_unique<Width2::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine);
-    } else if( g_options.is_enabled("solver:hop") ) {
+    } else if( g_options.is_enabled("solver:hop5") ) {
+        action_selection = make_unique<HOP::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine, 5);
+    } else if( g_options.is_enabled("solver:hop10") ) {
         action_selection = make_unique<HOP::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine, 10);
+    } else if( g_options.is_enabled("solver:hop20") ) {
+        action_selection = make_unique<HOP::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine, 20);
     } else if( g_options.is_enabled("solver:despot") ) {
         action_selection = make_unique<Despot::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine, 50, 50, 1, .5, 10);
     } else {
@@ -458,7 +462,7 @@ int main(int argc, const char *argv[]) {
         cout << endl;
 
         // create solver and reset inference engine
-        LW1_Solver solver(instance, *lw1_instance, *action_selection, *inference_engine, opt_time_bound, opt_ncalls_bound);
+        LW1_Solver solver(instance, *lw1_instance, *action_selection, *inference_engine, opt_time_bound, opt_max_as_calls);
         inference_engine->reset();
 
         // reset stats
@@ -540,8 +544,8 @@ int main(int argc, const char *argv[]) {
                 cout << "problem has no solution!" << endl;
             } else if( status == LW1_Solver::TIME ) {
                 cout << "reached time limit of " << opt_time_bound << " seconds" << endl;
-            } else if( status == LW1_Solver::NCALLS ) {
-                cout << "reached limit of " << opt_ncalls_bound << " for #calls to classical planner" << endl;
+            } else if( status == LW1_Solver::AS_CALLS ) {
+                cout << "reached limit of " << opt_max_as_calls << " for #calls to action selection" << endl;
             } else if( status == LW1_Solver::ERROR ) {
                 cout << "error during action/plan computation" << endl;
             } else  {

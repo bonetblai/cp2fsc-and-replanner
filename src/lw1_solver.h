@@ -54,8 +54,8 @@ class LW1_Solver : public BASE_CLASS {
                const ActionSelection<STATE_CLASS> &action_selection,
                const Inference::Engine<STATE_CLASS> &inference_engine,
                int time_bound,
-               int ncalls_bound)
-      : BASE_CLASS(LW1, instance, kp_instance, action_selection, time_bound, ncalls_bound),
+               int max_as_calls)
+      : BASE_CLASS(LW1, instance, kp_instance, action_selection, time_bound, max_as_calls),
         inference_engine_(inference_engine) {
     }
     ~LW1_Solver() { }

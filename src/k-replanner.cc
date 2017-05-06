@@ -340,7 +340,7 @@ int main(int argc, const char *argv[]) {
                 cout << "problem has no solution!" << endl;
             } else if( status == Solver::TIME ) {
                 cout << "reached time limit of " << opt_time_bound << " seconds" << endl;
-            } else if( status == Solver::NCALLS ) {
+            } else if( status == Solver::AS_CALLS ) {
                 cout << "reached limit of " << opt_ncalls_bound << " for #calls to classical planner" << endl;
             } else if( status == Solver::ERROR ) {
                 cout << "planner error" << endl;

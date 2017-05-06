@@ -31,7 +31,7 @@
 
 template<typename T> class NewSolver {
   public:
-    enum { SOLVED = 0, NO_SOLUTION = 1, TIME = 2, NCALLS = 3, ERROR = 4 };
+    enum { SOLVED = 0, NO_SOLUTION = 1, TIME = 2, AS_CALLS = 3, ERROR = 4 };
     enum { K_REPLANNER = 0, CLG = 1, LW1 = 2 };
   protected:
     const int translation_type_;
@@ -39,7 +39,7 @@ template<typename T> class NewSolver {
     const KP_Instance &kp_instance_;
     const ActionSelection<T> &action_selection_;
     const int time_bound_;
-    const int ncalls_bound_;
+    const int max_as_calls_;
     const Options::Mode &options_;
   public:
     NewSolver(int translation_type,
@@ -47,10 +47,10 @@ template<typename T> class NewSolver {
               const KP_Instance &kp_instance,
               const ActionSelection<T> &action_selection,
               int time_bound,
-              int ncalls_bound)
+              int max_as_calls)
       : translation_type_(translation_type),
         instance_(instance), kp_instance_(kp_instance), action_selection_(action_selection),
-        time_bound_(time_bound), ncalls_bound_(ncalls_bound),
+        time_bound_(time_bound), max_as_calls_(max_as_calls),
         options_(instance.options_) {
     }
     virtual ~NewSolver() { }
@@ -166,7 +166,7 @@ int NewSolver<T>::solve(const T &initial_hidden_state,
 
         // call action selection method to obtain plan for state
         if( plan.empty() ) {
-            if( action_selection_.n_calls() >= ncalls_bound_ ) return NCALLS;
+            if( action_selection_.n_calls() >= max_as_calls_ ) return AS_CALLS;
             int status = action_selection_.get_plan(state, raw_plan, plan);
             if( status != ActionSelection<T>::SOLVED ) {
                 if( status == ActionSelection<T>::NO_SOLUTION )

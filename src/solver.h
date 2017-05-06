@@ -27,7 +27,7 @@
 
 class Solver {
   public:
-    enum { SOLVED = 0, NO_SOLUTION = 1, TIME = 2, NCALLS = 3, ERROR = 4 };
+    enum { SOLVED = 0, NO_SOLUTION = 1, TIME = 2, AS_CALLS = 3, ERROR = 4 };
     enum { K_REPLANNER = 0, CLG = 1, LW1 = 2 };
   protected:
     const int translation_type_;
@@ -35,7 +35,7 @@ class Solver {
     const KP_Instance &kp_instance_;
     const ClassicalPlanner &planner_;
     const int time_bound_;
-    const int ncalls_bound_;
+    const int max_as_calls_;
     const Options::Mode &options_;
   public:
     Solver(int translation_type,
@@ -43,10 +43,10 @@ class Solver {
            const KP_Instance &kp_instance,
            const ClassicalPlanner &planner,
            int time_bound,
-           int ncalls_bound)
+           int max_as_calls)
       : translation_type_(translation_type),
         instance_(instance), kp_instance_(kp_instance), planner_(planner),
-        time_bound_(time_bound), ncalls_bound_(ncalls_bound),
+        time_bound_(time_bound), max_as_calls_(max_as_calls),
         options_(instance.options_) {
     }
     virtual ~Solver() { }
