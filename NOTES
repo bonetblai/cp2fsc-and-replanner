@@ -1,3 +1,0 @@
-- forced-moves: it is not correct to check to abort when there are no kp applicable actions
-- assertions in 1150 and 1216 in lw1_problem.cc (it seems that execution should continue without assert(0))
-- forward-chaining multiple hidden
