@@ -30,7 +30,7 @@
 #include "inference_engine.h"
 #include "utils.h"
 
-#include "belief_features.h"
+#include "belief_features2.h"
 #include "and_or_search_api2.h"
 #include "and_or_search2.h"
 

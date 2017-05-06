@@ -30,7 +30,7 @@
 #include "utils.h"
 
 #include "and_or_search.h"
-#include "features.h"
+#include "belief_features.h"
 #include "and_or2.h"
 
 #define DEBUG

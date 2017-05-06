@@ -26,7 +26,7 @@
 #include <vector>
 
 #include "and_or_search_api.h"
-#include "features.h"
+#include "belief_features.h"
 #include "utils.h"
 
 namespace AndOr {
