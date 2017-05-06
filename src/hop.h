@@ -30,7 +30,7 @@
 #include "utils.h"
 
 #include "and_or_search.h"
-#include "features.h"
+#include "belief_features.h"
 #include "and_or2.h"
 
 //#define DEBUG
@@ -63,7 +63,7 @@ namespace HOP {
 
       mutable float total_search_time_;
       mutable float total_time_;
-mutable size_t n_ie_;
+      mutable size_t n_calls_to_inference_engine_;
       mutable size_t n_calls_;
 
     public:
@@ -83,7 +83,7 @@ mutable size_t n_ie_;
           num_expansions_(0),
           total_search_time_(0),
           total_time_(0),
-n_ie_(0),
+          n_calls_to_inference_engine_(0),
           n_calls_(0) {
           // Initialize language of features. For each state variable X with domain { x1, ..., xn },
           // add features for Kxi and DSZ(X)
@@ -138,6 +138,8 @@ n_ie_(0),
           std::cout << Utils::green() << "#goal-features=1" << Utils::normal() << std::endl;
 #endif
 
+          std::cout << "hop: #features=" << feature_language_.size() << std::endl;
+
           // create feature bitmap
           create_feature_bitmap(feature_universe_);
       }
@@ -178,15 +180,23 @@ n_ie_(0),
           register_feature(index, offset);
       }
 
+      void compute_state_bitmap(const T &state, std::vector<bool> &state_bitmap) const {
+          for( State::const_iterator it = state.begin(); it != state.end(); ++it ) {
+              //std::cout << "literal="; State::print_literal(std::cout, 1 + *it, &lw1_instance_); std::cout << std::endl;
+              assert((*it >= 0) && (*it < state_bitmap.size()));
+              state_bitmap[*it] = true;
+          }
+      }
+
       void compute_features(const T &state,
+                            const std::vector<bool> &state_bitmap,
                             Width::FeatureSet<T> &features,
                             const std::vector<const Width::Feature<T>*> &feature_language,
                             bool verbose = false) const {
           features.clear();
           for( size_t k = 0; k < feature_language.size(); ++k ) {
               const Width::Feature<T> &feature = *feature_language[k];
-              if( !is_feature_available(feature) ) continue;
-              if( feature.holds(state, verbose) ) {
+              if( is_feature_available(feature) && feature.holds(state_bitmap, verbose) ) {
 #ifdef DEBUG
                   std::cout << Utils::green() << "valid feature '" << feature << "'" << Utils::normal() << std::endl;
 #endif
@@ -203,7 +213,8 @@ n_ie_(0),
           assert(goal_feature_ != 0);
           return goal_feature_->holds(state);
       }
-      void calculate_unknown_variables(const T &state, std::vector<int> &unknown_variables) const {
+      int calculate_unknown_variables(const T &state, std::vector<int> *unknown_variables = 0) const {
+          int number_unknown_variables = 0;
           for( size_t var_index = 0; var_index < lw1_instance_.variables_.size(); ++var_index ) {
               const LW1_Instance::Variable &variable = *lw1_instance_.variables_[var_index];
               if( variable.is_state_variable() ) {
@@ -221,10 +232,17 @@ n_ie_(0),
                           }
                       }
                   }
-                  if( unknown_variable )
-                      unknown_variables.push_back(var_index);
+                  if( unknown_variable ) {
+                      ++number_unknown_variables;
+                      if( unknown_variables != 0 )
+                          unknown_variables->push_back(var_index);
+                  }
               }
           }
+          return number_unknown_variables;
+      }
+      void calculate_unknown_variables(const T &state, std::vector<int> &unknown_variables) const {
+          calculate_unknown_variables(state, &unknown_variables);
       }
       bool sample(const T &state, const std::vector<int> &unknown_variables, T &sampled_hidden) const {
           assert(sampled_hidden == state);
@@ -236,33 +254,34 @@ n_ie_(0),
               std::cout << Utils::blue() << "variable '" << variable.name() << "' is unknown: " << Utils::normal() << std::flush;
 #endif
               assert(variable.is_state_variable());
-              int sampled_atom = 0;
+              std::vector<int> possible_values;
               if( variable.is_binary() ) {
-                  std::cout << Utils::bold() << "sampling for binary variables not yet implemented!" << Utils::normal() << std::endl;
-                  assert(0); // CHECK
+                  int atom = *variable.domain().begin();
+                  assert(!state.satisfy(2 * atom) && !state.satisfy(2 * atom + 1));
+                  possible_values.push_back(2 * atom);
+                  possible_values.push_back(2 * atom + 1);
               } else {
-                  std::vector<int> possible_values;
                   for( std::set<int>::const_iterator it = variable.domain().begin(); it != variable.domain().end(); ++it ) {
                       int atom = *it;
                       if( !state.satisfy(2 * atom + 1) )
-                          possible_values.push_back(atom);
+                          possible_values.push_back(2 * atom);
                   }
-                  assert(!possible_values.empty());
-                  sampled_atom = possible_values[lrand48() % possible_values.size()];
               }
+              assert(!possible_values.empty());
+              int sampled_atom = possible_values[lrand48() % possible_values.size()];
 
 #ifdef DEBUG
               std::cout << Utils::blue() << " sampled-value=";
-              State::print_literal(std::cout, 1 + 2 * sampled_atom, &lw1_instance_);
+              State::print_literal(std::cout, 1 + sampled_atom, &lw1_instance_);
               std::cout << Utils::normal() << std::endl;
 #endif
 
               // add sampled atom to sampled state
-              sampled_hidden.add(2 * sampled_atom);
+              sampled_hidden.add(sampled_atom);
           }
 
           // propagate added atoms
-++n_ie_;
+          ++n_calls_to_inference_engine_;
           bool status = inference_engine_.propagate(sampled_hidden);
           assert(status);
           return status;
@@ -328,9 +347,14 @@ n_ie_(0),
               queue.pop_back();
               //std::cout << "processing node=" << *node << std::endl;
 
+              // compute state bitmap
+              const T &state = *node->belief()->belief();
+              std::vector<bool> state_bitmap(lw1_instance_.atoms_.size(), false);
+              compute_state_bitmap(state, state_bitmap);
+
               // compute features
               Width::FeatureSet<T> features;
-              compute_features(*node->belief()->belief(), features, feature_language_, false);
+              compute_features(state, state_bitmap, features, feature_language_, false);
 
               if( features.find(goal_feature_) != features.end() ) {
                   std::deque<const Instance::Action*> path;
@@ -376,6 +400,11 @@ n_ie_(0),
       void create_sampled_graph_breadth_first(const T &sampled_hidden, AndOr::OrNode<T> *root, std::vector<std::vector<int> > &goal_paths) const {
           std::vector<std::pair<AndOr::AndNode<T>*, const T*> > successors;
           std::deque<std::pair<AndOr::OrNode<T>*, const T*> > queue;
+
+          float total_time = Utils::read_time_in_seconds();
+          float expand_time = 0;
+          float feature_time = 0;
+
           queue.push_front(std::make_pair(root, new T(sampled_hidden)));
           while( !queue.empty() ) {
               AndOr::OrNode<T> *node = queue.back().first;
@@ -383,9 +412,16 @@ n_ie_(0),
               queue.pop_back();
               //std::cout << "processing node=" << *node << std::endl;
 
+              // compute state bitmap
+              const T &state = *node->belief()->belief();
+              std::vector<bool> state_bitmap(lw1_instance_.atoms_.size(), false);
+              compute_state_bitmap(state, state_bitmap);
+
               // compute features
               Width::FeatureSet<T> features;
-              compute_features(*node->belief()->belief(), features, feature_language_, false);
+              float feature_start_time = Utils::read_time_in_seconds();
+              compute_features(state, state_bitmap, features, feature_language_, false);
+              feature_time += Utils::read_time_in_seconds() - feature_start_time;
 
               if( features.find(goal_feature_) != features.end() ) {
                   // extract and store goal path
@@ -414,7 +450,9 @@ n_ie_(0),
                   //std::cout << Utils::green() << "#available-features=" << num_available_features_ << Utils::normal() << std::endl;
 
                   assert(successors.empty());
+                  float expand_start_time = Utils::read_time_in_seconds();
                   expand(*hidden, *node, successors);
+                  expand_time += Utils::read_time_in_seconds() - expand_start_time;
                   //std::cout << "#successors=" << successors.size() << std::endl;
                   for( size_t k = 0; k < successors.size(); ++k ) {
                       AndOr::AndNode<T> *succ = successors[k].first;
@@ -425,9 +463,14 @@ n_ie_(0),
                       succ->set_parent(node);
                   }
                   successors.clear();
+              } else {
+                  // mark node as pruned
+                  node->mark_as_pruned();
               }
               delete hidden;
           }
+          total_time = Utils::read_time_in_seconds() - total_time;
+          //std::cout << "time: total=" << total_time << ", expand=" << expand_time << ", feature=" << feature_time << std::endl;
       }
 
       void deallocate_graph(const AndOr::OrNode<T> *node) const {
@@ -495,7 +538,7 @@ n_ie_(0),
                           // possible observation is *valid* if once it is assimilated
                           // (i.e. inference is done), it results in a consistent state
                           T *result_after_action_and_obs = new T(*result_after_action);
-++n_ie_;
+                          ++n_calls_to_inference_engine_;
                           bool status = inference_engine_.apply_inference(&action, obs, *result_after_action_and_obs);
                           if( status ) {
                               valid_successors.push_back(result_after_action_and_obs);
@@ -581,16 +624,40 @@ n_ie_(0),
 
                   // calculate obs and result of action + obs
                   std::set<int> obs;
-                  compute_observation(*hidden_after_action, *result_after_action, action, obs);
+                  std::map<int, std::pair<const LW1_Instance::Variable*, const std::vector<std::vector<int> >*> > observed_literals;
+                  compute_observation(*hidden_after_action, *result_after_action, action, obs, observed_literals);
                   T *result_after_action_and_obs = new T(*result_after_action);
-                  bool good_successor = true;
 
-                  if( !obs.empty() ) {
-++n_ie_;
+                  // check whether we need to call inference engine
+                  bool need_to_call_inference_engine = false;
+                  for( std::set<int>::const_iterator it = obs.begin(); !need_to_call_inference_engine && (it != obs.end()); ++it ) {
+                      int literal = *it;
+                      int k_literal = literal > 0 ? 1 + 2 * (literal - 1) : 1 + 2 * (-literal - 1) + 1;
+                      const LW1_Instance::Variable &variable = *observed_literals.at(*it).first;
+                      const std::vector<std::vector<int> > &model = *observed_literals.at(*it).second;
+#ifdef DEBUG
+                      std::cout << "observed: literal=";
+                      LW1_State::print_literal(std::cout, literal, &lw1_instance_.po_instance_);
+                      std::cout << std::flush << ", k-literal=";
+                      LW1_State::print_literal(std::cout, k_literal, &lw1_instance_);
+                      std::cout << std::flush << ", variable=" << variable.name() << std::endl;
+#endif
+                      if( !variable.is_state_variable() ) {
+                          if( !satisfy(*result_after_action_and_obs, model) )
+                              need_to_call_inference_engine = true;
+                      } else {
+                          if( !result_after_action_and_obs->satisfy(k_literal - 1) )
+                              need_to_call_inference_engine = true;
+                      }
+                  }
+
+                  bool good_successor = true;
+                  if( need_to_call_inference_engine ) {
+                      ++n_calls_to_inference_engine_;
                       bool status = inference_engine_.apply_inference(&action, obs, *result_after_action_and_obs);
                       if( status ) {
 #ifdef DEBUG
-                          std::cout << Utils::blue() << "RESULT(a=" << action.name() << ",obs)=" << Utils::normal();
+                          std::cout << Utils::blue() << "RESULT(a=" << action.name() << ",obs-sz=" << obs.size() << ")=" << Utils::normal();
                           result_after_action_and_obs->print(std::cout, &lw1_instance_);
                           std::cout << std::endl;
 #endif
@@ -600,20 +667,9 @@ n_ie_(0),
                       }
                   } else {
                       // there are no observable variables. Hence, there is single successor equal to belief_a
-#if 0
-                      std::cout << "ACTION=" << action.name() << std::endl;
-                      if( lw1_instance_.vars_sensed_by_action_.find(action.name()) != lw1_instance_.vars_sensed_by_action_.end() ) {
-                          std::map<std::string, std::set<int> >::const_iterator it = lw1_instance_.vars_sensed_by_action_.find(action.name());
-                          std::cout << it->second.size() << std::endl;
-                          for( std::set<int>::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt ) {
-                              int var_index = *jt;
-                              const LW1_Instance::Variable &variable = *lw1_instance_.variables_[var_index];
-                              assert(variable.is_observable());
-                              std::cout << Utils::green() << variable << Utils::normal() << std::endl;
-                          }
-                      }
+#ifdef DEBUG
+                      std::cout << Utils::bold() << "Single successor equal to bel_a" << Utils::normal() << std::endl;
 #endif
-                      assert(lw1_instance_.vars_sensed_by_action_.find(action.name()) == lw1_instance_.vars_sensed_by_action_.end());
                   }
 
                   if( good_successor ) {
@@ -722,7 +778,11 @@ n_ie_(0),
 #endif
           }
       }
-      void compute_observation(const T &hidden, const T &tip, const Instance::Action &action, std::set<int> &observation) const {
+      void compute_observation(const T &hidden,
+                               const T &tip,
+                               const Instance::Action &action,
+                               std::set<int> &observation,
+                               std::map<int, std::pair<const LW1_Instance::Variable*, const std::vector<std::vector<int> >*> > &observed_literals) const {
           std::map<std::string, std::set<int> >::const_iterator it = lw1_instance_.vars_sensed_by_action_.find(action.name());
 
 #ifdef DEBUG
@@ -772,6 +832,8 @@ n_ie_(0),
                           if( satisfy(hidden, kt->second) ) {
                               observation.insert(kt->first);
                               some_value_is_satisfied = true;
+                              assert(observed_literals.find(kt->first) == observed_literals.end());
+                              observed_literals.insert(std::make_pair(kt->first, std::make_pair(&variable, &kt->second)));
                               break;
                           }
                       }
@@ -788,12 +850,18 @@ n_ie_(0),
                           int atom = *variable.domain().begin();
                           bool some_value_is_satisfied = false;
                           if( hidden.satisfy(2 * atom) ) {
+                              assert(!some_value_is_satisfied);
                               observation.insert(1 + atom);
                               some_value_is_satisfied = true;
+                              assert(observed_literals.find(1 + atom) == observed_literals.end());
+                              observed_literals.insert(std::make_pair(1 + atom, std::make_pair(&variable, static_cast<const std::vector<std::vector<int> >*>(0))));
                           }
                           if( hidden.satisfy(2 * atom + 1) ) {
+                              assert(!some_value_is_satisfied);
                               observation.insert(-(1 + atom));
                               some_value_is_satisfied = true;
+                              assert(observed_literals.find(-(1 + atom)) == observed_literals.end());
+                              observed_literals.insert(std::make_pair(-(1 + atom), std::make_pair(&variable, static_cast<const std::vector<std::vector<int> >*>(0))));
                           }
                           assert(some_value_is_satisfied);
                       } else {
@@ -816,6 +884,8 @@ n_ie_(0),
                               if( hidden.satisfy(2 * atom) ) {
                                   observation.insert(1 + atom);
                                   some_value_is_satisfied = true;
+                                  assert(observed_literals.find(1 + atom) == observed_literals.end());
+                                  observed_literals.insert(std::make_pair(1 + atom, std::make_pair(&variable, static_cast<const std::vector<std::vector<int> >*>(0))));
                                   break;
                               }
                           }
@@ -861,7 +931,15 @@ n_ie_(0),
           if( is_goal(*node) ) { // node is goal
               node->set_score(0);
           } else if( node->children().empty() ) { // node is dead-end either pruned, or real dead-end
-              node->set_score(1000);
+              if( node->pruned() ) {
+                  // score is proportional to 1 + number of unknown variables
+                  int number_unknown_variables = calculate_unknown_variables(*node->belief()->belief());
+                  node->set_score(100 * (1 + number_unknown_variables)); // CHECK: value
+                  //node->set_score(1000); // CHECK: value
+              } else {
+                  // node is a real dead-end
+                  node->set_score(10000); // CHECK: value
+              }
           } else {
               float score_best_children = std::numeric_limits<float>::max();
               for( size_t k = 0; k < node->children().size(); ++k ) {
@@ -946,11 +1024,11 @@ n_ie_(0),
               std::vector<std::vector<int> > goal_paths_in_graph;
               AndOr::OrNode<T> *root = make_root(state);
               //std::cout << "root=" << *root << std::endl;
-              //create_sampled_graph_breadth_first(root, goal_paths_in_graph, true); // CHECK
+              //create_sampled_graph_breadth_first(root, goal_paths_in_graph, true); // CHECK: another sampled graph?
               create_sampled_graph_breadth_first(sampled_hidden, root, goal_paths_in_graph);
               //std::cout << "num-expansions=" << num_expansions_ << ", #root-children=" << root->children().size() << ", #gp=" << goal_paths_in_graph.size() << std::endl;
 
-              // store goal-paths in sampled graph
+              // store goal-paths found in sampled graph
               for( size_t j = 0; j < goal_paths_in_graph.size(); ++j ) {
                   const std::vector<int> &path = goal_paths_in_graph[j];
                   if( goal_paths.find(path.back()) == goal_paths.end() ) {
@@ -1028,7 +1106,7 @@ n_ie_(0),
           // select best action
           int best_action_index = best_actions[lrand48() % best_actions.size()];
 
-#if 1//def DEBUG
+#ifdef DEBUG
           // print best action
           const Instance::Action &best_action = *lw1_instance_.actions_[best_action_index];
           assert(state.applicable(best_action));
@@ -1042,7 +1120,7 @@ n_ie_(0),
                     << ", score=" << score_best_actions
                     << std::endl;
           std::cout << Utils::normal();
-std::cout << "n-ie=" << n_ie_ << std::endl;
+          std::cout << "n-ie=" << n_calls_to_inference_engine_ << std::endl;
 #endif
 
           // sample goal-path using best action
@@ -1064,7 +1142,7 @@ std::cout << "n-ie=" << n_ie_ << std::endl;
               assert(sampled_path != 0);
               assert(sampled_path->back() == best_action_index);
 
-#if 1//def DEBUG
+#ifdef DEBUG
               // print sampled path
               std::cout << Utils::bold() << "sampled-path(sz=" << sampled_path->size() << "):";
               for( size_t k = sampled_path->size(); k > 0; --k )
