@@ -82,8 +82,9 @@ int main(int argc, const char *argv[]) {
     StringTable parser_symbol_table(lowercase_map, 50);
     bool        opt_debug_parser = false;
     bool        opt_print_plan = true;
-    string      opt_planner = "ff";
+    string      opt_planner("ff");
     int         opt_time_bound = 3600;
+    string      opt_as("classical-planner(ff)");
     int         opt_max_as_calls = 1000;
     string      opt_prefix = "";
     float       start_time = Utils::read_time_in_seconds();
@@ -146,6 +147,12 @@ int main(int argc, const char *argv[]) {
                 exit(-1);
             }
             opt_time_bound = atoi(argv[++k]);
+        } else if( !skip_options && !strcmp(argv[k], "--as") ) {
+            if( k == argc - 1 ) {
+                cout << Utils::error() << "not enough arguments for '" << argv[k] << "'." << endl;
+                exit(-1);
+            }
+            opt_as = argv[++k];
         } else if( !skip_options && !strcmp(argv[k], "--max-as-calls") ) {
             if( k == argc - 1 ) {
                 cout << Utils::error() << "not enough arguments for '" << argv[k] << "'." << endl;
@@ -434,12 +441,8 @@ int main(int argc, const char *argv[]) {
         assert(alternate_action_selection == nullptr);
     } else if( g_options.is_enabled("solver:width-based-action-selection") ) {
         action_selection = make_unique<Width2::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine);
-    } else if( g_options.is_enabled("solver:hop5") ) {
+    } else if( g_options.is_enabled("solver:hop") ) {
         action_selection = make_unique<HOP::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine, 5);
-    } else if( g_options.is_enabled("solver:hop10") ) {
-        action_selection = make_unique<HOP::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine, 10);
-    } else if( g_options.is_enabled("solver:hop20") ) {
-        action_selection = make_unique<HOP::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine, 20);
     } else if( g_options.is_enabled("solver:despot") ) {
         action_selection = make_unique<Despot::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine, 50, 50, 1, .5, 10);
     } else {
