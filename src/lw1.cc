@@ -44,6 +44,13 @@ using namespace std;
 
 Options::Mode g_options;
 
+class ASOptions {
+};
+
+void parse_as_string(const string as_string, Options::Mode &options, ASOptions &as_options) {
+    cout << "string=|" << as_string << "|" << endl;
+}
+
 void print_usage(ostream &os, const char *exec_name, const char **cmdline_options) {
     char *tmp = strdup(exec_name);
     const char *base_name = basename(tmp);
@@ -203,6 +210,10 @@ int main(int argc, const char *argv[]) {
             ++nfiles;
         }
     }
+
+    // parse as string
+    ASOptions as_options;
+    parse_as_string(opt_as, g_options, as_options);
 
     // either lw1:aaai or lw1:strict: one of them but not both. Default is lw1:strict.
     if( !g_options.is_enabled("lw1:aaai") && !g_options.is_enabled("lw1:strict") )
