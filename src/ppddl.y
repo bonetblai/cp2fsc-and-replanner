@@ -29,7 +29,7 @@
 %define CONSTRUCTOR_INIT : PDDL_Base(parser_symbol_table, options), error_flag_(false), type_(type), effect_vec_ptr_(0)
 %define MEMBERS \
   public: \
-    typedef enum { replanner, cp2fsc } Type; \
+    typedef enum { replanner, cp2fsc, lw1 } Type; \
     virtual ~PDDL_Parser() { } \
     virtual std::ostream& syntax_errors() = 0; \
     bool error_flag_; \
@@ -378,32 +378,32 @@ constant_sym_list:
 domain_schemas:
       action_decl
     | axiom_decl {
-          if( type_ == replanner ) {
+          if( type_ == PDDL_Parser::replanner ) {
               log_error((char*)"':axiom' is not a valid element in k-replanner.");
               yyerrok;
           }
       }
     | sensor_decl {
-          if( type_ == cp2fsc ) {
+          if( type_ == PDDL_Parser::cp2fsc ) {
               log_error((char*)"':sensor' is not a valid element in cp2fsc.");
               yyerrok;
           }
       }
     | observable_decl {
-          if( type_ == replanner ) {
+          if( type_ == PDDL_Parser::replanner ) {
               log_error((char*)"':observable' is not a valid element in k-replanner.");
               yyerrok;
           }
       }
     | sticky_decl {
-          if( type_ == replanner ) {
+          if( type_ == PDDL_Parser::replanner ) {
               log_error((char*)"':sticky' is not a valid element in k-replanner.");
               yyerrok;
           }
       }
     | simple_variable_decl {
           declare_lw1_translation();
-          if( type_ == cp2fsc ) {
+          if( type_ == PDDL_Parser::cp2fsc ) {
               log_error((char*)"':sensor' is not a valid element in cp2fsc.");
               yyerrok;
           }
@@ -1267,7 +1267,7 @@ single_init_element:
           $$ = new InitLiteral(*$1);
       }
     | invariant {
-          if( type_ == cp2fsc ) {
+          if( type_ == PDDL_Parser::cp2fsc ) {
               log_error((char*)"'invariant' is not a valid element in cp2fsc.");
               delete $1;
               yyerrok;
@@ -1278,7 +1278,7 @@ single_init_element:
           }
       }
     | clause {
-          if( type_ == replanner ) {
+          if( type_ == PDDL_Parser::replanner ) {
               // We let oneofs pass in k-replanner as they are later mapped
               // into invariants of type at-least-one. This is to support
               // CLG compatibility mode.
@@ -1289,7 +1289,7 @@ single_init_element:
           delete $1;
       }
     | oneof {
-          if( type_ == replanner ) {
+          if( type_ == PDDL_Parser::replanner ) {
               // We let oneofs pass in k-replanner as they are later mapped
               // into invariants of type exactly-one. This is to support
               // CLG compatibility mode.
@@ -1366,7 +1366,7 @@ unknown:
 
 hidden_state:
       TK_OPEN KW_HIDDEN init_elements TK_CLOSE {
-          if( type_ == cp2fsc ) {
+          if( type_ == PDDL_Parser::cp2fsc ) {
               log_error((char*)"':hidden' is not a valid element in cp2fsc.");
               yyerrok;
           } else {
@@ -1381,7 +1381,7 @@ hidden_state:
           }
       }
     | TK_OPEN KW_HIDDEN TK_CLOSE {
-          if( type_ == cp2fsc ) {
+          if( type_ == PDDL_Parser::cp2fsc ) {
               log_error((char*)"':hidden' is not a valid element in cp2fsc.");
               yyerrok;
           } else {

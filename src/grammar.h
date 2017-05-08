@@ -29,7 +29,7 @@
 #define YY_PDDL_Parser_CONSTRUCTOR_INIT  : PDDL_Base(parser_symbol_table, options), error_flag_(false), type_(type), effect_vec_ptr_(0)
 #define YY_PDDL_Parser_MEMBERS  \
   public: \
-    typedef enum { replanner, cp2fsc } Type; \
+    typedef enum { replanner, cp2fsc, lw1 } Type; \
     virtual ~PDDL_Parser() { } \
     virtual std::ostream& syntax_errors() = 0; \
     bool error_flag_; \

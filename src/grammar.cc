@@ -93,7 +93,7 @@ void *alloca ();
 #define YY_PDDL_Parser_CONSTRUCTOR_INIT  : PDDL_Base(parser_symbol_table, options), error_flag_(false), type_(type), effect_vec_ptr_(0)
 #define YY_PDDL_Parser_MEMBERS  \
   public: \
-    typedef enum { replanner, cp2fsc } Type; \
+    typedef enum { replanner, cp2fsc, lw1 } Type; \
     virtual ~PDDL_Parser() { } \
     virtual std::ostream& syntax_errors() = 0; \
     bool error_flag_; \
@@ -1946,7 +1946,7 @@ case 68:
 case 70:
 #line 380 "ppddl.y"
 {
-          if( type_ == replanner ) {
+          if( type_ == PDDL_Parser::replanner ) {
               log_error((char*)"':axiom' is not a valid element in k-replanner.");
               yyerrok;
           }
@@ -1955,7 +1955,7 @@ case 70:
 case 71:
 #line 386 "ppddl.y"
 {
-          if( type_ == cp2fsc ) {
+          if( type_ == PDDL_Parser::cp2fsc ) {
               log_error((char*)"':sensor' is not a valid element in cp2fsc.");
               yyerrok;
           }
@@ -1964,7 +1964,7 @@ case 71:
 case 72:
 #line 392 "ppddl.y"
 {
-          if( type_ == replanner ) {
+          if( type_ == PDDL_Parser::replanner ) {
               log_error((char*)"':observable' is not a valid element in k-replanner.");
               yyerrok;
           }
@@ -1973,7 +1973,7 @@ case 72:
 case 73:
 #line 398 "ppddl.y"
 {
-          if( type_ == replanner ) {
+          if( type_ == PDDL_Parser::replanner ) {
               log_error((char*)"':sticky' is not a valid element in k-replanner.");
               yyerrok;
           }
@@ -1983,7 +1983,7 @@ case 74:
 #line 404 "ppddl.y"
 {
           declare_lw1_translation();
-          if( type_ == cp2fsc ) {
+          if( type_ == PDDL_Parser::cp2fsc ) {
               log_error((char*)"':sensor' is not a valid element in cp2fsc.");
               yyerrok;
           }
@@ -2981,7 +2981,7 @@ case 214:
 case 215:
 #line 1269 "ppddl.y"
 {
-          if( type_ == cp2fsc ) {
+          if( type_ == PDDL_Parser::cp2fsc ) {
               log_error((char*)"'invariant' is not a valid element in cp2fsc.");
               delete yyvsp[0].invariant;
               yyerrok;
@@ -2995,7 +2995,7 @@ case 215:
 case 216:
 #line 1280 "ppddl.y"
 {
-          if( type_ == replanner ) {
+          if( type_ == PDDL_Parser::replanner ) {
               // We let oneofs pass in k-replanner as they are later mapped
               // into invariants of type at-least-one. This is to support
               // CLG compatibility mode.
@@ -3009,7 +3009,7 @@ case 216:
 case 217:
 #line 1291 "ppddl.y"
 {
-          if( type_ == replanner ) {
+          if( type_ == PDDL_Parser::replanner ) {
               // We let oneofs pass in k-replanner as they are later mapped
               // into invariants of type exactly-one. This is to support
               // CLG compatibility mode.
@@ -3086,7 +3086,7 @@ case 228:
 case 229:
 #line 1368 "ppddl.y"
 {
-          if( type_ == cp2fsc ) {
+          if( type_ == PDDL_Parser::cp2fsc ) {
               log_error((char*)"':hidden' is not a valid element in cp2fsc.");
               yyerrok;
           } else {
@@ -3104,7 +3104,7 @@ case 229:
 case 230:
 #line 1383 "ppddl.y"
 {
-          if( type_ == cp2fsc ) {
+          if( type_ == PDDL_Parser::cp2fsc ) {
               log_error((char*)"':hidden' is not a valid element in cp2fsc.");
               yyerrok;
           } else {
