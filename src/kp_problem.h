@@ -38,8 +38,10 @@ class KP_Instance : public Instance {
 #endif
         std::set<When> when_;
         std::string extra_;
-#ifdef SMART
+#ifndef NO_EMPLACE
         DRTemplate(const DRTemplate &dr) = delete;
+#endif
+#ifdef SMART
         DRTemplate(std::unique_ptr<const Action> &&action, const std::string &extra = "")
           : action_(std::move(action)),
             extra_(extra) {

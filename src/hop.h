@@ -1037,8 +1037,13 @@ namespace HOP {
                   const std::vector<int> &path = goal_paths_in_graph[j];
                   if( goal_paths.find(path.back()) == goal_paths.end() ) {
                       std::map<std::vector<int>, int> path_map;
+#ifndef NO_EMPLACE
                       path_map.emplace(path, 1);
                       goal_paths.emplace(path.back(), std::move(path_map));
+#else
+                      path_map.insert(std::make_pair(path, 1));
+                      goal_paths.insert(std::make_pair(path.back(), path_map));
+#endif
                   } else {
                       std::map<std::vector<int>, int> &path_map = goal_paths.at(path.back());
                       if( path_map.find(path) == path_map.end() )
