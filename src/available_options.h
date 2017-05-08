@@ -175,25 +175,48 @@ const char *available_options[] = {
 };
 
 const char *cp2fsc_cmdline_options[] = {
+    "[--help]",
+    "[--debug-parser]",
     "[--compound-obs-as-fluents]",
     "[--fsc-states <n>]",
-    "[--help]",
     "[--no-forbid-inconsistent-tuples]",
     "[--output-metadata <filename>]",
     "[--prefix <prefix>]",
     "[--tag-all-literals]",
+    "[--options=<options-string>]",
+    "[--override-defaults]",
     0
 };
 
 const char *k_replanner_cmdline_options[] = {
     "[--help]",
+    "[--debug-parser]",
     "[--max-time <time>]",
+    "[--max-ncalls <number-calls>]",
     "[--no-print-plan]",
     "[--prefix <prefix>]",
     "[--keep-intermediate-files]",
     "[--planner {ff|lama|m|mp}]",
     "[--planner-path <path>]",
     "[--tmpfile-path <path>]",
+    "[--options=<options-string>]",
+    "[--override-defaults]",
+    0
+};
+
+const char *lw1_cmdline_options[] = {
+    "[--help]",
+    "[--debug-parser]",
+    "[--max-time <time>]",
+    "[--as <as-string>]",
+    "[--max-as-calls <number-calls>]",
+    "[--no-print-plan]",
+    "[--prefix <prefix>]",
+    "[--keep-intermediate-files]",
+    "[--planner-path <path>]",
+    "[--tmpfile-path <path>]",
+    "[--options=<options-string>]",
+    "[--override-defaults]",
     0
 };
 
