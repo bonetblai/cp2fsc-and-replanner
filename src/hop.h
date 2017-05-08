@@ -1046,10 +1046,15 @@ namespace HOP {
 #endif
                   } else {
                       std::map<std::vector<int>, int> &path_map = goal_paths.at(path.back());
-                      if( path_map.find(path) == path_map.end() )
+                      if( path_map.find(path) == path_map.end() ) {
+#ifndef NO_EMPLACE
                           path_map.emplace(path, 1);
-                      else
+#else
+                          path_map.insert(std::make_pair(path, 1));
+#endif
+                      } else {
                           ++path_map[path];
+                      }
                   }
               }
 
