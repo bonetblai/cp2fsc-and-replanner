@@ -67,7 +67,7 @@ class StringTable {
     size_t num_entries() const {
         return num_entries_;
     }
-    const char_map& char_map() const {
+    const char_map& get_char_map() const {
         return char_map_;
     }
 
