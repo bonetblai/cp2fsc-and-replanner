@@ -309,7 +309,7 @@ class Instance {
         options_(options) {
     }
 #ifndef SMART
-    Instance(const Instance &ins); //NOT USED
+    //Instance(const Instance &ins); // CHECK: NOT USED
 #endif
     virtual ~Instance();
 

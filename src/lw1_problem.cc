@@ -1042,11 +1042,7 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                 int index = *it > 0 ? *it - 1 : -*it - 1;
                 nact->effect().insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
             }
-#ifdef SMART
             drule_store_.emplace(move(nact));
-#else
-            drule_store_.insert(DRTemplate(nact));
-#endif
         } else if( action_name.compare(0, 25, "drule-sensing-type4state-") == 0 ) {
 #ifdef SMART
             unique_ptr<Action> nact = make_unique<Action>(action_name);
@@ -1103,11 +1099,7 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                 complete_effect(nact->effect(), literal_for_value, variable);
 
             //nact->print(cout, *this);
-#ifdef SMART
             drule_store_.emplace(move(nact));
-#else
-            drule_store_.insert(DRTemplate(nact));
-#endif
         } else if( action_name.compare(0, 29, "drule-sensing-type4obs-boost-") == 0 ) {
             assert(action.when().empty());
 
@@ -1209,11 +1201,7 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             }
 
             //nact->print(cout, *this);
-#ifdef SMART
             drule_store_.emplace(move(nact));
-#else
-            drule_store_.insert(DRTemplate(nact));
-#endif
         } else if( action_name.compare(0, 23, "drule-sensing-type4obs-") == 0 ) {
             assert(action.precondition().size() == 1);
 
@@ -1448,11 +1436,7 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
 #endif
 
             //nact->print(cout, *this);
-#ifdef SMART
             drule_store_.emplace(move(nact));
-#else
-            drule_store_.insert(DRTemplate(nact));
-#endif
         } else {
             // skip sensing drules of type5 as they are not passed to classical problem (CHECK: WHY?)
             assert(action_name.compare(0, 20, "drule-sensing-type5-") == 0);
@@ -1486,11 +1470,7 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             nact->effect().insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
             nact->precondition().insert(*it > 0 ? -(1 + 2*index + 1) : -(1 + 2*index)); // CHECK: is this necessary?
         }
-#ifdef SMART
         drule_store_.emplace(move(nact));
-#else
-        drule_store_.insert(DRTemplate(nact));
-#endif
     }
 }
 
@@ -1526,11 +1506,7 @@ void LW1_Instance::create_drule_for_atom(const Action &action) {
         int index = *it > 0 ? *it - 1 : -*it - 1;
         nact->effect().insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
     }
-#ifdef SMART
     drule_store_.emplace(move(nact));
-#else
-    drule_store_.insert(DRTemplate(nact));
-#endif
 }
 
 void LW1_Instance::create_sensor(const Sensor &sensor) {

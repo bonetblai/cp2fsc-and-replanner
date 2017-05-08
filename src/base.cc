@@ -992,7 +992,11 @@ void PDDL_Base::lw1_calculate_beam_for_grounded_variable(Variable &var) {
 #endif
                             ad_hoc_group->grounded_group_.push_back(const_cast<StateVariable*>(candidate));
                             ad_hoc_group->grounded_group_str_.insert(string(candidate->print_name_));
+#ifdef SMART
                             lw1_ad_hoc_groups_.insert(make_pair(candidate->print_name_, ad_hoc_group.get()));
+#else
+                            lw1_ad_hoc_groups_.insert(make_pair(candidate->print_name_, ad_hoc_group));
+#endif
                             lw1_calculate_atoms_for_variable_group(*ad_hoc_group, lw1_variable_groups_.size());
                             ad_hoc_group->filtered_observations_.push_back(make_pair(&var, *it));
 #ifdef SMART

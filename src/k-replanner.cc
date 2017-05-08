@@ -62,10 +62,7 @@ void print_usage(ostream &os, const char *exec_name, const char **cmdline_option
         const Options::Option &opt = *it;
         os << "    " << left << setw(35) << opt.name() << "  " << opt.desc() << endl;
     }
-    os << endl;
-
-    os << "The components {cp,ks0} belong to cp2fsc while {kp,clg,mvv} to k-replanner."
-       << endl << endl;
+    os << endl << endl;
 }
 
 int main(int argc, const char *argv[]) {
@@ -104,7 +101,11 @@ int main(int argc, const char *argv[]) {
     }
 
     int nfiles = 0;
+#ifdef SMART
     unique_ptr<Parser> reader = make_unique<Parser>(Parser::replanner, parser_symbol_table, g_options);
+#else
+    Parser *reader = new Parser(Parser::replanner, parser_symbol_table, g_options);
+#endif
 
     // parse options
     bool skip_options = false;
@@ -213,13 +214,21 @@ int main(int argc, const char *argv[]) {
     }
 
     cout << "creating KP translation..." << endl;
+#ifdef SMART
     unique_ptr<KP_Instance> kp_instance;
-    if( translation_type == 0 ) {
+    if( translation_type == 0 )
         kp_instance = make_unique<Standard_KP_Instance>(instance);
-    } else if( translation_type == 1 ) {
+    else if( translation_type == 1 )
         kp_instance = make_unique<CLG_Instance>(instance);
-    }
     assert(kp_instance != nullptr);
+#else
+    KP_Instance *kp_instance = 0;
+    if( translation_type == 0 )
+        kp_instance = new Standard_KP_Instance(instance);
+    else if( translation_type == 1 )
+        kp_instance = new CLG_Instance(instance);
+    assert(kp_instance != 0);
+#endif
 
     if( g_options.is_enabled("kp:print:raw") ) {
         kp_instance->print(cout);
@@ -238,6 +247,7 @@ int main(int argc, const char *argv[]) {
     float preprocessing_time = Utils::read_time_in_seconds() - start_time;
 
     // construct classical planner
+#ifdef SMART
     unique_ptr<const ClassicalPlanner> planner;
     if( opt_planner == "ff" ) {
         planner = make_unique<const FF_Planner>(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
@@ -250,6 +260,20 @@ int main(int argc, const char *argv[]) {
     } else if( opt_planner == "lama-server" ) {
         planner = make_unique<const LAMA_Server_Planner>(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
     }
+#else
+    const ClassicalPlanner *planner = 0;
+    if( opt_planner == "ff" ) {
+        planner = new FF_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+    } else if( opt_planner == "lama" ) {
+        planner = new LAMA_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+    } else if( opt_planner == "m" ) {
+        planner = new M_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+    } else if( opt_planner == "mp" ) {
+        planner = new MP_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+    } else if( opt_planner == "lama-server" ) {
+        planner = new LAMA_Server_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+    }
+#endif
 
     // solve problem
     cout << "solving problem for " << instance.num_hidden_states() << " hidden state(s)" << endl;

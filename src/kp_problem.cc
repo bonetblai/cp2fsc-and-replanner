@@ -105,7 +105,11 @@ void KP_Instance::create_subgoaling_actions(const Instance &ins) {
     // create top subgoaling action: subgoaling action for original goal
     index_top_subgoaling_action_ = actions_.size();
     top_subgoaling_action_ = &new_action("subgoaling_action_for_original_goal__");
+#ifdef SMART
     assert(actions_.back().get() == top_subgoaling_action_);
+#else
+    assert(actions_.back() == top_subgoaling_action_);
+#endif
     for( index_set::const_iterator it = ins.goal_literals_.begin(); it != ins.goal_literals_.end(); ++it ) {
         int idx = *it > 0 ? *it-1 : -*it-1;
         if( *it > 0 )

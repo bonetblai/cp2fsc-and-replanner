@@ -227,11 +227,7 @@ void CLG_Instance::create_drules_from_invariant(const Invariant &invariant) {
         }
 
         // store invariant action
-#ifdef SMART
         drule_store_.emplace(move(nact));
-#else
-        drule_store_.insert(DRTemplate(nact));
-#endif
     }
 }
 

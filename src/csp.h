@@ -393,17 +393,31 @@ namespace Inference {
           : lw1_instance_(lw1_instance), atoms_to_var_map_(0) {
             for( size_t k = 0; k < lw1_instance_.variables_.size(); ++k ) {
                 const LW1_Instance::Variable &lw1_variable = *lw1_instance_.variables_[k];
+#ifdef SMART
                 std::unique_ptr<const Variable> variable;
                 if( lw1_variable.is_binary() )
                     variable = std::make_unique<const BinaryVariable>(lw1_variable, k);
                 else
                     variable = std::make_unique<const MultiValuedVariable>(lw1_variable, k);
                 variables_.emplace_back(std::move(variable));
+#else
+                const Variable *variable = 0;
+                if( lw1_variable.is_binary() )
+                    variable = new BinaryVariable(lw1_variable, k);
+                else
+                    variable = new MultiValuedVariable(lw1_variable, k);
+                variables_.emplace_back(variable);
+#endif
                 assert(variables_.back()->var_index() == k);
             }
             for( size_t k = 0; k < lw1_instance_.vars_for_variable_groups_.size(); ++k ) {
+#ifdef SMART
                 std::unique_ptr<const GroupVariable> group = std::make_unique<const GroupVariable>(lw1_instance_.vars_for_variable_groups_[k], k, variables_);
                 variable_groups_.emplace_back(std::move(group));
+#else
+                const GroupVariable *group = new GroupVariable(lw1_instance_.vars_for_variable_groups_[k], k, variables_);
+                variable_groups_.emplace_back(group);
+#endif
                 assert(variable_groups_.back()->var_index() == k);
             }
         }

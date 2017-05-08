@@ -30,6 +30,7 @@ bool Instance::always_write_precondition_ = false;
 bool Instance::always_write_conjunction_ = false;
 
 #ifndef SMART
+#if 0 // NOT USED
 Instance::Instance(const Instance& ins)
   : cross_referenced_(false),
     name_(ins.name_),
@@ -47,6 +48,7 @@ Instance::Instance(const Instance& ins)
     static_atoms_from_base_(ins.static_atoms_from_base_),
     options_(ins.options_) {
 }
+#endif
 #endif
 
 Instance::~Instance() {

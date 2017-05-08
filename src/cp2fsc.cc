@@ -62,10 +62,7 @@ void print_usage(ostream &os, const char *exec_name, const char **cmdline_option
         const Options::Option &opt = *it;
         os << "    " << left << setw(35) << opt.name() << "  " << opt.desc() << endl;
     }
-    os << endl;
-
-    os << "The components {cp,ks0} belong to cp2fsc while {kp,clg,mvv} to k-replanner."
-       << endl << endl;
+    os << endl << endl;
 }
 
 int main(int argc, const char *argv[]) {
@@ -97,7 +94,11 @@ int main(int argc, const char *argv[]) {
     }
 
     int nfiles = 0;
+#ifdef SMART
     unique_ptr<Parser> reader = make_unique<Parser>(Parser::cp2fsc, parser_symbol_table, g_options);
+#else
+    Parser *reader = new Parser(Parser::cp2fsc, parser_symbol_table, g_options);
+#endif
 
     // parse options
     bool skip_options = false;

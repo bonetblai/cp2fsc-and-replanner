@@ -362,7 +362,11 @@ namespace HOP {
                       const AndOr::AndNode<T> *parent = node->parent();
                       int action = parent->action();
                       assert((action >= 0) && (action < lw1_instance_.actions_.size()));
+#ifdef SMART
                       path.push_front(lw1_instance_.actions_[action].get());
+#else
+                      path.push_front(lw1_instance_.actions_[action]);
+#endif
                       assert(parent->parent() != 0);
                       node = const_cast<AndOr::OrNode<T>*>(parent->parent());
                   }

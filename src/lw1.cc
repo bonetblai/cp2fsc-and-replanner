@@ -140,10 +140,7 @@ void print_usage(ostream &os, const char *exec_name, const char **cmdline_option
         const Options::Option &opt = *it;
         os << "    " << left << setw(35) << opt.name() << "  " << opt.desc() << endl;
     }
-    os << endl;
-
-    os << "The components {cp,ks0} belong to cp2fsc while {kp,clg,mvv} to k-replanner."
-       << endl << endl;
+    os << endl << endl;
 }
 
 int main(int argc, const char *argv[]) {
@@ -194,18 +191,22 @@ int main(int argc, const char *argv[]) {
     // check correct number of parameters
     const char *exec_name = argv[0];
     if( argc == 1 ) {
-        print_usage(cout, exec_name, k_replanner_cmdline_options);
+        print_usage(cout, exec_name, lw1_cmdline_options);
         exit(0);
     }
 
     int nfiles = 0;
+#ifdef SMART
     unique_ptr<Parser> reader = make_unique<Parser>(Parser::replanner, parser_symbol_table, g_options);
+#else
+    Parser *reader = new Parser(Parser::replanner, parser_symbol_table, g_options);
+#endif
 
     // parse options
     bool skip_options = false;
     for( int k = 1; k < argc; ++k ) {
         if( !skip_options && !strcmp(argv[k], "--help") ) {
-            print_usage(cout, exec_name, k_replanner_cmdline_options);
+            print_usage(cout, exec_name, lw1_cmdline_options);
             exit(0);
         } else if( !skip_options && !strcmp(argv[k], "--debug-parser") ) {
             opt_debug_parser = true;
@@ -454,7 +455,11 @@ int main(int argc, const char *argv[]) {
     //instance.do_action_compilation(*variables);
 
     cout << "creating KP translation..." << endl;
+#ifdef SMART
     unique_ptr<LW1_Instance> lw1_instance = make_unique<LW1_Instance>(instance, *variables, *variable_groups, *sensing_models, *accepted_literals_for_observables);
+#else
+    LW1_Instance *lw1_instance = new LW1_Instance(instance, *variables, *variable_groups, *sensing_models, *accepted_literals_for_observables);
+#endif
 
     if( g_options.is_enabled("kp:print:raw") ) {
         lw1_instance->print(cout);
@@ -473,27 +478,62 @@ int main(int argc, const char *argv[]) {
     float preprocessing_time = Utils::read_time_in_seconds() - start_time;
 
     // construct classical planner
+#ifdef SMART
     unique_ptr<const ClassicalPlanner> planner;
     if( need_classical_planner || g_options.is_enabled("solver:classical-planner") ) {
         assert(as_method.options_.find("planner") != as_method.options_.end());
         const string &as_planner = as_method.options_.at("planner");
+
+        // override planner path?
+        string planner_path(opt_planner_path);
+        if( as_method.options_.find("path") != as_method.options_.end() )
+            planner_path _ as_method.options_.at("path");
+
         if( as_planner == "ff" ) {
-            planner = make_unique<const FF_Planner>(*lw1_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+            planner = make_unique<const FF_Planner>(*lw1_instance, opt_tmpfile_path.c_str(), planner_path.c_str());
         } else if( as_planner == "lama" ) {
-            planner = make_unique<const LAMA_Planner>(*lw1_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+            planner = make_unique<const LAMA_Planner>(*lw1_instance, opt_tmpfile_path.c_str(), planner_path.c_str());
         } else if( as_planner == "m" ) {
-            planner = make_unique<const M_Planner>(*lw1_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+            planner = make_unique<const M_Planner>(*lw1_instance, opt_tmpfile_path.c_str(), planner_path.c_str());
         } else if( as_planner == "mp" ) {
-            planner = make_unique<const MP_Planner>(*lw1_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+            planner = make_unique<const MP_Planner>(*lw1_instance, opt_tmpfile_path.c_str(), planner_path.c_str());
         } else if( as_planner == "lama-server" ) {
-            planner = make_unique<const LAMA_Server_Planner>(*lw1_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str());
+            planner = make_unique<const LAMA_Server_Planner>(*lw1_instance, opt_tmpfile_path.c_str(), planner_path.c_str());
         } else {
             std::cout << Utils::error() << "unrecognized planner '" << as_planner << "'." << std::endl;
             exit(-1);
         }
     }
+#else
+    const ClassicalPlanner *planner = 0;
+    if( need_classical_planner || g_options.is_enabled("solver:classical-planner") ) {
+        assert(as_method.options_.find("planner") != as_method.options_.end());
+        const string &as_planner = as_method.options_.at("planner");
+
+        // override planner path?
+        string planner_path(opt_planner_path);
+        if( as_method.options_.find("path") != as_method.options_.end() )
+            planner_path = as_method.options_.at("path");
+
+        if( as_planner == "ff" ) {
+            planner = new FF_Planner(*lw1_instance, opt_tmpfile_path.c_str(), planner_path.c_str());
+        } else if( as_planner == "lama" ) {
+            planner = new LAMA_Planner(*lw1_instance, opt_tmpfile_path.c_str(), planner_path.c_str());
+        } else if( as_planner == "m" ) {
+            planner = new M_Planner(*lw1_instance, opt_tmpfile_path.c_str(), planner_path.c_str());
+        } else if( as_planner == "mp" ) {
+            planner = new MP_Planner(*lw1_instance, opt_tmpfile_path.c_str(), planner_path.c_str());
+        } else if( as_planner == "lama-server" ) {
+            planner = new LAMA_Server_Planner(*lw1_instance, opt_tmpfile_path.c_str(), planner_path.c_str());
+        } else {
+            std::cout << Utils::error() << "unrecognized planner '" << as_planner << "'." << std::endl;
+            exit(-1);
+        }
+    }
+#endif
 
     // construct inference engine
+#ifdef SMART
     unique_ptr<Inference::Engine<STATE_CLASS> > inference_engine;
     if( g_options.is_enabled("lw1:inference:forward-chaining") ) {
         inference_engine = make_unique<Inference::ForwardChaining<STATE_CLASS> >(instance, *lw1_instance, g_options);
@@ -505,8 +545,22 @@ int main(int argc, const char *argv[]) {
         cout << Utils::error() << "unspecified inference method for lw1." << endl;
         exit(-1);
     }
+#else
+    Inference::Engine<STATE_CLASS> *inference_engine = 0;
+    if( g_options.is_enabled("lw1:inference:forward-chaining") ) {
+        inference_engine = new Inference::ForwardChaining<STATE_CLASS>(instance, *lw1_instance, g_options);
+    } else if( g_options.is_enabled("lw1:inference:up") ) {
+        inference_engine = new Inference::UnitPropagation<STATE_CLASS>(instance, *lw1_instance, g_options);
+    } else if( g_options.is_enabled("lw1:inference:ac3") ) {
+        inference_engine = new Inference::AC3<STATE_CLASS>(instance, *lw1_instance, g_options);
+    } else {
+        cout << Utils::error() << "unspecified inference method for lw1." << endl;
+        exit(-1);
+    }
+#endif
 
     // construct action selection
+#ifdef SMART
     unique_ptr<ActionSelection<STATE_CLASS> > action_selection;
     if( g_options.is_enabled("solver:naive-random-action-selection") ) {
         action_selection = make_unique<NaiveRandomActionSelection<STATE_CLASS> >(*lw1_instance);
@@ -531,6 +585,31 @@ int main(int argc, const char *argv[]) {
         assert(planner != nullptr);
         action_selection = make_unique<ClassicalPlannerWrapper<STATE_CLASS> >(*planner);
     }
+#else
+    ActionSelection<STATE_CLASS> *action_selection = 0;
+    if( g_options.is_enabled("solver:naive-random-action-selection") ) {
+        action_selection = new NaiveRandomActionSelection<STATE_CLASS>(*lw1_instance);
+    } else if( g_options.is_enabled("solver:random-action-selection") ) {
+        assert(planner != 0);
+        ActionSelection<STATE_CLASS> *alternate_action_selection = new ClassicalPlannerWrapper<STATE_CLASS>(*planner);
+        action_selection = new RandomActionSelection<STATE_CLASS>(*lw1_instance, alternate_action_selection);
+    } else if( g_options.is_enabled("solver:width-based-action-selection") ) {
+        //action_selection = new Width2::ActionSelection<STATE_CLASS>(*lw1_instance, *inference_engine);
+        assert(0); // CHECK
+    } else if( g_options.is_enabled("solver:hop") ) {
+        assert(as_method.options_.find("num-samples") != as_method.options_.end());
+        int hop_num_samples = atoi(as_method.options_.at("num-samples").c_str());
+        action_selection = new HOP::ActionSelection<STATE_CLASS>(*lw1_instance, *inference_engine, hop_num_samples);
+    } else if( g_options.is_enabled("solver:despot") ) {
+        //action_selection = new Despot::ActionSelection<STATE_CLASS>(*lw1_instance, *inference_engine, 50, 50, 1, .5, 10);
+        assert(0); // CHECK
+    } else {
+        assert(g_options.is_enabled("solver:classical-planner"));
+        assert(as_method.as_name_ == "classical-planner");
+        assert(planner != 0);
+        action_selection = new ClassicalPlannerWrapper<STATE_CLASS>(*planner);
+    }
+#endif
 
     // solve problem
     cout << "solving problem for " << instance.num_hidden_states() << " hidden state(s)" << endl;

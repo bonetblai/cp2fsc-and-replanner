@@ -111,14 +111,25 @@ class RandomActionSelection : public NaiveRandomActionSelection<T> {
   using NaiveRandomActionSelection<T>::n_calls_;
 
   protected:
+#ifdef SMART
     std::unique_ptr<const ::ActionSelection<T> > alternate_selection_;
+#else
+    const ::ActionSelection<T> *alternate_selection_;
+#endif
     mutable bool used_alternate_selection_;
 
   public:
+#ifdef SMART
     RandomActionSelection(const LW1_Instance &lw1_instance, std::unique_ptr<const ::ActionSelection<T> > &&alternate_selection)
       : NaiveRandomActionSelection<T>(lw1_instance),
         alternate_selection_(std::move(alternate_selection)) {
     }
+#else
+    RandomActionSelection(const LW1_Instance &lw1_instance, const ::ActionSelection<T> *alternate_selection)
+      : NaiveRandomActionSelection<T>(lw1_instance),
+        alternate_selection_(alternate_selection) {
+    }
+#endif
     virtual ~RandomActionSelection() { }
 
     const ::ActionSelection<T>* alternate_selection() const {
