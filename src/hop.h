@@ -323,8 +323,8 @@ namespace HOP {
       bool is_goal(const AndOr::OrNode<T> &node) const {
           return is_goal(*node.belief()->belief());
       }
-      AndOr::OrNode<T>* make_root(const T &state) const {
-          return new AndOr::OrNode<T>(new AndOr::Belief<T>(new T(state)), 0);
+      AndOr::OrNode<T>* make_root(const T &state, const T &hidden_state) const {
+          return new AndOr::OrNode<T>(new T(hidden_state), new AndOr::Belief<T>(new T(state)), 0);
       }
 
       // AND/OR graph
@@ -401,18 +401,17 @@ namespace HOP {
               }
           }
       }
-      void create_sampled_graph_breadth_first(const T &sampled_hidden, AndOr::OrNode<T> *root, std::vector<std::vector<int> > &goal_paths) const {
+      void create_sampled_graph_breadth_first(AndOr::OrNode<T> *root, std::vector<std::vector<int> > &goal_paths) const {
           std::vector<std::pair<AndOr::AndNode<T>*, const T*> > successors;
-          std::deque<std::pair<AndOr::OrNode<T>*, const T*> > queue;
+          std::deque<AndOr::OrNode<T>*> queue;
 
           float total_time = Utils::read_time_in_seconds();
           float expand_time = 0;
           float feature_time = 0;
 
-          queue.push_front(std::make_pair(root, new T(sampled_hidden)));
+          queue.push_front(root);
           while( !queue.empty() ) {
-              AndOr::OrNode<T> *node = queue.back().first;
-              const T *hidden = queue.back().second;
+              AndOr::OrNode<T> *node = queue.back();
               queue.pop_back();
               //std::cout << "processing node=" << *node << std::endl;
 
@@ -439,12 +438,7 @@ namespace HOP {
                       node = const_cast<AndOr::OrNode<T>*>(parent->parent());
                   }
                   goal_paths.emplace_back(std::move(reversed_goal_path));
-
-                  // free resources: free hidden states in open queue and clear queue
-                  while( !queue.empty() ) {
-                      delete queue.back().second;
-                      queue.pop_back();
-                  }
+                  continue;
               } else if( need_to_expand_node(*node, features) ) {
                   // register node's features
                   for( typename Width::FeatureSet<T>::const_iterator it = features.begin(); it != features.end(); ++it ) {
@@ -455,14 +449,17 @@ namespace HOP {
 
                   assert(successors.empty());
                   float expand_start_time = Utils::read_time_in_seconds();
-                  expand(*hidden, *node, successors);
+                  expand(*node, successors);
                   expand_time += Utils::read_time_in_seconds() - expand_start_time;
                   //std::cout << "#successors=" << successors.size() << std::endl;
                   for( size_t k = 0; k < successors.size(); ++k ) {
                       AndOr::AndNode<T> *succ = successors[k].first;
                       const T *succ_hidden = successors[k].second;
-                      for( size_t j = 0; j < succ->children().size(); ++j )
-                          queue.push_front(std::make_pair(const_cast<AndOr::OrNode<T>*>(succ->child(j)), succ_hidden));
+                      for( size_t j = 0; j < succ->children().size(); ++j ) {
+                          AndOr::OrNode<T> *succ_child = const_cast<AndOr::OrNode<T>*>(succ->child(j));
+                          succ_child->set_hidden_state(succ_hidden);
+                          queue.push_front(succ_child);
+                      }
                       node->add_child(succ);
                       succ->set_parent(node);
                   }
@@ -471,7 +468,6 @@ namespace HOP {
                   // mark node as pruned
                   node->mark_as_pruned();
               }
-              delete hidden;
           }
           total_time = Utils::read_time_in_seconds() - total_time;
           //std::cout << "time: total=" << total_time << ", expand=" << expand_time << ", feature=" << feature_time << std::endl;
@@ -590,7 +586,7 @@ namespace HOP {
           }
       }
 
-      bool expand(const T &hidden, const AndOr::OrNode<T> &node, std::vector<std::pair<AndOr::AndNode<T>*, const T*> > &successors) const {
+      bool expand(const AndOr::OrNode<T> &node, std::vector<std::pair<AndOr::AndNode<T>*, const T*> > &successors) const {
           ++num_expansions_;
 
 #ifdef DEBUG
@@ -598,7 +594,7 @@ namespace HOP {
           node.belief()->belief()->print(std::cout, &lw1_instance_);
           std::cout << std::endl;
           std::cout << Utils::blue() << "hidden=" << Utils::normal();
-          hidden.print(std::cout, &lw1_instance_);
+          node.hidden_state()->print(std::cout, &lw1_instance_);
           std::cout << std::endl;
 #endif
 
@@ -614,7 +610,7 @@ namespace HOP {
                   // calculate result of action
                   T *result_after_action = new T(tip);
                   result_after_action->apply(action);
-                  T *hidden_after_action = new T(hidden);
+                  T *hidden_after_action = new T(*node.hidden_state());
                   hidden_after_action->apply(action);
 
 #ifdef DEBUG
@@ -982,8 +978,8 @@ namespace HOP {
       virtual int get_plan(const T &state,
                            Instance::Plan &plan,
                            Instance::Plan &raw_plan,
-                           std::vector<const T*> &state_trajectory) const {
-          assert(state_trajectory.empty());
+                           std::vector<const T*> &sampled_state_trajectory) const {
+          assert(sampled_state_trajectory.empty());
           std::cout << "calling " << name() << " (n=" << 1+n_calls() << ", acc-time=" << get_time() << ")..." << std::endl;
           float start_time = Utils::read_time_in_seconds();
           ++n_calls_;
@@ -1030,10 +1026,10 @@ namespace HOP {
 
               // construct AND/OR graph rooted at state
               std::vector<std::vector<int> > goal_paths_in_graph;
-              AndOr::OrNode<T> *root = make_root(state);
+              AndOr::OrNode<T> *root = make_root(state, sampled_hidden);
               //std::cout << "root=" << *root << std::endl;
               //create_sampled_graph_breadth_first(root, goal_paths_in_graph, true); // CHECK: another sampled graph?
-              create_sampled_graph_breadth_first(sampled_hidden, root, goal_paths_in_graph);
+              create_sampled_graph_breadth_first(root, goal_paths_in_graph);
               //std::cout << "num-expansions=" << num_expansions_ << ", #root-children=" << root->children().size() << ", #gp=" << goal_paths_in_graph.size() << std::endl;
 
               // store goal-paths found in sampled graph
@@ -1193,15 +1189,15 @@ namespace HOP {
                                          const T &state,
                                          const Instance::Plan &plan,
                                          const Instance::Plan &raw_plan,
-                                         const std::vector<const T*> &state_trajectory,
+                                         const std::vector<const T*> &sampled_state_trajectory,
                                          const index_set &goal,
                                          std::vector<index_set> &assumptions) const {
           // apply actions in plan as long as they are applicable
-          if( state_trajectory.empty() ) {
+          if( sampled_state_trajectory.empty() ) {
               std::cout << Utils::red() << "hola" << Utils::normal() << std::endl;
               assumptions.insert(assumptions.end(), plan.size(), index_set());
           } else
-              solver.calculate_relevant_assumptions(plan, state_trajectory, state, goal, assumptions);
+              solver.calculate_relevant_assumptions(plan, sampled_state_trajectory, state, goal, assumptions);
       }
   };
 
