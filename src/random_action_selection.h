@@ -59,8 +59,8 @@ class NaiveRandomActionSelection : public ::ActionSelection<T> {
     virtual int get_plan(const T &state,
                          Instance::Plan &plan,
                          Instance::Plan &raw_plan,
-                         std::vector<const T*> &state_trajectory) const {
-        assert(state_trajectory.empty());
+                         std::vector<const T*> &sampled_state_trajectory) const {
+        assert(sampled_state_trajectory.empty());
         float start_time = Utils::read_time_in_seconds();
 
         // compute applicable actions at state
@@ -101,10 +101,10 @@ class NaiveRandomActionSelection : public ::ActionSelection<T> {
                                        const T &state,
                                        const Instance::Plan &plan,
                                        const Instance::Plan &raw_plan,
-                                       const std::vector<const T*> &state_trajectory,
+                                       const std::vector<const T*> &sampled_state_trajectory,
                                        const index_set &goal,
                                        std::vector<index_set> &assumptions) const {
-        assert(state_trajectory.empty());
+        assert(sampled_state_trajectory.empty());
         assumptions.push_back(index_set());
     }
 };
@@ -201,13 +201,13 @@ class RandomActionSelection : public NaiveRandomActionSelection<T> {
     virtual int get_plan(const T &state,
                          Instance::Plan &plan,
                          Instance::Plan &raw_plan,
-                         std::vector<const T*> &state_trajectory) const {
-        assert(state_trajectory.empty());
+                         std::vector<const T*> &sampled_state_trajectory) const {
+        assert(sampled_state_trajectory.empty());
         used_alternate_selection_ = (alternate_selection_ != 0) && is_singleton_belief(state);
         if( used_alternate_selection_ ) {
-            return alternate_selection_->get_plan(state, plan, raw_plan, state_trajectory);
+            return alternate_selection_->get_plan(state, plan, raw_plan, sampled_state_trajectory);
         } else {
-            return NaiveRandomActionSelection<T>::get_plan(state, plan, raw_plan, state_trajectory);
+            return NaiveRandomActionSelection<T>::get_plan(state, plan, raw_plan, sampled_state_trajectory);
         }
     }
 
@@ -215,10 +215,10 @@ class RandomActionSelection : public NaiveRandomActionSelection<T> {
                                        const T &state,
                                        const Instance::Plan &plan,
                                        const Instance::Plan &raw_plan,
-                                       const std::vector<const T*> &state_trajectory,
+                                       const std::vector<const T*> &sampled_state_trajectory,
                                        const index_set &goal,
                                        std::vector<index_set> &assumptions) const {
-        assert(state_trajectory.empty());
+        assert(sampled_state_trajectory.empty());
         if( used_alternate_selection() )
             solver.calculate_relevant_assumptions(plan, raw_plan, state, goal, assumptions);
         else

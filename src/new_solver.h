@@ -68,7 +68,7 @@ template<typename T> class NewSolver {
                                                 const index_set &goal,
                                                 std::vector<index_set> &assumptions) const;
     virtual void calculate_relevant_assumptions(const Instance::Plan &plan,
-                                                const std::vector<const T*> &state_trajectory,
+                                                const std::vector<const T*> &sampled_state_trajectory,
                                                 const T &initial_state,
                                                 const index_set &goal,
                                                 std::vector<index_set> &assumptions) const;
@@ -174,9 +174,9 @@ int NewSolver<T>::solve(const T &initial_hidden_state,
         // call action selection method to obtain plan for state
         if( plan.empty() ) {
             Instance::Plan raw_plan;
-            std::vector<const T*> state_trajectory;
+            std::vector<const T*> sampled_state_trajectory;
             if( action_selection_.n_calls() >= max_as_calls_ ) return AS_CALLS;
-            int status = action_selection_.get_plan(state, plan, raw_plan, state_trajectory);
+            int status = action_selection_.get_plan(state, plan, raw_plan, sampled_state_trajectory);
             if( status != ActionSelection<T>::SOLVED ) {
                 if( status == ActionSelection<T>::NO_SOLUTION )
                     return NO_SOLUTION;
@@ -186,10 +186,10 @@ int NewSolver<T>::solve(const T &initial_hidden_state,
                 return TIME;
             }
             assert(!plan.empty());
-            action_selection_.calculate_assumptions(*this, state, plan, raw_plan, state_trajectory, goal_condition, assumptions);
-            while( !state_trajectory.empty() ) {
-                delete state_trajectory.back();
-                state_trajectory.pop_back();
+            action_selection_.calculate_assumptions(*this, state, plan, raw_plan, sampled_state_trajectory, goal_condition, assumptions);
+            while( !sampled_state_trajectory.empty() ) {
+                delete sampled_state_trajectory.back();
+                sampled_state_trajectory.pop_back();
             }
         }
 
@@ -362,11 +362,12 @@ void NewSolver<T>::calculate_relevant_assumptions(const Instance::Plan &plan,
 
 template<typename T>
 void NewSolver<T>::calculate_relevant_assumptions(const Instance::Plan &plan,
-                                                  const std::vector<const T*> &state_trajectory,
+                                                  const std::vector<const T*> &sampled_state_trajectory,
                                                   const T &initial_state,
                                                   const index_set &goal,
                                                   std::vector<index_set> &assumptions) const {
-    assert(1 + state_trajectory.size() == plan.size());
+    std::cout << Utils::red() << "hola.0" << Utils::normal() << std::endl;
+    assert(1 + sampled_state_trajectory.size() == plan.size());
 }
 
 template<typename T>

@@ -44,12 +44,12 @@ template<typename T> class ActionSelection {
     virtual int get_plan(const T &state,
                          Instance::Plan &plan,
                          Instance::Plan &raw_plan,
-                         std::vector<const T*> &state_trajectory) const = 0;
+                         std::vector<const T*> &sampled_state_trajectory) const = 0;
     virtual void calculate_assumptions(const NewSolver<T> &solver,
                                        const T &state,
                                        const Instance::Plan &plan,
                                        const Instance::Plan &raw_plan,
-                                       const std::vector<const T*> &state_trajectory,
+                                       const std::vector<const T*> &sampled_state_trajectory,
                                        const index_set &goal,
                                        std::vector<index_set> &assumptions) const = 0;
 };

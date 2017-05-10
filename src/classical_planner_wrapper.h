@@ -52,8 +52,8 @@ class ClassicalPlannerWrapper : public ActionSelection<T> {
     virtual int get_plan(const T &state,
                          Instance::Plan &plan,
                          Instance::Plan &raw_plan,
-                         std::vector<const T*> &state_trajectory) const {
-        assert(state_trajectory.empty());
+                         std::vector<const T*> &sampled_state_trajectory) const {
+        assert(sampled_state_trajectory.empty());
         int status = planner_.get_plan(state, raw_plan, plan);
         if( status == ClassicalPlanner::SOLVED ) {
             return ActionSelection<T>::SOLVED;
@@ -69,10 +69,10 @@ class ClassicalPlannerWrapper : public ActionSelection<T> {
                                        const T &state,
                                        const Instance::Plan &plan,
                                        const Instance::Plan &raw_plan,
-                                       const std::vector<const T*> &state_trajectory,
+                                       const std::vector<const T*> &sampled_state_trajectory,
                                        const index_set &goal,
                                        std::vector<index_set> &assumptions) const {
-        assert(state_trajectory.empty());
+        assert(sampled_state_trajectory.empty());
         solver.calculate_relevant_assumptions(plan, raw_plan, state, goal, assumptions);
     }
 };
