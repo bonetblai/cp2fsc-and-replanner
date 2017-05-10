@@ -487,7 +487,7 @@ int main(int argc, const char *argv[]) {
         // override planner path?
         string planner_path(opt_planner_path);
         if( as_method.options_.find("path") != as_method.options_.end() )
-            planner_path _ as_method.options_.at("path");
+            planner_path = as_method.options_.at("path");
 
         if( as_planner == "ff" ) {
             planner = make_unique<const FF_Planner>(*lw1_instance, opt_tmpfile_path.c_str(), planner_path.c_str());
