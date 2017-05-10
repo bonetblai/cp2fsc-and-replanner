@@ -67,6 +67,11 @@ template<typename T> class NewSolver {
                                                 const T &initial_state,
                                                 const index_set &goal,
                                                 std::vector<index_set> &assumptions) const;
+    virtual void calculate_relevant_assumptions(const Instance::Plan &plan,
+                                                const std::vector<const T*> &state_trajectory,
+                                                const T &initial_state,
+                                                const index_set &goal,
+                                                std::vector<index_set> &assumptions) const;
   protected:
     virtual void compute_and_add_observations(const Instance::Action *last_action,
                                               const T &hidden,
@@ -131,7 +136,7 @@ int NewSolver<T>::solve(const T &initial_hidden_state,
 
     // replan loop
     std::vector<index_set> assumptions;
-    Instance::Plan raw_plan, plan;
+    Instance::Plan plan;
     final_plan.clear();
 
     while( !state.is_goal(kp_instance_) ) {
@@ -168,8 +173,10 @@ int NewSolver<T>::solve(const T &initial_hidden_state,
 
         // call action selection method to obtain plan for state
         if( plan.empty() ) {
+            Instance::Plan raw_plan;
+            std::vector<const T*> state_trajectory;
             if( action_selection_.n_calls() >= max_as_calls_ ) return AS_CALLS;
-            int status = action_selection_.get_plan(state, raw_plan, plan);
+            int status = action_selection_.get_plan(state, plan, raw_plan, state_trajectory);
             if( status != ActionSelection<T>::SOLVED ) {
                 if( status == ActionSelection<T>::NO_SOLUTION )
                     return NO_SOLUTION;
@@ -179,7 +186,11 @@ int NewSolver<T>::solve(const T &initial_hidden_state,
                 return TIME;
             }
             assert(!plan.empty());
-            action_selection_.calculate_assumptions(*this, state, raw_plan, plan, goal_condition, assumptions);
+            action_selection_.calculate_assumptions(*this, state, plan, raw_plan, state_trajectory, goal_condition, assumptions);
+            while( !state_trajectory.empty() ) {
+                delete state_trajectory.back();
+                state_trajectory.pop_back();
+            }
         }
 
         // first assumption for reduced plan should be satisfied by current state.
@@ -347,6 +358,15 @@ void NewSolver<T>::calculate_relevant_assumptions(const Instance::Plan &plan,
             std::cout << std::endl;
         }
     }
+}
+
+template<typename T>
+void NewSolver<T>::calculate_relevant_assumptions(const Instance::Plan &plan,
+                                                  const std::vector<const T*> &state_trajectory,
+                                                  const T &initial_state,
+                                                  const index_set &goal,
+                                                  std::vector<index_set> &assumptions) const {
+    assert(1 + state_trajectory.size() == plan.size());
 }
 
 template<typename T>

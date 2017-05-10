@@ -250,7 +250,7 @@ namespace HOP {
               int var_index = unknown_variables[k];
               assert((var_index >= 0) && (var_index < lw1_instance_.variables_.size()));
               const LW1_Instance::Variable &variable = *lw1_instance_.variables_[var_index];
-#ifdef DEBUG
+#if 1//def DEBUG
               std::cout << Utils::blue() << "variable '" << variable.name() << "' is unknown: " << Utils::normal() << std::flush;
 #endif
               assert(variable.is_state_variable());
@@ -270,7 +270,7 @@ namespace HOP {
               assert(!possible_values.empty());
               int sampled_atom = possible_values[lrand48() % possible_values.size()];
 
-#ifdef DEBUG
+#if 1//def DEBUG
               std::cout << Utils::blue() << " sampled-value=";
               State::print_literal(std::cout, 1 + sampled_atom, &lw1_instance_);
               std::cout << Utils::normal() << std::endl;
@@ -965,7 +965,7 @@ namespace HOP {
 
       virtual std::string name() const {
           std::string str = std::string("hop(") +
-            "num-sampled-scenarios=" + std::to_string(num_sampled_scenarios_) +
+            "num-samples=" + std::to_string(num_sampled_scenarios_) +
             ",prune-nodes=" + std::to_string(prune_nodes_) +
             ")";
           return str;
@@ -979,7 +979,11 @@ namespace HOP {
           n_calls_ = 0;
       }
 
-      virtual int get_plan(const T &state, Instance::Plan &raw_plan, Instance::Plan &plan) const {
+      virtual int get_plan(const T &state,
+                           Instance::Plan &plan,
+                           Instance::Plan &raw_plan,
+                           std::vector<const T*> &state_trajectory) const {
+          assert(state_trajectory.empty());
           std::cout << "calling " << name() << " (n=" << 1+n_calls() << ", acc-time=" << get_time() << ")..." << std::endl;
           float start_time = Utils::read_time_in_seconds();
           ++n_calls_;
@@ -999,7 +1003,7 @@ namespace HOP {
           std::vector<int> unknown_variables;
           calculate_unknown_variables(state, unknown_variables);
 
-#ifdef DEBUG
+#if 1//def DEBUG
           std::cout << Utils::magenta();
           std::cout << "belief=";
           state.print(std::cout, lw1_instance_);
@@ -1074,7 +1078,7 @@ namespace HOP {
               deallocate_graph(root);
           }
 
-#ifdef DEBUG
+#if 1//def DEBUG
           // print goal-paths
           std::cout << Utils::bold() << "**** goal-paths" << Utils::normal() << std::endl;
           for( std::map<int, std::map<std::vector<int>, int> >::const_iterator it = goal_paths.begin(); it != goal_paths.end(); ++it ) {
@@ -1107,7 +1111,7 @@ namespace HOP {
           assert(score_best_actions < std::numeric_limits<float>::max());
           assert(!best_actions.empty());
 
-#ifdef DEBUG
+#if 1//def DEBUG
           // print action scores
           for( size_t k = 0; k < action_scores.size(); ++k ) {
               if( action_scores[k] < std::numeric_limits<float>::max() ) {
@@ -1120,7 +1124,7 @@ namespace HOP {
           // select best action
           int best_action_index = best_actions[lrand48() % best_actions.size()];
 
-#ifdef DEBUG
+#if 1//def DEBUG
           // print best action
           const Instance::Action &best_action = *lw1_instance_.actions_[best_action_index];
           assert(state.applicable(best_action));
@@ -1156,7 +1160,7 @@ namespace HOP {
               assert(sampled_path != 0);
               assert(sampled_path->back() == best_action_index);
 
-#ifdef DEBUG
+#if 1//def DEBUG
               // print sampled path
               std::cout << Utils::bold() << "sampled-path(sz=" << sampled_path->size() << "):";
               for( size_t k = sampled_path->size(); k > 0; --k )
@@ -1187,12 +1191,17 @@ namespace HOP {
 
       virtual void calculate_assumptions(const NewSolver<T> &solver,
                                          const T &state,
-                                         const Instance::Plan &raw_plan,
                                          const Instance::Plan &plan,
+                                         const Instance::Plan &raw_plan,
+                                         const std::vector<const T*> &state_trajectory,
                                          const index_set &goal,
                                          std::vector<index_set> &assumptions) const {
-          // apply actions in plan as long as they are applicable // CHECK: wrong as it may lead to a dead-end (see medpks)
-          assumptions.insert(assumptions.end(), plan.size(), index_set());
+          // apply actions in plan as long as they are applicable
+          if( state_trajectory.empty() ) {
+              std::cout << Utils::red() << "hola" << Utils::normal() << std::endl;
+              assumptions.insert(assumptions.end(), plan.size(), index_set());
+          } else
+              solver.calculate_relevant_assumptions(plan, state_trajectory, state, goal, assumptions);
       }
   };
 

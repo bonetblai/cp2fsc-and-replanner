@@ -41,11 +41,15 @@ template<typename T> class ActionSelection {
     virtual float get_time() const = 0;
     virtual size_t n_calls() const = 0;
     virtual void reset_stats() const = 0;
-    virtual int get_plan(const T &state, Instance::Plan &raw_plan, Instance::Plan &plan) const = 0;
+    virtual int get_plan(const T &state,
+                         Instance::Plan &plan,
+                         Instance::Plan &raw_plan,
+                         std::vector<const T*> &state_trajectory) const = 0;
     virtual void calculate_assumptions(const NewSolver<T> &solver,
                                        const T &state,
-                                       const Instance::Plan &raw_plan,
                                        const Instance::Plan &plan,
+                                       const Instance::Plan &raw_plan,
+                                       const std::vector<const T*> &state_trajectory,
                                        const index_set &goal,
                                        std::vector<index_set> &assumptions) const = 0;
 };
