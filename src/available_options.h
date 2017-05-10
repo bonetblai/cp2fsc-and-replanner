@@ -217,6 +217,7 @@ const char *lw1_cmdline_options[] = {
     "[--tmpfile-path <path>]",
     "[--options=<options-string>]",
     "[--override-defaults]",
+    "[--seed <seed>]",
     0
 };
 

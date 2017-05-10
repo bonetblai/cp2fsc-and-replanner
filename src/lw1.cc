@@ -156,6 +156,7 @@ int main(int argc, const char *argv[]) {
     string      opt_planner_path = "";
     string      opt_tmpfile_path = "";
     bool        need_classical_planner = true;
+    int         opt_seed = 0;
 
     // print cmdline
     cout << "cmdline: " << Utils::cmdline(argc, argv) << endl;
@@ -250,6 +251,8 @@ int main(int argc, const char *argv[]) {
             parse_options(g_options, options);
         } else if( !skip_options && !strcmp(argv[k], "--override-defaults") ) {
             g_options.clear_enabled_and_disabled();
+        } else if( !skip_options && !strcmp(argv[k], "--seed") ) {
+            opt_seed = atoi(argv[++k]);
 
         // if '--', stop parsing options. Remaining fields are file names.
         } else if( !skip_options && !strcmp(argv[k], "--") ) {
@@ -273,6 +276,11 @@ int main(int argc, const char *argv[]) {
             ++nfiles;
         }
     }
+
+    // set seed for random numbers
+    unsigned short seed[3];
+    seed[0] = seed[1] = seed[2] = opt_seed;
+    seed48(seed);
 
     // parse AS string
     ASMethod as_method;
