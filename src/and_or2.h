@@ -231,7 +231,7 @@ namespace AndOr {
       }
 
     public:
-      static bool deallocate(const AndNode *node) { // CHECK
+      static bool deallocate(const AndNode<T> *node) { // CHECK
           return Node::deallocate(node);
       }
 
@@ -301,6 +301,7 @@ namespace AndOr {
   template<typename T>
   class OrNode : public Node {
     protected:
+      const T *hidden_state_;                   // hidden state for this belief
       const Belief<T> *belief_;                 // belief for this node
       const AndNode<T> *parent_;                // parent node
       std::vector<const AndNode<T>*> children_; // children
@@ -315,13 +316,13 @@ namespace AndOr {
       }
 
     public:
-      static bool deallocate(const OrNode *node) { // CHECK
+      static bool deallocate(const OrNode<T> *node) { // CHECK
           return Node::deallocate(node);
       }
 
     public:
-      OrNode(const Belief<T> *belief, const AndNode<T> *parent)
-        : belief_(belief), parent_(parent) {
+      OrNode(const T *hidden_state, const Belief<T> *belief, const AndNode<T> *parent)
+        : hidden_state_(hidden_state), belief_(belief), parent_(parent) {
       }
 #if 0
       OrNode(const T *belief, BeliefRepo<T> &repo, int action)
@@ -329,6 +330,13 @@ namespace AndOr {
       }
 #endif
       virtual ~OrNode() {
+      }
+
+      const T* hidden_state() const {
+          return hidden_state_;
+      }
+      void set_hidden_state(const T *hidden_state) {
+          hidden_state_ = hidden_state;
       }
 
       virtual int node_count(int type) const {
@@ -468,7 +476,7 @@ namespace AndOr {
       AndNode<T> *and_node = new AndNode<T>(action, belief_a, 0);
       for( size_t k = 0; k < successors.size(); ++k ) {
           const Belief<T> *belief_ao = new Belief<T>(successors[k]);
-          OrNode<T> *child = new OrNode<T>(belief_ao, and_node);
+          OrNode<T> *child = new OrNode<T>(0, belief_ao, and_node); // CHECK: hidden_state = 0
           and_node->add_child(child);
       }
       return and_node;
