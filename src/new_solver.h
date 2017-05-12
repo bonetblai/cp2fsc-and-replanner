@@ -366,8 +366,8 @@ void NewSolver<T>::calculate_relevant_assumptions(const Instance::Plan &plan,
                                                   const T &initial_state,
                                                   const index_set &goal,
                                                   std::vector<index_set> &assumptions) const {
-    std::cout << Utils::red() << "hola.0" << Utils::normal() << std::endl;
-    assert(1 + sampled_state_trajectory.size() == plan.size());
+    std::cout << Utils::red() << "hola.1: " << sampled_state_trajectory.size() << " " << plan.size() << Utils::normal() << std::endl;
+    assert(sampled_state_trajectory.size() == 1 + plan.size());
 }
 
 template<typename T>
@@ -388,12 +388,12 @@ void NewSolver<T>::compute_and_add_observations(const Instance::Action *last_act
             for( index_set::const_iterator it = r.sense().begin(); it != r.sense().end(); ++it ) {
                 int obs = *it > 0 ? *it - 1 : -*it - 1;
                 if( hidden.satisfy(obs) ) {
-                    state.remove(2*obs + 1);
-                    state.add(2*obs);
+                    state.remove(2 * obs + 1);
+                    state.add(2 * obs);
                     sensed_at_step.insert(1 + obs);
                 } else {
-                    state.remove(2*obs);
-                    state.add(2*obs+1);
+                    state.remove(2 * obs);
+                    state.add(2 * obs + 1);
                     sensed_at_step.insert(-(1 + obs));
                 }
             }

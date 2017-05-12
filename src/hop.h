@@ -401,7 +401,7 @@ namespace HOP {
               }
           }
       }
-      void create_sampled_graph_breadth_first(AndOr::OrNode<T> *root, std::vector<std::vector<int> > &goal_paths) const {
+      void create_sampled_graph_breadth_first(AndOr::OrNode<T> *root, std::vector<const AndOr::OrNode<T>*> &goal_nodes) const {
           std::vector<std::pair<AndOr::AndNode<T>*, const T*> > successors;
           std::deque<AndOr::OrNode<T>*> queue;
 
@@ -427,18 +427,7 @@ namespace HOP {
               feature_time += Utils::read_time_in_seconds() - feature_start_time;
 
               if( features.find(goal_feature_) != features.end() ) {
-                  // extract and store goal path
-                  std::vector<int> reversed_goal_path;
-                  while( node->parent() != 0 ) {
-                      const AndOr::AndNode<T> *parent = node->parent();
-                      int action = parent->action();
-                      assert((action >= 0) && (action < lw1_instance_.actions_.size()));
-                      reversed_goal_path.push_back(action);
-                      assert(parent->parent() != 0);
-                      node = const_cast<AndOr::OrNode<T>*>(parent->parent());
-                  }
-                  goal_paths.emplace_back(std::move(reversed_goal_path));
-                  continue;
+                  goal_nodes.push_back(node);
               } else if( need_to_expand_node(*node, features) ) {
                   // register node's features
                   for( typename Width::FeatureSet<T>::const_iterator it = features.begin(); it != features.end(); ++it ) {
@@ -478,6 +467,7 @@ namespace HOP {
               deallocate_graph(node->child(k));
           delete node->belief()->belief();
           delete node->belief();
+          delete node->hidden_state();
           delete node;
       }
       void deallocate_graph(const AndOr::AndNode<T> *node) const {
@@ -520,7 +510,7 @@ namespace HOP {
                   // is achieved in all successor beliefs
                   std::vector<std::set<int> > possible_observations;
                   compute_possible_observations(*result_after_action, action, possible_observations);
-#ifdef DEBUG 
+#ifdef DEBUG
                   std::cout << Utils::green() << "#possible-obs=" << possible_observations.size() << Utils::normal() << std::endl;
 #endif
 
@@ -809,7 +799,7 @@ namespace HOP {
 #endif
 
                   // For observable non-state variables, need to check sensing models. For observable
-                  // state variables, return the value of the variable. In the latter case, binary 
+                  // state variables, return the value of the variable. In the latter case, binary
                   // variables are handled seprately.
                   if( !variable.is_state_variable() ) {
 #ifdef DEBUG
@@ -1006,9 +996,16 @@ namespace HOP {
           std::cout << Utils::normal() << std::endl;
 #endif
 
-          // sample graph to score actions
+          // data structure: goal_paths: first action -> reversed action path -> count
           std::map<int, std::map<std::vector<int>, int> > goal_paths;
+
+          // data structure: sampled_state_trajectories: reversed action path -> state trajectory
+          std::map<std::vector<int>, std::vector<const T*> > sampled_state_trajectories;
+
+          // data structure: action scores: action -> score
           std::vector<float> action_scores(lw1_instance_.actions_.size(), std::numeric_limits<float>::max());
+
+          // sample graph to score actions
           for( size_t k = 0; k < num_sampled_scenarios_; ++k ) {
               reset_graph();
               //std::cout << Utils::bold() << "**** Running sampled scenario " << k << Utils::normal() << std::endl;
@@ -1025,36 +1022,71 @@ namespace HOP {
 #endif
 
               // construct AND/OR graph rooted at state
-              std::vector<std::vector<int> > goal_paths_in_graph;
+              std::vector<const AndOr::OrNode<T>*> goal_nodes_in_graph;
               AndOr::OrNode<T> *root = make_root(state, sampled_hidden);
               //std::cout << "root=" << *root << std::endl;
               //create_sampled_graph_breadth_first(root, goal_paths_in_graph, true); // CHECK: another sampled graph?
-              create_sampled_graph_breadth_first(root, goal_paths_in_graph);
+              create_sampled_graph_breadth_first(root, goal_nodes_in_graph);
               //std::cout << "num-expansions=" << num_expansions_ << ", #root-children=" << root->children().size() << ", #gp=" << goal_paths_in_graph.size() << std::endl;
 
               // store goal-paths found in sampled graph
-              for( size_t j = 0; j < goal_paths_in_graph.size(); ++j ) {
-                  const std::vector<int> &path = goal_paths_in_graph[j];
-                  if( goal_paths.find(path.back()) == goal_paths.end() ) {
+              for( size_t j = 0; j < goal_nodes_in_graph.size(); ++j ) {
+                  // extract action path to goal
+                  std::vector<int> reversed_action_path;
+                  const AndOr::OrNode<T> *node = goal_nodes_in_graph[j];
+                  while( node->parent() != 0 ) {
+                      const AndOr::AndNode<T> *parent = node->parent();
+                      int action = parent->action();
+                      assert((action >= 0) && (action < lw1_instance_.actions_.size()));
+                      reversed_action_path.push_back(action);
+                      node = parent->parent();
+                      assert(node != 0);
+                  }
+                  assert(node == root);
+
+                  // insert path into map: first action is last in reversed path
+                  int first_action = reversed_action_path.back();
+                  bool need_to_insert_state_trajectory = true;
+                  if( goal_paths.find(first_action) == goal_paths.end() ) {
                       std::map<std::vector<int>, int> path_map;
 #ifndef NO_EMPLACE
-                      path_map.emplace(path, 1);
-                      goal_paths.emplace(path.back(), std::move(path_map));
+                      path_map.emplace(reversed_action_path, 1);
+                      goal_paths.emplace(first_action, std::move(path_map));
 #else
-                      path_map.insert(std::make_pair(path, 1));
-                      goal_paths.insert(std::make_pair(path.back(), path_map));
+                      path_map.insert(std::make_pair(reversed_action_path, 1));
+                      goal_paths.insert(std::make_pair(first_action, path_map));
 #endif
                   } else {
-                      std::map<std::vector<int>, int> &path_map = goal_paths.at(path.back());
-                      if( path_map.find(path) == path_map.end() ) {
+                      std::map<std::vector<int>, int> &path_map = goal_paths.at(first_action);
+                      if( path_map.find(reversed_action_path) == path_map.end() ) {
 #ifndef NO_EMPLACE
-                          path_map.emplace(path, 1);
+                          path_map.emplace(reversed_action_path, 1);
 #else
-                          path_map.insert(std::make_pair(path, 1));
+                          path_map.insert(std::make_pair(reversed_action_path, 1));
 #endif
                       } else {
-                          ++path_map[path];
+                          ++path_map[reversed_action_path];
+                          need_to_insert_state_trajectory = false;
                       }
+                  }
+
+                  // if needed, calculate state trajectory and insert into map
+                  if( need_to_insert_state_trajectory ) {
+                      std::vector<const T*> state_trajectory(1 + reversed_action_path.size(), 0);
+                      const AndOr::OrNode<T> *node = goal_nodes_in_graph[j];
+                      for( int i = reversed_action_path.size(); node->parent() != 0; --i ) {
+                          assert(i > 0);
+                          state_trajectory[i] = new T(*node->hidden_state());
+                          node = node->parent()->parent();
+                          assert(node != 0);
+                      }
+                      assert(node == root);
+                      state_trajectory[0] = new T(*node->hidden_state());
+#ifndef NO_EMPLACE
+                      sampled_state_trajectories.emplace(reversed_action_path, std::move(state_trajectory));
+#else
+                      sampled_state_trajectories.insert(std::make_pair(reversed_action_path, state_trajectory));
+#endif
                   }
               }
 
@@ -1116,7 +1148,7 @@ namespace HOP {
               }
           }
 #endif
-       
+
           // select best action
           int best_action_index = best_actions[lrand48() % best_actions.size()];
 
@@ -1138,7 +1170,7 @@ namespace HOP {
 #endif
 
           // sample goal-path using best action
-          const std::vector<int> *sampled_path = 0;
+          const std::vector<int> *sampled_reversed_action_path = 0;
           if( goal_paths.find(best_action_index) != goal_paths.end() ) {
               const std::map<std::vector<int>, int> &path_map = goal_paths.at(best_action_index);
               int path_count = 0;
@@ -1147,36 +1179,55 @@ namespace HOP {
               int path_index = lrand48() % path_count;
               for( std::map<std::vector<int>, int>::const_iterator it = path_map.begin(); it != path_map.end(); ++it ) {
                   if( path_index < it->second ) {
-                      sampled_path = &it->first;
+                      sampled_reversed_action_path = &it->first;
                       break;
                   } else {
                       path_index -= it->second;
                   }
               }
-              assert(sampled_path != 0);
-              assert(sampled_path->back() == best_action_index);
+              assert(sampled_reversed_action_path != 0);
+              assert(sampled_reversed_action_path->back() == best_action_index);
 
 #if 1//def DEBUG
               // print sampled path
-              std::cout << Utils::bold() << "sampled-path(sz=" << sampled_path->size() << "):";
-              for( size_t k = sampled_path->size(); k > 0; --k )
-                  std::cout << " " << lw1_instance_.actions_[(*sampled_path)[k - 1]]->name();
+              std::cout << Utils::bold() << "sampled-path(sz=" << sampled_reversed_action_path->size() << "):";
+              for( size_t k = sampled_reversed_action_path->size(); k > 0; --k )
+                  std::cout << " " << lw1_instance_.actions_[(*sampled_reversed_action_path)[k - 1]]->name();
               std::cout << Utils::normal() << std::endl;
 #endif
           }
 
           // construct sampled path to be returned
-          if( sampled_path != 0 ) {
-              for( size_t k = sampled_path->size(); k > 0; --k ) {
-                  int action = (*sampled_path)[k - 1];
+          if( sampled_reversed_action_path != 0 ) {
+              for( size_t k = sampled_reversed_action_path->size(); k > 0; --k ) {
+                  int action = (*sampled_reversed_action_path)[k - 1];
                   raw_plan.push_back(action);
                   plan.push_back(action);
               }
               raw_plan.push_back(lw1_instance_.index_top_subgoaling_action());
               plan.push_back(lw1_instance_.index_top_subgoaling_action());
+
+              // construct sampled state trajectory
+              const std::vector<const T*> &state_trajectory = sampled_state_trajectories.at(*sampled_reversed_action_path);
+              sampled_state_trajectory = std::vector<const T*>(1 + state_trajectory.size(), 0);
+              for( size_t j = 0; j < state_trajectory.size(); ++j )
+                  sampled_state_trajectory[j] = new T(*state_trajectory[j]);
+
+              // insert final state resulting of top-subgoaling action
+              assert(state_trajectory.back()->applicable(*lw1_instance_.top_subgoaling_action()));
+              T *final_state = new T(*state_trajectory.back());
+              final_state->apply(*lw1_instance_.top_subgoaling_action());
+              sampled_state_trajectory[state_trajectory.size()] = final_state;
           } else {
               raw_plan.push_back(best_action_index);
               plan.push_back(best_action_index);
+          }
+
+          // free resources
+          for( typename std::map<std::vector<int>, std::vector<const T*> >::const_iterator it = sampled_state_trajectories.begin(); it != sampled_state_trajectories.end(); ++it ) {
+              const std::vector<const T*> &state_trajectory = it->second;
+              for( size_t j = 0; j < state_trajectory.size(); ++j )
+                  delete state_trajectory[j];
           }
 
           float end_time = Utils::read_time_in_seconds();
@@ -1193,11 +1244,12 @@ namespace HOP {
                                          const index_set &goal,
                                          std::vector<index_set> &assumptions) const {
           // apply actions in plan as long as they are applicable
-          if( sampled_state_trajectory.empty() ) {
-              std::cout << Utils::red() << "hola" << Utils::normal() << std::endl;
+          if( sampled_state_trajectory.empty() )
               assumptions.insert(assumptions.end(), plan.size(), index_set());
-          } else
+          else {
+              std::cout << Utils::red() << "hola.0" << Utils::normal() << std::endl;
               solver.calculate_relevant_assumptions(plan, sampled_state_trajectory, state, goal, assumptions);
+          }
       }
   };
 
