@@ -1759,7 +1759,7 @@ void PDDL_Base::lw1_create_drule_var_exclusive(const Variable &variable, const A
     dom_actions_.emplace_back(move(drule));
 #else
     dom_actions_.push_back(drule);
-#endif 
+#endif
     if( options_.is_enabled("lw1:print:drule:var") || options_.is_enabled("lw1:print:drule") )
         cout << Utils::yellow() << *dom_actions_.back() << Utils::normal();
 }

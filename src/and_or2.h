@@ -352,7 +352,7 @@ namespace AndOr {
              << ",ref=" << Node::ref_count_
              << ",parent=" << parent_
              << ",score=" << score_
-             << "]" 
+             << "]"
              << Utils::normal();
       }
       virtual void print_tree(std::ostream &os, int indent = 0) const {
