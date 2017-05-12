@@ -1,10 +1,10 @@
-$LW1 --as "hop(5)" --planner-path $FPATH benchmarks/lw1/clog/d2.pddl benchmarks/lw1/clog/p7/p.pddl benchmarks/lw1/clog/p7/broken-hidden/h10.pddl
-$LW1 --as "hop(5)" --planner-path $FPATH benchmarks/lw1/colorballs/d2.pddl benchmarks/lw1/colorballs/p04-2/p1.pddl benchmarks/lw1/colorballs/p04-2/broken-hidden/h0100.pddl
-$LW1 --as "hop(5)" --planner-path $FPATH benchmarks/lw1/doors/d.pddl benchmarks/lw1/doors/p15/p.pddl benchmarks/lw1/doors/p15/broken-hidden/h0233.pddl
-$LW1 --as "hop(5)" --planner-path $FPATH benchmarks/lw1/ebtcs/d2.pddl benchmarks/lw1/ebtcs/p50/p.pddl benchmarks/lw1/ebtcs/p50/broken-hidden/h20.pddl
-$LW1 --as "hop(5)" --planner-path $FPATH benchmarks/lw1/localize/d.pddl benchmarks/lw1/localize/p11/p.pddl benchmarks/lw1/localize/p11/broken-hidden/h18.pddl
-$LW1 --as "hop(5)" --planner-path $FPATH benchmarks/lw1/medpks/d.pddl benchmarks/lw1/medpks/p010/p.pddl benchmarks/lw1/medpks/p010/broken-hidden/h05.pddl
-$LW1 --as "hop(5)" --planner-path $FPATH benchmarks/lw1/rocksample/d2.pddl benchmarks/lw1/rocksample/p4-2/p2.pddl benchmarks/lw1/rocksample/p4-2/broken-hidden/h3.pddl
-$LW1 --as "hop(5)" --planner-path $FPATH benchmarks/lw1/unix/d.pddl benchmarks/lw1/unix/p3/p.pddl benchmarks/lw1/unix/p3/broken-hidden/h20.pddl
-$LW1 --as "hop(5)" --planner-path $FPATH benchmarks/lw1/wumpus/p10d/{d,p}.pddl benchmarks/lw1/wumpus/p10d/broken-hidden/h010.pddl
-$LW1 --as "hop(5)" --planner-path $FPATH benchmarks/lw1/wumpus/p05-1f/d2.pddl benchmarks/lw1/wumpus/p05-1f/p.pddl benchmarks/lw1/wumpus/p05-1f/broken-hidden/h010.pddl
+$LW1 --as "hop(num-samples=5)" --planner-path $FPATH benchmarks/lw1/clog/d2.pddl benchmarks/lw1/clog/p7/p.pddl benchmarks/lw1/clog/p7/broken-hidden/h10.pddl
+$LW1 --as "hop(num-samples=5)" --planner-path $FPATH benchmarks/lw1/colorballs/d2.pddl benchmarks/lw1/colorballs/p04-2/p1.pddl benchmarks/lw1/colorballs/p04-2/broken-hidden/h0100.pddl
+$LW1 --as "hop(num-samples=5)" --planner-path $FPATH benchmarks/lw1/doors/d.pddl benchmarks/lw1/doors/p15/p.pddl benchmarks/lw1/doors/p15/broken-hidden/h0233.pddl
+$LW1 --as "hop(num-samples=5)" --planner-path $FPATH benchmarks/lw1/ebtcs/d2.pddl benchmarks/lw1/ebtcs/p50/p.pddl benchmarks/lw1/ebtcs/p50/broken-hidden/h20.pddl
+$LW1 --as "hop(num-samples=5)" --planner-path $FPATH benchmarks/lw1/localize/d.pddl benchmarks/lw1/localize/p11/p.pddl benchmarks/lw1/localize/p11/broken-hidden/h18.pddl
+$LW1 --as "hop(num-samples=5)" --planner-path $FPATH benchmarks/lw1/medpks/d.pddl benchmarks/lw1/medpks/p010/p.pddl benchmarks/lw1/medpks/p010/broken-hidden/h05.pddl
+$LW1 --as "hop(num-samples=5)" --planner-path $FPATH benchmarks/lw1/rocksample/d2.pddl benchmarks/lw1/rocksample/p4-2/p2.pddl benchmarks/lw1/rocksample/p4-2/broken-hidden/h3.pddl
+$LW1 --as "hop(num-samples=5)" --planner-path $FPATH benchmarks/lw1/unix/d.pddl benchmarks/lw1/unix/p3/p.pddl benchmarks/lw1/unix/p3/broken-hidden/h20.pddl
+$LW1 --as "hop(num-samples=5)" --planner-path $FPATH benchmarks/lw1/wumpus/p10d/{d,p}.pddl benchmarks/lw1/wumpus/p10d/broken-hidden/h010.pddl
+$LW1 --as "hop(num-samples=5)" --planner-path $FPATH benchmarks/lw1/wumpus/p05-1f/d2.pddl benchmarks/lw1/wumpus/p05-1f/p.pddl benchmarks/lw1/wumpus/p05-1f/broken-hidden/h010.pddl
