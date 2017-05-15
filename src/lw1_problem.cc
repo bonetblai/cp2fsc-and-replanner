@@ -863,6 +863,12 @@ LW1_Instance::LW1_Instance(const Instance &ins,
 }
 
 LW1_Instance::~LW1_Instance() {
+#ifndef SMART
+    while( !variables_.empty() ) {
+        delete variables_.back();
+        variables_.pop_back();
+    }
+#endif
 }
 
 bool LW1_Instance::is_forbidden(int literal) const {
