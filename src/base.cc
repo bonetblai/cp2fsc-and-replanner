@@ -60,7 +60,9 @@ PDDL_Base::PDDL_Base(StringTable &parser_symbol_table, const Options::Mode &opti
     dom_top_type_(0),
     dom_eq_pred_(0),
     dom_goal_(0),
+#ifndef SMART
     normal_execution_(0),
+#endif
     clg_translation_(false),
     lw1_translation_(false),
     lw1_default_sensing_(0),
@@ -116,6 +118,8 @@ PDDL_Base::~PDDL_Base() {
         delete dom_predicates_[k];
     for( size_t k = 0; k < dom_types_.size(); ++k )
         delete dom_types_[k];
+
+    lw1_cleanup();
 }
 
 void PDDL_Base::set_variable_type(var_symbol_vec &vec, size_t n, TypeSymbol *t) {
@@ -516,7 +520,11 @@ PDDL_Base::Atom* PDDL_Base::create_atom(const string &name, const var_symbol_vec
 }
 
 void PDDL_Base::create_normal_execution_atom() {
+#ifdef SMART
+    normal_execution_ = unique_ptr<const Atom>(create_atom("normal-execution"));
+#else
     normal_execution_ = create_atom("normal-execution");
+#endif
 }
 
 void PDDL_Base::declare_clg_translation() {
@@ -1664,9 +1672,10 @@ void PDDL_Base::lw1_create_post_action(const unsigned_atom_set &atoms) {
             effect.push_back(AtomicEffect(enabler).negate());
         }
         post_action->effect_ = effect.copy_and_simplify();
-        delete effect[1];
-        delete effect[0];
-        effect.clear();
+        while( !effect.empty() ) {
+            delete effect.back();
+            effect.pop_back();
+        }
 
         // insert action
 #ifdef SMART
@@ -1809,7 +1818,7 @@ void PDDL_Base::lw1_index_sensing_models() {
                         continue;
                     }
                 }
-                lw1_xxx_[make_pair(variable, literal)][dnf->to_string()].insert(&action);
+                lw1_xxx_[make_pair(variable, literal)][dnf->to_string()].insert(&action); // CHECK: it can be delete?
             } else {
                 assert(dynamic_cast<const SensingModelForStateVariable*>(sensing[k]) != 0 );
                 const SensingModelForStateVariable &model = *static_cast<const SensingModelForStateVariable*>(sensing[k]);
@@ -3210,6 +3219,46 @@ const PDDL_Base::Atom* PDDL_Base::lw1_fetch_enabler_for_sensing(const Atom &atom
     } else {
         return it->second;
     }
+}
+
+void PDDL_Base::lw1_cleanup() {
+#ifndef SMART
+    delete normal_execution_;
+    normal_execution_ = 0;
+#endif
+
+    for( map<signed_atom_set, const Atom*>::const_iterator it = atoms_for_terms_for_type3_sensing_drules_.begin(); it != atoms_for_terms_for_type3_sensing_drules_.end(); ++it )
+        delete it->second;
+    atoms_for_terms_for_type3_sensing_drules_.clear();
+
+    for( map<string, const Atom*>::const_iterator it = sensing_atoms_.begin(); it != sensing_atoms_.end(); ++it )
+        delete it->second;
+    sensing_atoms_.clear();
+
+    for( map<unsigned_atom_set, const Atom*>::const_iterator it = need_post_atoms_.begin(); it != need_post_atoms_.end(); ++it )
+        delete it->second;
+    need_post_atoms_.clear();
+
+    for( list<pair<const Action*, const Sensing*> >::const_iterator it = lw1_sensing_models_.begin(); it != lw1_sensing_models_.end(); ++it ) {
+        const Sensing *sensing = it->second;
+        for( size_t k = 0; k < sensing->size(); ++k ) {
+            const SensingModel *model = (*sensing)[k];
+            delete model;
+        }
+        delete sensing;
+    }
+    lw1_sensing_models_.clear();
+
+    for( map<const Action*, map<const ObsVariable*, map<Atom, list<const And*> > > >::const_iterator it = lw1_sensing_models_index_.begin(); it != lw1_sensing_models_index_.end(); ++it ) {
+        for( map<const ObsVariable*, map<Atom, list<const And*> > >::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt ) {
+            for( map<Atom, list<const And*> >::const_iterator kt = jt->second.begin(); kt != jt->second.end(); ++kt ) {
+                for( list<const And*>::const_iterator lt = kt->second.begin(); lt != kt->second.end(); ++lt ) {
+                    delete *lt;
+                }
+            }
+        }
+    }
+    lw1_sensing_models_index_.clear();
 }
 
 void PDDL_Base::do_translation() {
@@ -5362,6 +5411,31 @@ bool PDDL_Base::InitUnknown::is_strongly_static(const PredicateSymbol &p) const 
 void PDDL_Base::InitUnknown::extract_atoms(unsigned_atom_set &atoms) const {
     cout << Utils::internal_error() << "call to PDDL_Base::InitUnknown::extract_atoms()" << endl;
     exit(255);
+}
+
+PDDL_Base::Action::Action(const string &name)
+  : Symbol(name, sym_action),
+    precondition_(0),
+    effect_(0),
+    observe_(0),
+    sensing_(0),
+    sensing_proxy_(0) {
+}
+
+PDDL_Base::Action::~Action() {
+    delete precondition_;
+    delete effect_;
+    delete observe_;
+    if( sensing_ != 0 ) {
+        for( size_t k = 0; k < sensing_->size(); ++k )
+            delete (*sensing_)[k];
+        delete sensing_;
+    }
+    if( sensing_proxy_ != 0 ) {
+        for( size_t k = 0; k < sensing_proxy_->size(); ++k )
+            delete (*sensing_proxy_)[k];
+        delete sensing_proxy_;
+    }
 }
 
 bool PDDL_Base::Action::is_special_action() const {

@@ -747,6 +747,16 @@ int main(int argc, const char *argv[]) {
              << current_time - start_time << " (total-acc-time)" << flush
              << endl << endl;
     }
+
+#ifndef SMART
+    // clean up
+    delete reader;
+    delete lw1_instance;
+    delete planner;
+    delete inference_engine;
+    delete action_selection;
+#endif
+
     return 0;
 }
 

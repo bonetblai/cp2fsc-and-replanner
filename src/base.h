@@ -472,7 +472,7 @@ class PDDL_Base {
     struct ForallSensing : public SensingProxy, Schema {
         sensing_proxy_vec sensing_;
         ForallSensing() { }
-        virtual ~ForallSensing() { }
+        virtual ~ForallSensing() { for( size_t k = 0; k < sensing_.size(); ++k ) delete sensing_[k]; }
         virtual bool is_strongly_static(const PredicateSymbol &p) const;
         virtual Sensing* ground(bool clone_variables = false, bool replace_static_values = true) const;
         virtual std::string to_string() const;
@@ -655,10 +655,8 @@ class PDDL_Base {
         const Sensing *sensing_;
         const sensing_proxy_vec *sensing_proxy_;
         std::string comment_;
-        Action(const std::string &name)
-          : Symbol(name, sym_action), precondition_(0), effect_(0), observe_(0),
-            sensing_(0), sensing_proxy_(0) { }
-        virtual ~Action() { delete precondition_; delete effect_; delete observe_; delete sensing_; }
+        Action(const std::string &name);
+        virtual ~Action();
         bool is_special_action() const;
 #ifdef SMART
         void instantiate(owned_action_list &alist) const;
@@ -973,7 +971,11 @@ class PDDL_Base {
     std::set<std::string>                     original_actions_;
 
     // For CLG and lw1 translations
+#ifdef SMART
+    std::unique_ptr<const Atom>               normal_execution_;
+#else
     const Atom                                *normal_execution_;
+#endif
 
     // For CLG-type syntax and translations
     bool                                      clg_translation_;
@@ -1160,6 +1162,9 @@ class PDDL_Base {
     // methods to perform action compilation (this action compilation is outside preprocessing)
     void lw1_do_action_compilation();
     void lw1_do_action_compilation(Action &action);
+
+    // cleanup lw1 translation (called by dtor)
+    void lw1_cleanup();
 };
 
 inline std::ostream& operator<<(std::ostream &os, const PDDL_Base::Symbol &sym) {
