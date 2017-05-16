@@ -18,6 +18,7 @@
 
 #include <cassert>
 #include <list>
+#include <map>
 #include "cp_problem.h"
 #include "state.h"
 #include "utils.h"
@@ -280,7 +281,7 @@ bool CP_Instance::consistent_with_obs(int obs_idx, const index_set &condition) c
     return false;
 }
 
-void CP_Instance::remove_atoms(const bool_vec &set, index_vec &map) {
+void CP_Instance::remove_atoms(const bool_vec &set, index_vec &atom_map) {
     index_vec rm_map(atoms_.size());
 
     // mark atoms to remove and re-index
@@ -325,7 +326,7 @@ void CP_Instance::remove_atoms(const bool_vec &set, index_vec &map) {
     reachable_space_from_initial_state_ = remaped_reachable_space_from_initial_state;
 
     // calls Instance::remove_atoms() to finish the job!
-    Instance::remove_atoms(set, map);
+    Instance::remove_atoms(set, atom_map);
 
     // re-calculate reachable observations
     reachable_obs_.clear();

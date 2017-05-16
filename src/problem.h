@@ -333,7 +333,7 @@ class Instance {
 
     // NOTE: remove_atoms must be virtual because CP_Instance needs to
     // remap atoms in the initial states, rechable space, etc.
-    virtual void remove_atoms(const bool_vec &set, index_vec &map);
+    virtual void remove_atoms(const bool_vec &set, index_vec &atom_map);
 
     // The following atoms should not be removed or simplified.
     index_set protected_atoms_;

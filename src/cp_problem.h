@@ -51,7 +51,7 @@ class CP_Instance : public Instance {
     int n_obs() const { return reachable_obs_.size(); }
 
     // Remaps atoms in the initial states and then calls Instance::remove_atoms()
-    virtual void remove_atoms(const bool_vec &set, index_vec &map);
+    virtual void remove_atoms(const bool_vec &set, index_vec &atom_map);
 
     // write initial states to pddl problem file
     virtual void write_problem_additional(std::ostream &os, const State *state, int indent = 4) const;

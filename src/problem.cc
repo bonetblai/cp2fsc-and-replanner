@@ -465,7 +465,7 @@ void Instance::remove_actions(const bool_vec &set, index_vec &map) {
     }
 }
 
-void Instance::remove_atoms(const bool_vec &set, index_vec &map) {
+void Instance::remove_atoms(const bool_vec &set, index_vec &atom_map) {
     index_vec rm_map(atoms_.size());
 
     // avoid removing protected atoms
@@ -568,10 +568,10 @@ void Instance::remove_atoms(const bool_vec &set, index_vec &map) {
     non_primitive_fluents_.remap(rm_map);
     observable_fluents_.remap(rm_map);
 
-    // update map
-    for( size_t k = 0; k < map.size(); ++k ) {
-        if( map[k] != no_such_index )
-            map[k] = rm_map[map[k]];
+    // update atom_map
+    for( size_t k = 0; k < atom_map.size(); ++k ) {
+        if( atom_map[k] != no_such_index )
+            atom_map[k] = rm_map[atom_map[k]];
     }
 }
 
