@@ -127,11 +127,6 @@ class KP_Instance : public Instance {
                                         const State &initial_state,
                                         const index_set &goal,
                                         std::vector<index_set> &assumptions) const;
-    bool calculate_relevant_assumptions(const Plan &plan,
-                                        const std::vector<const State*> &sampled_state_trajectory,
-                                        const State &initial_state,
-                                        const index_set &goal,
-                                        std::vector<index_set> &assumptions) const;
     bool plan_backchain(const Plan &plan,
                         const std::vector<const State*> &state_trajectory,
                         const index_set &goal,

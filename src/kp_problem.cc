@@ -325,6 +325,7 @@ bool KP_Instance::calculate_relevant_assumptions(const Plan &plan,
     return true;
 }
 
+#if 0
 bool KP_Instance::calculate_relevant_assumptions(const Plan &plan,
                                                  const vector<const State*> &sampled_state_trajectory,
                                                  const State &initial_state,
@@ -354,6 +355,7 @@ bool KP_Instance::calculate_relevant_assumptions(const Plan &plan,
     assumptions.insert(assumptions.end(), condition_vec.rbegin(), condition_vec.rend());
     return true;
 }
+#endif
 
 bool KP_Instance::plan_backchain(const Plan &plan,
                                  const vector<const State*> &state_trajectory,
