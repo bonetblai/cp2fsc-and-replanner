@@ -77,7 +77,7 @@ void LW1_Instance::Variable::print(ostream &os, const LW1_Instance *lw1_instance
 LW1_Instance::LW1_Instance(const Instance &ins,
                            const PDDL_Base::owned_variable_vec &variables,
                            const PDDL_Base::owned_variable_group_vec &variable_groups,
-                           const list<pair<const PDDL_Base::Action*, const PDDL_Base::Sensing*> > &sensing_models,
+                           const list<pair<const PDDL_Base::Action*, unique_ptr<const PDDL_Base::Sensing> > > &sensing_models,
                            const map<string, set<string> > &accepted_literals_for_observables)
 #else
 LW1_Instance::LW1_Instance(const Instance &ins,
@@ -288,16 +288,20 @@ LW1_Instance::LW1_Instance(const Instance &ins,
         }
     }
 
-    // extract sensing models into dnf and (complemented and into K-rules) cnf
+    // extract sensing models into dnf and (complemented and into K-rules) cnf (use auto for easily dealing with smart/non-smart pointers)
 #ifdef DEBUG
     cout << "extracting sensing models:" << endl;
 #endif
-    for( list<pair<const PDDL_Base::Action*, const PDDL_Base::Sensing*> >::const_iterator it = sensing_models.begin(); it != sensing_models.end(); ++it ) {
+    for( auto it = sensing_models.cbegin(); it != sensing_models.cend(); ++it ) {
         const PDDL_Base::Action &action = *it->first;
-        const PDDL_Base::Sensing &sensing = *it->second;
-        for( size_t k = 0; k < sensing.size(); ++k ) {
-            if( dynamic_cast<const PDDL_Base::SensingModelForObservableVariable*>(sensing[k]) != 0 ) {
-                const PDDL_Base::SensingModelForObservableVariable &model = *static_cast<const PDDL_Base::SensingModelForObservableVariable*>(sensing[k]);
+#ifdef SMART
+        const unique_ptr<const PDDL_Base::Sensing> &sensing = it->second;
+#else
+        const PDDL_Base::Sensing *sensing = it->second;
+#endif
+        for( size_t k = 0; k < sensing->size(); ++k ) {
+            if( dynamic_cast<const PDDL_Base::SensingModelForObservableVariable*>((*sensing)[k]) != 0 ) {
+                const PDDL_Base::SensingModelForObservableVariable &model = *static_cast<const PDDL_Base::SensingModelForObservableVariable*>((*sensing)[k]);
                 assert(model.variable_ != 0);
                 string var_name = model.variable_->to_string(false, true);
                 int var_index = varmap_.at(var_name);
@@ -593,8 +597,8 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                          << "' isn't dnf!" << endl;
                     continue;
                 }
-            } else if( dynamic_cast<const PDDL_Base::SensingModelForStateVariable*>(sensing[k]) != 0 ) {
-                const PDDL_Base::SensingModelForStateVariable &model = *static_cast<const PDDL_Base::SensingModelForStateVariable*>(sensing[k]);
+            } else if( dynamic_cast<const PDDL_Base::SensingModelForStateVariable*>((*sensing)[k]) != 0 ) {
+                const PDDL_Base::SensingModelForStateVariable &model = *static_cast<const PDDL_Base::SensingModelForStateVariable*>((*sensing)[k]);
                 assert(model.variable_ != 0);
                 string var_name = model.variable_->to_string(false, true);
                 vars_sensed_by_action_[action.print_name_].insert(varmap_.at(var_name));

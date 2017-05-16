@@ -418,11 +418,12 @@ int main(int argc, const char *argv[]) {
 #ifdef SMART
     const PDDL_Base::owned_variable_vec *variables = 0;
     const PDDL_Base::owned_variable_group_vec *variable_groups = 0;
+    const list<pair<const PDDL_Base::Action*, unique_ptr<const PDDL_Base::Sensing> > > *sensing_models = 0;
 #else
     const PDDL_Base::variable_vec *variables = 0;
     const PDDL_Base::variable_group_vec *variable_groups = 0;
-#endif
     const list<pair<const PDDL_Base::Action*, const PDDL_Base::Sensing*> > *sensing_models = 0;
+#endif
     const map<string, set<string> > *accepted_literals_for_observables = 0;
     reader->do_lw1_translation(variables, variable_groups, sensing_models, accepted_literals_for_observables);
     assert(variables != 0);

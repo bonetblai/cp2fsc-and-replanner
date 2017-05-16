@@ -110,7 +110,7 @@ class LW1_Instance : public KP_Instance {
     LW1_Instance(const Instance &instance,
                  const PDDL_Base::owned_variable_vec &variables,
                  const PDDL_Base::owned_variable_group_vec &variable_groups,
-                 const std::list<std::pair<const PDDL_Base::Action*, const PDDL_Base::Sensing*> > &sensing_models,
+                 const std::list<std::pair<const PDDL_Base::Action*, std::unique_ptr<const PDDL_Base::Sensing> > > &sensing_models,
                  const std::map<std::string, std::set<std::string> > &accepted_literals_for_observables);
 #else
     LW1_Instance(const Instance &instance,

@@ -997,9 +997,15 @@ class PDDL_Base {
     std::set<std::string>                     simple_sensors_for_variables_;
     std::map<unsigned_atom_set,const Action*> post_actions_for_lw1_translation_;
     std::map<std::string, const Atom*>        need_set_sensing_atoms_;
+#ifdef SMART
+    std::map<unsigned_atom_set, std::unique_ptr<const Atom> >  need_post_atoms_;
+    std::map<std::string, std::unique_ptr<const Atom> >        sensing_atoms_;
+    std::map<signed_atom_set, std::unique_ptr<const Atom> >    atoms_for_terms_for_type3_sensing_drules_;
+#else
     std::map<unsigned_atom_set, const Atom*>  need_post_atoms_;
     std::map<std::string, const Atom*>        sensing_atoms_;
     std::map<signed_atom_set, const Atom*>    atoms_for_terms_for_type3_sensing_drules_;
+#endif
     std::map<std::string, const Atom*>        lw1_sensing_enabler_atoms_;
     std::map<std::pair<const Action*, std::pair<const ObsVariable*, Atom> >, const Atom*> lw1_sensing_enablers_;
     std::map<std::string, std::set<std::string> > lw1_enablers_for_actions_;
@@ -1018,9 +1024,14 @@ class PDDL_Base {
 #endif
     std::map<std::string, const VariableGroup*> lw1_ad_hoc_groups_;
 
-    std::map<const Action*, std::map<const ObsVariable*, std::map<Atom, std::list<const And*> > > > lw1_sensing_models_index_;
     std::map<const StateVariable*, std::vector<const Action*> > lw1_actions_for_observable_state_variables_;
+#ifdef SMART
+    std::map<const Action*, std::map<const ObsVariable*, std::map<Atom, std::list<std::unique_ptr<const And> > > > > lw1_sensing_models_index_;
+    std::list<std::pair<const Action*, std::unique_ptr<const Sensing> > > lw1_sensing_models_;
+#else
+    std::map<const Action*, std::map<const ObsVariable*, std::map<Atom, std::list<const And*> > > > lw1_sensing_models_index_;
     std::list<std::pair<const Action*, const Sensing*> > lw1_sensing_models_;
+#endif
     std::map<std::pair<const ObsVariable*, Atom>, std::map<std::string, std::set<const Action*> > > lw1_xxx_;
 
     PDDL_Base(StringTable &parser_symbol_table, const Options::Mode &options);
@@ -1043,7 +1054,7 @@ class PDDL_Base {
 #ifdef SMART
     void do_lw1_translation(const owned_variable_vec* &variables,
                             const owned_variable_group_vec* &variable_groups,
-                            const std::list<std::pair<const Action*, const Sensing*> >* &sensing_models,
+                            const std::list<std::pair<const Action*, std::unique_ptr<const Sensing> > >* &sensing_models,
                             const std::map<std::string, std::set<std::string> >* &accepted_literals_for_observables);
 #else
     void do_lw1_translation(const variable_vec* &variables,
@@ -1105,16 +1116,35 @@ class PDDL_Base {
     void lw1_create_type2_sensing_drule(const Atom &obs, const And &term, int index);
 
     // methods to create type3 deductive rules (for lw1)
+#ifdef SMART
+    void lw1_create_type3_sensing_drule(const Action &action,
+                                        const ObsVariable &variable,
+                                        const Atom &value,
+                                        const And &term,
+                                        const std::list<std::unique_ptr<const And> > &dnf,
+                                        int index);
+#else
     void lw1_create_type3_sensing_drule(const Action &action,
                                         const ObsVariable &variable,
                                         const Atom &value,
                                         const And &term,
                                         const std::list<const And*> &dnf,
                                         int index);
+#endif
     const Atom& lw1_fetch_atom_for_negated_term(const And &term);
 
     // methods to create type4 deductive rules (for lw1)
     void lw1_create_type4_sensing_drule(const Action *action, const StateVariable &variable, const Atom &value);
+#ifdef SMART
+    void lw1_create_type4_sensing_drule(const Action &action,
+                                        const ObsVariable &variable,
+                                        const Atom &value,
+                                        const std::map<Atom, std::list<std::unique_ptr<const And> > > &sensing_models_for_action_and_var);
+    void lw1_create_type4_boost_sensing_drule(const Action &action,
+                                              const ObsVariable &variable,
+                                              const Atom &value,
+                                              const std::map<Atom, std::list<std::unique_ptr<const And> > > &sensing_models_for_action_and_var);
+#else
     void lw1_create_type4_sensing_drule(const Action &action,
                                         const ObsVariable &variable,
                                         const Atom &value,
@@ -1123,6 +1153,7 @@ class PDDL_Base {
                                               const ObsVariable &variable,
                                               const Atom &value,
                                               const std::map<Atom, std::list<const And*> > &sensing_models_for_action_and_var);
+#endif
     void lw1_create_type5_sensing_drule(const ObsVariable &variable);
     const Atom& lw1_fetch_sensing_enabler(const std::string &action, const std::string &variable, const std::string &value);
     const Atom& lw1_fetch_sensing_enabler(const Action &action, const ObsVariable &variable, const Atom &value);
