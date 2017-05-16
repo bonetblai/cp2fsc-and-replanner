@@ -1246,10 +1246,8 @@ namespace HOP {
           // apply actions in plan as long as they are applicable
           if( sampled_state_trajectory.empty() )
               assumptions.insert(assumptions.end(), plan.size(), index_set());
-          else {
-              std::cout << Utils::red() << "hola.0" << Utils::normal() << std::endl;
+          else
               solver.calculate_relevant_assumptions(plan, sampled_state_trajectory, state, goal, assumptions);
-          }
       }
   };
 

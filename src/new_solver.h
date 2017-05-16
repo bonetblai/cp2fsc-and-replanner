@@ -366,8 +366,12 @@ void NewSolver<T>::calculate_relevant_assumptions(const Instance::Plan &plan,
                                                   const T &initial_state,
                                                   const index_set &goal,
                                                   std::vector<index_set> &assumptions) const {
-    std::cout << Utils::red() << "hola.1: " << sampled_state_trajectory.size() << " " << plan.size() << Utils::normal() << std::endl;
-    assert(sampled_state_trajectory.size() == 1 + plan.size());
+    // calculate assumptions for plan
+    bool status = false;//kp_instance_.calculate_relevant_assumptions(plan, sampled_state_trajectory, initial_state, goal, assumptions);
+    if( !status ) {
+        std::cout << Utils::error() << "assumptions on plan could not be calculated" << std::endl;
+        return;
+    }
 }
 
 template<typename T>

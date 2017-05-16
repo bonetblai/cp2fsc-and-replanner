@@ -123,10 +123,21 @@ class KP_Instance : public Instance {
 #endif
     virtual void print_stats(std::ostream &os) const = 0;
 
-    virtual bool calculate_relevant_assumptions(const Plan &plan,
-                                                const State &initial_state,
-                                                const index_set &goal,
-                                                std::vector<index_set> &assumptions) const;
+    bool calculate_relevant_assumptions(const Plan &plan,
+                                        const State &initial_state,
+                                        const index_set &goal,
+                                        std::vector<index_set> &assumptions) const;
+    bool calculate_relevant_assumptions(const Plan &plan,
+                                        const std::vector<const State*> &sampled_state_trajectory,
+                                        const State &initial_state,
+                                        const index_set &goal,
+                                        std::vector<index_set> &assumptions) const;
+    bool plan_backchain(const Plan &plan,
+                        const std::vector<const State*> &state_trajectory,
+                        const index_set &goal,
+                        std::vector<index_set> &condition_vec,
+                        index_set &open) const;
+
 #if 0
     bool apply_plan(const Plan &plan,
                     const State &initial_state,
