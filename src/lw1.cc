@@ -47,7 +47,7 @@ Options::Mode g_options;
 struct ASMethod {
     string as_name_;
     string solver_option_str_;
-    std::map<string, string> options_;
+    map<string, string> options_;
 };
 
 void parse_as_string(const string as_string, ASMethod &as_method) {
@@ -509,7 +509,7 @@ int main(int argc, const char *argv[]) {
         } else if( as_planner == "lama-server" ) {
             planner = make_unique<const LAMA_Server_Planner>(*lw1_instance, opt_tmpfile_path.c_str(), planner_path.c_str());
         } else {
-            std::cout << Utils::error() << "unrecognized planner '" << as_planner << "'." << std::endl;
+            cout << Utils::error() << "unrecognized planner '" << as_planner << "'." << endl;
             exit(-1);
         }
     }
@@ -535,7 +535,7 @@ int main(int argc, const char *argv[]) {
         } else if( as_planner == "lama-server" ) {
             planner = new LAMA_Server_Planner(*lw1_instance, opt_tmpfile_path.c_str(), planner_path.c_str());
         } else {
-            std::cout << Utils::error() << "unrecognized planner '" << as_planner << "'." << std::endl;
+            cout << Utils::error() << "unrecognized planner '" << as_planner << "'." << endl;
             exit(-1);
         }
     }

@@ -297,7 +297,7 @@ void CP_Instance::remove_atoms(const bool_vec &set, index_vec &map) {
     // remap atoms in initial states
     StateSet remaped_initial_states;
     StateSet remaped_reachable_space;
-    std::map<const State*, const StateSet*> remaped_reachable_space_from_initial_state;
+    map<const State*, const StateSet*> remaped_reachable_space_from_initial_state;
     for( StateSet::const_iterator it = initial_states_.begin(); it != initial_states_.end(); ++it ) {
         State *state = new State;
         (*it)->remap(*state, rm_map);
@@ -307,7 +307,7 @@ void CP_Instance::remove_atoms(const bool_vec &set, index_vec &map) {
 
         // remap atoms in reachable space from initial state
         StateSet *space = new StateSet;
-        std::map<const State*, const StateSet*>::const_iterator jt = reachable_space_from_initial_state_.find(*it);
+        map<const State*, const StateSet*>::const_iterator jt = reachable_space_from_initial_state_.find(*it);
         assert(jt != reachable_space_from_initial_state_.end());
         for( StateSet::const_iterator kt = jt->second->begin(); kt != jt->second->end(); ++kt ) {
             State *st = new State;
@@ -345,8 +345,8 @@ void CP_Instance::remove_atoms(const bool_vec &set, index_vec &map) {
 
     /*
     cout << "# reachable obs = " << reachable_obs_.size() << endl;
-    for( std::map<index_set, int>::const_iterator it = reachable_obs_.begin(); it != reachable_obs_.end(); ++it ) {
-        for( std::map<index_set, int>::const_iterator jt = it; jt != reachable_obs_.end(); ++jt ) {
+    for( map<index_set, int>::const_iterator it = reachable_obs_.begin(); it != reachable_obs_.end(); ++it ) {
+        for( map<index_set, int>::const_iterator jt = it; jt != reachable_obs_.end(); ++jt ) {
             if( (it != jt) && (it->first.contains(jt->first) || jt->first.contains(it->first)) ) {
                 cout << Utils::warning() << "obs ";
                 write_atom_set(cout, it->first);

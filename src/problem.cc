@@ -65,7 +65,7 @@ Instance::~Instance() {
 #endif
 }
 
-Instance::Atom& Instance::new_atom(const std::string &name) {
+Instance::Atom& Instance::new_atom(const string &name) {
 #ifdef SMART
     unique_ptr<Atom> a = make_unique<Atom>(name, atoms_.size());
     atoms_.emplace_back(move(a));
@@ -82,7 +82,7 @@ Instance::Atom& Instance::new_atom(const std::string &name) {
 #endif
 }
 
-Instance::Action& Instance::new_action(const std::string &name) {
+Instance::Action& Instance::new_action(const string &name) {
 #ifdef SMART
     unique_ptr<Action> a = make_unique<Action>(name, actions_.size());
     actions_.emplace_back(move(a));
@@ -99,7 +99,7 @@ Instance::Action& Instance::new_action(const std::string &name) {
 #endif
 }
 
-Instance::Sensor& Instance::new_sensor(const std::string &name) {
+Instance::Sensor& Instance::new_sensor(const string &name) {
 #ifdef SMART
     unique_ptr<Sensor> r = make_unique<Sensor>(name, sensors_.size());
     sensors_.emplace_back(move(r));
@@ -116,7 +116,7 @@ Instance::Sensor& Instance::new_sensor(const std::string &name) {
 #endif
 }
 
-Instance::Axiom& Instance::new_axiom(const std::string &name) {
+Instance::Axiom& Instance::new_axiom(const string &name) {
 #ifdef SMART
     unique_ptr<Axiom> r = make_unique<Axiom>(name, axioms_.size());
     axioms_.emplace_back(move(r));
@@ -1142,7 +1142,7 @@ void Instance::generate_initial_states(StateSet &initial_states, bool verbose) c
     set_initial_state(t);
 
     int i = 0, j = 0;
-    std::vector<int> stack, restore;
+    vector<int> stack, restore;
     while( true ) {
         assert(stack.size() == restore.size());
         if( i == (int)init_.oneofs().size() ) {

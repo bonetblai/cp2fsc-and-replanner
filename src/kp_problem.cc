@@ -42,7 +42,7 @@ KP_Instance::KP_Instance(const Options::Mode &options)
     inference_time_(0)  {
 }
 
-KP_Instance::KP_Instance(const std::string &domain_name, const std::string &problem_name, const Options::Mode &options)
+KP_Instance::KP_Instance(const string &domain_name, const string &problem_name, const Options::Mode &options)
   : Instance(domain_name, problem_name, options),
     new_goal_(0),
     inference_time_(0)  {
@@ -339,7 +339,7 @@ bool KP_Instance::calculate_relevant_assumptions(const Plan &plan,
                     if( when.condition().size() > 1 ) {
                         cout << Utils::warning()
                              << "conditional effect with more than one literal in condition removes open condition ";
-                        State::print_literal(std::cout, *it, this);
+                        State::print_literal(cout, *it, this);
                         cout << "." << endl
                              << "Regression may be too strong. Consider removing conditional effect by enlarging precondition."
                              << endl;

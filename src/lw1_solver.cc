@@ -138,7 +138,7 @@ void LW1_Solver::apply_inference(const Instance::Action *last_action,
                                  STATE_CLASS &state) const {
     bool status = inference_engine_.apply_inference(last_action, sensed_at_step, state);
     if( !status ) {
-        std::cout << Utils::internal_error() << "inconsistency reached during apply_inference() at state (lw1_solver.cc)" << std::endl;
+        cout << Utils::internal_error() << "inconsistency reached during apply_inference() at state (lw1_solver.cc)" << endl;
         exit(-1);
     }
 }

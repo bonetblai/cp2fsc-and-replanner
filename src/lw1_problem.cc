@@ -799,7 +799,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
         // add K-tautological clauses Kp => -K-P and define set of
         // literals that forbid clauses to enter the augmented state
         if( options_.is_enabled("lw1:inference:up:enhanced") ) {
-            std::cout << Utils::internal_error() << "lw1:inference:up:enhanced is EXPERIMENTAL!" << std::endl;
+            cout << Utils::internal_error() << "lw1:inference:up:enhanced is EXPERIMENTAL!" << endl;
             exit(-1);
 
             // Need to correctly identify literals/clauses that can be added to state after
