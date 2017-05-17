@@ -254,7 +254,7 @@ void Solver::calculate_relevant_assumptions(const Instance::Plan &plan,
                                             vector<index_set> &assumptions) const {
     // calculate assumptions for raw plan
     vector<index_set> assumptions_on_raw_plan;
-    bool status = kp_instance_.calculate_relevant_assumptions(raw_plan, initial_state, goal, assumptions_on_raw_plan);
+    bool status = kp_instance_.calculate_assumptions(raw_plan, initial_state, goal, assumptions_on_raw_plan);
     if( !status ) {
         cout << Utils::error() << "assumptions on raw plan could not be calculated" << endl;
         return;

@@ -116,29 +116,20 @@ class KP_Instance : public Instance {
     virtual bool is_obs_rule(size_t a) const = 0;
     virtual bool is_static_rule(size_t a) const = 0;
     virtual bool is_subgoaling_rule(size_t a) const = 0;
-#if 0
-    virtual bool is_goal_action(size_t a) const {
-        return a == index_for_goal_action_;
-    }
-#endif
     virtual void print_stats(std::ostream &os) const = 0;
 
-    bool calculate_relevant_assumptions(const Plan &plan,
-                                        const State &initial_state,
-                                        const index_set &goal,
-                                        std::vector<index_set> &assumptions) const;
+    // These two methods for calculating assumptions will be
+    // removed in the future once the deprecated solver.cc
+    // is fully replaced by new_solver.cc
+    bool calculate_assumptions(const Plan &plan,
+                               const State &initial_state,
+                               const index_set &goal,
+                               std::vector<index_set> &assumptions) const;
     bool plan_backchain(const Plan &plan,
                         const std::vector<const State*> &state_trajectory,
                         const index_set &goal,
                         std::vector<index_set> &condition_vec,
                         index_set &open) const;
-
-#if 0
-    bool apply_plan(const Plan &plan,
-                    const State &initial_state,
-                    State &final_state,
-                    std::vector<State> &support_vec) const;
-#endif
 
     virtual void write_problem(std::ostream &os, const State *state = 0, int indent = 4) const;
 };
@@ -197,12 +188,6 @@ class Standard_KP_Instance : public KP_Instance {
         size_t upper = lower + n_subgoaling_actions_;
         return (a >= lower) && (a < upper);
     }
-
-#if 0
-    virtual bool is_obs_rule(const std::string &name) const {
-        return obs_rules_by_name_.find(name) != obs_rules_by_name_.end();
-    }
-#endif
 
     virtual void print_stats(std::ostream &os) const;
 };

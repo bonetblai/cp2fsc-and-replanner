@@ -247,23 +247,20 @@ void KP_Instance::disable_subgoaling_actions(State &state, const index_vec &enab
 }
 
 // Calculate the assumptions made along a plan from initial to goal state.
-// Basically, for a given plan pi=(a0, a1, ..., an), let's define:
-//
-//     R(pi, -1) = s0
-//      R(pi, k) = progress(s0, pi[0:k])
-//      A(pi, k) = regress(pi[k], R(pi, k-1), R(pi, k))
-//
-// where s0 is initial state, progress(s, pi) is the state that results of
-// applying the (applicable) plan pi on state s, and regress(a, s, s') is the
-// minimum set of assumptions needed for the action a, which is applicable
-// at state s, to produce state s'.
-//
-// CHECK IMPLEMENTATION BELOW (calculation of assumptions)
+// Basically, for a given plan pi=(a0, a1, ..., an), a state trajectory
+// that results of progressing the plan is calculate. The trajectory
+// is then passed to plan_backchain() that calculates the assumptions
+// along each step in the trajectory that are needed for the plan to
+// reach the goal. The methods in this class are for the DEPRECATED
+// solver.cc. The new solver, new_solver.cc, implements these methods
+// in a more general, templatized, fashion. Once solver.cc is removed,
+// calculate_relevant_assumptions() and plan_backchaining() in this
+// class would be removed as well.
 
-bool KP_Instance::calculate_relevant_assumptions(const Plan &plan,
-                                                 const State &initial_state,
-                                                 const index_set &goal,
-                                                 vector<index_set> &assumptions) const {
+bool KP_Instance::calculate_assumptions(const Plan &plan,
+                                        const State &initial_state,
+                                        const index_set &goal,
+                                        vector<index_set> &assumptions) const {
     assert(!plan.empty());
 
 #ifdef DEBUG
@@ -324,38 +321,6 @@ bool KP_Instance::calculate_relevant_assumptions(const Plan &plan,
     assumptions.insert(assumptions.end(), condition_vec.rbegin(), condition_vec.rend());
     return true;
 }
-
-#if 0
-bool KP_Instance::calculate_relevant_assumptions(const Plan &plan,
-                                                 const vector<const State*> &sampled_state_trajectory,
-                                                 const State &initial_state,
-                                                 const index_set &goal,
-                                                 vector<index_set> &assumptions) const {
-    // backchain plan through state trajectory to identify relevant assumptions in plan
-    index_set open;                          // signed set of current open conditions
-    vector<index_set> condition_vec;         // stores computed assumptions in reverse order
-    bool status = plan_backchain(plan, sampled_state_trajectory, goal, condition_vec, open);
-    if( !status ) return false;
-
-    // the open conditions should be met by initial state *in sampled state trajectory*
-    assert(!sampled_state_trajectory.empty());
-    const State &initial_state_in_sampled_trajectory = **sampled_state_trajectory.begin();
-    for( State::const_iterator it = initial_state_in_sampled_trajectory.begin(); it != initial_state_in_sampled_trajectory.end(); ++it ) {
-        assert(*it >= 0);
-        open.erase(1 + *it);
-    }
-#ifdef DEBUG
-    std::cout << "after erasing init: open="; kp_instance_.write_atom_set(std::cout, open); std::cout << std::endl;
-#endif
-    assert(open.empty());
-
-    // assumptions is reversed vector of conditions
-    assumptions.clear();
-    assumptions.reserve(condition_vec.size());
-    assumptions.insert(assumptions.end(), condition_vec.rbegin(), condition_vec.rend());
-    return true;
-}
-#endif
 
 bool KP_Instance::plan_backchain(const Plan &plan,
                                  const vector<const State*> &state_trajectory,
@@ -1370,76 +1335,4 @@ void Standard_KP_Instance::print_stats(ostream &os) const {
        << ", #subgoaling-actions=" << n_subgoaling_actions_
        << endl;
 }
-
-#if 0
-// This function apply given plan at given initial state and returns the final
-// state and the assumptions made by the plan. If plan is applicable, returns
-// true. Otherwise, returns false.
-bool KP_Instance::apply_plan(const Plan &plan, const State &initial_state, State &final_state, vector<State> &assumption_vec) const {
-    assumption_vec.clear();
-    vector<State> support_vec;
-
-    final_state = initial_state;
-    for( size_t k = 0; k < plan.size(); ++k ) {
-        const Instance::Action &act = *actions_[plan[k]];
-        assert(final_state.applicable(act));
-
-        // check that preconditions hold at current state (final_state)
-        if( !final_state.satisfy(act.precondition()) ) return false;
-
-        State assumption;
-        State support;
-
-        // add positive preconditions to support
-        for( index_set::const_iterator it = act.precondition().begin(); it != act.precondition().end(); ++it ) {
-            if( *it > 0 ) {
-                support.add(*it - 1);
-            }
-        }
-
-        // add positive conditions of triggered conditional effects to support and
-        // the assumptions made with observations rules
-        for( size_t i = 0; i < act.when().size(); ++i ) {
-            const Instance::When &w = act.when()[i];
-            if( final_state.satisfy(w.condition()) ) {
-                for( index_set::const_iterator it = w.condition().begin(); it != w.condition().end(); ++it ) {
-                    if( *it > 0 ) {
-                        support.add(*it - 1);
-                    }
-                }
-                if( is_obs_rule(plan[k]) ) {
-                    for( index_set::const_iterator it = w.effect().begin(); it != w.effect().end(); ++it ) {
-                        assert(*it > 0);
-                        if( !final_state.satisfy(*it - 1) ) {
-                            assumption.add(*it - 1);
-                        }
-                    }
-                }
-            }
-        }
-        cout << "support="; support.print(cout, *this);  cout << endl;
-        cout << "assumption ="; assumption.print(cout, *this);  cout << endl;
-        support_vec.push_back(support);
-        assumption_vec.push_back(assumption);
-
-        // apply action to state
-        final_state.apply(act);
-    }
-
-    // calculate and consolidate the relevant assumptions
-    assert(support_vec.size() == assumption_vec.size());
-    State relevant, support;
-    for( int i = assumption_vec.size() - 1; i >= 0; --i ) {
-        support.add(support_vec[i]);
-        for( State::const_iterator it = assumption_vec[i].begin(); it != assumption_vec[i].end(); ++it ) {
-            if( support.satisfy(*it) ) {
-                relevant.add(*it);
-            }
-        }
-        assumption_vec[i] = relevant;
-    }
-
-    return true;
-}
-#endif
 
