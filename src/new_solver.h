@@ -24,7 +24,6 @@
 #include <vector>
 
 #include "action_selection.h"
-#include "random_action_selection.h"
 #include "problem.h"
 #include "kp_problem.h"
 #include "utils.h"

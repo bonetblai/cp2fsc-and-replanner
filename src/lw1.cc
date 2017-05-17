@@ -20,25 +20,30 @@
 #include <iostream>
 #include <iomanip>
 #include <libgen.h>
+#include <map>
 #include <memory>
+#include <string>
+#if 0
 #include "action_selection.h"
-#include "classical_planner_wrapper.h"
 #include "problem.h"
-#include "preprocess.h"
-#include "parser.h"
 #include "state.h"
 #include "clg_problem.h"
-#include "lw1_problem.h"
-#include "lw1_solver.h"
-#include "inference_engine.h"
-#include "options.h"
-#include "available_options.h"
-#include "utils.h"
 #include "width.h"
 #include "width_search.h"
-#include "random_action_selection.h"
-#include "hop.h"
 #include "despot.h"
+#endif
+#include "available_options.h"
+#include "classical_planner_wrapper.h"
+#include "hop.h"
+#include "inference_engine.h"
+#include "lw1_problem.h"
+#include "lw1_solver.h"
+#include "options.h"
+#include "parser.h"
+#include "preprocess.h"
+#include "random_action_selection.h"
+#include "string_table.h"
+#include "utils.h"
 
 using namespace std;
 
