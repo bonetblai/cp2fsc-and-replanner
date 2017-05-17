@@ -251,7 +251,7 @@ namespace HOP {
               assert((var_index >= 0) && (var_index < lw1_instance_.variables_.size()));
               const LW1_Instance::Variable &variable = *lw1_instance_.variables_[var_index];
 #if 1//def DEBUG
-              std::cout << Utils::blue() << "variable '" << variable.name() << "' is unknown: " << Utils::normal() << std::flush;
+              std::cout << Utils::blue() << "sampling: variable=" << variable.name() << Utils::normal() << std::flush;
 #endif
               assert(variable.is_state_variable());
               std::vector<int> possible_values;
@@ -1006,7 +1006,8 @@ namespace HOP {
           std::vector<float> action_scores(lw1_instance_.actions_.size(), std::numeric_limits<float>::max());
 
           // sample graph to score actions
-          for( size_t k = 0; k < num_sampled_scenarios_; ++k ) {
+          int num_sampled_scenarios = unknown_variables.empty() ? 1 : num_sampled_scenarios_;
+          for( int k = 0; k < num_sampled_scenarios; ++k ) {
               reset_graph();
               //std::cout << Utils::bold() << "**** Running sampled scenario " << k << Utils::normal() << std::endl;
 
@@ -1099,7 +1100,7 @@ namespace HOP {
                   int action = root->child(j)->action();
                   if( action_scores[action] == std::numeric_limits<float>::max() )
                       action_scores[action] = 0;
-                  action_scores[action] += root->child(j)->score() / float(num_sampled_scenarios_);
+                  action_scores[action] += root->child(j)->score() / float(num_sampled_scenarios);
               }
 
               // deallocate AND/OR graph
@@ -1108,19 +1109,23 @@ namespace HOP {
 
 #if 1//def DEBUG
           // print goal-paths
-          std::cout << Utils::bold() << "**** goal-paths" << Utils::normal() << std::endl;
-          for( std::map<int, std::map<std::vector<int>, int> >::const_iterator it = goal_paths.begin(); it != goal_paths.end(); ++it ) {
-              int first_action = it->first;
-              const std::map<std::vector<int>, int> &path_map = it->second;
-              std::cout << "  first-action=" << first_action << std::endl;
-              for( std::map<std::vector<int>, int>::const_iterator jt = path_map.begin(); jt != path_map.end(); ++jt ) {
-                  const std::vector<int> &path = jt->first;
-                  assert(first_action == path.back());
-                  std::cout << "    count=" << jt->second << ", path=";
-                  for( size_t k = path.size(); k > 0; --k )
-                      std::cout << " " << path[k - 1];
-                  std::cout << std::endl;
+          if( !goal_paths.empty() ) {
+              std::cout << Utils::bold() << "**** goal-paths" << Utils::normal() << std::endl;
+              for( std::map<int, std::map<std::vector<int>, int> >::const_iterator it = goal_paths.begin(); it != goal_paths.end(); ++it ) {
+                  int first_action = it->first;
+                  const std::map<std::vector<int>, int> &path_map = it->second;
+                  std::cout << "  first-action=" << first_action << std::endl;
+                  for( std::map<std::vector<int>, int>::const_iterator jt = path_map.begin(); jt != path_map.end(); ++jt ) {
+                      const std::vector<int> &path = jt->first;
+                      assert(first_action == path.back());
+                      std::cout << "    count=" << jt->second << ", path=";
+                      for( size_t k = path.size(); k > 0; --k )
+                          std::cout << " " << path[k - 1];
+                      std::cout << std::endl;
+                  }
               }
+          } else {
+              std::cout << Utils::red() << "**** no goal-paths" << Utils::normal() << std::endl;
           }
 #endif
 
@@ -1166,7 +1171,7 @@ namespace HOP {
                     << ", score=" << score_best_actions
                     << std::endl;
           std::cout << Utils::normal();
-          std::cout << "n-ie=" << n_calls_to_inference_engine_ << std::endl;
+          std::cout << "acc-#calls-ie=" << n_calls_to_inference_engine_ << std::endl;
 #endif
 
           // sample goal-path using best action
