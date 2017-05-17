@@ -245,6 +245,9 @@ namespace HOP {
           calculate_unknown_variables(state, &unknown_variables);
       }
       bool sample(const T &state, const std::vector<int> &unknown_variables, T &sampled_hidden) const {
+#if 1//def DEBUG
+          std::cout << Utils::blue() << "sampling: #unknown-variables=" << unknown_variables.size() << Utils::normal() << std::endl;
+#endif
           assert(sampled_hidden == state);
           for( size_t k = 0; k < unknown_variables.size(); ++k ) {
               int var_index = unknown_variables[k];
@@ -1144,7 +1147,7 @@ namespace HOP {
           assert(score_best_actions < std::numeric_limits<float>::max());
           assert(!best_actions.empty());
 
-#if 1//def DEBUG
+#ifdef DEBUG
           // print action scores
           for( size_t k = 0; k < action_scores.size(); ++k ) {
               if( action_scores[k] < std::numeric_limits<float>::max() ) {
