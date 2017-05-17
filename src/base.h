@@ -1001,15 +1001,16 @@ class PDDL_Base {
     std::map<unsigned_atom_set, std::unique_ptr<const Atom> >  need_post_atoms_;
     std::map<std::string, std::unique_ptr<const Atom> >        sensing_atoms_;
     std::map<signed_atom_set, std::unique_ptr<const Atom> >    atoms_for_terms_for_type3_sensing_drules_;
+    std::map<std::string, std::unique_ptr<const Atom> >        lw1_last_action_atoms_;
 #else
     std::map<unsigned_atom_set, const Atom*>  need_post_atoms_;
     std::map<std::string, const Atom*>        sensing_atoms_;
     std::map<signed_atom_set, const Atom*>    atoms_for_terms_for_type3_sensing_drules_;
+    std::map<std::string, const Atom*>        lw1_last_action_atoms_;
 #endif
     std::map<std::string, const Atom*>        lw1_sensing_enabler_atoms_;
     std::map<std::pair<const Action*, std::pair<const ObsVariable*, Atom> >, const Atom*> lw1_sensing_enablers_;
     std::map<std::string, std::set<std::string> > lw1_enablers_for_actions_;
-    std::map<std::string, const Atom*>        lw1_last_action_atoms_;
     std::map<std::string, std::set<std::string> > lw1_accepted_literals_for_observables_;
 
     const Sensing                             *lw1_default_sensing_;

@@ -2697,16 +2697,24 @@ const PDDL_Base::Atom& PDDL_Base::lw1_fetch_sensing_enabler(const StateVariable 
 }
 
 const PDDL_Base::Atom& PDDL_Base::lw1_fetch_last_action_atom(const Action &action) {
-    map<string, const Atom*>::const_iterator it = lw1_last_action_atoms_.find(action.print_name_);
-    if( it != lw1_last_action_atoms_.end() ) {
-        return *it->second;
-    } else {
+    // (use auto for easily dealing with smart/non-smart pointers)
+    auto it = lw1_last_action_atoms_.find(action.print_name_);
+    if( it == lw1_last_action_atoms_.end() ) {
         // create atom
         string name = string("last-action-was-") + action.print_name_;
         Atom *atom = create_atom(name);
+#ifdef SMART
+        lw1_last_action_atoms_.emplace(action.print_name_, unique_ptr<const Atom>(atom));
+#else
         lw1_last_action_atoms_.insert(make_pair(action.print_name_, atom));
-        //cout << "Atom " << *atom << " created!" << endl;
+#endif
         return *atom;
+    } else {
+#ifdef SMART
+        return *it->second.get();
+#else
+        return *it->second;
+#endif
     }
 }
 
@@ -2762,15 +2770,15 @@ void PDDL_Base::lw1_patch_actions_with_enablers_for_sensing() {
         AndEffect &effect = *const_cast<AndEffect*>(static_cast<const AndEffect*>(action.effect_));
 
         if( !options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
-            // patch effect according to generated last-action-atoms
-            map<string, const Atom*>::const_iterator it = lw1_last_action_atoms_.find(action.print_name_);
+            // patch effect according to generated last-action-atoms (use auto for easily dealing with smart/non-smart pointers)
+            auto it = lw1_last_action_atoms_.find(action.print_name_);
             if( it != lw1_last_action_atoms_.end() ) {
                 effect.push_back(AtomicEffect(*it->second).copy());
-                for( map<string, const Atom*>::const_iterator jt = lw1_last_action_atoms_.begin(); jt != lw1_last_action_atoms_.end(); ++jt ) {
+                for( auto jt = lw1_last_action_atoms_.cbegin(); jt != lw1_last_action_atoms_.cend(); ++jt ) {
                     if( jt != it ) effect.push_back(AtomicEffect(*jt->second).negate());
                 }
             } else if( !action.is_special_action() ) {
-                for( map<string, const Atom*>::const_iterator jt = lw1_last_action_atoms_.begin(); jt != lw1_last_action_atoms_.end(); ++jt ) {
+                for( auto jt = lw1_last_action_atoms_.cbegin(); jt != lw1_last_action_atoms_.cend(); ++jt ) {
                     effect.push_back(AtomicEffect(*jt->second).negate());
                 }
             }
@@ -3340,6 +3348,10 @@ void PDDL_Base::lw1_cleanup() {
     for( map<unsigned_atom_set, const Atom*>::const_iterator it = need_post_atoms_.begin(); it != need_post_atoms_.end(); ++it )
         delete it->second;
     need_post_atoms_.clear();
+
+    for( map<string, const Atom*>::const_iterator it = lw1_last_action_atoms_.begin(); it != lw1_last_action_atoms_.end(); ++it )
+        delete it->second;
+    lw1_last_action_atoms_.clear();
 
     for( list<pair<const Action*, const Sensing*> >::const_iterator it = lw1_sensing_models_.begin(); it != lw1_sensing_models_.end(); ++it ) {
         const Sensing *sensing = it->second;
