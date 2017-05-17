@@ -94,6 +94,7 @@ const char *available_options[] = {
     "solver:forced-moves",                              "[SOLVER] don't call planner when there is just one applicable operator",
     "solver:print:assumptions",                         "[SOLVER] print assumptions made in classical plan",
     "solver:print:assumptions:raw",                     "[SOLVER] print assumptions made in raw classical plan",
+    "solver:print:assumptions:violation",               "[SOLVER] print assumptions violated when executing plan",
     "solver:print:steps",                               "[SOLVER] print the result of each action in the plan",
     //"solver:print:inconsistency",                       "[SOLVER] print when detecting an inconsistency", // DEAD CODE in new_solver.h
     //"solver:print:inconsistency:details",               "[SOLVER] print details of the inconsistency",    // DEAD CODE in new_solver.h

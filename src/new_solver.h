@@ -90,6 +90,8 @@ template<typename T> class NewSolver {
                         std::vector<index_set> &condition_vec,
                         index_set &open) const;
 
+    bool violate_assumption(const T &state, const index_set &assumptions, bool verbose) const;
+
   protected:
     virtual void compute_and_add_observations(const Instance::Action *last_action,
                                               const T &hidden,
@@ -157,6 +159,7 @@ int NewSolver<T>::solve(const T &initial_hidden_state,
     Instance::Plan plan;
     final_plan.clear();
 
+    bool print_assumption_violation = options_.is_enabled("solver:print:assumptions:violation");
     while( !state.is_goal(kp_instance_) ) {
         plan.clear();
         assumptions.clear();
@@ -215,7 +218,8 @@ int NewSolver<T>::solve(const T &initial_hidden_state,
         // If not, there must be an incomplete or invalid specification of hidden
         // state or initial state, or problem with domain
         assert(!assumptions.empty());
-        if( !state.satisfy(assumptions[0]) ) {
+        //if( !state.satisfy(assumptions[0]) ) {
+        if( violate_assumption(state, assumptions[0], print_assumption_violation) ) {
             std::cout << Utils::error() << "current state doesn't satisfy first assumption"
                       << " in (reduced) plan: check specification!"
                       << std::endl;
@@ -239,7 +243,8 @@ int NewSolver<T>::solve(const T &initial_hidden_state,
             //std::cout << ">>> kp-action=" << kp_act.name() << std::endl;
 
             // if current state doesn't satisfy corresponding assumption, replan
-            if( !state.satisfy(assumptions[k]) || !state.applicable(kp_act) ) break;
+            //if( !state.satisfy(assumptions[k]) || !state.applicable(kp_act) ) break;
+            if( violate_assumption(state, assumptions[k], print_assumption_violation) || !state.applicable(kp_act) ) break;
 
             // apply action at state
             if( options_.is_enabled("solver:print:steps") ) {
@@ -389,6 +394,18 @@ void NewSolver<T>::calculate_relevant_assumptions(const Instance::Plan &plan,
     if( !status ) {
         std::cout << Utils::error() << "assumptions on plan could not be calculated" << std::endl;
         return;
+    }
+
+    // print assumptions
+    if( options_.is_enabled("solver:print:assumptions") ) {
+        std::cout << "Assumptions (sz=" << assumptions.size() << "):" << std::endl;
+        for( size_t k = 0; k < assumptions.size(); ++k ) {
+            std::cout << "    step=" << k << ", "
+                      << plan[k] << "." << kp_instance_.actions_[plan[k]]->name()
+                      << ": ";
+            kp_instance_.write_atom_set(std::cout, assumptions[k]);
+            std::cout << std::endl;
+        }
     }
 }
 
@@ -601,6 +618,26 @@ bool NewSolver<T>::plan_backchain(const Instance::Plan &plan,
 #endif
 
     return true;
+}
+
+template<typename T>
+bool NewSolver<T>::violate_assumption(const T &state, const index_set &assumption, bool verbose) const {
+    for( index_set::const_iterator it = assumption.begin(); it != assumption.end(); ++it ) {
+        int k_literal = *it;
+        int k_not_literal = (k_literal - 1) % 2 == 0 ? 1 + k_literal : k_literal - 1;
+        if( verbose ) {
+            std::cout << Utils::cyan() << "assumption:" << Utils::normal();
+            std::cout << " k-literal=";
+            State::print_literal(std::cout, k_literal, &kp_instance_);
+            std::cout << ", k-not-literal=";
+            State::print_literal(std::cout, k_not_literal, &kp_instance_);
+            std::cout << ", satisfy=" << state.satisfy(k_not_literal - 1);
+            std::cout << std::endl;
+        }
+        if( state.satisfy(k_not_literal - 1) )
+            return true;
+    }
+    return false;
 }
 
 template<typename T>
