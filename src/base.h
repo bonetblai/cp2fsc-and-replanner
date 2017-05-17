@@ -455,7 +455,7 @@ class PDDL_Base {
     };
 
     struct sensing_proxy_vec : public std::vector<const SensingProxy*> {
-        //~sensing_proxy_vec() { for( size_t k = 0; k < size(); ++k ) delete (*this)[k]; }
+        ~sensing_proxy_vec() { for( size_t k = 0; k < size(); ++k ) delete (*this)[k]; }
         Sensing* ground(bool clone_variables = false, bool replace_static_values = true) const;
         std::string to_string() const;
         void print(std::ostream &os) const { os << to_string(); }
@@ -473,7 +473,7 @@ class PDDL_Base {
     struct ForallSensing : public SensingProxy, Schema {
         sensing_proxy_vec sensing_;
         ForallSensing() { }
-        virtual ~ForallSensing() { for( size_t k = 0; k < sensing_.size(); ++k ) delete sensing_[k]; }
+        virtual ~ForallSensing() { }
         virtual bool is_strongly_static(const PredicateSymbol &p) const;
         virtual Sensing* ground(bool clone_variables = false, bool replace_static_values = true) const;
         virtual std::string to_string() const;
@@ -1017,10 +1017,11 @@ class PDDL_Base {
 
 #ifdef SMART
     std::unique_ptr<const Sensing>                             lw1_default_sensing_;
+    std::unique_ptr<const sensing_proxy_vec>                   lw1_default_sensing_proxy_;
 #else
     const Sensing                             *lw1_default_sensing_;
-#endif
     const sensing_proxy_vec                   *lw1_default_sensing_proxy_;
+#endif
 
 #ifdef SMART
     owned_variable_group_vec                        lw1_variable_groups_;

@@ -753,6 +753,7 @@ forall_sensing:
           schema_.pop_back();
           using_owned_schema_.pop_back();
           forall_sensing->sensing_ = *$9;
+          const_cast<sensing_proxy_vec*>($9)->clear();
           delete $9;
           clear_param(forall_sensing->param_);
           $$ = forall_sensing;
@@ -1152,7 +1153,11 @@ forall_state_variable_list_decl:
 domain_default_sensing:
       TK_OPEN KW_DEFAULT_SENSING sensing TK_CLOSE {
           declare_lw1_translation();
+#ifdef SMART
+          lw1_default_sensing_proxy_ = std::unique_ptr<const sensing_proxy_vec>($3);
+#else
           lw1_default_sensing_proxy_ = $3;
+#endif
       }
     ;
 

@@ -60,15 +60,16 @@ PDDL_Base::PDDL_Base(StringTable &parser_symbol_table, const Options::Mode &opti
     dom_top_type_(0),
     dom_eq_pred_(0),
     dom_goal_(0),
-#ifndef SMART
+#ifdef SMART
+    clg_translation_(false),
+    lw1_translation_(false) {
+#else
     normal_execution_(0),
-#endif
     clg_translation_(false),
     lw1_translation_(false),
-#ifndef SMART
     lw1_default_sensing_(0),
-#endif
     lw1_default_sensing_proxy_(0) {
+#endif
 
     // setup predicate for equality
     StringTable::Cell *sc = parser_symbol_table_.insert("object");
@@ -5552,11 +5553,7 @@ PDDL_Base::Action::~Action() {
     delete effect_;
     delete observe_;
     delete sensing_;
-    if( sensing_proxy_ != 0 ) {
-        for( size_t k = 0; k < sensing_proxy_->size(); ++k )
-            delete (*sensing_proxy_)[k];
-        delete sensing_proxy_;
-    }
+    delete sensing_proxy_;
 }
 
 bool PDDL_Base::Action::is_special_action() const {
