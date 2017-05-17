@@ -455,6 +455,7 @@ class PDDL_Base {
     };
 
     struct sensing_proxy_vec : public std::vector<const SensingProxy*> {
+        //~sensing_proxy_vec() { for( size_t k = 0; k < size(); ++k ) delete (*this)[k]; }
         Sensing* ground(bool clone_variables = false, bool replace_static_values = true) const;
         std::string to_string() const;
         void print(std::ostream &os) const { os << to_string(); }
@@ -483,6 +484,7 @@ class PDDL_Base {
     };
 
     struct Sensing : public std::vector<const SensingModel*> {
+        ~Sensing() { for( size_t k = 0; k < size(); ++k ) delete (*this)[k]; }
         bool is_strongly_static(const PredicateSymbol &p) const;
         Sensing* ground(bool clone_variables = false, bool replace_static_values = true) const;
         bool finish_grounding(PDDL_Base *base);

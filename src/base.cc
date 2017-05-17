@@ -3382,14 +3382,6 @@ void PDDL_Base::lw1_cleanup() {
         }
     }
     lw1_sensing_models_index_.clear();
-#else
-    for( list<pair<const Action*, unique_ptr<const Sensing> > >::const_iterator it = lw1_sensing_models_.begin(); it != lw1_sensing_models_.end(); ++it ) {
-        const unique_ptr<const Sensing> &sensing = it->second;
-        for( size_t k = 0; k < sensing->size(); ++k ) {
-            const SensingModel *model = (*sensing)[k];
-            delete model;
-        }
-    }
 #endif
 }
 
@@ -5105,6 +5097,7 @@ bool PDDL_Base::Sensing::finish_grounding(PDDL_Base *base) {
     }
 
     // set result and return
+    static_cast<vector<const SensingModel*>*>(this)->clear();
     *static_cast<vector<const SensingModel*>*>(this) = result;
     return verify;
 }
@@ -5558,11 +5551,7 @@ PDDL_Base::Action::~Action() {
     delete precondition_;
     delete effect_;
     delete observe_;
-    if( sensing_ != 0 ) {
-        for( size_t k = 0; k < sensing_->size(); ++k )
-            delete (*sensing_)[k];
-        delete sensing_;
-    }
+    delete sensing_;
     if( sensing_proxy_ != 0 ) {
         for( size_t k = 0; k < sensing_proxy_->size(); ++k )
             delete (*sensing_proxy_)[k];
