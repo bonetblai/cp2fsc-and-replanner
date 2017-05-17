@@ -97,7 +97,7 @@ namespace HOP {
                       literal_features_.push_back(new Width::LiteralFeature<T>(feature_index, lw1_instance_, var_index, 1 + 2*(*it)));
                       feature_universe_.push_back(literal_features_.back());
                       feature_language_.push_back(literal_features_.back());
-#ifdef DEBUG
+#if 1//def DEBUG
                       std::cout << "using " << *feature_language_.back() << std::endl;
 #endif
 
@@ -105,7 +105,7 @@ namespace HOP {
                       literal_features_.push_back(new Width::LiteralFeature<T>(feature_index, lw1_instance_, var_index, 1 + 2*(*it) + 1));
                       feature_universe_.push_back(literal_features_.back());
                       feature_language_.push_back(literal_features_.back());
-#ifdef DEBUG
+#if 1//def DEBUG
                       std::cout << "using " << *feature_language_.back() << std::endl;
 #endif
                   }
@@ -117,7 +117,7 @@ namespace HOP {
                       domain_size_features_.push_back(new Width::DomainSizeFeatureEQ<T>(feature_index, lw1_instance_, var_index, 1 + i));
                       feature_universe_.push_back(domain_size_features_.back());
                       feature_language_.push_back(domain_size_features_.back());
-#ifdef DEBUG
+#if 1//def DEBUG
                       std::cout << "using " << *feature_language_.back() << std::endl;
 #endif
                   }
@@ -133,7 +133,7 @@ namespace HOP {
           goal_feature_ = new Width::GoalFeature<T>(goal_feature_index_, lw1_instance_);
           feature_universe_.push_back(goal_feature_);
           feature_language_.push_back(goal_feature_);
-#ifdef DEBUG
+#if 1//def DEBUG
           std::cout << "using " << *goal_feature_ << std::endl;
           std::cout << Utils::green() << "#goal-features=1" << Utils::normal() << std::endl;
 #endif
@@ -1012,13 +1012,13 @@ namespace HOP {
           int num_sampled_scenarios = unknown_variables.empty() ? 1 : num_sampled_scenarios_;
           for( int k = 0; k < num_sampled_scenarios; ++k ) {
               reset_graph();
-              //std::cout << Utils::bold() << "**** Running sampled scenario " << k << Utils::normal() << std::endl;
+              std::cout << Utils::bold() << "**** Running sampled scenario " << 1 + k << "/" << num_sampled_scenarios << Utils::normal() << std::endl;
 
               // sample (full) state from given state (belief)
               T sampled_hidden(state);
               sample(state, unknown_variables, sampled_hidden);
 
-#ifdef DEBUG
+#if 1//def DEBUG
               std::cout << Utils::magenta();
               std::cout << "sampled=";
               sampled_hidden.print(std::cout, lw1_instance_);
@@ -1031,7 +1031,7 @@ namespace HOP {
               //std::cout << "root=" << *root << std::endl;
               //create_sampled_graph_breadth_first(root, goal_paths_in_graph, true); // CHECK: another sampled graph?
               create_sampled_graph_breadth_first(root, goal_nodes_in_graph);
-              //std::cout << "num-expansions=" << num_expansions_ << ", #root-children=" << root->children().size() << ", #gp=" << goal_paths_in_graph.size() << std::endl;
+              std::cout << "num-expansions=" << num_expansions_ << ", #root-children=" << root->children().size() << ", #gn=" << goal_nodes_in_graph.size() << std::endl;
 
               // store goal-paths found in sampled graph
               for( size_t j = 0; j < goal_nodes_in_graph.size(); ++j ) {
@@ -1147,7 +1147,7 @@ namespace HOP {
           assert(score_best_actions < std::numeric_limits<float>::max());
           assert(!best_actions.empty());
 
-#ifdef DEBUG
+#if 1//def DEBUG
           // print action scores
           for( size_t k = 0; k < action_scores.size(); ++k ) {
               if( action_scores[k] < std::numeric_limits<float>::max() ) {
