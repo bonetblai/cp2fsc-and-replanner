@@ -65,7 +65,9 @@ PDDL_Base::PDDL_Base(StringTable &parser_symbol_table, const Options::Mode &opti
 #endif
     clg_translation_(false),
     lw1_translation_(false),
+#ifndef SMART
     lw1_default_sensing_(0),
+#endif
     lw1_default_sensing_proxy_(0) {
 
     // setup predicate for equality
@@ -322,8 +324,15 @@ void PDDL_Base::instantiate_elements() {
 
     // ground default sensing model
     if( lw1_default_sensing_proxy_ != 0 ) {
-        lw1_default_sensing_ = lw1_default_sensing_proxy_->ground();
-        lw1_finish_grounding_of_sensing(lw1_default_sensing_);
+        const Sensing *default_sensing = lw1_default_sensing_proxy_->ground();
+        lw1_finish_grounding_of_sensing(default_sensing);
+        if( default_sensing != 0 ) {
+#ifdef SMART
+            lw1_default_sensing_ = unique_ptr<const Sensing>(default_sensing);
+#else
+            lw1_default_sensing_ = default_sensing;
+#endif
+        }
     }
 
     // instantiate actions

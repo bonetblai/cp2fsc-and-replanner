@@ -1013,7 +1013,11 @@ class PDDL_Base {
     std::map<std::string, std::set<std::string> > lw1_enablers_for_actions_;
     std::map<std::string, std::set<std::string> > lw1_accepted_literals_for_observables_;
 
+#ifdef SMART
+    std::unique_ptr<const Sensing>                             lw1_default_sensing_;
+#else
     const Sensing                             *lw1_default_sensing_;
+#endif
     const sensing_proxy_vec                   *lw1_default_sensing_proxy_;
 
 #ifdef SMART
