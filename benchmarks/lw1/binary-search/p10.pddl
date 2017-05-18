@@ -1,0 +1,18 @@
+(define (problem bs-p10)
+    (:domain binary-search)
+    (:objects p0 p1 p2 p3 p4 p5 p6 p7 p8 p9 - state)
+    (:init
+        (discover-not-yet-attempted)
+        (lt p0 p1) (lt p0 p2) (lt p0 p3) (lt p0 p4) (lt p0 p5) (lt p0 p6) (lt p0 p7) (lt p0 p8) (lt p0 p9)
+        (lt p1 p2) (lt p1 p3) (lt p1 p4) (lt p1 p5) (lt p1 p6) (lt p1 p7) (lt p1 p8) (lt p1 p9)
+        (lt p2 p3) (lt p2 p4) (lt p2 p5) (lt p2 p6) (lt p2 p7) (lt p2 p8) (lt p2 p9)
+        (lt p3 p4) (lt p3 p5) (lt p3 p6) (lt p3 p7) (lt p3 p8) (lt p3 p9)
+        (lt p4 p5) (lt p4 p6) (lt p4 p7) (lt p4 p8) (lt p4 p9)
+        (lt p5 p6) (lt p5 p7) (lt p5 p8) (lt p5 p9)
+        (lt p6 p7) (lt p6 p8) (lt p6 p9)
+        (lt p7 p8) (lt p7 p9)
+        (lt p8 p9)
+    )
+    (:goal (finish))
+)
+
