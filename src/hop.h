@@ -43,16 +43,21 @@ namespace HOP {
       const Inference::Engine<T> &inference_engine_;
       const int num_sampled_scenarios_;
       const bool prune_nodes_;
+      const bool use_path_;
+
+      std::set<int> unknown_variables_at_initial_state_;
+      std::vector<int> goal_variables_;
 
       int goal_feature_index_;
       const Width::Feature<T> *goal_feature_;
       std::vector<const Width::Feature<T>*> feature_universe_;        // set of all features
       std::vector<const Width::Feature<T>*> feature_language_;        // set of features that are considered
       std::vector<const Width::Feature<T>*> literal_features_;
-      std::vector<const Width::Feature<T>*> domain_size_features_;
-      std::vector<const Width::AndFeature<T>*> term_features_;
-      std::vector<const Width::OrFeature<T>*> disjunctive_features_;
-      std::vector<const Width::OrFeature<T>*> disjunctive_features_involving_goal_feature_;
+      std::vector<const Width::Feature<T>*> combined_features_;
+      std::map<int, std::vector<const Width::Feature<T>*> > domain_size_features_;
+      //std::vector<const Width::AndFeature<T>*> term_features_;
+      //std::vector<const Width::OrFeature<T>*> disjunctive_features_;
+      //std::vector<const Width::OrFeature<T>*> disjunctive_features_involving_goal_feature_;
 
       // bitmap for features (used when computing AND/OR lookahead tree)
       size_t feature_bitmap_size_;
@@ -70,11 +75,13 @@ namespace HOP {
       ActionSelection(const LW1_Instance &lw1_instance,
                       const Inference::Engine<T> &inference_engine,
                       int num_sampled_scenarios,
-                      bool prune_nodes = true)
+                      bool prune_nodes,
+                      bool use_path)
         : lw1_instance_(lw1_instance),
           inference_engine_(inference_engine),
           num_sampled_scenarios_(num_sampled_scenarios),
           prune_nodes_(prune_nodes),
+          use_path_(use_path),
           goal_feature_index_(-1),
           goal_feature_(0),
           feature_bitmap_size_(0),
@@ -85,40 +92,108 @@ namespace HOP {
           total_time_(0),
           n_calls_to_inference_engine_(0),
           n_calls_(0) {
+
+          // calculate unknown variables at initial state
+          T initial_state;
+          std::vector<int> unknown_variables_at_initial_state;
+          lw1_instance_.set_initial_state(initial_state);
+          calculate_unknown_variables(initial_state, unknown_variables_at_initial_state);
+          for( size_t k = 0; k < unknown_variables_at_initial_state.size(); ++k )
+              unknown_variables_at_initial_state_.insert(unknown_variables_at_initial_state[k]);
+#if 1//def DEBUG
+          std::cout << "initial-state=";
+          initial_state.print(std::cout, lw1_instance_);
+          std::cout << std::endl << "unknown-variables-at-initial-state={";
+          for( size_t k = 0; k < unknown_variables_at_initial_state.size(); ++k ) {
+              int var_index = unknown_variables_at_initial_state[k];
+              const LW1_Instance::Variable &variable = *lw1_instance_.variables_[var_index];
+              std::cout << variable.name();
+              if( 1 + k < unknown_variables_at_initial_state.size() )
+                  std::cout << ",";
+          }
+          std::cout << "}" << std::endl;
+#endif
+
+          // calculate variables in goal
+          for( size_t var_index = 0; var_index < lw1_instance_.variables_.size(); ++var_index ) {
+              const LW1_Instance::Variable &variable = *lw1_instance_.variables_[var_index];
+              if( variable.is_state_variable() ) {
+                  bool is_goal_variable = false;
+                  for( std::set<int>::const_iterator it = variable.domain().begin(); it != variable.domain().end(); ++it ) {
+                      if( (lw1_instance_.po_instance_.goal_literals_.find(1 + *it) != lw1_instance_.po_instance_.goal_literals_.end()) ||
+                          (lw1_instance_.po_instance_.goal_literals_.find(-(1 + *it)) != lw1_instance_.po_instance_.goal_literals_.end()) ) {
+                          is_goal_variable = true;
+                          break;
+                      }
+                  }
+                  if( is_goal_variable ) {
+                      goal_variables_.push_back(var_index);
+#if 1//def DEBUG
+                      std::cout << "Variable '" << variable.name() << "' is a goal variable" << std::endl;
+#endif
+                  }
+              }
+          }
+
           // Initialize language of features. For each state variable X with domain { x1, ..., xn },
           // add features for Kxi and DSZ(X)
           for( size_t var_index = 0; var_index < lw1_instance_.variables_.size(); ++var_index ) {
               const LW1_Instance::Variable &variable = *lw1_instance_.variables_[var_index];
+              bool is_unknown_at_initial_state = unknown_variables_at_initial_state_.find(var_index) != unknown_variables_at_initial_state_.end();
+              assert(!is_unknown_at_initial_state || variable.is_state_variable());
               if( variable.is_state_variable() ) {
-                  //std::cout << variable << std::endl;
+#if 1//def DEBUG
+                  std::cout << "Variable: name=" << variable.name() << ", unknown-at-init=" << is_unknown_at_initial_state << std::endl;
+#endif
+
+                  // generate features for domain size
+                  if( is_unknown_at_initial_state ) {
+                      std::vector<const Width::Feature<T>*> domain_size_features_for_var;
+                      size_t dsize = variable.is_binary() ? 2 : variable.domain().size();
+                      for( size_t i = 0; i < dsize; ++i ) {
+                          int feature_index = feature_universe_.size();
+                          domain_size_features_for_var.push_back(new Width::DomainSizeFeatureEQ<T>(feature_index, lw1_instance_, var_index, 1 + i));
+                          feature_universe_.push_back(domain_size_features_for_var.back());
+#if 1
+                          feature_language_.push_back(domain_size_features_for_var.back());
+#ifdef DEBUG
+                          std::cout << "using " << *domain_size_features_for_var.back() << std::endl;
+#endif
+#endif
+                      }
+#ifndef NO_EMPLACE
+                      domain_size_features_.emplace(var_index, std::move(domain_size_features_for_var));
+#else
+                      domain_size_features_.insert(std::make_pair(var_index, domain_size_features_for_var));
+#endif
+                  }
+
                   // generate features for domain values
                   for( std::set<int>::const_iterator it = variable.domain().begin(); it != variable.domain().end(); ++it ) {
                       int feature_index = feature_universe_.size();
                       literal_features_.push_back(new Width::LiteralFeature<T>(feature_index, lw1_instance_, var_index, 1 + 2*(*it)));
                       feature_universe_.push_back(literal_features_.back());
+
+#if 0
                       feature_language_.push_back(literal_features_.back());
 #if 1//def DEBUG
                       std::cout << "using " << *feature_language_.back() << std::endl;
+#endif
+#else
+                      generate_features_combined_with_dsizes(literal_features_.back());
 #endif
 
                       feature_index = feature_universe_.size();
                       literal_features_.push_back(new Width::LiteralFeature<T>(feature_index, lw1_instance_, var_index, 1 + 2*(*it) + 1));
                       feature_universe_.push_back(literal_features_.back());
+
+#if 0
                       feature_language_.push_back(literal_features_.back());
 #if 1//def DEBUG
                       std::cout << "using " << *feature_language_.back() << std::endl;
 #endif
-                  }
-
-                  // generate feature for domain size
-                  size_t dsize = variable.is_binary() ? 2 : variable.domain().size();
-                  for( size_t i = 0; i < dsize; ++i ) {
-                      int feature_index = feature_universe_.size();
-                      domain_size_features_.push_back(new Width::DomainSizeFeatureEQ<T>(feature_index, lw1_instance_, var_index, 1 + i));
-                      feature_universe_.push_back(domain_size_features_.back());
-                      feature_language_.push_back(domain_size_features_.back());
-#if 1//def DEBUG
-                      std::cout << "using " << *feature_language_.back() << std::endl;
+#else
+                      generate_features_combined_with_dsizes(literal_features_.back());
 #endif
                   }
               }
@@ -133,7 +208,7 @@ namespace HOP {
           goal_feature_ = new Width::GoalFeature<T>(goal_feature_index_, lw1_instance_);
           feature_universe_.push_back(goal_feature_);
           feature_language_.push_back(goal_feature_);
-#if 1//def DEBUG
+#ifdef DEBUG
           std::cout << "using " << *goal_feature_ << std::endl;
           std::cout << Utils::green() << "#goal-features=1" << Utils::normal() << std::endl;
 #endif
@@ -147,6 +222,28 @@ namespace HOP {
           delete[] feature_bitmap_;
           for( size_t k = 0; k < feature_universe_.size(); ++k )
               delete feature_universe_[k];
+      }
+
+      // combined feature
+      void generate_features_combined_with_dsizes(const Width::Feature<T> *feature) {
+          for( std::set<int>::const_iterator it = unknown_variables_at_initial_state_.begin(); it != unknown_variables_at_initial_state_.end(); ++it ) {
+              int var_index_for_unknown_var = *it;
+              assert(domain_size_features_.find(var_index_for_unknown_var) != domain_size_features_.end());
+              const std::vector<const Width::Feature<T>*> &dsize_features = domain_size_features_.at(var_index_for_unknown_var);
+              for( size_t k = 0; k < dsize_features.size(); ++k ) {
+                  const Width::Feature<T> *dsize_feature = dsize_features[k];
+                  int feature_index = feature_universe_.size();
+                  Width::AndFeature<T> *combined_feature = new Width::AndFeature<T>(feature_index);
+                  combined_feature->add_conjunct(*feature);
+                  combined_feature->add_conjunct(*dsize_feature);
+                  combined_features_.push_back(combined_feature);
+                  feature_universe_.push_back(combined_feature);
+                  feature_language_.push_back(combined_feature);
+#ifdef DEBUG
+                  std::cout << "using " << *feature_language_.back() << std::endl;
+#endif
+              }
+          }
       }
 
       // features
@@ -193,6 +290,11 @@ namespace HOP {
                             Width::FeatureSet<T> &features,
                             const std::vector<const Width::Feature<T>*> &feature_language,
                             bool verbose = false) const {
+#ifdef DEBUG
+          std::cout << Utils::green() << "calculating features for state=";
+          state.print(std::cout, lw1_instance_);
+          std::cout << Utils::normal() << std::endl;
+#endif
           features.clear();
           for( size_t k = 0; k < feature_language.size(); ++k ) {
               const Width::Feature<T> &feature = *feature_language[k];
@@ -253,9 +355,6 @@ namespace HOP {
               int var_index = unknown_variables[k];
               assert((var_index >= 0) && (var_index < lw1_instance_.variables_.size()));
               const LW1_Instance::Variable &variable = *lw1_instance_.variables_[var_index];
-#if 1//def DEBUG
-              std::cout << Utils::blue() << "sampling: variable=" << variable.name() << Utils::normal() << std::flush;
-#endif
               assert(variable.is_state_variable());
               std::vector<int> possible_values;
               if( variable.is_binary() ) {
@@ -270,13 +369,21 @@ namespace HOP {
                           possible_values.push_back(2 * atom);
                   }
               }
-              assert(!possible_values.empty());
+              assert(possible_values.size() > 1);
               int sampled_atom = possible_values[lrand48() % possible_values.size()];
 
 #if 1//def DEBUG
-              std::cout << Utils::blue() << " sampled-value=";
+              std::cout << Utils::blue()
+                        << "sampling: variable=" << variable.name()
+                        << ", #possible-values=" << possible_values.size()
+                        << ", sampled-value=";
               State::print_literal(std::cout, 1 + sampled_atom, &lw1_instance_);
-              std::cout << Utils::normal() << std::endl;
+              std::cout << ", possible-values={";
+              for( size_t j = 0; j < possible_values.size(); ++j ) {
+                  State::print_literal(std::cout, 1 + possible_values[j], &lw1_instance_);
+                  if( 1 + j < possible_values.size() ) std::cout << ",";
+              }
+              std::cout << "}" << Utils::normal() << std::endl;
 #endif
 
               // add sampled atom to sampled state
@@ -404,7 +511,17 @@ namespace HOP {
               }
           }
       }
+
+      bool need_to_expand_node(const AndOr::OrNode<T> *node, const Width::FeatureSet<T> &node_features, const std::set<T> &expanded_states) const {
+          if( prune_nodes_ ) {
+              return !node_features.empty();
+          } else {
+              return expanded_states.find(*node->belief()->belief()) == expanded_states.end();
+          }
+      }
+
       void create_sampled_graph_breadth_first(AndOr::OrNode<T> *root, std::vector<const AndOr::OrNode<T>*> &goal_nodes) const {
+          std::set<T> expanded_states; // only used when !prune_nodes_ (this should be changed to hash table)
           std::vector<std::pair<AndOr::AndNode<T>*, const T*> > successors;
           std::deque<AndOr::OrNode<T>*> queue;
 
@@ -424,16 +541,19 @@ namespace HOP {
               compute_state_bitmap(state, state_bitmap);
 
               // compute features
-              Width::FeatureSet<T> features;
+              Width::FeatureSet<T> state_features;
               float feature_start_time = Utils::read_time_in_seconds();
-              compute_features(state, state_bitmap, features, feature_language_, false);
+              compute_features(state, state_bitmap, state_features, feature_language_, false);
               feature_time += Utils::read_time_in_seconds() - feature_start_time;
 
-              if( features.find(goal_feature_) != features.end() ) {
+              if( state_features.find(goal_feature_) != state_features.end() ) {
                   goal_nodes.push_back(node);
-              } else if( need_to_expand_node(*node, features) ) {
+              } else if( need_to_expand_node(node, state_features, expanded_states) ) {
+                  // update set of expanded states
+                  if( !prune_nodes_ ) expanded_states.insert(state);
+
                   // register node's features
-                  for( typename Width::FeatureSet<T>::const_iterator it = features.begin(); it != features.end(); ++it ) {
+                  for( typename Width::FeatureSet<T>::const_iterator it = state_features.begin(); it != state_features.end(); ++it ) {
                       assert(*it != 0);
                       register_feature(**it);
                   }
@@ -456,7 +576,7 @@ namespace HOP {
                       succ->set_parent(node);
                   }
                   successors.clear();
-              } else {
+              } else if( prune_nodes_ ) {
                   // mark node as pruned
                   node->mark_as_pruned();
               }
@@ -920,34 +1040,52 @@ namespace HOP {
           }
       }
 
-      float propagate(const AndOr::OrNode<T> *node) const {
-          if( is_goal(*node) ) { // node is goal
-              node->set_score(0);
+      float propagate_scores(const AndOr::OrNode<T> *node, std::map<T, float> &score_map) const {
+          float score = std::numeric_limits<float>::max();
+          if( is_goal(*node) ) {
+              // node is goal
+              score = 0;
           } else if( node->children().empty() ) { // node is dead-end either pruned, or real dead-end
               if( node->pruned() ) {
-                  // score is proportional to 1 + number of unknown variables
+                  assert(prune_nodes_);
                   int number_unknown_variables = calculate_unknown_variables(*node->belief()->belief());
-                  node->set_score(100 * (1 + number_unknown_variables)); // CHECK: value
-                  //node->set_score(1000); // CHECK: value
+                  score = 1000 * (1 + number_unknown_variables); // CHECK: value
               } else {
                   // node is a real dead-end
-                  node->set_score(10000); // CHECK: value
+                  score = 10000; // CHECK: value
               }
           } else {
-              float score_best_children = std::numeric_limits<float>::max();
+              float score_best_child = std::numeric_limits<float>::max();
               for( size_t k = 0; k < node->children().size(); ++k ) {
-                  float score = propagate(node->child(k));
-                  if( score < score_best_children )
-                      score_best_children = score;
+                  float score = propagate_scores(node->child(k), score_map);
+                  if( score < score_best_child )
+                      score_best_child = score;
               }
-              assert(score_best_children < std::numeric_limits<float>::max());
-              node->set_score(score_best_children);
+              assert(score_best_child < std::numeric_limits<float>::max());
+              score = score_best_child;
           }
-          return node->score();
+
+          // update score_map
+#if 0
+          const T &state = *node->belief()->belief();
+          if( score_map.find(state) != score_map.end() ) {
+              float stored_score = score_map.at(state);
+              if( score < stored_score )
+                  score_map[state] = score;
+              else
+                  score = stored_score;
+          } else {
+              score_map[state] = score;
+          }
+#endif
+
+          // update node score
+          node->set_score(score);
+          return score;
       }
-      float propagate(const AndOr::AndNode<T> *node) const {
+      float propagate_scores(const AndOr::AndNode<T> *node, std::map<T, float> &score_map) const {
           assert(node->children().size() == 1);
-          float score = 1 + propagate(node->child(0)); // CHECK: should add action cost
+          float score = 1 + propagate_scores(node->child(0), score_map); // CHECK: should add action cost
           node->set_score(score);
           return node->score();
       }
@@ -1034,69 +1172,82 @@ namespace HOP {
               std::cout << "num-expansions=" << num_expansions_ << ", #root-children=" << root->children().size() << ", #gn=" << goal_nodes_in_graph.size() << std::endl;
 
               // store goal-paths found in sampled graph
-              for( size_t j = 0; j < goal_nodes_in_graph.size(); ++j ) {
-                  // extract action path to goal
-                  std::vector<int> reversed_action_path;
-                  const AndOr::OrNode<T> *node = goal_nodes_in_graph[j];
-                  while( node->parent() != 0 ) {
-                      const AndOr::AndNode<T> *parent = node->parent();
-                      int action = parent->action();
-                      assert((action >= 0) && (action < lw1_instance_.actions_.size()));
-                      reversed_action_path.push_back(action);
-                      node = parent->parent();
-                      assert(node != 0);
-                  }
-                  assert(node == root);
-
-                  // insert path into map: first action is last in reversed path
-                  int first_action = reversed_action_path.back();
-                  bool need_to_insert_state_trajectory = true;
-                  if( goal_paths.find(first_action) == goal_paths.end() ) {
-                      std::map<std::vector<int>, int> path_map;
-#ifndef NO_EMPLACE
-                      path_map.emplace(reversed_action_path, 1);
-                      goal_paths.emplace(first_action, std::move(path_map));
-#else
-                      path_map.insert(std::make_pair(reversed_action_path, 1));
-                      goal_paths.insert(std::make_pair(first_action, path_map));
-#endif
-                  } else {
-                      std::map<std::vector<int>, int> &path_map = goal_paths.at(first_action);
-                      if( path_map.find(reversed_action_path) == path_map.end() ) {
-#ifndef NO_EMPLACE
-                          path_map.emplace(reversed_action_path, 1);
-#else
-                          path_map.insert(std::make_pair(reversed_action_path, 1));
-#endif
-                      } else {
-                          ++path_map[reversed_action_path];
-                          need_to_insert_state_trajectory = false;
-                      }
-                  }
-
-                  // if needed, calculate state trajectory and insert into map
-                  if( need_to_insert_state_trajectory ) {
-                      std::vector<const T*> state_trajectory(1 + reversed_action_path.size(), 0);
+              if( use_path_ ) {
+                  for( size_t j = 0; j < goal_nodes_in_graph.size(); ++j ) {
+                      // extract action path to goal
+                      std::vector<int> reversed_action_path;
                       const AndOr::OrNode<T> *node = goal_nodes_in_graph[j];
-                      for( int i = reversed_action_path.size(); node->parent() != 0; --i ) {
-                          assert(i > 0);
-                          state_trajectory[i] = new T(*node->hidden_state());
-                          node = node->parent()->parent();
+                      while( node->parent() != 0 ) {
+                          const AndOr::AndNode<T> *parent = node->parent();
+                          int action = parent->action();
+                          assert((action >= 0) && (action < lw1_instance_.actions_.size()));
+                          reversed_action_path.push_back(action);
+                          node = parent->parent();
                           assert(node != 0);
                       }
                       assert(node == root);
-                      state_trajectory[0] = new T(*node->hidden_state());
+
+                      // insert path into map: first action is last in reversed path
+                      int first_action = reversed_action_path.back();
+                      bool need_to_insert_state_trajectory = true;
+                      if( goal_paths.find(first_action) == goal_paths.end() ) {
+                          std::map<std::vector<int>, int> path_map;
 #ifndef NO_EMPLACE
-                      sampled_state_trajectories.emplace(reversed_action_path, std::move(state_trajectory));
+                          path_map.emplace(reversed_action_path, 1);
+                          goal_paths.emplace(first_action, std::move(path_map));
 #else
-                      sampled_state_trajectories.insert(std::make_pair(reversed_action_path, state_trajectory));
+                          path_map.insert(std::make_pair(reversed_action_path, 1));
+                          goal_paths.insert(std::make_pair(first_action, path_map));
 #endif
+                      } else {
+                          std::map<std::vector<int>, int> &path_map = goal_paths.at(first_action);
+                          if( path_map.find(reversed_action_path) == path_map.end() ) {
+#ifndef NO_EMPLACE
+                              path_map.emplace(reversed_action_path, 1);
+#else
+                              path_map.insert(std::make_pair(reversed_action_path, 1));
+#endif
+                          } else {
+                              ++path_map[reversed_action_path];
+                              need_to_insert_state_trajectory = false;
+                          }
+                      }
+
+                      // if needed, calculate state trajectory and insert into map
+                      if( need_to_insert_state_trajectory ) {
+                          std::vector<const T*> state_trajectory(1 + reversed_action_path.size(), 0);
+                          const AndOr::OrNode<T> *node = goal_nodes_in_graph[j];
+                          for( int i = reversed_action_path.size(); node->parent() != 0; --i ) {
+                              assert(i > 0);
+                              state_trajectory[i] = new T(*node->hidden_state());
+                              node = node->parent()->parent();
+                              assert(node != 0);
+                          }
+                          assert(node == root);
+                          state_trajectory[0] = new T(*node->hidden_state());
+#ifndef NO_EMPLACE
+                          sampled_state_trajectories.emplace(reversed_action_path, std::move(state_trajectory));
+#else
+                          sampled_state_trajectories.insert(std::make_pair(reversed_action_path, state_trajectory));
+#endif
+                      }
                   }
               }
 
-              // propagate values in graph
-              propagate(root);
-              //root->print_tree(std::cout);
+              // propagate scores in graph
+              std::map<T, float> score_map; // CHECL: always used?
+              propagate_scores(root, score_map);
+#if 0
+              for( size_t j = 0; j < root->children().size(); ++j ) {
+                  assert(root->child(j)->children().size() == 1);
+                  //int action = root->child(j)->action();
+                  const T &child_state = *root->child(j)->child(0)->belief()->belief();
+                  assert(score_map.find(child_state) != score_map.end());
+                  float stored_score = 1 + score_map.at(child_state); // CHECK: use action' cost instead of 1
+                  assert(stored_score <= root->child(j)->score());
+                  root->child(j)->set_score(stored_score);
+              }
+#endif
 
               // update score for best children in graph
               for( size_t j = 0; j < root->children().size(); ++j ) {
@@ -1152,7 +1303,7 @@ namespace HOP {
           for( size_t k = 0; k < action_scores.size(); ++k ) {
               if( action_scores[k] < std::numeric_limits<float>::max() ) {
                   const Instance::Action &action = *lw1_instance_.actions_[k];
-                  std::cout << Utils::cyan() << "score for '" << action.name() << "' is " << action_scores[k] << Utils::normal() << std::endl;
+                  std::cout << Utils::cyan() << "score for '" << k << "." << action.name() << "' is " << action_scores[k] << Utils::normal() << std::endl;
               }
           }
 #endif

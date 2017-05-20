@@ -108,8 +108,16 @@ void parse_as_string(const string as_string, ASMethod &as_method) {
     } else if( as_method.as_name_ == "hop" ) {
         as_method.solver_option_str_ = "solver:hop";
         if( as_method.options_.find("num-samples") == as_method.options_.end() ) {
-            cout << Utils::warning() << "unspecified number of samples for hop AS; defaulting to 5..." << endl;
-            as_method.options_.insert(make_pair("num-samples", "5"));
+            cout << Utils::warning() << "unspecified 'num-samples' for hop AS; defaulting to 1..." << endl;
+            as_method.options_.insert(make_pair("num-samples", "1"));
+        }
+        if( as_method.options_.find("prune-nodes") == as_method.options_.end() ) {
+            cout << Utils::warning() << "unspecified 'prune-nodes' for hop AS; defaulting to true..." << endl;
+            as_method.options_.insert(make_pair("prune-nodes", "true"));
+        }
+        if( as_method.options_.find("use-path") == as_method.options_.end() ) {
+            cout << Utils::warning() << "unspecified 'use-path' for hop AS; defaulting to true..." << endl;
+            as_method.options_.insert(make_pair("use-path", "true"));
         }
     } else {
         cout << Utils::error() << "undefined action-selection method." << endl;
@@ -588,8 +596,12 @@ int main(int argc, const char *argv[]) {
         assert(0); // CHECK
     } else if( g_options.is_enabled("solver:hop") ) {
         assert(as_method.options_.find("num-samples") != as_method.options_.end());
-        int hop_num_samples = atoi(as_method.options_.at("num-samples").c_str());
-        action_selection = make_unique<HOP::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine, hop_num_samples);
+        int num_samples = atoi(as_method.options_.at("num-samples").c_str());
+        assert(as_method.options_.find("prune-nodes") != as_method.options_.end());
+        bool prune_nodes = as_method.options_.at("prune-nodes") == "true";
+        assert(as_method.options_.find("use-path") != as_method.options_.end());
+        bool use_path = as_method.options_.at("use-path") == "true";
+        action_selection = make_unique<HOP::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine, num_samples, prune_nodes, use_path);
     } else if( g_options.is_enabled("solver:despot") ) {
         //action_selection = make_unique<Despot::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine, 50, 50, 1, .5, 10);
         assert(0); // CHECK
@@ -612,8 +624,12 @@ int main(int argc, const char *argv[]) {
         assert(0); // CHECK
     } else if( g_options.is_enabled("solver:hop") ) {
         assert(as_method.options_.find("num-samples") != as_method.options_.end());
-        int hop_num_samples = atoi(as_method.options_.at("num-samples").c_str());
-        action_selection = new HOP::ActionSelection<STATE_CLASS>(*lw1_instance, *inference_engine, hop_num_samples);
+        int num_samples = atoi(as_method.options_.at("num-samples").c_str());
+        assert(as_method.options_.find("prune-nodes") != as_method.options_.end());
+        bool prune_nodes = as_method.options_.at("prune-nodes") == "true";
+        assert(as_method.options_.find("use-path") != as_method.options_.end());
+        bool use_path = as_method.options_.at("use-path") == "true";
+        action_selection = new HOP::ActionSelection<STATE_CLASS>(*lw1_instance, *inference_engine, num_samples, prune_nodes, use_path);
     } else if( g_options.is_enabled("solver:despot") ) {
         //action_selection = new Despot::ActionSelection<STATE_CLASS>(*lw1_instance, *inference_engine, 50, 50, 1, .5, 10);
         assert(0); // CHECK
