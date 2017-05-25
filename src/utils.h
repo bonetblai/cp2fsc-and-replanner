@@ -86,6 +86,19 @@ namespace Utils {
       return str;
   }
 
+  template<typename T>
+  inline void random_shuffle(std::vector<T> &vec) {
+      size_t vsz = vec.size();
+      for( size_t k = 0; k < vsz; ++k ) {
+          size_t j = k + (lrand48() % (vsz - k));
+          if( j > k ) {
+              T t = vec[k];
+              vec[k] = vec[j];
+              vec[j] = t;
+          }
+      }
+  }
+
 } // namespace Utils
 
 #endif
