@@ -44,6 +44,8 @@ namespace HOP {
       const int num_sampled_scenarios_;
       const bool prune_nodes_;
       const bool use_path_;
+      const bool random_shuffle_;
+      const int debug_;
 
       std::set<int> unknown_variables_at_initial_state_;
       std::vector<int> goal_variables_;
@@ -76,12 +78,16 @@ namespace HOP {
                       const Inference::Engine<T> &inference_engine,
                       int num_sampled_scenarios,
                       bool prune_nodes,
-                      bool use_path)
+                      bool use_path,
+                      bool random_shuffle,
+                      int debug = 0)
         : lw1_instance_(lw1_instance),
           inference_engine_(inference_engine),
           num_sampled_scenarios_(num_sampled_scenarios),
           prune_nodes_(prune_nodes),
           use_path_(use_path),
+          random_shuffle_(random_shuffle),
+          debug_(debug),
           goal_feature_index_(-1),
           goal_feature_(0),
           feature_bitmap_size_(0),
@@ -347,9 +353,9 @@ namespace HOP {
           calculate_unknown_variables(state, &unknown_variables);
       }
       bool sample(const T &state, const std::vector<int> &unknown_variables, T &sampled_hidden) const {
-#if 1//def DEBUG
-          std::cout << Utils::blue() << "sampling: #unknown-variables=" << unknown_variables.size() << Utils::normal() << std::endl;
-#endif
+          if( debug_ > 0 )
+              std::cout << Utils::blue() << "sampling: #unknown-variables=" << unknown_variables.size() << Utils::normal() << std::endl;
+
           assert(sampled_hidden == state);
           for( size_t k = 0; k < unknown_variables.size(); ++k ) {
               int var_index = unknown_variables[k];
@@ -372,19 +378,19 @@ namespace HOP {
               assert(possible_values.size() > 1);
               int sampled_atom = possible_values[lrand48() % possible_values.size()];
 
-#if 1//def DEBUG
-              std::cout << Utils::blue()
-                        << "sampling: variable=" << variable.name()
-                        << ", #possible-values=" << possible_values.size()
-                        << ", sampled-value=";
-              State::print_literal(std::cout, 1 + sampled_atom, &lw1_instance_);
-              std::cout << ", possible-values={";
-              for( size_t j = 0; j < possible_values.size(); ++j ) {
-                  State::print_literal(std::cout, 1 + possible_values[j], &lw1_instance_);
-                  if( 1 + j < possible_values.size() ) std::cout << ",";
+              if( debug_ > 0 ) {
+                  std::cout << Utils::blue()
+                            << "sampling: variable=" << variable.name()
+                            << ", #possible-values=" << possible_values.size()
+                            << ", sampled-value=";
+                  State::print_literal(std::cout, 1 + sampled_atom, &lw1_instance_);
+                  std::cout << ", possible-values={";
+                  for( size_t j = 0; j < possible_values.size(); ++j ) {
+                      State::print_literal(std::cout, 1 + possible_values[j], &lw1_instance_);
+                      if( 1 + j < possible_values.size() ) std::cout << ",";
+                  }
+                  std::cout << "}" << Utils::normal() << std::endl;
               }
-              std::cout << "}" << Utils::normal() << std::endl;
-#endif
 
               // add sampled atom to sampled state
               sampled_hidden.add(sampled_atom);
@@ -505,7 +511,7 @@ namespace HOP {
                       for( size_t j = 0; j < succ->children().size(); ++j )
                           queue.push_front(const_cast<AndOr::OrNode<T>*>(succ->child(j)));
                       node->add_child(succ);
-                      succ->set_parent(node);
+                      assert(succ->parent() == node);
                   }
                   successors.clear();
               }
@@ -530,10 +536,11 @@ namespace HOP {
           float feature_time = 0;
 
           queue.push_front(root);
+          //std::cout << "root: ptr=" << root << ", node=" << *root << std::endl;
           while( !queue.empty() ) {
               AndOr::OrNode<T> *node = queue.back();
               queue.pop_back();
-              //std::cout << "processing node=" << *node << std::endl;
+              //std::cout << "node: ptr=" << node << ", node=" << *node << std::endl;
 
               // compute state bitmap
               const T &state = *node->belief()->belief();
@@ -562,8 +569,14 @@ namespace HOP {
                   assert(successors.empty());
                   float expand_start_time = Utils::read_time_in_seconds();
                   expand(*node, successors);
+                  if( random_shuffle_ ) Utils::random_shuffle(successors);
                   expand_time += Utils::read_time_in_seconds() - expand_start_time;
-                  //std::cout << "#successors=" << successors.size() << std::endl;
+
+                  //std::cout << "successors: n=" << successors.size() << ", succ={";
+                  //for( size_t k = 0; k < successors.size(); ++k )
+                  //    std::cout << successors[k].first << ",";
+                  //std::cout << "}" << std::endl;
+
                   for( size_t k = 0; k < successors.size(); ++k ) {
                       AndOr::AndNode<T> *succ = successors[k].first;
                       const T *succ_hidden = successors[k].second;
@@ -573,7 +586,7 @@ namespace HOP {
                           queue.push_front(succ_child);
                       }
                       node->add_child(succ);
-                      succ->set_parent(node);
+                      assert(succ->parent() == node);
                   }
                   successors.clear();
               } else if( prune_nodes_ ) {
@@ -617,6 +630,7 @@ namespace HOP {
               assert(lw1_instance_.is_regular_action(action_index));
               const Instance::Action &action = *lw1_instance_.actions_[action_index];
               if( tip.applicable(action) ) {
+                  int action_cost = 1; // CHECK: action cost?
                   //std::cout << Utils::green() << "action=" << Utils::normal() << action.name() << std::endl;
 
                   // calculate result of action
@@ -693,7 +707,7 @@ namespace HOP {
                       }
                       assert(valid_successors.size() == 1);
                   }
-                  AndOr::AndNode<T> *and_node = AndOr::create_and_node(action_index, result_after_action, valid_successors);
+                  AndOr::AndNode<T> *and_node = AndOr::create_and_node(node, action_index, action_cost, result_after_action, valid_successors);
                   successors.push_back(and_node);
               }
           }
@@ -718,6 +732,7 @@ namespace HOP {
               assert(lw1_instance_.is_regular_action(action_index));
               const Instance::Action &action = *lw1_instance_.actions_[action_index];
               if( tip.applicable(action) ) {
+                  int action_cost = 1; // CHECK: action cost?
                   //std::cout << Utils::green() << "action=" << Utils::normal() << action.name() << std::endl;
 
                   // calculate result of action
@@ -787,7 +802,7 @@ namespace HOP {
 
                   if( good_successor ) {
                       std::vector<const T*> valid_successors(1, result_after_action_and_obs);
-                      AndOr::AndNode<T> *and_node = AndOr::create_and_node(action_index, result_after_action, valid_successors);
+                      AndOr::AndNode<T> *and_node = AndOr::create_and_node(node, action_index, action_cost, result_after_action, valid_successors);
                       successors.push_back(std::make_pair(and_node, hidden_after_action));
                   } else {
                      // a bad successor means that the hidden sampled state is inconsistent
@@ -1085,7 +1100,7 @@ namespace HOP {
       }
       float propagate_scores(const AndOr::AndNode<T> *node, std::map<T, float> &score_map) const {
           assert(node->children().size() == 1);
-          float score = 1 + propagate_scores(node->child(0), score_map); // CHECK: should add action cost
+          float score = node->action_cost() + propagate_scores(node->child(0), score_map);
           node->set_score(score);
           return node->score();
       }
@@ -1094,6 +1109,9 @@ namespace HOP {
           std::string str = std::string("hop(") +
             "num-samples=" + std::to_string(num_sampled_scenarios_) +
             ",prune-nodes=" + std::to_string(prune_nodes_) +
+            ",use-path=" + std::to_string(use_path_) +
+            ",random-shuffle=" + std::to_string(random_shuffle_) +
+            ",debug=" + std::to_string(debug_) +
             ")";
           return str;
       }
@@ -1150,13 +1168,17 @@ namespace HOP {
           int num_sampled_scenarios = unknown_variables.empty() ? 1 : num_sampled_scenarios_;
           for( int k = 0; k < num_sampled_scenarios; ++k ) {
               reset_graph();
-              std::cout << Utils::bold() << "**** Running sampled scenario " << 1 + k << "/" << num_sampled_scenarios << Utils::normal() << std::endl;
+              if( debug_ > 0 ) {
+                  std::cout << Utils::bold()
+                            << "**** Running sampled scenario " << 1 + k << "/" << num_sampled_scenarios
+                            << Utils::normal() << std::endl;
+              }
 
               // sample (full) state from given state (belief)
               T sampled_hidden(state);
               sample(state, unknown_variables, sampled_hidden);
 
-#if 1//def DEBUG
+#ifdef DEBUG
               std::cout << Utils::magenta();
               std::cout << "sampled=";
               sampled_hidden.print(std::cout, lw1_instance_);
@@ -1169,7 +1191,7 @@ namespace HOP {
               //std::cout << "root=" << *root << std::endl;
               //create_sampled_graph_breadth_first(root, goal_paths_in_graph, true); // CHECK: another sampled graph?
               create_sampled_graph_breadth_first(root, goal_nodes_in_graph);
-              std::cout << "num-expansions=" << num_expansions_ << ", #root-children=" << root->children().size() << ", #gn=" << goal_nodes_in_graph.size() << std::endl;
+              //std::cout << "num-expansions=" << num_expansions_ << ", #root-children=" << root->children().size() << ", #gn=" << goal_nodes_in_graph.size() << std::endl;
 
               // store goal-paths found in sampled graph
               if( use_path_ ) {
@@ -1235,7 +1257,7 @@ namespace HOP {
               }
 
               // propagate scores in graph
-              std::map<T, float> score_map; // CHECL: always used?
+              std::map<T, float> score_map; // CHECK: always used?
               propagate_scores(root, score_map);
 #if 0
               for( size_t j = 0; j < root->children().size(); ++j ) {
