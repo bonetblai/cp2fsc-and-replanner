@@ -154,6 +154,8 @@ namespace AndOr {
       mutable float score_;
       mutable bool pruned_;
 
+      int cost_;
+
     protected:
       virtual int deallocate() const = 0;
 
@@ -185,7 +187,7 @@ namespace AndOr {
       }
 
     public:
-      Node() : ref_count_(1), score_(-1), pruned_(false) { }
+      Node(int cost = 0) : ref_count_(1), score_(-1), pruned_(false), cost_(cost) { }
       virtual ~Node() { }
       float score() const {
           return score_;
@@ -199,6 +201,13 @@ namespace AndOr {
       void mark_as_pruned() const {
           pruned_ = true;
       }
+      int cost() const {
+          return cost_;
+      }
+      void set_cost(int cost) {
+          cost_ = cost;
+      }
+
       int node_count() const {
           return node_count(0);
       }
@@ -217,6 +226,7 @@ namespace AndOr {
   class AndNode : public Node {
     protected:
       int action_;                             // action leading to this node
+      int action_cost_;                        // cost of action leading to this node
       const Belief<T> *belief_;                // belief after action is applied (belief for this node)
       const OrNode<T> *parent_;                // parent node
       std::vector<const OrNode<T>*> children_; // children
@@ -236,8 +246,9 @@ namespace AndOr {
       }
 
     public:
-      AndNode(int action, const Belief<T> *belief, const OrNode<T> *parent)
-        : action_(action), belief_(belief), parent_(parent) {
+      AndNode(int action, int action_cost, const Belief<T> *belief, const OrNode<T> *parent)
+        : action_(action), action_cost_(action_cost), belief_(belief), parent_(parent) {
+          assert(parent_ != 0);
       }
 #if 0
       AndNode(int action, const T *belief, BeliefRepo<T> &repo)
@@ -257,6 +268,7 @@ namespace AndOr {
           os << std::string(indent, ' ')
              << Utils::blue()
              << "AND[ptr=" << this
+             << ",cost=" << Node::cost_
              << ",ref=" << Node::ref_count_
              << ",action=" << action_
              << ",parent=" << parent_
@@ -272,8 +284,11 @@ namespace AndOr {
               children_[k]->print_tree(os, 4 + indent);
       }
 
-      const int action() const {
+      int action() const {
           return action_;
+      }
+      int action_cost() const {
+          return action_cost_;
       }
       const Belief<T>* belief() const {
           return belief_;
@@ -323,6 +338,8 @@ namespace AndOr {
     public:
       OrNode(const T *hidden_state, const Belief<T> *belief, const AndNode<T> *parent)
         : hidden_state_(hidden_state), belief_(belief), parent_(parent) {
+          if( parent_ != 0 )
+              set_cost(parent_->cost());
       }
 #if 0
       OrNode(const T *belief, BeliefRepo<T> &repo, int action)
@@ -349,6 +366,7 @@ namespace AndOr {
           os << std::string(indent, ' ')
              << Utils::green()
              << "OR[ptr=" << this
+             << ",cost=" << Node::cost_
              << ",ref=" << Node::ref_count_
              << ",parent=" << parent_
              << ",score=" << score_
@@ -471,9 +489,9 @@ namespace AndOr {
   };
 
   template<typename T>
-  inline AndNode<T>* create_and_node(int action, const T *bel_a, std::vector<const T*> &successors) {
+  inline AndNode<T>* create_and_node(const OrNode<T> &parent, int action, int action_cost, const T *bel_a, std::vector<const T*> &successors) {
       const Belief<T> *belief_a = new Belief<T>(bel_a);
-      AndNode<T> *and_node = new AndNode<T>(action, belief_a, 0);
+      AndNode<T> *and_node = new AndNode<T>(action, action_cost, belief_a, &parent);
       for( size_t k = 0; k < successors.size(); ++k ) {
           const Belief<T> *belief_ao = new Belief<T>(successors[k]);
           OrNode<T> *child = new OrNode<T>(0, belief_ao, and_node); // CHECK: hidden_state = 0
