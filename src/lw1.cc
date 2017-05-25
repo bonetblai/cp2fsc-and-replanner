@@ -86,6 +86,11 @@ void parse_as_string(const string as_string, ASMethod &as_method) {
         }
     }
 
+    // global AS options
+    if( as_method.options_.find("debug") == as_method.options_.end() )
+        as_method.options_.insert(make_pair("debug", "0"));
+
+    // specific AS option
     if( as_method.as_name_ == "classical-planner" ) {
         as_method.solver_option_str_ = "solver:classical-planner";
         if( as_method.options_.find("planner") == as_method.options_.end() ) {
@@ -118,6 +123,10 @@ void parse_as_string(const string as_string, ASMethod &as_method) {
         if( as_method.options_.find("use-path") == as_method.options_.end() ) {
             cout << Utils::warning() << "unspecified 'use-path' for hop AS; defaulting to true..." << endl;
             as_method.options_.insert(make_pair("use-path", "true"));
+        }
+        if( as_method.options_.find("random-shuffle") == as_method.options_.end() ) {
+            cout << Utils::warning() << "unspecified 'random-shuffle' for hop AS; defaulting to false..." << endl;
+            as_method.options_.insert(make_pair("random-shuffle", "false"));
         }
     } else {
         cout << Utils::error() << "undefined action-selection method." << endl;
@@ -582,6 +591,8 @@ int main(int argc, const char *argv[]) {
 #endif
 
     // construct action selection
+    assert(as_method.options_.find("debug") != as_method.options_.end());
+    int as_debug = atoi(as_method.options_.at("debug").c_str());
 #ifdef SMART
     unique_ptr<ActionSelection<STATE_CLASS> > action_selection;
     if( g_options.is_enabled("solver:naive-random-action-selection") ) {
@@ -601,7 +612,9 @@ int main(int argc, const char *argv[]) {
         bool prune_nodes = as_method.options_.at("prune-nodes") == "true";
         assert(as_method.options_.find("use-path") != as_method.options_.end());
         bool use_path = as_method.options_.at("use-path") == "true";
-        action_selection = make_unique<HOP::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine, num_samples, prune_nodes, use_path);
+        assert(as_method.options_.find("random-shuffle") != as_method.options_.end());
+        bool random_shuffle = as_method.options_.at("random-shuffle") == "true";
+        action_selection = make_unique<HOP::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine, num_samples, prune_nodes, use_path, random_shuffle, as_debug);
     } else if( g_options.is_enabled("solver:despot") ) {
         //action_selection = make_unique<Despot::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine, 50, 50, 1, .5, 10);
         assert(0); // CHECK
@@ -629,7 +642,9 @@ int main(int argc, const char *argv[]) {
         bool prune_nodes = as_method.options_.at("prune-nodes") == "true";
         assert(as_method.options_.find("use-path") != as_method.options_.end());
         bool use_path = as_method.options_.at("use-path") == "true";
-        action_selection = new HOP::ActionSelection<STATE_CLASS>(*lw1_instance, *inference_engine, num_samples, prune_nodes, use_path);
+        assert(as_method.options_.find("random-shuffle") != as_method.options_.end());
+        bool random_shuffle = as_method.options_.at("random-shuffle") == "true";
+        action_selection = new HOP::ActionSelection<STATE_CLASS>(*lw1_instance, *inference_engine, num_samples, prune_nodes, use_path, random_shuffle, as_debug);
     } else if( g_options.is_enabled("solver:despot") ) {
         //action_selection = new Despot::ActionSelection<STATE_CLASS>(*lw1_instance, *inference_engine, 50, 50, 1, .5, 10);
         assert(0); // CHECK
