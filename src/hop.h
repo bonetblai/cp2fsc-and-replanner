@@ -80,7 +80,7 @@ namespace HOP {
                       bool prune_nodes,
                       bool use_path,
                       bool random_shuffle,
-                      int debug = 0)
+                      int debug)
         : lw1_instance_(lw1_instance),
           inference_engine_(inference_engine),
           num_sampled_scenarios_(num_sampled_scenarios),

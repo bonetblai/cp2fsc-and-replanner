@@ -32,12 +32,16 @@ ClassicalPlanner::ClassicalPlanner(const string &name,
                                    const string &tmpfile_path,
                                    const string &planner_path,
                                    const string &planner_name,
-                                   const KP_Instance &instance)
+                                   const KP_Instance &instance,
+                                   bool remove_intermediate_files,
+                                   int debug)
   : name_(name),
     tmpfile_path_(tmpfile_path),
     planner_path_(planner_path),
     planner_name_(planner_name),
     kp_instance_(instance),
+    remove_intermediate_files_(remove_intermediate_files),
+    debug_(debug),
     total_search_time_(0),
     total_time_(0),
     n_calls_(0) {
@@ -84,7 +88,7 @@ void ClassicalPlanner::generate_pddl_problem(const State &state) const {
 }
 
 void ClassicalPlanner::remove_file(const string &filename) const {
-    if( kp_instance_.options_.is_enabled("planner:remove-intermediate-files") )
+    if( remove_intermediate_files_ )
         unlink(filename.c_str());
 }
 
@@ -99,7 +103,7 @@ void ClassicalPlanner::reduce_plan(const KP_Instance::Plan &raw_plan, Instance::
 int ClassicalPlanner::get_plan(const State &state, Instance::Plan &raw_plan, Instance::Plan &plan) const {
     int status = get_raw_plan(state, raw_plan);
     if( status == SOLVED ) {
-        if( kp_instance_.options_.is_enabled("planner:print:plan:raw") ) {
+        if( debug_ > 1 ) {
             cout << "Classical plan (raw):" << endl;
             int step = 0;
             for( Instance::Plan::const_iterator a = raw_plan.begin(); a != raw_plan.end(); ++a, ++step ) {
@@ -109,7 +113,7 @@ int ClassicalPlanner::get_plan(const State &state, Instance::Plan &raw_plan, Ins
             }
         }
         reduce_plan(raw_plan, plan);
-        if( kp_instance_.options_.is_enabled("planner:print:plan") ) {
+        if( debug_ > 0 ) {
             cout << "Classical plan (reduced):" << endl;
             int step = 0;
             for( Instance::Plan::const_iterator a = plan.begin(); a != plan.end(); ++a, ++step ) {
@@ -268,8 +272,12 @@ MP_Planner::~MP_Planner() {
     if( !first_call_ ) remove_file(domain_fn_);
 }
 
-LAMA_Planner::LAMA_Planner(const KP_Instance &instance, const string &tmpfile_path, const string &planner_path)
-  : ClassicalPlanner("LAMA", tmpfile_path, planner_path, "lama", instance),
+LAMA_Planner::LAMA_Planner(const KP_Instance &instance,
+                           const string &tmpfile_path,
+                           const string &planner_path,
+                           bool remove_intermediate_files,
+                           int debug)
+  : ClassicalPlanner("LAMA", tmpfile_path, planner_path, "lama", instance, remove_intermediate_files, debug),
     first_call_(true) {
     for( size_t k = 0; k < kp_instance_.n_atoms(); ++k ) {
         const Instance::Atom &atom = *kp_instance_.atoms_[k];
@@ -473,8 +481,12 @@ void LAMA_Planner::read_variables(ifstream &ifs) const {
 
 
 
-LAMA_Server_Planner::LAMA_Server_Planner(const KP_Instance &instance, const string &tmpfile_path, const string &planner_path)
-  : ClassicalPlanner("LAMA_Server", tmpfile_path, planner_path, "lama-server", instance),
+LAMA_Server_Planner::LAMA_Server_Planner(const KP_Instance &instance,
+                                         const string &tmpfile_path,
+                                         const string &planner_path,
+                                         bool remove_intermediate_files,
+                                         int debug)
+  : ClassicalPlanner("LAMA_Server", tmpfile_path, planner_path, "lama-server", instance, remove_intermediate_files, debug),
     first_call_(true) {
     for( size_t k = 0; k < kp_instance_.n_atoms(); ++k ) {
         const Instance::Atom &atom = *kp_instance_.atoms_[k];

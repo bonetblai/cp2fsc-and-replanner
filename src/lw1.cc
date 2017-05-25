@@ -97,6 +97,8 @@ void parse_as_string(const string as_string, ASMethod &as_method) {
             cout << Utils::warning() << "unspecified planner for classical-planner AS; defaulting to 'ff'..." << endl;
             as_method.options_.insert(make_pair("planner", "ff"));
         }
+        if( as_method.options_.find("remove-intermediate-files") == as_method.options_.end() )
+            as_method.options_.insert(make_pair("remove-intermediate-files", "true"));
     } else if( as_method.as_name_ == "random" ) {
         if( as_method.options_.find("type") == as_method.options_.end() ) {
             as_method.solver_option_str_ = "solver:random-action-selection";
@@ -191,7 +193,6 @@ int main(int argc, const char *argv[]) {
     }
 
     // set default options
-    g_options.enable("planner:remove-intermediate-files");
     g_options.enable("problem:action-compilation");
     g_options.enable("kp:merge-drules");
     g_options.enable("solver:forced-moves");
@@ -259,8 +260,6 @@ int main(int argc, const char *argv[]) {
                 exit(-1);
             }
             opt_prefix = argv[++k];
-        } else if( !skip_options && !strcmp(argv[k], "--keep-intermediate-files") ) {
-            g_options.disable("planner:remove-intermediate-files");
         } else if( !skip_options && !strcmp(argv[k], "--planner") ) {
             cout << Utils::warning() << "deprecated option. Use --as to specify AS method." << endl;
             //opt_planner = argv[++k];
@@ -520,16 +519,22 @@ int main(int argc, const char *argv[]) {
         if( as_method.options_.find("path") != as_method.options_.end() )
             planner_path = as_method.options_.at("path");
 
+        // options
+        assert(as_method.options_.find("remove-intermediate-files") != as_method.options_.end());
+        bool remove_intermediate_files = as_method.options_.at("remove-intermediate-files") == "true";
+        assert(as_method.options_.find("debug") != as_method.options_.end());
+        int debug = atoi(as_method.options_.at("debug").c_str());
+
         if( as_planner == "ff" ) {
-            planner = make_unique<const FF_Planner>(*lw1_instance, opt_tmpfile_path.c_str(), planner_path.c_str());
+            planner = make_unique<const FF_Planner>(*lw1_instance, opt_tmpfile_path.c_str(), planner_path.c_str(), remove_intermediate_files, debug);
         } else if( as_planner == "lama" ) {
-            planner = make_unique<const LAMA_Planner>(*lw1_instance, opt_tmpfile_path.c_str(), planner_path.c_str());
+            planner = make_unique<const LAMA_Planner>(*lw1_instance, opt_tmpfile_path.c_str(), planner_path.c_str(), remove_intermediate_files, debug);
         } else if( as_planner == "m" ) {
-            planner = make_unique<const M_Planner>(*lw1_instance, opt_tmpfile_path.c_str(), planner_path.c_str());
+            planner = make_unique<const M_Planner>(*lw1_instance, opt_tmpfile_path.c_str(), planner_path.c_str(), remove_intermediate_files, debug);
         } else if( as_planner == "mp" ) {
-            planner = make_unique<const MP_Planner>(*lw1_instance, opt_tmpfile_path.c_str(), planner_path.c_str());
+            planner = make_unique<const MP_Planner>(*lw1_instance, opt_tmpfile_path.c_str(), planner_path.c_str(), remove_intermediate_files, debug);
         } else if( as_planner == "lama-server" ) {
-            planner = make_unique<const LAMA_Server_Planner>(*lw1_instance, opt_tmpfile_path.c_str(), planner_path.c_str());
+            planner = make_unique<const LAMA_Server_Planner>(*lw1_instance, opt_tmpfile_path.c_str(), planner_path.c_str(), remove_intermediate_files, debug);
         } else {
             cout << Utils::error() << "unrecognized planner '" << as_planner << "'." << endl;
             exit(-1);
@@ -546,16 +551,22 @@ int main(int argc, const char *argv[]) {
         if( as_method.options_.find("path") != as_method.options_.end() )
             planner_path = as_method.options_.at("path");
 
+        // options
+        assert(as_method.options_.find("remove-intermediate-files") != as_method.options_.end());
+        bool remove_intermediate_files = as_method.options_.at("remove-intermediate-files") == "true";
+        assert(as_method.options_.find("debug") != as_method.options_.end());
+        int debug = atoi(as_method.options_.at("debug").c_str());
+
         if( as_planner == "ff" ) {
-            planner = new FF_Planner(*lw1_instance, opt_tmpfile_path.c_str(), planner_path.c_str());
+            planner = new FF_Planner(*lw1_instance, opt_tmpfile_path.c_str(), planner_path.c_str(), remove_intermediate_files, debug);
         } else if( as_planner == "lama" ) {
-            planner = new LAMA_Planner(*lw1_instance, opt_tmpfile_path.c_str(), planner_path.c_str());
+            planner = new LAMA_Planner(*lw1_instance, opt_tmpfile_path.c_str(), planner_path.c_str(), remove_intermediate_files, debug);
         } else if( as_planner == "m" ) {
-            planner = new M_Planner(*lw1_instance, opt_tmpfile_path.c_str(), planner_path.c_str());
+            planner = new M_Planner(*lw1_instance, opt_tmpfile_path.c_str(), planner_path.c_str(), remove_intermediate_files, debug);
         } else if( as_planner == "mp" ) {
-            planner = new MP_Planner(*lw1_instance, opt_tmpfile_path.c_str(), planner_path.c_str());
+            planner = new MP_Planner(*lw1_instance, opt_tmpfile_path.c_str(), planner_path.c_str(), remove_intermediate_files, debug);
         } else if( as_planner == "lama-server" ) {
-            planner = new LAMA_Server_Planner(*lw1_instance, opt_tmpfile_path.c_str(), planner_path.c_str());
+            planner = new LAMA_Server_Planner(*lw1_instance, opt_tmpfile_path.c_str(), planner_path.c_str(), remove_intermediate_files, debug);
         } else {
             cout << Utils::error() << "unrecognized planner '" << as_planner << "'." << endl;
             exit(-1);

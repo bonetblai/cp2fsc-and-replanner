@@ -31,11 +31,14 @@ class ClassicalPlanner {
   public:
     enum { SOLVED = 0, NO_SOLUTION = 1, ERROR = 2 };
   protected:
-    std::string name_;
-    std::string tmpfile_path_;
-    std::string planner_path_;
-    std::string planner_name_;
+    const std::string name_;
+    const std::string tmpfile_path_;
+    const std::string planner_path_;
+    const std::string planner_name_;
     const KP_Instance &kp_instance_;
+    const bool remove_intermediate_files_;
+    const int debug_;
+
     std::map<std::string, size_t> action_map_;
 
     std::string domain_fn_;
@@ -52,7 +55,9 @@ class ClassicalPlanner {
                      const std::string &tmpfile_path,
                      const std::string &planner_path,
                      const std::string &planner_name,
-                     const KP_Instance &instance);
+                     const KP_Instance &instance,
+                     bool remove_intermediate_files,
+                     int debug);
     virtual ~ClassicalPlanner() { }
     virtual int get_raw_plan(const State &state, Instance::Plan &raw_plan) const = 0;
     const std::string& name() const { return planner_name_; }
@@ -77,8 +82,14 @@ class ClassicalPlanner {
 class FF_Planner : public ClassicalPlanner {
     mutable bool first_call_;
   public:
-    FF_Planner(const KP_Instance &instance, const std::string &tmpfile_path, const std::string &planner_path)
-      : ClassicalPlanner("FF", tmpfile_path, planner_path, "ff", instance), first_call_(true) { }
+    FF_Planner(const KP_Instance &instance,
+               const std::string &tmpfile_path,
+               const std::string &planner_path,
+               bool remove_intermediate_files,
+               int debug)
+      : ClassicalPlanner("FF", tmpfile_path, planner_path, "ff", instance, remove_intermediate_files, debug),
+        first_call_(true) {
+    }
     virtual ~FF_Planner();
     virtual int get_raw_plan(const State &state, Instance::Plan &raw_plan) const;
 };
@@ -87,16 +98,27 @@ class M_Planner : public ClassicalPlanner {
   protected:
     mutable bool first_call_;
   public:
-    M_Planner(const KP_Instance &instance, const std::string &tmpfile_path, const std::string &planner_path, const std::string &planner_name = "M")
-      : ClassicalPlanner(planner_name, tmpfile_path, planner_path, planner_name, instance), first_call_(true) { }
+    M_Planner(const KP_Instance &instance,
+              const std::string &tmpfile_path,
+              const std::string &planner_path,
+              bool remove_intermediate_files,
+              int debug,
+              const std::string &planner_name = "M")
+      : ClassicalPlanner(planner_name, tmpfile_path, planner_path, planner_name, instance, remove_intermediate_files, debug),
+        first_call_(true) {
+    }
     virtual ~M_Planner();
     virtual int get_raw_plan(const State &state, Instance::Plan &raw_plan) const;
 };
 
 class MP_Planner : public M_Planner {
   public:
-    MP_Planner(const KP_Instance &instance, const std::string &tmpfile_path, const std::string &planner_path)
-      : M_Planner(instance, tmpfile_path, planner_path, "Mp") { }
+    MP_Planner(const KP_Instance &instance,
+               const std::string &tmpfile_path,
+               const std::string &planner_path,
+               bool remove_intermediate_files,
+               int debug)
+      : M_Planner(instance, tmpfile_path, planner_path, remove_intermediate_files, debug, "Mp") { }
     virtual ~MP_Planner();
 };
 
@@ -106,7 +128,11 @@ class LAMA_Planner : public ClassicalPlanner {
     mutable std::vector<std::vector<int> > variables_;
     std::map<std::string, size_t> atom_map_;
   public:
-    LAMA_Planner(const KP_Instance &instance, const std::string &tmpfile_path, const std::string &planner_path);
+    LAMA_Planner(const KP_Instance &instance,
+                 const std::string &tmpfile_path,
+                 const std::string &planner_path,
+                 bool remove_intermediate_files,
+                 int debug);
     virtual ~LAMA_Planner();
     virtual int get_raw_plan(const State &state, Instance::Plan &raw_plan) const;
 
@@ -129,7 +155,11 @@ class LAMA_Server_Planner : public ClassicalPlanner {
     mutable int child_pid_;
 
   public:
-    LAMA_Server_Planner(const KP_Instance &instance, const std::string &tmpfile_path, const std::string &planner_path);
+    LAMA_Server_Planner(const KP_Instance &instance,
+                        const std::string &tmpfile_path,
+                        const std::string &planner_path,
+                        bool remove_intermediate_files,
+                        int debug);
     virtual ~LAMA_Server_Planner();
     virtual int get_raw_plan(const State &state, Instance::Plan &raw_plan) const;
     //void patch_state_in_sas(std::fstream &iofs, const State &state) const;

@@ -84,11 +84,10 @@ const char *available_options[] = {
     "kp:subgoaling:non-reversable-goal-atoms",          "[KP] add non-reversable goal atoms as subgoals [EXPERIMENTAL]",
     "kp:subgoaling:static-unknowns",                    "[KP] add unknown static fluents as subgoals [EXPERIMENTAL]",
 
-    // planner options (k_replanner, clg, lw1)
+    // planner options (k_replanner)
     "planner:print:plan",                               "[PLANNER] print classical plan (reduced)",
     "planner:print:plan:raw",                           "[PLANNER] print classical plan (raw)",
     "planner:remove-intermediate-files",                "[PLANNER] remove the files created for calling the classical planner",
-    "planner:support-for-axioms",                       "[PLANNER] indicates that the classical planner supports axioms (aka derived predicates)",
 
     // solver options (k_replanner, clg, lw1)
     "solver:forced-moves",                              "[SOLVER] don't call planner when there is just one applicable operator",
