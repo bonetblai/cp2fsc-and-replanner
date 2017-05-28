@@ -212,7 +212,6 @@ const char *lw1_cmdline_options[] = {
     "[--max-as-calls <number-calls>]",
     "[--no-print-plan]",
     "[--prefix <prefix>]",
-    "[--keep-intermediate-files]",
     "[--planner-path <path>]",
     "[--tmpfile-path <path>]",
     "[--options=<options-string>]",
