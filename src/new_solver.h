@@ -628,12 +628,13 @@ bool NewSolver<T>::violate_assumption(const T &state, const index_set &assumptio
             std::cout << Utils::cyan() << "assumption:" << Utils::normal();
             std::cout << " k-literal=";
             State::print_literal(std::cout, k_literal, &kp_instance_);
+            std::cout << ", satisfy=" << state.satisfy(k_literal - 1);
             std::cout << ", k-not-literal=";
             State::print_literal(std::cout, k_not_literal, &kp_instance_);
             std::cout << ", satisfy=" << state.satisfy(k_not_literal - 1);
             std::cout << std::endl;
         }
-        if( state.satisfy(k_not_literal - 1) )
+        if( !state.satisfy(k_literal - 1) || state.satisfy(k_not_literal - 1) )
             return true;
     }
     return false;
