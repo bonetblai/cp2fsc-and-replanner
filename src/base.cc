@@ -1800,7 +1800,7 @@ void PDDL_Base::lw1_create_drule_var_exclusive(const Variable &variable, const A
 }
 
 void PDDL_Base::lw1_index_sensing_models() {
-    // consolidate sensing models for each literal (use auto for easily dealing with smart/non-smart pointers)
+    // consolidate sensing models for each literal (using auto for easily dealing with smart/non-smart pointers)
     for( auto it = lw1_sensing_models_.cbegin(); it != lw1_sensing_models_.cend(); ++it ) {
         const Action &action = *it->first;
 #ifdef SMART
@@ -2066,7 +2066,7 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
             }
         }
 
-        // deductive rules for sensing for observable non-state variables (use auto for easily dealing with smart/non-smart pointers)
+        // deductive rules for sensing for observable non-state variables (using auto for easily dealing with smart/non-smart pointers)
         if( !options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
             for( auto it = lw1_sensing_models_index_.cbegin(); it != lw1_sensing_models_index_.cend(); ++it ) {
                 const Action &action = *it->first;
@@ -2104,7 +2104,7 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
 #endif
         }
 
-        // type3 deductive rules for sensing for observable non-state variables (use auto for easily dealing with smart/non-smart pointers)
+        // type3 deductive rules for sensing for observable non-state variables (using auto for easily dealing with smart/non-smart pointers)
         if( options_.is_enabled("lw1:boost:drule:sensing:type3") ) {
             for( auto it = lw1_sensing_models_index_.cbegin(); it != lw1_sensing_models_index_.cend(); ++it ) {
                 const Action &action = *it->first;
@@ -2120,7 +2120,7 @@ void PDDL_Base::lw1_create_deductive_rules_for_sensing() {
             }
         }
     } else {
-        // (use auto for easily dealing with smart/non-smart pointers)
+        // (using auto for easily dealing with smart/non-smart pointers)
         for( auto it = lw1_sensing_models_index_.cbegin(); it != lw1_sensing_models_index_.cend(); ++it ) {
             const Action &action = *it->first;
             for( auto jt = it->second.cbegin(); jt != it->second.cend(); ++jt ) {
@@ -2235,7 +2235,7 @@ void PDDL_Base::lw1_create_type3_sensing_drule(const Action &action,
 
 #ifdef DEBUG
     cout << "Type3: var=" << variable << ", value=" << value << ", term=" << term << ", dnf=[";
-    for( list<const And*>::const_iterator it = dnf.begin(); it != dnf.end(); ++it )
+    for( auto it = dnf.begin(); it != dnf.end(); ++it )
         cout << **it << ",";
     cout << "]" << endl;
 #endif
@@ -2261,13 +2261,29 @@ void PDDL_Base::lw1_create_type3_sensing_drule(const Action &action,
 
 #ifdef SMART
     for( list<unique_ptr<const And> >::const_iterator other_term = dnf.begin(); other_term != dnf.end(); ++other_term ) {
-        if( other_term->get() != &term )
-            precondition->push_back(Literal(lw1_fetch_atom_for_negated_term(**other_term)).copy());
+        if( other_term->get() != &term ) {
+            assert(!(*other_term)->empty());
+            if( (*other_term)->size() == 1 ) {
+                assert(dynamic_cast<const Literal*>(*(*other_term)->begin()) != 0);
+                const Literal &literal = *static_cast<const Literal*>(*(*other_term)->begin());
+                precondition->push_back(literal.negate());
+            } else {
+                precondition->push_back(Literal(lw1_fetch_atom_for_negated_term(**other_term)).copy());
+            }
+        }
     }
 #else
     for( list<const And*>::const_iterator other_term = dnf.begin(); other_term != dnf.end(); ++other_term ) {
-        if( *other_term != &term )
-            precondition->push_back(Literal(lw1_fetch_atom_for_negated_term(**other_term)).copy());
+        if( *other_term != &term ) {
+            assert(!other_term->empty());
+            if( other_term->size() == 1 ) {
+                assert(dynamic_cast<const Literal*>(*(*other_term)->begin()) != 0);
+                const Literal &literal = *static_cast<const Literal*>(*(*other_term)->begin());
+                precondition->push_back(literal.negate());
+            } else {
+                precondition->push_back(Literal(lw1_fetch_atom_for_negated_term(**other_term)).copy());
+            }
+        }
     }
 #endif
 
@@ -2293,6 +2309,7 @@ void PDDL_Base::lw1_create_type3_sensing_drule(const Action &action,
 }
 
 const PDDL_Base::Atom& PDDL_Base::lw1_fetch_atom_for_negated_term(const And &term) {
+    assert(term.size() > 1);
     signed_atom_set condition;
     for( size_t k = 0; k < term.size(); ++k ) {
         assert(dynamic_cast<const Literal*>(term[k]) != 0);
@@ -2300,7 +2317,7 @@ const PDDL_Base::Atom& PDDL_Base::lw1_fetch_atom_for_negated_term(const And &ter
         condition.insert(literal);
     }
 
-    // (use auto for easily dealing with smart/non-smart pointers)
+    // (using auto for easily dealing with smart/non-smart pointers)
     auto it = atoms_for_terms_for_type3_sensing_drules_.find(condition);
     if( it != atoms_for_terms_for_type3_sensing_drules_.end() ) {
         return *it->second;
@@ -2413,7 +2430,7 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action,
     assert(variable.beam_.find(value) != variable.beam_.end());
     assert(!value.negated_ || variable.is_binary()); // || options_.is_enabled("lw1:boost:literals-for-observables")); // CHECK
 
-    // find out whether something needs to be done (use auto for easily dealing with smart/non-smart pointers)
+    // find out whether something needs to be done (using auto for easily dealing with smart/non-smart pointers)
     if( options_.is_enabled("lw1:boost:drule:sensing:type4") ) {
         const And *term = 0;
         for( auto it = sensing_models_for_action_and_var.cbegin(); it != sensing_models_for_action_and_var.cend(); ++it ) {
@@ -2450,7 +2467,7 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action,
     else
         drule->precondition_ = Literal(lw1_fetch_last_action_atom(action)).copy();
 
-    // effects (use auto for easily dealing with smart/non-smart pointers)
+    // effects (using auto for easily dealing with smart/non-smart pointers)
     AndEffect *and_effect = new AndEffect;
     for( auto it = sensing_models_for_action_and_var.cbegin(); it != sensing_models_for_action_and_var.cend(); ++it ) {
         const Atom &other_value = it->first;
@@ -2531,7 +2548,7 @@ void PDDL_Base::lw1_create_type4_boost_sensing_drule(const Action &action,
     assert(variable.beam_.find(value) != variable.beam_.end());
     assert(!value.negated_ || variable.is_binary()); // || options_.is_enabled("lw1:boost:literals-for-observables")); // CHECK
 
-    // find out whether something needs to be done (use auto for easily dealing with smart/non-smart pointers)
+    // find out whether something needs to be done (using auto for easily dealing with smart/non-smart pointers)
     const And *term = 0;
     for( auto it = sensing_models_for_action_and_var.cbegin(); it != sensing_models_for_action_and_var.cend(); ++it ) {
         const Atom &other_value = it->first;
@@ -2624,7 +2641,7 @@ void PDDL_Base::lw1_create_type5_sensing_drule(const ObsVariable &variable) {
             continue;
         }
 
-        // the beam for atom is empty meaning that the formula is given by static variables: good to go! (use auto for easily dealing with smart/non-smart pointers)
+        // the beam for atom is empty meaning that the formula is given by static variables: good to go! (using auto for easily dealing with smart/non-smart pointers)
         set<string> models_for_value;
 #ifdef SMART
         const list<unique_ptr<const And> > *dnf = 0;
@@ -2707,7 +2724,7 @@ const PDDL_Base::Atom& PDDL_Base::lw1_fetch_sensing_enabler(const StateVariable 
 }
 
 const PDDL_Base::Atom& PDDL_Base::lw1_fetch_last_action_atom(const Action &action) {
-    // (use auto for easily dealing with smart/non-smart pointers)
+    // (using auto for easily dealing with smart/non-smart pointers)
     auto it = lw1_last_action_atoms_.find(action.print_name_);
     if( it == lw1_last_action_atoms_.end() ) {
         // create atom
@@ -2780,7 +2797,7 @@ void PDDL_Base::lw1_patch_actions_with_enablers_for_sensing() {
         AndEffect &effect = *const_cast<AndEffect*>(static_cast<const AndEffect*>(action.effect_));
 
         if( !options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
-            // patch effect according to generated last-action-atoms (use auto for easily dealing with smart/non-smart pointers)
+            // patch effect according to generated last-action-atoms (using auto for easily dealing with smart/non-smart pointers)
             auto it = lw1_last_action_atoms_.find(action.print_name_);
             if( it != lw1_last_action_atoms_.end() ) {
                 effect.push_back(AtomicEffect(*it->second).copy());
@@ -3301,7 +3318,7 @@ const PDDL_Base::Atom* PDDL_Base::lw1_fetch_need_set_sensing_atom(const Action &
 }
 
 const PDDL_Base::Atom* PDDL_Base::lw1_fetch_enabler_for_sensing(const unsigned_atom_set &atoms) {
-    // (use auto for easily dealing with smart/non-smart pointers)
+    // (using auto for easily dealing with smart/non-smart pointers)
     auto it = need_post_atoms_.find(atoms);
     if( it == need_post_atoms_.end() ) {
         string name = string("enable-sensing-for-set-") + Utils::to_string(need_post_atoms_.size());
@@ -3322,7 +3339,7 @@ const PDDL_Base::Atom* PDDL_Base::lw1_fetch_enabler_for_sensing(const unsigned_a
 }
 
 const PDDL_Base::Atom* PDDL_Base::lw1_fetch_enabler_for_sensing(const Atom &atom) {
-    // (use auto for easily dealing with smart/non-smart pointers)
+    // (using auto for easily dealing with smart/non-smart pointers)
     auto it = sensing_atoms_.find(atom.to_string(atom.negated_, true));
     if( it == sensing_atoms_.end() ) {
         string name = string("enable-sensing-for-") + atom.to_string(atom.negated_, true);
