@@ -2275,8 +2275,8 @@ void PDDL_Base::lw1_create_type3_sensing_drule(const Action &action,
 #else
     for( list<const And*>::const_iterator other_term = dnf.begin(); other_term != dnf.end(); ++other_term ) {
         if( *other_term != &term ) {
-            assert(!other_term->empty());
-            if( other_term->size() == 1 ) {
+            assert(!(*other_term)->empty());
+            if( (*other_term)->size() == 1 ) {
                 assert(dynamic_cast<const Literal*>(*(*other_term)->begin()) != 0);
                 const Literal &literal = *static_cast<const Literal*>(*(*other_term)->begin());
                 precondition->push_back(literal.negate());
