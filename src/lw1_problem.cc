@@ -288,7 +288,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
         }
     }
 
-    // extract sensing models into dnf and (complemented and into K-rules) cnf (use auto for easily dealing with smart/non-smart pointers)
+    // extract sensing models into dnf and (complemented and into K-rules) cnf (using auto for easily dealing with smart/non-smart pointers)
 #ifdef DEBUG
     cout << "extracting sensing models:" << endl;
 #endif
@@ -767,6 +767,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
             }
         }
 
+        // CHECK: I'm not so sure we need these clauses; in binary-search, they are wrong!
         // create clauses for type3 sensing drules
         if( options_.is_enabled("lw1:boost:drule:sensing:type3") ) {
             for( size_t k = 0; k < ins.n_actions(); ++k ) {

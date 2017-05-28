@@ -1,0 +1,16 @@
+For binary-search and classical-planner-based AS, we need to disable:
+
+lw1:boost:enable-post-actions
+
+The resason for this is that drule-sensing- actions are not preconditioned with last-action atoms
+and thus they can be used to assert any atom of the form (K_not_secret p?). Therefore, after any
+test-p? action, there are rules to infer the secret. The system then loops forever as the classical
+plans always look the same.
+
+lw1:boost:drule:sensing:type3
+
+When this flag is enabled, clauses are generated for such rules (prefixed by CLAUSE3 when printed
+by turning DEBUG on in lw1_problem.cc). These clauses permit incorrect inferences at the belief
+tracking level. As pointed out in comments in lw1_problem.cc, I'm not sure why and how these clasues
+got into the code. Are they really needed?
+
