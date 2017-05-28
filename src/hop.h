@@ -167,7 +167,7 @@ namespace HOP {
 #endif
 #endif
                       }
-#ifndef NO_EMPLACE
+#ifndef NO_EMPLACE_FOR_MAP
                       domain_size_features_.emplace(var_index, std::move(domain_size_features_for_var));
 #else
                       domain_size_features_.insert(std::make_pair(var_index, domain_size_features_for_var));
@@ -1214,7 +1214,7 @@ namespace HOP {
                       bool need_to_insert_state_trajectory = true;
                       if( goal_paths.find(first_action) == goal_paths.end() ) {
                           std::map<std::vector<int>, int> path_map;
-#ifndef NO_EMPLACE
+#ifndef NO_EMPLACE_FOR_MAP
                           path_map.emplace(reversed_action_path, 1);
                           goal_paths.emplace(first_action, std::move(path_map));
 #else
@@ -1224,7 +1224,7 @@ namespace HOP {
                       } else {
                           std::map<std::vector<int>, int> &path_map = goal_paths.at(first_action);
                           if( path_map.find(reversed_action_path) == path_map.end() ) {
-#ifndef NO_EMPLACE
+#ifndef NO_EMPLACE_FOR_MAP
                               path_map.emplace(reversed_action_path, 1);
 #else
                               path_map.insert(std::make_pair(reversed_action_path, 1));
@@ -1247,7 +1247,7 @@ namespace HOP {
                           }
                           assert(node == root);
                           state_trajectory[0] = new T(*node->hidden_state());
-#ifndef NO_EMPLACE
+#ifndef NO_EMPLACE_FOR_MAP
                           sampled_state_trajectories.emplace(reversed_action_path, std::move(state_trajectory));
 #else
                           sampled_state_trajectories.insert(std::make_pair(reversed_action_path, state_trajectory));

@@ -1053,7 +1053,7 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                 int index = *it > 0 ? *it - 1 : -*it - 1;
                 nact->effect().insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
             }
-#ifndef NO_EMPLACE
+#ifndef NO_EMPLACE_FOR_MAP
             drule_store_.emplace(move(nact));
 #else
             drule_store_.insert(DRTemplate(nact));
@@ -1114,7 +1114,7 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
                 complete_effect(nact->effect(), literal_for_value, variable);
 
             //nact->print(cout, *this);
-#ifndef NO_EMPLACE
+#ifndef NO_EMPLACE_FOR_MAP
             drule_store_.emplace(move(nact));
 #else
             drule_store_.insert(DRTemplate(nact));
@@ -1220,7 +1220,7 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             }
 
             //nact->print(cout, *this);
-#ifndef NO_EMPLACE
+#ifndef NO_EMPLACE_FOR_MAP
             drule_store_.emplace(move(nact));
 #else
             drule_store_.insert(DRTemplate(nact));
@@ -1459,7 +1459,7 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
 #endif
 
             //nact->print(cout, *this);
-#ifndef NO_EMPLACE
+#ifndef NO_EMPLACE_FOR_MAP
             drule_store_.emplace(move(nact));
 #else
             drule_store_.insert(DRTemplate(nact));
@@ -1497,7 +1497,7 @@ void LW1_Instance::create_drule_for_sensing(const Action &action) {
             nact->effect().insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
             nact->precondition().insert(*it > 0 ? -(1 + 2*index + 1) : -(1 + 2*index)); // CHECK: is this necessary?
         }
-#ifndef NO_EMPLACE
+#ifndef NO_EMPLACE_FOR_MAP
         drule_store_.emplace(move(nact));
 #else
         drule_store_.insert(DRTemplate(nact));
@@ -1537,7 +1537,7 @@ void LW1_Instance::create_drule_for_atom(const Action &action) {
         int index = *it > 0 ? *it - 1 : -*it - 1;
         nact->effect().insert(*it > 0 ? 1 + 2*index : 1 + 2*index + 1);
     }
-#ifndef NO_EMPLACE
+#ifndef NO_EMPLACE_FOR_MAP
     drule_store_.emplace(move(nact));
 #else
     drule_store_.insert(DRTemplate(nact));

@@ -2,9 +2,9 @@
 #CC     = gcc-4.8
 #C++    = g++-4.8
 #LINK   = g++-4.8
-CC     = clang
-C++    = clang++
-LINK   = clang++
+CC     = clang-3.5
+C++    = clang++-3.5
+LINK   = clang++-3.5
 
 
 # Define bison++ and flex++.
@@ -25,10 +25,20 @@ FLEX    = /usr/local/bin/flex++
 
 # Define compiler/linker flags:
 DEBUG = -g
-OPTIMIZE = -O3 -DSMART #-DNDEBUG
 
-override CFLAGS += $(DEBUG) $(OPTIMIZE) -I. -Wall -std=c++14
-override LFLAGS += $(DEBUG) $(OPTIMIZE) -L. -Wall -std=c++14
+# if compiler fully supports c++14, use -DSMART
+# if compiler supports smart pointers, use -DSMART
+# if compiler doesn't support emplace() for std::map, use -DNO_EMPLACE_FOR_MAP
+OPTIMIZE = -O3 -DSMART #-DNDEBUG
+#OPTIMIZE = -O3 #-DNDEBUG
+#OPTIMIZE = -O3 -DNO_EMPLACE_FOR_MAP #-DNDEBUG
+
+# specify -std=c++11 or -std=c++14 depending on compiler's capability; c++14
+# is prefered. In some systems, clang requires stdlib specification
+#override CFLAGS += $(DEBUG) $(OPTIMIZE) -I. -Wall -std=c++11 -stdlib=libc++
+#override LFLAGS += $(DEBUG) $(OPTIMIZE) -L. -Wall -std=c++11 -stdlib=libc++
+override CFLAGS += $(DEBUG) $(OPTIMIZE) -I. -Wall -std=c++14 -stdlib=libc++
+override LFLAGS += $(DEBUG) $(OPTIMIZE) -L. -Wall -std=c++14 -stdlib=libc++
 
 # Libraries to be linked.
 # The malloc lib may be needed

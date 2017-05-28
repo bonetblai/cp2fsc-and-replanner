@@ -38,7 +38,7 @@ class KP_Instance : public Instance {
 #endif
         std::set<When> when_;
         std::string extra_;
-#ifndef NO_EMPLACE
+#ifndef NO_EMPLACE_FOR_MAP
         DRTemplate(const DRTemplate &dr) = delete;
 #endif
 #ifdef SMART

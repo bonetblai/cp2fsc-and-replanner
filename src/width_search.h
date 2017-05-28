@@ -655,7 +655,7 @@ namespace Width2 {
                       AndOr3::OrNode<T> *node = fringe[k];
                       cache_t::iterator jt = feature_value_cache_.find(node);
                       if( jt == feature_value_cache_.end() ) {
-#ifndef NO_EMPLACE
+#ifndef NO_EMPLACE_FOR_MAP
                           feature_value_cache_.emplace(std::piecewise_construct,
                                                        std::forward_as_tuple(node),
                                                        std::forward_as_tuple(global_atomic_features_.size(), 0));
