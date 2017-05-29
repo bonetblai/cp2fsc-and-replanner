@@ -28,28 +28,25 @@
 
 using namespace std;
 
-ClassicalPlanner::ClassicalPlanner(const string &name,
-                                   const string &tmpfile_path,
-                                   const string &planner_path,
-                                   const string &planner_name,
-                                   const KP_Instance &instance,
-                                   bool remove_intermediate_files,
-                                   int debug)
-  : name_(name),
-    tmpfile_path_(tmpfile_path),
-    planner_path_(planner_path),
+ClassicalPlanner::ClassicalPlanner(const string &planner_name,
+                                   const KP_Instance &kp_instance,
+                                   const map<string, string> &options)
+  : kp_instance_(kp_instance),
     planner_name_(planner_name),
-    kp_instance_(instance),
-    remove_intermediate_files_(remove_intermediate_files),
-    debug_(debug),
+    planner_path_(options.find("planner-path") != options.end() ? options.at("planner-path") : ""),
+    tmpfile_path_(options.find("tmpfile-path") != options.end() ? options.at("tmpfile-path") : ""),
+    remove_intermediate_files_(options.find("remove-intermediate-files") != options.end() ? options.at("remove-intermediate-files") != "false" : true),
+    debug_(options.find("debug") != options.end() ? atoi(options.at("debug").c_str()) : 0),
     total_search_time_(0),
     total_time_(0),
     n_calls_(0) {
+    // construct action map
     for( size_t k = 0; k < kp_instance_.n_actions(); ++k ) {
         const Instance::Action &act = *kp_instance_.actions_[k];
         action_map_.insert(make_pair(act.name(), k));
     }
 
+    // construct parameters
     int pid = getpid();
 
     domain_fn_.clear();
@@ -272,12 +269,9 @@ MP_Planner::~MP_Planner() {
     if( !first_call_ ) remove_file(domain_fn_);
 }
 
-LAMA_Planner::LAMA_Planner(const KP_Instance &instance,
-                           const string &tmpfile_path,
-                           const string &planner_path,
-                           bool remove_intermediate_files,
-                           int debug)
-  : ClassicalPlanner("LAMA", tmpfile_path, planner_path, "lama", instance, remove_intermediate_files, debug),
+LAMA_Planner::LAMA_Planner(const KP_Instance &kp_instance,
+                           const map<string, string> &options)
+  : ClassicalPlanner("lama", kp_instance, options),
     first_call_(true) {
     for( size_t k = 0; k < kp_instance_.n_atoms(); ++k ) {
         const Instance::Atom &atom = *kp_instance_.atoms_[k];
@@ -481,12 +475,9 @@ void LAMA_Planner::read_variables(ifstream &ifs) const {
 
 
 
-LAMA_Server_Planner::LAMA_Server_Planner(const KP_Instance &instance,
-                                         const string &tmpfile_path,
-                                         const string &planner_path,
-                                         bool remove_intermediate_files,
-                                         int debug)
-  : ClassicalPlanner("LAMA_Server", tmpfile_path, planner_path, "lama-server", instance, remove_intermediate_files, debug),
+LAMA_Server_Planner::LAMA_Server_Planner(const KP_Instance &kp_instance,
+                                         const map<string, string> &options)
+  : ClassicalPlanner("lama-server", kp_instance, options),
     first_call_(true) {
     for( size_t k = 0; k < kp_instance_.n_atoms(); ++k ) {
         const Instance::Atom &atom = *kp_instance_.atoms_[k];
