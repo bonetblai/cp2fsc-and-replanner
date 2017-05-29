@@ -72,7 +72,6 @@ int main(int argc, const char *argv[]) {
     string      opt_planner = "ff";
     int         opt_time_bound = 3600;
     int         opt_ncalls_bound = 1000;
-    string      opt_prefix = "";
     float       start_time = Utils::read_time_in_seconds();
     string      opt_planner_path = "";
     string      opt_tmpfile_path = "";
@@ -129,12 +128,6 @@ int main(int argc, const char *argv[]) {
             opt_ncalls_bound = atoi(argv[++k]);
         } else if( !skip_options && !strcmp(argv[k], "--no-print-plan") ) {
             opt_print_plan = false;
-        } else if( !skip_options && !strcmp(argv[k], "--prefix") ) {
-            if( k == argc-1 ) {
-                cout << Utils::error() << "not enough arguments for '" << argv[k] << "'." << endl;
-                exit(-1);
-            }
-            opt_prefix = argv[++k];
         } else if( !skip_options && !strcmp(argv[k], "--keep-intermediate-files") ) {
             g_options.disable("planner:remove-intermediate-files");
         } else if( !skip_options && !strcmp(argv[k], "--planner") ) {
@@ -247,39 +240,42 @@ int main(int argc, const char *argv[]) {
     float preprocessing_time = Utils::read_time_in_seconds() - start_time;
 
     // planner options
-    int planner_debug = 0;
-    bool remove_intermediate_files = g_options.is_enabled("planner:remove-intermediate-files");
+    map<string, string> planner_options;
+    planner_options.insert(make_pair("planner-path", opt_planner_path));
+    planner_options.insert(make_pair("tmpfile-path", opt_tmpfile_path));
+    planner_options.insert(make_pair("remove-intermediate-files", g_options.is_enabled("planner:remove-intermediate-files") ? "true" : "false"));
+    planner_options.insert(make_pair("debug", "0"));
     if( g_options.is_enabled("planner:print:plan:raw") )
-        planner_debug = 2;
+        planner_options["debug"] = 2;
     else if( g_options.is_enabled("planner:print:plan") )
-        planner_debug = 1;
+        planner_options["debug"] = 1;
 
     // construct classical planner
 #ifdef SMART
     unique_ptr<const ClassicalPlanner> planner;
     if( opt_planner == "ff" ) {
-        planner = make_unique<const FF_Planner>(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str(), remove_intermediate_files, planner_debug);
+        planner = make_unique<const FF_Planner>(*kp_instance, planner_options);
     } else if( opt_planner == "lama" ) {
-        planner = make_unique<const LAMA_Planner>(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str(), remove_intermediate_files, planner_debug);
+        planner = make_unique<const LAMA_Planner>(*kp_instance, planner_options);
     } else if( opt_planner == "m" ) {
-        planner = make_unique<const M_Planner>(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str(), remove_intermediate_files, planner_debug);
+        planner = make_unique<const M_Planner>(*kp_instance, planner_options);
     } else if( opt_planner == "mp" ) {
-        planner = make_unique<const MP_Planner>(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str(), remove_intermediate_files, planner_debug);
+        planner = make_unique<const MP_Planner>(*kp_instance, planner_options);
     } else if( opt_planner == "lama-server" ) {
-        planner = make_unique<const LAMA_Server_Planner>(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str(), remove_intermediate_files, planner_debug);
+        planner = make_unique<const LAMA_Server_Planner>(*kp_instance, planner_options);
     }
 #else
     const ClassicalPlanner *planner = 0;
     if( opt_planner == "ff" ) {
-        planner = new FF_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str(), remove_intermediate_files, planner_debug);
+        planner = new FF_Planner(*kp_instance, planner_options);
     } else if( opt_planner == "lama" ) {
-        planner = new LAMA_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str(), remove_intermediate_files, planner_debug);
+        planner = new LAMA_Planner(*kp_instance, planner_options);
     } else if( opt_planner == "m" ) {
-        planner = new M_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str(), remove_intermediate_files, planner_debug);
+        planner = new M_Planner(*kp_instance, planner_options);
     } else if( opt_planner == "mp" ) {
-        planner = new MP_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str(), remove_intermediate_files, planner_debug);
+        planner = new MP_Planner(*kp_instance, planner_options);
     } else if( opt_planner == "lama-server" ) {
-        planner = new LAMA_Server_Planner(*kp_instance, opt_tmpfile_path.c_str(), opt_planner_path.c_str(), remove_intermediate_files, planner_debug);
+        planner = new LAMA_Server_Planner(*kp_instance, planner_options);
     }
 #endif
 
