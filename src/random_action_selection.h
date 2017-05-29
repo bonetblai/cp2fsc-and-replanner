@@ -41,7 +41,7 @@ class NaiveRandomActionSelection : public ::ActionSelection<T> {
     mutable size_t n_calls_;
 
   public:
-    NaiveRandomActionSelection(const LW1_Instance &lw1_instance)
+    NaiveRandomActionSelection(const LW1_Instance &lw1_instance, const std::map<std::string, std::string> &options)
       : lw1_instance_(lw1_instance) {
     }
     virtual ~NaiveRandomActionSelection() { }
@@ -126,13 +126,17 @@ class RandomActionSelection : public NaiveRandomActionSelection<T> {
 
   public:
 #ifdef SMART
-    RandomActionSelection(const LW1_Instance &lw1_instance, std::unique_ptr<const ::ActionSelection<T> > &&alternate_selection)
-      : NaiveRandomActionSelection<T>(lw1_instance),
+    RandomActionSelection(const LW1_Instance &lw1_instance,
+                          std::unique_ptr<const ::ActionSelection<T> > &&alternate_selection,
+                          std::map<std::string, std::string> &options)
+      : NaiveRandomActionSelection<T>(lw1_instance, options),
         alternate_selection_(std::move(alternate_selection)) {
     }
 #else
-    RandomActionSelection(const LW1_Instance &lw1_instance, const ::ActionSelection<T> *alternate_selection)
-      : NaiveRandomActionSelection<T>(lw1_instance),
+    RandomActionSelection(const LW1_Instance &lw1_instance,
+                          const ::ActionSelection<T> *alternate_selection,
+                          std::map<std::string, std::string> &options)
+      : NaiveRandomActionSelection<T>(lw1_instance, options),
         alternate_selection_(alternate_selection) {
     }
 #endif

@@ -21,6 +21,7 @@
 
 #include <cassert>
 #include <iostream>
+#include <map>
 
 #include "action_selection.h"
 #include "classical_planner.h"
@@ -31,7 +32,9 @@ class ClassicalPlannerWrapper : public ActionSelection<T> {
     const ClassicalPlanner &planner_;
 
   public:
-    ClassicalPlannerWrapper(const ClassicalPlanner &planner) : planner_(planner) { }
+    ClassicalPlannerWrapper(const ClassicalPlanner &planner, const std::map<std::string, std::string> &options)
+      : planner_(planner) {
+    }
     virtual ~ClassicalPlannerWrapper() { }
 
     virtual std::string name() const {

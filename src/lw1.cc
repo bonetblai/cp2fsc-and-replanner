@@ -23,15 +23,6 @@
 #include <map>
 #include <memory>
 #include <string>
-#if 0
-#include "action_selection.h"
-#include "problem.h"
-#include "state.h"
-#include "clg_problem.h"
-#include "width.h"
-#include "width_search.h"
-#include "despot.h"
-#endif
 #include "available_options.h"
 #include "classical_planner_wrapper.h"
 #include "hop.h"
@@ -50,13 +41,13 @@ using namespace std;
 Options::Mode g_options;
 
 struct ASMethod {
-    string as_name_;
+    string name_;
     string solver_option_str_;
     map<string, string> options_;
 };
 
-void parse_as_string(const string as_string, ASMethod &as_method) {
-    //cout << "as_string=|" << as_string << "|" << endl;
+void parse_as_string(const string as_string, ASMethod &as_method, bool verbose) {
+    if( verbose ) cout << "as_string=|" << as_string << "|" << endl;
 
     size_t start_pos = as_string.find('(');
     size_t end_pos = as_string.find(')', start_pos);
@@ -64,15 +55,15 @@ void parse_as_string(const string as_string, ASMethod &as_method) {
         cout << Utils::error() << "bad format for action-selection method." << endl;
         exit(-1);
     }
-    as_method.as_name_ = string(as_string, 0, start_pos);
-    //cout << "as_name=|" << as_method.as_name_ << "|" << endl;
+    as_method.name_ = string(as_string, 0, start_pos);
+    if( verbose ) cout << "name=|" << as_method.name_ << "|" << endl;
 
     assert(as_string.at(start_pos) == '(');
     size_t next_pos = as_string.find_first_of(",)", ++start_pos);
     while( next_pos <= end_pos ) {
-        //cout << "start-pos=" << start_pos << ", next-pos=" << next_pos << endl;
+        if( verbose ) cout << "start-pos=" << start_pos << ", next-pos=" << next_pos << endl;
         string token(as_string, start_pos, next_pos - start_pos);
-        //cout << "token=|" << token << "|" << endl;
+        if( verbose ) cout << "token=|" << token << "|" << endl;
         start_pos = 1 + next_pos;
         next_pos = as_string.find_first_of(",)", start_pos);
         if( token != "" ) {
@@ -80,26 +71,22 @@ void parse_as_string(const string as_string, ASMethod &as_method) {
             if( pos == string::npos ) {
                 cout << Utils::warning() << "invalid token '" << token << "' in AS method; skipping it..." << endl;
             } else {
-                //cout << "key=|" << token.substr(0, pos) << "|, value=|" << token.substr(1 + pos) << "|" << endl;
-                as_method.options_.insert(make_pair(token.substr(0, pos), token.substr(1 + pos)));
+                string key = token.substr(0, pos);
+                string value = token.substr(1 + pos);
+                as_method.options_[key] = value;
+                if( verbose ) cout << "key=|" << key << "|, value=|" << value << "|" << endl;
             }
         }
     }
 
-    // global AS options
-    if( as_method.options_.find("debug") == as_method.options_.end() )
-        as_method.options_.insert(make_pair("debug", "0"));
-
     // specific AS option
-    if( as_method.as_name_ == "classical-planner" ) {
+    if( as_method.name_ == "classical-planner" ) {
         as_method.solver_option_str_ = "solver:classical-planner";
         if( as_method.options_.find("planner") == as_method.options_.end() ) {
             cout << Utils::warning() << "unspecified planner for classical-planner AS; defaulting to 'ff'..." << endl;
             as_method.options_.insert(make_pair("planner", "ff"));
         }
-        if( as_method.options_.find("remove-intermediate-files") == as_method.options_.end() )
-            as_method.options_.insert(make_pair("remove-intermediate-files", "true"));
-    } else if( as_method.as_name_ == "random" ) {
+    } else if( as_method.name_ == "random" ) {
         if( as_method.options_.find("type") == as_method.options_.end() ) {
             as_method.solver_option_str_ = "solver:random-action-selection";
             if( as_method.options_.find("planner") == as_method.options_.end() ) {
@@ -112,24 +99,8 @@ void parse_as_string(const string as_string, ASMethod &as_method) {
             cout << Utils::error() << "undefined type '" << as_method.options_.at("type") << "' for random AS method." << endl;
             exit(-1);
         }
-    } else if( as_method.as_name_ == "hop" ) {
+    } else if( as_method.name_ == "hop" ) {
         as_method.solver_option_str_ = "solver:hop";
-        if( as_method.options_.find("num-samples") == as_method.options_.end() ) {
-            cout << Utils::warning() << "unspecified 'num-samples' for hop AS; defaulting to 1..." << endl;
-            as_method.options_.insert(make_pair("num-samples", "1"));
-        }
-        if( as_method.options_.find("prune-nodes") == as_method.options_.end() ) {
-            cout << Utils::warning() << "unspecified 'prune-nodes' for hop AS; defaulting to true..." << endl;
-            as_method.options_.insert(make_pair("prune-nodes", "true"));
-        }
-        if( as_method.options_.find("use-path") == as_method.options_.end() ) {
-            cout << Utils::warning() << "unspecified 'use-path' for hop AS; defaulting to true..." << endl;
-            as_method.options_.insert(make_pair("use-path", "true"));
-        }
-        if( as_method.options_.find("random-shuffle") == as_method.options_.end() ) {
-            cout << Utils::warning() << "unspecified 'random-shuffle' for hop AS; defaulting to false..." << endl;
-            as_method.options_.insert(make_pair("random-shuffle", "false"));
-        }
     } else {
         cout << Utils::error() << "undefined action-selection method." << endl;
         exit(-1);
@@ -168,18 +139,16 @@ void print_usage(ostream &os, const char *exec_name, const char **cmdline_option
 }
 
 int main(int argc, const char *argv[]) {
+    float       start_time = Utils::read_time_in_seconds();
     StringTable parser_symbol_table(lowercase_map, 50);
+    bool        need_classical_planner = true;
     bool        opt_debug_parser = false;
     bool        opt_print_plan = true;
-    //string      opt_planner("ff");
     int         opt_time_bound = 3600;
-    string      opt_as("classical-planner(planner=ff)");
+    string      opt_as_str("classical-planner(planner=ff)");
     int         opt_max_as_calls = 1000;
-    string      opt_prefix = "";
-    float       start_time = Utils::read_time_in_seconds();
     string      opt_planner_path = "";
     string      opt_tmpfile_path = "";
-    bool        need_classical_planner = true;
     int         opt_seed = 0;
 
     // print cmdline
@@ -245,7 +214,7 @@ int main(int argc, const char *argv[]) {
                 cout << Utils::error() << "not enough arguments for '" << argv[k] << "'." << endl;
                 exit(-1);
             }
-            opt_as = argv[++k];
+            opt_as_str = argv[++k];
         } else if( !skip_options && !strcmp(argv[k], "--max-as-calls") ) {
             if( k == argc - 1 ) {
                 cout << Utils::error() << "not enough arguments for '" << argv[k] << "'." << endl;
@@ -254,15 +223,8 @@ int main(int argc, const char *argv[]) {
             opt_max_as_calls = atoi(argv[++k]);
         } else if( !skip_options && !strcmp(argv[k], "--no-print-plan") ) {
             opt_print_plan = false;
-        } else if( !skip_options && !strcmp(argv[k], "--prefix") ) {
-            if( k == argc-1 ) {
-                cout << Utils::error() << "not enough arguments for '" << argv[k] << "'." << endl;
-                exit(-1);
-            }
-            opt_prefix = argv[++k];
         } else if( !skip_options && !strcmp(argv[k], "--planner") ) {
             cout << Utils::warning() << "deprecated option. Use --as to specify AS method." << endl;
-            //opt_planner = argv[++k];
         } else if( !skip_options && !strcmp(argv[k], "--planner-path") ) {
             opt_planner_path = argv[++k];
         } else if( !skip_options && !strcmp(argv[k], "--tmpfile-path") ) {
@@ -303,9 +265,14 @@ int main(int argc, const char *argv[]) {
     seed[0] = seed[1] = seed[2] = opt_seed;
     seed48(seed);
 
-    // parse AS string
+    // create empty AS method with defaults
     ASMethod as_method;
-    parse_as_string(opt_as, as_method);
+    as_method.options_.insert(make_pair("planner-path", opt_planner_path));
+    as_method.options_.insert(make_pair("tmpfile-path", opt_tmpfile_path));
+
+    // parse AS string
+    parse_as_string(opt_as_str, as_method, true);
+    assert(as_method.solver_option_str_ != "");
     g_options.enable(as_method.solver_option_str_);
 
     // either lw1:aaai or lw1:strict: one of them but not both. Default is lw1:strict.
@@ -514,32 +481,16 @@ int main(int argc, const char *argv[]) {
         assert(as_method.options_.find("planner") != as_method.options_.end());
         const string &as_planner = as_method.options_.at("planner");
 
-        // override planner path?
-        string planner_path(opt_planner_path);
-        if( as_method.options_.find("path") != as_method.options_.end() )
-            planner_path = as_method.options_.at("path");
-
-        // override tmpfile path?
-        string tmpfile_path(opt_tmpfile_path);
-        if( as_method.options_.find("tmpfile-path") != as_method.options_.end() )
-            tmpfile_path = as_method.options_.at("tmpfile-path");
-
-        // options
-        assert(as_method.options_.find("remove-intermediate-files") != as_method.options_.end());
-        bool remove_intermediate_files = as_method.options_.at("remove-intermediate-files") == "true";
-        assert(as_method.options_.find("debug") != as_method.options_.end());
-        int debug = atoi(as_method.options_.at("debug").c_str());
-
         if( as_planner == "ff" ) {
-            planner = make_unique<const FF_Planner>(*lw1_instance, tmpfile_path.c_str(), planner_path.c_str(), remove_intermediate_files, debug);
+            planner = make_unique<const FF_Planner>(*lw1_instance, as_method.options_);
         } else if( as_planner == "lama" ) {
-            planner = make_unique<const LAMA_Planner>(*lw1_instance, tmpfile_path.c_str(), planner_path.c_str(), remove_intermediate_files, debug);
+            planner = make_unique<const LAMA_Planner>(*lw1_instance, as_method.options_);
         } else if( as_planner == "m" ) {
-            planner = make_unique<const M_Planner>(*lw1_instance, tmpfile_path.c_str(), planner_path.c_str(), remove_intermediate_files, debug);
+            planner = make_unique<const M_Planner>(*lw1_instance, as_method.options_);
         } else if( as_planner == "mp" ) {
-            planner = make_unique<const MP_Planner>(*lw1_instance, tmpfile_path.c_str(), planner_path.c_str(), remove_intermediate_files, debug);
+            planner = make_unique<const MP_Planner>(*lw1_instance, as_method.options_);
         } else if( as_planner == "lama-server" ) {
-            planner = make_unique<const LAMA_Server_Planner>(*lw1_instance, tmpfile_path.c_str(), planner_path.c_str(), remove_intermediate_files, debug);
+            planner = make_unique<const LAMA_Server_Planner>(*lw1_instance, as_method.options_);
         } else {
             cout << Utils::error() << "unrecognized planner '" << as_planner << "'." << endl;
             exit(-1);
@@ -551,32 +502,16 @@ int main(int argc, const char *argv[]) {
         assert(as_method.options_.find("planner") != as_method.options_.end());
         const string &as_planner = as_method.options_.at("planner");
 
-        // override planner path?
-        string planner_path(opt_planner_path);
-        if( as_method.options_.find("path") != as_method.options_.end() )
-            planner_path = as_method.options_.at("path");
-
-        // override tmpfile path?
-        string tmpfile_path(opt_tmpfile_path);
-        if( as_method.options_.find("tmpfile-path") != as_method.options_.end() )
-            tmpfile_path = as_method.options_.at("tmpfile-path");
-
-        // options
-        assert(as_method.options_.find("remove-intermediate-files") != as_method.options_.end());
-        bool remove_intermediate_files = as_method.options_.at("remove-intermediate-files") == "true";
-        assert(as_method.options_.find("debug") != as_method.options_.end());
-        int debug = atoi(as_method.options_.at("debug").c_str());
-
         if( as_planner == "ff" ) {
-            planner = new FF_Planner(*lw1_instance, tmpfile_path.c_str(), planner_path.c_str(), remove_intermediate_files, debug);
+            planner = new FF_Planner(*lw1_instance, as_method.options_);
         } else if( as_planner == "lama" ) {
-            planner = new LAMA_Planner(*lw1_instance, tmpfile_path.c_str(), planner_path.c_str(), remove_intermediate_files, debug);
+            planner = new LAMA_Planner(*lw1_instance, as_method.options_);
         } else if( as_planner == "m" ) {
-            planner = new M_Planner(*lw1_instance, tmpfile_path.c_str(), planner_path.c_str(), remove_intermediate_files, debug);
+            planner = new M_Planner(*lw1_instance, as_method.options_);
         } else if( as_planner == "mp" ) {
-            planner = new MP_Planner(*lw1_instance, tmpfile_path.c_str(), planner_path.c_str(), remove_intermediate_files, debug);
+            planner = new MP_Planner(*lw1_instance, as_method.options_);
         } else if( as_planner == "lama-server" ) {
-            planner = new LAMA_Server_Planner(*lw1_instance, tmpfile_path.c_str(), planner_path.c_str(), remove_intermediate_files, debug);
+            planner = new LAMA_Server_Planner(*lw1_instance, as_method.options_);
         } else {
             cout << Utils::error() << "unrecognized planner '" << as_planner << "'." << endl;
             exit(-1);
@@ -612,68 +547,50 @@ int main(int argc, const char *argv[]) {
 #endif
 
     // construct action selection
-    assert(as_method.options_.find("debug") != as_method.options_.end());
-    int as_debug = atoi(as_method.options_.at("debug").c_str());
 #ifdef SMART
     unique_ptr<ActionSelection<STATE_CLASS> > action_selection;
     if( g_options.is_enabled("solver:naive-random-action-selection") ) {
-        action_selection = make_unique<NaiveRandomActionSelection<STATE_CLASS> >(*lw1_instance);
+        action_selection = make_unique<NaiveRandomActionSelection<STATE_CLASS> >(*lw1_instance, as_method.options_);
     } else if( g_options.is_enabled("solver:random-action-selection") ) {
         assert(planner != nullptr);
-        unique_ptr<ActionSelection<STATE_CLASS> > alternate_action_selection = make_unique<ClassicalPlannerWrapper<STATE_CLASS> >(*planner);
-        action_selection = make_unique<RandomActionSelection<STATE_CLASS> >(*lw1_instance, move(alternate_action_selection));
+        unique_ptr<ActionSelection<STATE_CLASS> > alternate_action_selection = make_unique<ClassicalPlannerWrapper<STATE_CLASS> >(*planner, as_method.options_);
+        action_selection = make_unique<RandomActionSelection<STATE_CLASS> >(*lw1_instance, move(alternate_action_selection), as_method.options_);
         assert(alternate_action_selection == nullptr);
     } else if( g_options.is_enabled("solver:width-based-action-selection") ) {
         //action_selection = make_unique<Width2::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine);
         assert(0); // CHECK
     } else if( g_options.is_enabled("solver:hop") ) {
-        assert(as_method.options_.find("num-samples") != as_method.options_.end());
-        int num_samples = atoi(as_method.options_.at("num-samples").c_str());
-        assert(as_method.options_.find("prune-nodes") != as_method.options_.end());
-        bool prune_nodes = as_method.options_.at("prune-nodes") == "true";
-        assert(as_method.options_.find("use-path") != as_method.options_.end());
-        bool use_path = as_method.options_.at("use-path") == "true";
-        assert(as_method.options_.find("random-shuffle") != as_method.options_.end());
-        bool random_shuffle = as_method.options_.at("random-shuffle") == "true";
-        action_selection = make_unique<HOP::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine, num_samples, prune_nodes, use_path, random_shuffle, as_debug);
+        action_selection = make_unique<HOP::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine, as_method.options_);
     } else if( g_options.is_enabled("solver:despot") ) {
         //action_selection = make_unique<Despot::ActionSelection<STATE_CLASS> >(*lw1_instance, *inference_engine, 50, 50, 1, .5, 10);
         assert(0); // CHECK
     } else {
         assert(g_options.is_enabled("solver:classical-planner"));
-        assert(as_method.as_name_ == "classical-planner");
+        assert(as_method.name_ == "classical-planner");
         assert(planner != nullptr);
-        action_selection = make_unique<ClassicalPlannerWrapper<STATE_CLASS> >(*planner);
+        action_selection = make_unique<ClassicalPlannerWrapper<STATE_CLASS> >(*planner, as_method.options_);
     }
 #else
     ActionSelection<STATE_CLASS> *action_selection = 0;
     if( g_options.is_enabled("solver:naive-random-action-selection") ) {
-        action_selection = new NaiveRandomActionSelection<STATE_CLASS>(*lw1_instance);
+        action_selection = new NaiveRandomActionSelection<STATE_CLASS>(*lw1_instance, as_method.options_);
     } else if( g_options.is_enabled("solver:random-action-selection") ) {
         assert(planner != 0);
-        ActionSelection<STATE_CLASS> *alternate_action_selection = new ClassicalPlannerWrapper<STATE_CLASS>(*planner);
-        action_selection = new RandomActionSelection<STATE_CLASS>(*lw1_instance, alternate_action_selection);
+        ActionSelection<STATE_CLASS> *alternate_action_selection = new ClassicalPlannerWrapper<STATE_CLASS>(*planner, as_method.options_);
+        action_selection = new RandomActionSelection<STATE_CLASS>(*lw1_instance, alternate_action_selection, as_method.options_);
     } else if( g_options.is_enabled("solver:width-based-action-selection") ) {
         //action_selection = new Width2::ActionSelection<STATE_CLASS>(*lw1_instance, *inference_engine);
         assert(0); // CHECK
     } else if( g_options.is_enabled("solver:hop") ) {
-        assert(as_method.options_.find("num-samples") != as_method.options_.end());
-        int num_samples = atoi(as_method.options_.at("num-samples").c_str());
-        assert(as_method.options_.find("prune-nodes") != as_method.options_.end());
-        bool prune_nodes = as_method.options_.at("prune-nodes") == "true";
-        assert(as_method.options_.find("use-path") != as_method.options_.end());
-        bool use_path = as_method.options_.at("use-path") == "true";
-        assert(as_method.options_.find("random-shuffle") != as_method.options_.end());
-        bool random_shuffle = as_method.options_.at("random-shuffle") == "true";
-        action_selection = new HOP::ActionSelection<STATE_CLASS>(*lw1_instance, *inference_engine, num_samples, prune_nodes, use_path, random_shuffle, as_debug);
+        action_selection = new HOP::ActionSelection<STATE_CLASS>(*lw1_instance, *inference_engine, as_method.options_);
     } else if( g_options.is_enabled("solver:despot") ) {
         //action_selection = new Despot::ActionSelection<STATE_CLASS>(*lw1_instance, *inference_engine, 50, 50, 1, .5, 10);
         assert(0); // CHECK
     } else {
         assert(g_options.is_enabled("solver:classical-planner"));
-        assert(as_method.as_name_ == "classical-planner");
+        assert(as_method.name_ == "classical-planner");
         assert(planner != 0);
-        action_selection = new ClassicalPlannerWrapper<STATE_CLASS>(*planner);
+        action_selection = new ClassicalPlannerWrapper<STATE_CLASS>(*planner, as_method.options_);
     }
 #endif
 
