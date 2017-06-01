@@ -42,6 +42,8 @@ namespace HOP {
       const LW1_Instance &lw1_instance_;
       const Inference::Engine<T> &inference_engine_;
       const int num_sampled_scenarios_;
+      const bool tree_search_;
+      const int lookahead_depth_;
       const bool prune_nodes_;
       const bool use_path_;
       const bool random_shuffle_;
@@ -80,7 +82,9 @@ namespace HOP {
         : lw1_instance_(lw1_instance),
           inference_engine_(inference_engine),
           num_sampled_scenarios_(options.find("num-samples") != options.end() ? atoi(options.at("num-samples").c_str()) : 1),
-          prune_nodes_(options.find("prune-nodes") != options.end() ? options.at("num-samples") != "false" : true),
+          tree_search_(options.find("tree-search") != options.end() ? options.at("tree-search") == "true" : false),
+          lookahead_depth_(options.find("lookahead-depth") != options.end() ? atoi(options.at("lookahead-depth").c_str()) : 0),
+          prune_nodes_(options.find("prune-nodes") != options.end() ? options.at("prune-nodes") != "false" : true),
           use_path_(options.find("use-path") != options.end() ? options.at("use-path") != "false" : true),
           random_shuffle_(options.find("random-shuffle") != options.end() ? options.at("random-shuffle") == "true" : false),
           debug_(options.find("debug") != options.end() ? atoi(options.at("debug").c_str()) : 0),
@@ -97,19 +101,22 @@ namespace HOP {
 
           // calculate unknown variables at initial state
           T initial_state;
-          std::vector<int> unknown_variables_at_initial_state;
+          std::vector<std::vector<int> > unknown_variables_at_initial_state;
           lw1_instance_.set_initial_state(initial_state);
           calculate_unknown_variables(initial_state, unknown_variables_at_initial_state);
-          for( size_t k = 0; k < unknown_variables_at_initial_state.size(); ++k )
-              unknown_variables_at_initial_state_.insert(unknown_variables_at_initial_state[k]);
+          for( size_t k = 0; k < unknown_variables_at_initial_state.size(); ++k ) {
+              assert(unknown_variables_at_initial_state[k].size() > 2);
+              unknown_variables_at_initial_state_.insert(*unknown_variables_at_initial_state[k].begin());
+          }
 #if 1//def DEBUG
           std::cout << "initial-state=";
           initial_state.print(std::cout, lw1_instance_);
           std::cout << std::endl << "unknown-variables-at-initial-state={";
           for( size_t k = 0; k < unknown_variables_at_initial_state.size(); ++k ) {
-              int var_index = unknown_variables_at_initial_state[k];
+              int var_index = *unknown_variables_at_initial_state[k].begin();
+              int num_possible_values = unknown_variables_at_initial_state[k].size() - 1;
               const LW1_Instance::Variable &variable = *lw1_instance_.variables_[var_index];
-              std::cout << variable.name();
+              std::cout << "(" << variable.name() << "," << num_possible_values << ")";
               if( 1 + k < unknown_variables_at_initial_state.size() )
                   std::cout << ",";
           }
@@ -317,73 +324,70 @@ namespace HOP {
           assert(goal_feature_ != 0);
           return goal_feature_->holds(state);
       }
-      int calculate_unknown_variables(const T &state, std::vector<int> *unknown_variables = 0) const {
+      int calculate_unknown_variables(const T &state, std::vector<std::vector<int> > *unknown_variables = 0) const {
           int number_unknown_variables = 0;
           for( size_t var_index = 0; var_index < lw1_instance_.variables_.size(); ++var_index ) {
               const LW1_Instance::Variable &variable = *lw1_instance_.variables_[var_index];
               if( variable.is_state_variable() ) {
-                  bool unknown_variable = true;
+                  std::vector<int> var_index_and_possible_values(1, var_index);
                   if( variable.is_binary() ) {
                       assert(variable.domain().size() == 1);
                       int atom = *variable.domain().begin();
-                      unknown_variable = !state.satisfy(2 * atom) && !state.satisfy(2 * atom + 1);
+                      assert(!state.satisfy(2 * atom) || !state.satisfy(2 * atom + 1));
+                      if( !state.satisfy(2 * atom) && !state.satisfy(2 * atom + 1) ) {
+                          var_index_and_possible_values.push_back(2 * atom);
+                          var_index_and_possible_values.push_back(2 * atom + 1);
+                      } else if( state.satisfy(2 * atom) ) {
+                          var_index_and_possible_values.push_back(2 * atom);
+                      } else {
+                          var_index_and_possible_values.push_back(2 * atom + 1);
+                      }
                   } else {
                       for( std::set<int>::const_iterator it = variable.domain().begin(); it != variable.domain().end(); ++it ) {
                           int atom = *it;
-                          if( state.satisfy(2 * atom) ) {
-                              unknown_variable = false;
-                              break;
-                          }
+                          if( !state.satisfy(2 * atom + 1) )
+                              var_index_and_possible_values.push_back(2 * atom);
                       }
                   }
-                  if( unknown_variable ) {
+                  assert(var_index_and_possible_values.size() > 1);
+                  if( var_index_and_possible_values.size() > 2 ) {
                       ++number_unknown_variables;
-                      if( unknown_variables != 0 )
-                          unknown_variables->push_back(var_index);
+                      if( unknown_variables != 0 ) {
+                          unknown_variables->emplace_back(std::move(var_index_and_possible_values));
+                          assert(var_index_and_possible_values.empty());
+                      }
                   }
               }
           }
           return number_unknown_variables;
       }
-      void calculate_unknown_variables(const T &state, std::vector<int> &unknown_variables) const {
+      void calculate_unknown_variables(const T &state, std::vector<std::vector<int> > &unknown_variables) const {
           calculate_unknown_variables(state, &unknown_variables);
       }
-      bool sample(const T &state, const std::vector<int> &unknown_variables, T &sampled_hidden) const {
+      bool sample(const T &state, const std::vector<std::vector<int> > &unknown_variables, T &sampled_hidden) const {
+          assert(sampled_hidden == state);
+
           if( debug_ > 0 )
               std::cout << Utils::blue() << "sampling: #unknown-variables=" << unknown_variables.size() << Utils::normal() << std::endl;
 
-          assert(sampled_hidden == state);
           for( size_t k = 0; k < unknown_variables.size(); ++k ) {
-              int var_index = unknown_variables[k];
-              assert((var_index >= 0) && (var_index < lw1_instance_.variables_.size()));
-              const LW1_Instance::Variable &variable = *lw1_instance_.variables_[var_index];
-              assert(variable.is_state_variable());
-              std::vector<int> possible_values;
-              if( variable.is_binary() ) {
-                  int atom = *variable.domain().begin();
-                  assert(!state.satisfy(2 * atom) && !state.satisfy(2 * atom + 1));
-                  possible_values.push_back(2 * atom);
-                  possible_values.push_back(2 * atom + 1);
-              } else {
-                  for( std::set<int>::const_iterator it = variable.domain().begin(); it != variable.domain().end(); ++it ) {
-                      int atom = *it;
-                      if( !state.satisfy(2 * atom + 1) )
-                          possible_values.push_back(2 * atom);
-                  }
-              }
-              assert(possible_values.size() > 1);
-              int sampled_atom = possible_values[lrand48() % possible_values.size()];
+              const std::vector<int> &var_index_and_possible_values = unknown_variables[k];
+              assert(var_index_and_possible_values.size() > 2);
+              int var_index = var_index_and_possible_values[0];
+              int sampled_atom = var_index_and_possible_values[1 + (lrand48() % (var_index_and_possible_values.size() - 1))];
 
               if( debug_ > 0 ) {
+                  assert((var_index >= 0) && (var_index < lw1_instance_.variables_.size()));
+                  const LW1_Instance::Variable &variable = *lw1_instance_.variables_[var_index];
                   std::cout << Utils::blue()
                             << "sampling: variable=" << variable.name()
-                            << ", #possible-values=" << possible_values.size()
+                            << ", #possible-values=" << var_index_and_possible_values.size() - 1
                             << ", sampled-value=";
                   State::print_literal(std::cout, 1 + sampled_atom, &lw1_instance_);
                   std::cout << ", possible-values={";
-                  for( size_t j = 0; j < possible_values.size(); ++j ) {
-                      State::print_literal(std::cout, 1 + possible_values[j], &lw1_instance_);
-                      if( 1 + j < possible_values.size() ) std::cout << ",";
+                  for( size_t j = 1; j < var_index_and_possible_values.size(); ++j ) {
+                      State::print_literal(std::cout, 1 + var_index_and_possible_values[j], &lw1_instance_);
+                      if( 1 + j < var_index_and_possible_values.size() ) std::cout << ",";
                   }
                   std::cout << "}" << Utils::normal() << std::endl;
               }
@@ -392,7 +396,7 @@ namespace HOP {
               sampled_hidden.add(sampled_atom);
           }
 
-          // propagate added atoms
+          // propagate added (sampled) atoms
           ++n_calls_to_inference_engine_;
           bool status = inference_engine_.propagate(sampled_hidden);
           assert(status);
@@ -592,6 +596,53 @@ namespace HOP {
           }
           total_time = Utils::read_time_in_seconds() - total_time;
           //std::cout << "time: total=" << total_time << ", expand=" << expand_time << ", feature=" << feature_time << std::endl;
+      }
+
+      void create_sampled_tree(AndOr::OrNode<T> *node, int depth, std::vector<const AndOr::OrNode<T>*> &goal_nodes) const {
+          if( depth > lookahead_depth_ ) {
+              node->mark_as_pruned();
+              return;
+          }
+          //std::cout << "node: ptr=" << node << ", node=" << *node << ", depth=" << depth << std::endl;
+
+          // compute state bitmap
+          const T &state = *node->belief()->belief();
+          std::vector<bool> state_bitmap(lw1_instance_.atoms_.size(), false);
+          compute_state_bitmap(state, state_bitmap);
+
+          // compute features
+          Width::FeatureSet<T> state_features;
+          compute_features(state, state_bitmap, state_features, feature_language_, false);
+
+          if( state_features.find(goal_feature_) != state_features.end() ) {
+              goal_nodes.push_back(node);
+          } else if( true ) {//need_to_expand_node(node, state_features, expanded_states) ) {
+              // register node's features
+              for( typename Width::FeatureSet<T>::const_iterator it = state_features.begin(); it != state_features.end(); ++it ) {
+                  assert(*it != 0);
+                  register_feature(**it);
+              }
+              //std::cout << Utils::green() << "#available-features=" << num_available_features_ << Utils::normal() << std::endl;
+
+              std::vector<std::pair<AndOr::AndNode<T>*, const T*> > successors;
+              expand(*node, successors);
+              if( random_shuffle_ ) Utils::random_shuffle(successors);
+
+              for( size_t k = 0; k < successors.size(); ++k ) {
+                  AndOr::AndNode<T> *succ = successors[k].first;
+                  const T *succ_hidden = successors[k].second;
+                  for( size_t j = 0; j < succ->children().size(); ++j ) {
+                      AndOr::OrNode<T> *succ_child = const_cast<AndOr::OrNode<T>*>(succ->child(j));
+                      succ_child->set_hidden_state(succ_hidden);
+                      create_sampled_tree(succ_child, 1 + depth, goal_nodes);
+                  }
+                  node->add_child(succ);
+                  assert(succ->parent() == node);
+              }
+          } else if( prune_nodes_ ) {
+              // mark node as pruned
+              node->mark_as_pruned();
+          }
       }
 
       void deallocate_graph(const AndOr::OrNode<T> *node) const {
@@ -1058,9 +1109,21 @@ namespace HOP {
               score = 0;
           } else if( node->children().empty() ) { // node is dead-end either pruned, or real dead-end
               if( node->pruned() ) {
-                  assert(prune_nodes_);
-                  int number_unknown_variables = calculate_unknown_variables(*node->belief()->belief());
-                  score = 1000 * (1 + number_unknown_variables); // CHECK: value
+score = 2;
+#if 0
+                  std::vector<std::vector<int> > unknown_variables;
+                  calculate_unknown_variables(*node->belief()->belief(), unknown_variables);
+                  if( unknown_variables.empty() ) {
+                      score = 1;
+                  } else {
+                      score = 1;
+                      for( size_t k = 0; k < unknown_variables.size(); ++k ) {
+                          const std::vector<int> &var_index_and_possible_values = unknown_variables[k];
+                          assert(var_index_and_possible_values.size() > 2);
+                          score += log2f(1 * (var_index_and_possible_values.size() - 1)); // CHECK: value
+                      }
+                  }
+#endif
               } else {
                   // node is a real dead-end
                   score = 10000; // CHECK: value
@@ -1104,6 +1167,8 @@ namespace HOP {
       virtual std::string name() const {
           std::string str = std::string("hop(") +
             "num-samples=" + std::to_string(num_sampled_scenarios_) +
+            ",tree-search=" + std::to_string(tree_search_) +
+            ",lookahead-depth=" + std::to_string(lookahead_depth_) +
             ",prune-nodes=" + std::to_string(prune_nodes_) +
             ",use-path=" + std::to_string(use_path_) +
             ",random-shuffle=" + std::to_string(random_shuffle_) +
@@ -1141,7 +1206,7 @@ namespace HOP {
           }
 
           // determine known/unknown variables at state
-          std::vector<int> unknown_variables;
+          std::vector<std::vector<int> > unknown_variables;
           calculate_unknown_variables(state, unknown_variables);
 
 #if 1//def DEBUG
@@ -1161,6 +1226,7 @@ namespace HOP {
           std::vector<float> action_scores(lw1_instance_.actions_.size(), std::numeric_limits<float>::max());
 
           // sample graph to score actions
+          std::map<T, int> frequency_table;
           int num_sampled_scenarios = unknown_variables.empty() ? 1 : num_sampled_scenarios_;
           for( int k = 0; k < num_sampled_scenarios; ++k ) {
               reset_graph();
@@ -1173,6 +1239,10 @@ namespace HOP {
               // sample (full) state from given state (belief)
               T sampled_hidden(state);
               sample(state, unknown_variables, sampled_hidden);
+              if( frequency_table.find(sampled_hidden) == frequency_table.end() )
+                  frequency_table.emplace(sampled_hidden, 1);
+              else
+                  ++frequency_table[sampled_hidden];
 
 #ifdef DEBUG
               std::cout << Utils::magenta();
@@ -1185,9 +1255,13 @@ namespace HOP {
               std::vector<const AndOr::OrNode<T>*> goal_nodes_in_graph;
               AndOr::OrNode<T> *root = make_root(state, sampled_hidden);
               //std::cout << "root=" << *root << std::endl;
-              //create_sampled_graph_breadth_first(root, goal_paths_in_graph, true); // CHECK: another sampled graph?
-              create_sampled_graph_breadth_first(root, goal_nodes_in_graph);
-              //std::cout << "num-expansions=" << num_expansions_ << ", #root-children=" << root->children().size() << ", #gn=" << goal_nodes_in_graph.size() << std::endl;
+              if( !tree_search_ ) {
+                  //create_sampled_graph_breadth_first(root, goal_paths_in_graph, true); // CHECK: another sampled graph?
+                  create_sampled_graph_breadth_first(root, goal_nodes_in_graph);
+              } else {
+                  create_sampled_tree(root, 0, goal_nodes_in_graph);
+              }
+              std::cout << "num-expansions=" << num_expansions_ << ", #root-children=" << root->children().size() << ", #gn=" << goal_nodes_in_graph.size() << std::endl;
 
               // store goal-paths found in sampled graph
               if( use_path_ ) {
@@ -1278,6 +1352,14 @@ namespace HOP {
               // deallocate AND/OR graph
               deallocate_graph(root);
           }
+
+#if 1
+          std::cout << "frequency table:";
+          for( typename std::map<T, int>::const_iterator it = frequency_table.begin(); it != frequency_table.end(); ++it ) {
+              std::cout << " " << it->second;
+          }
+          std::cout << std::endl;
+#endif
 
 #if 1//def DEBUG
           // print goal-paths
