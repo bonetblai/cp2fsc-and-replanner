@@ -271,7 +271,7 @@ int main(int argc, const char *argv[]) {
     as_method.options_.insert(make_pair("tmpfile-path", opt_tmpfile_path));
 
     // parse AS string
-    parse_as_string(opt_as_str, as_method, true);
+    parse_as_string(opt_as_str, as_method, false);
     assert(as_method.solver_option_str_ != "");
     g_options.enable(as_method.solver_option_str_);
 
