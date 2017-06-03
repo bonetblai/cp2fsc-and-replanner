@@ -42,6 +42,7 @@ namespace HOP {
       const LW1_Instance &lw1_instance_;
       const Inference::Engine<T> &inference_engine_;
       const int num_sampled_scenarios_;
+      const bool merge_trees_;
       const bool tree_search_;
       const int lookahead_depth_;
       const bool prune_nodes_;
@@ -82,6 +83,7 @@ namespace HOP {
         : lw1_instance_(lw1_instance),
           inference_engine_(inference_engine),
           num_sampled_scenarios_(options.find("num-samples") != options.end() ? atoi(options.at("num-samples").c_str()) : 1),
+          merge_trees_(options.find("merge-trees") != options.end() ? options.at("merge-trees") == "true" : false),
           tree_search_(options.find("tree-search") != options.end() ? options.at("tree-search") == "true" : false),
           lookahead_depth_(options.find("lookahead-depth") != options.end() ? atoi(options.at("lookahead-depth").c_str()) : 0),
           prune_nodes_(options.find("prune-nodes") != options.end() ? options.at("prune-nodes") != "false" : true),
@@ -444,7 +446,7 @@ namespace HOP {
       }
 
       // AND/OR graph
-      void reset_graph() const {
+      void reset_bitmap_and_graph_stats() const {
           reset_bitmap_for_features();
           num_expansions_ = 0;
       }
@@ -642,6 +644,79 @@ namespace HOP {
           } else if( prune_nodes_ ) {
               // mark node as pruned
               node->mark_as_pruned();
+          }
+      }
+
+      const AndOr::OrNode<T>* merge_trees(const std::vector<AndOr::OrNode<T>*> &root_nodes, std::map<AndOr::OrNode<T>*, const AndOr::OrNode<T>*> &tip_map) const {
+          assert(!root_nodes.empty() && (root_nodes[0] != 0));
+          AndOr::OrNode<T> *root = tree_copy(0, root_nodes[0], tip_map);
+          for( size_t k = 1; k < root_nodes.size(); ++k ) {
+              assert(root_nodes[k] != 0);
+              tandem_traversal_for_merge(root, root_nodes[k], tip_map);
+          }
+          assert(0);
+          return root;
+      }
+
+      AndOr::OrNode<T>* tree_copy(const AndOr::AndNode<T> *parent, const AndOr::OrNode<T> *node, std::map<AndOr::OrNode<T>*, const AndOr::OrNode<T>*> &tip_map) const {
+          AndOr::OrNode<T> *new_node = new AndOr::OrNode<T>(node->hidden_state(), node->belief(), parent);
+          for( size_t k = 0; k < node->children().size(); ++k )
+              new_node->add_child(tree_copy(new_node, node->child(k), tip_map));
+          if( new_node->children().empty() )
+              tip_map.insert(std::make_pair(new_node, node));
+          return new_node;
+      }
+      AndOr::AndNode<T>* tree_copy(const AndOr::OrNode<T> *parent, const AndOr::AndNode<T> *node, std::map<AndOr::OrNode<T>*, const AndOr::OrNode<T>*> &tip_map) const {
+          AndOr::AndNode<T> *new_node = new AndOr::AndNode<T>(node->action(), node->action_cost(), node->belief(), parent);
+          for( size_t k = 0; k < node->children().size(); ++k )
+              new_node->add_child(tree_copy(new_node, node->child(k), tip_map));
+          return new_node;
+      }
+
+      void tandem_traversal_for_merge(AndOr::OrNode<T> *node, const AndOr::OrNode<T> *alt_node, std::map<AndOr::OrNode<T>*, const AndOr::OrNode<T>*> &tip_map) const {
+          // the two nodes must correspond to the same belief
+          assert(*node->belief()->belief() == *alt_node->belief()->belief());
+
+          // create child map for OR node
+          std::map<int, const AndOr::AndNode<T>*> child_map;
+          for( size_t k = 0; k < node->children().size(); ++k )
+              child_map.insert(std::make_pair(node->child(k)->action(), node->child(k)));
+
+          // iterate over children of alt_node
+          for( size_t k = 0; k < alt_node->children().size(); ++k ) {
+              const AndOr::AndNode<T> *alt_child = alt_node->child(k);
+              // look for this child in node; if it doesn't exist, insert this
+              // child into node; if it exists, recurse
+              typename std::map<int, const AndOr::AndNode<T>*>::const_iterator it = child_map.find(alt_child->action());
+
+              if( it == child_map.end() ) {
+                  // need to add a copy of alt_chld and its successors to node
+                  node->add_child(tree_copy(node, alt_child, tip_map));
+              } else {
+                  tandem_traversal_for_merge(const_cast<AndOr::AndNode<T>*>(it->second), alt_child, tip_map);
+              }
+          }
+      }
+      void tandem_traversal_for_merge(AndOr::AndNode<T> *node, const AndOr::AndNode<T> *alt_node, std::map<AndOr::OrNode<T>*, const AndOr::OrNode<T>*> &tip_map) const {
+          // the two nodes must correspond to the same belief and same action
+          assert(*node->belief()->belief() == *alt_node->belief()->belief());
+          assert(node->action() == alt_node->action());
+
+          // create child map for AND node
+
+          // iterate over children of alt_node
+          for( size_t k = 0; k < alt_node->children().size(); ++k ) {
+              const AndOr::OrNode<T> *alt_child = alt_node->child(k);
+              // look for this child in node; if it doesn't exist, insert this
+              // child into node; if it exists, recurse
+              AndOr::OrNode<T> *child = 0;
+
+              if( child == 0 ) {
+                  // need to add a copy of alt_chld and its successors to node
+                  node->add_child(tree_copy(node, alt_child, tip_map));
+              } else {
+                  tandem_traversal_for_merge(child, alt_child, tip_map);
+              }
           }
       }
 
@@ -1167,6 +1242,7 @@ score = 2;
       virtual std::string name() const {
           std::string str = std::string("hop(") +
             "num-samples=" + std::to_string(num_sampled_scenarios_) +
+            ",merge-trees=" + std::to_string(merge_trees_) +
             ",tree-search=" + std::to_string(tree_search_) +
             ",lookahead-depth=" + std::to_string(lookahead_depth_) +
             ",prune-nodes=" + std::to_string(prune_nodes_) +
@@ -1219,147 +1295,174 @@ score = 2;
           // data structure: goal_paths: first action -> reversed action path -> count
           std::map<int, std::map<std::vector<int>, int> > goal_paths;
 
-          // data structure: sampled_state_trajectories: reversed action path -> state trajectory
-          std::map<std::vector<int>, std::vector<const T*> > sampled_state_trajectories;
-
           // data structure: action scores: action -> score
           std::vector<float> action_scores(lw1_instance_.actions_.size(), std::numeric_limits<float>::max());
 
-          // sample graph to score actions
-          std::map<T, int> frequency_table;
-          int num_sampled_scenarios = unknown_variables.empty() ? 1 : num_sampled_scenarios_;
-          for( int k = 0; k < num_sampled_scenarios; ++k ) {
-              reset_graph();
-              if( debug_ > 0 ) {
-                  std::cout << Utils::bold()
-                            << "**** Running sampled scenario " << 1 + k << "/" << num_sampled_scenarios
-                            << Utils::normal() << std::endl;
-              }
+          // data structure: sampled_state_trajectories: reversed action path -> state trajectory
+          std::map<std::vector<int>, std::vector<const T*> > sampled_state_trajectories;
 
-              // sample (full) state from given state (belief)
-              T sampled_hidden(state);
-              sample(state, unknown_variables, sampled_hidden);
-              if( frequency_table.find(sampled_hidden) == frequency_table.end() )
-                  frequency_table.emplace(sampled_hidden, 1);
-              else
-                  ++frequency_table[sampled_hidden];
+          if( !merge_trees_ ) {
+              // sample graph to score actions
+              int num_sampled_scenarios = unknown_variables.empty() ? 1 : num_sampled_scenarios_;
+              for( int k = 0; k < num_sampled_scenarios; ++k ) {
+                  reset_bitmap_and_graph_stats();
+                  if( debug_ > 0 ) {
+                      std::cout << Utils::bold()
+                                << "**** Running sampled scenario " << 1 + k << "/" << num_sampled_scenarios
+                                << Utils::normal() << std::endl;
+                  }
+
+                  // sample (full) state from given state (belief)
+                  T sampled_hidden(state);
+                  sample(state, unknown_variables, sampled_hidden);
 
 #ifdef DEBUG
-              std::cout << Utils::magenta();
-              std::cout << "sampled=";
-              sampled_hidden.print(std::cout, lw1_instance_);
-              std::cout << Utils::normal() << std::endl;
+                  std::cout << Utils::magenta();
+                  std::cout << "sampled=";
+                  sampled_hidden.print(std::cout, lw1_instance_);
+                  std::cout << Utils::normal() << std::endl;
 #endif
 
-              // construct AND/OR graph rooted at state
-              std::vector<const AndOr::OrNode<T>*> goal_nodes_in_graph;
-              AndOr::OrNode<T> *root = make_root(state, sampled_hidden);
-              //std::cout << "root=" << *root << std::endl;
-              if( !tree_search_ ) {
-                  //create_sampled_graph_breadth_first(root, goal_paths_in_graph, true); // CHECK: another sampled graph?
-                  create_sampled_graph_breadth_first(root, goal_nodes_in_graph);
-              } else {
-                  create_sampled_tree(root, 0, goal_nodes_in_graph);
-              }
-              std::cout << "num-expansions=" << num_expansions_ << ", #root-children=" << root->children().size() << ", #gn=" << goal_nodes_in_graph.size() << std::endl;
+                  // construct AND/OR graph rooted at state
+                  std::vector<const AndOr::OrNode<T>*> goal_nodes_in_graph;
+                  AndOr::OrNode<T> *root = make_root(state, sampled_hidden);
+                  //std::cout << "root=" << *root << std::endl;
+                  if( !tree_search_ ) {
+                      //create_sampled_graph_breadth_first(root, goal_paths_in_graph, true); // CHECK: another sampled graph?
+                      create_sampled_graph_breadth_first(root, goal_nodes_in_graph);
+                  } else {
+                      create_sampled_tree(root, 0, goal_nodes_in_graph);
+                  }
+                  std::cout << "num-expansions=" << num_expansions_ << ", #root-children=" << root->children().size() << ", #gn=" << goal_nodes_in_graph.size() << std::endl;
 
-              // store goal-paths found in sampled graph
-              if( use_path_ ) {
-                  for( size_t j = 0; j < goal_nodes_in_graph.size(); ++j ) {
-                      // extract action path to goal
-                      std::vector<int> reversed_action_path;
-                      const AndOr::OrNode<T> *node = goal_nodes_in_graph[j];
-                      while( node->parent() != 0 ) {
-                          const AndOr::AndNode<T> *parent = node->parent();
-                          int action = parent->action();
-                          assert((action >= 0) && (action < lw1_instance_.actions_.size()));
-                          reversed_action_path.push_back(action);
-                          node = parent->parent();
-                          assert(node != 0);
-                      }
-                      assert(node == root);
-
-                      // insert path into map: first action is last in reversed path
-                      int first_action = reversed_action_path.back();
-                      bool need_to_insert_state_trajectory = true;
-                      if( goal_paths.find(first_action) == goal_paths.end() ) {
-                          std::map<std::vector<int>, int> path_map;
-#ifndef NO_EMPLACE_FOR_MAP
-                          path_map.emplace(reversed_action_path, 1);
-                          goal_paths.emplace(first_action, std::move(path_map));
-#else
-                          path_map.insert(std::make_pair(reversed_action_path, 1));
-                          goal_paths.insert(std::make_pair(first_action, path_map));
-#endif
-                      } else {
-                          std::map<std::vector<int>, int> &path_map = goal_paths.at(first_action);
-                          if( path_map.find(reversed_action_path) == path_map.end() ) {
-#ifndef NO_EMPLACE_FOR_MAP
-                              path_map.emplace(reversed_action_path, 1);
-#else
-                              path_map.insert(std::make_pair(reversed_action_path, 1));
-#endif
-                          } else {
-                              ++path_map[reversed_action_path];
-                              need_to_insert_state_trajectory = false;
-                          }
-                      }
-
-                      // if needed, calculate state trajectory and insert into map
-                      if( need_to_insert_state_trajectory ) {
-                          std::vector<const T*> state_trajectory(1 + reversed_action_path.size(), 0);
+                  // store goal-paths found in sampled graph
+                  if( use_path_ ) {
+                      for( size_t j = 0; j < goal_nodes_in_graph.size(); ++j ) {
+                          // extract action path to goal
+                          std::vector<int> reversed_action_path;
                           const AndOr::OrNode<T> *node = goal_nodes_in_graph[j];
-                          for( int i = reversed_action_path.size(); node->parent() != 0; --i ) {
-                              assert(i > 0);
-                              state_trajectory[i] = new T(*node->hidden_state());
-                              node = node->parent()->parent();
+                          while( node->parent() != 0 ) {
+                              const AndOr::AndNode<T> *parent = node->parent();
+                              int action = parent->action();
+                              assert((action >= 0) && (action < lw1_instance_.actions_.size()));
+                              reversed_action_path.push_back(action);
+                              node = parent->parent();
                               assert(node != 0);
                           }
                           assert(node == root);
-                          state_trajectory[0] = new T(*node->hidden_state());
+
+                          // insert path into map: first action is last in reversed path
+                          int first_action = reversed_action_path.back();
+                          bool need_to_insert_state_trajectory = true;
+                          if( goal_paths.find(first_action) == goal_paths.end() ) {
+                              std::map<std::vector<int>, int> path_map;
 #ifndef NO_EMPLACE_FOR_MAP
-                          sampled_state_trajectories.emplace(reversed_action_path, std::move(state_trajectory));
+                              path_map.emplace(reversed_action_path, 1);
+                              goal_paths.emplace(first_action, std::move(path_map));
 #else
-                          sampled_state_trajectories.insert(std::make_pair(reversed_action_path, state_trajectory));
+                              path_map.insert(std::make_pair(reversed_action_path, 1));
+                              goal_paths.insert(std::make_pair(first_action, path_map));
 #endif
+                          } else {
+                              std::map<std::vector<int>, int> &path_map = goal_paths.at(first_action);
+                              if( path_map.find(reversed_action_path) == path_map.end() ) {
+#ifndef NO_EMPLACE_FOR_MAP
+                                  path_map.emplace(reversed_action_path, 1);
+#else
+                                  path_map.insert(std::make_pair(reversed_action_path, 1));
+#endif
+                              } else {
+                                  ++path_map[reversed_action_path];
+                                  need_to_insert_state_trajectory = false;
+                              }
+                          }
+
+                          // if needed, calculate state trajectory and insert into map
+                          if( need_to_insert_state_trajectory ) {
+                              std::vector<const T*> state_trajectory(1 + reversed_action_path.size(), 0);
+                              const AndOr::OrNode<T> *node = goal_nodes_in_graph[j];
+                              for( int i = reversed_action_path.size(); node->parent() != 0; --i ) {
+                                  assert(i > 0);
+                                  state_trajectory[i] = new T(*node->hidden_state());
+                                  node = node->parent()->parent();
+                                  assert(node != 0);
+                              }
+                              assert(node == root);
+                              state_trajectory[0] = new T(*node->hidden_state());
+#ifndef NO_EMPLACE_FOR_MAP
+                              sampled_state_trajectories.emplace(reversed_action_path, std::move(state_trajectory));
+#else
+                              sampled_state_trajectories.insert(std::make_pair(reversed_action_path, state_trajectory));
+#endif
+                          }
                       }
                   }
-              }
 
-              // propagate scores in graph
-              std::map<T, float> score_map; // CHECK: always used?
-              propagate_scores(root, score_map);
+                  // propagate scores in graph
+                  std::map<T, float> score_map; // CHECK: always used?
+                  propagate_scores(root, score_map);
 #if 0
-              for( size_t j = 0; j < root->children().size(); ++j ) {
-                  assert(root->child(j)->children().size() == 1);
-                  //int action = root->child(j)->action();
-                  const T &child_state = *root->child(j)->child(0)->belief()->belief();
-                  assert(score_map.find(child_state) != score_map.end());
-                  float stored_score = 1 + score_map.at(child_state); // CHECK: use action' cost instead of 1
-                  assert(stored_score <= root->child(j)->score());
-                  root->child(j)->set_score(stored_score);
-              }
+                  for( size_t j = 0; j < root->children().size(); ++j ) {
+                      assert(root->child(j)->children().size() == 1);
+                      //int action = root->child(j)->action();
+                      const T &child_state = *root->child(j)->child(0)->belief()->belief();
+                      assert(score_map.find(child_state) != score_map.end());
+                      float stored_score = 1 + score_map.at(child_state); // CHECK: use action' cost instead of 1
+                      assert(stored_score <= root->child(j)->score());
+                      root->child(j)->set_score(stored_score);
+                  }
 #endif
 
-              // update score for best children in graph
-              for( size_t j = 0; j < root->children().size(); ++j ) {
-                  int action = root->child(j)->action();
-                  if( action_scores[action] == std::numeric_limits<float>::max() )
-                      action_scores[action] = 0;
-                  action_scores[action] += root->child(j)->score() / float(num_sampled_scenarios);
+                  // update score for best children in graph
+                  for( size_t j = 0; j < root->children().size(); ++j ) {
+                      int action = root->child(j)->action();
+                      if( action_scores[action] == std::numeric_limits<float>::max() )
+                          action_scores[action] = 0;
+                      action_scores[action] += root->child(j)->score() / float(num_sampled_scenarios);
+                  }
+
+                  // deallocate AND/OR graph
+                  deallocate_graph(root);
+              }
+          } else {
+              // sample graph to score actions
+              std::vector<AndOr::OrNode<T>*> root_nodes;
+              int num_sampled_scenarios = unknown_variables.empty() ? 1 : num_sampled_scenarios_;
+              for( int k = 0; k < num_sampled_scenarios; ++k ) {
+                  reset_bitmap_and_graph_stats();
+                  if( debug_ > 0 ) {
+                      std::cout << Utils::bold()
+                                << "**** Running sampled scenario " << 1 + k << "/" << num_sampled_scenarios
+                                << Utils::normal() << std::endl;
+                  }
+
+                  // sample (full) state from given state (belief)
+                  T sampled_hidden(state);
+                  sample(state, unknown_variables, sampled_hidden);
+
+#ifdef DEBUG
+                  std::cout << Utils::magenta();
+                  std::cout << "sampled=";
+                  sampled_hidden.print(std::cout, lw1_instance_);
+                  std::cout << Utils::normal() << std::endl;
+#endif
+
+                  // construct AND/OR graph rooted at state
+                  std::vector<const AndOr::OrNode<T>*> goal_nodes_in_graph;
+                  root_nodes.push_back(make_root(state, sampled_hidden));
+                  //std::cout << "root=" << *root_nodes.back() << std::endl;
+                  assert(tree_search_);
+                  create_sampled_tree(root_nodes.back(), 0, goal_nodes_in_graph);
+                  std::cout << "num-expansions=" << num_expansions_ << ", #root-children=" << root_nodes.back()->children().size() << ", #gn=" << goal_nodes_in_graph.size() << std::endl;
               }
 
-              // deallocate AND/OR graph
-              deallocate_graph(root);
+              // merge trees
+              assert(!root_nodes.empty());
+              std::map<AndOr::OrNode<T>*, const AndOr::OrNode<T>*> tip_map;
+              const AndOr::OrNode<T> *root = merge_trees(root_nodes, tip_map);
+              assert(root != 0);
+              assert(0);
           }
-
-#if 1
-          std::cout << "frequency table:";
-          for( typename std::map<T, int>::const_iterator it = frequency_table.begin(); it != frequency_table.end(); ++it ) {
-              std::cout << " " << it->second;
-          }
-          std::cout << std::endl;
-#endif
 
 #if 1//def DEBUG
           // print goal-paths
