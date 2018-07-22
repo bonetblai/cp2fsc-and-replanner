@@ -1,0 +1,44 @@
+
+R version 3.2.2 (2015-08-14) -- "Fire Safety"
+Copyright (C) 2015 The R Foundation for Statistical Computing
+Platform: x86_64-apple-darwin13.4.0 (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> options(width=200)
+> library(plyr)
+> data = read.csv("data.csv", header=T)
+> good = data[data$plan.size != -1, ]
+> summary = ddply(good, .(folder, family, domain.file, problem, planner), summarise,
++                 instance.time.N = length(instance.time),
++                 planner.calls.mean = mean(planner.calls),
++                 plan.size.mean = mean(plan.size),
++                 instance.time.mean = mean(instance.time),
++                 prep.time.mean = mean(prep.time + planner.time - planner.search.time),
++                 exec.time.mean = mean(instance.time - planner.time + planner.search.time)
++                 #time.per.planner.call.mean = instance.time.mean / planner.calls.mean
++                 #instance.time.sd = sd(instance.time),
++                 #instance.time.se = instance.time.sd / sqrt(instance.time.N)
++                )
+> format(summary, digits=0, nsmall=2, scientific=FALSE)
+              folder      family domain.file problem planner instance.time.N planner.calls.mean plan.size.mean instance.time.mean prep.time.mean exec.time.mean
+1 minesweeper_d3.txt minesweeper       04x03   04x03      ff              34               2.71          14.00               1.28           1.42           0.06
+2 minesweeper_d3.txt minesweeper       04x04   04x04      ff              35               3.91          18.00              10.63          11.60           0.19
+3 minesweeper_d3.txt minesweeper       05x03   05x03      ff              43               3.16          17.00               3.02           3.26           0.10
+4 minesweeper_d3.txt minesweeper       05x05   05x05      ff              48               5.83          27.00             118.72         126.70           1.11
+5 minesweeper_d3.txt minesweeper       06x06   06x06      ff              37               8.51          38.00             661.79         699.69           6.02
+6 minesweeper_d3.txt minesweeper       08x08   08x08      ff              43              14.37          66.00            4287.65        4421.37          56.77
+> 
+> 
