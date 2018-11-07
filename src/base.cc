@@ -4214,11 +4214,13 @@ PDDL_Base::Condition* PDDL_Base::ForallCondition::ground(bool clone_variables, b
     clone_variables_stack_.push_back(clone_variables);
     result_stack_.push_back(negate ? static_cast<Condition*>(new Or) : static_cast<Condition*>(new And));
     enumerate(true);
+    assert(!result_stack_.empty());
     if( negate )
         static_cast<Or*>(result_stack_.back())->reserve(count_);
     else
         static_cast<And*>(result_stack_.back())->reserve(count_);
     enumerate();
+    assert(!result_stack_.empty());
 
     Condition *result = result_stack_.back();
     result_stack_.pop_back();
@@ -4263,6 +4265,7 @@ PDDL_Base::Condition* PDDL_Base::ForallCondition::ground(bool clone_variables, b
 }
 
 void PDDL_Base::ForallCondition::process_instance() const {
+    assert(!negate_stack_.empty() && !clone_variables_stack_.empty() && !result_stack_.empty());
     bool negate = negate_stack_.back();
     bool clone_variables = clone_variables_stack_.back();
     if( dynamic_cast<Constant*>(result_stack_.back()) != 0 ) {
@@ -4332,8 +4335,8 @@ string PDDL_Base::ForallCondition::to_string() const {
     string str("(forall (");
     for( size_t k = 0; k < param_.size(); ++k )
         str += (k > 0 ? " " : "") + param_[k]->to_string();
-    str += ") " + condition_->to_string() + ")";
-    return str;
+    str += ") " + condition_->to_string();
+    return str + ")";
 }
 
 void PDDL_Base::ExistsCondition::remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param) {
@@ -4350,11 +4353,13 @@ PDDL_Base::Condition* PDDL_Base::ExistsCondition::ground(bool clone_variables, b
     clone_variables_stack_.push_back(clone_variables);
     result_stack_.push_back(negate ? static_cast<Condition*>(new And) : static_cast<Condition*>(new Or));
     enumerate(true);
+    assert(!result_stack_.empty());
     if( negate )
         static_cast<And*>(result_stack_.back())->reserve(count_);
     else
         static_cast<Or*>(result_stack_.back())->reserve(count_);
     enumerate();
+    assert(!result_stack_.empty());
 
     Condition *result = result_stack_.back();
     result_stack_.pop_back();
@@ -4399,6 +4404,7 @@ PDDL_Base::Condition* PDDL_Base::ExistsCondition::ground(bool clone_variables, b
 }
 
 void PDDL_Base::ExistsCondition::process_instance() const {
+    assert(!negate_stack_.empty() && !clone_variables_stack_.empty() && !result_stack_.empty());
     bool negate = negate_stack_.back();
     bool clone_variables = clone_variables_stack_.back();
     if( dynamic_cast<Constant*>(result_stack_.back()) != 0 ) {
@@ -4468,8 +4474,8 @@ string PDDL_Base::ExistsCondition::to_string() const {
     string str("(exists (");
     for( size_t k = 0; k < param_.size(); ++k )
         str += (k > 0 ? " " : "") + param_[k]->to_string();
-    str += ") " + condition_->to_string() + ")";
-    return str;
+    str += ") " + condition_->to_string();
+    return str + ")";
 }
 
 void PDDL_Base::AtomicEffect::remap_parameters(const var_symbol_vec &old_param, const var_symbol_vec &new_param) {
@@ -4633,8 +4639,10 @@ PDDL_Base::Effect* PDDL_Base::ForallEffect::ground(bool clone_variables, bool re
     clone_variables_stack_.push_back(clone_variables);
     result_stack_.push_back(new AndEffect);
     enumerate(true);
+    assert(!result_stack_.empty());
     result_stack_.back()->reserve(count_);
     enumerate();
+    assert(!result_stack_.empty());
     AndEffect *result = result_stack_.back();
     result_stack_.pop_back();
     clone_variables_stack_.pop_back();
@@ -4998,8 +5006,10 @@ PDDL_Base::Sensing* PDDL_Base::ForallSensing::ground(bool clone_variables, bool 
     replace_static_values_stack_.push_back(replace_static_values);
     result_stack_.push_back(new Sensing);
     enumerate(true);
+    assert(!result_stack_.empty());
     result_stack_.back()->reserve(count_);
     enumerate();
+    assert(!result_stack_.empty());
     Sensing *sensing = result_stack_.back();
     result_stack_.pop_back();
     clone_variables_stack_.pop_back();
@@ -6091,6 +6101,7 @@ PDDL_Base::state_variable_vec* PDDL_Base::ForallStateVariableList::ground(const 
     base_stack_.push_back(base);
     result_stack_.push_back(new state_variable_vec);
     enumerate();
+    assert(!result_stack_.empty());
     state_variable_vec *result = result_stack_.back();
     result_stack_.pop_back();
     base_stack_.pop_back();

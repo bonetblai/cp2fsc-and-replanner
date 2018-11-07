@@ -474,10 +474,12 @@ constant_condition:
 single_condition:
       literal {
           // if literal is for equality, construct EQ
-          if( $1->pred_ == dom_eq_pred_ )
-              $$ = new EQ(dynamic_cast<VariableSymbol*>($1->param_[0]), dynamic_cast<VariableSymbol*>($1->param_[1]), $1->negated_);
-          else
+          if( $1->pred_ == dom_eq_pred_ ) {
+              assert($1->param_.size() == 2);
+              $$ = new EQ($1->param_[0], $1->param_[1], $1->negated_);
+          } else {
               $$ = new Literal(*$1);
+          }
           delete $1;
       }
     ;
@@ -503,6 +505,7 @@ positive_literal:
           if( $3->size() != 2 ) {
               log_error((char*)"wrong number of arguments for equality");
           } else {
+              /* CHECK: Why do we do this instead of generating EQ right here? (Now. EQ is generated in rule for single_condition) */
               $$ = new Atom(dom_eq_pred_);
               $$->param_ = *$3;
               delete $3;
