@@ -22,7 +22,7 @@
 
 using namespace std;
 
-KS0_Instance::KS0_Instance(const Instance &instance, bool tag_all_literals)
+KS0_Instance::KS0_Instance(const Instance &instance, size_t bounded_reachability, bool tag_all_literals)
   : Instance(instance.domain_name_, instance.problem_name_, instance.options_),
     tag_all_literals_(tag_all_literals) {
 
@@ -33,21 +33,15 @@ KS0_Instance::KS0_Instance(const Instance &instance, bool tag_all_literals)
     // calculate reachable state space
     cout << Utils::error() << "this translation is not working!" << endl;
     if( instance.explicit_initial_states_.empty() ) {
-        cout << "HOLA.0" << endl;
-        instance.generate_initial_states(initial_states, true);
+        instance.generate_initial_states(initial_states, false);
         assert(0);
         for( StateSet::const_iterator it = initial_states.begin(); it != initial_states.end(); ++it ) {
             StateSet *space = new StateSet;
-            cout << "HOLA.1" << endl;
-            instance.generate_reachable_state_space(**it, *space, true);
-            cout << "HOLA.2" << endl;
+            instance.generate_reachable_state_space(**it, *space, bounded_reachability, false);
             reachable_space_from_initial_state.insert(make_pair(*it, space));
-            cout << "HOLA.3" << endl;
             reachable_space.insert(space->begin(), space->end());
-            cout << "HOLA.4" << endl;
             cout << "# reachable states from "; (*it)->print(cout, instance); cout << " = " << space->size() << endl;
         }
-        cout << "HOLA.5" << endl;
     } else {
         for( size_t k = 0; k < instance.explicit_initial_states_.size(); ++k ) {
             State *state = new State;

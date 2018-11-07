@@ -37,8 +37,8 @@ class KS0_Instance : public Instance {
                    int num_fsc_states = 0);
 
   public:
-    KS0_Instance(const Instance &instance, bool tag_all_literals = true);
-    KS0_Instance(const CP_Instance &instance, bool tag_all_literals = true);
+    KS0_Instance(const Instance &instance, size_t bounded_reachability, bool tag_all_literals);
+    KS0_Instance(const CP_Instance &instance, bool tag_all_literals);
     virtual ~KS0_Instance() { }
     int n_tags() const { return n_tags_; }
 };

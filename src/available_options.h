@@ -174,8 +174,20 @@ const char *available_options[] = {
     0
 };
 
+const char *ks0_cmdline_options[] = {
+    "[--help]",
+    "[--bounded-reachability <n>]",
+    "[--debug-parser]",
+    "[--prefix <prefix>]",
+    "[--no-tag-all-literals]",
+    "[--options=<options-string>]",
+    "[--override-defaults]",
+    0
+};
+
 const char *cp2fsc_cmdline_options[] = {
     "[--help]",
+    "[--bounded-reachability <n>]",
     "[--debug-parser]",
     "[--compound-obs-as-fluents]",
     "[--fsc-states <n>]",

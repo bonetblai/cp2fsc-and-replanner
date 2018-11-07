@@ -19,6 +19,7 @@
 #include <cassert>
 #include <iostream>
 #include <iomanip>
+#include <limits>
 #include <libgen.h>
 #include "cp_problem.h"
 #include "ks0_problem.h"
@@ -67,6 +68,7 @@ void print_usage(ostream &os, const char *exec_name, const char **cmdline_option
 
 int main(int argc, const char *argv[]) {
     StringTable parser_symbol_table(lowercase_map, 50);
+    int         opt_bounded_reachability = numeric_limits<int>::max();
     bool        opt_debug_parser = false;
     int         opt_fsc_states = 1;
     bool        opt_forbid_inconsistent_tuples = true;
@@ -106,6 +108,12 @@ int main(int argc, const char *argv[]) {
         if( !skip_options && !strcmp(argv[k], "--help") ) {
             print_usage(cout, exec_name, cp2fsc_cmdline_options);
             exit(0);
+        } else if( !skip_options && !strcmp(argv[k], "--bounded-reachability") ) {
+            if( k == argc - 1 ) {
+                cout << Utils::error() << "not enough arguments for '" << argv[k] << "'." << endl;
+                exit(-1);
+            }
+            opt_bounded_reachability = atoi(argv[++k]);
         } else if( !skip_options && !strcmp(argv[k], "--debug-parser") ) {
             opt_debug_parser = true;
         } else if( !skip_options && !strcmp(argv[k], "--compound-obs-as-fluents") ) {
@@ -113,7 +121,7 @@ int main(int argc, const char *argv[]) {
             cout << Utils::error() << "'" << argv[k] << "' is currently not implemented." << endl;
             exit(-1);
         } else if( !skip_options && !strcmp(argv[k], "--fsc-states") ) {
-            if( k == argc-1 ) {
+            if( k == argc - 1 ) {
                 cout << Utils::error() << "not enough arguments for '" << argv[k] << "'." << endl;
                 exit(-1);
             }
@@ -121,13 +129,13 @@ int main(int argc, const char *argv[]) {
         } else if( !skip_options && !strcmp(argv[k], "--no-forbid-inconsistent-tuples") ) {
             opt_forbid_inconsistent_tuples = false;
         } else if( !skip_options && !strcmp(argv[k], "--output-metadata") ) {
-            if( k == argc-1 ) {
+            if( k == argc - 1 ) {
                 cout << Utils::error() << "not enough arguments for '" << argv[k] << "'." << endl;
                 exit(-1);
             }
             opt_metadata_filename = argv[++k];
         } else if( !skip_options && !strcmp(argv[k], "--prefix") ) {
-            if( k == argc-1 ) {
+            if( k == argc - 1 ) {
                 cout << Utils::error() << "not enough arguments for '" << argv[k] << "'." << endl;
                 exit(-1);
             }
@@ -195,7 +203,7 @@ int main(int argc, const char *argv[]) {
     }
 
     cout << "creating CP translation..." << endl;
-    CP_Instance cp_instance(instance, opt_fsc_states,
+    CP_Instance cp_instance(instance, opt_fsc_states, opt_bounded_reachability,
                             opt_forbid_inconsistent_tuples, opt_compound_obs_as_fluents);
     if( g_options.is_enabled("cp:print:raw") ) {
         cp_instance.write_domain(cout);
