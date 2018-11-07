@@ -37,8 +37,8 @@ OPTIMIZE = -O3 -DSMART #-DNDEBUG
 # is prefered. In some systems, clang requires stdlib specification
 #override CFLAGS += $(DEBUG) $(OPTIMIZE) -I. -Wall -std=c++11 -stdlib=libc++
 #override LFLAGS += $(DEBUG) $(OPTIMIZE) -L. -Wall -std=c++11 -stdlib=libc++
-override CFLAGS += $(DEBUG) $(OPTIMIZE) -I. -Wall -std=c++14 -stdlib=libc++
-override LFLAGS += $(DEBUG) $(OPTIMIZE) -L. -Wall -std=c++14 -stdlib=libc++
+override CFLAGS += $(DEBUG) $(OPTIMIZE) -I. -Wall -std=c++14 #-stdlib=libc++
+override LFLAGS += $(DEBUG) $(OPTIMIZE) -L. -Wall -std=c++14 #-stdlib=libc++
 
 # Libraries to be linked.
 # The malloc lib may be needed
