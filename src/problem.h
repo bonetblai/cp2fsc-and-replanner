@@ -360,9 +360,9 @@ class Instance {
     void reserve_axioms(int n) { axioms_.reserve(n); }
 
     // generate reachable state space
-    void generate_reachable_state_space(StateSet &hash, bool verbose = false) const;
-    void generate_reachable_state_space(const State &state, StateSet &hash, bool verbose = false) const;
-    void generate_initial_states(StateSet &initial_states, bool verbose = false) const;
+    void generate_reachable_state_space(StateSet &hash, size_t bounded_reachability, bool verbose) const;
+    void generate_reachable_state_space(const State &state, StateSet &hash, size_t bounded_reachability, bool verbose) const;
+    void generate_initial_states(StateSet &initial_states, bool verbose) const;
 
     // set/get original actions
     bool is_original_action(const std::string &action_name) const {

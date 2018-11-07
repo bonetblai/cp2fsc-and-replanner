@@ -19,6 +19,7 @@
 #include <cassert>
 #include <iostream>
 #include <iomanip>
+#include <limits>
 #include <libgen.h>
 #include "cp_problem.h"
 #include "ks0_problem.h"
@@ -67,6 +68,7 @@ void print_usage(ostream &os, const char *exec_name, const char **cmdline_option
 
 int main(int argc, const char *argv[]) {
     StringTable parser_symbol_table(lowercase_map, 50);
+    int         opt_bounded_reachability = numeric_limits<int>::max();
     bool        opt_debug_parser = false;
     string      opt_prefix = "";
     bool        opt_tag_all_literals = true;
@@ -85,7 +87,7 @@ int main(int argc, const char *argv[]) {
     // check correct number of parameters
     const char *exec_name = argv[0];
     if( argc == 1 ) {
-        print_usage(cout, exec_name, cp2fsc_cmdline_options);
+        print_usage(cout, exec_name, ks0_cmdline_options);
         exit(0);
     }
 
@@ -100,12 +102,18 @@ int main(int argc, const char *argv[]) {
     bool skip_options = false;
     for( int k = 1; k < argc; ++k ) {
         if( !skip_options && !strcmp(argv[k], "--help") ) {
-            print_usage(cout, exec_name, cp2fsc_cmdline_options);
+            print_usage(cout, exec_name, ks0_cmdline_options);
             exit(0);
+        } else if( !skip_options && !strcmp(argv[k], "--bounded-reachability") ) {
+            if( k == argc - 1 ) {
+                cout << Utils::error() << "not enough arguments for '" << argv[k] << "'." << endl;
+                exit(-1);
+            }
+            opt_bounded_reachability = atoi(argv[++k]);
         } else if( !skip_options && !strcmp(argv[k], "--debug-parser") ) {
             opt_debug_parser = true;
         } else if( !skip_options && !strcmp(argv[k], "--prefix") ) {
-            if( k == argc-1 ) {
+            if( k == argc - 1 ) {
                 cout << Utils::error() << "not enough arguments for '" << argv[k] << "'." << endl;
                 exit(-1);
             }
@@ -173,7 +181,7 @@ int main(int argc, const char *argv[]) {
 #endif
 
     cout << "creating KS0 translation..." << endl;
-    KS0_Instance ks0_instance(instance, opt_tag_all_literals);
+    KS0_Instance ks0_instance(instance, opt_bounded_reachability, opt_tag_all_literals);
     if( g_options.is_enabled("ks0:print:raw") ) {
         ks0_instance.write_domain(cout);
         ks0_instance.write_problem(cout);

@@ -42,6 +42,7 @@ class CP_Instance : public Instance {
 
     CP_Instance(const Instance &instance,
                 size_t fsc_states,
+                size_t bounded_reachability,
                 bool forbid_inconsistent_tuples = false,
                 bool compound_obs_as_fluents = false);
     virtual ~CP_Instance();

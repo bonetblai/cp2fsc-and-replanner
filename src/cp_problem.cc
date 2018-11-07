@@ -29,6 +29,7 @@ using namespace std;
 
 CP_Instance::CP_Instance(const Instance &ins,
                          size_t fsc_states,
+                         size_t bounded_reachability,
                          bool forbid_inconsistent_tuples,
                          bool compound_obs_as_fluents)
   : Instance(ins.domain_name_, ins.problem_name_, ins.options_),
@@ -42,15 +43,16 @@ CP_Instance::CP_Instance(const Instance &ins,
 
     // calculate reachable state space
     assert(initial_states_.empty());
-    ins.generate_initial_states(initial_states_);
+    cout << "calculating reachable state space (bound=" << bounded_reachability << ")..." << endl;
+    ins.generate_initial_states(initial_states_, false);
+    cout << "# initial states = " << initial_states_.size() << endl;
     for( StateSet::const_iterator it = initial_states_.begin(); it != initial_states_.end(); ++it ) {
         StateSet *space = new StateSet;
-        ins.generate_reachable_state_space(**it, *space);
+        ins.generate_reachable_state_space(**it, *space, bounded_reachability, false);
         reachable_space_from_initial_state_.insert(make_pair(*it, space));
         reachable_space_.insert(space->begin(), space->end());
         cout << "# reachable states from "; (*it)->print(cout, ins); cout << " = " << space->size() << endl;
     }
-    cout << "# initial states = " << initial_states_.size() << endl;
     cout << "# reachable states = " << reachable_space_.size() << endl;
 
     // calculate reachable observations
