@@ -112,6 +112,10 @@ CP_Instance::CP_Instance(const Instance &ins,
 
     // create fluents to forbid inconsistent tuples
     if( forbid_inconsistent_tuples_ ) {
+        // there is an atom unused(o,q) for each obs and fsc state
+        // there is an atom mapped(o,q,a,q') for each obs, action, and pair (q,q') of fsc-states
+        // once (o,q,a,q') is included in fsc (meaning that in q with obs o, do a and go to q') 
+        // all tuples (o,q,a',q'') should be disabled for (a,q') != (a',q'')
         n_unused_fluents_ = reachable_obs_.size() * fsc_states_;
         n_mapped_fluents_ = n_unused_fluents_ * ins.n_actions() * fsc_states_;
         unused0_ = n_atoms();
@@ -134,6 +138,7 @@ CP_Instance::CP_Instance(const Instance &ins,
 
     // extend initial situation with fluents to remove inconsistent tuples
     if( forbid_inconsistent_tuples_ ) {
+        // each time a tuple (o,q,a,q') is included, set unused(o,q) to false
         for( size_t k = 0; k < n_unused_fluents_; ++k ) {
             init_.literals().insert(1 + unused0_+k);
             add_to_initial_states(unused0_ + k);
@@ -171,9 +176,9 @@ CP_Instance::CP_Instance(const Instance &ins,
                     if( forbid_inconsistent_tuples_ ) {
                         string map_act_name = string("map_") + act.name() + "_obs" + Utils::to_string(obs_idx) + "_q" + Utils::to_string(q) + "_q" + Utils::to_string(qp);
                         Action &map_act = new_action(map_act_name);
-                        map_act.precondition().insert(1 + unused0_+unused_fluent);
-                        map_act.effect().insert(-(1 + unused0_+unused_fluent));
-                        map_act.effect().insert(1 + mapped0_+mapped_fluent);
+                        map_act.precondition().insert(1 + unused0_ + unused_fluent);
+                        map_act.effect().insert(-(1 + unused0_ + unused_fluent));
+                        map_act.effect().insert(1 + mapped0_ + mapped_fluent);
                     }
 
                     string app_act_name = string("app_") + act.name() + "_obs" + Utils::to_string(obs_idx) + "_q" + Utils::to_string(q) + "_q" + Utils::to_string(qp);
@@ -181,7 +186,8 @@ CP_Instance::CP_Instance(const Instance &ins,
 
                     // the action has precondition if inconsistent tuples are forbidden
                     if( forbid_inconsistent_tuples_ ) {
-                        nact.precondition().insert(1 + mapped0_+mapped_fluent);
+                        // the tuple (o,q,a,q') should be inserted by a map action in advance
+                        nact.precondition().insert(1 + mapped0_ + mapped_fluent);
                     }
 
                     // unconditional effects of action
@@ -189,7 +195,7 @@ CP_Instance::CP_Instance(const Instance &ins,
                         When base_c_eff;
 
                         // condition
-                        base_c_eff.condition().insert(1 + q0_+q);
+                        base_c_eff.condition().insert(1 + q0_ + q);
                         base_c_eff.condition().insert(obs.begin(), obs.end());
 
                         // effects
@@ -204,8 +210,8 @@ CP_Instance::CP_Instance(const Instance &ins,
 
                         // effects for changing (FSC) state
                         if( q != qp ) {
-                            base_c_eff.effect().insert(-(1 + q0_+q));
-                            base_c_eff.effect().insert(1 + q0_+qp);
+                            base_c_eff.effect().insert(-(1 + q0_ + q));
+                            base_c_eff.effect().insert(1 + q0_ + qp);
                         }
                         nact.when().push_back(base_c_eff);
                     }
@@ -217,9 +223,12 @@ CP_Instance::CP_Instance(const Instance &ins,
                             When c_eff;
 
                             // condition
-                            c_eff.condition().insert(1 + q0_+q);
+                            c_eff.condition().insert(1 + q0_ + q);
                             c_eff.condition().insert(obs.begin(), obs.end());
                             c_eff.condition().insert(w.condition().begin(), w.condition().end());
+
+                            // add preconditions of original action
+                            c_eff.condition().insert(act.precondition().begin(), act.precondition().end());
 
                             // effects
                             c_eff.effect().insert(w.effect().begin(), w.effect().end());
@@ -231,14 +240,16 @@ CP_Instance::CP_Instance(const Instance &ins,
 
                             // effects for changing (FSC) state
                             if( q != qp ) {
-                                c_eff.effect().insert(-(1 + q0_+q));
-                                c_eff.effect().insert(1 + q0_+qp);
+                                c_eff.effect().insert(-(1 + q0_ + q));
+                                c_eff.effect().insert(1 + q0_ + qp);
                             }
 
                             // add conditional effect to new action
                             nact.when().push_back(c_eff);
                         }
                     }
+                    //act.print(cout, ins);
+                    //nact.print(cout, *this);
                 }
             }
         }
