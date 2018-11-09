@@ -1200,7 +1200,7 @@ case 58:
 case 59:
 #line 127 "ppddl.lex"
 { val.sym = _tab.insert(yytext);
-             if( val.sym->value_ == 0 )
+             if( val.sym->value_ == nullptr )
                  return PDDL_Parser::TK_NEW_VAR_SYMBOL;
              if( static_cast<PDDL_Base::Symbol*>(val.sym->value_)->sym_class_ == PDDL_Base::sym_variable )
                  return PDDL_Parser::TK_VAR_SYMBOL;
@@ -1216,7 +1216,7 @@ case 60:
 case 61:
 #line 139 "ppddl.lex"
 { val.sym = _tab.insert(yytext);
-             if( val.sym->value_ == 0 ) {
+             if( val.sym->value_ == nullptr ) {
                  return PDDL_Parser::TK_NEW_SYMBOL;
              } else {
                  switch( static_cast<PDDL_Base::Symbol*>(val.sym->value_)->sym_class_ ) {
@@ -1876,9 +1876,9 @@ void PDDL_Scanner::open_file(bool trace) {
 }
 
 void PDDL_Scanner::close_file() {
-    if( _filename != 0 ) {
+    if( _filename != nullptr ) {
         fclose(yyin);
-        _filename = 0;
+        _filename = nullptr;
     }
 }
 

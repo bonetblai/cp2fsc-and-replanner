@@ -937,7 +937,7 @@ static const char * const yytname[] = {   "$","error","$illegal.","TK_OPEN",
 "forall_state_variable_list_decl","@21","@22","domain_default_sensing","pddl_problem",
 "@23","problem_elements","initial_state","initial_state_keyword","init_elements",
 "single_init_element","at_least_one_invariant","at_most_one_invariant","exactly_one_invariant",
-"invariant","clause","oneof","unknown","hidden_state","goal_spec","-"
+"invariant","clause","oneof","unknown","hidden_state","goal_spec","\37777777600\b\37777777634"
 };
 #endif
 
@@ -2111,7 +2111,7 @@ case 98:
 case 99:
 #line 524 "ppddl.y"
 {
-          if( yyvsp[0].sym->value_ == 0 )
+          if( yyvsp[0].sym->value_ == nullptr )
               log_error((char*)"undeclared variable in atom args list");
           else
               yyvsp[-1].param->push_back(static_cast<VariableSymbol*>(yyvsp[0].sym->value_));
@@ -2160,7 +2160,7 @@ case 105:
 case 106:
 #line 561 "ppddl.y"
 {
-          assert(dynamic_cast<ForallCondition*>(schema_.back()) != 0);
+          assert(dynamic_cast<ForallCondition*>(schema_.back()) != nullptr);
           ForallCondition *forall_condition = static_cast<ForallCondition*>(schema_.back());
           schema_.pop_back();
           using_owned_schema_.pop_back();
@@ -2186,7 +2186,7 @@ case 108:
 case 109:
 #line 581 "ppddl.y"
 {
-          assert(dynamic_cast<ExistsCondition*>(schema_.back()) != 0);
+          assert(dynamic_cast<ExistsCondition*>(schema_.back()) != nullptr);
           ExistsCondition *exists_condition = static_cast<ExistsCondition*>(schema_.back());
           schema_.pop_back();
           using_owned_schema_.pop_back();
@@ -2267,7 +2267,7 @@ case 123:
 case 124:
 #line 654 "ppddl.y"
 {
-          assert(dynamic_cast<ForallEffect*>(schema_.back()) != 0);
+          assert(dynamic_cast<ForallEffect*>(schema_.back()) != nullptr);
           ForallEffect *forall_effect = static_cast<ForallEffect*>(schema_.back());
           schema_.pop_back();
           using_owned_schema_.pop_back();
@@ -2377,7 +2377,7 @@ case 142:
 case 143:
 #line 753 "ppddl.y"
 {
-          assert(dynamic_cast<ForallSensing*>(schema_.back()) != 0);
+          assert(dynamic_cast<ForallSensing*>(schema_.back()) != nullptr);
           ForallSensing *forall_sensing = static_cast<ForallSensing*>(schema_.back());
           schema_.pop_back();
           using_owned_schema_.pop_back();
@@ -2393,12 +2393,12 @@ case 144:
 {
           assert(static_cast<Symbol*>(yyvsp[-3].sym->value_)->sym_class_ == sym_varname);
           const Variable *variable = static_cast<Variable*>(yyvsp[-3].sym->value_);
-          if( dynamic_cast<const ObsVariable*>(variable) == 0 ) {
+          if( dynamic_cast<const ObsVariable*>(variable) == nullptr ) {
               std::cout << Utils::error() << "sensing model can only be specified for observable variable" << std::endl;
               yyval.sensing_model = 0;
           } else {
               const ObsVariable *obs_variable = static_cast<const ObsVariable*>(variable);
-              assert(dynamic_cast<const ObsVariable*>(variable) != 0);
+              assert(dynamic_cast<const ObsVariable*>(variable) != nullptr);
               yyval.sensing_model = new SensingModelForObservableVariable(obs_variable, new Literal(*yyvsp[-2].atom), yyvsp[-1].condition);
           }
       ;
@@ -2408,12 +2408,12 @@ case 145:
 {
           assert(static_cast<Symbol*>(yyvsp[-5].sym->value_)->sym_class_ == sym_varname);
           const Variable *variable = static_cast<Variable*>(yyvsp[-5].sym->value_);
-          if( dynamic_cast<const ObsVariable*>(variable) == 0 ) {
+          if( dynamic_cast<const ObsVariable*>(variable) == nullptr ) {
               std::cout << Utils::error() << "sensing model can only be specified for observable variable" << std::endl;
               yyval.sensing_model = 0;
           } else {
               const ObsVariable *obs_variable = static_cast<const ObsVariable*>(variable);
-              assert(dynamic_cast<const ObsVariable*>(variable) != 0);
+              assert(dynamic_cast<const ObsVariable*>(variable) != nullptr);
               SensingModelForObservableVariable *model = new SensingModelForObservableVariable(obs_variable, new Literal(*yyvsp[-2].atom), yyvsp[-1].condition);
               model->param_ = *yyvsp[-4].param;
               delete yyvsp[-4].param;
@@ -2426,7 +2426,7 @@ case 146:
 {
           assert(static_cast<Symbol*>(yyvsp[-1].sym->value_)->sym_class_ == sym_varname);
           const Variable *variable = static_cast<Variable*>(yyvsp[-1].sym->value_);
-          assert(dynamic_cast<const StateVariable*>(variable) != 0);
+          assert(dynamic_cast<const StateVariable*>(variable) != nullptr);
           yyval.sensing_model = new SensingModelForStateVariable(static_cast<const StateVariable*>(variable));
       ;
     break;}
@@ -2435,7 +2435,7 @@ case 147:
 {
           assert(static_cast<Symbol*>(yyvsp[-3].sym->value_)->sym_class_ == sym_varname);
           const Variable *variable = static_cast<Variable*>(yyvsp[-3].sym->value_);
-          assert(dynamic_cast<const StateVariable*>(variable) != 0);
+          assert(dynamic_cast<const StateVariable*>(variable) != nullptr);
           SensingModelForStateVariable *model = new SensingModelForStateVariable(static_cast<const StateVariable*>(variable));
           model->param_ = *yyvsp[-2].param;
           delete yyvsp[-2].param;
@@ -2676,12 +2676,12 @@ case 178:
 #line 1000 "ppddl.y"
 {
 #ifdef SMART
-          assert(dynamic_cast<Variable*>(owned_schema_.back().get()) != 0);
+          assert(dynamic_cast<Variable*>(owned_schema_.back().get()) != nullptr);
           std::unique_ptr<Variable> variable(static_cast<Variable*>(owned_schema_.back().release()));
           owned_schema_.pop_back();
           using_owned_schema_.pop_back();
 #else
-          assert(dynamic_cast<Variable*>(schema_.back()) != 0);
+          assert(dynamic_cast<Variable*>(schema_.back()) != nullptr);
           Variable *variable = static_cast<Variable*>(schema_.back());
           schema_.pop_back();
           using_owned_schema_.pop_back();
@@ -2759,12 +2759,12 @@ case 186:
 #line 1065 "ppddl.y"
 {
 #ifdef SMART
-          assert(dynamic_cast<VariableGroup*>(owned_schema_.back().get()) != 0);
+          assert(dynamic_cast<VariableGroup*>(owned_schema_.back().get()) != nullptr);
           std::unique_ptr<VariableGroup> group(static_cast<VariableGroup*>(owned_schema_.back().release()));
           owned_schema_.pop_back();
           using_owned_schema_.pop_back();
 #else
-          assert(dynamic_cast<VariableGroup*>(schema_.back()) != 0);
+          assert(dynamic_cast<VariableGroup*>(schema_.back()) != nullptr);
           VariableGroup *group = static_cast<VariableGroup*>(schema_.back());
           schema_.pop_back();
           using_owned_schema_.pop_back();
@@ -2792,7 +2792,7 @@ case 188:
 #line 1095 "ppddl.y"
 {
           state_variable_list_vec *varlist = const_cast<state_variable_list_vec*>(yyvsp[-1].state_variable_list_vec);
-          assert(dynamic_cast<const SingleStateVariableList*>(yyvsp[0].state_variable_list) != 0);
+          assert(dynamic_cast<const SingleStateVariableList*>(yyvsp[0].state_variable_list) != nullptr);
           varlist->push_back(const_cast<StateVariableList*>(yyvsp[0].state_variable_list));
           yyval.state_variable_list_vec = varlist;
       ;
@@ -2801,7 +2801,7 @@ case 189:
 #line 1101 "ppddl.y"
 {
           state_variable_list_vec *varlist = const_cast<state_variable_list_vec*>(yyvsp[-1].state_variable_list_vec);
-          assert(dynamic_cast<const ForallStateVariableList*>(yyvsp[0].state_variable_list) != 0);
+          assert(dynamic_cast<const ForallStateVariableList*>(yyvsp[0].state_variable_list) != nullptr);
           varlist->push_back(const_cast<StateVariableList*>(yyvsp[0].state_variable_list));
           yyval.state_variable_list_vec = varlist;
       ;
@@ -2815,7 +2815,7 @@ case 191:
 {
           assert(static_cast<Symbol*>(yyvsp[0].sym->value_)->sym_class_ == sym_varname);
           const Variable *var = static_cast<Variable*>(yyvsp[0].sym->value_);
-          if( dynamic_cast<const StateVariable*>(var) == 0 ) {
+          if( dynamic_cast<const StateVariable*>(var) == nullptr ) {
               std::cout << Utils::error() << "only state variables can be grouped together" << std::endl;
           }
           yyval.state_variable_list = new SingleStateVariableList(var->print_name_);
@@ -2826,7 +2826,7 @@ case 192:
 {
           assert(static_cast<Symbol*>(yyvsp[-2].sym->value_)->sym_class_ == sym_varname);
           const Variable *var = static_cast<Variable*>(yyvsp[-2].sym->value_);
-          if( dynamic_cast<const StateVariable*>(var) == 0 ) {
+          if( dynamic_cast<const StateVariable*>(var) == nullptr ) {
               std::cout << Utils::error() << "only state variables can be grouped together" << std::endl;
           }
           SingleStateVariableList *single = new SingleStateVariableList(var->print_name_);
@@ -2852,7 +2852,7 @@ case 194:
 case 195:
 #line 1141 "ppddl.y"
 {
-          assert(dynamic_cast<ForallStateVariableList*>(schema_.back()) != 0);
+          assert(dynamic_cast<ForallStateVariableList*>(schema_.back()) != nullptr);
           ForallStateVariableList *forall_state_variable_list = static_cast<ForallStateVariableList*>(schema_.back());
           schema_.pop_back();
           using_owned_schema_.pop_back();
@@ -2959,10 +2959,10 @@ case 212:
 {
 #ifdef SMART
           owned_init_element_vec *ilist = const_cast<owned_init_element_vec*>(yyvsp[-1].ilist);
-          if( yyvsp[0].ielem != 0 ) ilist->emplace_back(std::unique_ptr<InitElement>(const_cast<InitElement*>(yyvsp[0].ielem)));
+          if( yyvsp[0].ielem != nullptr ) ilist->emplace_back(std::unique_ptr<InitElement>(const_cast<InitElement*>(yyvsp[0].ielem)));
 #else
           init_element_vec *ilist = const_cast<init_element_vec*>(yyvsp[-1].ilist);
-          if( yyvsp[0].ielem != 0 ) ilist->push_back(const_cast<InitElement*>(yyvsp[0].ielem));
+          if( yyvsp[0].ielem != nullptr ) ilist->push_back(const_cast<InitElement*>(yyvsp[0].ielem));
 #endif
           yyval.ilist = ilist;
       ;
@@ -2972,10 +2972,10 @@ case 213:
 {
 #ifdef SMART
           owned_init_element_vec *ilist = new owned_init_element_vec;
-          if( yyvsp[0].ielem != 0 ) ilist->emplace_back(std::unique_ptr<InitElement>(const_cast<InitElement*>(yyvsp[0].ielem)));
+          if( yyvsp[0].ielem != nullptr ) ilist->emplace_back(std::unique_ptr<InitElement>(const_cast<InitElement*>(yyvsp[0].ielem)));
 #else
           init_element_vec *ilist = new init_element_vec;
-          if( yyvsp[0].ielem != 0 ) ilist->push_back(const_cast<InitElement*>(yyvsp[0].ielem));
+          if( yyvsp[0].ielem != nullptr ) ilist->push_back(const_cast<InitElement*>(yyvsp[0].ielem));
 #endif
           yyval.ilist = ilist;
       ;
@@ -3031,7 +3031,7 @@ case 217:
 case 218:
 #line 1310 "ppddl.y"
 {
-          yyval.ielem = 0; // when fixing this, remove condition '$2 != 0' and '$1 != 0' above (in single_init_element)
+          yyval.ielem = nullptr; // when fixing this, remove condition '$2 != nullptr' and '$1 != nullptr' above (in single_init_element)
           std::cout << Utils::warning()
                     << Utils::magenta() << "(clg) ignoring '" << yyvsp[0].unknown->to_string() << "'"
                     << Utils::normal() << std::endl;
