@@ -1,10 +1,10 @@
 # Define compiler/linker:
-#CC     = gcc-4.8
-#C++    = g++-4.8
-#LINK   = g++-4.8
-CC     = clang
-C++    = clang++
-LINK   = clang++
+CC     = gcc72
+C++    = g++72
+LINK   = g++72
+#CC     = clang
+#C++    = clang++
+#LINK   = clang++
 
 
 # Define bison++ and flex++.
@@ -35,8 +35,8 @@ OPTIMIZE = -O3 -DSMART #-DNDEBUG
 
 # specify -std=c++11 or -std=c++14 depending on compiler's capability; c++14
 # is prefered. In some systems, clang requires stdlib specification
-#override CFLAGS += $(DEBUG) $(OPTIMIZE) -I. -Wall -std=c++11 -stdlib=libc++
-#override LFLAGS += $(DEBUG) $(OPTIMIZE) -L. -Wall -std=c++11 -stdlib=libc++
+#override CFLAGS += $(DEBUG) $(OPTIMIZE) -I. -Wall -std=c++11 #-stdlib=libc++
+#override LFLAGS += $(DEBUG) $(OPTIMIZE) -L. -Wall -std=c++11 #-stdlib=libc++
 override CFLAGS += $(DEBUG) $(OPTIMIZE) -I. -Wall -std=c++14 #-stdlib=libc++
 override LFLAGS += $(DEBUG) $(OPTIMIZE) -L. -Wall -std=c++14 #-stdlib=libc++
 
