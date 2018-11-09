@@ -36,10 +36,10 @@ void LW1_Solver::compute_and_add_observations(const Instance::Action *last_actio
     assert(sensed_at_step.empty());
 
     assert(translation_type_ == LW1);
-    assert(dynamic_cast<const LW1_Instance*>(&kp_instance_) != 0);
+    assert(dynamic_cast<const LW1_Instance*>(&kp_instance_) != nullptr);
     const LW1_Instance &lw1 = *static_cast<const LW1_Instance*>(&kp_instance_);
 
-    if( options_.is_enabled("lw1:strict") && (last_action != 0) ) {
+    if( options_.is_enabled("lw1:strict") && (last_action != nullptr) ) {
         map<string, set<int> >::const_iterator it = lw1.vars_sensed_by_action_.find(last_action->name());
         if( it != lw1.vars_sensed_by_action_.end() ) {
             for( set<int>::const_iterator jt = it->second.begin(); jt != it->second.end(); ++jt ) {
@@ -151,7 +151,7 @@ bool LW1_Solver::value_observable_literal(const STATE_CLASS &hidden,
 
     // case when observed variable is not a state variable
     assert(translation_type_ == LW1);
-    assert(dynamic_cast<const LW1_Instance*>(&kp_instance_) != 0);
+    assert(dynamic_cast<const LW1_Instance*>(&kp_instance_) != nullptr);
     const LW1_Instance &lw1 = *static_cast<const LW1_Instance*>(&kp_instance_);
     const LW1_Instance::Variable &variable = *lw1.variables_[var_index];
     const string &action_key = last_action.name();
@@ -256,7 +256,7 @@ void LW1_Solver::fill_relevant_sensing_models(const LW1_Instance &lw1,
                                               const set<int> &sensed_at_step,
                                               LW1_Solver::relevant_sensing_models_t &relevant_sensing_models,
                                               bool as_k_cnf) const {
-    assert(last_action != 0);
+    assert(last_action != nullptr);
 
     // compute action-key for accessingn sensing models in lw1 instance
     string action_key;
@@ -284,8 +284,8 @@ void LW1_Solver::fill_relevant_sensing_models(const LW1_Instance &lw1,
     assert(action_key != "");
 
     // fill in relevant sensing models
-    const map<int, map<int, vector<vector<int> > > > *sensing_models_for_action_as_k_cnf = 0;
-    const map<int, map<int, vector<vector<int> > > > *sensing_models_for_action_as_k_dnf = 0;
+    const map<int, map<int, vector<vector<int> > > > *sensing_models_for_action_as_k_cnf = nullptr;
+    const map<int, map<int, vector<vector<int> > > > *sensing_models_for_action_as_k_dnf = nullptr;
     if( as_k_cnf ) {
         if( lw1.sensing_models_as_k_cnf_.find(action_key) != lw1.sensing_models_as_k_cnf_.end() )
             sensing_models_for_action_as_k_cnf = &lw1.sensing_models_as_k_cnf_.at(action_key);
@@ -333,7 +333,7 @@ void LW1_Solver::fill_relevant_sensing_models(const LW1_Instance &lw1,
             if( (variable.domain().size() > 1) && negated ) continue;
 
             if( as_k_cnf ) {
-                assert(sensing_models_for_action_as_k_cnf != 0);
+                assert(sensing_models_for_action_as_k_cnf != nullptr);
                 const map<int, vector<vector<int> > > &sensing_models_for_var_as_k_cnf = sensing_models_for_action_as_k_cnf->at(var_key);
                 for( map<int, vector<vector<int> > >::const_iterator kt = sensing_models_for_var_as_k_cnf.begin(); kt != sensing_models_for_var_as_k_cnf.end(); ++kt ) {
 #ifdef DEBUG
@@ -353,7 +353,7 @@ void LW1_Solver::fill_relevant_sensing_models(const LW1_Instance &lw1,
 #endif
                 }
             } else {
-                assert(sensing_models_for_action_as_k_dnf != 0);
+                assert(sensing_models_for_action_as_k_dnf != nullptr);
                 const map<int, vector<vector<int> > > &sensing_models_for_var_as_k_dnf = sensing_models_for_action_as_k_dnf->at(var_key);
                 for( map<int, vector<vector<int> > >::const_iterator kt = sensing_models_for_var_as_k_dnf.begin(); kt != sensing_models_for_var_as_k_dnf.end(); ++kt ) {
 #ifdef DEBUG
@@ -378,12 +378,12 @@ void LW1_Solver::fill_relevant_sensing_models(const LW1_Instance &lw1,
 }
 
 bool LW1_Solver::is_forbidden(int literal) const {
-    assert(dynamic_cast<const LW1_Instance*>(&kp_instance_) != 0);
+    assert(dynamic_cast<const LW1_Instance*>(&kp_instance_) != nullptr);
     return static_cast<const LW1_Instance&>(kp_instance_).is_forbidden(literal);
 }
 
 bool LW1_Solver::is_forbidden(const LW1_Solver::clause_or_term_t &clause) const {
-    assert(dynamic_cast<const LW1_Instance*>(&kp_instance_) != 0);
+    assert(dynamic_cast<const LW1_Instance*>(&kp_instance_) != nullptr);
     return static_cast<const LW1_Instance&>(kp_instance_).is_forbidden(clause);
 }
 

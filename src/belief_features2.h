@@ -54,8 +54,8 @@ namespace Width2 {
       virtual bool value_term() const = 0;  // if true, this is not a feature but a value to construct a feature
 
       // basic functions
-      virtual int value(const T &belief, const std::vector<int> *cache = 0, bool verbose = false) const = 0;
-      virtual bool holds(const T &belief, const std::vector<int> *cache = 0, bool verbose = false) const = 0;
+      virtual int value(const T &belief, const std::vector<int> *cache = nullptr, bool verbose = false) const = 0;
+      virtual bool holds(const T &belief, const std::vector<int> *cache = nullptr, bool verbose = false) const = 0;
       virtual std::string to_string(bool pretty = false) const = 0;
 
       // comparison for feature pointers
@@ -105,9 +105,9 @@ namespace Width2 {
       virtual bool value_term() const {
           return false;
       }
-      virtual int value(const T &belief, const std::vector<int> *cache = 0, bool verbose = false) const {
+      virtual int value(const T &belief, const std::vector<int> *cache = nullptr, bool verbose = false) const {
           int feature_value = -1;
-          if( cached() && (cache != 0) ) {
+          if( cached() && (cache != nullptr) ) {
               assert((index() >= 0) && (index() < (*cache).size()));
               feature_value = (*cache)[index()];
           } else {
@@ -116,7 +116,7 @@ namespace Width2 {
           if( verbose ) std::cout << *this << " --> " << feature_value << std::endl;
           return feature_value;
       }
-      virtual bool holds(const T &belief, const std::vector<int> *cache = 0, bool verbose = false) const {
+      virtual bool holds(const T &belief, const std::vector<int> *cache = nullptr, bool verbose = false) const {
           return value(belief, cache, verbose) == 1;
       }
       virtual std::string to_string(bool pretty = false) const {
@@ -185,9 +185,9 @@ namespace Width2 {
       virtual bool value_term() const {
           return true;
       }
-      virtual int value(const T &belief, const std::vector<int> *cache = 0, bool verbose = false) const {
+      virtual int value(const T &belief, const std::vector<int> *cache = nullptr, bool verbose = false) const {
           int feature_value = -1;
-          if( cached() && (cache != 0) ) {
+          if( cached() && (cache != nullptr) ) {
               assert((index() >= 0) && (index() < (*cache).size()));
               feature_value = (*cache)[index()];
           } else {
@@ -197,7 +197,7 @@ namespace Width2 {
           if( feature_value < -1 ) exit(0);
           return feature_value;
       }
-      virtual bool holds(const T &belief, const std::vector<int> *cache = 0, bool verbose = false) const {
+      virtual bool holds(const T &belief, const std::vector<int> *cache = nullptr, bool verbose = false) const {
           std::cout << Utils::internal_error() << "holds() called for feature value" << std::endl;
           exit(-1);
       }
@@ -245,7 +245,7 @@ namespace Width2 {
       virtual bool value_term() const {
           return false;
       }
-      virtual int value(const T &belief, const std::vector<int> *cache = 0, bool verbose = false) const {
+      virtual int value(const T &belief, const std::vector<int> *cache = nullptr, bool verbose = false) const {
           int feature_value = -1;
           int base_value = base_.value(belief, cache, verbose);
           if( test_type_ == 0 ) { // EQ
@@ -259,7 +259,7 @@ namespace Width2 {
           if( verbose ) std::cout << *this << " --> " << feature_value << std::endl;
           return feature_value;
       }
-      virtual bool holds(const T &belief, const std::vector<int> *cache = 0, bool verbose = false) const {
+      virtual bool holds(const T &belief, const std::vector<int> *cache = nullptr, bool verbose = false) const {
           return value(belief, cache, verbose) == 1;
       }
       virtual std::string to_string(bool pretty = false) const {
@@ -343,9 +343,9 @@ namespace Width2 {
       virtual bool value_term() const {
           return false;
       }
-      virtual int value(const T &belief, const std::vector<int> *cache = 0, bool verbose = false) const {
+      virtual int value(const T &belief, const std::vector<int> *cache = nullptr, bool verbose = false) const {
           int feature_value = -1;
-          if( cached() && (cache != 0) ) {
+          if( cached() && (cache != nullptr) ) {
               assert((index() >= 0) && (index() < (*cache).size()));
               feature_value = (*cache)[index()];
           } else {
@@ -361,7 +361,7 @@ namespace Width2 {
           if( verbose ) std::cout << *this << " --> " << feature_value << std::endl;
           return feature_value;
       }
-      virtual bool holds(const T &belief, const std::vector<int> *cache = 0, bool verbose = false) const {
+      virtual bool holds(const T &belief, const std::vector<int> *cache = nullptr, bool verbose = false) const {
           return value(belief, cache, verbose) == 1;
       }
       virtual std::string to_string(bool pretty = false) const {
@@ -525,7 +525,7 @@ namespace Width2 {
       }
       virtual bool subsumes(const Feature<T> &feature) const {
           assert(disjuncts_.size() > 1);
-          if( dynamic_cast<const OrFeature<T>*>(&feature) != 0 ) {
+          if( dynamic_cast<const OrFeature<T>*>(&feature) != nullptr ) {
               const OrFeature<T> &or_feature = static_cast<const OrFeature<T>&>(feature);
               if( disjuncts_.size() <= or_feature.disjuncts_.size() ) {
                   std::set<const Feature<T>*> fset(or_feature.disjuncts_.begin(), or_feature.disjuncts_.end());
@@ -581,7 +581,7 @@ namespace Width2 {
       virtual bool value_term() const {
           return false;
       }
-      virtual int value(const T &belief, const std::vector<int> *cache = 0, bool verbose = false) const {
+      virtual int value(const T &belief, const std::vector<int> *cache = nullptr, bool verbose = false) const {
           int feature_value = 1;
           for( size_t k = 0; k < conjuncts_.size(); ++k ) {
               if( conjuncts_[k]->value(belief, cache, verbose) == 0 )
@@ -589,7 +589,7 @@ namespace Width2 {
           }
           return feature_value;
       }
-      virtual bool holds(const T &belief, const std::vector<int> *cache = 0, bool verbose = false) const {
+      virtual bool holds(const T &belief, const std::vector<int> *cache = nullptr, bool verbose = false) const {
           return value(belief, cache, verbose) == 1;
       }
       virtual std::string to_string(bool pretty = false) const {

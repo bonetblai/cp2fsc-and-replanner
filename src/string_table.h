@@ -81,7 +81,7 @@ class StringTable {
     Cell* insert(const char *str, size_t len) {
         return find_and_insert(str, len, false);
     }
-    const char* set(const char *str, size_t len, void *value = 0) {
+    const char* set(const char *str, size_t len, void *value = nullptr) {
         Cell *sc = find_and_insert(str, len);
         sc->value_ = value;
         return sc->text_;
@@ -91,26 +91,26 @@ class StringTable {
     }
     void* find_value(const char *str, size_t len) const {
         const Cell *sc = find(str, len);
-        return sc == 0 ? 0 : sc->value_;
+        return sc == nullptr ? nullptr : sc->value_;
     }
 
     Cell* find_and_insert(const char *symbol, bool only_find = false) {
-        assert(symbol != 0);
+        assert(symbol != nullptr);
         return find_and_insert(symbol, strlen(symbol), only_find);
     }
     Cell* insert(const char *symbol) {
         return find_and_insert(symbol, false);
     }
-    const char* set(const char *symbol, void *value = 0) {
-        assert(symbol != 0);
+    const char* set(const char *symbol, void *value = nullptr) {
+        assert(symbol != nullptr);
         return set(symbol, strlen(symbol), value);
     }
     const Cell* find(const char *symbol) const {
-        assert(symbol != 0);
+        assert(symbol != nullptr);
         return find(symbol, strlen(symbol));
     }
     void* find_value(const char *symbol) const {
-        assert(symbol != 0);
+        assert(symbol != nullptr);
         return find_value(symbol, strlen(symbol));
     }
 };

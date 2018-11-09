@@ -29,8 +29,8 @@ inline PDDL_Base::Condition* distribute_and(const PDDL_Base::Or &dnf1, const PDD
     PDDL_Base::Or *result = new PDDL_Base::Or;
     for( size_t k = 0; k < dnf1.size(); ++k ) {
         for( size_t j = 0; j < dnf2.size(); ++j ) {
-            PDDL_Base::Condition *term = 0;
-            if( (dynamic_cast<const PDDL_Base::Literal*>(dnf1[k]) != 0) && (dynamic_cast<const PDDL_Base::Literal*>(dnf2[j]) != 0) ) {
+            PDDL_Base::Condition *term = nullptr;
+            if( (dynamic_cast<const PDDL_Base::Literal*>(dnf1[k]) != nullptr) && (dynamic_cast<const PDDL_Base::Literal*>(dnf2[j]) != nullptr) ) {
                 if( *static_cast<const PDDL_Base::Literal*>(dnf1[k]) == *static_cast<const PDDL_Base::Literal*>(dnf2[j]) ) {
                     term = dnf1[k]->copy_and_simplify();
                 } else {
@@ -39,36 +39,36 @@ inline PDDL_Base::Condition* distribute_and(const PDDL_Base::Or &dnf1, const PDD
                     and_term->push_back(dnf2[j]->copy_and_simplify());
                     term = and_term;
                 }
-            } else if( (dynamic_cast<const PDDL_Base::Literal*>(dnf1[k]) != 0) && (dynamic_cast<const PDDL_Base::Literal*>(dnf2[j]) == 0) ) {
-                assert(dynamic_cast<const PDDL_Base::And*>(dnf2[j]) != 0);
+            } else if( (dynamic_cast<const PDDL_Base::Literal*>(dnf1[k]) != nullptr) && (dynamic_cast<const PDDL_Base::Literal*>(dnf2[j]) == nullptr) ) {
+                assert(dynamic_cast<const PDDL_Base::And*>(dnf2[j]) != nullptr);
                 const PDDL_Base::And &term2 = *static_cast<const PDDL_Base::And*>(dnf2[j]);
                 assert(term2.size() > 1);
                 PDDL_Base::Condition *and_term = term2.copy_and_simplify();
-                assert(dynamic_cast<PDDL_Base::And*>(and_term) != 0);
+                assert(dynamic_cast<PDDL_Base::And*>(and_term) != nullptr);
                 static_cast<PDDL_Base::And*>(and_term)->push_back(dnf1[k]->copy_and_simplify());
                 term = and_term;
-            } else if( (dynamic_cast<const PDDL_Base::Literal*>(dnf1[k]) == 0) && (dynamic_cast<const PDDL_Base::Literal*>(dnf2[j]) != 0) ) {
-                assert(dynamic_cast<const PDDL_Base::And*>(dnf1[k]) != 0);
+            } else if( (dynamic_cast<const PDDL_Base::Literal*>(dnf1[k]) == nullptr) && (dynamic_cast<const PDDL_Base::Literal*>(dnf2[j]) != nullptr) ) {
+                assert(dynamic_cast<const PDDL_Base::And*>(dnf1[k]) != nullptr);
                 const PDDL_Base::And &term1 = *static_cast<const PDDL_Base::And*>(dnf1[k]);
                 assert(term1.size() > 1);
                 PDDL_Base::Condition *and_term = term1.copy_and_simplify();
-                assert(dynamic_cast<PDDL_Base::And*>(and_term) != 0);
+                assert(dynamic_cast<PDDL_Base::And*>(and_term) != nullptr);
                 static_cast<PDDL_Base::And*>(and_term)->push_back(dnf2[j]->copy_and_simplify());
                 term = and_term;
             } else {
-                assert(dynamic_cast<const PDDL_Base::And*>(dnf1[k]) != 0);
-                assert(dynamic_cast<const PDDL_Base::And*>(dnf2[j]) != 0);
+                assert(dynamic_cast<const PDDL_Base::And*>(dnf1[k]) != nullptr);
+                assert(dynamic_cast<const PDDL_Base::And*>(dnf2[j]) != nullptr);
                 const PDDL_Base::And &term1 = *static_cast<const PDDL_Base::And*>(dnf1[k]);
                 const PDDL_Base::And &term2 = *static_cast<const PDDL_Base::And*>(dnf2[j]);
                 assert((term1.size() > 1) && (term2.size() > 1));
                 PDDL_Base::Condition *and_term = term1.copy_and_simplify();
-                assert(dynamic_cast<PDDL_Base::And*>(and_term) != 0);
+                assert(dynamic_cast<PDDL_Base::And*>(and_term) != nullptr);
                 for( size_t i = 0; i < term2.size(); ++i )
                     static_cast<PDDL_Base::And*>(and_term)->push_back(term2[i]->copy_and_simplify());
                 term = and_term;
             }
 
-            assert(term != 0);
+            assert(term != nullptr);
             if( true && (included_terms.find(term->to_string()) == included_terms.end()) ) {
                 result->push_back(term);
                 included_terms.insert(term->to_string());

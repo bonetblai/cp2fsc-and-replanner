@@ -107,7 +107,7 @@ namespace AndOr {
           return this;
       }
       static bool deallocate(const Belief *belief) {
-          if( belief != 0 ) {
+          if( belief != nullptr ) {
               if( belief->ref_count_ <= 0 ) std::cout << "REF-C=" << belief->ref_count_ << std::endl;
               assert(belief->ref_count_ > 0);
               if( --belief->ref_count_ == 0 ) {
@@ -121,7 +121,7 @@ namespace AndOr {
       }
 
     public:
-      Belief(const T *belief = 0) : ref_count_(1), belief_(belief) {
+      Belief(const T *belief = nullptr) : ref_count_(1), belief_(belief) {
       }
       ~Belief() {
           std::cout << "(dtor for Belief)" << std::flush;
@@ -132,7 +132,7 @@ namespace AndOr {
       }
 
       void print(std::ostream &os) const {
-          if( belief_ == 0 )
+          if( belief_ == nullptr )
               os << "(null)";
           else
               belief_->print(os);
@@ -169,7 +169,7 @@ namespace AndOr {
           return this;
       }
       static bool deallocate(const Node *node) {
-          if( node != 0 ) {
+          if( node != nullptr ) {
               assert(node->ref_count_ > 0);
               if( node->deallocate() == 0 ) {
                   std::cout << Utils::green() << "[Node::deallocate::delete:" << Utils::normal() << std::flush;
@@ -270,11 +270,11 @@ namespace AndOr {
       }
 
     public:
-      OrNode(const Belief<T> *belief, const Instance::Action *action = 0)
-        : belief_(belief), action_(action), child_(0) {
+      OrNode(const Belief<T> *belief, const Instance::Action *action = nullptr)
+        : belief_(belief), action_(action), child_(nullptr) {
       }
       OrNode(const T *belief, BeliefRepo<T> &repo, const Instance::Action *action)
-        : belief_(repo.get(belief)), action_(action), child_(0) {
+        : belief_(repo.get(belief)), action_(action), child_(nullptr) {
       }
       virtual ~OrNode() {
           std::cout << "(dtor for OrNode)" << std::flush;
@@ -328,17 +328,17 @@ namespace AndOr {
       OrNodeList<T> tip_nodes_;
 
       void make_empty_policy(const T *belief) {
-          assert(belief != 0);
+          assert(belief != nullptr);
           tip_nodes_.clear();
           Node::deallocate(root_);
           const Belief<T> *root_belief = repo_.get(belief);
-          root_ = or_repo_.get(root_belief);//new OrNode<T>(belief, repo_, 0); // not re-using nodes in policy (i.e. policy is tree not dag)
+          root_ = or_repo_.get(root_belief);//new OrNode<T>(belief, repo_, nullptr); // not re-using nodes in policy (i.e. policy is tree not dag)
           tip_nodes_.push_back(root_);
       }
 
     public:
       Policy(BeliefRepo<T> &repo, const T *belief)
-        : repo_(repo), root_(0) {
+        : repo_(repo), root_(nullptr) {
           make_empty_policy(belief);
       }
       virtual ~Policy() {
@@ -349,10 +349,10 @@ namespace AndOr {
           return root_;
       }
       void deallocate() {
-          if( root_ != 0 ) {
+          if( root_ != nullptr ) {
               assert(root_->ref_count() > 0);
               Node::deallocate(root_);
-              root_ = 0;
+              root_ = nullptr;
           }
       }
       const OrNodeList<T>& tip_nodes() const {
@@ -441,10 +441,10 @@ namespace AndOr {
           exit(0);
 
           if( !feature_is_achieved ) {
-              return std::make_pair(static_cast<const Policy*>(0), 0);
+              return std::make_pair(static_cast<const Policy*>(nullptr), nullptr);
           } else {
               // return extension that achieves feature
-              return std::make_pair(static_cast<const Policy*>(0), 0);
+              return std::make_pair(static_cast<const Policy*>(nullptr), nullptr);
           }
       }
 #endif

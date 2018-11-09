@@ -128,7 +128,7 @@ void KS0_Instance::translate(const Instance &instance,
             }
 
             // extend literals with fsc states
-            for( size_t q = 0; q < num_fsc_states; ++q ) {
+            for( size_t q = 0; q < size_t(num_fsc_states); ++q ) {
                 literals.insert(1 + q0 + q);
             }
 
@@ -150,7 +150,7 @@ void KS0_Instance::translate(const Instance &instance,
     for( size_t k = 0; k < ins_n_fluents; ++k ) {
         const Atom &atom = *instance.atoms_[k];
         string lit_name;
-        char *dup = strdup(atom.name().c_str()), *aux = 0;
+        char *dup = strdup(atom.name().c_str()), *aux = nullptr;
         if( *dup == '(' ) {
             aux = dup;
             dup = &dup[1];
@@ -160,7 +160,7 @@ void KS0_Instance::translate(const Instance &instance,
         //CHECK lit_name = string("(K_") + t;
         lit_name = string("K_") + t;
         if( tagged_[k] && (n_tags_ > 1) ) lit_name += string("__tag") + Utils::to_string(tag0_);
-        while( (t = strtok(0, " ")) ) {
+        while( (t = strtok(nullptr, " ")) ) {
             lit_name += string(" ") + t;
         }
         //CHECK lit_name += ")";
@@ -180,7 +180,7 @@ void KS0_Instance::translate(const Instance &instance,
                 if( tagged_[k] ) {
                     const Atom &atom = *instance.atoms_[k];
                     string lit_name;
-                    char *dup = strdup(atom.name().c_str()), *aux = 0;
+                    char *dup = strdup(atom.name().c_str()), *aux = nullptr;
                     if( *dup == '(' ) {
                         aux = dup;
                         dup = &dup[1];
@@ -189,11 +189,11 @@ void KS0_Instance::translate(const Instance &instance,
                     char *t = strtok(dup, " ");
                     //CHECK lit_name = string("(K_") + t + "__tag" + Utils::to_string(tag);
                     lit_name = string("K_") + t + "__tag" + Utils::to_string(tag);
-                    while( (t = strtok(0, " ")) ) {
+                    while( (t = strtok(nullptr, " ")) ) {
                         lit_name += string(" ") + t;
                     }
                     //CHECK lit_name += ")";
-                    free(aux == 0 ? dup : aux);
+                    free(aux == nullptr ? dup : aux);
 
                     tag_map_[tag*ins_n_fluents + k] = n_atoms();
                     new_atom(lit_name);
@@ -211,7 +211,7 @@ void KS0_Instance::translate(const Instance &instance,
                 const Atom &atom = *instance.atoms_[*it-1];
                 if( tagged_[*it-1] ) {
                     string lit_name;
-                    char *dup = strdup(atom.name().c_str()), *aux = 0;
+                    char *dup = strdup(atom.name().c_str()), *aux = nullptr;
                     if( *dup == '(' ) {
                         aux = dup;
                         dup = &dup[1];
@@ -220,11 +220,11 @@ void KS0_Instance::translate(const Instance &instance,
                     char *t = strtok(dup, " ");
                     //CHECK lit_name = string("(K_") + t + "__tag" + Utils::to_string(tag);
                     lit_name = string("K_") + t + "__tag" + Utils::to_string(tag);
-                    while( (t = strtok(0, " ")) ) {
+                    while( (t = strtok(nullptr, " ")) ) {
                         lit_name += string(" ") + t;
                     }
                     //CHECK lit_name += ")";
-                    free(aux == 0 ? dup : aux);
+                    free(aux == nullptr ? dup : aux);
 
                     tag_map_[tag*ins_n_fluents + *it-1] = n_atoms();
                     new_atom(lit_name);

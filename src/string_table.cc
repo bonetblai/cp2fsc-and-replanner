@@ -25,10 +25,10 @@ StringTable::StringTable(const class char_map &cmap, size_t num_bins)
   : char_map_(cmap),
     num_bins_(num_bins),
     num_entries_(0),
-    table_(0) {
+    table_(nullptr) {
     table_ = new StringTable::Cell*[num_bins_];
     for( size_t k = 0; k < num_bins_; ++k )
-        table_[k] = 0;
+        table_[k] = nullptr;
 }
 
 StringTable::~StringTable() {
@@ -46,28 +46,28 @@ void StringTable::keys(vector<const char*> &vec) const {
 void StringTable::values(vector<const void*> &vec) const {
     vec. clear();
     for( const StringTable::Cell *sc = first(); sc; sc = next(sc) ) {
-        if( sc->value_ != 0 )
+        if( sc->value_ != nullptr )
             vec.push_back(sc->value_);
     }
 }
 
 const StringTable::Cell* StringTable::first() const {
     for( size_t k = 0; k < num_bins_; ++k ) {
-        if( table_[k] != 0 )
+        if( table_[k] != nullptr )
             return table_[k];
     }
-    return 0;
+    return nullptr;
 }
 
 const StringTable::Cell* StringTable::next(const StringTable::Cell *sc) const {
-    if( sc->next_ != 0 ) {
+    if( sc->next_ != nullptr ) {
         return sc->next_;
     } else {
         for( size_t k = sc->bin_ + 1; k < num_bins_; ++k ) {
-            if( table_[k] != 0 )
+            if( table_[k] != nullptr )
                 return table_[k];
         }
-        return 0;
+        return nullptr;
     }
 }
 
@@ -75,11 +75,11 @@ StringTable::Cell* StringTable::find_and_insert(const char *str, size_t len, boo
     size_t bin = char_map_.hash(str, len) % num_bins_;
     StringTable::Cell **sc = &(table_[bin]);
     while( true ) {
-        if( *sc == 0 ) {
+        if( *sc == nullptr ) {
             if( only_find ) {
-                return 0;
+                return nullptr;
             } else {
-                *sc = new StringTable::Cell(str, len, char_map_, 0, bin, 0);
+                *sc = new StringTable::Cell(str, len, char_map_, nullptr, bin, nullptr);
                 ++num_entries_;
                 return *sc;
             }
@@ -91,9 +91,9 @@ StringTable::Cell* StringTable::find_and_insert(const char *str, size_t len, boo
                 sc = &(*sc)->next_;
             } else {
                 if( only_find ) {
-                    return 0;
+                    return nullptr;
                 } else {
-	            *sc = new StringTable::Cell(str, len, char_map_, 0, bin, *sc);
+	            *sc = new StringTable::Cell(str, len, char_map_, nullptr, bin, *sc);
 	            ++num_entries_;
 	            return *sc;
                 }
@@ -118,8 +118,8 @@ const StringTable::Cell* StringTable::find(const char *str, size_t len) const {
     size_t bin = char_map_.hash(str, len) % num_bins_;
     const StringTable::Cell *sc = table_[bin];
     while( true ) {
-        if( sc == 0 )
-            return 0;
+        if( sc == nullptr )
+            return nullptr;
         else {
             int d = char_map_.strcmp(sc->text_, str, len);
             if( d == 0 )
@@ -127,22 +127,22 @@ const StringTable::Cell* StringTable::find(const char *str, size_t len) const {
             else if( d < 0 )
                 sc = sc->next_;
             else
-                return 0;
+                return nullptr;
         }
     }
 }
 
 void* StringTable::find_value(const char *str, size_t len) const {
     const StringTable::Cell *sc = find(str, len);
-    return sc ? sc->value_ : 0;
+    return sc ? sc->value_ : nullptr;
 }
 
 StringTable::Cell* StringTable::insert(const char *symbol) {
     size_t bin = char_map_.hash(symbol) % num_bins_;
     StringTable::Cell **sc = &(table_[bin]);
     while( true ) {
-        if( *sc == 0 ) {
-            *sc = new StringTable::Cell(symbol, char_map_, 0, bin, 0);
+        if( *sc == nullptr ) {
+            *sc = new StringTable::Cell(symbol, char_map_, nullptr, bin, nullptr);
             ++num_entries_;
             return *sc;
         } else {
@@ -152,7 +152,7 @@ StringTable::Cell* StringTable::insert(const char *symbol) {
             } else if( d < 0 ) {
                 sc = &(*sc)->next_;
             } else {
-	        *sc = new StringTable::Cell(symbol, char_map_, 0, bin, *sc);
+	        *sc = new StringTable::Cell(symbol, char_map_, nullptr, bin, *sc);
 	        ++num_entries_;
 	        return *sc;
             }
@@ -175,8 +175,8 @@ const StringTable::Cell* StringTable::find(const char *symbol) const {
     size_t bin = char_map_.hash(symbol) % num_bins_;
     const StringTable::Cell *sc = table_[bin];
     while( true ) {
-        if( sc == 0 )
-            return 0;
+        if( sc == nullptr )
+            return nullptr;
         else {
             int d = char_map_.strcmp(sc->text_, symbol);
             if( d == 0 )
@@ -184,14 +184,14 @@ const StringTable::Cell* StringTable::find(const char *symbol) const {
             else if( d < 0 )
                 sc = sc->next_;
             else
-                return 0;
+                return nullptr;
         }
     }
 }
 
 void* StringTable::find_value(const char *symbol) const {
     const StringTable::Cell* sc = find(symbol);
-    return sc ? sc->value_ : 0;
+    return sc ? sc->value_ : nullptr;
 }
 #endif
 

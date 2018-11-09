@@ -139,7 +139,7 @@ namespace AndOr3 {
 #endif
             assert(!in.empty() && out.empty());
             while( !in.empty() ) {
-                assert(in.front() != 0);
+                assert(in.front() != nullptr);
                 OrNode<T> &n = *in.front();
                 in.pop_front();
                 if( !api_.is_goal(n) )
@@ -168,11 +168,11 @@ namespace AndOr3 {
         }
 
         void kill_by_feature(const OrNode<T> &node) const {
-            if( node.parent() != 0 ) kill_by_feature(*node.parent());
+            if( node.parent() != nullptr ) kill_by_feature(*node.parent());
             kill_node_and_descendants_by_feature(node);
         }
         void kill_by_feature(const AndNode<T> &node) const {
-            assert(node.parent() != 0);
+            assert(node.parent() != nullptr);
             bool kill_parent = true;
             for( size_t k = 0; k < node.parent()->children().size(); ++k ) {
                 const AndNode<T> &child = *node.parent()->child(k);

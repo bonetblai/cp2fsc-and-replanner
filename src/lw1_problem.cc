@@ -55,7 +55,7 @@ void LW1_Instance::Variable::print(ostream &os, const LW1_Instance *lw1_instance
        << ", is-observable=" << is_observable_
        << ", domain={";
     for( set<int>::const_iterator it = domain_.begin(); it != domain_.end(); ++it ) {
-        if( lw1_instance != 0 ) {
+        if( lw1_instance != nullptr ) {
             State::print_literal(os, *it + 1, &lw1_instance->po_instance_);
             os << "[index=" << *it << " in po_instance_],";
         } else {
@@ -300,9 +300,9 @@ LW1_Instance::LW1_Instance(const Instance &ins,
         const PDDL_Base::Sensing *sensing = it->second;
 #endif
         for( size_t k = 0; k < sensing->size(); ++k ) {
-            if( dynamic_cast<const PDDL_Base::SensingModelForObservableVariable*>((*sensing)[k]) != 0 ) {
+            if( dynamic_cast<const PDDL_Base::SensingModelForObservableVariable*>((*sensing)[k]) != nullptr ) {
                 const PDDL_Base::SensingModelForObservableVariable &model = *static_cast<const PDDL_Base::SensingModelForObservableVariable*>((*sensing)[k]);
-                assert(model.variable_ != 0);
+                assert(model.variable_ != nullptr);
                 string var_name = model.variable_->to_string(false, true);
                 int var_index = varmap_.at(var_name);
                 string atom_name = model.literal_->to_string(model.literal_->negated_, true);
@@ -327,15 +327,15 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                 cout << "  key: action=" << action_key << ", var=" << var_key << ", value=" << value_key << endl;
 #endif
 
-                assert(model.dnf_ != 0);
-                if( dynamic_cast<const PDDL_Base::Or*>(model.dnf_) != 0 ) {
+                assert(model.dnf_ != nullptr);
+                if( dynamic_cast<const PDDL_Base::Or*>(model.dnf_) != nullptr ) {
                     const PDDL_Base::Or &disjunction = *static_cast<const PDDL_Base::Or*>(model.dnf_);
 #ifdef DEBUG
                     cout << "    dnf is disjunction=" << disjunction << ":" << endl;
 #endif
                     for( size_t j = 0; j < disjunction.size(); ++j ) {
-                        assert(disjunction[j] != 0);
-                        if( dynamic_cast<const PDDL_Base::And*>(disjunction[j]) != 0 ) {
+                        assert(disjunction[j] != nullptr);
+                        if( dynamic_cast<const PDDL_Base::And*>(disjunction[j]) != nullptr ) {
                             const PDDL_Base::And &term = *static_cast<const PDDL_Base::And*>(disjunction[j]);
 #ifdef DEBUG
                             cout << "      term is conjunction=" << term << ":" << endl;
@@ -344,7 +344,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                             // verify term
                             bool verified = true;
                             for( size_t i = 0; i < term.size(); ++i ) {
-                                if( dynamic_cast<const PDDL_Base::Literal*>(term[i]) == 0 ) {
+                                if( dynamic_cast<const PDDL_Base::Literal*>(term[i]) == nullptr ) {
                                     cout << Utils::error() << "formula '" << *term[i]
                                          << "' for model of '" << var_name << ":" << atom_name
                                          << "' isn't a literal!" << endl;
@@ -420,7 +420,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                             LW1_State::print_clause_or_term(cout, k_term, this);
                             cout << endl;
 #endif
-                        } else if( dynamic_cast<const PDDL_Base::Literal*>(disjunction[j]) != 0 ) {
+                        } else if( dynamic_cast<const PDDL_Base::Literal*>(disjunction[j]) != nullptr ) {
                             const PDDL_Base::Literal &literal = *static_cast<const PDDL_Base::Literal*>(disjunction[j]);
 #ifdef DEBUG
                             cout << "    term is single literal=" << *(const PDDL_Base::Atom*)&literal << endl;
@@ -461,7 +461,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                             continue;
                         }
                     }
-                } else if( dynamic_cast<const PDDL_Base::And*>(model.dnf_) != 0 ) {
+                } else if( dynamic_cast<const PDDL_Base::And*>(model.dnf_) != nullptr ) {
                     const PDDL_Base::And &term = *static_cast<const PDDL_Base::And*>(model.dnf_);
 #ifdef DEBUG
                     cout << "    dnf is single term=" << term << ":" << endl;
@@ -470,7 +470,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                     // verify term
                     bool verified = true;
                     for( size_t j = 0; j < term.size(); ++j ) {
-                        if( dynamic_cast<const PDDL_Base::Literal*>(term[j]) == 0 ) {
+                        if( dynamic_cast<const PDDL_Base::Literal*>(term[j]) == nullptr ) {
                             cout << Utils::error() << "formula '" << *term[j]
                                  << "' for model of '" << var_name << ":" << atom_name
                                  << "' isn't a literal!" << endl;
@@ -546,7 +546,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                     LW1_State::print_clause_or_term(cout, k_term, this);
                     cout << endl;
 #endif
-                } else if( dynamic_cast<const PDDL_Base::Literal*>(model.dnf_) != 0 ) {
+                } else if( dynamic_cast<const PDDL_Base::Literal*>(model.dnf_) != nullptr ) {
                     const PDDL_Base::Literal &literal = *static_cast<const PDDL_Base::Literal*>(model.dnf_);
 #ifdef DEBUG
                     cout << "    dnf is single literal=" << *(const PDDL_Base::Atom*)&literal << endl;
@@ -580,7 +580,7 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                     LW1_State::print_clause_or_term(cout, unit_k_term, this);
                     cout << endl;
 #endif
-                } else if( dynamic_cast<const PDDL_Base::Constant*>(model.dnf_) != 0 ) {
+                } else if( dynamic_cast<const PDDL_Base::Constant*>(model.dnf_) != nullptr ) {
                     const PDDL_Base::Constant &constant = *static_cast<const PDDL_Base::Constant*>(model.dnf_);
 #ifdef DEBUG
                     cout << "    dnf is constant: " << constant << endl;
@@ -597,9 +597,9 @@ LW1_Instance::LW1_Instance(const Instance &ins,
                          << "' isn't dnf!" << endl;
                     continue;
                 }
-            } else if( dynamic_cast<const PDDL_Base::SensingModelForStateVariable*>((*sensing)[k]) != 0 ) {
+            } else if( dynamic_cast<const PDDL_Base::SensingModelForStateVariable*>((*sensing)[k]) != nullptr ) {
                 const PDDL_Base::SensingModelForStateVariable &model = *static_cast<const PDDL_Base::SensingModelForStateVariable*>((*sensing)[k]);
-                assert(model.variable_ != 0);
+                assert(model.variable_ != nullptr);
                 string var_name = model.variable_->to_string(false, true);
                 vars_sensed_by_action_[action.print_name_].insert(varmap_.at(var_name));
             }

@@ -195,7 +195,7 @@ int NewSolver<T>::solve(const T &initial_hidden_state,
         if( plan.empty() ) {
             Instance::Plan raw_plan;
             std::vector<const T*> sampled_state_trajectory;
-            if( action_selection_.n_calls() >= max_as_calls_ ) return AS_CALLS;
+            if( int(action_selection_.n_calls()) >= max_as_calls_ ) return AS_CALLS;
             int status = action_selection_.get_plan(state, plan, raw_plan, sampled_state_trajectory);
             if( status != ActionSelection<T>::SOLVED ) {
                 if( status == ActionSelection<T>::NO_SOLUTION )

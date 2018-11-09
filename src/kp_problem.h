@@ -51,8 +51,8 @@ class KP_Instance : public Instance {
             }
         }
 #else
-        DRTemplate(const Action *action = 0, const std::string &extra = "") : action_(action), extra_(extra) {
-            if( action != 0 ) {
+        DRTemplate(const Action *action = nullptr, const std::string &extra = "") : action_(action), extra_(extra) {
+            if( action != nullptr ) {
                 for( size_t i = 0; i < action_->when().size(); ++i )
                     when_.insert(action_->when()[i]);
             }
@@ -131,7 +131,7 @@ class KP_Instance : public Instance {
                         std::vector<index_set> &condition_vec,
                         index_set &open) const;
 
-    virtual void write_problem(std::ostream &os, const State *state = 0, int indent = 4) const;
+    virtual void write_problem(std::ostream &os, const State *state = nullptr, int indent = 4) const;
 };
 
 class Standard_KP_Instance : public KP_Instance {

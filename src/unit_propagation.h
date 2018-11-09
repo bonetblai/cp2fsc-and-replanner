@@ -148,7 +148,7 @@ namespace Inference {
         // responsability of the caller to swap the non-false watched literal
         // into the first watched literal (w1)
         int replace(const CNF &cnf, std::vector<int> &assigned, int clause) {
-            for( int w1 = 0, w2 = watched_[clause].second; w1 < cnf[clause].size(); w1++ ) {
+            for( int w1 = 0, w2 = watched_[clause].second; w1 < int(cnf[clause].size()); w1++ ) {
                 if( ((assigned[abs(cnf[clause][w1])] == -1) || is_true(cnf[clause][w1], assigned)) && (w1 != w2) )
                     return w1;
             }
@@ -160,7 +160,7 @@ namespace Inference {
         // must watch the value associated with prop.
         void add_negative_propositions(const CNF &cnf, int var, int value, std::vector<int> &cp) const {
             assert(cp.empty());
-            assert((var > 0) && (var < var_to_clauses_map_.size()));
+            assert((var > 0) && (var < int(var_to_clauses_map_.size())));
             for( size_t k = 0; k < var_to_clauses_map_[var].size(); ++k ) {
                 int clause = var_to_clauses_map_[var][k];
                 if( is_watched(cnf, clause, -value) )
@@ -171,7 +171,7 @@ namespace Inference {
         // Returns true if a prop can be propagated with new value set in assigned vector.
         // It is caller's responsability to give a proposition (prop > 0)
         virtual bool propagate(const CNF &cnf, std::vector<int> &assigned, int var) {
-            assert((var > 0) && (var < assigned.size()));
+            assert((var > 0) && (var < int(assigned.size())));
             assert(assigned[var] != -1);
             int value = assigned[var] ? var : -var;
 
@@ -182,9 +182,9 @@ namespace Inference {
             bool no_conflict = true;
             for( size_t k = 0; k < cp.size(); ++k ) {
                 int clause = cp[k];
-                assert((clause >= 0) && (clause < cnf.size()));
-                assert((clause >= 0) && (clause < watched_.size()));
-                assert(watched_[clause].first < cnf[clause].size());
+                assert((clause >= 0) && (clause < int(cnf.size())));
+                assert((clause >= 0) && (clause < int(watched_.size())));
+                assert(watched_[clause].first < int(cnf[clause].size()));
 
                 if( cnf[clause][watched_[clause].first] != -value )
                     std::swap(watched_[clause].first, watched_[clause].second);
@@ -250,7 +250,7 @@ namespace Inference {
             for( size_t k = 0; k < var_to_clauses_map_.size(); ++k ) {
                 std::vector<int> &map = var_to_clauses_map_[k];
                 for( size_t j = 0; j < map.size(); ++j ) {
-                    if( map[j] >= start ) {
+                    if( map[j] >= int(start) ) {
                         map[j] = map.back();
                         map.pop_back();
                         --j;

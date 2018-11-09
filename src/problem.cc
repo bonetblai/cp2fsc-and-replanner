@@ -769,14 +769,14 @@ void Instance::write_problem(ostream &os, const State *state, int indent) const 
         os << string(indent, ' ') << "(:domain NONAME)" << endl;
 
     // initial situation
-    if( (state == 0) && !init_.literals().empty() ) {
+    if( (state == nullptr) && !init_.literals().empty() ) {
         os << string(indent, ' ') << "(:init";
         for( index_set::const_iterator it = init_.literals().begin(); it != init_.literals().end(); ++it ) {
             os << " ";
             State::print_literal(os, *it, this);
         }
         os << ")" << endl;
-    } else if( state != 0 ) {
+    } else if( state != nullptr ) {
         os << string(indent, ' ') << "(:init";
         for( State::const_iterator it = state->begin(); it != state->end(); ++it ) {
             os << " ";

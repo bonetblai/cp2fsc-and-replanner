@@ -30,7 +30,7 @@ using namespace std;
 bool PDDL_Base::write_warnings_ = true;
 bool PDDL_Base::write_info_ = true;
 Instance::when_vec PDDL_Base::dummy_when_vec_;
-PDDL_Base *PDDL_Base::Atom::pddl_base_ = 0;
+PDDL_Base *PDDL_Base::Atom::pddl_base_ = nullptr;
 
 template <class T>
 static void copy_symbol_vec(const vector<T> &src, vector<T> &dst) {
@@ -46,7 +46,7 @@ static void clone_parameters(const PDDL_Base::var_symbol_vec &param, PDDL_Base::
     clone.reserve(param.size());
     for( size_t k = 0; k < param.size(); ++k ) {
         clone.push_back(dynamic_cast<PDDL_Base::VariableSymbol*>(param[k]->clone()));
-        if( clone.back() == 0 ) {
+        if( clone.back() == nullptr ) {
             cout << Utils::error() << "parameter conversion failed for " << *param[k] << endl;
             exit(255);
         }
@@ -57,18 +57,18 @@ static void clone_parameters(const PDDL_Base::var_symbol_vec &param, PDDL_Base::
 PDDL_Base::PDDL_Base(StringTable &parser_symbol_table, const Options::Mode &options)
   : parser_symbol_table_(parser_symbol_table),
     options_(options),
-    dom_top_type_(0),
-    dom_eq_pred_(0),
-    dom_goal_(0),
+    dom_top_type_(nullptr),
+    dom_eq_pred_(nullptr),
+    dom_goal_(nullptr),
 #ifdef SMART
     clg_translation_(false),
     lw1_translation_(false) {
 #else
-    normal_execution_(0),
+    normal_execution_(nullptr),
     clg_translation_(false),
     lw1_translation_(false),
-    lw1_default_sensing_(0),
-    lw1_default_sensing_proxy_(0) {
+    lw1_default_sensing_(nullptr),
+    lw1_default_sensing_proxy_(nullptr) {
 #endif
 
     // setup predicate for equality
@@ -127,21 +127,21 @@ PDDL_Base::~PDDL_Base() {
 
 void PDDL_Base::set_variable_type(var_symbol_vec &vec, size_t n, TypeSymbol *t) {
     for( size_t k = n; k > 0; k-- ) {
-        if( vec[k-1]->sym_type_ != 0 ) return;
+        if( vec[k-1]->sym_type_ != nullptr ) return;
         vec[k-1]->sym_type_ = t;
     }
 }
 
 void PDDL_Base::set_type_type(type_symbol_vec &vec, size_t n, TypeSymbol *t) {
     for( size_t k = vec.size(); k > 0; k-- ) {
-        if( vec[k-1]->sym_type_ != 0 ) return;
+        if( vec[k-1]->sym_type_ != nullptr ) return;
         vec[k-1]->sym_type_ = t;
     }
 }
 
 void PDDL_Base::set_constant_type(symbol_vec &vec, size_t n, TypeSymbol *t) {
     for( size_t k = n; k > 0; k-- ) {
-        if( vec[k-1]->sym_type_ != 0 ) return;
+        if( vec[k-1]->sym_type_ != nullptr ) return;
         vec[k-1]->sym_type_ = t;
         t->add_element(vec[k-1]);
     }
@@ -149,7 +149,7 @@ void PDDL_Base::set_constant_type(symbol_vec &vec, size_t n, TypeSymbol *t) {
 
 void PDDL_Base::clear_param(var_symbol_vec &vec, size_t start) {
     for( size_t k = start; k < vec.size(); ++k )
-        parser_symbol_table_.set(vec[k]->print_name_.c_str(), static_cast<void*>(0));
+        parser_symbol_table_.set(vec[k]->print_name_.c_str(), static_cast<void*>(nullptr));
 }
 
 void PDDL_Base::insert_atom(ptr_table &t, Atom *a) {
@@ -192,11 +192,11 @@ void PDDL_Base::calculate_strongly_static_predicates() const {
 
         for( size_t k = 0; strongly_static && (k < dom_actions_.size()); ++k ) {
             Action &act = *dom_actions_[k];
-            strongly_static = act.effect_ == 0 ? true : act.effect_->is_strongly_static(pred);
-            strongly_static = strongly_static && (act.sensing_ == 0 ? true : act.sensing_->is_strongly_static(pred));
+            strongly_static = act.effect_ == nullptr ? true : act.effect_->is_strongly_static(pred);
+            strongly_static = strongly_static && (act.sensing_ == nullptr ? true : act.sensing_->is_strongly_static(pred));
         }
 
-        if( lw1_default_sensing_ != 0 )
+        if( lw1_default_sensing_ != nullptr )
             strongly_static = strongly_static && lw1_default_sensing_->is_strongly_static(pred);
 
         pred.strongly_static_ = strongly_static;
@@ -250,7 +250,7 @@ void PDDL_Base::instantiate_elements() {
 #endif
 
     // instantiate goal
-    if( dom_goal_ != 0 ) {
+    if( dom_goal_ != nullptr ) {
         Condition *instantiated_goal = dom_goal_->ground();
         delete dom_goal_;
         dom_goal_ = instantiated_goal;
@@ -259,10 +259,10 @@ void PDDL_Base::instantiate_elements() {
     // extract set of initial literals
     for( size_t k = 0; k < dom_init_.size(); ++k ) {
 #ifdef SMART
-        if( dynamic_cast<const InitLiteral*>(dom_init_[k].get()) != 0 )
+        if( dynamic_cast<const InitLiteral*>(dom_init_[k].get()) != nullptr )
             set_of_initial_literals_.insert(*static_cast<const InitLiteral*>(dom_init_[k].get()));
 #else
-        if( dynamic_cast<const InitLiteral*>(dom_init_[k]) != 0 )
+        if( dynamic_cast<const InitLiteral*>(dom_init_[k]) != nullptr )
             set_of_initial_literals_.insert(*static_cast<const InitLiteral*>(dom_init_[k]));
 #endif
     }
@@ -324,10 +324,10 @@ void PDDL_Base::instantiate_elements() {
     }
 
     // ground default sensing model
-    if( lw1_default_sensing_proxy_ != 0 ) {
+    if( lw1_default_sensing_proxy_ != nullptr ) {
         const Sensing *default_sensing = lw1_default_sensing_proxy_->ground();
         lw1_finish_grounding_of_sensing(default_sensing);
-        if( default_sensing != 0 ) {
+        if( default_sensing != nullptr ) {
 #ifdef SMART
             lw1_default_sensing_ = unique_ptr<const Sensing>(default_sensing);
 #else
@@ -360,9 +360,9 @@ void PDDL_Base::instantiate_elements() {
     // finish grounding the sensing and insert default-sensing-model into action with empty sensing models
     for( size_t k = 0; k < dom_actions_.size(); ++k ) {
         Action &action = *dom_actions_[k];
-        if( action.sensing_ != 0 )
+        if( action.sensing_ != nullptr )
             lw1_finish_grounding_of_sensing(action.sensing_);
-        else if( lw1_default_sensing_ != 0 )
+        else if( lw1_default_sensing_ != nullptr )
             action.sensing_ = lw1_default_sensing_->copy_and_simplify();
     }
 
@@ -465,13 +465,13 @@ void PDDL_Base::calculate_static_atoms() {
     // calculate affected atoms and candidate set for static atoms
     for( size_t k = 0; k < dom_actions_.size(); ++k ) {
         const Action &action = *dom_actions_[k];
-        if( action.precondition_ != 0 ) action.precondition_->extract_atoms(dom_static_atoms_);
-        if( action.effect_ != 0 ) {
+        if( action.precondition_ != nullptr ) action.precondition_->extract_atoms(dom_static_atoms_);
+        if( action.effect_ != nullptr ) {
             action.effect_->extract_atoms(dom_static_atoms_);
             action.effect_->extract_atoms(affected_atoms, true);
         }
-        if( action.observe_ != 0 ) action.observe_->extract_atoms(dom_static_atoms_);
-        if( action.sensing_ != 0 ) {
+        if( action.observe_ != nullptr ) action.observe_->extract_atoms(dom_static_atoms_);
+        if( action.sensing_ != nullptr ) {
             action.sensing_->extract_atoms(dom_static_atoms_);
             action.sensing_->extract_atoms(affected_atoms, false, true);
         }
@@ -479,14 +479,14 @@ void PDDL_Base::calculate_static_atoms() {
 
     for( size_t k = 0; k < dom_sensors_.size(); ++k ) {
         const Sensor &sensor = *dom_sensors_[k];
-        if( sensor.condition_ != 0 ) sensor.condition_->extract_atoms(dom_static_atoms_);
-        if( sensor.sense_ != 0 ) sensor.sense_->extract_atoms(dom_static_atoms_);
+        if( sensor.condition_ != nullptr ) sensor.condition_->extract_atoms(dom_static_atoms_);
+        if( sensor.sense_ != nullptr ) sensor.sense_->extract_atoms(dom_static_atoms_);
     }
 
     for( size_t k = 0; k < dom_axioms_.size(); ++k ) {
         const Axiom &axiom = *dom_axioms_[k];
-        if( axiom.body_ != 0 ) axiom.body_->extract_atoms(dom_static_atoms_);
-        if( axiom.head_ != 0 ) axiom.head_->extract_atoms(dom_static_atoms_);
+        if( axiom.body_ != nullptr ) axiom.body_->extract_atoms(dom_static_atoms_);
+        if( axiom.head_ != nullptr ) axiom.head_->extract_atoms(dom_static_atoms_);
     }
 
     for( size_t k = 0; k < dom_init_.size(); ++k ) {
@@ -511,7 +511,7 @@ bool PDDL_Base::is_static_atom(const Atom &atom) const {
 
 PDDL_Base::PredicateSymbol* PDDL_Base::create_predicate(const string &name, const var_symbol_vec *param) {
     PredicateSymbol *new_predicate = new PredicateSymbol(name);
-    if( param != 0 ) new_predicate->param_ = *param;
+    if( param != nullptr ) new_predicate->param_ = *param;
     dom_predicates_.push_back(new_predicate);
     return new_predicate;
 }
@@ -558,20 +558,20 @@ void PDDL_Base::clg_map_oneofs_and_clauses_to_invariants() {
 #else
         InitElement *ie = dom_init_[k];
 #endif
-        if( dynamic_cast<InitOneof*>(ie) != 0 ) {
+        if( dynamic_cast<InitOneof*>(ie) != nullptr ) {
 #ifdef SMART
             oneofs.emplace_back(k, unique_ptr<InitOneof>(static_cast<InitOneof*>(dom_init_[k].release())));
 #else
             oneofs.push_back(make_pair(k, static_cast<InitOneof*>(ie)));
-            dom_init_[k] = 0;
+            dom_init_[k] = nullptr;
 #endif
-        } else if( dynamic_cast<InitClause*>(ie) != 0 ) {
+        } else if( dynamic_cast<InitClause*>(ie) != nullptr ) {
 #ifdef SMART
             clauses.emplace_back(k, unique_ptr<InitClause>(static_cast<InitClause*>(dom_init_[k].release())));
             dom_init_[k].release();
 #else
             clauses.push_back(make_pair(k, static_cast<InitClause*>(ie)));
-            dom_init_[k] = 0;
+            dom_init_[k] = nullptr;
 #endif
         }
     }
@@ -580,7 +580,7 @@ void PDDL_Base::clg_map_oneofs_and_clauses_to_invariants() {
     for( size_t k = 0; k < oneofs.size(); ++k ) {
         Invariant invariant(Invariant::EXACTLY_ONE, *oneofs[k].second);
         // BLAI: check precondition
-        //if( normal_execution_ != 0 ) invariant.Xprecondition_ = Literal(*normal_execution_).copy();
+        //if( normal_execution_ != nullptr ) invariant.Xprecondition_ = Literal(*normal_execution_).copy();
 #ifdef SMART
         dom_init_[oneofs[k].first] = make_unique<InitInvariant>(invariant);
 #else
@@ -597,7 +597,7 @@ void PDDL_Base::clg_map_oneofs_and_clauses_to_invariants() {
     for( size_t k = 0; k < clauses.size(); ++k ) {
         Invariant invariant(Invariant::AT_LEAST_ONE, *clauses[k].second);
         // BLAI: check precondition
-        //if( normal_execution_ != 0 ) invariant.Xprecondition_ = Literal(*normal_execution_).copy();
+        //if( normal_execution_ != nullptr ) invariant.Xprecondition_ = Literal(*normal_execution_).copy();
 #ifdef SMART
         dom_init_[clauses[k].first] = make_unique<InitInvariant>(invariant);
 #else
@@ -621,7 +621,7 @@ void PDDL_Base::clg_translate_actions() {
     action_vec actions_to_translate;
 #endif
     for( size_t k = 0; k < dom_actions_.size(); ++k ) {
-        if( dom_actions_[k]->observe_ != 0 ) {
+        if( dom_actions_[k]->observe_ != nullptr ) {
 #ifdef SMART
             actions_to_translate.emplace_back(move(dom_actions_[k]));
             dom_actions_[k] = move(dom_actions_.back());
@@ -647,9 +647,9 @@ void PDDL_Base::clg_translate_actions() {
 #else
         dom_init_.push_back(new InitLiteral(*normal_execution_));
 #endif
-        if( dom_goal_ == 0 ) {
+        if( dom_goal_ == nullptr ) {
             dom_goal_ = new And;
-        } else if( dynamic_cast<const And*>(dom_goal_) == 0 ) {
+        } else if( dynamic_cast<const And*>(dom_goal_) == nullptr ) {
             And *new_goal = new And;
             assert(dom_goal_->is_grounded());
             new_goal->push_back(dom_goal_->copy_and_simplify());
@@ -665,7 +665,7 @@ void PDDL_Base::clg_translate_actions() {
             for( size_t k = 0; k < dom_actions_.size(); ++k ) {
                 Action &action = *dom_actions_[k];
                 And *precondition = new And;
-                if( action.precondition_ != 0 ) precondition->push_back(action.precondition_);
+                if( action.precondition_ != nullptr ) precondition->push_back(action.precondition_);
                 precondition->push_back(new Literal(*normal_execution_));
                 assert(precondition->is_grounded());
                 action.precondition_ = precondition->copy_and_simplify();
@@ -689,7 +689,7 @@ void PDDL_Base::clg_translate_actions() {
 }
 
 void PDDL_Base::clg_translate(Action &action) {
-    assert(action.observe_ != 0);
+    assert(action.observe_ != nullptr);
 
     original_actions_.insert(action.print_name_); // this action counts as the original action
 
@@ -704,7 +704,7 @@ void PDDL_Base::clg_translate(Action &action) {
     //    effects (do-post-sense-for-<action> <args>) and (not (normal-execution))
 
     And precondition;
-    if( action.precondition_ != 0 ) precondition.push_back(action.precondition_);
+    if( action.precondition_ != nullptr ) precondition.push_back(action.precondition_);
     precondition.push_back(Literal(*normal_execution_).copy());
     assert(precondition.is_grounded());
     action.precondition_ = precondition.copy_and_simplify();
@@ -713,7 +713,7 @@ void PDDL_Base::clg_translate(Action &action) {
     precondition.clear();
 
     AndEffect effect;
-    if( action.effect_ != 0 ) effect.push_back(action.effect_);
+    if( action.effect_ != nullptr ) effect.push_back(action.effect_);
     effect.push_back(AtomicEffect(*normal_execution_).negate());
     effect.push_back(AtomicEffect(need_post).copy());
     assert(effect.is_grounded());
@@ -722,7 +722,7 @@ void PDDL_Base::clg_translate(Action &action) {
         delete effect[k];
     effect.clear();
 
-    action.observe_ = 0;
+    action.observe_ = nullptr;
     if( options_.is_enabled("clg:print:effect") || options_.is_enabled("clg:print:generated") )
         cout << Utils::yellow() << action << Utils::normal();
 
@@ -901,7 +901,7 @@ void PDDL_Base::lw1_calculate_beam_for_grounded_variable(Variable &var) {
         // fill up beams for values of variable
         for( int k = 0; k < int(dom_actions_.size()); ++k ) {
             const Action &action = *dom_actions_[k];
-            if( action.sensing_ != 0 )
+            if( action.sensing_ != nullptr )
                 action.sensing_->extend_beam_for_variable(var);
         }
 
@@ -922,7 +922,7 @@ void PDDL_Base::lw1_calculate_beam_for_grounded_variable(Variable &var) {
             const unsigned_atom_set &beam = var.beam_.at(*it);
             //cout << "PROCESSING: " << *it << " for " << var << ": beam.sz=" << beam.size() << endl;
 
-            VariableGroup *best_group = 0;
+            VariableGroup *best_group = nullptr;
             for( int k = 0; k < int(lw1_variable_groups_.size()); ++k ) {
                 VariableGroup &group = *lw1_variable_groups_[k];
                 //cout << "  GROUP=" << group << endl;
@@ -948,11 +948,11 @@ void PDDL_Base::lw1_calculate_beam_for_grounded_variable(Variable &var) {
                 }
                 //if( !good ) cout << "  GROUP " << group << " DOESN'T WORK" << endl;
                 //if( good ) cout << "  GROUP " << group << " WORKS" << endl;
-                if( good && ((best_group == 0) || (group.grounded_group_.size() < best_group->grounded_group_.size())) )
+                if( good && ((best_group == nullptr) || (group.grounded_group_.size() < best_group->grounded_group_.size())) )
                     best_group = &group;
             }
 
-            if( best_group != 0 ) {
+            if( best_group != nullptr ) {
 #ifdef DEBUG
                 cout << "observation '" << *it << "' for " << var << " will be filtered in group " << best_group->print_name_ << endl;
 #endif
@@ -965,10 +965,10 @@ void PDDL_Base::lw1_calculate_beam_for_grounded_variable(Variable &var) {
             }
 
             // there is no group where to filter observation, check if it can be filtered in variable
-            const StateVariable *candidate = 0;
+            const StateVariable *candidate = nullptr;
             bool found_in_variable = true;
             for( unsigned_atom_set::const_iterator kt = beam.begin(); kt != beam.end(); ++kt ) {
-                if( candidate != 0 ) {
+                if( candidate != nullptr ) {
                     if( candidate->grounded_domain_.find(*kt) == candidate->grounded_domain_.end() ) {
                         found_in_variable = false;
                         break;
@@ -977,7 +977,7 @@ void PDDL_Base::lw1_calculate_beam_for_grounded_variable(Variable &var) {
                     for( size_t k = 0; k < lw1_variables_.size(); ++k ) {
                         const Variable &v = *lw1_variables_[k];
                         if( v.is_state_variable() && (v.grounded_domain_.find(*kt) != v.grounded_domain_.end()) ) {
-                            assert(dynamic_cast<const StateVariable*>(&v) != 0);
+                            assert(dynamic_cast<const StateVariable*>(&v) != nullptr);
                             candidate = static_cast<const StateVariable*>(&v);
                             break;
                         }
@@ -985,7 +985,7 @@ void PDDL_Base::lw1_calculate_beam_for_grounded_variable(Variable &var) {
                 }
             }
 
-            if( found_in_variable && (candidate != 0) ) {
+            if( found_in_variable && (candidate != nullptr) ) {
                 if( options_.is_enabled("lw1:inference:ac3:create-ad-hoc-groups" ) ) {
                     map<string, const VariableGroup*>::iterator gt = lw1_ad_hoc_groups_.find(candidate->print_name_);
                     if( gt == lw1_ad_hoc_groups_.end() ) {
@@ -1080,7 +1080,7 @@ void PDDL_Base::lw1_translate_actions() {
     action_vec actions_to_translate;
 #endif
     for( size_t k = 0; k < dom_actions_.size(); ++k ) {
-        if( dom_actions_[k]->sensing_ != 0 ) {
+        if( dom_actions_[k]->sensing_ != nullptr ) {
 #ifdef SMART
             actions_to_translate.emplace_back(move(dom_actions_[k]));
             dom_actions_[k] = move(dom_actions_.back());
@@ -1106,9 +1106,9 @@ void PDDL_Base::lw1_translate_actions() {
 #else
         dom_init_.push_back(new InitLiteral(*normal_execution_));
 #endif
-        if( dom_goal_ == 0 ) {
+        if( dom_goal_ == nullptr ) {
             dom_goal_ = new And;
-        } else if( dynamic_cast<const And*>(dom_goal_) == 0 ) {
+        } else if( dynamic_cast<const And*>(dom_goal_) == nullptr ) {
             And *new_goal = new And;
             assert(dom_goal_->is_grounded());
             new_goal->push_back(dom_goal_->copy_and_simplify());
@@ -1124,7 +1124,7 @@ void PDDL_Base::lw1_translate_actions() {
             for( size_t k = 0; k < dom_actions_.size(); ++k ) {
                 Action &action = *dom_actions_[k];
                 And *precondition = new And;
-                if( action.precondition_ != 0 ) precondition->push_back(action.precondition_);
+                if( action.precondition_ != nullptr ) precondition->push_back(action.precondition_);
                 precondition->push_back(Literal(*normal_execution_).copy());
                 assert(precondition->is_grounded());
                 action.precondition_ = precondition->copy_and_simplify();
@@ -1157,8 +1157,8 @@ void PDDL_Base::lw1_translate(Action &action) {
     unsigned_atom_set atoms_to_remove(atoms_for_state_variables_);
     atoms_to_remove.insert(static_observable_atoms_.begin(), static_observable_atoms_.end());
     const Sensing *reduced_sensing = action.sensing_->reduce(atoms_to_remove);
-    bool need_effect_action = action.effect_ != 0;
-    bool need_set_sensing_action = reduced_sensing != 0;
+    bool need_effect_action = action.effect_ != nullptr;
+    bool need_set_sensing_action = reduced_sensing != nullptr;
 
     // calculate sensed atoms
     unsigned_atom_set sensed_atoms;
@@ -1178,7 +1178,7 @@ void PDDL_Base::lw1_translate(Action &action) {
         original_actions_.insert(effect_action->print_name_);             // this action counts as the original action
 
         // precondition
-        if( action.precondition_ != 0 ) precondition.push_back(action.precondition_);
+        if( action.precondition_ != nullptr ) precondition.push_back(action.precondition_);
         precondition.push_back(Literal(*normal_execution_).copy());       // (normal-execution)
         assert(precondition.is_grounded());
         effect_action->precondition_ = precondition.copy_and_simplify();
@@ -1235,7 +1235,7 @@ void PDDL_Base::lw1_translate(Action &action) {
             const Atom& need_set_sensing = *lw1_fetch_need_set_sensing_atom(action);
             precondition.push_back(Literal(need_set_sensing).copy());     // (need-set-sensing <param>)
         } else {
-            if( action.precondition_ != 0 ) precondition.push_back(action.precondition_);
+            if( action.precondition_ != nullptr ) precondition.push_back(action.precondition_);
             precondition.push_back(Literal(*normal_execution_).copy());   // (normal-execution)
             original_actions_.insert(set_sensing_action->print_name_);    // this action counts as the original action
         }
@@ -1292,7 +1292,7 @@ void PDDL_Base::lw1_translate(Action &action) {
         original_actions_.insert(turn_on_sensor_action->print_name_);     // this action counts as the original action
 
         // precondition
-        if( action.precondition_ != 0 ) precondition.push_back(action.precondition_);
+        if( action.precondition_ != nullptr ) precondition.push_back(action.precondition_);
         precondition.push_back(Literal(*normal_execution_).copy());       // (normal-execution)
         assert(precondition.is_grounded());
         turn_on_sensor_action->precondition_ = precondition.copy_and_simplify();
@@ -1370,7 +1370,7 @@ void PDDL_Base::lw1_translate_actions_strict() {
     // extract sensing models
     for( size_t k = 0; k < dom_actions_.size(); ++k ) {
         const Action &action = *dom_actions_[k];
-        if( action.sensing_ != 0 ) {
+        if( action.sensing_ != nullptr ) {
 #ifdef SMART
             lw1_sensing_models_.emplace_back(&action, unique_ptr<const Sensing>(action.sensing_->copy_and_simplify()));
 #else
@@ -1390,7 +1390,7 @@ void PDDL_Base::lw1_translate_actions_strict() {
         action_vec actions_to_translate;
 #endif
         for( size_t k = 0; k < dom_actions_.size(); ++k ) {
-            if( dom_actions_[k]->sensing_ != 0 ) {
+            if( dom_actions_[k]->sensing_ != nullptr ) {
 #ifdef SMART
                 actions_to_translate.emplace_back(move(dom_actions_[k]));
                 dom_actions_[k] = move(dom_actions_.back());
@@ -1413,9 +1413,9 @@ void PDDL_Base::lw1_translate_actions_strict() {
 #else
             dom_init_.push_back(new InitLiteral(*normal_execution_));
 #endif
-            if( dom_goal_ == 0 ) {
+            if( dom_goal_ == nullptr ) {
                 dom_goal_ = new And;
-            } else if( dynamic_cast<const And*>(dom_goal_) == 0 ) {
+            } else if( dynamic_cast<const And*>(dom_goal_) == nullptr ) {
                 And *new_goal = new And;
                 assert(dom_goal_->is_grounded());
                 new_goal->push_back(dom_goal_->copy_and_simplify());
@@ -1431,7 +1431,7 @@ void PDDL_Base::lw1_translate_actions_strict() {
                 for( size_t k = 0; k < dom_actions_.size(); ++k ) {
                     Action &action = *dom_actions_[k];
                     And *precondition = new And;
-                    if( action.precondition_ != 0 ) precondition->push_back(action.precondition_);
+                    if( action.precondition_ != nullptr ) precondition->push_back(action.precondition_);
                     precondition->push_back(Literal(*normal_execution_).copy());
                     assert(precondition->is_grounded());
                     action.precondition_ = precondition->copy_and_simplify();
@@ -1467,21 +1467,21 @@ void PDDL_Base::lw1_translate_strict(Action &action) { // CHECK: replace this by
     // be deleted in effects. The effects should also assert the corresponding
     // enablers for sensing
 
-    if( dynamic_cast<const And*>(action.precondition_) == 0 ) {
+    if( dynamic_cast<const And*>(action.precondition_) == nullptr ) {
         And *new_precondition = new And;
-        if( action.precondition_ != 0 ) new_precondition->push_back(action.precondition_);
+        if( action.precondition_ != nullptr ) new_precondition->push_back(action.precondition_);
         action.precondition_ = new_precondition;
     }
     const_cast<And*>(static_cast<const And*>(action.precondition_))->push_back(Literal(*normal_execution_).copy());
 
-    if( dynamic_cast<const AndEffect*>(action.effect_) == 0 ) {
+    if( dynamic_cast<const AndEffect*>(action.effect_) == nullptr ) {
         AndEffect *new_effect = new AndEffect;
-        if( action.effect_ != 0 ) new_effect->push_back(action.effect_);
+        if( action.effect_ != nullptr ) new_effect->push_back(action.effect_);
         action.effect_ = new_effect;
     }
     const_cast<AndEffect*>(static_cast<const AndEffect*>(action.effect_))->push_back(AtomicEffect(*normal_execution_).negate());
 
-    const Atom *last_action_atom = 0;
+    const Atom *last_action_atom = nullptr;
     if( options_.is_enabled("lw1:boost:single-sensing-literal-enablers") ) {
         cout << Utils::error() << "lw1:boost:single-sensing-literal-enablers is deprecated" << endl;
         exit(-1);
@@ -1537,20 +1537,20 @@ void PDDL_Base::lw1_translate_strict_NEW(Action &action) {
     action.sensing_->extract_atoms(sensed_atoms, true);
     const Atom &enabler_for_sensing = *lw1_fetch_enabler_for_sensing(sensed_atoms);
 
-    And *new_precondition = 0;
-    if( dynamic_cast<const And*>(action.precondition_) == 0 ) {
+    And *new_precondition = nullptr;
+    if( dynamic_cast<const And*>(action.precondition_) == nullptr ) {
         new_precondition = new And;
-        if( action.precondition_ != 0 ) new_precondition->push_back(action.precondition_);
+        if( action.precondition_ != nullptr ) new_precondition->push_back(action.precondition_);
     } else {
         new_precondition = const_cast<And*>(static_cast<const And*>(action.precondition_));
     }
     new_precondition->push_back(Literal(*normal_execution_).copy());
     action.precondition_ = new_precondition;
 
-    AndEffect *new_effect = 0;
-    if( dynamic_cast<const AndEffect*>(action.effect_) == 0 ) {
+    AndEffect *new_effect = nullptr;
+    if( dynamic_cast<const AndEffect*>(action.effect_) == nullptr ) {
         new_effect = new AndEffect;
-        if( action.effect_ != 0 ) new_effect->push_back(action.effect_);
+        if( action.effect_ != nullptr ) new_effect->push_back(action.effect_);
     } else {
         new_effect = const_cast<AndEffect*>(static_cast<const AndEffect*>(action.effect_));
     }
@@ -1609,8 +1609,8 @@ void PDDL_Base::lw1_create_sensors_for_atom(const Atom &atom, const Condition &c
 #endif
 
             // condition of sensor is enabler plus conditions on other values of variable
-            And *sensor_condition = 0;
-            if( dynamic_cast<const And*>(&condition) != 0 )
+            And *sensor_condition = nullptr;
+            if( dynamic_cast<const And*>(&condition) != nullptr )
                 sensor_condition = static_cast<And*>(condition.copy_and_simplify());
             else {
                 sensor_condition = new And;
@@ -1722,7 +1722,7 @@ void PDDL_Base::lw1_finish_grounding_of_sensing(const Sensing* &sensing) {
     //cout << "GROUNDED (after finishing): " << *sensing << endl;
     if( sensing->empty() ) {
         delete sensing;
-        sensing = 0;
+        sensing = nullptr;
     }
 }
 
@@ -1809,12 +1809,12 @@ void PDDL_Base::lw1_index_sensing_models() {
         const Sensing *sensing = it->second;
 #endif
         for( size_t k = 0; k < sensing->size(); ++k ) {
-            if( dynamic_cast<const SensingModelForObservableVariable*>((*sensing)[k]) != 0 ) {
+            if( dynamic_cast<const SensingModelForObservableVariable*>((*sensing)[k]) != nullptr ) {
                 const SensingModelForObservableVariable &model = *static_cast<const SensingModelForObservableVariable*>((*sensing)[k]);
                 const ObsVariable *variable = model.variable_;
                 const Literal &literal = *model.literal_;
                 const Condition *dnf = model.dnf_;
-                if( dynamic_cast<const Constant*>(dnf) != 0 ) {
+                if( dynamic_cast<const Constant*>(dnf) != nullptr ) {
                     // nothing to do
 #ifndef NDEBUG
                     const Constant *constant = static_cast<const Constant*>(dnf);
@@ -1822,17 +1822,17 @@ void PDDL_Base::lw1_index_sensing_models() {
 #endif
                 } else {
                     assert(dnf->is_dnf());
-                    if( dynamic_cast<const Or*>(dnf) != 0 ) {
+                    if( dynamic_cast<const Or*>(dnf) != nullptr ) {
                         const Or *disjunction = static_cast<const Or*>(dnf);
                         for( size_t j = 0; j < disjunction->size(); ++j ) {
                             const Condition *disjunct = (*disjunction)[j];
-                            if( dynamic_cast<const And*>(disjunct) != 0 ) {
+                            if( dynamic_cast<const And*>(disjunct) != nullptr ) {
 #ifdef SMART
                                 lw1_sensing_models_index_[&action][variable][literal].emplace_back(unique_ptr<const And>(static_cast<const And*>(disjunct->copy_and_simplify())));
 #else
                                 lw1_sensing_models_index_[&action][variable][literal].push_back(static_cast<const And*>(disjunct->copy_and_simplify()));
 #endif
-                            } else if( dynamic_cast<const Literal*>(disjunct) != 0 ) {
+                            } else if( dynamic_cast<const Literal*>(disjunct) != nullptr ) {
                                 And *term = new And;
                                 term->push_back(disjunct->copy_and_simplify());
 #ifdef SMART
@@ -1845,13 +1845,13 @@ void PDDL_Base::lw1_index_sensing_models() {
                                 continue;
                             }
                         }
-                    } else if( dynamic_cast<const And*>(dnf) != 0 ) {
+                    } else if( dynamic_cast<const And*>(dnf) != nullptr ) {
 #ifdef SMART
                         lw1_sensing_models_index_[&action][variable][literal].emplace_back(unique_ptr<const And>(static_cast<const And*>(dnf->copy_and_simplify())));
 #else
                         lw1_sensing_models_index_[&action][variable][literal].push_back(static_cast<const And*>(dnf->copy_and_simplify()));
 #endif
-                    } else if( dynamic_cast<const Literal*>(dnf) != 0 ) {
+                    } else if( dynamic_cast<const Literal*>(dnf) != nullptr ) {
                         And *term = new And;
                         term->push_back(dnf->copy_and_simplify());
 #ifdef SMART
@@ -1866,9 +1866,9 @@ void PDDL_Base::lw1_index_sensing_models() {
                 }
                 lw1_xxx_[make_pair(variable, literal)][dnf->to_string()].insert(&action); // CHECK: can it be delete?
             } else {
-                assert(dynamic_cast<const SensingModelForStateVariable*>((*sensing)[k]) != 0 );
+                assert(dynamic_cast<const SensingModelForStateVariable*>((*sensing)[k]) != nullptr );
                 const SensingModelForStateVariable &model = *static_cast<const SensingModelForStateVariable*>((*sensing)[k]);
-                assert(model.variable_ != 0);
+                assert(model.variable_ != nullptr);
                 lw1_actions_for_observable_state_variables_[model.variable_].push_back(&action);;
             }
         }
@@ -2182,7 +2182,7 @@ void PDDL_Base::lw1_create_type2_sensing_drule(const Atom &obs, const And &term,
         // precondition
         And *precondition = new And;
         for( size_t i = 0; i < term.size(); ++i ) {
-            assert(dynamic_cast<const Literal*>(term[i]) != 0);
+            assert(dynamic_cast<const Literal*>(term[i]) != nullptr);
             if( i != k )
                 precondition->push_back(static_cast<const Literal*>(term[i])->copy());
         }
@@ -2191,7 +2191,7 @@ void PDDL_Base::lw1_create_type2_sensing_drule(const Atom &obs, const And &term,
 
         // effect
         AndEffect *effect = new AndEffect;
-        assert(dynamic_cast<const Literal*>(term[k]) != 0);
+        assert(dynamic_cast<const Literal*>(term[k]) != nullptr);
         effect->push_back(AtomicEffect(*static_cast<const Literal*>(term[k])).negate());
         drule->effect_= effect;
 
@@ -2264,7 +2264,7 @@ void PDDL_Base::lw1_create_type3_sensing_drule(const Action &action,
         if( other_term->get() != &term ) {
             assert(!(*other_term)->empty());
             if( (*other_term)->size() == 1 ) {
-                assert(dynamic_cast<const Literal*>(*(*other_term)->begin()) != 0);
+                assert(dynamic_cast<const Literal*>(*(*other_term)->begin()) != nullptr);
                 const Literal &literal = *static_cast<const Literal*>(*(*other_term)->begin());
                 precondition->push_back(literal.negate());
             } else {
@@ -2277,7 +2277,7 @@ void PDDL_Base::lw1_create_type3_sensing_drule(const Action &action,
         if( *other_term != &term ) {
             assert(!(*other_term)->empty());
             if( (*other_term)->size() == 1 ) {
-                assert(dynamic_cast<const Literal*>(*(*other_term)->begin()) != 0);
+                assert(dynamic_cast<const Literal*>(*(*other_term)->begin()) != nullptr);
                 const Literal &literal = *static_cast<const Literal*>(*(*other_term)->begin());
                 precondition->push_back(literal.negate());
             } else {
@@ -2293,7 +2293,7 @@ void PDDL_Base::lw1_create_type3_sensing_drule(const Action &action,
     // effect
     AndEffect *effect = new AndEffect;
     for( size_t k = 0; k < term.size(); ++k ) {
-        assert(dynamic_cast<const Literal*>(term[k]) != 0);
+        assert(dynamic_cast<const Literal*>(term[k]) != nullptr);
         effect->push_back(AtomicEffect(*static_cast<const Literal*>(term[k])).copy());
     }
     drule->effect_ = effect;
@@ -2312,7 +2312,7 @@ const PDDL_Base::Atom& PDDL_Base::lw1_fetch_atom_for_negated_term(const And &ter
     assert(term.size() > 1);
     signed_atom_set condition;
     for( size_t k = 0; k < term.size(); ++k ) {
-        assert(dynamic_cast<const Literal*>(term[k]) != 0);
+        assert(dynamic_cast<const Literal*>(term[k]) != nullptr);
         const Literal &literal = *static_cast<const Literal*>(term[k]);
         condition.insert(literal);
     }
@@ -2385,7 +2385,7 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action *action, const State
     if( options_.is_enabled("lw1:boost:enable-post-actions") ) {
         drule->precondition_ = Literal(*lw1_fetch_enabler_for_sensing(value)).copy();
     } else {
-        assert(action != 0);
+        assert(action != nullptr);
         drule->precondition_ = Literal(lw1_fetch_last_action_atom(*action)).copy();
     }
     drule->effect_ = AtomicEffect(value).copy();
@@ -2432,7 +2432,7 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action,
 
     // find out whether something needs to be done (using auto for easily dealing with smart/non-smart pointers)
     if( options_.is_enabled("lw1:boost:drule:sensing:type4") ) {
-        const And *term = 0;
+        const And *term = nullptr;
         for( auto it = sensing_models_for_action_and_var.cbegin(); it != sensing_models_for_action_and_var.cend(); ++it ) {
             const Atom &other_value = it->first;
             //const list<unique_ptr<const And> > &dnf = it->second;
@@ -2447,7 +2447,7 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action,
         }
 
         // if boosting type4 drules and not adding redundant rules, return (do nothing)
-        if( (term != 0) && !options_.is_enabled("lw1:boost:drule:sensing:type4:add") )
+        if( (term != nullptr) && !options_.is_enabled("lw1:boost:drule:sensing:type4:add") )
             return;
     }
 
@@ -2482,18 +2482,18 @@ void PDDL_Base::lw1_create_type4_sensing_drule(const Action &action,
                 assert(!term.empty());
                 if( term.size() == 1 ) {
                     // this unconditional effect becomes conditional when lw1 problem is constructed
-                    assert(dynamic_cast<const Literal*>(term[0]) != 0);
+                    assert(dynamic_cast<const Literal*>(term[0]) != nullptr);
                     const Literal &literal = *static_cast<const Literal*>(term[0]);
                     and_effect->push_back(AtomicEffect(literal).negate());
                 } else {
                     for( size_t k = 0; k < term.size(); ++k ) {
-                        assert(dynamic_cast<const Literal*>(term[k]) != 0);
+                        assert(dynamic_cast<const Literal*>(term[k]) != nullptr);
                         const Literal &literal = *static_cast<const Literal*>(term[k]);
                         AtomicEffect *effect = AtomicEffect(literal).negate();
                         And *condition = new And;
                         for( size_t j = 0; j < term.size(); ++j ) {
                             if( j != k ) {
-                                assert(dynamic_cast<const Literal*>(term[j]) != 0);
+                                assert(dynamic_cast<const Literal*>(term[j]) != nullptr);
                                 condition->push_back(static_cast<const Literal*>(term[j])->copy());
                             }
                         }
@@ -2549,7 +2549,7 @@ void PDDL_Base::lw1_create_type4_boost_sensing_drule(const Action &action,
     assert(!value.negated_ || variable.is_binary()); // || options_.is_enabled("lw1:boost:literals-for-observables")); // CHECK
 
     // find out whether something needs to be done (using auto for easily dealing with smart/non-smart pointers)
-    const And *term = 0;
+    const And *term = nullptr;
     for( auto it = sensing_models_for_action_and_var.cbegin(); it != sensing_models_for_action_and_var.cend(); ++it ) {
         const Atom &other_value = it->first;
         auto &dnf = it->second;
@@ -2562,7 +2562,7 @@ void PDDL_Base::lw1_create_type4_boost_sensing_drule(const Action &action,
             break;
         }
     }
-    if( term == 0 ) return;
+    if( term == nullptr ) return;
 
     string name = string("drule-sensing-type4obs-boost-") + action.print_name_ + "-" + variable.to_string(false, true) + "-" + value.to_string(false, true);
 #ifdef SMART
@@ -2582,7 +2582,7 @@ void PDDL_Base::lw1_create_type4_boost_sensing_drule(const Action &action,
     else
         precondition->push_back(Literal(lw1_fetch_last_action_atom(action)).copy());
     for( size_t k = 0; k < term->size(); ++k ) {
-        assert(dynamic_cast<const Literal*>((*term)[k]) != 0);
+        assert(dynamic_cast<const Literal*>((*term)[k]) != nullptr);
         const Literal &literal = *static_cast<const Literal*>((*term)[k]);
         precondition->push_back(literal.negate());
     }
@@ -2592,7 +2592,7 @@ void PDDL_Base::lw1_create_type4_boost_sensing_drule(const Action &action,
     assert(!term->empty());
     AndEffect *effect = new AndEffect;
     for( size_t k = 0; k < term->size(); ++k ) {
-        assert(dynamic_cast<const Literal*>((*term)[k]) != 0);
+        assert(dynamic_cast<const Literal*>((*term)[k]) != nullptr);
         const Literal &literal = *static_cast<const Literal*>((*term)[k]);
         effect->push_back(AtomicEffect(literal).copy());
     }
@@ -2644,9 +2644,9 @@ void PDDL_Base::lw1_create_type5_sensing_drule(const ObsVariable &variable) {
         // the beam for atom is empty meaning that the formula is given by static variables: good to go! (using auto for easily dealing with smart/non-smart pointers)
         set<string> models_for_value;
 #ifdef SMART
-        const list<unique_ptr<const And> > *dnf = 0;
+        const list<unique_ptr<const And> > *dnf = nullptr;
 #else
-        const list<const And*> *dnf = 0;
+        const list<const And*> *dnf = nullptr;
 #endif
         for( auto it = lw1_sensing_models_index_.cbegin(); it != lw1_sensing_models_index_.cend(); ++it ) {
             for( auto jt = it->second.cbegin(); jt != it->second.cend(); ++jt ) {
@@ -2664,7 +2664,7 @@ void PDDL_Base::lw1_create_type5_sensing_drule(const ObsVariable &variable) {
             }
         }
 
-        if( dnf == 0 ) {
+        if( dnf == nullptr ) {
 #ifdef DEBUG
             cout << " ... skip because there is no dnf" << endl;
 #endif
@@ -2789,9 +2789,9 @@ void PDDL_Base::lw1_patch_actions_with_enablers_for_sensing() {
         Action &action = *dom_actions_[k];
 
         // make sure effect is AndEffect
-        if( dynamic_cast<const AndEffect*>(action.effect_) == 0 ) {
+        if( dynamic_cast<const AndEffect*>(action.effect_) == nullptr ) {
             AndEffect *new_effect = new AndEffect;
-            if( action.effect_ != 0 ) new_effect->push_back(action.effect_);
+            if( action.effect_ != nullptr ) new_effect->push_back(action.effect_);
             action.effect_ = new_effect;
         }
         AndEffect &effect = *const_cast<AndEffect*>(static_cast<const AndEffect*>(action.effect_));
@@ -2835,27 +2835,27 @@ void PDDL_Base::lw1_calculate_post_condition(const Condition *precondition, cons
     unsigned_atom_set condition;
 
     // calculate literals in precondition
-    if( dynamic_cast<const And*>(precondition) != 0 ) {
+    if( dynamic_cast<const And*>(precondition) != nullptr ) {
         const And &and_precondition = *static_cast<const And*>(precondition);
         for( size_t k = 0; k < and_precondition.size(); ++k ) {
-            assert(dynamic_cast<const Literal*>(and_precondition[k]) != 0);
+            assert(dynamic_cast<const Literal*>(and_precondition[k]) != nullptr);
             condition.insert(*static_cast<const Literal*>(and_precondition[k]));
         }
-    } else if( dynamic_cast<const Literal*>(precondition) != 0 ) {
+    } else if( dynamic_cast<const Literal*>(precondition) != nullptr ) {
         condition.insert(*static_cast<const Literal*>(precondition));
     }
 
     // calculate post condition (this works because sets are unsigned)
-    if( dynamic_cast<const AndEffect*>(effect) != 0 ) {
+    if( dynamic_cast<const AndEffect*>(effect) != nullptr ) {
         const AndEffect &and_effect = *static_cast<const AndEffect*>(effect);
         for( size_t k = 0; k < and_effect.size(); ++k ) {
-            if( dynamic_cast<const AtomicEffect*>(and_effect[k]) != 0 ) {
+            if( dynamic_cast<const AtomicEffect*>(and_effect[k]) != nullptr ) {
                 const AtomicEffect &effect = *static_cast<const AtomicEffect*>(and_effect[k]);
                 condition.erase(effect);
                 condition.insert(effect);
             }
         }
-    } else if( dynamic_cast<const AtomicEffect*>(effect) != 0 ) {
+    } else if( dynamic_cast<const AtomicEffect*>(effect) != nullptr ) {
         condition.erase(*static_cast<const AtomicEffect*>(effect));
         condition.insert(*static_cast<const AtomicEffect*>(effect));
     }
@@ -2895,14 +2895,14 @@ void PDDL_Base::lw1_simplify_post_condition(signed_atom_set &post_condition) con
 
 bool PDDL_Base::lw1_is_literal_implied(const Atom &literal, const Condition &condition, bool complement_literal) const {
     vector<const Atom*> condition_vector;
-    assert((dynamic_cast<const Literal*>(&condition) != 0) || (dynamic_cast<const And*>(&condition) != 0));
-    if( dynamic_cast<const Literal*>(&condition) != 0 ) {
+    assert((dynamic_cast<const Literal*>(&condition) != nullptr) || (dynamic_cast<const And*>(&condition) != nullptr));
+    if( dynamic_cast<const Literal*>(&condition) != nullptr ) {
         condition_vector.push_back(static_cast<const Literal*>(&condition));
     } else {
         const And &and_condition = *static_cast<const And*>(&condition);
         condition_vector.reserve(and_condition.size());
         for( size_t k = 0; k < and_condition.size(); ++k ) {
-            assert(dynamic_cast<const Literal*>(and_condition[k]) != 0);
+            assert(dynamic_cast<const Literal*>(and_condition[k]) != nullptr);
             condition_vector.push_back(static_cast<const Literal*>(and_condition[k]));
         }
     }
@@ -2978,12 +2978,12 @@ bool PDDL_Base::lw1_test_on_actions_for_static_observable(const signed_atom_set 
         const Action &action = *dom_actions_[k];
 
         unsigned_atom_set sensed_atoms;
-        if( action.sensing_ != 0 ) action.sensing_->extract_atoms(sensed_atoms, true);
+        if( action.sensing_ != nullptr ) action.sensing_->extract_atoms(sensed_atoms, true);
         bool action_senses_atom = sensed_atoms.find(atom) != sensed_atoms.end();
 
         bool action_makes_condition_true = false;
         //signed_atom_set precondition, effect;
-        if( action.precondition_ != 0 ) {
+        if( action.precondition_ != nullptr ) {
             bool condition_is_inconsistent_with_precondition = false;
             for( signed_atom_set::const_iterator it = condition.begin(); it != condition.end(); ++it ) {
                 if( lw1_is_literal_implied(*it, *action.precondition_, true) ) {
@@ -3004,18 +3004,18 @@ bool PDDL_Base::lw1_test_on_actions_for_static_observable(const signed_atom_set 
                     bool implied_by_precondition = lw1_is_literal_implied(literal, *action.precondition_);
                     bool removed_by_effect = false;
                     bool added_by_effect = false;
-                    if( action.effect_ != 0 ) {
-                        if( dynamic_cast<const AndEffect*>(action.effect_) != 0 ) {
+                    if( action.effect_ != nullptr ) {
+                        if( dynamic_cast<const AndEffect*>(action.effect_) != nullptr ) {
                             const AndEffect &and_effect = *static_cast<const AndEffect*>(action.effect_);
                             for( size_t i = 0; i < and_effect.size(); ++i ) {
-                                if( dynamic_cast<const AtomicEffect*>(and_effect[i]) != 0 ) {
+                                if( dynamic_cast<const AtomicEffect*>(and_effect[i]) != nullptr ) {
                                     const Atom &effect = *static_cast<const AtomicEffect*>(and_effect[i]);
                                     if( effect == literal ) added_by_effect = true;
                                     if( effect == negated_literal ) removed_by_effect = true;
                                     if( added_by_effect || removed_by_effect ) break;
                                 }
                             }
-                        } else if( dynamic_cast<const AtomicEffect*>(action.effect_) != 0 ) {
+                        } else if( dynamic_cast<const AtomicEffect*>(action.effect_) != nullptr ) {
                             const Atom &effect = *static_cast<const AtomicEffect*>(action.effect_);
                             if( effect == literal ) added_by_effect = true;
                             if( effect == negated_literal ) removed_by_effect = true;
@@ -3075,7 +3075,7 @@ void PDDL_Base::lw1_compile_static_observable(const Atom &atom) { // CHECK: comp
     vector<const SensingModelForObservableVariable*> extracted_sensing_models;
     for( size_t k = 0; k < dom_actions_.size(); ++k ) {
         const Action &action = *dom_actions_[k];
-        if( action.sensing_ != 0 ) {
+        if( action.sensing_ != nullptr ) {
             action.sensing_->extract_sensing_model_for_atom(atom, extracted_sensing_models);
             action.sensing_->extract_sensing_model_for_atom(negated_atom, extracted_sensing_models);
         }
@@ -3111,15 +3111,15 @@ void PDDL_Base::lw1_compile_static_observable(const Atom &atom) { // CHECK: comp
         if( !sensing_model.literal_->negated_ ) {
             const Literal &literal = *sensing_model.literal_;
             const Condition *dnf = sensing_model.dnf_;
-            if( dynamic_cast<const Or*>(dnf) != 0 ) {
+            if( dynamic_cast<const Or*>(dnf) != nullptr ) {
                 const Or *disjunction = static_cast<const Or*>(dnf);
                 for( size_t j = 0; j < disjunction->size(); ++j ) {
                     const Condition *disjunct = (*disjunction)[j];
                     lw1_add_axiom_for_static_observable(literal, *disjunct);
                 }
-            } else if( dynamic_cast<const And*>(dnf) != 0 ) {
+            } else if( dynamic_cast<const And*>(dnf) != nullptr ) {
                 lw1_add_axiom_for_static_observable(literal, *dnf);
-            } else if( dynamic_cast<const Literal*>(dnf) != 0 ) {
+            } else if( dynamic_cast<const Literal*>(dnf) != nullptr ) {
                 lw1_add_axiom_for_static_observable(literal, *dnf);
             } else {
                 cout << Utils::error() << "expecting dnf; got '" << *dnf << "'" << endl;
@@ -3144,11 +3144,11 @@ void PDDL_Base::lw1_compile_static_observable(const Atom &atom) { // CHECK: comp
     vector<const Sensing*> reduced_sensing_for_actions(dom_actions_.size(), 0);
     for( size_t k = 0; k < dom_actions_.size(); ++k ) {
         Action &action = *dom_actions_[k];
-        if( action.sensing_ != 0 ) {
+        if( action.sensing_ != nullptr ) {
             const Sensing *reduced_sensing = action.sensing_->reduce(atoms_to_remove);
-            if( (reduced_sensing == 0) || (reduced_sensing->to_string() != action.sensing_->to_string()) ) {
+            if( (reduced_sensing == nullptr) || (reduced_sensing->to_string() != action.sensing_->to_string()) ) {
                 cout << "AFFECTED: sensing=" << *action.sensing_ << flush;
-                if( reduced_sensing != 0 ) cout << ", reduced=" << *reduced_sensing << endl;
+                if( reduced_sensing != nullptr ) cout << ", reduced=" << *reduced_sensing << endl;
                 affected_action[k] = true;
                 reduced_sensing_for_actions[k] = reduced_sensing;
                 signed_atom_set post_condition;
@@ -3180,10 +3180,10 @@ void PDDL_Base::lw1_compile_static_observable(const Atom &atom) { // CHECK: comp
             Action &action = *dom_actions_[k];
             const Sensing *reduced_sensing = reduced_sensing_for_actions[k];
             if( post_conditions.empty() ) {
-                if( reduced_sensing == 0 ) {
+                if( reduced_sensing == nullptr ) {
                     reduced_sensing = AtomicEffect(atom).copy();
                 } else {
-                    if( dynamic_cast<AndEffect*>(reduced_sensing) == 0 ) {
+                    if( dynamic_cast<AndEffect*>(reduced_sensing) == nullptr ) {
                         AndEffect *and_effect = new AndEffect;
                         and_effect->push_back(reduced_sensing);
                         reduced_sensing = and_effect;
@@ -3191,10 +3191,10 @@ void PDDL_Base::lw1_compile_static_observable(const Atom &atom) { // CHECK: comp
                     static_cast<AndEffect*>(reduced_sensing)->push_back(AtomicEffect(atom).copy());
                 }
             }
-            assert(action.sensing_ != 0);
+            assert(action.sensing_ != nullptr);
             delete action.sensing_;
             action.sensing_ = reduced_model;
-            reduced_sensing_for_actions[k] = 0;
+            reduced_sensing_for_actions[k] = nullptr;
         }
     }
 
@@ -3245,7 +3245,7 @@ void PDDL_Base::lw1_complete_effect_for_actions() {
 }
 
 const PDDL_Base::AndEffect* PDDL_Base::lw1_complete_effect(Effect *effect) const {
-    if( effect == 0 ) return 0;
+    if( effect == nullptr ) return nullptr;
 
     AndEffect *canonical = const_cast<AndEffect*>(lw1_canonize_effect(effect));
 
@@ -3260,21 +3260,21 @@ const PDDL_Base::AndEffect* PDDL_Base::lw1_complete_effect(Effect *effect) const
 
 const PDDL_Base::AndEffect* PDDL_Base::lw1_canonize_effect(Effect *effect) const {
     // put effect into canonical form (and ... )
-    AndEffect *canonical = 0;
-    if( (dynamic_cast<AtomicEffect*>(effect) != 0) || (dynamic_cast<ConditionalEffect*>(effect) != 0) ) {
+    AndEffect *canonical = nullptr;
+    if( (dynamic_cast<AtomicEffect*>(effect) != nullptr) || (dynamic_cast<ConditionalEffect*>(effect) != nullptr) ) {
         canonical = new AndEffect;
         canonical->push_back(effect);
     } else {
-        assert(dynamic_cast<AndEffect*>(effect) != 0);
+        assert(dynamic_cast<AndEffect*>(effect) != nullptr);
         canonical = static_cast<AndEffect*>(effect);
     }
 
     // canonize conditional effects as (when (...) (and ...))
     for( size_t k = 0; k < canonical->size(); ++k ) {
         const Effect *eff = (*canonical)[k];
-        if( dynamic_cast<const ConditionalEffect*>(eff) != 0 ) {
+        if( dynamic_cast<const ConditionalEffect*>(eff) != nullptr ) {
             const ConditionalEffect *ceff = static_cast<const ConditionalEffect*>(eff);
-            if( dynamic_cast<const AndEffect*>(ceff->effect_) == 0 ) {
+            if( dynamic_cast<const AndEffect*>(ceff->effect_) == nullptr ) {
                 AndEffect *and_effect = new AndEffect;
                 and_effect->push_back(ceff->effect_);
                 const_cast<ConditionalEffect*>(ceff)->effect_ = and_effect;
@@ -3287,7 +3287,7 @@ const PDDL_Base::AndEffect* PDDL_Base::lw1_canonize_effect(Effect *effect) const
 void PDDL_Base::lw1_complete_effect_with_variable(AndEffect *effect, const Variable &var) const {
     vector<Effect*> additions;
     for( size_t k = 0; k < effect->size(); ++k ) {
-        if( dynamic_cast<const AtomicEffect*>((*effect)[k]) != 0 ) {
+        if( dynamic_cast<const AtomicEffect*>((*effect)[k]) != nullptr ) {
             const AtomicEffect &literal = *static_cast<const AtomicEffect*>((*effect)[k]);
             if( !literal.negated_ && (var.grounded_domain_.find(literal) != var.grounded_domain_.end()) ) {
                 for( unsigned_atom_set::const_iterator it = var.grounded_domain_.begin(); it != var.grounded_domain_.end(); ++it ) {
@@ -3296,9 +3296,9 @@ void PDDL_Base::lw1_complete_effect_with_variable(AndEffect *effect, const Varia
                 }
             }
         } else {
-            assert(dynamic_cast<const ConditionalEffect*>((*effect)[k]) != 0);
+            assert(dynamic_cast<const ConditionalEffect*>((*effect)[k]) != nullptr);
             const ConditionalEffect *ceff = static_cast<const ConditionalEffect*>((*effect)[k]);
-            assert(dynamic_cast<const AndEffect*>(ceff->effect_) != 0);
+            assert(dynamic_cast<const AndEffect*>(ceff->effect_) != nullptr);
             lw1_complete_effect_with_variable(const_cast<AndEffect*>(static_cast<const AndEffect*>(ceff->effect_)), var);
         }
     }
@@ -3362,7 +3362,7 @@ const PDDL_Base::Atom* PDDL_Base::lw1_fetch_enabler_for_sensing(const Atom &atom
 void PDDL_Base::lw1_cleanup() {
 #ifndef SMART
     delete normal_execution_;
-    normal_execution_ = 0;
+    normal_execution_ = nullptr;
 
     for( map<signed_atom_set, const Atom*>::const_iterator it = atoms_for_terms_for_type3_sensing_drules_.begin(); it != atoms_for_terms_for_type3_sensing_drules_.end(); ++it )
         delete it->second;
@@ -3485,10 +3485,10 @@ void PDDL_Base::emit_instance(Instance &ins) const {
     for( size_t k = 0; k < dom_hidden_.size(); ++k ) {
         for( size_t j = 0; j < dom_hidden_[k].size(); ++j ) {
 #ifdef SMART
-            assert(dynamic_cast<const InitLiteral*>(dom_hidden_[k][j].get()) != 0);
+            assert(dynamic_cast<const InitLiteral*>(dom_hidden_[k][j].get()) != nullptr);
             static_cast<const InitLiteral*>(dom_hidden_[k][j].get())->emit(ins, ins.hidden_[k]);
 #else
-            assert(dynamic_cast<const InitLiteral*>(dom_hidden_[k][j]) != 0);
+            assert(dynamic_cast<const InitLiteral*>(dom_hidden_[k][j]) != nullptr);
             static_cast<const InitLiteral*>(dom_hidden_[k][j])->emit(ins, ins.hidden_[k]);
 #endif
         }
@@ -3501,10 +3501,10 @@ void PDDL_Base::emit_instance(Instance &ins) const {
         for( size_t k = 0; k < dom_explicit_initial_states_.size(); ++k ) {
             for( size_t j = 0; j < dom_explicit_initial_states_[k].size(); ++j ) {
 #ifdef SMART
-                assert(dynamic_cast<const InitLiteral*>(dom_explicit_initial_states_[k][j].get()) != 0);
+                assert(dynamic_cast<const InitLiteral*>(dom_explicit_initial_states_[k][j].get()) != nullptr);
                 static_cast<const InitLiteral*>(dom_explicit_initial_states_[k][j].get())->emit(ins, ins.explicit_initial_states_[k]);
 #else
-                assert(dynamic_cast<const InitLiteral*>(dom_explicit_initial_states_[k][j]) != 0);
+                assert(dynamic_cast<const InitLiteral*>(dom_explicit_initial_states_[k][j]) != nullptr);
                 static_cast<const InitLiteral*>(dom_explicit_initial_states_[k][j])->emit(ins, ins.explicit_initial_states_[k]);
 #endif
             }
@@ -3512,7 +3512,7 @@ void PDDL_Base::emit_instance(Instance &ins) const {
     }
 
     // emit goal situation
-    if( dom_goal_ != 0 )
+    if( dom_goal_ != nullptr )
         dom_goal_->emit(ins, ins.goal_literals_);
 
     // emit actions
@@ -3566,7 +3566,7 @@ PDDL_Base::Symbol* PDDL_Base::Symbol::clone() const {
 
 void PDDL_Base::TypeSymbol::add_element(Symbol *e) {
     elements_.push_back(e);
-    if( sym_type_ != 0 ) static_cast<TypeSymbol*>(sym_type_)->add_element(e);
+    if( sym_type_ != nullptr ) static_cast<TypeSymbol*>(sym_type_)->add_element(e);
 }
 
 string PDDL_Base::TypeSymbol::to_string() const {
@@ -3597,7 +3597,7 @@ PDDL_Base::Symbol* PDDL_Base::VariableSymbol::clone() const {
 
 string PDDL_Base::VariableSymbol::to_string() const {
     string str;
-    if( value_ == 0 ) {
+    if( value_ == nullptr ) {
         str += print_name_;
         if( sym_type_ ) str += " - " + sym_type_->to_string();
     } else {
@@ -3624,7 +3624,7 @@ string PDDL_Base::PredicateSymbol::to_string() const {
 void PDDL_Base::Schema::enumerate(bool only_count) const {
     count_ = 0;
     for( size_t k = 0; k < param_.size(); ++k )
-        param_[k]->value_ = 0;
+        param_[k]->value_ = nullptr;
     rec_enumerate(0, only_count);
 }
 
@@ -3636,7 +3636,7 @@ void PDDL_Base::Schema::rec_enumerate(size_t p, bool only_count) const {
             // TODO: incremental pruning
             rec_enumerate(p+1, only_count);
         }
-        param_[p]->value_ = 0;
+        param_[p]->value_ = nullptr;
     } else {
         if( only_count )
             ++count_;
@@ -3711,7 +3711,7 @@ Instance::Atom* PDDL_Base::Atom::find_prop(Instance &ins, bool negated, bool cre
             r = r->insert_next(param_[k]);
     }
     if( !r->val ) {
-        if( !create ) return 0;
+        if( !create ) return nullptr;
         PDDL_Name a_name(pred_, negated);
         for( size_t k = 0; k < param_.size(); ++k ) {
             if( param_[k]->sym_class_ == sym_variable )
@@ -3732,7 +3732,7 @@ PDDL_Base::Atom* PDDL_Base::Atom::ground(bool clone_variables) const {
         assert((c == sym_object) || (c == sym_variable));
         if( c == sym_variable ) {
             const VariableSymbol *var = static_cast<const VariableSymbol*>(param_[k]);
-            if( var->value_ != 0 )
+            if( var->value_ != nullptr )
                 result->param_[k] = var->value_;
             else if( clone_variables )
                 result->param_[k] = new VariableSymbol(var->print_name_);
@@ -3760,7 +3760,7 @@ bool PDDL_Base::Atom::has_free_variables(const var_symbol_vec &param) const {
 bool PDDL_Base::Atom::is_fully_instantiated() const {
     for( size_t k = 0; k < param_.size(); ++k ) {
         if( (param_[k]->sym_class_ == sym_variable) &&
-            (static_cast<VariableSymbol*>(param_[k])->value_ == 0) ) {
+            (static_cast<VariableSymbol*>(param_[k])->value_ == nullptr) ) {
             return false;
         }
     }
@@ -3781,7 +3781,7 @@ string PDDL_Base::Atom::to_string(bool extra_neg, bool mangled) const {
     if( extra_neg ) str += beg + "not" + sep;
     str += beg + pred_->print_name_;
     for( size_t k = 0; k < param_.size(); ++k ) {
-        if( (param_[k]->sym_class_ == sym_variable) && (static_cast<VariableSymbol*>(param_[k])->value_ != 0) )
+        if( (param_[k]->sym_class_ == sym_variable) && (static_cast<VariableSymbol*>(param_[k])->value_ != nullptr) )
             str += sep + static_cast<VariableSymbol*>(param_[k])->value_->to_string();
         else
             str += sep + param_[k]->to_string();
@@ -3842,7 +3842,7 @@ void PDDL_Base::Literal::extract_atoms(unsigned_atom_set &atoms) const {
 
 bool PDDL_Base::Literal::is_term(bool positive, const PDDL_Base *base) const {
     if( positive && negated_ ) {
-        if( base == 0 ) {
+        if( base == nullptr ) {
             return false;
         } else {
             // if there is a non-binary var such that negated literal (atom) is value, return false
@@ -3864,9 +3864,9 @@ PDDL_Base::Condition* PDDL_Base::Literal::as_dnf() const {
 }
 
 PDDL_Base::Condition* PDDL_Base::Literal::copy(bool clone_variables, bool negate, bool replace_static_values) const {
-    Condition *result = 0;
+    Condition *result = nullptr;
     Atom *atom = Atom::ground(false);
-    if( replace_static_values && pred_->strongly_static_ && (pddl_base_ != 0) && atom->is_fully_instantiated() ) {
+    if( replace_static_values && pred_->strongly_static_ && (pddl_base_ != nullptr) && atom->is_fully_instantiated() ) {
         bool value = pddl_base_->truth_value_in_initial_situation(*atom);
         result = new Constant(negate ? !value : value);
     } else {
@@ -3894,13 +3894,13 @@ void PDDL_Base::EQ::remap_parameters(const var_symbol_vec &old_param, const var_
 PDDL_Base::Condition* PDDL_Base::EQ::ground(bool clone_variables, bool negate, bool replace_static_values) const {
     EQ *result = new EQ(first, second, negate ? !negated_ : negated_);
     if( first->sym_class_ == sym_variable ) {
-        if( static_cast<const VariableSymbol*>(first)->value_ != 0 )
+        if( static_cast<const VariableSymbol*>(first)->value_ != nullptr )
             result->first = static_cast<const VariableSymbol*>(first)->value_;
         else if( clone_variables )
             result->first = new VariableSymbol(first->print_name_);
     }
     if( second->sym_class_ == sym_variable ) {
-        if( static_cast<const VariableSymbol*>(second)->value_ != 0 )
+        if( static_cast<const VariableSymbol*>(second)->value_ != nullptr )
             result->second = static_cast<const VariableSymbol*>(second)->value_;
         else if( clone_variables )
             result->second = new VariableSymbol(second->print_name_);
@@ -3965,11 +3965,11 @@ void PDDL_Base::And::emit(Instance &ins, index_set &condition) const {
 }
 
 PDDL_Base::Condition* PDDL_Base::And::ground(bool clone_variables, bool negate, bool replace_static_values) const {
-    Condition *result = 0;
+    Condition *result = nullptr;
     condition_vec conditions;
     for( size_t k = 0; k < size(); ++k ) {
         Condition *item = (*this)[k]->ground(clone_variables, negate, replace_static_values);
-        if( dynamic_cast<Constant*>(item) != 0 ) {
+        if( dynamic_cast<Constant*>(item) != nullptr ) {
             Constant &constant = *static_cast<Constant*>(item);
             if( (!negate && constant.value_) || (negate && !constant.value_) ) {
                 // item is neutral constant
@@ -3981,13 +3981,13 @@ PDDL_Base::Condition* PDDL_Base::And::ground(bool clone_variables, bool negate, 
                 result = new Constant(negate ? true : false);
                 break;
             }
-        } else if( !negate && (dynamic_cast<And*>(item) != 0) ) {
+        } else if( !negate && (dynamic_cast<And*>(item) != nullptr) ) {
             And &item_list = *static_cast<And*>(item);
             for( size_t i = 0; i < item_list.size(); ++i)
                 conditions.push_back(item_list[i]);
             item_list.clear();
             delete item;
-        } else if( negate && (dynamic_cast<Or*>(item) != 0) ) {
+        } else if( negate && (dynamic_cast<Or*>(item) != nullptr) ) {
             Or &item_list = *static_cast<Or*>(item);
             for( size_t i = 0; i < item_list.size(); ++i)
                 conditions.push_back(item_list[i]);
@@ -3999,7 +3999,7 @@ PDDL_Base::Condition* PDDL_Base::And::ground(bool clone_variables, bool negate, 
     }
 
     // check if result can be reduced to constant or single condition
-    if( result == 0 ) {
+    if( result == nullptr ) {
         if( conditions.empty() ) {
             result = new Constant(negate ? false : true);
         } else if( conditions.size() == 1 ) {
@@ -4027,7 +4027,7 @@ void PDDL_Base::And::extract_atoms(unsigned_atom_set &atoms) const {
 bool PDDL_Base::And::is_term(bool positive, const PDDL_Base *base) const {
     if( size() <= 1 ) return false;
     for( size_t k = 0; k < size(); ++k ) {
-        if( dynamic_cast<const Literal*>((*this)[k]) == 0 )
+        if( dynamic_cast<const Literal*>((*this)[k]) == nullptr )
             return false;
         else if( !(*this)[k]->is_term(positive, base) )
             return false;
@@ -4040,27 +4040,27 @@ PDDL_Base::Condition* PDDL_Base::And::as_dnf() const {
     if( size() > 1 ) {
         for( size_t k = 1; k < size(); ++k ) {
             Condition *sub = (*this)[k]->as_dnf();
-            Condition *new_dnf = 0;
-            if( dynamic_cast<Literal*>(dnf) != 0 ) {
-                if( dynamic_cast<Literal*>(sub) != 0 )
+            Condition *new_dnf = nullptr;
+            if( dynamic_cast<Literal*>(dnf) != nullptr ) {
+                if( dynamic_cast<Literal*>(sub) != nullptr )
                     new_dnf = distribute_and(*static_cast<Literal*>(dnf), *static_cast<Literal*>(sub));
-                else if( dynamic_cast<And*>(sub) != 0 )
+                else if( dynamic_cast<And*>(sub) != nullptr )
                     new_dnf = distribute_and(*static_cast<And*>(sub), *static_cast<Literal*>(dnf));
-                else if( dynamic_cast<Or*>(sub) != 0 )
+                else if( dynamic_cast<Or*>(sub) != nullptr )
                     new_dnf = distribute_and(*static_cast<Or*>(sub), *static_cast<Literal*>(dnf));
-            } else if( dynamic_cast<And*>(dnf) != 0 ) {
-                if( dynamic_cast<Literal*>(sub) != 0 )
+            } else if( dynamic_cast<And*>(dnf) != nullptr ) {
+                if( dynamic_cast<Literal*>(sub) != nullptr )
                     new_dnf = distribute_and(*static_cast<And*>(dnf), *static_cast<Literal*>(sub));
-                else if( dynamic_cast<And*>(sub) != 0 )
+                else if( dynamic_cast<And*>(sub) != nullptr )
                     new_dnf = distribute_and(*static_cast<And*>(dnf), *static_cast<And*>(sub));
-                else if( dynamic_cast<Or*>(sub) != 0 )
+                else if( dynamic_cast<Or*>(sub) != nullptr )
                     new_dnf = distribute_and(*static_cast<Or*>(sub), *static_cast<And*>(dnf));
-            } else if( dynamic_cast<Or*>(dnf) != 0 ) {
-                if( dynamic_cast<Literal*>(sub) != 0 )
+            } else if( dynamic_cast<Or*>(dnf) != nullptr ) {
+                if( dynamic_cast<Literal*>(sub) != nullptr )
                     new_dnf = distribute_and(*static_cast<Or*>(dnf), *static_cast<Literal*>(sub));
-                else if( dynamic_cast<And*>(sub) != 0 )
+                else if( dynamic_cast<And*>(sub) != nullptr )
                     new_dnf = distribute_and(*static_cast<Or*>(dnf), *static_cast<And*>(sub));
-                else if( dynamic_cast<Or*>(sub) != 0 )
+                else if( dynamic_cast<Or*>(sub) != nullptr )
                     new_dnf = distribute_and(*static_cast<Or*>(dnf), *static_cast<Or*>(sub));
             }
             delete dnf;
@@ -4089,11 +4089,11 @@ void PDDL_Base::Or::emit(Instance &ins, index_set &condition) const {
 }
 
 PDDL_Base::Condition* PDDL_Base::Or::ground(bool clone_variables, bool negate, bool replace_static_values) const {
-    Condition *result = 0;
+    Condition *result = nullptr;
     condition_vec conditions;
     for( size_t k = 0; k < size(); ++k ) {
         Condition *item = (*this)[k]->ground(false, negate, replace_static_values);
-        if( dynamic_cast<Constant*>(item) != 0 ) {
+        if( dynamic_cast<Constant*>(item) != nullptr ) {
             Constant &constant = *static_cast<Constant*>(item);
             if( (!negate && !constant.value_) || (negate && constant.value_) ) {
                 // item is neutral constant
@@ -4105,13 +4105,13 @@ PDDL_Base::Condition* PDDL_Base::Or::ground(bool clone_variables, bool negate, b
                 result = new Constant(!negate ? true : false);
                 break;
             }
-        } else if( !negate && (dynamic_cast<Or*>(item) != 0) ) {
+        } else if( !negate && (dynamic_cast<Or*>(item) != nullptr) ) {
             Or &item_list = *static_cast<Or*>(item);
             for( size_t i = 0; i < item_list.size(); ++i)
                 conditions.push_back(item_list[i]);
             item_list.clear();
             delete item;
-        } else if( negate && (dynamic_cast<And*>(item) != 0) ) {
+        } else if( negate && (dynamic_cast<And*>(item) != nullptr) ) {
             And &item_list = *static_cast<And*>(item);
             for( size_t i = 0; i < item_list.size(); ++i)
                 conditions.push_back(item_list[i]);
@@ -4123,7 +4123,7 @@ PDDL_Base::Condition* PDDL_Base::Or::ground(bool clone_variables, bool negate, b
     }
 
     // check if result can be reduced to constant or single condition
-    if( result == 0 ) {
+    if( result == nullptr ) {
         if( conditions.empty() ) {
             return new Constant(negate ? true : false);
         } else if( conditions.size() == 1 ) {
@@ -4162,27 +4162,27 @@ PDDL_Base::Condition* PDDL_Base::Or::as_dnf() const {
     if( size() > 1 ) {
         for( size_t k = 1; k < size(); ++k ) {
             Condition *sub = (*this)[k]->as_dnf();
-            Condition *new_dnf = 0;
-            if( dynamic_cast<Literal*>(dnf) != 0 ) {
-                if( dynamic_cast<Literal*>(sub) != 0 )
+            Condition *new_dnf = nullptr;
+            if( dynamic_cast<Literal*>(dnf) != nullptr ) {
+                if( dynamic_cast<Literal*>(sub) != nullptr )
                     new_dnf = distribute_or(*static_cast<Literal*>(dnf), *static_cast<Literal*>(sub));
-                else if( dynamic_cast<And*>(sub) != 0 )
+                else if( dynamic_cast<And*>(sub) != nullptr )
                     new_dnf = distribute_or(*static_cast<And*>(sub), *static_cast<Literal*>(dnf));
-                else if( dynamic_cast<Or*>(sub) != 0 )
+                else if( dynamic_cast<Or*>(sub) != nullptr )
                     new_dnf = distribute_or(*static_cast<Or*>(sub), *static_cast<Literal*>(dnf));
-            } else if( dynamic_cast<And*>(dnf) != 0 ) {
-                if( dynamic_cast<Literal*>(sub) != 0 )
+            } else if( dynamic_cast<And*>(dnf) != nullptr ) {
+                if( dynamic_cast<Literal*>(sub) != nullptr )
                     new_dnf = distribute_or(*static_cast<And*>(dnf), *static_cast<Literal*>(sub));
-                else if( dynamic_cast<And*>(sub) != 0 )
+                else if( dynamic_cast<And*>(sub) != nullptr )
                     new_dnf = distribute_or(*static_cast<And*>(dnf), *static_cast<And*>(sub));
-                else if( dynamic_cast<Or*>(sub) != 0 )
+                else if( dynamic_cast<Or*>(sub) != nullptr )
                     new_dnf = distribute_or(*static_cast<Or*>(sub), *static_cast<And*>(dnf));
-            } else if( dynamic_cast<Or*>(dnf) != 0 ) {
-                if( dynamic_cast<Literal*>(sub) != 0 )
+            } else if( dynamic_cast<Or*>(dnf) != nullptr ) {
+                if( dynamic_cast<Literal*>(sub) != nullptr )
                     new_dnf = distribute_or(*static_cast<Or*>(dnf), *static_cast<Literal*>(sub));
-                else if( dynamic_cast<And*>(sub) != 0 )
+                else if( dynamic_cast<And*>(sub) != nullptr )
                     new_dnf = distribute_or(*static_cast<Or*>(dnf), *static_cast<And*>(sub));
-                else if( dynamic_cast<Or*>(sub) != 0 )
+                else if( dynamic_cast<Or*>(sub) != nullptr )
                     new_dnf = distribute_or(*static_cast<Or*>(dnf), *static_cast<Or*>(sub));
             }
             delete dnf;
@@ -4231,7 +4231,7 @@ PDDL_Base::Condition* PDDL_Base::ForallCondition::ground(bool clone_variables, b
     assert(!negate || dynamic_cast<Or*>(result));
 
     // check if result can be reduced to a constant or single condition
-    if( dynamic_cast<Constant*>(result) != 0 ) {
+    if( dynamic_cast<Constant*>(result) != nullptr ) {
         assert(negate || !static_cast<Constant*>(result)->value_);
         assert(!negate || static_cast<Constant*>(result)->value_);
         return result;
@@ -4268,13 +4268,13 @@ void PDDL_Base::ForallCondition::process_instance() const {
     assert(!negate_stack_.empty() && !clone_variables_stack_.empty() && !result_stack_.empty());
     bool negate = negate_stack_.back();
     bool clone_variables = clone_variables_stack_.back();
-    if( dynamic_cast<Constant*>(result_stack_.back()) != 0 ) {
+    if( dynamic_cast<Constant*>(result_stack_.back()) != nullptr ) {
         return; // value is already reduced to absorbing constant
     } else if( !negate ) {
-        assert(dynamic_cast<And*>(result_stack_.back()) != 0);
+        assert(dynamic_cast<And*>(result_stack_.back()) != nullptr);
         And &and_result = *static_cast<And*>(result_stack_.back());
         Condition *item = condition_->ground(clone_variables, false);
-        if( dynamic_cast<Constant*>(item) != 0 ) {
+        if( dynamic_cast<Constant*>(item) != nullptr ) {
             bool value = static_cast<Constant*>(item)->value_;
             delete item;
             if( !value ) {
@@ -4282,7 +4282,7 @@ void PDDL_Base::ForallCondition::process_instance() const {
                 result_stack_.pop_back();
                 result_stack_.push_back(new Constant(false));
             }
-        } else if( dynamic_cast<And*>(item) != 0 ) {
+        } else if( dynamic_cast<And*>(item) != nullptr ) {
             And &item_list = *static_cast<And*>(item);
             for( size_t i = 0; i < item_list.size(); ++i)
                 and_result.push_back(item_list[i]);
@@ -4292,10 +4292,10 @@ void PDDL_Base::ForallCondition::process_instance() const {
             and_result.push_back(item);
         }
     }  else {
-        assert(dynamic_cast<Or*>(result_stack_.back()) != 0);
+        assert(dynamic_cast<Or*>(result_stack_.back()) != nullptr);
         Or &or_result = *static_cast<Or*>(result_stack_.back());
         Condition *item = condition_->ground(clone_variables, true);
-        if( dynamic_cast<Constant*>(item) != 0 ) {
+        if( dynamic_cast<Constant*>(item) != nullptr ) {
             bool value = static_cast<Constant*>(item)->value_;
             delete item;
             if( value ) {
@@ -4303,7 +4303,7 @@ void PDDL_Base::ForallCondition::process_instance() const {
                 result_stack_.pop_back();
                 result_stack_.push_back(new Constant(true));
             }
-        } else if( dynamic_cast<Or*>(item) != 0 ) {
+        } else if( dynamic_cast<Or*>(item) != nullptr ) {
             Or &item_list = *static_cast<Or*>(item);
             for( size_t i = 0; i < item_list.size(); ++i)
                 or_result.push_back(item_list[i]);
@@ -4370,7 +4370,7 @@ PDDL_Base::Condition* PDDL_Base::ExistsCondition::ground(bool clone_variables, b
     assert(!negate || dynamic_cast<And*>(result));
 
     // check if result can be reduced to a constant or single condition
-    if( dynamic_cast<Constant*>(result) != 0 ) {
+    if( dynamic_cast<Constant*>(result) != nullptr ) {
         assert(negate || !static_cast<Constant*>(result)->value_);
         assert(!negate || static_cast<Constant*>(result)->value_);
         return result;
@@ -4407,13 +4407,13 @@ void PDDL_Base::ExistsCondition::process_instance() const {
     assert(!negate_stack_.empty() && !clone_variables_stack_.empty() && !result_stack_.empty());
     bool negate = negate_stack_.back();
     bool clone_variables = clone_variables_stack_.back();
-    if( dynamic_cast<Constant*>(result_stack_.back()) != 0 ) {
+    if( dynamic_cast<Constant*>(result_stack_.back()) != nullptr ) {
         return; // value is already reduced to absorbing constant
     } else if( !negate ) {
-        assert(dynamic_cast<Or*>(result_stack_.back()) != 0);
+        assert(dynamic_cast<Or*>(result_stack_.back()) != nullptr);
         Or &or_result = *static_cast<Or*>(result_stack_.back());
         Condition *item = condition_->ground(clone_variables, false);
-        if( dynamic_cast<Constant*>(item) != 0 ) {
+        if( dynamic_cast<Constant*>(item) != nullptr ) {
             bool value = static_cast<Constant*>(item)->value_;
             delete item;
             if( value ) {
@@ -4421,7 +4421,7 @@ void PDDL_Base::ExistsCondition::process_instance() const {
                 result_stack_.pop_back();
                 result_stack_.push_back(new Constant(true));
             }
-        } else if( dynamic_cast<Or*>(item) != 0 ) {
+        } else if( dynamic_cast<Or*>(item) != nullptr ) {
             Or &item_list = *static_cast<Or*>(item);
             for( size_t i = 0; i < item_list.size(); ++i)
                 or_result.push_back(item_list[i]);
@@ -4431,10 +4431,10 @@ void PDDL_Base::ExistsCondition::process_instance() const {
             or_result.push_back(item);
         }
     }  else {
-        assert(dynamic_cast<And*>(result_stack_.back()) != 0);
+        assert(dynamic_cast<And*>(result_stack_.back()) != nullptr);
         And &and_result = *static_cast<And*>(result_stack_.back());
         Condition *item = condition_->ground(clone_variables, true);
-        if( dynamic_cast<Constant*>(item) != 0 ) {
+        if( dynamic_cast<Constant*>(item) != nullptr ) {
             bool value = static_cast<Constant*>(item)->value_;
             delete item;
             if( !value ) {
@@ -4442,7 +4442,7 @@ void PDDL_Base::ExistsCondition::process_instance() const {
                 result_stack_.pop_back();
                 result_stack_.push_back(new Constant(false));
             }
-        } else if( dynamic_cast<And*>(item) != 0 ) {
+        } else if( dynamic_cast<And*>(item) != nullptr ) {
             And &item_list = *static_cast<And*>(item);
             for( size_t i = 0; i < item_list.size(); ++i)
                 and_result.push_back(item_list[i]);
@@ -4523,9 +4523,9 @@ PDDL_Base::Effect* PDDL_Base::AndEffect::ground(bool clone_variables, bool repla
     effect_vec effects;
     for( size_t k = 0; k < size(); ++k ) {
         Effect *item = (*this)[k]->ground(clone_variables, replace_static_values);
-        if( item != 0 ) {
-            assert(dynamic_cast<NullEffect*>(item) == 0);
-            if( dynamic_cast<AndEffect*>(item) != 0 ) {
+        if( item != nullptr ) {
+            assert(dynamic_cast<NullEffect*>(item) == nullptr);
+            if( dynamic_cast<AndEffect*>(item) != nullptr ) {
                 AndEffect &item_list = *static_cast<AndEffect*>(item);
                 for( size_t i = 0; i < item_list.size(); ++i)
                     effects.push_back(item_list[i]);
@@ -4538,7 +4538,7 @@ PDDL_Base::Effect* PDDL_Base::AndEffect::ground(bool clone_variables, bool repla
     }
 
     // check if result can be reduced to null or single effect
-    Effect *result = 0;
+    Effect *result = nullptr;
     if( !effects.empty() ) {
         if( effects.size() == 1 )
             result = const_cast<Effect*>(effects[0]);
@@ -4589,11 +4589,11 @@ void PDDL_Base::ConditionalEffect::emit(Instance &ins, index_set &eff, Instance:
 }
 
 PDDL_Base::Effect* PDDL_Base::ConditionalEffect::ground(bool clone_variables, bool replace_static_values) const {
-    Effect *result = 0;
+    Effect *result = nullptr;
     Effect *grounded_effect = effect_->ground(clone_variables, replace_static_values);
-    if( grounded_effect != 0 ) {
+    if( grounded_effect != nullptr ) {
         Condition *grounded_condition = condition_->ground(clone_variables, false, replace_static_values);
-        if( dynamic_cast<Constant*>(grounded_condition) != 0 ) {
+        if( dynamic_cast<Constant*>(grounded_condition) != nullptr ) {
             bool value = static_cast<Constant*>(grounded_condition)->value_;
             delete grounded_condition;
             if( value )
@@ -4650,7 +4650,7 @@ PDDL_Base::Effect* PDDL_Base::ForallEffect::ground(bool clone_variables, bool re
     // check if result can be reduced to null or single effect
     if( result->empty() ) {
         delete result;
-        return 0;
+        return nullptr;
     } else if( result->size() == 1 ) {
         Effect *single = const_cast<Effect*>((*result)[0]);
         result->clear();
@@ -4662,15 +4662,15 @@ PDDL_Base::Effect* PDDL_Base::ForallEffect::ground(bool clone_variables, bool re
 }
 
 void PDDL_Base::ForallEffect::process_instance() const {
-    Condition *such_that = 0;
-    if( such_that_ != 0 ) such_that = such_that_->ground(false, false, true);
-    if( (such_that_ == 0) || (dynamic_cast<const Constant*>(such_that) != 0) ) {
+    Condition *such_that = nullptr;
+    if( such_that_ != nullptr ) such_that = such_that_->ground(false, false, true);
+    if( (such_that_ == nullptr) || (dynamic_cast<const Constant*>(such_that) != nullptr) ) {
         const Constant *constant = static_cast<const Constant*>(such_that);
-        if( (such_that_ == 0) || constant->value_ ) {
+        if( (such_that_ == nullptr) || constant->value_ ) {
             Effect *item = effect_->ground(clone_variables_stack_.back());
-            if( item != 0 ) {
-                assert(dynamic_cast<NullEffect*>(item) == 0);
-                if( dynamic_cast<AndEffect*>(item) != 0 ) {
+            if( item != nullptr ) {
+                assert(dynamic_cast<NullEffect*>(item) == nullptr);
+                if( dynamic_cast<AndEffect*>(item) != nullptr ) {
                     AndEffect &item_list = *static_cast<AndEffect*>(item);
                     for( size_t i = 0; i < item_list.size(); ++i)
                         result_stack_.back()->push_back(item_list[i]);
@@ -4681,11 +4681,11 @@ void PDDL_Base::ForallEffect::process_instance() const {
                 }
             }
         }
-    } else if( such_that_ != 0 ) {
+    } else if( such_that_ != nullptr ) {
         cout << Utils::error() << "condition '" << *such_that_
              << "' in such-that statement must ground to constant value" << endl;
     }
-    if( such_that != 0 ) delete such_that;
+    if( such_that != nullptr ) delete such_that;
 }
 
 bool PDDL_Base::ForallEffect::has_free_variables(const var_symbol_vec &param, bool dont_extend) const {
@@ -4708,7 +4708,7 @@ string PDDL_Base::ForallEffect::to_string() const {
     for( size_t k = 0; k < param_.size(); ++k )
         str += (k > 0 ? " " : "") + param_[k]->to_string();
     str += ")";
-    if( such_that_ != 0 ) {
+    if( such_that_ != nullptr ) {
         str += " such-that ";
         str += such_that_->to_string();
     }
@@ -4750,18 +4750,18 @@ void PDDL_Base::SensingModelForStateVariable::finish_grounding(PDDL_Base *base) 
 }
 
 bool PDDL_Base::SensingModelForStateVariable::verify(const PDDL_Base *base) const {
-    return variable_ != 0;
+    return variable_ != nullptr;
 }
 
 PDDL_Base::SensingModel* PDDL_Base::SensingModelForStateVariable::reduce(const unsigned_atom_set &atoms_to_remove) const {
-    return 0;
+    return nullptr;
 }
 
 void PDDL_Base::SensingModelForStateVariable::extract_atoms(unsigned_atom_set &atoms, bool only_sensed_atoms, bool only_affected_atoms) const {
     // \emptyset = affected \subset sensed = all = { all atoms in variable's domain }
     if( !only_affected_atoms ) {
         // include all atoms in variable domains
-        if( variable_ == 0 ) {
+        if( variable_ == nullptr ) {
             cout << Utils::error() << "internal state variable is null. Look for previous error(s)." << endl;
             return;
         }
@@ -4770,7 +4770,7 @@ void PDDL_Base::SensingModelForStateVariable::extract_atoms(unsigned_atom_set &a
 }
 
 string PDDL_Base::SensingModelForStateVariable::to_string() const {
-    if( variable_ == 0 )
+    if( variable_ == nullptr )
         return string("[incomplete-grounding substitute variable '") + variable_name_ + "']";
     else
         return string("(state-variable ") + variable_->print_name_ + ")";
@@ -4795,7 +4795,7 @@ PDDL_Base::SensingModel* PDDL_Base::SensingModelForObservableVariable::ground(bo
 
     // ground literal and dnf
     Condition *grounded_literal = literal_->ground(clone_variables, false, replace_static_values);
-    assert(dynamic_cast<Literal*>(grounded_literal) != 0);
+    assert(dynamic_cast<Literal*>(grounded_literal) != nullptr);
     model->literal_ = static_cast<Literal*>(grounded_literal);
     model->dnf_ = dnf_->ground(clone_variables, false, replace_static_values);
     //cout << "grounded: " << flush << *model << endl;
@@ -4821,10 +4821,10 @@ void PDDL_Base::SensingModelForObservableVariable::finish_grounding(PDDL_Base *b
 }
 
 bool PDDL_Base::SensingModelForObservableVariable::verify(const PDDL_Base *base) const {
-    bool return_value = variable_ != 0;
+    bool return_value = variable_ != nullptr;
 
     // check that literal is value of observable variable
-    if( variable_ != 0 ) {
+    if( variable_ != nullptr ) {
         string literal_name = literal_->to_string();
         if( variable_->is_binary() ) {
             const Atom &value = *variable_->grounded_domain_.begin();
@@ -4885,13 +4885,13 @@ bool PDDL_Base::SensingModelForObservableVariable::is_grounded() const {
 PDDL_Base::SensingModel* PDDL_Base::SensingModelForObservableVariable::reduce(const unsigned_atom_set &atoms_to_remove) const {
     assert(literal_->is_grounded());
     assert(dnf_->is_grounded());
-    if( dynamic_cast<const Constant*>(dnf_) != 0 ) {
+    if( dynamic_cast<const Constant*>(dnf_) != nullptr ) {
 #ifndef NDEBUG
         const Constant *constant = static_cast<const Constant*>(dnf_);
         assert(constant->value_);
 #endif
     }
-    return atoms_to_remove.find(*literal_) != atoms_to_remove.end() ? 0 : copy_and_simplify();
+    return atoms_to_remove.find(*literal_) != atoms_to_remove.end() ? nullptr : copy_and_simplify();
 }
 
 void PDDL_Base::SensingModelForObservableVariable::extract_atoms(unsigned_atom_set &atoms, bool only_sensed_atoms, bool only_affected_atoms) const {
@@ -4916,17 +4916,17 @@ void PDDL_Base::SensingModelForObservableVariable::extract_sensing_model_for_ato
 PDDL_Base::Effect* PDDL_Base::SensingModelForObservableVariable::as_effect() const {
     assert(is_grounded());
     vector<const Condition*> conditions;
-    if( dynamic_cast<const Or*>(dnf_) != 0 ) {
+    if( dynamic_cast<const Or*>(dnf_) != nullptr ) {
         const Or *disjunction = static_cast<const Or*>(dnf_);
         for( size_t k = 0; k < disjunction->size(); ++k ) {
             const Condition *disjunct = (*disjunction)[k];
             conditions.push_back(disjunct->copy_and_simplify());
         }
-    } else if( dynamic_cast<const And*>(dnf_) != 0 ) {
+    } else if( dynamic_cast<const And*>(dnf_) != nullptr ) {
         conditions.push_back(dnf_->copy_and_simplify());
-    } else if( dynamic_cast<const Literal*>(dnf_) != 0 ) {
+    } else if( dynamic_cast<const Literal*>(dnf_) != nullptr ) {
         conditions.push_back(dnf_->copy_and_simplify());
-    } else if( dynamic_cast<const Constant*>(dnf_) != 0 ) {
+    } else if( dynamic_cast<const Constant*>(dnf_) != nullptr ) {
         assert(static_cast<const Constant*>(dnf_)->value_);
     } else {
         cout << Utils::error() << "expecting dnf; got '" << *dnf_ << "'" << endl;
@@ -4973,24 +4973,24 @@ PDDL_Base::Sensing* PDDL_Base::BasicSensingModel::ground(bool clone_variables, b
 }
 
 void PDDL_Base::ForallSensing::process_instance() const {
-    Condition *such_that = 0;
-    if( such_that_ != 0 ) such_that = such_that_->ground(false, false, true);
-    if( (such_that_ == 0) || (dynamic_cast<const Constant*>(such_that) != 0) ) {
+    Condition *such_that = nullptr;
+    if( such_that_ != nullptr ) such_that = such_that_->ground(false, false, true);
+    if( (such_that_ == nullptr) || (dynamic_cast<const Constant*>(such_that) != nullptr) ) {
         const Constant *constant = static_cast<const Constant*>(such_that);
-        if( (such_that_ == 0) || constant->value_ ) {
+        if( (such_that_ == nullptr) || constant->value_ ) {
             Sensing *sensing = sensing_.ground(clone_variables_stack_.back(), replace_static_values_stack_.back());
-            if( sensing != 0 ) {
+            if( sensing != nullptr ) {
                 for( size_t k = 0; k < sensing->size(); ++k )
                     result_stack_.back()->push_back((*sensing)[k]);
                 sensing->clear();
                 delete sensing;
             }
         }
-    } else if( such_that_ != 0 ) {
+    } else if( such_that_ != nullptr ) {
         cout << Utils::error() << "condition '" << *such_that_
              << "' in such-that statement must ground to constant value" << endl;
     }
-    if( such_that != 0 ) delete such_that;
+    if( such_that != nullptr ) delete such_that;
 }
 
 bool PDDL_Base::ForallSensing::is_strongly_static(const PredicateSymbol &p) const {
@@ -5022,7 +5022,7 @@ string PDDL_Base::ForallSensing::to_string() const {
     for( size_t k = 0; k < param_.size(); ++k )
         str += (k > 0 ? " " : "") + param_[k]->to_string();
     str += ")";
-    if( such_that_ != 0 ) {
+    if( such_that_ != nullptr ) {
         str += " such-that ";
         str += such_that_->to_string();
     }
@@ -5066,9 +5066,9 @@ bool PDDL_Base::Sensing::finish_grounding(PDDL_Base *base) {
     map<string, set<string> > sensed_values_for_var;
     map<pair<string, string>, string> model_for_sensed_value_for_var;
     for( size_t k = 0; k < result.size(); ++k ) {
-        if( dynamic_cast<const SensingModelForObservableVariable*>(result[k]) != 0 ) {
+        if( dynamic_cast<const SensingModelForObservableVariable*>(result[k]) != nullptr ) {
             const SensingModelForObservableVariable *model = static_cast<const SensingModelForObservableVariable*>(result[k]);
-            assert(model->variable_ != 0);
+            assert(model->variable_ != nullptr);
             const ObsVariable &var = *model->variable_;
             variables.insert(&var);
             sensed_values_for_var[var.to_string()].insert(model->literal_->to_string());
@@ -5110,9 +5110,9 @@ bool PDDL_Base::Sensing::finish_grounding(PDDL_Base *base) {
 
     // 3. Remove models with 'false' dnf
     for( int k = 0; k < (int)result.size(); ++k ) {
-        if( dynamic_cast<const SensingModelForObservableVariable*>(result[k]) != 0 ) {
+        if( dynamic_cast<const SensingModelForObservableVariable*>(result[k]) != nullptr ) {
             const SensingModelForObservableVariable *model = static_cast<const SensingModelForObservableVariable*>(result[k]);
-            if( dynamic_cast<const Constant*>(model->dnf_) != 0 ) {
+            if( dynamic_cast<const Constant*>(model->dnf_) != nullptr ) {
                 const Constant *constant = static_cast<const Constant*>(model->dnf_);
                 if( !constant->value_ ) {
                     delete result[k];
@@ -5143,12 +5143,12 @@ PDDL_Base::Sensing* PDDL_Base::Sensing::reduce(const unsigned_atom_set &atoms_to
     for( size_t k = 0; k < size(); ++k ) {
         const SensingModel *model = (*this)[k];
         SensingModel *reduced_model = model->reduce(atoms_to_remove);
-        if( reduced_model != 0 ) reduced_sensing->push_back(reduced_model);
+        if( reduced_model != nullptr ) reduced_sensing->push_back(reduced_model);
     }
 
     if( reduced_sensing->empty() ) {
         delete reduced_sensing;
-        reduced_sensing = 0;
+        reduced_sensing = nullptr;
     }
     return reduced_sensing;
 }
@@ -5207,7 +5207,7 @@ void PDDL_Base::Invariant::process_instance() const {
 
 void PDDL_Base::Invariant::clear() {
     condition_vec::clear();
-    Xprecondition_ = 0;
+    Xprecondition_ = nullptr;
 }
 
 PDDL_Base::Invariant::status_t PDDL_Base::Invariant::Xeduce() {
@@ -5232,7 +5232,7 @@ PDDL_Base::Invariant::status_t PDDL_Base::Invariant::Xeduce() {
             status = RECOVERABLE; // temporal status, final status is determined below
             const And &conjunction = *static_cast<const And*>(condition);
             for( size_t i = 0; i < conjunction.size(); ++i ) {
-                if( dynamic_cast<const Literal*>(conjunction[i]) == 0 ) {
+                if( dynamic_cast<const Literal*>(conjunction[i]) == nullptr ) {
                     status = BAD; // this invariant is no longer recoverable
                     break;
                 }
@@ -5276,7 +5276,7 @@ string PDDL_Base::Invariant::to_string() const {
         str += ")";
     }
 
-    if( Xprecondition_ != 0 ) {
+    if( Xprecondition_ != nullptr ) {
         str += " (:precondition " + Xprecondition_->to_string() + ")";
     }
 
@@ -5296,7 +5296,7 @@ bool PDDL_Base::Invariant::has_free_variables() const {
 void PDDL_Base::Clause::emit(Instance &ins, Instance::Clause &clause) const {
     for( size_t k = 0; k < size(); ++k ) {
         const Literal *lit = dynamic_cast<const Literal*>((*this)[k]);
-        assert(lit != 0);
+        assert(lit != nullptr);
         Instance::Atom *p = lit->find_prop(ins, false, true);
         if( !lit->negated_ )
             clause.push_back(1 + p->index());
@@ -5315,7 +5315,7 @@ string PDDL_Base::Clause::to_string() const {
 void PDDL_Base::Oneof::emit(Instance &ins, Instance::Oneof &oneof) const {
     for( size_t k = 0; k < size(); ++k ) {
         const Literal *lit = dynamic_cast<const Literal*>((*this)[k]);
-        assert(lit != 0);
+        assert(lit != nullptr);
         Instance::Atom *p = lit->find_prop(ins, false, true);
         if( !lit->negated_ )
             oneof.push_back(1 + p->index());
@@ -5405,7 +5405,7 @@ void PDDL_Base::InitInvariant::emit(Instance &ins) const {
     // construct invariant
     Instance::Invariant typed_invariant(type_);
     for( size_t k = 0; k < size(); ++k ) {
-        assert(dynamic_cast<const Literal*>((*this)[k]) != 0);
+        assert(dynamic_cast<const Literal*>((*this)[k]) != nullptr);
         const Literal &literal = *static_cast<const Literal*>((*this)[k]);
         Instance::Atom *p = literal.find_prop(ins, false, true);
         if( !literal.negated_ )
@@ -5415,17 +5415,17 @@ void PDDL_Base::InitInvariant::emit(Instance &ins) const {
     }
 
     // construct precondition
-    if( Xprecondition_ != 0 ) {
+    if( Xprecondition_ != nullptr ) {
         And precondition;
-        if( dynamic_cast<const Literal*>(Xprecondition_) != 0 ) {
+        if( dynamic_cast<const Literal*>(Xprecondition_) != nullptr ) {
             precondition.push_back(Xprecondition_);
         } else {
-            assert(dynamic_cast<const And*>(Xprecondition_) != 0);
+            assert(dynamic_cast<const And*>(Xprecondition_) != nullptr);
             const And &and_precondition = *static_cast<const And*>(Xprecondition_);
             precondition.insert(precondition.end(), and_precondition.begin(), and_precondition.end());
         }
         for( size_t k = 0; k < precondition.size(); ++k ) {
-            assert(dynamic_cast<const Literal*>(precondition[k]) != 0);
+            assert(dynamic_cast<const Literal*>(precondition[k]) != nullptr);
             const Literal &literal = *static_cast<const Literal*>(precondition[k]);
             Instance::Atom *p = literal.find_prop(ins, false, true);
             if( !literal.negated_ )
@@ -5453,7 +5453,7 @@ void PDDL_Base::InitInvariant::emit(Instance &ins) const {
 bool PDDL_Base::InitInvariant::is_strongly_static(const PredicateSymbol &p) const {
     for( size_t k = 0; k < size(); ++k ) {
         const Literal *lit = dynamic_cast<const Literal*>((*this)[k]);
-        assert(lit != 0);
+        assert(lit != nullptr);
         assert((lit->pred_->print_name_ != p.print_name_) || (lit->pred_ == &p));
         assert((lit->pred_->print_name_ == p.print_name_) || (lit->pred_ != &p));
         if( lit->pred_ == &p ) return false;
@@ -5491,7 +5491,7 @@ void PDDL_Base::InitClause::emit(Instance &ins) const {
 bool PDDL_Base::InitClause::is_strongly_static(const PredicateSymbol &p) const {
     for( size_t k = 0; k < size(); ++k ) {
         const Literal *lit = dynamic_cast<const Literal*>((*this)[k]);
-        assert(lit != 0);
+        assert(lit != nullptr);
         assert((lit->pred_->print_name_ != p.print_name_) || (lit->pred_ == &p));
         assert((lit->pred_->print_name_ == p.print_name_) || (lit->pred_ != &p));
         if( lit->pred_ == &p ) return false;
@@ -5529,7 +5529,7 @@ void PDDL_Base::InitOneof::emit(Instance &ins) const {
 bool PDDL_Base::InitOneof::is_strongly_static(const PredicateSymbol &p) const {
     for( size_t k = 0; k < size(); ++k ) {
         const Literal *lit = dynamic_cast<const Literal*>((*this)[k]);
-        assert(lit != 0);
+        assert(lit != nullptr);
         assert((lit->pred_->print_name_ != p.print_name_) || (lit->pred_ == &p));
         assert((lit->pred_->print_name_ == p.print_name_) || (lit->pred_ != &p));
         if( lit->pred_ == &p ) return false;
@@ -5568,11 +5568,11 @@ void PDDL_Base::InitUnknown::extract_atoms(unsigned_atom_set &atoms) const {
 
 PDDL_Base::Action::Action(const string &name)
   : Symbol(name, sym_action),
-    precondition_(0),
-    effect_(0),
-    observe_(0),
-    sensing_(0),
-    sensing_proxy_(0) {
+    precondition_(nullptr),
+    effect_(nullptr),
+    observe_(nullptr),
+    sensing_(nullptr),
+    sensing_proxy_(nullptr) {
 }
 
 PDDL_Base::Action::~Action() {
@@ -5606,11 +5606,11 @@ void PDDL_Base::Action::emit(Instance &ins) const {
     Instance::Action &act = ins.new_action(name.to_string(true));
     act.set_cost(1);
     //cout << "fully instantiated action " << name << endl;
-    if( precondition_ != 0 ) {
+    if( precondition_ != nullptr ) {
         precondition_->emit(ins, act.precondition());
         //cout << "    pre=" << *precondition() << endl;
     }
-    if( effect_ != 0 ) {
+    if( effect_ != nullptr ) {
         effect_->emit(ins, act.effect(), act.when());
         //cout << "    eff=" << *effect() << endl;
     }
@@ -5618,16 +5618,16 @@ void PDDL_Base::Action::emit(Instance &ins) const {
 }
 
 void PDDL_Base::Action::process_instance() const {
-    Condition *grounded_precondition = 0;
-    if( precondition_ != 0 ) {
+    Condition *grounded_precondition = nullptr;
+    if( precondition_ != nullptr ) {
         grounded_precondition = precondition_->ground();
-        if( dynamic_cast<Constant*>(grounded_precondition) != 0 ) {
+        if( dynamic_cast<Constant*>(grounded_precondition) != nullptr ) {
             Constant *precondition_value = static_cast<Constant*>(grounded_precondition);
             if( !precondition_value->value_ ) {
                 delete grounded_precondition;
                 return;
             } else {
-                grounded_precondition = 0;
+                grounded_precondition = nullptr;
             }
         }
     }
@@ -5639,9 +5639,9 @@ void PDDL_Base::Action::process_instance() const {
     Action *action = new Action(name.to_string(true));
 #endif
     action->precondition_ = grounded_precondition;
-    if( effect_ != 0 ) action->effect_ = effect_->ground();
-    if( observe_ != 0 ) action->observe_ = observe_->ground();
-    if( sensing_proxy_ != 0 ) action->sensing_ = sensing_proxy_->ground();
+    if( effect_ != nullptr ) action->effect_ = effect_->ground();
+    if( observe_ != nullptr ) action->observe_ = observe_->ground();
+    if( sensing_proxy_ != nullptr ) action->sensing_ = sensing_proxy_->ground();
 #ifdef SMART
     action_list_ptr_->emplace_back(move(action));
 #else
@@ -5660,10 +5660,10 @@ void PDDL_Base::Action::print(ostream &os) const {
         os << ")" << endl;
     }
 
-    if( precondition_ != 0 ) os << "    :precondition " << *precondition_ << endl;
-    if( effect_ != 0 ) os << "    :effect " << *effect_ << endl;
-    if( observe_ != 0 ) os << "    :observe " << *observe_ << endl;
-    if( sensing_ != 0 ) os << "    :sensing " << *sensing_ << endl;
+    if( precondition_ != nullptr ) os << "    :precondition " << *precondition_ << endl;
+    if( effect_ != nullptr ) os << "    :effect " << *effect_ << endl;
+    if( observe_ != nullptr ) os << "    :observe " << *observe_ << endl;
+    if( sensing_ != nullptr ) os << "    :sensing " << *sensing_ << endl;
 
     os << ")" << endl;
 }
@@ -5686,27 +5686,27 @@ void PDDL_Base::Sensor::emit(Instance &ins) const {
     PDDL_Name name(this, param_);
     Instance::Sensor &sensor = ins.new_sensor(name.to_string(true));
     //cout << "fully instantiated sensor " << name << endl;
-    if( condition_ != 0 ) {
+    if( condition_ != nullptr ) {
         condition_->emit(ins, sensor.condition());
         //cout << "    :condition " << condition() << endl;
     }
-    if( sense_ != 0 ) {
+    if( sense_ != nullptr ) {
         sense_->emit(ins, sensor.sense());
         //cout << "    :sense " << sense() << endl;
     }
 }
 
 void PDDL_Base::Sensor::process_instance() const {
-    Condition *grounded_condition = 0;
-    if( condition_ != 0 ) {
+    Condition *grounded_condition = nullptr;
+    if( condition_ != nullptr ) {
         grounded_condition = condition_->ground();
-        if( dynamic_cast<Constant*>(grounded_condition) != 0 ) {
+        if( dynamic_cast<Constant*>(grounded_condition) != nullptr ) {
             Constant *condition_value = static_cast<Constant*>(grounded_condition);
             delete grounded_condition;
             if( !condition_value->value_ )
                 return;
             else
-                grounded_condition = 0;
+                grounded_condition = nullptr;
         }
     }
 
@@ -5717,7 +5717,7 @@ void PDDL_Base::Sensor::process_instance() const {
     Sensor *sensor = new Sensor(name.to_string(true));
 #endif
     sensor->condition_ = grounded_condition;
-    if( sense_ != 0 ) sensor->sense_ = sense_->ground();
+    if( sense_ != nullptr ) sensor->sense_ = sense_->ground();
 #ifdef SMART
     sensor_list_ptr_->emplace_back(move(sensor));
 #else
@@ -5735,11 +5735,11 @@ void PDDL_Base::Sensor::print(ostream &os) const {
         os << ")" << endl;
     }
 
-    if( condition_ != 0 ) {
+    if( condition_ != nullptr ) {
         os << "    :condition " << *condition_ << endl;
     }
 
-    assert(sense_ != 0);
+    assert(sense_ != nullptr);
     os << "    :sense " << *sense_ << endl
        << ")" << endl;
 }
@@ -5762,27 +5762,27 @@ void PDDL_Base::Axiom::emit(Instance &ins) const {
     PDDL_Name name(this, param_);
     Instance::Axiom &axiom = ins.new_axiom(name.to_string(true));
     //cout << "fully instantiated axiom " << name << endl;
-    if( body_ != 0 ) {
+    if( body_ != nullptr ) {
         body_->emit(ins, axiom.body());
         //cout << "    :body " << *body() << endl;
     }
-    if( head_ != 0 ) {
+    if( head_ != nullptr ) {
         head_->emit(ins, axiom.head());
         //cout << "    :head " << *head() << endl;
     }
 }
 
 void PDDL_Base::Axiom::process_instance() const {
-    Condition *grounded_body = 0;
-    if( body_ != 0 ) {
+    Condition *grounded_body = nullptr;
+    if( body_ != nullptr ) {
         grounded_body = body_->ground();
-        if( dynamic_cast<Constant*>(grounded_body) != 0 ) {
+        if( dynamic_cast<Constant*>(grounded_body) != nullptr ) {
             Constant *body_value = static_cast<Constant*>(grounded_body);
             delete grounded_body;
             if( !body_value->value_ )
                 return;
             else
-                grounded_body = 0;
+                grounded_body = nullptr;
         }
     }
 
@@ -5793,7 +5793,7 @@ void PDDL_Base::Axiom::process_instance() const {
     Axiom *axiom = new Axiom(name.to_string(true));
 #endif
     axiom->body_ = grounded_body;
-    if( head_ != 0 ) axiom->head_ = head_->ground();
+    if( head_ != nullptr ) axiom->head_ = head_->ground();
 #ifdef SMART
     axiom_list_ptr_->emplace_back(move(axiom));
 #else
@@ -5811,7 +5811,7 @@ void PDDL_Base::Axiom::print(ostream &os) const {
         os << ")" << endl;
     }
 
-    assert((body_ != 0) && (head_ != 0));
+    assert((body_ != nullptr) && (head_ != nullptr));
     os << "    :body " << *body_ << endl
        << "    :head " << *head_ << endl
        << ")" << endl;
@@ -5898,11 +5898,11 @@ void PDDL_Base::Variable::instantiate(variable_list &vlist) const {
 }
 
 void PDDL_Base::Variable::process_instance() const {
-    Condition *such_that = 0;
-    if( such_that_ != 0 ) such_that = such_that_->ground(false, false, true);
-    if( (such_that_ == 0) || (dynamic_cast<const Constant*>(such_that) != 0) ) {
+    Condition *such_that = nullptr;
+    if( such_that_ != nullptr ) such_that = such_that_->ground(false, false, true);
+    if( (such_that_ == nullptr) || (dynamic_cast<const Constant*>(such_that) != nullptr) ) {
         const Constant *constant = static_cast<const Constant*>(such_that);
-        if( (such_that_ == 0) || constant->value_ ) {
+        if( (such_that_ == nullptr) || constant->value_ ) {
             string variable_name("(");
             variable_name += print_name_;
             for( size_t k = 0; k < param_.size(); ++k )
@@ -5917,12 +5917,12 @@ void PDDL_Base::Variable::process_instance() const {
             variable->grounded_ = true;
             for( size_t k = 0; k < domain_.size(); ++k ) {
                 Effect *grounded_value = domain_[k]->ground(true); // clone_variables=true
-                if( dynamic_cast<AtomicEffect*>(grounded_value) != 0 ) {
+                if( dynamic_cast<AtomicEffect*>(grounded_value) != nullptr ) {
                     variable->grounded_domain_.insert(*static_cast<AtomicEffect*>(grounded_value));
-                } else if( dynamic_cast<AndEffect*>(grounded_value) != 0 ) {
+                } else if( dynamic_cast<AndEffect*>(grounded_value) != nullptr ) {
                     AndEffect &item_list = *static_cast<AndEffect*>(grounded_value);
                     for( size_t i = 0; i < item_list.size(); ++i ) {
-                        assert(dynamic_cast<const AtomicEffect*>(item_list[i]) != 0);
+                        assert(dynamic_cast<const AtomicEffect*>(item_list[i]) != nullptr);
                         variable->grounded_domain_.insert(*static_cast<const AtomicEffect*>(item_list[i]));
                     }
                 } else {
@@ -5940,11 +5940,11 @@ void PDDL_Base::Variable::process_instance() const {
             variable_list_ptr_->push_back(variable);
 #endif
         }
-    } else if( such_that_ != 0 ) {
+    } else if( such_that_ != nullptr ) {
         cout << Utils::error() << "condition '" << *such_that_
              << "' in such-that statement must ground to constant value" << endl;
     }
-    if( such_that != 0 ) delete such_that;
+    if( such_that != nullptr ) delete such_that;
 }
 
 #ifdef SMART
@@ -5989,7 +5989,7 @@ string PDDL_Base::StateVariable::to_string(bool only_name, bool mangled) const {
     } else {
         string str("(:variable ");
         str += print_name_;
-        if( such_that_ != 0 )
+        if( such_that_ != nullptr )
             str += string(" such-that ") + such_that_->to_string();
         for( size_t k = 0; k < domain_.size(); ++k )
             str += " " + domain_[k]->to_string();
@@ -6040,7 +6040,7 @@ string PDDL_Base::ObsVariable::to_string(bool only_name, bool mangled) const {
     } else {
         string str("(:obs-variable ");
         str += print_name_;
-        if( such_that_ != 0 )
+        if( such_that_ != nullptr )
             str += string(" such-that ") + such_that_->to_string();
         for( size_t k = 0; k < domain_.size(); ++k )
             str += " " + domain_[k]->to_string();
@@ -6055,7 +6055,7 @@ PDDL_Base::state_variable_vec* PDDL_Base::SingleStateVariableList::ground(const 
         variable_name += " " + param_[k]->to_string();
     variable_name += ")";
 
-    const Variable *variable = 0;
+    const Variable *variable = nullptr;
     for( size_t k = 0; k < base->lw1_variables_.size(); ++k ) {
         const Variable &var = *base->lw1_variables_[k];
         if( var.is_state_variable() && (variable_name == var.print_name_) ) {
@@ -6065,8 +6065,8 @@ PDDL_Base::state_variable_vec* PDDL_Base::SingleStateVariableList::ground(const 
     }
 
     state_variable_vec *result = new state_variable_vec;
-    if( variable != 0 ) {
-        assert(dynamic_cast<const StateVariable*>(variable) != 0);
+    if( variable != nullptr ) {
+        assert(dynamic_cast<const StateVariable*>(variable) != nullptr);
         result->push_back(const_cast<StateVariable*>(static_cast<const StateVariable*>(variable)));
     } else {
         cout << Utils::error()
@@ -6078,11 +6078,11 @@ PDDL_Base::state_variable_vec* PDDL_Base::SingleStateVariableList::ground(const 
 }
 
 void PDDL_Base::ForallStateVariableList::process_instance() const {
-    Condition *such_that = 0;
-    if( such_that_ != 0 ) such_that = such_that_->ground(false, false, true);
-    if( (such_that_ == 0) || (dynamic_cast<const Constant*>(such_that) != 0) ) {
+    Condition *such_that = nullptr;
+    if( such_that_ != nullptr ) such_that = such_that_->ground(false, false, true);
+    if( (such_that_ == nullptr) || (dynamic_cast<const Constant*>(such_that) != nullptr) ) {
         const Constant *constant = static_cast<const Constant*>(such_that);
-        if( (such_that_ == 0) || constant->value_ ) {
+        if( (such_that_ == nullptr) || constant->value_ ) {
             for( size_t k = 0; k < group_.size(); ++k ) {
                 const StateVariableList &vlist = *group_[k];
                 state_variable_vec *vec = vlist.ground(base_stack_.back());
@@ -6090,11 +6090,11 @@ void PDDL_Base::ForallStateVariableList::process_instance() const {
                 delete vec;
             }
         }
-    } else if( such_that_ != 0 ) {
+    } else if( such_that_ != nullptr ) {
         cout << Utils::error() << "condition '" << *such_that_
              << "' in such-that statement must ground to constant value" << endl;
     }
-    if( such_that != 0 ) delete such_that;
+    if( such_that != nullptr ) delete such_that;
 }
 
 PDDL_Base::state_variable_vec* PDDL_Base::ForallStateVariableList::ground(const PDDL_Base *base) const {
@@ -6124,11 +6124,11 @@ void PDDL_Base::VariableGroup::instantiate(const PDDL_Base *base, variable_group
 }
 
 void PDDL_Base::VariableGroup::process_instance() const {
-    Condition *such_that = 0;
-    if( such_that_ != 0 ) such_that = such_that_->ground(false, false, true);
-    if( (such_that_ == 0) || (dynamic_cast<const Constant*>(such_that) != 0) ) {
+    Condition *such_that = nullptr;
+    if( such_that_ != nullptr ) such_that = such_that_->ground(false, false, true);
+    if( (such_that_ == nullptr) || (dynamic_cast<const Constant*>(such_that) != nullptr) ) {
         const Constant *constant = static_cast<const Constant*>(such_that);
-        if( (such_that_ == 0) || constant->value_ ) {
+        if( (such_that_ == nullptr) || constant->value_ ) {
             string group_name("(");
             group_name += print_name_;
             for( size_t k = 0; k < param_.size(); ++k )
@@ -6160,11 +6160,11 @@ void PDDL_Base::VariableGroup::process_instance() const {
             variable_group_list_ptr_->push_back(group);
 #endif
         }
-    } else if( such_that_ != 0 ) {
+    } else if( such_that_ != nullptr ) {
         cout << Utils::error() << "condition '" << *such_that
              << "' in such-that statement must ground to constant value" << endl;
     }
-    if( such_that != 0 ) delete such_that;
+    if( such_that != nullptr ) delete such_that;
 }
 
 string PDDL_Base::VariableGroup::to_string() const {

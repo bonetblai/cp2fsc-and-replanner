@@ -105,7 +105,7 @@ namespace AndOr {
           return this;
       }
       static bool deallocate(const Belief *belief) { // CHECK
-          if( belief != 0 ) {
+          if( belief != nullptr ) {
               if( belief->ref_count_ <= 0 ) std::cout << "REF-C=" << belief->ref_count_ << std::endl;
               assert(belief->ref_count_ > 0);
               if( --belief->ref_count_ == 0 ) {
@@ -119,7 +119,7 @@ namespace AndOr {
       }
 
     public:
-      Belief(const T *belief = 0) : ref_count_(1), belief_(belief) {
+      Belief(const T *belief = nullptr) : ref_count_(1), belief_(belief) {
       }
       ~Belief() {
       }
@@ -130,7 +130,7 @@ namespace AndOr {
 
       void print(std::ostream &os, int indent = 0) const {
           os << std::string(indent, ' ');
-          if( belief_ == 0 )
+          if( belief_ == nullptr )
               os << "(null)";
           else
               belief_->print(os);
@@ -174,7 +174,7 @@ namespace AndOr {
 #endif
 
       static bool deallocate(const Node *node) { // CHECK
-          if( node != 0 ) {
+          if( node != nullptr ) {
               assert(node->ref_count_ > 0);
               if( node->deallocate() == 0 ) {
                   std::cout << Utils::green() << "[Node::deallocate::delete:" << Utils::normal() << std::flush;
@@ -248,7 +248,7 @@ namespace AndOr {
     public:
       AndNode(int action, int action_cost, const Belief<T> *belief, const OrNode<T> *parent)
         : action_(action), action_cost_(action_cost), belief_(belief), parent_(parent) {
-          assert(parent_ != 0);
+          assert(parent_ != nullptr);
       }
 #if 0
       AndNode(int action, const T *belief, BeliefRepo<T> &repo)
@@ -304,7 +304,7 @@ namespace AndOr {
           return children_;
       }
       const OrNode<T>* child(int k) const {
-          assert((k >= 0) && (k < children_.size()));
+          assert((k >= 0) && (k < int(children_.size())));
           return children_[k];
       }
       size_t add_child(const OrNode<T> *child) {
@@ -338,12 +338,12 @@ namespace AndOr {
     public:
       OrNode(const T *hidden_state, const Belief<T> *belief, const AndNode<T> *parent)
         : hidden_state_(hidden_state), belief_(belief), parent_(parent) {
-          if( parent_ != 0 )
+          if( parent_ != nullptr )
               set_cost(parent_->cost());
       }
 #if 0
       OrNode(const T *belief, BeliefRepo<T> &repo, int action)
-        : belief_(repo.get(belief)), action_(action), child_(0) {
+        : belief_(repo.get(belief)), action_(action), child_(nullptr) {
       }
 #endif
       virtual ~OrNode() {
@@ -395,7 +395,7 @@ namespace AndOr {
           return children_;
       }
       const AndNode<T>* child(int k) const {
-          assert((k >= 0) && (k < children_.size()));
+          assert((k >= 0) && (k < int(children_.size())));
           return children_[k];
       }
       size_t add_child(const AndNode<T> *child) {
@@ -433,15 +433,15 @@ namespace AndOr {
       OrNodeList<T> tip_nodes_;
 
       void make_empty_policy(const T *belief) {
-          assert(belief != 0);
+          assert(belief != nullptr);
           tip_nodes_.clear();
 #if 0
           Node::deallocate(root_);
           const Belief<T> *root_belief = repo_.get(belief);
-          root_ = new OrNode<T>(root_belief, 0);
+          root_ = new OrNode<T>(root_belief, nullptr);
           tip_nodes_.push_back(root_);
 #endif
-          OrNode<T> *root = new OrNode<T>(repo_->get(belief), 0);
+          OrNode<T> *root = new OrNode<T>(repo_->get(belief), nullptr);
           tip_nodes_.push_back(root);
       }
 
@@ -479,10 +479,10 @@ namespace AndOr {
 
 #if 0
       void deallocate() { // CHECK
-          if( root_ != 0 ) {
+          if( root_ != nullptr ) {
               assert(root_->ref_count() > 0);
               Node::deallocate(root_);
-              root_ = 0;
+              root_ = nullptr;
           }
       }
 #endif
@@ -494,7 +494,7 @@ namespace AndOr {
       AndNode<T> *and_node = new AndNode<T>(action, action_cost, belief_a, &parent);
       for( size_t k = 0; k < successors.size(); ++k ) {
           const Belief<T> *belief_ao = new Belief<T>(successors[k]);
-          OrNode<T> *child = new OrNode<T>(0, belief_ao, and_node); // CHECK: hidden_state = 0
+          OrNode<T> *child = new OrNode<T>(nullptr, belief_ao, and_node); // CHECK: hidden_state = nullptr
           and_node->add_child(child);
       }
       return and_node;

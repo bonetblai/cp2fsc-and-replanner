@@ -62,7 +62,7 @@ CLG_Instance::CLG_Instance(const Instance &ins)
             for( size_t i = 0; !in_invariant && (i < ins.init_.invariants().size()); ++i ) {
                 for( size_t j = 0; j < ins.init_.invariants()[i].size(); ++j ) {
                     int lit = ins.init_.invariants()[i][j];
-                    if( (lit > 0) && (atom.index() + 1 == lit) ) {
+                    if( (lit > 0) && (int(atom.index()) + 1 == lit) ) {
                         in_invariant = true;
                         break;
                     }

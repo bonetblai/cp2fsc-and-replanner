@@ -25,7 +25,7 @@ ptr_table::~ptr_table() {
 }
 
 ptr_table* ptr_table::insert(void *k) {
-    if( _key == 0) {
+    if( _key == nullptr) {
         _key = k;
         _count += 1;
         return this;
@@ -56,7 +56,7 @@ ptr_table* ptr_table::insert(void *k) {
 
 ptr_table* ptr_table::insert_next(void *k) {
     if( !_next ) {
-        _next = new ptr_table(k, 0, this);
+        _next = new ptr_table(k, nullptr, this);
         return _next;
     }
     return _next->insert(k);
@@ -79,19 +79,19 @@ ptr_table* ptr_table::insert(key_vec &k) {
 }
 
 ptr_table* ptr_table::find(void *k) {
-    if( _key == 0 ) return 0;
+    if( _key == nullptr ) return nullptr;
     if( _key == k ) return this;
     if( k < _key ) {
-        if( !_left ) return 0;
+        if( !_left ) return nullptr;
         return _left->find(k);
     } else {
-        if( !_right ) return 0;
+        if( !_right ) return nullptr;
         return _right->find(k);
     }
 }
 
 ptr_table* ptr_table::find_next(void *k) {
-    if( !_next ) return 0;
+    if( !_next ) return nullptr;
     return _next->find(k);
 }
 
@@ -115,24 +115,24 @@ size_t ptr_table::count_values() {
     return (_left ? _left->count_values() : 0) +
 	   (_right ? _right->count_values() : 0) +
 	   (_next ? _next->count_values() : 0) +
-	   (val != 0 ? 1 : 0);
+	   (val != nullptr ? 1 : 0);
 }
 
 size_t ptr_table::count_keys() {
     return (_left ? _left->count_keys() : 0) +
 	   (_right ? _right->count_keys() : 0) +
-	   (_key != 0 ? 1 : 0);
+	   (_key != nullptr ? 1 : 0);
 }
 
 void ptr_table::dump_values(value_vec& vec) {
-    if( val != 0 ) vec.push_back( val );
+    if( val != nullptr ) vec.push_back( val );
     if( _left ) _left->dump_values(vec);
     if( _right ) _right->dump_values(vec);
     if( _next ) _next->dump_values(vec);
 }
 
 void ptr_table::dump_keys(key_vec &vec) {
-    if( _key != 0 ) vec.push_back(_key);
+    if( _key != nullptr ) vec.push_back(_key);
     if( _left ) _left->dump_keys(vec);
     if( _right ) _right->dump_keys(vec);
 }

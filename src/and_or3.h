@@ -51,7 +51,7 @@ namespace AndOr3 {
       }
 #endif
       static bool deallocate(const Belief *belief) { // CHECK
-          if( belief != 0 ) {
+          if( belief != nullptr ) {
               if( belief->ref_count_ <= 0 ) std::cout << "REF-C=" << belief->ref_count_ << std::endl;
               assert(belief->ref_count_ > 0);
               if( --belief->ref_count_ == 0 ) {
@@ -65,7 +65,7 @@ namespace AndOr3 {
       }
 
     public:
-      Belief(const T *belief = 0) : ref_count_(1), rep_(belief) {
+      Belief(const T *belief = nullptr) : ref_count_(1), rep_(belief) {
       }
       virtual ~Belief() {
           std::cout << "(dtor for Belief)" << std::flush;
@@ -74,7 +74,7 @@ namespace AndOr3 {
           return rep_;
       }
       void print(std::ostream &os) const {
-          if( rep_ == 0 )
+          if( rep_ == nullptr )
               os << "(null)";
           else
               rep_->print(os);
@@ -109,7 +109,7 @@ namespace AndOr3 {
       }
 #endif
       static bool deallocate(const Node *node) { // CHECK
-          if( node != 0 ) {
+          if( node != nullptr ) {
               assert(node->ref_count_ > 0);
               if( node->deallocate() == 0 ) {
                   std::cout << Utils::green() << "[Node::deallocate::delete:" << Utils::normal() << std::flush;
@@ -150,7 +150,7 @@ namespace AndOr3 {
       virtual void print(std::ostream &os) const = 0;
       virtual void pretty_print(std::ostream &os, bool solution, const LW1_Instance &lw1_instance, const std::string &color, int indent = 0) const = 0;
 
-      std::string to_string(const LW1_Instance *lw1_instance = 0) const {
+      std::string to_string(const LW1_Instance *lw1_instance = nullptr) const {
           return to_string(lw1_instance, Utils::normal());
       }
   };
@@ -190,7 +190,7 @@ namespace AndOr3 {
           std::string str = color + "And[";
           str += std::string("ptr=0x") + std::to_string(size_t(this));
           str += std::string(",ref=") + std::to_string(Node::ref_count_);
-          if( lw1_instance != 0 ) {
+          if( lw1_instance != nullptr ) {
               const Instance::Action &action = *lw1_instance->actions_[action_];
               str += std::string(",action=") + Utils::blue() + action.name() + color;
           } else {
