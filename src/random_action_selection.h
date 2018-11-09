@@ -181,21 +181,21 @@ class RandomActionSelection : public NaiveRandomActionSelection<T> {
 
     virtual std::string name() const {
         std::string str = std::string("random-action-selection(");
-        if( alternate_selection_ != 0 )
+        if( alternate_selection_ != nullptr )
             str += alternate_selection_->name();
         return str + ")";
     }
     virtual float get_search_time() const {
-        return total_search_time_ + (alternate_selection_ != 0 ? alternate_selection_->get_search_time() : 0);
+        return total_search_time_ + (alternate_selection_ != nullptr ? alternate_selection_->get_search_time() : 0);
     }
     virtual float get_time() const {
-        return total_time_ + (alternate_selection_ != 0 ? alternate_selection_->get_time() : 0);
+        return total_time_ + (alternate_selection_ != nullptr ? alternate_selection_->get_time() : 0);
     }
     virtual size_t n_calls() const {
-        return n_calls_ + (alternate_selection_ != 0 ? alternate_selection_->n_calls() : 0);
+        return n_calls_ + (alternate_selection_ != nullptr ? alternate_selection_->n_calls() : 0);
     }
     virtual void reset_stats() const {
-        if( alternate_selection_ != 0 )
+        if( alternate_selection_ != nullptr )
             alternate_selection_->reset_stats();
         total_search_time_ = 0;
         total_time_ = 0;
@@ -207,7 +207,7 @@ class RandomActionSelection : public NaiveRandomActionSelection<T> {
                          Instance::Plan &raw_plan,
                          std::vector<const T*> &sampled_state_trajectory) const {
         assert(sampled_state_trajectory.empty());
-        used_alternate_selection_ = (alternate_selection_ != 0) && is_singleton_belief(state);
+        used_alternate_selection_ = (alternate_selection_ != nullptr) && is_singleton_belief(state);
         if( used_alternate_selection_ ) {
             return alternate_selection_->get_plan(state, plan, raw_plan, sampled_state_trajectory);
         } else {

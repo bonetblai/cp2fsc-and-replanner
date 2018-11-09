@@ -43,11 +43,11 @@ void print_usage(ostream &os, const char *exec_name, const char **cmdline_option
     os << endl << "usage: " << base_name << " ";
     free(tmp);
 
-    if( cmdline_options[0] == 0 ) {
+    if( cmdline_options[0] == nullptr ) {
         os << endl;
     } else {
         os << cmdline_options[0] << endl;
-        for( int i = 1; cmdline_options[i] != 0; ++i ) {
+        for( int i = 1; cmdline_options[i] != nullptr; ++i ) {
             os << indent << cmdline_options[i] << endl;
         }
     }
@@ -80,7 +80,7 @@ int main(int argc, const char *argv[]) {
     cout << "cmdline: " << Utils::cmdline(argc, argv) << endl;
 
     // initialize options
-    for( const char **opt = &available_options[0]; *opt != 0; ++opt ) {
+    for( const char **opt = &available_options[0]; *opt != nullptr; ++opt ) {
         const char *name = *opt++;
         const char *desc = *opt;
         g_options.add(name, desc);
@@ -215,12 +215,12 @@ int main(int argc, const char *argv[]) {
         kp_instance = make_unique<CLG_Instance>(instance);
     assert(kp_instance != nullptr);
 #else
-    KP_Instance *kp_instance = 0;
+    KP_Instance *kp_instance = nullptr;
     if( translation_type == 0 )
         kp_instance = new Standard_KP_Instance(instance);
     else if( translation_type == 1 )
         kp_instance = new CLG_Instance(instance);
-    assert(kp_instance != 0);
+    assert(kp_instance != nullptr);
 #endif
 
     if( g_options.is_enabled("kp:print:raw") ) {
@@ -265,7 +265,7 @@ int main(int argc, const char *argv[]) {
         planner = make_unique<const LAMA_Server_Planner>(*kp_instance, planner_options);
     }
 #else
-    const ClassicalPlanner *planner = 0;
+    const ClassicalPlanner *planner = nullptr;
     if( opt_planner == "ff" ) {
         planner = new FF_Planner(*kp_instance, planner_options);
     } else if( opt_planner == "lama" ) {

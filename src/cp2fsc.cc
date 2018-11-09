@@ -44,11 +44,11 @@ void print_usage(ostream &os, const char *exec_name, const char **cmdline_option
     os << endl << "usage: " << base_name << " ";
     free(tmp);
 
-    if( cmdline_options[0] == 0 ) {
+    if( cmdline_options[0] == nullptr ) {
         os << endl;
     } else {
         os << cmdline_options[0] << endl;
-        for( int i = 1; cmdline_options[i] != 0; ++i ) {
+        for( int i = 1; cmdline_options[i] != nullptr; ++i ) {
             os << indent << "" << cmdline_options[i] << endl;
         }
     }
@@ -82,7 +82,7 @@ int main(int argc, const char *argv[]) {
     cout << "cmdline: " << Utils::cmdline(argc, argv) << endl;
 
     // initialize options
-    for( const char **opt = &available_options[0]; *opt != 0; ++opt ) {
+    for( const char **opt = &available_options[0]; *opt != nullptr; ++opt ) {
         const char *name = *opt++;
         const char *desc = *opt;
         g_options.add(name, desc);

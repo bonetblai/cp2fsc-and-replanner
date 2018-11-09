@@ -214,7 +214,7 @@ namespace Width {
       }
       virtual bool subsumes(const Feature<T> &feature) const {
           assert(disjuncts_.size() > 1);
-          if( dynamic_cast<const OrFeature<T>*>(&feature) != 0 ) {
+          if( dynamic_cast<const OrFeature<T>*>(&feature) != nullptr ) {
               const OrFeature<T> &or_feature = static_cast<const OrFeature<T>&>(feature);
               if( disjuncts_.size() <= or_feature.disjuncts_.size() ) {
                   std::set<const Feature<T>*> fset(or_feature.disjuncts_.begin(), or_feature.disjuncts_.end());
@@ -379,16 +379,16 @@ namespace Width {
           int num_values = var.is_binary() ? 2 : var.domain().size();
           if( var.is_binary() ) {
               int atom_index = *var.domain().begin();
-              assert((2 * atom_index >= 0) && (2 * atom_index < state_bitmap.size()));
+              assert((2 * atom_index >= 0) && (2 * atom_index < int(state_bitmap.size())));
               if( state_bitmap[2 * atom_index] )
                   --num_values;
-              assert((2 * atom_index + 1 >= 0) && (2 * atom_index + 1 < state_bitmap.size()));
+              assert((2 * atom_index + 1 >= 0) && (2 * atom_index + 1 < int(state_bitmap.size())));
               if( state_bitmap[2 * atom_index + 1] )
                   --num_values;
           } else {
               for( std::set<int>::const_iterator it = var.domain().begin(); it != var.domain().end(); ++it ) {
                   int k_literal = 1 + 2 * (*it) + 1;
-                  assert((k_literal - 1 >= 0) && (k_literal - 1 < state_bitmap.size()));
+                  assert((k_literal - 1 >= 0) && (k_literal - 1 < int(state_bitmap.size())));
                   if( state_bitmap[k_literal - 1] )
                       --num_values;
 #ifdef DEBUG
@@ -437,7 +437,7 @@ namespace Width {
           return Feature<T>::default_holds(policy, verbose);
       }
       virtual bool subsumes(const Feature<T> &feature) const {
-          if( dynamic_cast<const OrFeature<T>*>(&feature) != 0 ) {
+          if( dynamic_cast<const OrFeature<T>*>(&feature) != nullptr ) {
               const OrFeature<T> &or_feature = static_cast<const OrFeature<T>&>(feature);
               assert(or_feature.disjuncts().size() > 1);
               for( size_t k = 0; k < or_feature.disjuncts().size(); ++k ) {
@@ -530,7 +530,7 @@ namespace Width {
           return Feature<T>::default_holds(policy, verbose);
       }
       virtual bool subsumes(const Feature<T> &feature) const {
-          if( dynamic_cast<const OrFeature<T>*>(&feature) != 0 ) {
+          if( dynamic_cast<const OrFeature<T>*>(&feature) != nullptr ) {
               const OrFeature<T> &or_feature = static_cast<const OrFeature<T>&>(feature);
               assert(or_feature.disjuncts().size() > 1);
               for( size_t k = 0; k < or_feature.disjuncts().size(); ++k ) {
@@ -538,7 +538,7 @@ namespace Width {
                       return true;
               }
               return false;
-          } else if( dynamic_cast<const DomainSizeFeature<T>*>(&feature) != 0 ) {
+          } else if( dynamic_cast<const DomainSizeFeature<T>*>(&feature) != nullptr ) {
               const DomainSizeFeature<T> &dsz_feature = static_cast<const DomainSizeFeature<T>&>(feature);
               return (k_literal_ > 0) && (var_index_ == dsz_feature.var_index()) && (dsz_feature.size() == 1);
           }

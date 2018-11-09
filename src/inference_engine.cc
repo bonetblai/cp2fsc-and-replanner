@@ -56,7 +56,7 @@ namespace Inference {
                                     const set<int> &sensed_at_step,
                                     relevant_sensing_models_t &relevant_sensing_models,
                                     bool as_k_cnf) {
-      assert(last_action != 0);
+      assert(last_action != nullptr);
 
       // compute action-key for accessing sensing models in lw1 instance
       string action_key;
@@ -84,8 +84,8 @@ namespace Inference {
       assert(action_key != "");
 
       // fill in relevant sensing models
-      const map<int, map<int, vector<vector<int> > > > *sensing_models_for_action_as_k_cnf = 0;
-      const map<int, map<int, vector<vector<int> > > > *sensing_models_for_action_as_k_dnf = 0;
+      const map<int, map<int, vector<vector<int> > > > *sensing_models_for_action_as_k_cnf = nullptr;
+      const map<int, map<int, vector<vector<int> > > > *sensing_models_for_action_as_k_dnf = nullptr;
       if( as_k_cnf ) {
           if( lw1_instance.sensing_models_as_k_cnf_.find(action_key) != lw1_instance.sensing_models_as_k_cnf_.end() )
               sensing_models_for_action_as_k_cnf = &lw1_instance.sensing_models_as_k_cnf_.at(action_key);
@@ -133,7 +133,7 @@ namespace Inference {
               if( (variable.domain().size() > 1) && negated ) continue;
 
               if( as_k_cnf ) {
-                  assert(sensing_models_for_action_as_k_cnf != 0);
+                  assert(sensing_models_for_action_as_k_cnf != nullptr);
                   const map<int, vector<vector<int> > > &sensing_models_for_var_as_k_cnf = sensing_models_for_action_as_k_cnf->at(var_key);
                   for( map<int, vector<vector<int> > >::const_iterator kt = sensing_models_for_var_as_k_cnf.begin(); kt != sensing_models_for_var_as_k_cnf.end(); ++kt ) {
 #ifdef DEBUG
@@ -153,7 +153,7 @@ namespace Inference {
 #endif
                   }
               } else {
-                  assert(sensing_models_for_action_as_k_dnf != 0);
+                  assert(sensing_models_for_action_as_k_dnf != nullptr);
                   const map<int, vector<vector<int> > > &sensing_models_for_var_as_k_dnf = sensing_models_for_action_as_k_dnf->at(var_key);
                   for( map<int, vector<vector<int> > >::const_iterator kt = sensing_models_for_var_as_k_dnf.begin(); kt != sensing_models_for_var_as_k_dnf.end(); ++kt ) {
 #ifdef DEBUG

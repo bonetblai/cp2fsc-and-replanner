@@ -91,9 +91,9 @@ namespace HOP {
           random_shuffle_(options.find("random-shuffle") != options.end() ? options.at("random-shuffle") == "true" : false),
           debug_(options.find("debug") != options.end() ? atoi(options.at("debug").c_str()) : 0),
           goal_feature_index_(-1),
-          goal_feature_(0),
+          goal_feature_(nullptr),
           feature_bitmap_size_(0),
-          feature_bitmap_(0),
+          feature_bitmap_(nullptr),
           num_available_features_(0),
           num_expansions_(0),
           total_search_time_(0),
@@ -267,7 +267,7 @@ namespace HOP {
           num_available_features_ = feature_language_.size();
       }
       bool is_feature_available(int index, int offset) const {
-          assert((index >= 0) && (index < feature_bitmap_size_));
+          assert((index >= 0) && (index < int(feature_bitmap_size_)));
           assert((offset >= 0) && (offset < 32));
           return (feature_bitmap_[index] & (1 << offset)) != 0;
       }
@@ -276,14 +276,14 @@ namespace HOP {
           return is_feature_available(index, offset);
       }
       void register_feature(int index, int offset) const {
-          assert((index >= 0) && (index < feature_bitmap_size_));
+          assert((index >= 0) && (index < int(feature_bitmap_size_)));
           assert((offset >= 0) && (offset < 32));
           feature_bitmap_[index] = feature_bitmap_[index] & ~(1 << offset);
       }
       void register_feature(const Width::Feature<T> &feature) const {
-          assert(feature.index() < feature_universe_.size());
+          assert(feature.index() < int(feature_universe_.size()));
           int index = feature.index() >> 5, offset = feature.index() % 32;
-          if( is_feature_available(index, offset) && (feature.index() < feature_language_.size()) )
+          if( is_feature_available(index, offset) && (feature.index() < int(feature_language_.size())) )
               --num_available_features_;
           register_feature(index, offset);
       }
@@ -323,10 +323,10 @@ namespace HOP {
 
       // beliefs (states)
       bool is_goal(const T &state) const {
-          assert(goal_feature_ != 0);
+          assert(goal_feature_ != nullptr);
           return goal_feature_->holds(state);
       }
-      int calculate_unknown_variables(const T &state, std::vector<std::vector<int> > *unknown_variables = 0) const {
+      int calculate_unknown_variables(const T &state, std::vector<std::vector<int> > *unknown_variables = nullptr) const {
           int number_unknown_variables = 0;
           for( size_t var_index = 0; var_index < lw1_instance_.variables_.size(); ++var_index ) {
               const LW1_Instance::Variable &variable = *lw1_instance_.variables_[var_index];
@@ -354,7 +354,7 @@ namespace HOP {
                   assert(var_index_and_possible_values.size() > 1);
                   if( var_index_and_possible_values.size() > 2 ) {
                       ++number_unknown_variables;
-                      if( unknown_variables != 0 ) {
+                      if( unknown_variables != nullptr ) {
                           unknown_variables->emplace_back(std::move(var_index_and_possible_values));
                           assert(var_index_and_possible_values.empty());
                       }
@@ -379,7 +379,7 @@ namespace HOP {
               int sampled_atom = var_index_and_possible_values[1 + (lrand48() % (var_index_and_possible_values.size() - 1))];
 
               if( debug_ > 0 ) {
-                  assert((var_index >= 0) && (var_index < lw1_instance_.variables_.size()));
+                  assert((var_index >= 0) && (var_index < int(lw1_instance_.variables_.size())));
                   const LW1_Instance::Variable &variable = *lw1_instance_.variables_[var_index];
                   std::cout << Utils::blue()
                             << "sampling: variable=" << variable.name()
@@ -442,7 +442,7 @@ namespace HOP {
           return is_goal(*node.belief()->belief());
       }
       AndOr::OrNode<T>* make_root(const T &state, const T &hidden_state) const {
-          return new AndOr::OrNode<T>(new T(hidden_state), new AndOr::Belief<T>(new T(state)), 0);
+          return new AndOr::OrNode<T>(new T(hidden_state), new AndOr::Belief<T>(new T(state)), nullptr);
       }
 
       // AND/OR graph
@@ -452,7 +452,7 @@ namespace HOP {
       }
 
       bool need_to_expand_node(const AndOr::OrNode<T> &nodes, const Width::FeatureSet<T> &features) const {
-          assert(goal_feature_ != 0);
+          assert(goal_feature_ != nullptr);
           return !features.empty() && (features.find(goal_feature_) == features.end());
       }
 
@@ -476,7 +476,7 @@ namespace HOP {
 
               if( features.find(goal_feature_) != features.end() ) {
                   std::deque<const Instance::Action*> path;
-                  while( node->parent() != 0 ) {
+                  while( node->parent() != nullptr ) {
                       const AndOr::AndNode<T> *parent = node->parent();
                       int action = parent->action();
                       assert((action >= 0) && (action < lw1_instance_.actions_.size()));
@@ -485,7 +485,7 @@ namespace HOP {
 #else
                       path.push_front(lw1_instance_.actions_[action]);
 #endif
-                      assert(parent->parent() != 0);
+                      assert(parent->parent() != nullptr);
                       node = const_cast<AndOr::OrNode<T>*>(parent->parent());
                   }
                   std::cout << Utils::red() << "GOAL PATH:";
@@ -500,7 +500,7 @@ namespace HOP {
               if( need_to_expand_node(*node, features) ) {
                   // register node's features
                   for( typename Width::FeatureSet<T>::const_iterator it = features.begin(); it != features.end(); ++it ) {
-                      assert(*it != 0);
+                      assert(*it != nullptr);
                       register_feature(**it);
                   }
                   //std::cout << Utils::green() << "#available-features=" << num_available_features_ << Utils::normal() << std::endl;
@@ -563,7 +563,7 @@ namespace HOP {
 
                   // register node's features
                   for( typename Width::FeatureSet<T>::const_iterator it = state_features.begin(); it != state_features.end(); ++it ) {
-                      assert(*it != 0);
+                      assert(*it != nullptr);
                       register_feature(**it);
                   }
                   //std::cout << Utils::green() << "#available-features=" << num_available_features_ << Utils::normal() << std::endl;
@@ -621,7 +621,7 @@ namespace HOP {
           } else if( true ) {//need_to_expand_node(node, state_features, expanded_states) ) {
               // register node's features
               for( typename Width::FeatureSet<T>::const_iterator it = state_features.begin(); it != state_features.end(); ++it ) {
-                  assert(*it != 0);
+                  assert(*it != nullptr);
                   register_feature(**it);
               }
               //std::cout << Utils::green() << "#available-features=" << num_available_features_ << Utils::normal() << std::endl;
@@ -648,10 +648,10 @@ namespace HOP {
       }
 
       const AndOr::OrNode<T>* merge_trees(const std::vector<AndOr::OrNode<T>*> &root_nodes, std::map<AndOr::OrNode<T>*, const AndOr::OrNode<T>*> &tip_map) const {
-          assert(!root_nodes.empty() && (root_nodes[0] != 0));
-          AndOr::OrNode<T> *root = tree_copy(0, root_nodes[0], tip_map);
+          assert(!root_nodes.empty() && (root_nodes[0] != nullptr));
+          AndOr::OrNode<T> *root = tree_copy(nullptr, root_nodes[0], tip_map);
           for( size_t k = 1; k < root_nodes.size(); ++k ) {
-              assert(root_nodes[k] != 0);
+              assert(root_nodes[k] != nullptr);
               tandem_traversal_for_merge(root, root_nodes[k], tip_map);
           }
           assert(0);
@@ -709,9 +709,9 @@ namespace HOP {
               const AndOr::OrNode<T> *alt_child = alt_node->child(k);
               // look for this child in node; if it doesn't exist, insert this
               // child into node; if it exists, recurse
-              AndOr::OrNode<T> *child = 0;
+              AndOr::OrNode<T> *child = nullptr;
 
-              if( child == 0 ) {
+              if( child == nullptr ) {
                   // need to add a copy of alt_chld and its successors to node
                   node->add_child(tree_copy(node, alt_child, tip_map));
               } else {
@@ -1043,7 +1043,7 @@ namespace HOP {
 #endif
 
           // fetch sensing models for observable non-state variables
-          const std::map<int, std::map<int, std::vector<std::vector<int> > > > *sensing_models_for_action_as_k_dnf = 0;
+          const std::map<int, std::map<int, std::vector<std::vector<int> > > > *sensing_models_for_action_as_k_dnf = nullptr;
           if( lw1_instance_.sensing_models_as_k_dnf_.find(action.name()) != lw1_instance_.sensing_models_as_k_dnf_.end() )
               sensing_models_for_action_as_k_dnf = &lw1_instance_.sensing_models_as_k_dnf_.at(action.name());
 
@@ -1065,7 +1065,7 @@ namespace HOP {
 #ifdef DEBUG
                       std::cout << Utils::green() << "variable '" << variable.name() << "' is observable variable" << Utils::normal() << std::endl;
 #endif
-                      assert(sensing_models_for_action_as_k_dnf != 0);
+                      assert(sensing_models_for_action_as_k_dnf != nullptr);
                       assert(sensing_models_for_action_as_k_dnf->find(var_index) != sensing_models_for_action_as_k_dnf->end());
                       const std::map<int, std::vector<std::vector<int> > > &sensing_models_for_var_as_k_dnf = sensing_models_for_action_as_k_dnf->at(var_index);
                       bool some_value_is_satisfied = false;
@@ -1104,14 +1104,14 @@ namespace HOP {
                               observation.insert(1 + atom);
                               some_value_is_satisfied = true;
                               assert(observed_literals.find(1 + atom) == observed_literals.end());
-                              observed_literals.insert(std::make_pair(1 + atom, std::make_pair(&variable, static_cast<const std::vector<std::vector<int> >*>(0))));
+                              observed_literals.insert(std::make_pair(1 + atom, std::make_pair(&variable, static_cast<const std::vector<std::vector<int> >*>(nullptr))));
                           }
                           if( hidden.satisfy(2 * atom + 1) ) {
                               assert(!some_value_is_satisfied);
                               observation.insert(-(1 + atom));
                               some_value_is_satisfied = true;
                               assert(observed_literals.find(-(1 + atom)) == observed_literals.end());
-                              observed_literals.insert(std::make_pair(-(1 + atom), std::make_pair(&variable, static_cast<const std::vector<std::vector<int> >*>(0))));
+                              observed_literals.insert(std::make_pair(-(1 + atom), std::make_pair(&variable, static_cast<const std::vector<std::vector<int> >*>(nullptr))));
                           }
                           assert(some_value_is_satisfied);
                       } else {
@@ -1135,7 +1135,7 @@ namespace HOP {
                                   observation.insert(1 + atom);
                                   some_value_is_satisfied = true;
                                   assert(observed_literals.find(1 + atom) == observed_literals.end());
-                                  observed_literals.insert(std::make_pair(1 + atom, std::make_pair(&variable, static_cast<const std::vector<std::vector<int> >*>(0))));
+                                  observed_literals.insert(std::make_pair(1 + atom, std::make_pair(&variable, static_cast<const std::vector<std::vector<int> >*>(nullptr))));
                                   break;
                               }
                           }
@@ -1341,13 +1341,13 @@ score = 2;
                           // extract action path to goal
                           std::vector<int> reversed_action_path;
                           const AndOr::OrNode<T> *node = goal_nodes_in_graph[j];
-                          while( node->parent() != 0 ) {
+                          while( node->parent() != nullptr ) {
                               const AndOr::AndNode<T> *parent = node->parent();
                               int action = parent->action();
-                              assert((action >= 0) && (action < lw1_instance_.actions_.size()));
+                              assert((action >= 0) && (action < int(lw1_instance_.actions_.size())));
                               reversed_action_path.push_back(action);
                               node = parent->parent();
-                              assert(node != 0);
+                              assert(node != nullptr);
                           }
                           assert(node == root);
 
@@ -1385,7 +1385,7 @@ score = 2;
                                   assert(i > 0);
                                   state_trajectory[i] = new T(*node->hidden_state());
                                   node = node->parent()->parent();
-                                  assert(node != 0);
+                                  assert(node != nullptr);
                               }
                               assert(node == root);
                               state_trajectory[0] = new T(*node->hidden_state());
@@ -1460,7 +1460,7 @@ score = 2;
               assert(!root_nodes.empty());
               std::map<AndOr::OrNode<T>*, const AndOr::OrNode<T>*> tip_map;
               const AndOr::OrNode<T> *root = merge_trees(root_nodes, tip_map);
-              assert(root != 0);
+              assert(root != nullptr);
               assert(0);
           }
 
@@ -1532,7 +1532,7 @@ score = 2;
 #endif
 
           // sample goal-path using best action
-          const std::vector<int> *sampled_reversed_action_path = 0;
+          const std::vector<int> *sampled_reversed_action_path = nullptr;
           if( goal_paths.find(best_action_index) != goal_paths.end() ) {
               const std::map<std::vector<int>, int> &path_map = goal_paths.at(best_action_index);
               int path_count = 0;
@@ -1547,7 +1547,7 @@ score = 2;
                       path_index -= it->second;
                   }
               }
-              assert(sampled_reversed_action_path != 0);
+              assert(sampled_reversed_action_path != nullptr);
               assert(sampled_reversed_action_path->back() == best_action_index);
 
 #if 1//def DEBUG
@@ -1560,7 +1560,7 @@ score = 2;
           }
 
           // construct sampled path to be returned
-          if( sampled_reversed_action_path != 0 ) {
+          if( sampled_reversed_action_path != nullptr ) {
               for( size_t k = sampled_reversed_action_path->size(); k > 0; --k ) {
                   int action = (*sampled_reversed_action_path)[k - 1];
                   raw_plan.push_back(action);

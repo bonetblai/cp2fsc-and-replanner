@@ -138,7 +138,7 @@ namespace Options {
   inline void parse_options(Mode &options, const char *options_str) {
       char *opts = strdup(options_str);
       char *opt = strtok(opts, ",");
-      while( opt != 0 ) {
+      while( opt != nullptr ) {
           bool good_option = true;
           if( opt[0] == '-' )
               good_option = options.disable(&opt[1]);

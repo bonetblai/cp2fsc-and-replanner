@@ -67,7 +67,7 @@ namespace AndOr {
             size_t num_expansions = 0;
             while( !q.empty() ) {
                 const Node *n = q.top();
-                assert(n != 0);
+                assert(n != nullptr);
                 q.pop();
 
                 if( api_.prune(*n) ) {
@@ -95,7 +95,7 @@ namespace AndOr {
                       << " expansion(s)!"
                       << std::endl;
 #endif
-            return 0; // CHECK: should clear memory in use
+            return nullptr; // CHECK: should clear memory in use
         }
     };
 

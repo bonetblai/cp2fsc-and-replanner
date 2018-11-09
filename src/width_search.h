@@ -193,7 +193,7 @@ namespace Width2 {
           goal_feature_index_ = feature_universe_.size();
           AndFeature<T> *g_feature = new AndFeature<T>(goal_feature_index_);
           for( size_t k = 0; k < xxx.size(); ++k ) {
-              assert(dynamic_cast<const DomainSizeFeature<T>*>(feature_universe_[xxx[k]]) != 0);
+              assert(dynamic_cast<const DomainSizeFeature<T>*>(feature_universe_[xxx[k]]) != nullptr);
               const DomainSizeFeature<T> &f = static_cast<const DomainSizeFeature<T>&>(*feature_universe_[xxx[k]]);
               g_feature->add_conjunct(f);
           }
@@ -488,7 +488,7 @@ namespace Width2 {
           if( verbose ) std::cout << "bottom-up: value for " << feature << " at " << node << " --> " << node.cached_value() << std::endl;
       }
       void top_down_pass(const AndOr3::OrNode<T> &node, const Feature<T> &feature, bool verbose = false) const {
-          if( node.parent() != 0 ) {
+          if( node.parent() != nullptr ) {
               node.set_cached_value(node.parent()->cached_value());
           }
           for( size_t k = 0; k < node.children().size(); ++k ) {
@@ -498,7 +498,7 @@ namespace Width2 {
           if( verbose ) std::cout << "top-down: value for " << feature << " at " << node << " --> " << node.cached_value() << std::endl;
       }
       void top_down_pass(const AndOr3::AndNode<T> &node, const Feature<T> &feature, bool verbose = false) const {
-          assert(node.parent() != 0);
+          assert(node.parent() != nullptr);
           node.set_cached_value(std::max(node.cached_value(), node.parent()->cached_value()));
           for( size_t k = 0; k < node.children().size(); ++k ) {
               const AndOr3::OrNode<T> &child = *node.child(k);
@@ -532,7 +532,7 @@ namespace Width2 {
           return prune_node;
       }
       virtual bool is_goal(const T *n) const {
-          return (n != 0) && n->is_goal(lw1_instance_);
+          return (n != nullptr) && n->is_goal(lw1_instance_);
       }
       virtual void expand(const AndOr3::OrNode<T> &n, std::vector<AndOr3::AndNode<T>*> &successors) const {
           const AndOr3::Belief<T> &belief = *n.belief();

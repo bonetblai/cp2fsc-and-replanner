@@ -159,7 +159,7 @@ namespace Inference {
             os << "{";
             for( size_t k = 0; k < values.size(); ++k ) {
                 int k_atom = values[k];
-                if( lw1_instance != 0 ) State::print_literal(os, 1 + k_atom, lw1_instance);
+                if( lw1_instance != nullptr ) State::print_literal(os, 1 + k_atom, lw1_instance);
                 os << "[" << k_atom << "], ";
             }
             os << "}";
@@ -168,7 +168,7 @@ namespace Inference {
             Variable::print(os, std::vector<int>(values.begin(), values.end()), lw1_instance);
         }
 
-        virtual void print(std::ostream &os, const LW1_Instance *lw1_instance = 0, bool extra_output = false) const {
+        virtual void print(std::ostream &os, const LW1_Instance *lw1_instance = nullptr, bool extra_output = false) const {
             os << (name_ == "" ? std::string("<unnamed-var>") : name_)
                << "(type=" << type_as_string() << "):"
                << " od: ";
@@ -249,13 +249,13 @@ namespace Inference {
                                      int group_index,
                                      const std::vector<std::unique_ptr<const Variable> > &variables,
                                      std::vector<int> &joint_valuation) {
-            if( group_index == group.size() ) {
+            if( group_index == int(group.size()) ) {
                 joint_valuations_.push_back(joint_valuation);
             } else {
                 assert(group.size() == joint_valuation.size());
-                assert((group_index >= 0) && (group_index < group.size()));
+                assert((group_index >= 0) && (group_index < int(group.size())));
                 int var_index = group[group_index];
-                assert((var_index >= 0) && (var_index < variables.size()));
+                assert((var_index >= 0) && (var_index < int(variables.size())));
                 const Variable &variable = *variables[var_index];
                 for( std::set<int>::const_iterator it = variable.original_domain().begin();  it != variable.original_domain().end(); ++it ) {
                     joint_valuation[group_index] = *it;
@@ -278,7 +278,7 @@ namespace Inference {
             var_index_to_pos_ = std::vector<int>(1 + max_var_index, -1);
             pos_to_var_index_ = std::vector<std::pair<int, const Variable*> >(group.size(), std::pair<int, const Variable*>(-1, 0));
             for( size_t k = 0; k < group.size(); ++k ) {
-                assert((group[k] >= 0) && (group[k] < var_index_to_pos_.size()));
+                assert((group[k] >= 0) && (group[k] < int(var_index_to_pos_.size())));
                 var_index_to_pos_[group[k]] = k;
                 pos_to_var_index_[k] = std::make_pair(group[k], variables[group[k]].get());
             }
@@ -295,14 +295,14 @@ namespace Inference {
 
         int get_pos_from_var_index(int var_index) const {
             assert(var_index >= 0);
-            return var_index >= var_index_to_pos_.size() ? -1 : var_index_to_pos_[var_index];
+            return var_index >= int(var_index_to_pos_.size()) ? -1 : var_index_to_pos_[var_index];
         }
         int get_var_index_from_pos(int pos) const {
-            assert((pos >= 0) && (pos < pos_to_var_index_.size()));
+            assert((pos >= 0) && (pos < int(pos_to_var_index_.size())));
             return pos_to_var_index_[pos].first;
         }
         const std::vector<int>& joint_valuation(int index) const {
-            assert((index >= 0) && (index < joint_valuations_.size()));
+            assert((index >= 0) && (index < int(joint_valuations_.size())));
             return joint_valuations_[index];
         }
 
@@ -325,7 +325,7 @@ namespace Inference {
         void filter_current_domain_with_k_dnf(const std::vector<std::vector<int> > &k_dnf, const Csp &csp) const {
             // iterate over current values and erase those inconsistent with k_dnf
             for( std::set<int>::iterator it = current_domain_.begin(); it != current_domain_.end(); ) {
-                assert((*it >= 0) && (*it < joint_valuations_.size()));
+                assert((*it >= 0) && (*it < int(joint_valuations_.size())));
                 const std::vector<int> &joint_valuation = joint_valuations_[*it];
                 if( !is_consistent_with(joint_valuation, k_dnf, csp) )
                     it = current_domain_.erase(it);
@@ -337,7 +337,7 @@ namespace Inference {
         void print(std::ostream &os, const std::vector<int> &joint_valuation, const Csp &csp) const;
         void print(std::ostream &os, const std::set<int> &valuations, const Csp &csp) const {
             for( std::set<int>::const_iterator it = valuations.begin(); it != valuations.end(); ++it ) {
-                assert((*it >= 0) && (*it < joint_valuations_.size()));
+                assert((*it >= 0) && (*it < int(joint_valuations_.size())));
                 const std::vector<int> &joint_valuation = joint_valuations_[*it];
                 print(os, joint_valuation, csp);
                 os << std::endl;
@@ -354,7 +354,7 @@ namespace Inference {
             return true;
         }
 
-        virtual void print(std::ostream &os, const LW1_Instance *lw1_instance = 0, bool extra_output = false) const {
+        virtual void print(std::ostream &os, const LW1_Instance *lw1_instance = nullptr, bool extra_output = false) const {
             // force lw1_instance to null as there are no k-literals
             // associated to the values of group variables
             os << (name_ == "" ? std::string("<unnamed-group>") : name_)
@@ -401,14 +401,14 @@ namespace Inference {
                     variable = std::make_unique<const MultiValuedVariable>(lw1_variable, k);
                 variables_.emplace_back(std::move(variable));
 #else
-                const Variable *variable = 0;
+                const Variable *variable = nullptr;
                 if( lw1_variable.is_binary() )
                     variable = new BinaryVariable(lw1_variable, k);
                 else
                     variable = new MultiValuedVariable(lw1_variable, k);
                 variables_.emplace_back(variable);
 #endif
-                assert(variables_.back()->var_index() == k);
+                assert(variables_.back()->var_index() == int(k));
             }
             for( size_t k = 0; k < lw1_instance_.vars_for_variable_groups_.size(); ++k ) {
 #ifdef SMART
@@ -418,7 +418,7 @@ namespace Inference {
                 const GroupVariable *group = new GroupVariable(lw1_instance_.vars_for_variable_groups_[k], k, variables_);
                 variable_groups_.emplace_back(group);
 #endif
-                assert(variable_groups_.back()->var_index() == k);
+                assert(variable_groups_.back()->var_index() == int(k));
             }
         }
         virtual ~Csp() { }
@@ -430,14 +430,14 @@ namespace Inference {
             return variables_;
         }
         const Variable& variable(int var_index) const {
-            assert((var_index >= 0) && (var_index < variables_.size()));
+            assert((var_index >= 0) && (var_index < int(variables_.size())));
             return *variables_[var_index];
         }
         const std::vector<std::unique_ptr<const GroupVariable> >& variable_groups() const {
             return variable_groups_;
         }
         const GroupVariable& variable_group(int var_index) const {
-            assert((var_index >= 0) && (var_index < variable_groups_.size()));
+            assert((var_index >= 0) && (var_index < int(variable_groups_.size())));
             return *variable_groups_[var_index];
         }
 
@@ -457,7 +457,7 @@ namespace Inference {
 
         int get_var_index(int atom) const {
             assert(atom >= 0);
-            return atom >= atoms_to_var_map_.size() ? -1 : atoms_to_var_map_[atom];
+            return atom >= int(atoms_to_var_map_.size()) ? -1 : atoms_to_var_map_[atom];
         }
 
         void set_atoms_to_var_map(const std::map<int, int> &atoms_to_var_map) {
@@ -469,7 +469,7 @@ namespace Inference {
             // create O(1)-time map
             atoms_to_var_map_ = std::vector<int>(1 + max_atom, -1);
             for( std::map<int, int>::const_iterator it = atoms_to_var_map.begin(); it != atoms_to_var_map.end(); ++it ) {
-                assert((it->first >= 0) && (it->first < atoms_to_var_map_.size()));
+                assert((it->first >= 0) && (it->first < int(atoms_to_var_map_.size())));
                 atoms_to_var_map_[it->first] = it->second;
              }
         }
@@ -505,7 +505,7 @@ namespace Inference {
 
         // remove valuations inconsistent with k_dnf
         void filter_group_with_k_dnf(int group_index, const std::vector<std::vector<int> > &k_dnf) const {
-            assert((group_index >= 0) && (group_index < variable_groups_.size()));
+            assert((group_index >= 0) && (group_index < int(variable_groups_.size())));
             const GroupVariable &group = *variable_groups_[group_index];
             group.filter_current_domain_with_k_dnf(k_dnf, *this);
         }
@@ -566,7 +566,7 @@ namespace Inference {
         assert(var_index != -1);
         const Variable &var = csp.variable(var_index);
         int pos = get_pos_from_var_index(var_index);
-        assert((pos >= 0) && (pos < joint_valuation.size()));
+        assert((pos >= 0) && (pos < int(joint_valuation.size())));
         return var.is_binary() || !k_not ? joint_valuation[pos] == k_atom : joint_valuation[pos] != k_atom - 1;
     }
 
@@ -645,11 +645,11 @@ namespace Inference {
             return edges_;
         }
         const Edge& edge(int edge_index) const {
-            assert((edge_index >= 0) && (edge_index < edges_.size()));
+            assert((edge_index >= 0) && (edge_index < int(edges_.size())));
             return edges_[edge_index];
         }
         const std::vector<int>& alist(int vertex) const {
-            assert((vertex >= 0) && (vertex < alists_.size()));
+            assert((vertex >= 0) && (vertex < int(alists_.size())));
             return alists_[vertex];
         }
         void add_edge(int i, int j, const T &label) {
@@ -674,7 +674,7 @@ namespace Inference {
             while( !worklist_.empty() ) {
                 int edge_index = worklist_.front();
                 worklist_.pop_front();
-                assert((edge_index >= 0) && (edge_index < digraph_.edges().size()));
+                assert((edge_index >= 0) && (edge_index < int(digraph_.edges().size())));
                 const Digraph<Arc>::Edge &edge = digraph_.edge(edge_index);
                 const Arc &arc = edge.label_;
                 std::pair<bool, bool> p = reduce(arc);
@@ -745,8 +745,8 @@ namespace Inference {
                 int var_index_for_common_var = common_vars[k];
                 int pos_x = group_x.get_pos_from_var_index(var_index_for_common_var);
                 int pos_y = group_y.get_pos_from_var_index(var_index_for_common_var);
-                assert((pos_x >= 0) && (pos_x < joint_valuation_x.size()));
-                assert((pos_y >= 0) && (pos_y < joint_valuation_y.size()));
+                assert((pos_x >= 0) && (pos_x < int(joint_valuation_x.size())));
+                assert((pos_y >= 0) && (pos_y < int(joint_valuation_y.size())));
                 if( joint_valuation_x[pos_x] != joint_valuation_y[pos_y] )
                     return false;
             }

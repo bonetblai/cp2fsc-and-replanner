@@ -522,7 +522,7 @@ negative_literal:
 
 argument_list:
       argument_list TK_VAR_SYMBOL {
-          if( $2->value_ == 0 )
+          if( $2->value_ == nullptr )
               log_error((char*)"undeclared variable in atom args list");
           else
               $1->push_back(static_cast<VariableSymbol*>($2->value_));
@@ -559,7 +559,7 @@ forall_condition:
           delete $5;
       }
       condition TK_CLOSE {
-          assert(dynamic_cast<ForallCondition*>(schema_.back()) != 0);
+          assert(dynamic_cast<ForallCondition*>(schema_.back()) != nullptr);
           ForallCondition *forall_condition = static_cast<ForallCondition*>(schema_.back());
           schema_.pop_back();
           using_owned_schema_.pop_back();
@@ -579,7 +579,7 @@ exists_condition:
           delete $5;
       }
       condition TK_CLOSE {
-          assert(dynamic_cast<ExistsCondition*>(schema_.back()) != 0);
+          assert(dynamic_cast<ExistsCondition*>(schema_.back()) != nullptr);
           ExistsCondition *exists_condition = static_cast<ExistsCondition*>(schema_.back());
           schema_.pop_back();
           using_owned_schema_.pop_back();
@@ -652,7 +652,7 @@ forall_effect:
           delete $5;
       }
       optional_such_that action_effect TK_CLOSE {
-          assert(dynamic_cast<ForallEffect*>(schema_.back()) != 0);
+          assert(dynamic_cast<ForallEffect*>(schema_.back()) != nullptr);
           ForallEffect *forall_effect = static_cast<ForallEffect*>(schema_.back());
           schema_.pop_back();
           using_owned_schema_.pop_back();
@@ -751,7 +751,7 @@ forall_sensing:
           delete $5;
       }
       optional_such_that sensing_decl_list TK_CLOSE {
-          assert(dynamic_cast<ForallSensing*>(schema_.back()) != 0);
+          assert(dynamic_cast<ForallSensing*>(schema_.back()) != nullptr);
           ForallSensing *forall_sensing = static_cast<ForallSensing*>(schema_.back());
           schema_.pop_back();
           using_owned_schema_.pop_back();
@@ -767,24 +767,24 @@ sensing_model:
       TK_OPEN KW_MODEL_FOR TK_VARNAME_SYMBOL literal condition TK_CLOSE {
           assert(static_cast<Symbol*>($3->value_)->sym_class_ == sym_varname);
           const Variable *variable = static_cast<Variable*>($3->value_);
-          if( dynamic_cast<const ObsVariable*>(variable) == 0 ) {
+          if( dynamic_cast<const ObsVariable*>(variable) == nullptr ) {
               std::cout << Utils::error() << "sensing model can only be specified for observable variable" << std::endl;
               $$ = 0;
           } else {
               const ObsVariable *obs_variable = static_cast<const ObsVariable*>(variable);
-              assert(dynamic_cast<const ObsVariable*>(variable) != 0);
+              assert(dynamic_cast<const ObsVariable*>(variable) != nullptr);
               $$ = new SensingModelForObservableVariable(obs_variable, new Literal(*$4), $5);
           }
       }
     | TK_OPEN KW_MODEL_FOR TK_OPEN TK_VARNAME_SYMBOL argument_list TK_CLOSE literal condition TK_CLOSE {
           assert(static_cast<Symbol*>($4->value_)->sym_class_ == sym_varname);
           const Variable *variable = static_cast<Variable*>($4->value_);
-          if( dynamic_cast<const ObsVariable*>(variable) == 0 ) {
+          if( dynamic_cast<const ObsVariable*>(variable) == nullptr ) {
               std::cout << Utils::error() << "sensing model can only be specified for observable variable" << std::endl;
               $$ = 0;
           } else {
               const ObsVariable *obs_variable = static_cast<const ObsVariable*>(variable);
-              assert(dynamic_cast<const ObsVariable*>(variable) != 0);
+              assert(dynamic_cast<const ObsVariable*>(variable) != nullptr);
               SensingModelForObservableVariable *model = new SensingModelForObservableVariable(obs_variable, new Literal(*$7), $8);
               model->param_ = *$5;
               delete $5;
@@ -794,13 +794,13 @@ sensing_model:
     | TK_OPEN KW_VARIABLE TK_VARNAME_SYMBOL TK_CLOSE {
           assert(static_cast<Symbol*>($3->value_)->sym_class_ == sym_varname);
           const Variable *variable = static_cast<Variable*>($3->value_);
-          assert(dynamic_cast<const StateVariable*>(variable) != 0);
+          assert(dynamic_cast<const StateVariable*>(variable) != nullptr);
           $$ = new SensingModelForStateVariable(static_cast<const StateVariable*>(variable));
       }
     | TK_OPEN KW_VARIABLE TK_OPEN TK_VARNAME_SYMBOL argument_list TK_CLOSE TK_CLOSE {
           assert(static_cast<Symbol*>($4->value_)->sym_class_ == sym_varname);
           const Variable *variable = static_cast<Variable*>($4->value_);
-          assert(dynamic_cast<const StateVariable*>(variable) != 0);
+          assert(dynamic_cast<const StateVariable*>(variable) != nullptr);
           SensingModelForStateVariable *model = new SensingModelForStateVariable(static_cast<const StateVariable*>(variable));
           model->param_ = *$5;
           delete $5;
@@ -999,12 +999,12 @@ simple_variable_decl:
       }
       optional_such_that fluent_list_decl TK_CLOSE {
 #ifdef SMART
-          assert(dynamic_cast<Variable*>(owned_schema_.back().get()) != 0);
+          assert(dynamic_cast<Variable*>(owned_schema_.back().get()) != nullptr);
           std::unique_ptr<Variable> variable(static_cast<Variable*>(owned_schema_.back().release()));
           owned_schema_.pop_back();
           using_owned_schema_.pop_back();
 #else
-          assert(dynamic_cast<Variable*>(schema_.back()) != 0);
+          assert(dynamic_cast<Variable*>(schema_.back()) != nullptr);
           Variable *variable = static_cast<Variable*>(schema_.back());
           schema_.pop_back();
           using_owned_schema_.pop_back();
@@ -1064,12 +1064,12 @@ variable_group_decl:
       }
       optional_such_that state_variable_list_decl TK_CLOSE {
 #ifdef SMART
-          assert(dynamic_cast<VariableGroup*>(owned_schema_.back().get()) != 0);
+          assert(dynamic_cast<VariableGroup*>(owned_schema_.back().get()) != nullptr);
           std::unique_ptr<VariableGroup> group(static_cast<VariableGroup*>(owned_schema_.back().release()));
           owned_schema_.pop_back();
           using_owned_schema_.pop_back();
 #else
-          assert(dynamic_cast<VariableGroup*>(schema_.back()) != 0);
+          assert(dynamic_cast<VariableGroup*>(schema_.back()) != nullptr);
           VariableGroup *group = static_cast<VariableGroup*>(schema_.back());
           schema_.pop_back();
           using_owned_schema_.pop_back();
@@ -1094,13 +1094,13 @@ variable_group_decl:
 state_variable_list_decl:
       state_variable_list_decl state_variable {
           state_variable_list_vec *varlist = const_cast<state_variable_list_vec*>($1);
-          assert(dynamic_cast<const SingleStateVariableList*>($2) != 0);
+          assert(dynamic_cast<const SingleStateVariableList*>($2) != nullptr);
           varlist->push_back(const_cast<StateVariableList*>($2));
           $$ = varlist;
       }
     | state_variable_list_decl forall_state_variable_list_decl {
           state_variable_list_vec *varlist = const_cast<state_variable_list_vec*>($1);
-          assert(dynamic_cast<const ForallStateVariableList*>($2) != 0);
+          assert(dynamic_cast<const ForallStateVariableList*>($2) != nullptr);
           varlist->push_back(const_cast<StateVariableList*>($2));
           $$ = varlist;
       }
@@ -1111,7 +1111,7 @@ state_variable:
       TK_VARNAME_SYMBOL {
           assert(static_cast<Symbol*>($1->value_)->sym_class_ == sym_varname);
           const Variable *var = static_cast<Variable*>($1->value_);
-          if( dynamic_cast<const StateVariable*>(var) == 0 ) {
+          if( dynamic_cast<const StateVariable*>(var) == nullptr ) {
               std::cout << Utils::error() << "only state variables can be grouped together" << std::endl;
           }
           $$ = new SingleStateVariableList(var->print_name_);
@@ -1119,7 +1119,7 @@ state_variable:
     | TK_OPEN TK_VARNAME_SYMBOL argument_list TK_CLOSE {
           assert(static_cast<Symbol*>($2->value_)->sym_class_ == sym_varname);
           const Variable *var = static_cast<Variable*>($2->value_);
-          if( dynamic_cast<const StateVariable*>(var) == 0 ) {
+          if( dynamic_cast<const StateVariable*>(var) == nullptr ) {
               std::cout << Utils::error() << "only state variables can be grouped together" << std::endl;
           }
           SingleStateVariableList *single = new SingleStateVariableList(var->print_name_);
@@ -1139,7 +1139,7 @@ forall_state_variable_list_decl:
           delete $5;
       }
       optional_such_that state_variable_list_decl TK_CLOSE {
-          assert(dynamic_cast<ForallStateVariableList*>(schema_.back()) != 0);
+          assert(dynamic_cast<ForallStateVariableList*>(schema_.back()) != nullptr);
           ForallStateVariableList *forall_state_variable_list = static_cast<ForallStateVariableList*>(schema_.back());
           schema_.pop_back();
           using_owned_schema_.pop_back();
@@ -1251,20 +1251,20 @@ init_elements:
       init_elements single_init_element {
 #ifdef SMART
           owned_init_element_vec *ilist = const_cast<owned_init_element_vec*>($1);
-          if( $2 != 0 ) ilist->emplace_back(std::unique_ptr<InitElement>(const_cast<InitElement*>($2)));
+          if( $2 != nullptr ) ilist->emplace_back(std::unique_ptr<InitElement>(const_cast<InitElement*>($2)));
 #else
           init_element_vec *ilist = const_cast<init_element_vec*>($1);
-          if( $2 != 0 ) ilist->push_back(const_cast<InitElement*>($2));
+          if( $2 != nullptr ) ilist->push_back(const_cast<InitElement*>($2));
 #endif
           $$ = ilist;
       }
     | single_init_element {
 #ifdef SMART
           owned_init_element_vec *ilist = new owned_init_element_vec;
-          if( $1 != 0 ) ilist->emplace_back(std::unique_ptr<InitElement>(const_cast<InitElement*>($1)));
+          if( $1 != nullptr ) ilist->emplace_back(std::unique_ptr<InitElement>(const_cast<InitElement*>($1)));
 #else
           init_element_vec *ilist = new init_element_vec;
-          if( $1 != 0 ) ilist->push_back(const_cast<InitElement*>($1));
+          if( $1 != nullptr ) ilist->push_back(const_cast<InitElement*>($1));
 #endif
           $$ = ilist;
       }
@@ -1308,7 +1308,7 @@ single_init_element:
           delete $1;
       }
     | unknown {
-          $$ = 0; // when fixing this, remove condition '$2 != 0' and '$1 != 0' above (in single_init_element)
+          $$ = nullptr; // when fixing this, remove condition '$2 != nullptr' and '$1 != nullptr' above (in single_init_element)
           std::cout << Utils::warning()
                     << Utils::magenta() << "(clg) ignoring '" << $1->to_string() << "'"
                     << Utils::normal() << std::endl;

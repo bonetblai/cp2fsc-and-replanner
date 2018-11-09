@@ -346,7 +346,9 @@ bool KP_Instance::plan_backchain(const Plan &plan,
         cout << "    action=" << Utils::yellow() << action.name() << mode << " is applied at state=" << Utils::normal();
         state_trajectory[k]->print(cout, *this);
         cout << endl;
-        for( index_set::const_iterator it = open.begin(); it != open.end(); ++it ) cout << *it << " "; cout << endl;
+        for( index_set::const_iterator it = open.begin(); it != open.end(); ++it )
+            cout << *it << " ";
+        cout << endl;
 #endif
 
         // sets of literals to update set of open conditions
@@ -512,7 +514,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins, const PDDL_Base:
             for( size_t i = 0; !in_invariant && (i < ins.init_.invariants().size()); ++i ) {
                 for( size_t j = 0; j < ins.init_.invariants()[i].size(); ++j ) {
                     int lit = ins.init_.invariants()[i][j];
-                    if( (lit > 0) && (atom.index() + 1 == lit) ) {
+                    if( (lit > 0) && (int(atom.index()) + 1 == lit) ) {
                         in_invariant = true;
                         break;
                     }
@@ -914,7 +916,7 @@ Standard_KP_Instance::Standard_KP_Instance(const Instance &ins)
             for( size_t i = 0; !in_invariant && (i < ins.init_.invariants().size()); ++i ) {
                 for( size_t j = 0; j < ins.init_.invariants()[i].size(); ++j ) {
                     int lit = ins.init_.invariants()[i][j];
-                    if( (lit > 0) && (atom.index() + 1 == lit) ) {
+                    if( (lit > 0) && (int(atom.index()) + 1 == lit) ) {
                         in_invariant = true;
                         break;
                     }

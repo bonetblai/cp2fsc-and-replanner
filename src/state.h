@@ -232,8 +232,8 @@ class State {
     bool operator()(const State *s1, const State *s2) const { return *s1 == *s2; }
     size_t operator()(const State *s) const { return s->hash(); }
 
-    static std::string to_string(int literal, const Instance *ins = 0) {
-        if( ins == 0 ) {
+    static std::string to_string(int literal, const Instance *ins = nullptr) {
+        if( ins == nullptr ) {
             return Utils::to_string(literal);
         } else {
             std::string str;
@@ -245,11 +245,11 @@ class State {
         }
     }
 
-    static void print_literal(std::ostream &os, int literal, const Instance *ins = 0) {
+    static void print_literal(std::ostream &os, int literal, const Instance *ins = nullptr) {
         os << to_string(literal, ins);
     }
 
-    static bool is_special(int literal, const Instance *ins = 0) {
+    static bool is_special(int literal, const Instance *ins = nullptr) {
         std::string literal_name = to_string(literal, ins);
         if (literal_name.find("need-start") != std::string::npos or
             literal_name.find("normal-execution") != std::string::npos or
@@ -260,7 +260,7 @@ class State {
         return false;
     }
 
-    void print(std::ostream &os, const Instance *ins = 0) const {
+    void print(std::ostream &os, const Instance *ins = nullptr) const {
         os << "{";
         for( unsigned *p = atoms_; *p; ++p ) {
             assert(*p > 0);
@@ -280,7 +280,7 @@ class State {
     // iterators
     struct const_iterator {
         const unsigned *p_;
-        const_iterator(const unsigned *p = 0) : p_(p) { }
+        const_iterator(const unsigned *p = nullptr) : p_(p) { }
         const_iterator operator++() { return ++p_; }
         unsigned operator*() const { return *p_ - 1; }
         bool operator!=(const const_iterator &i) const { return p_ != i.p_; }

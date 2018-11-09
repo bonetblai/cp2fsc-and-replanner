@@ -100,7 +100,7 @@ namespace AndOr3 {
             }
         }
         void propagate_subtree_solution_upwards(const OrNode<T> &node) const {
-            if( has_solution(node) && (node.parent() != 0) ) {
+            if( has_solution(node) && (node.parent() != nullptr) ) {
                 const AndNode<T> &parent = *node.parent();
                 assert(!has_solution(parent));
                 bool parent_has_solution = true;
@@ -116,7 +116,7 @@ namespace AndOr3 {
             }
         }
         void propagate_subtree_solution_upwards(const AndNode<T> &node) const {
-            assert(node.parent() != 0);
+            assert(node.parent() != nullptr);
             if( has_solution(node) ) {
                 const OrNode<T> &parent = *node.parent();
                 assert(!has_solution(parent));

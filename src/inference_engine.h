@@ -81,7 +81,7 @@ namespace Inference {
           state.print(std::cout, lw1_instance_);
           std::cout << Utils::normal() << std::endl;
 
-          if( last_action != 0 )
+          if( last_action != nullptr )
               std::cout << "Last action=" << last_action->name() << std::endl;
           else
               std::cout << "Last action=" << last_action << std::endl;
@@ -221,11 +221,11 @@ namespace Inference {
           base_theory_.clear();
       }
       bool is_forbidden(int literal) const {
-          assert(dynamic_cast<const LW1_Instance*>(&lw1_instance_) != 0);
+          assert(dynamic_cast<const LW1_Instance*>(&lw1_instance_) != nullptr);
           return static_cast<const LW1_Instance&>(lw1_instance_).is_forbidden(literal);
       }
       bool is_forbidden(const std::vector<int> &clause) const {
-          assert(dynamic_cast<const LW1_Instance*>(&lw1_instance_) != 0);
+          assert(dynamic_cast<const LW1_Instance*>(&lw1_instance_) != nullptr);
           return static_cast<const LW1_Instance&>(lw1_instance_).is_forbidden(clause);
       }
 
@@ -233,7 +233,7 @@ namespace Inference {
                                             const std::set<int> &sensed_at_step,
                                             T &state) const {
           assert(options_.is_enabled("lw1:inference:up"));
-          assert(dynamic_cast<const LW1_Instance*>(&lw1_instance_) != 0);
+          assert(dynamic_cast<const LW1_Instance*>(&lw1_instance_) != nullptr);
           const LW1_Instance &lw1_instance = static_cast<const LW1_Instance&>(lw1_instance_);
 
 #ifdef DEBUG
@@ -242,7 +242,7 @@ namespace Inference {
 
           // find sensing models for given action that are incompatible with observations
           relevant_sensing_models_t relevant_sensing_models_as_k_cnf;
-          if( last_action != 0 )
+          if( last_action != nullptr )
               fill_relevant_sensing_models(options_, instance_, lw1_instance, last_action, sensed_at_step, relevant_sensing_models_as_k_cnf, true);
 
           // check basic invariants
@@ -335,7 +335,7 @@ namespace Inference {
               std::cout << Utils::internal_error() << "lw1:inference:up:enhanced is EXPERIMENTAL!" << std::endl;
               exit(-1);
 
-              assert(dynamic_cast<LW1_State*>(&state) != 0);
+              assert(dynamic_cast<LW1_State*>(&state) != nullptr);
               for( size_t k = 0; k < state.cnf_.size(); ++k ) {
                   const clause_or_term_t &clause = state.cnf_[k];
                   //cnf_.push_back(static_cast<const Propositional::Clause&>(clause));//CHECK: is this equivalent?
@@ -459,7 +459,7 @@ namespace Inference {
       }
       virtual bool internal_propagate(T &state) const {
           assert(options_.is_enabled("lw1:inference:up"));
-          assert(dynamic_cast<const LW1_Instance*>(&lw1_instance_) != 0);
+          assert(dynamic_cast<const LW1_Instance*>(&lw1_instance_) != nullptr);
           const LW1_Instance &lw1_instance = static_cast<const LW1_Instance&>(lw1_instance_);
 
 #ifdef DEBUG
@@ -628,7 +628,7 @@ namespace Inference {
 
           // find sensing models for given action that are incompatible with observations
           relevant_sensing_models_t relevant_sensing_models_as_k_dnf;
-          if( last_action != 0 )
+          if( last_action != nullptr )
               fill_relevant_sensing_models(options_, instance_, lw1_instance_, last_action, sensed_at_step, relevant_sensing_models_as_k_dnf, false);
 
           // 0. Domains are original domains with values pruned as indicated with the k-atoms in state.

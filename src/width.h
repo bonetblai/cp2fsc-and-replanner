@@ -183,7 +183,7 @@ namespace Width {
           goal_feature_index_ = feature_universe_.size();
           AndFeature<T> *g_feature = new AndFeature<T>(goal_feature_index_);
           for( size_t k = 0; k < xxx.size(); ++k ) {
-              assert(dynamic_cast<const DomainSizeFeature<T>*>(feature_universe_[xxx[k]]) != 0);
+              assert(dynamic_cast<const DomainSizeFeature<T>*>(feature_universe_[xxx[k]]) != nullptr);
               const DomainSizeFeature<T> &f = static_cast<const DomainSizeFeature<T>&>(*feature_universe_[xxx[k]]);
               g_feature->add_conjunct(f);
           }
@@ -510,7 +510,7 @@ namespace Width {
       virtual bool prune(const AndOr::Search::Node &n) const {
           if( prune_nodes_ ) {
               const Node<T> &node = static_cast<const Node<T>&>(n);
-              if( node.features() != 0 ) {
+              if( node.features() != nullptr ) {
                   for( typename FeatureSet<T>::const_iterator it = node.features()->begin(); it != node.features()->end(); ++it ) {
                       if( is_feature_available(**it) ) // CHECK: ext
                           return false;
@@ -551,7 +551,7 @@ namespace Width {
 
           // register node's features as reached features
           for( typename FeatureSet<T>::const_iterator it = features.begin(); it != features.end(); ++it ) {
-              assert(*it != 0);
+              assert(*it != nullptr);
               register_feature(**it); // CHECK: ext
           }
           std::cout << Utils::green() << "#available-features=" << num_available_features_ << Utils::normal() << std::endl;
@@ -927,7 +927,7 @@ std::cout << "NEW POLICY FOR " << feature << std::endl;
                   new_policy->add_tip(tip);
               } else {
                   AndOr::AndNode<T> *and_node = maps.first.at(action);
-                  assert(and_node != 0);
+                  assert(and_node != nullptr);
 
                   // link and-node to (old) policy and create tips for new policy
                   and_node->set_parent(tip);

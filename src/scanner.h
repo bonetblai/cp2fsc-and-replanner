@@ -76,7 +76,7 @@
 #line 38 "ppddl.lex"
 #define YY_PDDL_Scanner_CONSTRUCTOR_PARAM  StringTable& t
 #line 39 "ppddl.lex"
-#define YY_PDDL_Scanner_CONSTRUCTOR_INIT  : _tab(t), _reset(false), _filename(0), _line_no(1), _trace_line(false)
+#define YY_PDDL_Scanner_CONSTRUCTOR_INIT  : _tab(t), _reset(false), _filename(nullptr), _line_no(1), _trace_line(false)
 #line 42 "ppddl.lex"
 #include <strings.h>
 #include "string_table.h"

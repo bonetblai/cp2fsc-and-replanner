@@ -116,11 +116,11 @@ void print_usage(ostream &os, const char *exec_name, const char **cmdline_option
     os << endl << "usage: " << base_name << " ";
     free(tmp);
 
-    if( cmdline_options[0] == 0 ) {
+    if( cmdline_options[0] == nullptr ) {
         os << endl;
     } else {
         os << cmdline_options[0] << endl;
-        for( int i = 1; cmdline_options[i] != 0; ++i ) {
+        for( int i = 1; cmdline_options[i] != nullptr; ++i ) {
             os << indent << cmdline_options[i] << endl;
         }
     }
@@ -155,7 +155,7 @@ int main(int argc, const char *argv[]) {
     cout << "cmdline: " << Utils::cmdline(argc, argv) << endl;
 
     // initialize options
-    for( const char **opt = &available_options[0]; *opt != 0; ++opt ) {
+    for( const char **opt = &available_options[0]; *opt != nullptr; ++opt ) {
         const char *name = *opt++;
         const char *desc = *opt;
         g_options.add(name, desc);
@@ -404,19 +404,19 @@ int main(int argc, const char *argv[]) {
 
     // perform necessary translations
 #ifdef SMART
-    const PDDL_Base::owned_variable_vec *variables = 0;
-    const PDDL_Base::owned_variable_group_vec *variable_groups = 0;
-    const list<pair<const PDDL_Base::Action*, unique_ptr<const PDDL_Base::Sensing> > > *sensing_models = 0;
+    const PDDL_Base::owned_variable_vec *variables = nullptr;
+    const PDDL_Base::owned_variable_group_vec *variable_groups = nullptr;
+    const list<pair<const PDDL_Base::Action*, unique_ptr<const PDDL_Base::Sensing> > > *sensing_models = nullptr;
 #else
-    const PDDL_Base::variable_vec *variables = 0;
-    const PDDL_Base::variable_group_vec *variable_groups = 0;
-    const list<pair<const PDDL_Base::Action*, const PDDL_Base::Sensing*> > *sensing_models = 0;
+    const PDDL_Base::variable_vec *variables = nullptr;
+    const PDDL_Base::variable_group_vec *variable_groups = nullptr;
+    const list<pair<const PDDL_Base::Action*, const PDDL_Base::Sensing*> > *sensing_models = nullptr;
 #endif
-    const map<string, set<string> > *accepted_literals_for_observables = 0;
+    const map<string, set<string> > *accepted_literals_for_observables = nullptr;
     reader->do_lw1_translation(variables, variable_groups, sensing_models, accepted_literals_for_observables);
-    assert(variables != 0);
-    assert(variable_groups != 0);
-    assert(sensing_models != 0);
+    assert(variables != nullptr);
+    assert(variable_groups != nullptr);
+    assert(sensing_models != nullptr);
 
     if( g_options.is_enabled("parser:print:translated") ) {
         reader->print(cout);
@@ -497,7 +497,7 @@ int main(int argc, const char *argv[]) {
         }
     }
 #else
-    const ClassicalPlanner *planner = 0;
+    const ClassicalPlanner *planner = nullptr;
     if( need_classical_planner || g_options.is_enabled("solver:classical-planner") ) {
         assert(as_method.options_.find("planner") != as_method.options_.end());
         const string &as_planner = as_method.options_.at("planner");
@@ -533,7 +533,7 @@ int main(int argc, const char *argv[]) {
         exit(-1);
     }
 #else
-    Inference::Engine<STATE_CLASS> *inference_engine = 0;
+    Inference::Engine<STATE_CLASS> *inference_engine = nullptr;
     if( g_options.is_enabled("lw1:inference:forward-chaining") ) {
         inference_engine = new Inference::ForwardChaining<STATE_CLASS>(instance, *lw1_instance, g_options);
     } else if( g_options.is_enabled("lw1:inference:up") ) {
@@ -571,11 +571,11 @@ int main(int argc, const char *argv[]) {
         action_selection = make_unique<ClassicalPlannerWrapper<STATE_CLASS> >(*planner, as_method.options_);
     }
 #else
-    ActionSelection<STATE_CLASS> *action_selection = 0;
+    ActionSelection<STATE_CLASS> *action_selection = nullptr;
     if( g_options.is_enabled("solver:naive-random-action-selection") ) {
         action_selection = new NaiveRandomActionSelection<STATE_CLASS>(*lw1_instance, as_method.options_);
     } else if( g_options.is_enabled("solver:random-action-selection") ) {
-        assert(planner != 0);
+        assert(planner != nullptr);
         ActionSelection<STATE_CLASS> *alternate_action_selection = new ClassicalPlannerWrapper<STATE_CLASS>(*planner, as_method.options_);
         action_selection = new RandomActionSelection<STATE_CLASS>(*lw1_instance, alternate_action_selection, as_method.options_);
     } else if( g_options.is_enabled("solver:width-based-action-selection") ) {
@@ -589,7 +589,7 @@ int main(int argc, const char *argv[]) {
     } else {
         assert(g_options.is_enabled("solver:classical-planner"));
         assert(as_method.name_ == "classical-planner");
-        assert(planner != 0);
+        assert(planner != nullptr);
         action_selection = new ClassicalPlannerWrapper<STATE_CLASS>(*planner, as_method.options_);
     }
 #endif
