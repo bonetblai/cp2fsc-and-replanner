@@ -34,7 +34,8 @@ class CP_Instance : public Instance {
     StateSet reachable_space_;
     std::map<const State*, const StateSet*> reachable_space_from_initial_state_;
     std::map<index_set, int> reachable_obs_;
-    std::vector<int> state_obs_;
+    std::vector<std::set<const State*> > states_for_obs_index_;
+    mutable std::map<std::pair<int, const index_set*>, bool> cache_for_consistent_with_obs_;
     const Instance &instance_;
 
     size_t obs0_, q0_; // initial fluent index for reachable obs and FSC states
@@ -62,7 +63,7 @@ class CP_Instance : public Instance {
     }
 
     void add_to_initial_states(int fluent);
-    bool consistent_with_obs(int obs_idx, const index_set &condition) const;
+    bool consistent_with_obs(int obs_idx, const index_set &condition, bool caching) const;
     int n_obs() const { return reachable_obs_.size(); }
 
     // Remaps atoms in the initial states and then calls Instance::remove_atoms()

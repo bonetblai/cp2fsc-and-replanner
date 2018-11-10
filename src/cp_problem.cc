@@ -19,6 +19,7 @@
 #include <cassert>
 #include <list>
 #include <map>
+#include <set>
 #include "cp_problem.h"
 #include "state.h"
 #include "utils.h"
@@ -57,8 +58,6 @@ CP_Instance::CP_Instance(const Instance &ins,
     cout << "# reachable states = " << reachable_space_.size() << endl;
 
     // calculate reachable observations
-    state_obs_ = vector<int>(reachable_space_.size(), -1);
-    int state_idx = 0;
     for( StateSet::const_iterator it = reachable_space_.begin(); it != reachable_space_.end(); ++it ) {
         index_set obs;
         for( index_set::const_iterator jt = ins.observable_fluents_.begin(); jt != ins.observable_fluents_.end(); ++jt ) {
@@ -67,8 +66,10 @@ CP_Instance::CP_Instance(const Instance &ins,
         if( reachable_obs_.find(obs) == reachable_obs_.end() ) {
             // this is a new observation
             reachable_obs_.insert(make_pair(obs, (int)reachable_obs_.size()));
+            states_for_obs_index_.push_back(set<const State*>());
+            assert(states_for_obs_index_.size() == reachable_obs_.size());
         }
-        state_obs_[state_idx++] = reachable_obs_[obs];
+        states_for_obs_index_[reachable_obs_[obs]].insert(*it);
     }
 
     cout << "# reachable obs = " << reachable_obs_.size() << endl;
@@ -174,9 +175,10 @@ CP_Instance::CP_Instance(const Instance &ins,
             for( size_t k = 0; k < ins.n_actions(); ++k ) {
                 const Action &act = *ins.actions_[k];
                 for( int qp = 0; qp < fsc_states_; ++qp ) {
+                    //cout << "tuple: t=(" << obs_idx << "," << q << "," << k << "," << qp << ")" << endl;
 
                     // create map actions if inconsistent tuples must be forbidden
-                    size_t unused_fluent = obs_idx*fsc_states_ + q;
+                    size_t unused_fluent = obs_idx * fsc_states_ + q;
                     size_t mapped_fluent = obs_idx * fsc_states_ * ins.n_actions() * fsc_states_ + q * ins.n_actions() * fsc_states_ + k * fsc_states_ + qp;
                     if( forbid_inconsistent_tuples_ ) {
                         string map_act_name = string("map_") + act.name() + "_obs" + Utils::to_string(obs_idx) + "_q" + Utils::to_string(q) + "_q" + Utils::to_string(qp);
@@ -224,7 +226,7 @@ CP_Instance::CP_Instance(const Instance &ins,
                     // conditional effects of action
                     for( size_t i = 0; i < act.when().size(); ++i ) {
                         const When &w = act.when()[i];
-                        if( consistent_with_obs(obs_idx, w.condition()) ) {
+                        if( consistent_with_obs(obs_idx, w.condition(), true) ) {
                             When c_eff;
 
                             // condition
@@ -289,15 +291,22 @@ void CP_Instance::add_to_initial_states(int fluent) {
 }
 
 // CHECK: this operation is slow when many reachable states
-bool CP_Instance::consistent_with_obs(int obs_idx, const index_set &condition) const {
-    int state_idx = 0;
-    for( StateSet::const_iterator it = reachable_space_.begin(); it != reachable_space_.end(); ++it ) {
-        // if state generates this observation, check condition in state
-        if( (state_obs_[state_idx] == obs_idx) && (*it)->satisfy(condition) )
-            return true;
-        ++state_idx;
+bool CP_Instance::consistent_with_obs(int obs_idx, const index_set &condition, bool caching) const {
+    pair<int, const index_set*> p(obs_idx, &condition);
+    map<pair<int, const index_set*>, bool>::const_iterator it = cache_for_consistent_with_obs_.find(p);
+    if( it != cache_for_consistent_with_obs_.end() ) {
+        return it->second;
+    } else {
+        assert(obs_idx < states_for_obs_index_.size());
+        for( set<const State*>::const_iterator it = states_for_obs_index_[obs_idx].begin(); it != states_for_obs_index_[obs_idx].end(); ++it ) {
+            if( (*it)->satisfy(condition) ) {
+                if( caching ) cache_for_consistent_with_obs_.insert(make_pair(p, true));
+                return true;
+            }
+        }
+        if( caching ) cache_for_consistent_with_obs_.insert(make_pair(p, false));
+        return false;
     }
-    return false;
 }
 
 void CP_Instance::remove_atoms(const bool_vec &set, index_vec &atom_map) {
@@ -349,8 +358,7 @@ void CP_Instance::remove_atoms(const bool_vec &set, index_vec &atom_map) {
 
     // re-calculate reachable observations
     reachable_obs_.clear();
-    state_obs_ = vector<int>(reachable_space_.size(), -1);
-    int state_idx = 0;
+    states_for_obs_index_.clear();
     for( StateSet::const_iterator it = reachable_space_.begin(); it != reachable_space_.end(); ++it ) {
         index_set obs;
         for( index_set::const_iterator jt = instance_.observable_fluents_.begin(); jt != instance_.observable_fluents_.end(); ++jt ) {
@@ -359,8 +367,10 @@ void CP_Instance::remove_atoms(const bool_vec &set, index_vec &atom_map) {
         if( reachable_obs_.find(obs) == reachable_obs_.end() ) {
             // this is a new observation
             reachable_obs_.insert(make_pair(obs, (int)reachable_obs_.size()));
+            states_for_obs_index_.push_back(std::set<const State*>());
+            assert(states_for_obs_index_.size() == reachable_obs_.size());
         }
-        state_obs_[state_idx++] = reachable_obs_[obs];
+        states_for_obs_index_[reachable_obs_[obs]].insert(*it);
     }
 
     /*
