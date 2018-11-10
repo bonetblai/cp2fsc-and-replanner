@@ -26,9 +26,10 @@
 
 class CP_Instance : public Instance {
   public:
-    size_t fsc_states_;
-    bool forbid_inconsistent_tuples_;
-    bool compound_obs_as_fluents_;
+    const int fsc_states_;
+    const int bounded_reachability_;
+    const bool forbid_inconsistent_tuples_;
+    const bool compound_obs_as_fluents_;
     StateSet initial_states_;
     StateSet reachable_space_;
     std::map<const State*, const StateSet*> reachable_space_from_initial_state_;
@@ -41,11 +42,24 @@ class CP_Instance : public Instance {
     size_t unused0_, mapped0_; // initial fluent index for unused and mapped fluents
 
     CP_Instance(const Instance &instance,
-                size_t fsc_states,
-                size_t bounded_reachability,
+                int fsc_states,
+                int bounded_reachability,
                 bool forbid_inconsistent_tuples = false,
                 bool compound_obs_as_fluents = false);
     virtual ~CP_Instance();
+
+    int fsc_states() const {
+        return fsc_states_;
+    }
+    int bounded_reachability() const {
+        return bounded_reachability_;
+    }
+    bool forbid_inconsistent_tuples() const {
+        return forbid_inconsistent_tuples_;
+    }
+    bool compound_obs_as_fluents() const {
+        return compound_obs_as_fluents_;
+    }
 
     void add_to_initial_states(int fluent);
     bool consistent_with_obs(int obs_idx, const index_set &condition) const;

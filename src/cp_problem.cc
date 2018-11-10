@@ -28,12 +28,13 @@ using namespace std;
 // TODO: remove map actions for which there are no act actions
 
 CP_Instance::CP_Instance(const Instance &ins,
-                         size_t fsc_states,
-                         size_t bounded_reachability,
+                         int fsc_states,
+                         int bounded_reachability,
                          bool forbid_inconsistent_tuples,
                          bool compound_obs_as_fluents)
   : Instance(ins.domain_name_, ins.problem_name_, ins.options_),
     fsc_states_(fsc_states),
+    bounded_reachability_(bounded_reachability),
     forbid_inconsistent_tuples_(forbid_inconsistent_tuples),
     compound_obs_as_fluents_(compound_obs_as_fluents),
     instance_(ins) {
@@ -43,12 +44,12 @@ CP_Instance::CP_Instance(const Instance &ins,
 
     // calculate reachable state space
     assert(initial_states_.empty());
-    cout << "calculating reachable state space (bound=" << bounded_reachability << ")..." << endl;
+    cout << "calculating reachable state space (bound=" << bounded_reachability_ << ")..." << endl;
     ins.generate_initial_states(initial_states_, false);
     cout << "# initial states = " << initial_states_.size() << endl;
     for( StateSet::const_iterator it = initial_states_.begin(); it != initial_states_.end(); ++it ) {
         StateSet *space = new StateSet;
-        ins.generate_reachable_state_space(**it, *space, bounded_reachability, false);
+        ins.generate_reachable_state_space(**it, *space, bounded_reachability_, false);
         reachable_space_from_initial_state_.insert(make_pair(*it, space));
         reachable_space_.insert(space->begin(), space->end());
         cout << "# reachable states from "; (*it)->print(cout, ins); cout << " = " << space->size() << endl;
@@ -83,7 +84,7 @@ CP_Instance::CP_Instance(const Instance &ins,
         }
         cout << "obs" << it->second << ":";
         for( index_set::const_iterator jt = it->first.begin(); jt != it->first.end(); ++jt )
-            cout << " " << ins.atoms_[*jt-1]->name();
+            cout << " " << ins.atoms_[*jt - 1]->name();
         cout << endl;
     }
 
@@ -104,7 +105,7 @@ CP_Instance::CP_Instance(const Instance &ins,
 
     // fluents for states
     q0_ = n_atoms();
-    for( size_t k = 0; k < fsc_states_; ++k ) {
+    for( int k = 0; k < fsc_states_; ++k ) {
         //CHECK string name = string("(q") + Utils::to_string(k) + ")";
         string name = string("q") + Utils::to_string(k);
         new_atom(name);
@@ -147,8 +148,12 @@ CP_Instance::CP_Instance(const Instance &ins,
 
     // set goal atoms
     for( index_set::const_iterator it = ins.goal_literals_.begin(); it != ins.goal_literals_.end(); ++it ) {
-        assert(*it > 0);
-        goal_literals_.insert(1 + *it-1);
+        assert(*it != 0);
+        if( *it < 0 ) {
+            cout << Utils::error() << "negative goal literals are not suppoerted!" << endl;
+            exit(0);
+        }
+        goal_literals_.insert(1 + *it - 1);
     }
 
     // create common effect for non-primitive non-sticky and non-observable fluents
@@ -164,10 +169,10 @@ CP_Instance::CP_Instance(const Instance &ins,
     for( map<index_set, int>::const_iterator it = reachable_obs_.begin(); it != reachable_obs_.end(); ++it ) {
         const index_set &obs = it->first;
         int obs_idx = it->second;
-        for( size_t q = 0; q < fsc_states_; ++q ) {
+        for( int q = 0; q < fsc_states_; ++q ) {
             for( size_t k = 0; k < ins.n_actions(); ++k ) {
                 const Action &act = *ins.actions_[k];
-                for( size_t qp = 0; qp < fsc_states_; ++qp ) {
+                for( int qp = 0; qp < fsc_states_; ++qp ) {
 
                     // create map actions if inconsistent tuples must be forbidden
                     size_t unused_fluent = obs_idx*fsc_states_ + q;
@@ -371,7 +376,7 @@ void CP_Instance::remove_atoms(const bool_vec &set, index_vec &atom_map) {
         }
         cout << "obs" << it->second << ":";
         for( index_set::const_iterator jt = it->first.begin(); jt != it->first.end(); ++jt )
-            cout << " " << atoms[*jt-1]->name();
+            cout << " " << atoms[*jt - 1]->name();
         cout << endl;
     }
     */

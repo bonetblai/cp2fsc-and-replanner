@@ -203,8 +203,11 @@ int main(int argc, const char *argv[]) {
     }
 
     cout << "creating CP translation..." << endl;
-    CP_Instance cp_instance(instance, opt_fsc_states, opt_bounded_reachability,
-                            opt_forbid_inconsistent_tuples, opt_compound_obs_as_fluents);
+    CP_Instance cp_instance(instance,
+                            opt_fsc_states,
+                            opt_bounded_reachability,
+                            opt_forbid_inconsistent_tuples,
+                            opt_compound_obs_as_fluents);
     if( g_options.is_enabled("cp:print:raw") ) {
         cp_instance.write_domain(cout);
         cp_instance.write_problem(cout);
