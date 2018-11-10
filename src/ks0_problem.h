@@ -24,7 +24,8 @@
 
 class KS0_Instance : public Instance {
   protected:
-    bool tag_all_literals_;
+    const int bounded_reachability_;
+    bool tag_all_literals_; // it's const because a value is assigned to it (in a special case)
     size_t n_tags_;
     size_t tag0_; // empty tag
     std::vector<bool> tagged_;
@@ -37,7 +38,7 @@ class KS0_Instance : public Instance {
                    int num_fsc_states = 0);
 
   public:
-    KS0_Instance(const Instance &instance, size_t bounded_reachability, bool tag_all_literals);
+    KS0_Instance(const Instance &instance, int bounded_reachability, bool tag_all_literals);
     KS0_Instance(const CP_Instance &instance, bool tag_all_literals);
     virtual ~KS0_Instance() { }
     int n_tags() const { return n_tags_; }
