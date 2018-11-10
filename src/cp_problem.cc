@@ -159,13 +159,14 @@ CP_Instance::CP_Instance(const Instance &ins,
     // create common effect for non-primitive non-sticky and non-observable fluents
     index_set np_ns_effect;
     for( index_set::const_iterator it = ins.non_primitive_fluents_.begin(); it != ins.non_primitive_fluents_.end(); ++it ) {
-        if( (ins.given_stickies_.find(*it+1) == ins.given_stickies_.end()) && //) {
+        if( (ins.given_stickies_.find(*it+1) == ins.given_stickies_.end()) &&
             (ins.observable_fluents_.find(*it) == ins.observable_fluents_.end()) ) {
             np_ns_effect.insert(-(1 + *it));
         }
     }
 
     // create actions for each tuple (o,q,a,q')
+    cout << "# tuples (o,q,a,q') = " << reachable_obs_.size() * fsc_states_ * fsc_states_ * ins.n_actions() << endl;
     for( map<index_set, int>::const_iterator it = reachable_obs_.begin(); it != reachable_obs_.end(); ++it ) {
         const index_set &obs = it->first;
         int obs_idx = it->second;
@@ -176,8 +177,7 @@ CP_Instance::CP_Instance(const Instance &ins,
 
                     // create map actions if inconsistent tuples must be forbidden
                     size_t unused_fluent = obs_idx*fsc_states_ + q;
-                    size_t mapped_fluent = obs_idx*fsc_states_*ins.n_actions()*fsc_states_ +
-                                           q*ins.n_actions()*fsc_states_ + k*fsc_states_ + qp;
+                    size_t mapped_fluent = obs_idx * fsc_states_ * ins.n_actions() * fsc_states_ + q * ins.n_actions() * fsc_states_ + k * fsc_states_ + qp;
                     if( forbid_inconsistent_tuples_ ) {
                         string map_act_name = string("map_") + act.name() + "_obs" + Utils::to_string(obs_idx) + "_q" + Utils::to_string(q) + "_q" + Utils::to_string(qp);
                         Action &map_act = new_action(map_act_name);
@@ -288,6 +288,7 @@ void CP_Instance::add_to_initial_states(int fluent) {
     }
 }
 
+// CHECK: this operation is slow when many reachable states
 bool CP_Instance::consistent_with_obs(int obs_idx, const index_set &condition) const {
     int state_idx = 0;
     for( StateSet::const_iterator it = reachable_space_.begin(); it != reachable_space_.end(); ++it ) {
