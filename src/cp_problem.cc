@@ -42,6 +42,7 @@ CP_Instance::CP_Instance(const Instance &ins,
 
     // set description of init
     init_ = ins.init_;
+    complete_state_space_ = true;
 
     // calculate reachable state space
     assert(initial_states_.empty());
@@ -50,12 +51,13 @@ CP_Instance::CP_Instance(const Instance &ins,
     cout << "# initial states = " << initial_states_.size() << endl;
     for( StateSet::const_iterator it = initial_states_.begin(); it != initial_states_.end(); ++it ) {
         StateSet *space = new StateSet;
-        ins.generate_reachable_state_space(**it, *space, bounded_reachability_, false);
+        complete_state_space_ = ins.generate_reachable_state_space(**it, *space, bounded_reachability_, false) && complete_state_space_;
         reachable_space_from_initial_state_.insert(make_pair(*it, space));
         reachable_space_.insert(space->begin(), space->end());
         cout << "# reachable states from "; (*it)->print(cout, ins); cout << " = " << space->size() << endl;
     }
     cout << "# reachable states = " << reachable_space_.size() << endl;
+    cout << "complete state space = " << complete_state_space_ << endl;
 
     // calculate reachable observations
     for( StateSet::const_iterator it = reachable_space_.begin(); it != reachable_space_.end(); ++it ) {
@@ -226,7 +228,7 @@ CP_Instance::CP_Instance(const Instance &ins,
                     // conditional effects of action
                     for( size_t i = 0; i < act.when().size(); ++i ) {
                         const When &w = act.when()[i];
-                        if( consistent_with_obs(obs_idx, w.condition(), true) ) {
+                        if( !complete_state_space_ || consistent_with_obs(obs_idx, w.condition(), true) ) {
                             When c_eff;
 
                             // condition

@@ -1095,13 +1095,13 @@ void Instance::print_axioms(ostream &os) const {
     }
 }
 
-void Instance::generate_reachable_state_space(StateSet &hash, size_t bounded_reachability, bool verbose) const {
+bool Instance::generate_reachable_state_space(StateSet &hash, size_t bounded_reachability, bool verbose) const {
     State state;
     set_initial_state(state);
-    generate_reachable_state_space(state, hash, bounded_reachability, verbose);
+    return generate_reachable_state_space(state, hash, bounded_reachability, verbose);
 }
 
-void Instance::generate_reachable_state_space(const State &state, StateSet &hash, size_t bounded_reachability, bool verbose) const {
+bool Instance::generate_reachable_state_space(const State &state, StateSet &hash, size_t bounded_reachability, bool verbose) const {
     deque<const State*> queue;
     State *seed = new State(state);
     queue.push_back(seed);
@@ -1136,8 +1136,9 @@ void Instance::generate_reachable_state_space(const State &state, StateSet &hash
         }
     }
 
-    // empty queue
+    bool complete_state_space = queue.empty();
     while( !queue.empty() ) queue.pop_front();
+    return complete_state_space;
 }
 
 void Instance::generate_initial_states(StateSet &initial_states, bool verbose) const {

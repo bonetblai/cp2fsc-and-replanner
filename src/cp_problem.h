@@ -30,6 +30,8 @@ class CP_Instance : public Instance {
     const int bounded_reachability_;
     const bool forbid_inconsistent_tuples_;
     const bool compound_obs_as_fluents_;
+
+    bool complete_state_space_;
     StateSet initial_states_;
     StateSet reachable_space_;
     std::map<const State*, const StateSet*> reachable_space_from_initial_state_;
