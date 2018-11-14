@@ -42,6 +42,7 @@ CP_Instance::CP_Instance(const Instance &ins,
 
     // set description of init
     init_ = ins.init_;
+    complete_state_space_ = true;
 
     // calculate reachable state space
     assert(initial_states_.empty());
@@ -50,12 +51,13 @@ CP_Instance::CP_Instance(const Instance &ins,
     cout << "# initial states = " << initial_states_.size() << endl;
     for( StateSet::const_iterator it = initial_states_.begin(); it != initial_states_.end(); ++it ) {
         StateSet *space = new StateSet;
-        ins.generate_reachable_state_space(**it, *space, bounded_reachability_, false);
+        complete_state_space_ = ins.generate_reachable_state_space(**it, *space, bounded_reachability_, false) && complete_state_space_;
         reachable_space_from_initial_state_.insert(make_pair(*it, space));
         reachable_space_.insert(space->begin(), space->end());
         cout << "# reachable states from "; (*it)->print(cout, ins); cout << " = " << space->size() << endl;
     }
     cout << "# reachable states = " << reachable_space_.size() << endl;
+    cout << "complete state space = " << complete_state_space_ << endl;
 
     // calculate reachable observations
     for( StateSet::const_iterator it = reachable_space_.begin(); it != reachable_space_.end(); ++it ) {
@@ -160,10 +162,8 @@ CP_Instance::CP_Instance(const Instance &ins,
     // create common effect for non-primitive non-sticky and non-observable fluents
     index_set np_ns_effect;
     for( index_set::const_iterator it = ins.non_primitive_fluents_.begin(); it != ins.non_primitive_fluents_.end(); ++it ) {
-        if( (ins.given_stickies_.find(*it+1) == ins.given_stickies_.end()) &&
-            (ins.observable_fluents_.find(*it) == ins.observable_fluents_.end()) ) {
+        if( (ins.given_stickies_.find(*it+1) == ins.given_stickies_.end()) && !ins.is_observable(*it) )
             np_ns_effect.insert(-(1 + *it));
-        }
     }
 
     // create actions for each tuple (o,q,a,q')
@@ -171,9 +171,23 @@ CP_Instance::CP_Instance(const Instance &ins,
     for( map<index_set, int>::const_iterator it = reachable_obs_.begin(); it != reachable_obs_.end(); ++it ) {
         const index_set &obs = it->first;
         int obs_idx = it->second;
-        for( int q = 0; q < fsc_states_; ++q ) {
-            for( size_t k = 0; k < ins.n_actions(); ++k ) {
-                const Action &act = *ins.actions_[k];
+
+        for( size_t k = 0; k < ins.n_actions(); ++k ) {
+            const Action &act = *ins.actions_[k];
+
+            // emit tuple (o,q,a,q') if observable preconditions of action are compatible with obs o
+            bool good_to_go = true;
+            for( index_set::const_iterator jt = act.precondition().begin(); good_to_go && (jt != act.precondition().end()); ++jt ) {
+                int atom = *jt < 0 ? -*jt - 1 : *jt - 1;
+                if( ins.is_observable(atom) && !holds_in_observation(obs_idx, it->first, *jt) ) {
+                    good_to_go = false;
+                    break;
+                }
+            }
+            if( !good_to_go ) continue;
+
+            // emit tuples for pairs (q,qp) of controller states
+            for( int q = 0; q < fsc_states_; ++q ) {
                 for( int qp = 0; qp < fsc_states_; ++qp ) {
                     //cout << "tuple: t=(" << obs_idx << "," << q << "," << k << "," << qp << ")" << endl;
 
@@ -212,8 +226,8 @@ CP_Instance::CP_Instance(const Instance &ins,
                         base_c_eff.effect().insert(np_ns_effect.begin(), np_ns_effect.end());
 
                         // effect for clearing observation
-                        for( index_set::const_iterator it = obs.begin(); it != obs.end(); ++it )
-                            base_c_eff.effect().insert(-*it);
+                        for( index_set::const_iterator jt = obs.begin(); jt != obs.end(); ++jt )
+                            base_c_eff.effect().insert(-*jt);
 
                         // effects for changing (FSC) state
                         if( q != qp ) {
@@ -226,7 +240,7 @@ CP_Instance::CP_Instance(const Instance &ins,
                     // conditional effects of action
                     for( size_t i = 0; i < act.when().size(); ++i ) {
                         const When &w = act.when()[i];
-                        if( consistent_with_obs(obs_idx, w.condition(), true) ) {
+                        if( !complete_state_space_ || consistent_with_obs(obs_idx, w.condition(), true) ) {
                             When c_eff;
 
                             // condition
@@ -234,8 +248,12 @@ CP_Instance::CP_Instance(const Instance &ins,
                             c_eff.condition().insert(obs.begin(), obs.end());
                             c_eff.condition().insert(w.condition().begin(), w.condition().end());
 
-                            // add preconditions of original action
-                            c_eff.condition().insert(act.precondition().begin(), act.precondition().end());
+                            // non-observable preconditions of action are inserted as conditions
+                            for( index_set::const_iterator jt = act.precondition().begin(); jt != act.precondition().end(); ++jt ) {
+                                int atom = *jt < 0 ? -*jt - 1 : *jt - 1;
+                                if( !ins.is_observable(atom) )
+                                    c_eff.condition().insert(*jt);
+                            }
 
                             // effects
                             c_eff.effect().insert(w.effect().begin(), w.effect().end());
@@ -288,6 +306,16 @@ void CP_Instance::add_to_initial_states(int fluent) {
     for( StateSet::iterator it = initial_states_.begin(); it != initial_states_.end(); ++it ) {
         const_cast<State*>(*it)->add(fluent);
     }
+}
+
+bool CP_Instance::holds_in_observation(int obs_idx, const index_set &obs, int literal) const {
+    assert(literal > 0);
+    for( index_set::const_iterator it = obs.begin(); it != obs.end(); ++it ) {
+        assert(*it >= 0);
+        if( *it == literal )
+            return true;
+    }
+    return false;
 }
 
 // CHECK: this operation is slow when many reachable states
