@@ -65,6 +65,7 @@ class CP_Instance : public Instance {
     }
 
     void add_to_initial_states(int fluent);
+    bool holds_in_observation(int obs_idx, const index_set &obs, int literal) const;
     bool consistent_with_obs(int obs_idx, const index_set &condition, bool caching) const;
     int n_obs() const { return reachable_obs_.size(); }
 
