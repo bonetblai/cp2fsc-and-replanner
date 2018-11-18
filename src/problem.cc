@@ -133,6 +133,34 @@ Instance::Axiom& Instance::new_axiom(const string &name) {
 #endif
 }
 
+void Instance::remove_last_atom() {
+#ifndef SMART
+    delete atoms_.back();
+#endif
+    atoms_.pop_back();
+}
+
+void Instance::remove_last_action() {
+#ifndef SMART
+    delete actions_.back();
+#endif
+    actions_.pop_back();
+}
+
+void Instance::remove_last_sensor() {
+#ifndef SMART
+    delete sensors_.back();
+#endif
+    sensors_.pop_back();
+}
+
+void Instance::remove_last_axiom() {
+#ifndef SMART
+    delete axioms_.back();
+#endif
+    axioms_.pop_back();
+}
+
 void Instance::remove_unreachable_conditional_effects(const bool_vec &reachable_atoms, const bool_vec &static_atoms) {
     // compute known literals in init
     bool_vec pos_literal_in_init(n_atoms(), false);

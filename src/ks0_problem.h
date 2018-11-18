@@ -26,10 +26,15 @@ class KS0_Instance : public Instance {
   protected:
     const int bounded_reachability_;
     bool tag_all_literals_; // it's const because a value is assigned to it (in a special case)
+    bool tag_actions_;
     size_t n_tags_;
     size_t tag0_; // empty tag
     std::vector<bool> tagged_;
     std::vector<int> tag_map_;
+
+    const Atom& create_tagged_atom(int n_atoms, int index, const Atom &atom, int tag);
+    const Action& create_action(int base_n_atoms, const Instance::Action &act, int first_tag, int action_tag);
+    const Action& create_merge_action(const Instance &instance);
 
     void translate(const Instance &instance,
                    const StateSet &initial_states,
@@ -38,8 +43,8 @@ class KS0_Instance : public Instance {
                    int num_fsc_states = 0);
 
   public:
-    KS0_Instance(const Instance &instance, int bounded_reachability, bool tag_all_literals);
-    KS0_Instance(const CP_Instance &instance, bool tag_all_literals);
+    KS0_Instance(const Instance &instance, int bounded_reachability, bool tag_all_literals, bool tag_actions);
+    KS0_Instance(const CP_Instance &instance, bool tag_all_literals, bool tag_actions);
     virtual ~KS0_Instance() { }
     int n_tags() const { return n_tags_; }
 };

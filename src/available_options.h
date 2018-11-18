@@ -180,6 +180,7 @@ const char *ks0_cmdline_options[] = {
     "[--debug-parser]",
     "[--prefix <prefix>]",
     "[--no-tag-all-literals]",
+    "[--tag-actions]",
     "[--options=<options-string>]",
     "[--override-defaults]",
     0
@@ -194,6 +195,7 @@ const char *cp2fsc_cmdline_options[] = {
     "[--no-forbid-inconsistent-tuples]",
     "[--output-metadata <filename>]",
     "[--prefix <prefix>]",
+    "[--tag-actions]",
     "[--tag-all-literals]",
     "[--options=<options-string>]",
     "[--override-defaults]",
