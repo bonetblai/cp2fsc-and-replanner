@@ -116,24 +116,49 @@ CP_Instance::CP_Instance(const Instance &ins,
 
     // create fluents to forbid inconsistent tuples
     if( forbid_inconsistent_tuples_ ) {
+        // order observation indices for creating unused and mapped fluents
+        set<int> observation_indices;
+        for( map<index_set, int>::const_iterator it = reachable_obs_.begin(); it != reachable_obs_.end(); ++it )
+            observation_indices.insert(it->second);
+
         // there is an atom unused(o,q) for each obs and fsc state
+        unused0_ = n_atoms();
+        n_unused_fluents_ = 0;
+        for( set<int>::const_iterator it = observation_indices.begin(); it != observation_indices.end(); ++it ) {
+            int obs_idx = *it;
+            for( int q = 0; q < fsc_states_; ++q ) {
+                size_t unused_fluent = obs_idx * fsc_states_ + q;
+                //string atom_name = string("unused") + Utils::to_string(n_unused_fluents_) + "_obs" + Utils::to_string(obs_idx) + "_q" + Utils::to_string(q);
+                string atom_name = string("unused") + Utils::to_string(n_unused_fluents_) + "_q" + Utils::to_string(q) + "_obs" + Utils::to_string(obs_idx);
+                assert(unused_fluent == n_unused_fluents_);
+                new_atom(atom_name);
+                ++n_unused_fluents_;
+            }
+        }
+        assert(n_unused_fluents_ == reachable_obs_.size() * fsc_states_);
+
         // there is an atom mapped(o,q,a,q') for each obs, action, and pair (q,q') of fsc-states
         // once (o,q,a,q') is included in fsc (meaning that in q with obs o, do a and go to q') 
         // all tuples (o,q,a',q'') should be disabled for (a,q') != (a',q'')
-        n_unused_fluents_ = reachable_obs_.size() * fsc_states_;
-        n_mapped_fluents_ = n_unused_fluents_ * ins.n_actions() * fsc_states_;
-        unused0_ = n_atoms();
-        for( size_t k = 0; k < n_unused_fluents_; ++k ) {
-            //CHECK string name = string("(unused") + Utils::to_string(k) + ")";
-            string name = string("unused") + Utils::to_string(k);
-            new_atom(name);
-        }
         mapped0_ = n_atoms();
-        for( size_t k = 0; k < n_mapped_fluents_; ++k ) {
-            //CHECK string name = string("(mapped") + Utils::to_string(k) + ")";
-            string name = string("mapped") + Utils::to_string(k);
-            new_atom(name);
+        n_mapped_fluents_ = 0;
+        for( set<int>::const_iterator it = observation_indices.begin(); it != observation_indices.end(); ++it ) {
+            int obs_idx = *it;
+            for( int q = 0; q < fsc_states_; ++q ) {
+                for( size_t k = 0; k < ins.n_actions(); ++k ) {
+                    const Action &act = *ins.actions_[k];
+                    for( int qp = 0; qp < fsc_states_; ++qp ) {
+                        size_t mapped_fluent = obs_idx * fsc_states_ * ins.n_actions() * fsc_states_ + q * ins.n_actions() * fsc_states_ + k * fsc_states_ + qp;
+                        //string atom_name = string("mapped") + Utils::to_string(n_mapped_fluents_) + "_obs" + Utils::to_string(obs_idx) + "_q" + Utils::to_string(q) + "_" + act.name() + "_q" + Utils::to_string(qp);
+                        string atom_name = string("mapped") + Utils::to_string(n_mapped_fluents_) + "_q" + Utils::to_string(q) + "_obs" + Utils::to_string(obs_idx) + "_" + act.name() + "_q" + Utils::to_string(qp);
+                        assert(mapped_fluent == n_mapped_fluents_);
+                        new_atom(atom_name);
+                        ++n_mapped_fluents_;
+                    }
+                }
+            }
         }
+        assert(n_mapped_fluents_ == n_unused_fluents_ * ins.n_actions() * fsc_states_);
     }
 
     // add q0 to initial state
@@ -144,7 +169,7 @@ CP_Instance::CP_Instance(const Instance &ins,
     if( forbid_inconsistent_tuples_ ) {
         // each time a tuple (o,q,a,q') is included, set unused(o,q) to false
         for( size_t k = 0; k < n_unused_fluents_; ++k ) {
-            init_.literals().insert(1 + unused0_+k);
+            init_.literals().insert(1 + unused0_ + k);
             add_to_initial_states(unused0_ + k);
         }
     }
@@ -162,7 +187,7 @@ CP_Instance::CP_Instance(const Instance &ins,
     // create common effect for non-primitive non-sticky and non-observable fluents
     index_set np_ns_effect;
     for( index_set::const_iterator it = ins.non_primitive_fluents_.begin(); it != ins.non_primitive_fluents_.end(); ++it ) {
-        if( (ins.given_stickies_.find(*it+1) == ins.given_stickies_.end()) && !ins.is_observable(*it) )
+        if( (ins.given_stickies_.find(*it + 1) == ins.given_stickies_.end()) && !ins.is_observable(*it) )
             np_ns_effect.insert(-(1 + *it));
     }
 
@@ -195,14 +220,16 @@ CP_Instance::CP_Instance(const Instance &ins,
                     size_t unused_fluent = obs_idx * fsc_states_ + q;
                     size_t mapped_fluent = obs_idx * fsc_states_ * ins.n_actions() * fsc_states_ + q * ins.n_actions() * fsc_states_ + k * fsc_states_ + qp;
                     if( forbid_inconsistent_tuples_ ) {
-                        string map_act_name = string("map_") + act.name() + "_obs" + Utils::to_string(obs_idx) + "_q" + Utils::to_string(q) + "_q" + Utils::to_string(qp);
+                        //string map_act_name = string("map_") + act.name() + "_obs" + Utils::to_string(obs_idx) + "_q" + Utils::to_string(q) + "_q" + Utils::to_string(qp);
+                        string map_act_name = string("map_q") + Utils::to_string(q) + "_obs" + Utils::to_string(obs_idx) + "_" + act.name() + "_q" + Utils::to_string(qp);
                         Action &map_act = new_action(map_act_name);
                         map_act.precondition().insert(1 + unused0_ + unused_fluent);
                         map_act.effect().insert(-(1 + unused0_ + unused_fluent));
                         map_act.effect().insert(1 + mapped0_ + mapped_fluent);
                     }
 
-                    string app_act_name = string("app_") + act.name() + "_obs" + Utils::to_string(obs_idx) + "_q" + Utils::to_string(q) + "_q" + Utils::to_string(qp);
+                    //string app_act_name = string("app_") + act.name() + "_obs" + Utils::to_string(obs_idx) + "_q" + Utils::to_string(q) + "_q" + Utils::to_string(qp);
+                    string app_act_name = string("app_q") + Utils::to_string(q) + "_obs" + Utils::to_string(obs_idx) + "_" + act.name() + "_q" + Utils::to_string(qp);
                     Action &nact = new_action(app_act_name);
 
                     // the action has precondition if inconsistent tuples are forbidden
