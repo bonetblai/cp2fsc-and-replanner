@@ -72,6 +72,7 @@ int main(int argc, const char *argv[]) {
     bool        opt_debug_parser = false;
     string      opt_prefix = "";
     bool        opt_tag_all_literals = true;
+    bool        opt_tag_actions = false;
     float       start_time = Utils::read_time_in_seconds();
 
     // print cmdline
@@ -120,6 +121,8 @@ int main(int argc, const char *argv[]) {
             opt_prefix = argv[++k];
         } else if( !skip_options && !strcmp(argv[k], "--no-tag-all-literals") ) {
             opt_tag_all_literals = false;
+        } else if( !skip_options && !strcmp(argv[k], "--tag-actions") ) {
+            opt_tag_actions = true;
         } else if( !skip_options && !strncmp(argv[k], "--options=", 10) ) {
             const char *options = &argv[k][10];
             parse_options(g_options, options);
@@ -181,7 +184,7 @@ int main(int argc, const char *argv[]) {
 #endif
 
     cout << "creating KS0 translation..." << endl;
-    KS0_Instance ks0_instance(instance, opt_bounded_reachability, opt_tag_all_literals);
+    KS0_Instance ks0_instance(instance, opt_bounded_reachability, opt_tag_all_literals, opt_tag_actions);
     if( g_options.is_enabled("ks0:print:raw") ) {
         ks0_instance.write_domain(cout);
         ks0_instance.write_problem(cout);

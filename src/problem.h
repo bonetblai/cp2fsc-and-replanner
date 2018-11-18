@@ -313,10 +313,15 @@ class Instance {
 #endif
     virtual ~Instance();
 
-    Atom&      new_atom(const std::string &name);
-    Action&    new_action(const std::string &name);
-    Sensor&    new_sensor(const std::string &name);
-    Axiom&     new_axiom(const std::string &name);
+    Atom&   new_atom(const std::string &name);
+    Action& new_action(const std::string &name);
+    Sensor& new_sensor(const std::string &name);
+    Axiom&  new_axiom(const std::string &name);
+
+    void remove_last_atom();
+    void remove_last_action();
+    void remove_last_sensor();
+    void remove_last_axiom();
 
     void set_domain_name(const std::string &domain_name) { domain_name_ = domain_name; }
     void set_problem_name(const std::string &problem_name) { problem_name_ = problem_name; }

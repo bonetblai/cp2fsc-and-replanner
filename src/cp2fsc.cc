@@ -75,6 +75,7 @@ int main(int argc, const char *argv[]) {
     bool        opt_compound_obs_as_fluents = false;
     string      opt_prefix = "";
     bool        opt_tag_all_literals = false;
+    bool        opt_tag_actions = false;
     string      opt_metadata_filename = "";
     float       start_time = Utils::read_time_in_seconds();
 
@@ -140,6 +141,8 @@ int main(int argc, const char *argv[]) {
                 exit(-1);
             }
             opt_prefix = argv[++k];
+        } else if( !skip_options && !strcmp(argv[k], "--tag-actions") ) {
+            opt_tag_actions = true;
         } else if( !skip_options && !strcmp(argv[k], "--tag-all-literals") ) {
             opt_tag_all_literals = true;
         } else if( !skip_options && !strncmp(argv[k], "--options=", 10) ) {
@@ -227,7 +230,7 @@ int main(int argc, const char *argv[]) {
     }
 
     cout << "creating KS0 translation..." << endl;
-    KS0_Instance ks0_instance(cp_instance, opt_tag_all_literals);
+    KS0_Instance ks0_instance(cp_instance, opt_tag_all_literals, opt_tag_actions);
     if( g_options.is_enabled("ks0:print:raw") ) {
         ks0_instance.write_domain(cout);
         ks0_instance.write_problem(cout);
