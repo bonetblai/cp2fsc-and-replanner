@@ -31,11 +31,13 @@ using namespace std;
 CP_Instance::CP_Instance(const Instance &ins,
                          int fsc_states,
                          int bounded_reachability,
+                         bool single_monolithic_action,
                          bool forbid_inconsistent_tuples,
                          bool compound_obs_as_fluents)
   : Instance(ins.domain_name_, ins.problem_name_, ins.options_),
     fsc_states_(fsc_states),
     bounded_reachability_(bounded_reachability),
+    single_monolithic_action_(single_monolithic_action),
     forbid_inconsistent_tuples_(forbid_inconsistent_tuples),
     compound_obs_as_fluents_(compound_obs_as_fluents),
     instance_(ins) {
@@ -189,6 +191,78 @@ CP_Instance::CP_Instance(const Instance &ins,
             np_ns_effect.insert(-(1 + *it));
     }
 
+    // calculate tuples (o,q,a,q') that must be accounted for
+    cout << "# (total) tuples (o,q,a,q') = " << reachable_obs_.size() * fsc_states_ * fsc_states_ * ins.n_actions() << endl;
+    for( map<index_set, int>::const_iterator it = reachable_obs_.begin(); it != reachable_obs_.end(); ++it ) {
+        const index_set &obs = it->first;
+        int obs_idx = it->second;
+
+        for( size_t k = 0; k < ins.n_actions(); ++k ) {
+            const Action &act = *ins.actions_[k];
+
+            // check whether obs satisfy observable preconditions of action
+            bool good_to_go = true;
+            for( index_set::const_iterator jt = act.precondition().begin(); good_to_go && (jt != act.precondition().end()); ++jt ) {
+                int atom = *jt < 0 ? -*jt - 1 : *jt - 1;
+                if( ins.is_observable(atom) && !holds_in_observation(obs_idx, obs, *jt) ) {
+                    good_to_go = false;
+                    break;
+                }
+            }
+            if( !good_to_go ) continue;
+
+            for( int q = 0; q < fsc_states_; ++q ) {
+                for( int qp = 0; qp < fsc_states_; ++qp )
+                    tuples_.emplace_back(fsc_states_, ins.n_actions(), &obs, obs_idx, q, &act, qp);
+            }
+        }
+    }
+    cout << "# (reachable) tuples (o,q,a,q') = " << tuples_.size() << endl;
+
+    // create map actions if forbid inconsistent tuples is enabled
+    if( forbid_inconsistent_tuples_ ) {
+        for( size_t k = 0; k < tuples_.size(); ++k ) {
+            const Tuple &t = tuples_[k];
+            string map_act_name = string("map_") + t.suffix();
+            Action &map_act = new_action(map_act_name);
+            map_act.precondition().insert(1 + unused0_ + t.unused_fluent_);
+            map_act.effect().insert(-(1 + unused0_ + t.unused_fluent_));
+            map_act.effect().insert(1 + mapped0_ + t.mapped_fluent_);
+        }
+    }
+
+    // create actions for each tuple (o,q,a,q')
+    if( single_monolithic_action_ ) {
+        string monolithic_action_name = string("monolithic_action");
+        Action &monolithic_action = new_action(monolithic_action_name);
+
+        // add unconditional and conditional effects from all tuples
+        for( size_t k = 0; k < tuples_.size(); ++k ) {
+            const Tuple &t = tuples_[k];
+            add_unconditional_effects(monolithic_action, t, np_ns_effect);
+            add_conditional_effects(monolithic_action, ins, t, np_ns_effect);
+        }
+        //monolithic_action.print(cout, *this);
+    } else {
+        for( size_t k = 0; k < tuples_.size(); ++k ) {
+            const Tuple &t = tuples_[k];
+            string app_act_name = string("app_") + t.suffix();
+            Action &nact = new_action(app_act_name);
+
+            // the action has precondition if inconsistent tuples are forbidden
+            if( forbid_inconsistent_tuples_ ) {
+                // the tuple (o,q,a,q') should be inserted by a map action in advance
+                nact.precondition().insert(1 + mapped0_ + t.mapped_fluent_);
+            }
+
+            // add unconditional and conditional effects
+            add_unconditional_effects(nact, t, np_ns_effect);
+            add_conditional_effects(nact, ins, t, np_ns_effect);
+            //nact.print(cout, *this);
+        }
+    }
+
+#if 0
     // create actions for each tuple (o,q,a,q')
     cout << "# tuples (o,q,a,q') = " << reachable_obs_.size() * fsc_states_ * fsc_states_ * ins.n_actions() << endl;
     for( map<index_set, int>::const_iterator it = reachable_obs_.begin(); it != reachable_obs_.end(); ++it ) {
@@ -304,6 +378,7 @@ CP_Instance::CP_Instance(const Instance &ins,
             }
         }
     }
+#endif
 
     // create ramification action
     Action &ramif = new_action("ramification");
@@ -343,7 +418,6 @@ bool CP_Instance::holds_in_observation(int obs_idx, const index_set &obs, int li
     return false;
 }
 
-// CHECK: this operation is slow when many reachable states
 bool CP_Instance::consistent_with_obs(int obs_idx, const index_set &condition, bool caching) const {
     pair<int, const index_set*> p(obs_idx, &condition);
     map<pair<int, const index_set*>, bool>::const_iterator it = cache_for_consistent_with_obs_.find(p);
@@ -360,6 +434,88 @@ bool CP_Instance::consistent_with_obs(int obs_idx, const index_set &condition, b
         if( caching ) cache_for_consistent_with_obs_.insert(make_pair(p, false));
         return false;
     }
+}
+
+void CP_Instance::add_unconditional_effects(Action &nact, const Tuple &t, const index_set &np_ns_effect) const {
+    assert((t.obs_ != nullptr) && (t.action_ != nullptr));
+    const index_set &obs = *t.obs_;
+    const Action &act = *t.action_;
+
+    // unconditional effects of action
+    if( !act.effect().empty() ) {
+        When base_c_eff;
+
+        // condition
+        base_c_eff.condition().insert(1 + q0_ + t.q_);
+        base_c_eff.condition().insert(obs.begin(), obs.end());
+        if( single_monolithic_action_ )
+            base_c_eff.condition().insert(1 + mapped0_ + t.mapped_fluent_);
+
+        // effects
+        base_c_eff.effect().insert(act.effect().begin(), act.effect().end());
+
+        // effects for non-primitive fluents for base conditional effect
+        base_c_eff.effect().insert(np_ns_effect.begin(), np_ns_effect.end());
+
+        // effect for clearing observation
+        for( index_set::const_iterator jt = obs.begin(); jt != obs.end(); ++jt )
+            base_c_eff.effect().insert(-*jt);
+
+        // effects for changing (FSC) state
+        if( t.q_ != t.qp_ ) {
+            base_c_eff.effect().insert(-(1 + q0_ + t.q_));
+            base_c_eff.effect().insert(1 + q0_ + t.qp_);
+        }
+
+        // add effect
+        nact.when().push_back(base_c_eff);
+    }
+}
+
+void CP_Instance::add_conditional_effects(Action &nact, const Instance &ins, const Tuple &t, const index_set &np_ns_effect) const {
+    assert((t.obs_ != nullptr) && (t.action_ != nullptr));
+    const index_set &obs = *t.obs_;
+    const Action &act = *t.action_;
+
+    for( size_t i = 0; i < act.when().size(); ++i ) {
+        const When &w = act.when()[i];
+        if( !complete_state_space_ || consistent_with_obs(t.obs_index_, w.condition(), true) ) {
+            When c_eff;
+
+            // condition
+            c_eff.condition().insert(1 + q0_ + t.q_);
+            c_eff.condition().insert(obs.begin(), obs.end());
+            c_eff.condition().insert(w.condition().begin(), w.condition().end());
+            if( single_monolithic_action_ )
+                c_eff.condition().insert(1 + mapped0_ + t.mapped_fluent_);
+
+            // non-observable preconditions of action are inserted as conditions
+            for( index_set::const_iterator it = act.precondition().begin(); it != act.precondition().end(); ++it ) {
+                int atom = *it < 0 ? -*it - 1 : *it - 1;
+                if( !ins.is_observable(atom) )
+                    c_eff.condition().insert(*it);
+            }
+
+            // effects
+            c_eff.effect().insert(w.effect().begin(), w.effect().end());
+            c_eff.effect().insert(np_ns_effect.begin(), np_ns_effect.end());
+
+            // effect for clearing observation
+            for( index_set::const_iterator it = obs.begin(); it != obs.end(); ++it )
+                c_eff.effect().insert(-*it);
+
+            // effects for changing (FSC) state
+            if( t.q_ != t.qp_ ) {
+                c_eff.effect().insert(-(1 + q0_ + t.q_));
+                c_eff.effect().insert(1 + q0_ + t.qp_);
+            }
+
+            // add conditional effect to new action
+            nact.when().push_back(c_eff);
+        }
+    }
+    //act.print(cout, ins);
+    //nact.print(cout, *this);
 }
 
 void CP_Instance::remove_atoms(const bool_vec &set, index_vec &atom_map) {

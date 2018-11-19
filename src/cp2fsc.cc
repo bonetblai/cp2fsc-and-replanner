@@ -67,17 +67,19 @@ void print_usage(ostream &os, const char *exec_name, const char **cmdline_option
 }
 
 int main(int argc, const char *argv[]) {
+    float start_time = Utils::read_time_in_seconds();
     StringTable parser_symbol_table(lowercase_map, 50);
-    int         opt_bounded_reachability = numeric_limits<int>::max();
-    bool        opt_debug_parser = false;
-    int         opt_fsc_states = 1;
-    bool        opt_forbid_inconsistent_tuples = true;
-    bool        opt_compound_obs_as_fluents = false;
-    string      opt_prefix = "";
-    bool        opt_tag_all_literals = false;
-    bool        opt_tag_actions = false;
-    string      opt_metadata_filename = "";
-    float       start_time = Utils::read_time_in_seconds();
+
+    int    opt_bounded_reachability = numeric_limits<int>::max();
+    bool   opt_compound_obs_as_fluents = false;
+    bool   opt_debug_parser = false;
+    bool   opt_forbid_inconsistent_tuples = true;
+    int    opt_fsc_states = 1;
+    string opt_metadata_filename = "";
+    string opt_prefix = "";
+    bool   opt_single_monolithic_action = false;
+    bool   opt_tag_all_literals = false;
+    bool   opt_tag_actions = false;
 
     // print cmdline
     cout << "cmdline: " << Utils::cmdline(argc, argv) << endl;
@@ -115,12 +117,12 @@ int main(int argc, const char *argv[]) {
                 exit(-1);
             }
             opt_bounded_reachability = atoi(argv[++k]);
-        } else if( !skip_options && !strcmp(argv[k], "--debug-parser") ) {
-            opt_debug_parser = true;
         } else if( !skip_options && !strcmp(argv[k], "--compound-obs-as-fluents") ) {
             opt_compound_obs_as_fluents = true;
             cout << Utils::error() << "'" << argv[k] << "' is currently not implemented." << endl;
             exit(-1);
+        } else if( !skip_options && !strcmp(argv[k], "--debug-parser") ) {
+            opt_debug_parser = true;
         } else if( !skip_options && !strcmp(argv[k], "--fsc-states") ) {
             if( k == argc - 1 ) {
                 cout << Utils::error() << "not enough arguments for '" << argv[k] << "'." << endl;
@@ -141,6 +143,8 @@ int main(int argc, const char *argv[]) {
                 exit(-1);
             }
             opt_prefix = argv[++k];
+        } else if( !skip_options && !strcmp(argv[k], "--single-monolithic-action") ) {
+            opt_single_monolithic_action = true;
         } else if( !skip_options && !strcmp(argv[k], "--tag-actions") ) {
             opt_tag_actions = true;
         } else if( !skip_options && !strcmp(argv[k], "--tag-all-literals") ) {
@@ -209,6 +213,7 @@ int main(int argc, const char *argv[]) {
     CP_Instance cp_instance(instance,
                             opt_fsc_states,
                             opt_bounded_reachability,
+                            opt_single_monolithic_action,
                             opt_forbid_inconsistent_tuples,
                             opt_compound_obs_as_fluents);
     if( g_options.is_enabled("cp:print:raw") ) {
