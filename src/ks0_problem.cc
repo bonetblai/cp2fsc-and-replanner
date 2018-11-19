@@ -386,7 +386,7 @@ void KS0_Instance::translate(const Instance &instance,
     // create actions
     for( size_t k = 0; k < instance.n_actions(); ++k ) {
         const Action &act = *instance.actions_[k];
-        if( tag_actions_ && (act.name() != "ramification") ) {
+        if( tag_actions_ ) { //&& (act.name() != "ramification") ) {
             size_t first_tag = n_tags_ == 1 ? 0 : 1;
             for( size_t tag = first_tag; tag < n_tags_; ++tag )
                 create_action(ins_n_fluents, act, first_tag, tag);
