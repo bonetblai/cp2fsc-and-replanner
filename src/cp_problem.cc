@@ -128,8 +128,7 @@ CP_Instance::CP_Instance(const Instance &ins,
             int obs_idx = *it;
             for( int q = 0; q < fsc_states_; ++q ) {
                 size_t unused_fluent = obs_idx * fsc_states_ + q;
-                //string atom_name = string("unused") + Utils::to_string(n_unused_fluents_) + "_obs" + Utils::to_string(obs_idx) + "_q" + Utils::to_string(q);
-                string atom_name = string("unused") + Utils::to_string(n_unused_fluents_) + "_q" + Utils::to_string(q) + "_obs" + Utils::to_string(obs_idx);
+                string atom_name = string("unused_q") + Utils::to_string(q) + "_obs" + Utils::to_string(obs_idx);
                 assert(unused_fluent == n_unused_fluents_);
                 new_atom(atom_name);
                 ++n_unused_fluents_;
@@ -149,8 +148,7 @@ CP_Instance::CP_Instance(const Instance &ins,
                     const Action &act = *ins.actions_[k];
                     for( int qp = 0; qp < fsc_states_; ++qp ) {
                         size_t mapped_fluent = obs_idx * fsc_states_ * ins.n_actions() * fsc_states_ + q * ins.n_actions() * fsc_states_ + k * fsc_states_ + qp;
-                        //string atom_name = string("mapped") + Utils::to_string(n_mapped_fluents_) + "_obs" + Utils::to_string(obs_idx) + "_q" + Utils::to_string(q) + "_" + act.name() + "_q" + Utils::to_string(qp);
-                        string atom_name = string("mapped") + Utils::to_string(n_mapped_fluents_) + "_q" + Utils::to_string(q) + "_obs" + Utils::to_string(obs_idx) + "_" + act.name() + "_q" + Utils::to_string(qp);
+                        string atom_name = string("mapped_q") + Utils::to_string(q) + "_obs" + Utils::to_string(obs_idx) + "_" + act.name() + "_q" + Utils::to_string(qp);
                         assert(mapped_fluent == n_mapped_fluents_);
                         new_atom(atom_name);
                         ++n_mapped_fluents_;
