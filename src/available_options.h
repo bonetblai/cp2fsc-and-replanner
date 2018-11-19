@@ -189,16 +189,17 @@ const char *ks0_cmdline_options[] = {
 const char *cp2fsc_cmdline_options[] = {
     "[--help]",
     "[--bounded-reachability <n>]",
-    "[--debug-parser]",
     "[--compound-obs-as-fluents]",
+    "[--debug-parser]",
     "[--fsc-states <n>]",
     "[--no-forbid-inconsistent-tuples]",
+    "[--options=<options-string>]",
     "[--output-metadata <filename>]",
+    "[--override-defaults]",
     "[--prefix <prefix>]",
     "[--tag-actions]",
     "[--tag-all-literals]",
-    "[--options=<options-string>]",
-    "[--override-defaults]",
+    "[--single-monolithic-action]",
     0
 };
 

@@ -25,9 +25,38 @@
 #include "state.h"
 
 class CP_Instance : public Instance {
+  protected:
+    struct Tuple { // (o,q,a,q')
+        const index_set *obs_;
+        int obs_index_;
+        int q_;
+        const Action *action_;
+        int qp_;
+        int unused_fluent_;
+        int mapped_fluent_;
+
+        Tuple() : obs_(nullptr), obs_index_(-1), q_(-1), action_(nullptr), qp_(-1), unused_fluent_(-1), mapped_fluent_(-1) { }
+        Tuple(int fsc_states, int ins_n_actions, const index_set *obs, int obs_index, int q, const Action *action, int qp)
+          : obs_(obs),
+            obs_index_(obs_index),
+            q_(q),
+            action_(action),
+            qp_(qp) {
+            assert((obs_ != nullptr) && (action_ != nullptr));
+            unused_fluent_ = obs_index_ * fsc_states + q_;
+            mapped_fluent_ = obs_index_ * fsc_states * ins_n_actions * fsc_states + q_ * ins_n_actions * fsc_states + action_->index() * fsc_states + qp_;
+        }
+
+        std::string suffix() const {
+            return std::string("q") + Utils::to_string(q_) + "_obs" + Utils::to_string(obs_index_) + "_" + action_->name() + "_q" + Utils::to_string(qp_);
+        }
+    };
+    std::vector<Tuple> tuples_;
+
   public:
     const int fsc_states_;
     const int bounded_reachability_;
+    const bool single_monolithic_action_;
     const bool forbid_inconsistent_tuples_;
     const bool compound_obs_as_fluents_;
 
@@ -47,8 +76,9 @@ class CP_Instance : public Instance {
     CP_Instance(const Instance &instance,
                 int fsc_states,
                 int bounded_reachability,
-                bool forbid_inconsistent_tuples = false,
-                bool compound_obs_as_fluents = false);
+                bool single_monolithic_action,
+                bool forbid_inconsistent_tuples,
+                bool compound_obs_as_fluents);
     virtual ~CP_Instance();
 
     int fsc_states() const {
@@ -68,6 +98,9 @@ class CP_Instance : public Instance {
     bool holds_in_observation(int obs_idx, const index_set &obs, int literal) const;
     bool consistent_with_obs(int obs_idx, const index_set &condition, bool caching) const;
     int n_obs() const { return reachable_obs_.size(); }
+
+    void add_unconditional_effects(Action &nact, const Tuple &t, const index_set &np_ns_effect) const;
+    void add_conditional_effects(Action &nact, const Instance &ins, const Tuple &t, const index_set &np_ns_effect) const;
 
     // Remaps atoms in the initial states and then calls Instance::remove_atoms()
     virtual void remove_atoms(const bool_vec &set, index_vec &atom_map);
