@@ -144,6 +144,9 @@ int main(int argc, const char *argv[]) {
             }
             opt_prefix = argv[++k];
         } else if( !skip_options && !strcmp(argv[k], "--single-monolithic-action") ) {
+#ifndef OPTION_FOR_SINGLE_MONOLITHIC_ACTION
+            cout << Utils::warning() << "option '" << argv[k] << "' is currently disabled" << endl;
+#endif
             opt_single_monolithic_action = true;
         } else if( !skip_options && !strcmp(argv[k], "--tag-actions") ) {
             opt_tag_actions = true;
