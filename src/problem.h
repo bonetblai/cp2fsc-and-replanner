@@ -359,6 +359,23 @@ class Instance {
         return observable_fluents_.find(fluent) != observable_fluents_.end();
     }
 
+    const Atom& atom(int i) const {
+        assert((i >= 0) && (i < atoms_.size()));
+        return *atoms_[i];
+    }
+    const Action& action(int i) const {
+        assert((i >= 0) && (i < actions_.size()));
+        return *actions_[i];
+    }
+    const Sensor& sensor(int i) const {
+        assert((i >= 0) && (i < sensors_.size()));
+        return *sensors_[i];
+    }
+    const Axiom& axiom(int i) const {
+        assert((i >= 0) && (i < axioms_.size()));
+        return *axioms_[i];
+    }
+
     // reserve space
     void reserve_actions(int n) { actions_.reserve(n); }
     void reserve_sensors(int n) { sensors_.reserve(n); }
