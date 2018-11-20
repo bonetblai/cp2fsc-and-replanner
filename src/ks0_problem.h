@@ -24,6 +24,7 @@
 
 class KS0_Instance : public Instance {
   protected:
+    const Instance &base_instance_;
     const int bounded_reachability_;
     bool tag_all_literals_; // it's const because a value is assigned to it (in a special case)
     bool tag_actions_;
@@ -33,14 +34,13 @@ class KS0_Instance : public Instance {
     std::vector<int> tag_map_;
 
     const Atom& create_tagged_atom(int n_atoms, int index, const Atom &atom, int tag);
-    const Action& create_action(int base_n_atoms, const Instance::Action &act, int first_tag, int action_tag);
-    const Action& create_merge_action(const Instance &instance);
+    const Action* create_action(int base_n_atoms, const Instance::Action &act, int first_tag, int action_tag);
+    const Action* create_merge_action();
 
-    void translate(const Instance &instance,
-                   const StateSet &initial_states,
+    void translate(const StateSet &initial_states,
                    const std::map<const State*, const StateSet*> &reachable_space_from_initial_state,
-                   int q0 = -1,
-                   int num_fsc_states = 0);
+                   int q0,
+                   int num_fsc_states);
 
   public:
     KS0_Instance(const Instance &instance, int bounded_reachability, bool tag_all_literals, bool tag_actions);
