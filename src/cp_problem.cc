@@ -56,7 +56,9 @@ CP_Instance::CP_Instance(const Instance &ins,
         complete_state_space_ = ins.generate_reachable_state_space(**it, *space, bounded_reachability_, false) && complete_state_space_;
         reachable_space_from_initial_state_.insert(make_pair(*it, space));
         reachable_space_.insert(space->begin(), space->end());
-        cout << "# reachable states from "; (*it)->print(cout, ins); cout << " = " << space->size() << endl;
+        cout << "# reachable states from ";
+        (*it)->print(cout, ins);
+        cout << " = " << space->size() << endl;
     }
     cout << "# reachable states = " << reachable_space_.size() << endl;
     cout << "complete state space = " << complete_state_space_ << endl;
@@ -191,6 +193,7 @@ CP_Instance::CP_Instance(const Instance &ins,
             np_ns_effect.insert(-(1 + *it));
     }
 
+#ifdef OPTION_FOR_SINGLE_MONOLITHIC_ACTION
     // calculate tuples (o,q,a,q') that must be accounted for
     cout << "# (total) tuples (o,q,a,q') = " << reachable_obs_.size() * fsc_states_ * fsc_states_ * ins.n_actions() << endl;
     for( map<index_set, int>::const_iterator it = reachable_obs_.begin(); it != reachable_obs_.end(); ++it ) {
@@ -261,8 +264,7 @@ CP_Instance::CP_Instance(const Instance &ins,
             //nact.print(cout, *this);
         }
     }
-
-#if 0
+#else
     // create actions for each tuple (o,q,a,q')
     cout << "# tuples (o,q,a,q') = " << reachable_obs_.size() * fsc_states_ * fsc_states_ * ins.n_actions() << endl;
     for( map<index_set, int>::const_iterator it = reachable_obs_.begin(); it != reachable_obs_.end(); ++it ) {

@@ -24,6 +24,8 @@
 #include "problem.h"
 #include "state.h"
 
+//#define OPTION_FOR_SINGLE_MONOLITHIC_ACTION
+
 class CP_Instance : public Instance {
   protected:
     struct Tuple { // (o,q,a,q')
