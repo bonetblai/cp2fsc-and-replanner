@@ -24,31 +24,38 @@ using namespace std;
 
 KS0_Instance::KS0_Instance(const Instance &instance, int bounded_reachability, bool tag_all_literals, bool tag_actions)
   : Instance(instance.domain_name_, instance.problem_name_, instance.options_),
+    base_instance_(instance),
     bounded_reachability_(bounded_reachability),
     tag_all_literals_(tag_all_literals),
     tag_actions_(tag_actions) {
+
+    cout << Utils::error() << "this translation is not working!" << endl;
+    exit(0);
 
     StateSet initial_states;
     map<const State*, const StateSet*> reachable_space_from_initial_state;
     StateSet reachable_space;
 
     // calculate reachable state space
-    cout << Utils::error() << "this translation is not working!" << endl;
-    if( instance.explicit_initial_states_.empty() ) {
-        instance.generate_initial_states(initial_states, false);
+    if( base_instance_.explicit_initial_states_.empty() ) {
+        base_instance_.generate_initial_states(initial_states, false);
         assert(0);
         for( StateSet::const_iterator it = initial_states.begin(); it != initial_states.end(); ++it ) {
             StateSet *space = new StateSet;
-            instance.generate_reachable_state_space(**it, *space, bounded_reachability, false);
+            base_instance_.generate_reachable_state_space(**it, *space, bounded_reachability, false);
             reachable_space_from_initial_state.insert(make_pair(*it, space));
             reachable_space.insert(space->begin(), space->end());
-            cout << "# reachable states from "; (*it)->print(cout, instance); cout << " = " << space->size() << endl;
+            cout << "# reachable states from ";
+            (*it)->print(cout, base_instance_);
+            cout << " = " << space->size() << endl;
         }
     } else {
-        for( size_t k = 0; k < instance.explicit_initial_states_.size(); ++k ) {
+        for( size_t k = 0; k < base_instance_.explicit_initial_states_.size(); ++k ) {
             State *state = new State;
-            instance.set_state(instance.explicit_initial_states_[k], *state);
-            cout << "state="; state->print(cout, &instance); cout << endl;
+            base_instance_.set_state(base_instance_.explicit_initial_states_[k], *state);
+            cout << "state=";
+            state->print(cout, &base_instance_);
+            cout << endl;
             initial_states.insert(state);
             cout << "(after insert) # initial states = " << initial_states.size() << endl;
         }
@@ -63,17 +70,18 @@ KS0_Instance::KS0_Instance(const Instance &instance, int bounded_reachability, b
         cout << Utils::error() << "there must be at least one initial state" << endl;
         exit(-1);
     }
-    translate(instance, initial_states, reachable_space_from_initial_state);
+    translate(initial_states, reachable_space_from_initial_state, 0, 0);
 }
 
 KS0_Instance::KS0_Instance(const CP_Instance &instance, bool tag_all_literals, bool tag_actions)
   : Instance(instance.domain_name_, instance.problem_name_, instance.options_),
+    base_instance_(instance),
     bounded_reachability_(instance.bounded_reachability()),
     tag_all_literals_(tag_all_literals),
     tag_actions_(tag_actions) {
     const StateSet &initial_states = instance.initial_states_;
     const map<const State*, const StateSet*> &reachable_space_from_initial_state = instance.reachable_space_from_initial_state_;
-    translate(instance, initial_states, reachable_space_from_initial_state, instance.q0_, instance.fsc_states_);
+    translate(initial_states, reachable_space_from_initial_state, instance.q0_, instance.fsc_states_);
 }
 
 const Instance::Atom& KS0_Instance::create_tagged_atom(int base_n_atoms, int index, const Instance::Atom &atom, int tag) {
@@ -104,7 +112,7 @@ const Instance::Atom& KS0_Instance::create_tagged_atom(int base_n_atoms, int ind
     return tagged_atom;
 }
 
-const Instance::Action& KS0_Instance::create_action(int base_n_atoms, const Instance::Action &act, int first_tag, int action_tag) {
+const Instance::Action* KS0_Instance::create_action(int base_n_atoms, const Instance::Action &act, int first_tag, int action_tag) {
     // if action_tag == -1, this is an untagged action so generate effects for all tags,
     // otherwise generate effects only for tag = action_tag and exclude effects for tag0
     assert(tag_actions_ || (action_tag == -1));
@@ -130,8 +138,29 @@ const Instance::Action& KS0_Instance::create_action(int base_n_atoms, const Inst
         for( size_t tag = 0; tag < n_tags_; ++tag ) {
             if( (action_tag != -1) && ((tag != 0) && (tag != action_tag)) ) continue;
             int tidx = tag_map_[tag * base_n_atoms + idx];
+
+            // CHECK: literals that must be tagged are the ones appearing in conditional
+            // effects. Currently, either condition or effect (see comment in translate())
+            //
+            // Untagged reachable atoms are thus typically:
+            //   - those in initial situation that do not appear in conditional effects
+            //     (this group includes literals in oneofs defining different initial states)
+            //   - atoms for map/app actions (i.e., unused and mapped atoms) that only
+            //     appear in preconditions and unconditional effects (unless single-monolithic-action
+            //     is enabled)
+            //   - other atoms that only appear in unconditional effects. However, if the
+            //     instance comes from cp_problem, then no other atom appears in uncondional effects
+            //
+            // The code below need to be fixed/adapted to work in all cases.
+#if 0
+            if( tidx != -1 )
+                nact.effect().insert(*it > 0 ? 1 + tidx : -(1 + tidx));
+            else
+                nact.effect().insert(*it > 0 ? 1 + idx : -(1 + idx));
+#else
             assert(tidx != -1);
             nact.effect().insert(*it > 0 ? 1 + tidx : -(1 + tidx));
+#endif
             if( !tagged_[idx] ) break;
         }
     }
@@ -152,9 +181,35 @@ const Instance::Action& KS0_Instance::create_action(int base_n_atoms, const Inst
             for( index_set::const_iterator it = when.condition().begin(); it != when.condition().end(); ++it ) {
                 int idx = *it < 0 ? -*it - 1 : *it - 1;
                 int tidx = tag_map_[tag * base_n_atoms + idx];
+
+                // CHECK: literals that must be tagged are the ones appearing in conditional
+                // effects. Currently, either condition or effect (see comment in translate())
+                //
+                // Untagged reachable atoms are thus typically:
+                //   - those in initial situation that do not appear in conditional effects
+                //     (this group includes literals in oneofs defining different initial states)
+                //   - atoms for map/app actions (i.e., unused and mapped atoms) that only
+                //     appear in preconditions and unconditional effects (unless single-monolithic-action
+                //     is enabled)
+                //   - other atoms that only appear in unconditional effects. However, if the
+                //     instance comes from cp_problem, then no other atom appears in uncondional effects
+                //
+                // The code below need to be fixed/adapted to work in all cases.
+#if 0
+                if( tidx != -1 )
+                    eff.condition().insert(*it > 0 ? 1 + tidx : -(1 + tidx));
+                else
+                    eff.condition().insert(*it > 0 ? 1 + idx : -(1 + idx));
+#else
+                if( tidx == -1 ) {
+                    cout << "ATOM: where=condition, atom=" << base_instance_.atom(idx).name() << endl;
+                    cout << Utils::error() << "enable --tag-all-literals (broken code otherwise)" << endl;
+                    exit(0);
+                }
                 if( (tidx == -1) && (*it > 0) ) { safe = false; break; } // What?
                 if( tidx == -1 ) continue;
                 eff.condition().insert(*it > 0 ? 1 + tidx : -(1 + tidx));
+#endif
             }
             if( !safe ) continue;
 
@@ -162,9 +217,35 @@ const Instance::Action& KS0_Instance::create_action(int base_n_atoms, const Inst
             for( index_set::const_iterator it = when.effect().begin(); it != when.effect().end(); ++it ) {
                 int idx = *it < 0 ? -*it - 1 : *it - 1;
                 int tidx = tag_map_[tag * base_n_atoms + idx];
+
+                // CHECK: literals that must be tagged are the ones appearing in conditional
+                // effects. Currently, either condition or effect (see comment in translate())
+                //
+                // Untagged reachable atoms are thus typically:
+                //   - those in initial situation that do not appear in conditional effects
+                //     (this group includes literals in oneofs defining different initial states)
+                //   - atoms for map/app actions (i.e., unused and mapped atoms) that only
+                //     appear in preconditions and unconditional effects (unless single-monolithic-action
+                //     is enabled)
+                //   - other atoms that only appear in unconditional effects. However, if the
+                //     instance comes from cp_problem, then no other atom appears in uncondional effects
+                //
+                // The code below need to be fixed/adapted to work in all cases.
+#if 0
+                if( tidx != -1 )
+                    eff.effect().insert(*it > 0 ? 1 + tidx : -(1 + tidx));
+                else
+                    eff.effect().insert(*it > 0 ? 1 + idx : -(1 + idx));
+#else
+                if( tidx == -1 ) {
+                    cout << "ATOM: where=effect, atom=" << base_instance_.atom(idx).name() << endl;
+                    cout << Utils::error() << "enable --tag-all-literals (broken code otherwise)" << endl;
+                    exit(0);
+                }
                 if( (tidx == -1) && (*it > 0) ) { safe = false; break; } // What?
                 if( tidx == -1 ) continue;
                 eff.effect().insert(*it > 0 ? 1 + tidx : -(1 + tidx));
+#endif
             }
             if( !safe ) continue;
 
@@ -177,39 +258,37 @@ const Instance::Action& KS0_Instance::create_action(int base_n_atoms, const Inst
     // generate empty action so that preprocessor eliminates it
     if( (action_tag != -1) && (action_tag != first_tag) ) {
         assert(n_actions() > 1);
-        const Action &prev = *actions_[n_actions() - 2];
+        const Action &prev = action(n_actions() - 2);
         //cout << "Comparing " << prev.name() << " vs " << nact.name() << endl;
         bool duplicate = nact.precondition() == prev.precondition();
         duplicate = duplicate && (nact.effect() == prev.effect());
         duplicate = duplicate && (nact.when() == prev.when());
         if( duplicate ) {
-            //nact.precondition().clear();
-            //nact.effect().clear();
-            //nact.when().clear();
             //cout << "Clearing duplicate " << nact.name() << endl;
             //nact.print(cout, *this);
             remove_last_action();
+            return nullptr;
         }
     }
 
     if( options_.is_enabled("ks0:print:action") )
         nact.print(cout, *this);
 
-    return nact;
+    return &nact;
 }
 
-const Instance::Action& KS0_Instance::create_merge_action(const Instance &instance) {
+const Instance::Action* KS0_Instance::create_merge_action() {
     // calculate merge literals; i.e., those tagged that appear as precondition or goal
     set<int> merge_lits;
-    for( size_t k = 0; k < instance.n_actions(); ++k ) {
-        const Action &act = *instance.actions_[k];
+    for( size_t k = 0; k < base_instance_.n_actions(); ++k ) {
+        const Action &act = base_instance_.action(k);
         for( index_set::const_iterator it = act.precondition().begin(); it != act.precondition().end(); ++it ) {
             int idx = *it < 0 ? -*it - 1 : *it - 1;
             if( tagged_[idx] ) merge_lits.insert(idx);
         }
     }
 
-    for( index_set::const_iterator it = instance.goal_literals_.begin(); it != instance.goal_literals_.end(); ++it ) {
+    for( index_set::const_iterator it = base_instance_.goal_literals_.begin(); it != base_instance_.goal_literals_.end(); ++it ) {
         assert(*it > 0);
         if( tagged_[*it - 1] ) merge_lits.insert(*it - 1);
     }
@@ -217,7 +296,7 @@ const Instance::Action& KS0_Instance::create_merge_action(const Instance &instan
     if( options_.is_enabled("ks0:print:merge:literals") ) {
         cout << "merge literals =";
         for( set<int>::const_iterator it = merge_lits.begin(); it != merge_lits.end(); ++it ) {
-            cout << " " << instance.atoms_[*it]->name();
+            cout << " " << base_instance_.atom(*it).name();
         }
         cout << endl;
     }
@@ -230,15 +309,16 @@ const Instance::Action& KS0_Instance::create_merge_action(const Instance &instan
         assert(*it >= 0);
         assert(tagged_[*it]);
         for( size_t tag = 1; tag < n_tags_; ++tag ) {
-            int tidx = tag_map_[tag * instance.n_atoms() + *it];
+            int tidx = tag_map_[tag * base_instance_.n_atoms() + *it];
             if( tidx == -1 ) {
+                cout << Utils::error() << "expecting index tidx != -1: atom=" << base_instance_.atom(*it).name() << endl;
                 cout << Utils::error() << "expecting index tidx != -1: this may be due to insufficient reachability (try augmenting bounded_reachability or --tag-all-literals)" << endl;
                 exit(0);
             }
             assert(tidx != -1);
             merge_eff.condition().insert(1 + tidx);
         }
-        int tidx = tag_map_[tag0_ * instance.n_atoms() + *it];
+        int tidx = tag_map_[tag0_ * base_instance_.n_atoms() + *it];
         merge_eff.effect().insert(1 + tidx);
         merge.when().push_back(merge_eff);
     }
@@ -246,11 +326,10 @@ const Instance::Action& KS0_Instance::create_merge_action(const Instance &instan
     if( options_.is_enabled("ks0:print:action") || options_.is_enabled("ks0:print:merge:action") )
         merge.print(cout, *this);
 
-    return merge;
+    return &merge;
 }
 
-void KS0_Instance::translate(const Instance &instance,
-                             const StateSet &initial_states,
+void KS0_Instance::translate(const StateSet &initial_states,
                              const map<const State*, const StateSet*> &reachable_space_from_initial_state,
                              int q0,
                              int num_fsc_states) {
@@ -260,23 +339,23 @@ void KS0_Instance::translate(const Instance &instance,
     tag0_ = 0;
 
     // initialize tag map
-    size_t ins_n_fluents = instance.n_atoms();
+    size_t ins_n_fluents = base_instance_.n_atoms();
     tagged_ = vector<bool>(ins_n_fluents, false);
     tag_map_ = vector<int>(n_tags_ * ins_n_fluents, -1);
 
     // calculate literals that must be tagged because they appear in conditional effects
-    for( size_t k = 0; k < instance.n_actions(); ++k ) {
-        const Action &act = *instance.actions_[k];
+    for( size_t k = 0; k < base_instance_.n_actions(); ++k ) {
+        const Action &act = base_instance_.action(k);
         for( size_t i = 0; i < act.when().size(); ++i ) {
             const When &when = act.when()[i];
             for( index_set::const_iterator it = when.condition().begin(); it != when.condition().end(); ++it ) {
                 int idx = *it < 0 ? -*it - 1 : *it - 1;
-                //if( !tagged_[idx] ) cout << "Must tag: where=<when.condition>. literal=" << instance.atoms_[idx]->name() << ", idx=" << idx << endl;
-                tagged_[idx] = true;
+                //if( !tagged_[idx] ) cout << "Must tag: where=<when.condition>. literal=" << base_instance_.atom(idx).name() << ", idx=" << idx << endl;
+                tagged_[idx] = true; // CHECK: do we need to tag literals in conditions?
             }
             for( index_set::const_iterator it = when.effect().begin(); it != when.effect().end(); ++it ) {
                 int idx = *it < 0 ? -*it - 1 : *it - 1;
-                //if( !tagged_[idx] ) cout << "Must tag: where=<when.effect>. literal=" << instance.atoms_[idx]->name() << ", idx=" << idx << endl;
+                //if( !tagged_[idx] ) cout << "Must tag: where=<when.effect>. literal=" << base_instance_.atom(idx).name() << ", idx=" << idx << endl;
                 tagged_[idx] = true;
             }
         }
@@ -286,7 +365,7 @@ void KS0_Instance::translate(const Instance &instance,
         cout << "literals that *must* be tagged =";
         for( size_t k = 0; k < ins_n_fluents; ++k ) {
             if( tagged_[k] )
-                cout << " " << k << "." << instance.atoms_[k]->name();
+                cout << " " << k << "." << base_instance_.atom(k).name();
         }
         cout << endl;
     }
@@ -316,7 +395,7 @@ void KS0_Instance::translate(const Instance &instance,
 
             if( options_.is_enabled("ks0:print:reachable") ) {
                 cout << "reachable literals = ";
-                instance.write_atom_set(cout, literals);
+                base_instance_.write_atom_set(cout, literals);
                 cout << endl;
             }
         }
@@ -327,7 +406,7 @@ void KS0_Instance::translate(const Instance &instance,
 
     // first generate untagged and tag0 literals
     for( size_t k = 0; k < ins_n_fluents; ++k ) {
-        const Atom &atom = *instance.atoms_[k];
+        const Atom &atom = base_instance_.atom(k);
         create_tagged_atom(ins_n_fluents, k, atom, tag0_);
     }
 
@@ -336,7 +415,7 @@ void KS0_Instance::translate(const Instance &instance,
         for( size_t tag = 1; tag < n_tags_; ++tag ) {
             for( size_t k = 0; k < ins_n_fluents; ++k ) {
                 if( tagged_[k] ) {
-                    const Atom &atom = *instance.atoms_[k];
+                    const Atom &atom = base_instance_.atom(k);
                     create_tagged_atom(ins_n_fluents, k, atom, tag);
                 }
             }
@@ -347,7 +426,7 @@ void KS0_Instance::translate(const Instance &instance,
             for( index_set::const_iterator it = literals.begin(); it != literals.end(); ++it ) {
                 assert(*it > 0);
                 if( tagged_[*it - 1] ) {
-                    const Atom &atom = *instance.atoms_[*it - 1];
+                    const Atom &atom = base_instance_.atom(*it - 1);
                     create_tagged_atom(ins_n_fluents, *it - 1, atom, tag);
                 }
             }
@@ -377,16 +456,16 @@ void KS0_Instance::translate(const Instance &instance,
     }
 
     // set goal situation
-    for( index_set::const_iterator it = instance.goal_literals_.begin(); it != instance.goal_literals_.end(); ++it ) {
+    for( index_set::const_iterator it = base_instance_.goal_literals_.begin(); it != base_instance_.goal_literals_.end(); ++it ) {
         assert(*it > 0);
         int tidx = tag_map_[tag0_ * ins_n_fluents + (*it - 1)];
         goal_literals_.insert(1 + tidx);
     }
 
     // create actions
-    for( size_t k = 0; k < instance.n_actions(); ++k ) {
-        const Action &act = *instance.actions_[k];
-        if( tag_actions_ ) { //&& (act.name() != "ramification") ) {
+    for( size_t k = 0; k < base_instance_.n_actions(); ++k ) {
+        const Action &act = base_instance_.action(k);
+        if( tag_actions_ ) { //&& (act.name() != "ramification") )
             size_t first_tag = n_tags_ == 1 ? 0 : 1;
             for( size_t tag = first_tag; tag < n_tags_; ++tag )
                 create_action(ins_n_fluents, act, first_tag, tag);
@@ -396,7 +475,6 @@ void KS0_Instance::translate(const Instance &instance,
     }
 
     // create merge action
-    if( n_tags_ > 1 )
-        create_merge_action(instance);
+    if( n_tags_ > 1 ) create_merge_action();
 }
 
