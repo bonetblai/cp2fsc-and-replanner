@@ -361,18 +361,22 @@ class Instance {
 
     const Atom& atom(int i) const {
         assert((i >= 0) && (i < atoms_.size()));
+        assert(atoms_[i] != nullptr);
         return *atoms_[i];
     }
     const Action& action(int i) const {
         assert((i >= 0) && (i < actions_.size()));
+        assert(actions_[i] != nullptr);
         return *actions_[i];
     }
     const Sensor& sensor(int i) const {
         assert((i >= 0) && (i < sensors_.size()));
+        assert(sensors_[i] != nullptr);
         return *sensors_[i];
     }
     const Axiom& axiom(int i) const {
         assert((i >= 0) && (i < axioms_.size()));
+        assert(axioms_[i] != nullptr);
         return *axioms_[i];
     }
 
